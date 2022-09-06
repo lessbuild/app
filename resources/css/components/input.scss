@@ -1,0 +1,21 @@
+.input {
+    @apply flex-1;
+    @apply block;
+    @apply w-full;
+    @apply text-sm;
+    @apply border;
+
+    &.primary {
+        @apply bg-primary;
+        @apply text-primary;
+        @apply placeholder-primary;
+        @apply border-primary;
+    }
+
+    &.secondary {
+        @apply bg-secondary;
+        @apply text-secondary;
+        @apply placeholder-secondary;
+        @apply border-secondary;
+    }
+}

@@ -1,0 +1,49 @@
+<?php
+
+namespace App\Scripts\Repository;
+
+use App\Models\Repository;
+
+class PurgeOldReleasesScript
+{
+    /**
+     * Title of the script
+     *
+     * @var string
+     */
+    public static string $title = 'Purge Old Releases';
+
+    /**
+     * Description of the script
+     *
+     * @var string
+     */
+    public static string $description = 'Purge the old releases on the server';
+
+    /**
+     * Identifier of the script
+     *
+     * @var string
+     */
+    public static string $identifier = 'purged-releases';
+
+    /**
+     * The script to run
+     *
+     * @param int $step
+     * @param \App\Models\Repository $repository
+     * @return string
+     */
+    public function script(int $step, Repository $repository): string
+    {
+        return <<<SCRIPT
+
+            # Delete current file
+            # rm -- "$0"
+
+            # Ping
+            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" http://5653-2a01-4c8-829-a471-f954-95a-81d5-e90d.ngrok.io/servers/release-repository/callback/status
+
+        SCRIPT;
+    }
+}

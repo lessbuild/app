@@ -1,0 +1,62 @@
+:root {
+    @media (prefers-color-scheme: dark) {
+        @apply dark;
+    }
+
+    @media (prefers-color-scheme: light) {
+        @apply light;
+    }
+
+}
+
+.dark {
+    --bg-primary: theme('colors.gray.800');
+    --text-primary: theme('colors.gray.400');
+    --placeholder-primary: theme('colors.gray.300');
+    --border-primary: theme('colors.gray.600');
+    --divide-primary: theme('colors.gray.600');
+
+    --bg-secondary: theme('colors.gray.700');
+    --text-secondary: theme('colors.gray.500');
+    --placeholder-secondary: theme('colors.gray.400');
+    --border-secondary: theme('colors.gray.500');
+    --divide-secondary: theme('colors.gray.500');
+
+    --bg-tertiary: theme('colors.gray.900');
+    --text-tertiary: theme('colors.gray.400');
+    --placeholder-tertiary: theme('colors.gray.600');
+    --border-tertiary: theme('colors.gray.700');
+    --divide-tertiary: theme('colors.gray.700');
+
+    --bg-ternary: theme('colors.blue.700');
+    --text-ternary: theme('colors.blue.400');
+    --placeholder-ternary: theme('colors.blue.600');
+    --border-ternary: theme('colors.blue.700');
+    --divide-ternary: theme('colors.blue.700');
+}
+
+.light {
+    --bg-primary: theme('colors.white');
+    --text-primary: theme('colors.gray.600');
+    --placeholder-primary: theme('colors.gray.800');
+    --border-primary: theme('colors.gray.200');
+    --divide-primary: theme('colors.gray.200');
+
+    --bg-secondary: theme('colors.gray.50');
+    --text-secondary: theme('colors.gray.400');
+    --placeholder-secondary: theme('colors.gray.400');
+    --border-secondary: theme('colors.gray.300');
+    --divide-secondary: theme('colors.gray.300');
+
+    --bg-tertiary: theme('colors.gray.700');
+    --text-tertiary: theme('colors.gray.200');
+    --placeholder-tertiary: theme('colors.gray.500');
+    --border-tertiary: theme('colors.gray.700');
+    --divide-tertiary: theme('colors.gray.700');
+
+    --bg-ternary: theme('colors.blue.700');
+    --text-ternary: theme('colors.blue.500');
+    --placeholder-ternary: theme('colors.blue.600');
+    --border-ternary: theme('colors.blue.700');
+    --divide-ternary: theme('colors.blue.700');
+}
