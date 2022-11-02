@@ -40,6 +40,7 @@
             <x-scenes.repositories._form
                 :providers="$providers"
                 :repository="$repository"
+                :websites="$websites"
             ></x-scenes.repositories._form>
 
             <x-slot:footer>

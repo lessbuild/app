@@ -86,10 +86,12 @@ class RepositoriesController extends Controller
     public function edit(Request $request, Repository $repository): View
     {
         $providers = $request->user()->providers()->get();
+        $websites = $request->user()->websites()->get();
 
         return view('scenes.repositories.edit', [
             'repository' => $repository,
             'providers' => $providers,
+            'websites' => $websites,
         ]);
     }
 

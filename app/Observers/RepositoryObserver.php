@@ -19,6 +19,17 @@ class RepositoryObserver
     }
 
     /**
+     * When a repository is updated
+     *
+     * @param  \App\Models\Repository  $repository
+     * @return void
+     */
+    public function updated(Repository $repository)
+    {
+        PublishRepositoryJob::dispatch($repository);
+    }
+
+    /**
      * When a repository is deleted
      *
      * @param  \App\Models\Repository  $repository

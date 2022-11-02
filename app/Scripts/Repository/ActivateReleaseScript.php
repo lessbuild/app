@@ -49,6 +49,8 @@ class ActivateReleaseScript
             mv $root/current $root/releases/$release
             mv /var/www/$name/setup /var/www/$name/current
 
+            sudo chmod -R 777 /var/www/$name/current/bootstrap/cache
+
             # Ping
             curl --insecure --user-agent "deployer" --data "status=$step&repository_id=$repository->id" {$callback}
 
