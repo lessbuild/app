@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\CreateCloudServerAction;
+use App\Actions\Server\QueueRemoteServerProvisioningRetryAction;
 use App\Actions\Server\RetryServerInitializationAction;
 use App\Contracts\ServerProvider;
 use App\Http\Requests\ServerRequest;
@@ -178,5 +179,18 @@ class ServersController extends Controller
         }
 
         return back()->with('success', __('Server initialization retry queued.'));
+    }
+
+    public function retryRemoteProvisioning(
+        Server $server,
+        QueueRemoteServerProvisioningRetryAction $retry,
+    ): RedirectResponse {
+        $this->authorize('update', $server);
+
+        if (! $retry->handle($server)) {
+            return back()->with('info', __('Remote server provisioning is not eligible for retry.'));
+        }
+
+        return back()->with('success', __('Remote server provisioning retry queued.'));
     }
 }

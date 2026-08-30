@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
         ->name('servers.show');
     Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
         ->name('servers.initialization.retry');
+    Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])
+        ->name('servers.provisioning.retry');
 
     Route::resource('builds', BuildsController::class)->only(['index', 'show']);
     Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
@@ -86,9 +88,12 @@ Route::post('servers/{server}/provisioning/callback/status', function (Server $s
     if ($data['status'] === $finalStage) {
         $server->update([
             'provisioning_status' => Server::STATUS_ACTIVE,
+            'password' => null,
             'provisioned_at' => now(),
             'provisioning_error' => null,
             'provisioning_failure_phase' => null,
+            'provisioning_process_id' => null,
+            'provisioning_process_path' => null,
         ]);
     }
 })->middleware('signed')->name('callbacks.server');
@@ -144,11 +149,14 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
         Server::STATUS_PROVISIONING,
     ], true)) {
         $server->update([
+            'password' => null,
             'provisioning_status' => Server::STATUS_FAILED,
             'provisioning_error' => isset($data['exit_code'])
                 ? "{$data['message']} (exit code {$data['exit_code']})"
                 : $data['message'],
             'provisioning_failure_phase' => Server::FAILURE_REMOTE,
+            'provisioning_process_id' => null,
+            'provisioning_process_path' => null,
         ]);
     }
 

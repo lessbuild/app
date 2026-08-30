@@ -80,6 +80,11 @@
                     @csrf
                     <button type="submit" class="button primary">{{ __('Retry initialization') }}</button>
                 </form>
+            @elseif ($server->provisioning_failure_phase === \App\Models\Server::FAILURE_REMOTE)
+                <form method="POST" action="{{ route('servers.provisioning.retry', $server) }}" class="mt-3">
+                    @csrf
+                    <button type="submit" class="button primary">{{ __('Resume provisioning') }}</button>
+                </form>
             @endif
         </div>
     @endif

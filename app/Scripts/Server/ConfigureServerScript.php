@@ -79,12 +79,12 @@ class ConfigureServerScript implements ServerScript
         chmod 600 "/home/\$SERVER_NAME/.ssh/authorized_keys"
 
         # Create The Server SSH Key
-        sudo -u "\$SERVER_NAME" ssh-keygen -f "/home/\$SERVER_NAME/.ssh/id_rsa" -t rsa -N ''
+        if [ ! -f "/home/\$SERVER_NAME/.ssh/id_rsa" ]; then
+            sudo -u "\$SERVER_NAME" ssh-keygen -f "/home/\$SERVER_NAME/.ssh/id_rsa" -t rsa -N ''
+        fi
 
         # Copy Source Control Public Keys Into Known Hosts File
-        ssh-keyscan -H github.com >> "/home/\$SERVER_NAME/.ssh/known_hosts"
-        ssh-keyscan -H bitbucket.org >> "/home/\$SERVER_NAME/.ssh/known_hosts"
-        ssh-keyscan -H gitlab.com >> "/home/\$SERVER_NAME/.ssh/known_hosts"
+        ssh-keyscan -H github.com bitbucket.org gitlab.com 2>/dev/null | sort -u > "/home/\$SERVER_NAME/.ssh/known_hosts"
         chown "\$SERVER_NAME:\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh/known_hosts"
 
         # Configure Git Settings

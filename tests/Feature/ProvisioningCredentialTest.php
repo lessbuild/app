@@ -8,6 +8,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Scripts\Database\InstallMysqlScript;
 use App\Scripts\Server\ConfigureServerScript;
+use App\Scripts\Web\InstallCaddyScript;
 use App\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -74,6 +75,24 @@ class ProvisioningCredentialTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('MySQL provisioning credentials have not been prepared.');
         (new InstallMysqlScript)->script(8, $server);
+    }
+
+    public function test_remote_steps_are_safe_to_resume_after_partial_execution(): void
+    {
+        $server = $this->server(ServerTypeEnum::app);
+        $server->update(['public_ip' => '192.0.2.10']);
+        (new PrepareServerProvisioningAction(new ServerProvisioningPlan))->handle($server);
+
+        $configure = (new ConfigureServerScript)->script(3, $server);
+        $mysql = (new InstallMysqlScript)->script(8, $server);
+        $caddy = (new InstallCaddyScript)->script(7, $server);
+
+        $this->assertStringContainsString('if [ ! -f "/home/$SERVER_NAME/.ssh/id_rsa" ]', $configure);
+        $this->assertStringContainsString('CREATE USER IF NOT EXISTS', $mysql);
+        $this->assertStringContainsString('cat > /etc/mysql/mysql.conf.d/99-lessbuild.cnf', $mysql);
+        $this->assertStringNotContainsString('>> /etc/mysql/my.cnf', $mysql);
+        $this->assertStringContainsString('gpg --batch --yes --dearmor', $caddy);
+        $this->assertStringContainsString('mkdir -p /etc/caddy/websites', $caddy);
     }
 
     public function test_legacy_server_passwords_are_encrypted_at_rest(): void

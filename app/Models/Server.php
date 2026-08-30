@@ -72,6 +72,7 @@ class Server extends Model
      */
     protected $casts = [
         'setup_stage' => 'integer',
+        'provisioning_process_id' => 'integer',
         'type' => ServerTypeEnum::class,
         'password' => 'encrypted',
         'mysql_root_password' => 'encrypted',

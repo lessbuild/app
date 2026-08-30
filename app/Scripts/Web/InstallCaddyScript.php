@@ -35,7 +35,7 @@ class InstallCaddyScript implements ServerScript
         yes | sudo apt install debian-keyring debian-archive-keyring apt-transport-https
 
         # Add Caddy GPG
-        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+        curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
 
         # Add Caddy Repository
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
@@ -55,7 +55,7 @@ class InstallCaddyScript implements ServerScript
         echo "import /etc/caddy/websites/*" > /etc/caddy/Caddyfile
 
         # Make website directory
-        mkdir /etc/caddy/websites
+        mkdir -p /etc/caddy/websites
         SCRIPT;
     }
 }
