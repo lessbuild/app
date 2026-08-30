@@ -44,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('websites', WebsitesController::class);
     Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
         ->name('websites.placement.cleanup');
+    Route::post('websites/{website}/provisioning/retry', [WebsitesController::class, 'retryProvisioning'])
+        ->name('websites.provisioning.retry');
 
     Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::get('servers/{server}', ServerShow::class)

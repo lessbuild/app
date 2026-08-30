@@ -68,6 +68,13 @@
         <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
             <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
             <p class="text-sm">{{ $website->provisioning_error }}</p>
+            @error('retry')
+                <p class="mt-2 text-sm font-semibold">{{ $message }}</p>
+            @enderror
+            <form method="POST" action="{{ route('websites.provisioning.retry', $website) }}" class="mt-3">
+                @csrf
+                <button type="submit" class="button primary">{{ __('Retry provisioning') }}</button>
+            </form>
         </div>
     @endif
 

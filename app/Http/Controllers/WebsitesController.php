@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Web\RetryWebsiteProvisioningAction;
 use App\Http\Requests\WebsiteRequest;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
@@ -146,6 +147,19 @@ class WebsitesController extends Controller
         );
 
         return back()->with('success', __('Previous server cleanup queued.'));
+    }
+
+    public function retryProvisioning(
+        Website $website,
+        RetryWebsiteProvisioningAction $retry,
+    ): RedirectResponse {
+        $this->authorize('update', $website);
+
+        if (! $retry->handle($website)) {
+            return back()->with('info', __('Website provisioning is no longer in a failed state.'));
+        }
+
+        return back()->with('success', __('Website provisioning retry queued.'));
     }
 
     /**
