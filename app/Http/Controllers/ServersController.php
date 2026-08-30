@@ -20,9 +20,6 @@ class ServersController extends Controller
 {
     /**
      * List all servers.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function index(Request $request): View
     {
@@ -35,9 +32,6 @@ class ServersController extends Controller
 
     /**
      * Show the resource creation form
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function create(Request $request): View
     {
@@ -63,9 +57,6 @@ class ServersController extends Controller
     /**
      * Store the resource in storage
      *
-     * @param  \App\Http\Requests\ServerRequest  $request
-     * @param  \App\Services\SshKeyPair  $keypair
-     * @return \Illuminate\Http\RedirectResponse
      *
      * @throws \Exception
      */
@@ -77,15 +68,13 @@ class ServersController extends Controller
         $server = tap(Auth::user()->servers()->create([
             'provider_id' => $request->input('provider_id'),
             'provisioning_status' => Server::STATUS_QUEUED,
-            'keypair' => [
-                'public' => $keypair->publicKey(),
-                'private' => $keypair->privateKey(),
-            ],
+            'ssh_public_key' => $keypair->publicKey(),
+            'ssh_private_key' => $keypair->privateKey(),
         ]), function ($server) use ($digitalOcean, $request) {
 
             // create ssh
             $ssh = $digitalOcean->createSSH([
-                'public_key' => $server->keypair['public'],
+                'public_key' => $server->ssh_public_key,
                 'name' => $request->input('name'),
             ]);
 
@@ -116,9 +105,7 @@ class ServersController extends Controller
     /**
      * Delete a droplet
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Server  $server
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      *
      * @throws \Exception
      */

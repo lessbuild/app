@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Provider;
+use App\Models\Server;
 use App\Models\User;
+use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -63,6 +65,37 @@ class ResourceAuthorizationTest extends TestCase
             Provider::query()->toBase()->find($provider->id)->token
         );
         $this->assertArrayNotHasKey('token', $provider->toArray());
+    }
+
+    public function test_server_private_keys_are_encrypted_and_used_for_ssh(): void
+    {
+        $user = User::factory()->create();
+        $server = $user->servers()->create([
+            'name' => 'Production',
+            'public_ip' => '192.0.2.10',
+            'ssh_public_key' => 'ssh-rsa public-key',
+            'ssh_private_key' => 'private-key-contents',
+        ]);
+
+        $this->assertSame('private-key-contents', $server->fresh()->ssh_private_key);
+        $this->assertNotSame(
+            'private-key-contents',
+            Server::query()->toBase()->find($server->id)->ssh_private_key,
+        );
+        $this->assertArrayNotHasKey('ssh_private_key', $server->toArray());
+
+        $connection = (new Runner)->server($server->fresh())->create();
+        $command = $connection->getExecuteCommand('uptime');
+
+        preg_match('/-i ([^ ]+)/', $command, $matches);
+        $temporaryKey = $matches[1] ?? null;
+
+        $this->assertNotNull($temporaryKey);
+        $this->assertSame('private-key-contents', file_get_contents($temporaryKey));
+        $this->assertSame('0600', substr(sprintf('%o', fileperms($temporaryKey)), -4));
+
+        $connection->close();
+        $this->assertFileDoesNotExist($temporaryKey);
     }
 
     public function test_provisioning_callbacks_require_a_valid_signature(): void

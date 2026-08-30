@@ -36,7 +36,7 @@ class Server extends Model
      */
     protected $hidden = [
         'password',
-        'keypair',
+        'ssh_private_key',
     ];
 
     public function user(): BelongsTo
@@ -58,45 +58,30 @@ class Server extends Model
      */
     protected $casts = [
         'setup_stage' => 'integer',
-        'keypair' => 'json',
+        'ssh_private_key' => 'encrypted',
         'provisioned_at' => 'datetime',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
-     */
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
-     */
     public function logs(): MorphMany
     {
         return $this->morphMany(Log::class, 'parentable');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function websites(): HasMany
     {
         return $this->hasMany(Website::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);

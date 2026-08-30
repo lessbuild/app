@@ -14,34 +14,24 @@ abstract class Publishable
 {
     /**
      * Name of the file
-     *
-     * @var string|null
      */
     protected ?string $fileName = null;
 
     /**
      * Path of the file
-     *
-     * @var string|null
      */
     protected ?string $file = null;
 
     /**
      * The scripts to run
-     *
-     * @var string|null
      */
     protected ?string $script = null;
 
-    /**
-     * @var \Spatie\Ssh\Ssh
-     */
     protected Ssh $runner;
 
     /**
      * Publishable constructor
      *
-     * @param  \App\Models\Server  $server
      *
      * @throws \Exception
      */
@@ -65,7 +55,6 @@ abstract class Publishable
     /**
      * Upload the script to the server
      *
-     * @return bool
      *
      * @throws \Exception
      */
@@ -97,8 +86,6 @@ abstract class Publishable
 
     /**
      * Run the script
-     *
-     * @return string
      */
     protected function run(): string
     {
@@ -115,9 +102,6 @@ abstract class Publishable
 
     /**
      * Generate the script file
-     *
-     * @param  string  $name
-     * @return string
      */
     protected function makeScriptFile(string $name): string
     {
