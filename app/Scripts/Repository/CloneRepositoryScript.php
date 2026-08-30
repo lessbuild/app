@@ -3,48 +3,47 @@
 namespace App\Scripts\Repository;
 
 use App\Models\Repository;
+use Illuminate\Support\Facades\URL;
 
 class CloneRepositoryScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Clone Repository';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Clone the repository on the server';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'cloned-repository';
 
     /**
      * The script to run
-     *
-     * @param  int  $step
-     * @param  \App\Models\Repository  $repository
-     * @return string
      */
     public function script(int $step, Repository $repository): string
     {
-        $name = $repository->website->deployment_slug;
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
-        $repo = "https://{$repository->provider->token}@{$repository->url}";
+        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $credentialDirectory = escapeshellarg("/tmp/lessbuild-repository-{$repository->id}");
+        $credentialPayload = escapeshellarg(base64_encode(
+            "machine github.com\nlogin x-access-token\npassword {$repository->provider->token}\n",
+        ));
+        $repositoryUrl = escapeshellarg("https://{$repository->url}");
+        $callback = escapeshellarg(URL::signedRoute('callbacks.repository', $repository));
 
         return <<<SCRIPT
 
-            rm -f /etc/cron.d/$repository->name
-            rm -r /var/www/$name/setup
-            git clone $repo /var/www/$name/setup
+            CREDENTIALS_DIR={$credentialDirectory}
+            trap 'rm -rf -- "\$CREDENTIALS_DIR"; rm -f -- "\$0"' EXIT
+            rm -rf -- {$setupPath}
+            install -d -m 700 -- "\$CREDENTIALS_DIR"
+            printf '%s' {$credentialPayload} | base64 --decode > "\$CREDENTIALS_DIR/.netrc"
+            chmod 600 "\$CREDENTIALS_DIR/.netrc"
+            HOME="\$CREDENTIALS_DIR" git clone -- {$repositoryUrl} {$setupPath}
 
             # Ping
             curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" {$callback}

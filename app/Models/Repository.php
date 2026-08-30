@@ -26,25 +26,16 @@ class Repository extends Model
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function builds(): HasMany
     {
         return $this->hasMany(Build::class);
@@ -53,5 +44,14 @@ class Repository extends Model
     public function latestBuild(): HasOne
     {
         return $this->hasOne(Build::class)->latestOfMany();
+    }
+
+    public function isDeploymentReady(): bool
+    {
+        $this->loadMissing(['provider', 'website.server']);
+
+        return $this->provider?->provider === Provider::TYPE_GITHUB
+            && $this->website?->provisioning_status === Website::STATUS_ACTIVE
+            && $this->website?->server?->provisioning_status === Server::STATUS_ACTIVE;
     }
 }

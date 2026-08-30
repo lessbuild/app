@@ -8,7 +8,7 @@
             <select name="website_id" class="input secondary rounded">
                 @foreach($websites as $website)
                     <option value="{{ $website->id }}"
-                        @selected(old('website_id') == $website->id || ($website->website_id ?? null) == $website->id)
+                        @selected((string) old('website_id', $repository->website_id ?? '') === (string) $website->id)
                     >
                         {{ $website->name }}
                     </option>
@@ -59,7 +59,7 @@
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-primary bg-tertiary text-primary text-sm">
-                http://
+                https://
             </span>
             <input
                 value="{{ old('url') ?? ($repository->url ?? null) }}"
@@ -70,6 +70,22 @@
                 placeholder="github.com/user/repo.git">
         </div>
         <x-forms.errors name="url"></x-forms.errors>
+    </div>
+
+    <div class="col-span-3 sm:col-span-2">
+        <label for="branch" class="block text-sm font-medium text-primary">
+            {{ __('Deployment Branch') }}
+        </label>
+        <div class="mt-1 flex rounded-md shadow-sm">
+            <input
+                value="{{ old('branch', $repository->branch ?? 'main') }}"
+                type="text"
+                name="branch"
+                id="branch"
+                class="input secondary rounded"
+                placeholder="main">
+        </div>
+        <x-forms.errors name="branch"></x-forms.errors>
     </div>
 
     <div>

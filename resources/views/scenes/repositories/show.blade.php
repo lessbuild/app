@@ -23,11 +23,11 @@
 
             <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                 @csrf
-                <button type="submit" class="button primary" @disabled($deploymentInProgress)>
+                <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady)>
                     <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                         <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
                     </svg>
-                    {{ $deploymentInProgress ? __('Deployment in progress') : __('Deploy') }}
+                    {{ ! $deploymentReady ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
                 </button>
             </form>
 
@@ -55,6 +55,12 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    @if (! $deploymentReady)
+        <div class="my-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+            {{ __('The linked website and server must both be active before this repository can be deployed.') }}
+        </div>
+    @endif
+
     <!--
      ! ------------------------------------------------------------
      ! Repository information
@@ -73,6 +79,13 @@
                     {{ $repository->url }}
                 </div>
             </div>
+        </div>
+        <div class="flex items-center mr-6">
+            <svg class="mr-2 w-4 h-4 text-gray-400">
+                <use xlink:href="/assets/images/icons.svg#external-link"></use>
+            </svg>
+            <span class="mr-1 text-primary">{{ __('Branch') }}</span>
+            <span class="text-secondary">{{ $repository->branch }}</span>
         </div>
     </div>
 

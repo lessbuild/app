@@ -33,7 +33,7 @@
     @if($websites->isEmpty())
         <div class="my-4">
             <x-alerts.info
-                :title="__('You must create a website before you can add a repository')"
+                :title="__('You need an active website before you can add a repository')"
                 :link="route('websites.create')"
                 :anchor="__('Create Website')"
             ></x-alerts.info>
@@ -58,7 +58,7 @@
 
             <x-slot:footer>
                 <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary" type="submit">
+                    <button class="cursor-pointer button primary" type="submit" @disabled($providers->isEmpty() || $websites->isEmpty())>
                         <span class="flex items-center justify-between">
                             {{ __('Create Repository') }}
                         </span>

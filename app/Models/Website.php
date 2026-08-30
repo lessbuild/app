@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Presenters\WebsitePresenter;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -86,5 +87,13 @@ class Website extends Model
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
+    }
+
+    public function scopeReadyForDeployments(Builder $query): Builder
+    {
+        return $query
+            ->where('provisioning_status', self::STATUS_ACTIVE)
+            ->whereHas('server', fn (Builder $query) => $query
+                ->where('provisioning_status', Server::STATUS_ACTIVE));
     }
 }

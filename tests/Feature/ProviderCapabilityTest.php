@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
+use App\Models\Server;
 use App\Models\User;
+use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -163,6 +165,7 @@ class ProviderCapabilityTest extends TestCase
         $server = $user->servers()->create([
             'name' => 'Production',
             'provider_id' => $digitalOcean->id,
+            'provisioning_status' => Server::STATUS_ACTIVE,
         ]);
         $website = $user->websites()->create([
             'server_id' => $server->id,
@@ -170,6 +173,7 @@ class ProviderCapabilityTest extends TestCase
             'description' => 'Application website',
             'environment' => 'APP_ENV=production',
             'url' => 'app.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
         $repository = $user->repositories()->create([
             'provider_id' => $github->id,

@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
+use App\Models\Server;
 use App\Models\User;
+use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -100,13 +102,18 @@ class RepositoryDeploymentTest extends TestCase
             'token' => 'secret',
             'description' => 'Git provider',
         ]);
-        $server = $user->servers()->create(['name' => 'Production', 'provider_id' => $provider->id]);
+        $server = $user->servers()->create([
+            'name' => 'Production',
+            'provider_id' => $provider->id,
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
         $website = $user->websites()->create([
             'server_id' => $server->id,
             'name' => 'Application',
             'description' => 'Website',
             'environment' => 'APP_ENV=production',
             'url' => 'app.test',
+            'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
         $repository = $user->repositories()->create([
             'provider_id' => $provider->id,

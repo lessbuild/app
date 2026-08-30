@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RepositoryRequest;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
-use App\Models\Provider;
 use App\Models\Repository;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class RepositoriesController extends Controller
 {
@@ -38,6 +38,7 @@ class RepositoriesController extends Controller
             'deploymentInProgress' => $repository->builds()
                 ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
                 ->exists(),
+            'deploymentReady' => $repository->isDeploymentReady(),
         ]);
     }
 
@@ -47,7 +48,7 @@ class RepositoriesController extends Controller
     public function create(Request $request): View
     {
         $providers = $request->user()->providers()->forRepositories()->get();
-        $websites = $request->user()->websites()->get();
+        $websites = $request->user()->websites()->readyForDeployments()->get();
 
         return view('scenes.repositories.create', [
             'providers' => $providers,
@@ -60,26 +61,9 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(Request $request)
+    public function store(RepositoryRequest $request)
     {
-        $validated = $request->validate([
-            'provider_id' => [
-                'required',
-                Rule::exists('providers', 'id')->where(fn ($query) => $query
-                    ->where('user_id', $request->user()->id)
-                    ->where('provider', Provider::TYPE_GITHUB)
-                    ->whereNull('deleted_at')),
-            ],
-            'website_id' => [
-                'required',
-                Rule::exists('websites', 'id')->where('user_id', $request->user()->id),
-            ],
-            'name' => 'required|max:255',
-            'url' => 'required|max:255',
-            'description' => 'required',
-        ]);
-
-        $repository = $request->user()->repositories()->create($validated);
+        $repository = $request->user()->repositories()->create($request->validated());
 
         return redirect()->route('repositories.show', $repository);
     }
@@ -92,7 +76,7 @@ class RepositoriesController extends Controller
         $this->authorize('update', $repository);
 
         $providers = $request->user()->providers()->forRepositories()->get();
-        $websites = $request->user()->websites()->get();
+        $websites = $request->user()->websites()->readyForDeployments()->get();
 
         return view('scenes.repositories.edit', [
             'repository' => $repository,
@@ -106,28 +90,11 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(Request $request, Repository $repository)
+    public function update(RepositoryRequest $request, Repository $repository)
     {
         $this->authorize('update', $repository);
 
-        $validated = $request->validate([
-            'provider_id' => [
-                'required',
-                Rule::exists('providers', 'id')->where(fn ($query) => $query
-                    ->where('user_id', $request->user()->id)
-                    ->where('provider', Provider::TYPE_GITHUB)
-                    ->whereNull('deleted_at')),
-            ],
-            'website_id' => [
-                'required',
-                Rule::exists('websites', 'id')->where('user_id', $request->user()->id),
-            ],
-            'name' => 'required|max:255',
-            'url' => 'required|max:255',
-            'description' => 'required',
-        ]);
-
-        $repository->update($validated);
+        $repository->update($request->validated());
 
         return redirect()->route('repositories.show', $repository);
     }
@@ -153,18 +120,30 @@ class RepositoriesController extends Controller
     {
         $this->authorize('deploy', $repository);
 
-        $deploymentInProgress = $repository->builds()
-            ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
-            ->exists();
-
-        if ($deploymentInProgress) {
-            return back()->with('info', 'A deployment is already in progress');
+        if (! $repository->isDeploymentReady()) {
+            return back()->with('error', 'The website and server must be active before deployment.');
         }
 
-        $repository->update(['setup_stage' => 0]);
-        $build = $repository->builds()->create([
-            'status' => Build::STATUS_QUEUED,
-        ]);
+        $build = DB::transaction(function () use ($repository): ?Build {
+            $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
+            $deploymentInProgress = $lockedRepository->builds()
+                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->exists();
+
+            if ($deploymentInProgress) {
+                return null;
+            }
+
+            $lockedRepository->update(['setup_stage' => 0]);
+
+            return $lockedRepository->builds()->create([
+                'status' => Build::STATUS_QUEUED,
+            ]);
+        });
+
+        if (! $build) {
+            return back()->with('info', 'A deployment is already in progress');
+        }
 
         PublishRepositoryJob::dispatch($build);
 
