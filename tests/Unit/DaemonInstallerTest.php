@@ -17,6 +17,15 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('--tries=3 --timeout=80 --max-time=3600', $installer);
         $this->assertStringContainsString('Environment=APP_DEBUG=false', $installer);
         $this->assertStringContainsString('systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"', $installer);
+        $this->assertStringContainsString('Description=Lessbuild consistent SQLite database backup', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backup', $installer);
+        $this->assertStringContainsString('UMask=0027', $installer);
+        $this->assertStringContainsString('OnCalendar=daily', $installer);
+        $this->assertStringContainsString('RandomizedDelaySec=30m', $installer);
+        $this->assertStringContainsString('Persistent=true', $installer);
+        $this->assertStringContainsString('systemctl enable --now "${BACKUP_TIMER_NAME}.timer"', $installer);
+        $this->assertStringContainsString('if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]', $installer);
+        $this->assertStringContainsString('systemctl disable --now "${BACKUP_TIMER_NAME}.timer"', $installer);
 
         $syntaxCheck = new Process(['bash', '-n', dirname(__DIR__, 2).'/scripts/install-daemon.sh']);
         $syntaxCheck->run();

@@ -8,6 +8,10 @@ SERVICE_NAME="lessbuild-app"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 WORKER_SERVICE_NAME="lessbuild-worker"
 WORKER_SERVICE_FILE="/etc/systemd/system/${WORKER_SERVICE_NAME}.service"
+BACKUP_SERVICE_NAME="lessbuild-backup"
+BACKUP_SERVICE_FILE="/etc/systemd/system/${BACKUP_SERVICE_NAME}.service"
+BACKUP_TIMER_NAME="lessbuild-backup"
+BACKUP_TIMER_FILE="/etc/systemd/system/${BACKUP_TIMER_NAME}.timer"
 PUBLIC_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -98,10 +102,52 @@ Environment=APP_DEBUG=false
 WantedBy=multi-user.target
 SERVICE
 
+cat > "${BACKUP_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Lessbuild consistent SQLite database backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan lessbuild:backup
+Nice=10
+UMask=0027
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+SERVICE
+
+cat > "${BACKUP_TIMER_FILE}" <<TIMER
+[Unit]
+Description=Run the Lessbuild database backup daily
+
+[Timer]
+OnCalendar=daily
+RandomizedDelaySec=30m
+Persistent=true
+Unit=${BACKUP_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
+DATABASE_CONNECTION="$(sed -n 's/^DB_CONNECTION=//p' "${APP_DIR}/.env" | tail -n 1 | tr -d "\"'")"
+if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
+    systemctl enable --now "${BACKUP_TIMER_NAME}.timer"
+else
+    systemctl disable --now "${BACKUP_TIMER_NAME}.timer" 2>/dev/null || true
+fi
 systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
 
 echo "Lessbuild is running at http://${PUBLIC_IP}:8003"
 systemctl --no-pager --full status "${SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WORKER_SERVICE_NAME}.service"
+if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
+    systemctl --no-pager --full status "${BACKUP_TIMER_NAME}.timer"
+else
+    echo "Automatic database backups are disabled because DB_CONNECTION is not sqlite."
+fi

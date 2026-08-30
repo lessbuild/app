@@ -19,9 +19,11 @@ match the selected provider.
 The included systemd installer configures the app to listen on every network
 interface on port `8003`, process provisioning jobs in a separate queue worker,
 restart both processes after failures, and start them automatically after a
-reboot. On a new host it also creates a local SQLite database. A `sync` queue
-configuration is automatically upgraded to the database queue so job retries
-and backoff work outside web requests.
+reboot. On a new host it also creates a local SQLite database and a persistent
+systemd timer that takes a consistent database snapshot every day. Automatic
+backups are stored in `storage/app/backups` and retained for seven days by
+default. A `sync` queue configuration is automatically upgraded to the database
+queue so job retries and backoff work outside web requests.
 
 ```bash
 sudo ./scripts/install-daemon.sh
@@ -39,10 +41,15 @@ is allowed by the host firewall and cloud-provider firewall.
 Check the web and worker processes with:
 
 ```bash
-systemctl status lessbuild-app lessbuild-worker
+systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer
 journalctl -u lessbuild-app -u lessbuild-worker --since today
 php artisan queue:monitor database:default --max=10
+php artisan lessbuild:backup
 ```
+
+Set `DATABASE_BACKUP_RETENTION_DAYS` or `DATABASE_BACKUP_DIRECTORY` to adjust
+automatic backup retention and storage. Manual release backups use different
+filenames and are never pruned by the automatic backup command.
 
 ### Todo
  
