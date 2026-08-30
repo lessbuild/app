@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Website extends Model
 {
     use HasFactory;
+    use SoftDeletes;
     use WebsitePresenter;
 
     public const STATUS_QUEUED = 'queued';
@@ -57,7 +59,7 @@ class Website extends Model
             $slug = $base;
             $suffix = 2;
 
-            while (static::query()
+            while (static::withTrashed()
                 ->where('user_id', $website->user_id)
                 ->where('deployment_slug', $slug)
                 ->exists()) {

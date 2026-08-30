@@ -9,14 +9,13 @@ class WebsiteObserver
 {
     /**
      * When a website is deleted
-     *
-     * @param  \App\Models\Website  $website
-     * @return void
      */
-    public function deleting(Website $website)
+    public function deleted(Website $website): void
     {
-        DeleteWebsiteFromCaddyJob::dispatch($website->toArray());
+        if ($website->isForceDeleting()) {
+            return;
+        }
 
-        $website->repositories()->delete();
+        DeleteWebsiteFromCaddyJob::dispatch($website->id);
     }
 }

@@ -125,6 +125,8 @@ class WebsitesController extends Controller
 
         $website->delete();
 
-        return redirect()->route('websites.index');
+        return redirect()
+            ->route('websites.index')
+            ->with('success', __('Website deletion queued.'));
     }
 }

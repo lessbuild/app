@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Actions\Droplet\DeleteDropletAction;
 use App\Models\Repository;
 use App\Models\Server;
+use App\Models\Website;
 
 class ServerObserver
 {
@@ -19,7 +20,7 @@ class ServerObserver
     {
         (new DeleteDropletAction)->handle($server);
 
-        $server->websites()->each(function ($website): void {
+        Website::withTrashed()->where('server_id', $server->id)->each(function (Website $website): void {
             Repository::withTrashed()
                 ->where('website_id', $website->id)
                 ->each(function (Repository $repository): void {
@@ -29,7 +30,7 @@ class ServerObserver
 
             // The whole droplet is gone, so no remote Caddy cleanup job is
             // necessary for each child website.
-            $website->deleteQuietly();
+            $website->forceDeleteQuietly();
         });
     }
 }

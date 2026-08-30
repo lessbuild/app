@@ -3,12 +3,15 @@
 namespace App\Jobs\Web;
 
 use App\Actions\Web\DeleteWebsiteFromCaddyAction;
+use App\Models\Repository;
 use App\Models\Website;
+use App\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class DeleteWebsiteFromCaddyJob implements ShouldQueue
 {
@@ -17,28 +20,58 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    /** @var array<string, mixed> */
-    public array $websiteData;
+    public int $websiteId;
+
+    public int $tries = 3;
+
+    public int $backoff = 10;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(array $website)
+    public function __construct(int $websiteId)
     {
-        $this->websiteData = $website;
+        $this->websiteId = $websiteId;
     }
 
     /**
      * Execute the job.
      *
-     * @return void
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(Runner $runner): void
     {
-        // Rebuild from the snapshot because the original database row has
-        // already been deleted by the time this queued job runs.
-        (new DeleteWebsiteFromCaddyAction(Website::make($this->websiteData)))->handle();
+        $website = Website::withTrashed()->find($this->websiteId);
+        if (! $website) {
+            return;
+        }
+
+        (new DeleteWebsiteFromCaddyAction($website, $runner))->handle();
+
+        DB::transaction(function () use ($website): void {
+            Repository::withTrashed()
+                ->where('website_id', $website->id)
+                ->each(function (Repository $repository): void {
+                    $repository->builds()->delete();
+                    $repository->forceDelete();
+                });
+
+            Website::withoutEvents(fn () => $website->forceDelete());
+        });
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $website = Website::withTrashed()->find($this->websiteId);
+        if (! $website) {
+            return;
+        }
+
+        $website->restore();
+        $website->update([
+            'provisioning_status' => Website::STATUS_FAILED,
+            'provisioning_error' => str($exception->getMessage())->limit(2000),
+        ]);
     }
 }

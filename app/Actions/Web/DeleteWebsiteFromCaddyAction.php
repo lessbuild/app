@@ -5,6 +5,7 @@ namespace App\Actions\Web;
 use App\Models\Website;
 use App\Scripts\Web\DeleteWebsiteCaddy;
 use App\Services\Runner;
+use RuntimeException;
 
 class DeleteWebsiteFromCaddyAction
 {
@@ -15,9 +16,12 @@ class DeleteWebsiteFromCaddyAction
 
     private Website $website;
 
-    public function __construct(Website $website)
+    private Runner $runner;
+
+    public function __construct(Website $website, ?Runner $runner = null)
     {
         $this->website = $website;
+        $this->runner = $runner ?? new Runner;
     }
 
     /**
@@ -33,9 +37,14 @@ class DeleteWebsiteFromCaddyAction
             $script .= (new $command)->script($this->website)."\n";
         }
 
-        $run = (new Runner)->server($this->website->server)->create();
+        $run = $this->runner->server($this->website->server)->create();
 
-        // Run the script
-        $run->execute($script);
+        $result = $run->execute($script);
+        if (! $result->isSuccessful()) {
+            throw new RuntimeException(
+                'Unable to remove the website from its server: '
+                .trim($result->getErrorOutput() ?: $result->getOutput()),
+            );
+        }
     }
 }

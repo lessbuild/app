@@ -103,7 +103,7 @@ class WebsiteProvisioningSecurityTest extends TestCase
         $this->assertArrayNotHasKey('mysql_root_password', $server->toArray());
     }
 
-    public function test_deleted_website_cleanup_job_keeps_a_safe_deployment_snapshot(): void
+    public function test_deleted_website_is_soft_deleted_and_queues_cleanup_by_identifier(): void
     {
         Queue::fake();
         [$user, $server] = $this->infrastructure();
@@ -112,11 +112,9 @@ class WebsiteProvisioningSecurityTest extends TestCase
         $this->actingAs($user)->delete(route('websites.destroy', $website))
             ->assertRedirect(route('websites.index'));
 
-        $this->assertDatabaseMissing('websites', ['id' => $website->id]);
+        $this->assertSoftDeleted($website);
         Queue::assertPushed(DeleteWebsiteFromCaddyJob::class, function (DeleteWebsiteFromCaddyJob $job) use ($website): bool {
-            return $job->websiteData['id'] === $website->id
-                && $job->websiteData['deployment_slug'] === 'customer-portal'
-                && ! array_key_exists('database_password', $job->websiteData);
+            return $job->websiteId === $website->id;
         });
     }
 
