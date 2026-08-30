@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:view,server')
         ->name('servers.show');
 
-    Route::resource('builds', BuildsController::class)->only('index');
+    Route::resource('builds', BuildsController::class)->only(['index', 'show']);
     Route::resource('repositories', RepositoriesController::class);
     Route::resource('recipes', RecipesController::class)->except('show');
     Route::resource('providers', ProviderController::class);
@@ -183,5 +183,18 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.build.failed');
+
+Route::post('builds/{build}/deployment/callback/log', function (Build $build) {
+    $data = request()->validate([
+        'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.deployment_log_max_characters'))],
+    ]);
+
+    $build->logs()->updateOrCreate(
+        ['type' => 'deployment'],
+        ['log' => $data['log']],
+    );
+
+    return response()->noContent();
+})->middleware('signed')->name('callbacks.build.log');
 
 require __DIR__.'/auth.php';

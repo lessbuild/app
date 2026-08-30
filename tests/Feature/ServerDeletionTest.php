@@ -36,6 +36,7 @@ class ServerDeletionTest extends TestCase
         $this->assertDatabaseHas('servers', ['id' => $server->id]);
         $this->assertDatabaseHas('websites', ['id' => $website->id]);
         $this->assertDatabaseHas('repositories', ['id' => $repository->id, 'deleted_at' => null]);
+        $this->assertDatabaseCount('logs', 1);
         Queue::assertNotPushed(DeleteWebsiteFromCaddyJob::class);
     }
 
@@ -56,6 +57,7 @@ class ServerDeletionTest extends TestCase
         $this->assertDatabaseMissing('websites', ['id' => $website->id]);
         $this->assertDatabaseMissing('repositories', ['id' => $repository->id]);
         $this->assertDatabaseMissing('builds', ['id' => $build->id]);
+        $this->assertDatabaseCount('logs', 0);
         Queue::assertNotPushed(DeleteWebsiteFromCaddyJob::class);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
             && $request->url() === 'https://api.digitalocean.com/v2/droplets/12345');
@@ -126,6 +128,7 @@ class ServerDeletionTest extends TestCase
             'description' => 'Application source',
         ]);
         $build = $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $build->logs()->create(['type' => 'deployment', 'log' => 'Deployment output']);
 
         return [$user, $server, $website, $repository, $build];
     }

@@ -4,6 +4,7 @@ namespace App\Jobs\Repository;
 
 use App\Actions\Repository\PublishRepositoryAction;
 use App\Models\Build;
+use App\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -19,15 +20,11 @@ class PublishRepositoryJob implements ShouldQueue
 
     /**
      * The build instance.
-     *
-     * @var \App\Models\Build
      */
     public Build $build;
 
     /**
      * Create a new job instance.
-     *
-     * @param  \App\Models\Build  $build
      */
     public function __construct(Build $build)
     {
@@ -37,11 +34,10 @@ class PublishRepositoryJob implements ShouldQueue
     /**
      * Execute the job.
      *
-     * @return void
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(Runner $runner): void
     {
         $this->build->update([
             'status' => Build::STATUS_DEPLOYING,
@@ -49,7 +45,7 @@ class PublishRepositoryJob implements ShouldQueue
             'failure_message' => null,
         ]);
 
-        (new PublishRepositoryAction($this->build))->handle();
+        (new PublishRepositoryAction($this->build, $runner))->handle();
 
         $this->build->update(['status' => Build::STATUS_RUNNING]);
     }

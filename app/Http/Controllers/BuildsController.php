@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Build;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -9,9 +10,6 @@ class BuildsController extends Controller
 {
     /**
      * Show resources in storage
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function index(Request $request): View
     {
@@ -23,6 +21,17 @@ class BuildsController extends Controller
 
         return view('scenes.builds.index', [
             'builds' => $builds,
+        ]);
+    }
+
+    public function show(Build $build): View
+    {
+        $this->authorize('view', $build);
+        $build->load(['repository.website.server', 'logs']);
+
+        return view('scenes.builds.show', [
+            'build' => $build,
+            'deploymentLog' => $build->logs->firstWhere('type', 'deployment'),
         ]);
     }
 }

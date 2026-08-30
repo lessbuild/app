@@ -38,6 +38,7 @@ class WebsiteDeletionTest extends TestCase
         $this->assertDatabaseMissing('websites', ['id' => $website->id]);
         $this->assertDatabaseMissing('repositories', ['id' => $repository->id]);
         $this->assertDatabaseMissing('builds', ['id' => $build->id]);
+        $this->assertDatabaseCount('logs', 0);
     }
 
     public function test_failed_remote_cleanup_restores_the_website_and_preserves_resources(): void
@@ -60,6 +61,10 @@ class WebsiteDeletionTest extends TestCase
         $this->assertSame('Unable to remove the website from its server: Permission denied', $website->provisioning_error);
         $this->assertDatabaseHas('repositories', ['id' => $repository->id, 'deleted_at' => null]);
         $this->assertDatabaseHas('builds', ['id' => $build->id]);
+        $this->assertDatabaseHas('logs', [
+            'parentable_type' => Build::class,
+            'parentable_id' => $build->id,
+        ]);
     }
 
     public function test_cleanup_is_idempotent_when_server_deletion_already_removed_the_website(): void
@@ -125,6 +130,7 @@ class WebsiteDeletionTest extends TestCase
             'description' => 'Application source',
         ]);
         $build = $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $build->logs()->create(['type' => 'deployment', 'log' => 'Deployment output']);
 
         return [$user, $website, $repository, $build];
     }

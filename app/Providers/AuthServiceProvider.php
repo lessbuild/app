@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Recipe;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Policies\BuildPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\RecipePolicy;
 use App\Policies\RepositoryPolicy;
@@ -22,6 +24,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        Build::class => BuildPolicy::class,
         Provider::class => ProviderPolicy::class,
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,

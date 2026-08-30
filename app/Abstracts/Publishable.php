@@ -35,9 +35,9 @@ abstract class Publishable
      *
      * @throws \Exception
      */
-    public function __construct(Server $server)
+    public function __construct(Server $server, ?Runner $runner = null)
     {
-        $this->runner = (new Runner)->server($server)->create();
+        $this->runner = ($runner ?? new Runner)->server($server)->create();
     }
 
     /**

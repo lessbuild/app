@@ -39,6 +39,11 @@ class ProvisioningCallbackUrl
         return self::temporary('callbacks.build.failed', $build, 'deployment_callback_ttl_minutes');
     }
 
+    public static function buildLog(Build $build): string
+    {
+        return self::temporary('callbacks.build.log', $build, 'deployment_callback_ttl_minutes');
+    }
+
     private static function temporary(string $route, mixed $parameter, string $ttlConfig): string
     {
         return URL::temporarySignedRoute(

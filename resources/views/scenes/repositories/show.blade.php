@@ -98,7 +98,9 @@
         @forelse ($builds as $build)
             <div class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
                 <div>
-                    <p class="font-medium text-primary">{{ __('Build #:id', ['id' => $build->id]) }}</p>
+                    <a href="{{ route('builds.show', $build) }}" class="font-medium text-primary hover:underline">
+                        {{ __('Build #:id', ['id' => $build->id]) }}
+                    </a>
                     <p class="text-sm text-secondary">
                         {{ $build->created_at->diffForHumans() }}
                         @if ($build->failure_message)

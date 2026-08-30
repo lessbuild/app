@@ -7,4 +7,5 @@ return [
     'ssh_command_timeout' => (int) env('SSH_COMMAND_TIMEOUT', 60),
     'server_callback_ttl_minutes' => (int) env('SERVER_CALLBACK_TTL_MINUTES', 2880),
     'deployment_callback_ttl_minutes' => (int) env('DEPLOYMENT_CALLBACK_TTL_MINUTES', 360),
+    'deployment_log_max_characters' => (int) env('DEPLOYMENT_LOG_MAX_CHARACTERS', 262144),
 ];

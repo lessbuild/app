@@ -40,7 +40,7 @@
                                 <div class="h-10 w-10 flex-shrink-0">
                                     <img class="h-10 w-10 rounded-md" src="https://ui-avatars.com/api/?name={{ $build->repository->name }}&size=128&background=1e293b&color=fff" alt="">
                                 </div>
-                                <a href="{{ route('repositories.show', $build->repository) }}" class="ml-4">
+                                <a href="{{ route('builds.show', $build) }}" class="ml-4">
                                     <div class="font-medium text-ternary">
                                         {{ $build->repository->name }}
                                     </div>
@@ -59,9 +59,11 @@
                             </div>
                         </td>
                         <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                            <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                                <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                            </svg>
+                            <a href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}">
+                                <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
+                                    <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
+                                </svg>
+                            </a>
                         </td>
                     </tr>
                 @endforeach

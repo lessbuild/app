@@ -3,6 +3,7 @@
 namespace App\Jobs\Web;
 
 use App\Actions\Web\DeleteWebsiteFromCaddyAction;
+use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Website;
 use App\Services\Runner;
@@ -53,7 +54,10 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
             Repository::withTrashed()
                 ->where('website_id', $website->id)
                 ->each(function (Repository $repository): void {
-                    $repository->builds()->delete();
+                    $repository->builds()->each(function (Build $build): void {
+                        $build->logs()->delete();
+                        $build->delete();
+                    });
                     $repository->forceDelete();
                 });
 
