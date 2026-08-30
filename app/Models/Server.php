@@ -114,6 +114,11 @@ class Server extends Model
         return $this->hasMany(ServerLogSnapshot::class);
     }
 
+    public function commandExecutions(): HasMany
+    {
+        return $this->hasMany(ServerCommandExecution::class);
+    }
+
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);

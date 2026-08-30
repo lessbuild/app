@@ -1,4 +1,4 @@
-<div>
+<div @if ($shouldPoll) wire:poll.2s @endif>
     @if ($open)
         <div class="relative z-10" role="dialog" aria-modal="true">
             <button type="button" wire:click="close" class="fixed inset-0 bg-secondary opacity-70" aria-label="{{ __('Close command dialog') }}"></button>
@@ -19,9 +19,29 @@
                                 >
                                 @error('command') <p class="mt-2 text-sm text-red-500">{{ $message }}</p> @enderror
 
-                                @if ($output !== '')
-                                    <pre class="mt-4 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100">{{ $output }}</pre>
-                                @endif
+                                <div class="mt-5 max-h-96 space-y-3 overflow-y-auto">
+                                    @forelse ($executions as $execution)
+                                        <div class="rounded border border-primary bg-secondary p-3" wire:key="server-command-{{ $execution->id }}">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <code class="min-w-0 break-all text-xs text-primary">{{ $execution->command }}</code>
+                                                <span class="shrink-0 text-xs font-semibold uppercase text-secondary">{{ $execution->status }}</span>
+                                            </div>
+                                            @if ($execution->output !== null)
+                                                <pre class="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-3 text-xs text-gray-100">{{ $execution->output }}</pre>
+                                            @elseif (in_array($execution->status, [\App\Models\ServerCommandExecution::STATUS_QUEUED, \App\Models\ServerCommandExecution::STATUS_RUNNING], true))
+                                                <p class="mt-2 text-xs text-secondary">{{ __('Waiting for command output…') }}</p>
+                                            @endif
+                                            <p class="mt-2 text-xs text-secondary">
+                                                {{ $execution->created_at->diffForHumans() }}
+                                                @if ($execution->exit_code !== null)
+                                                    · {{ __('exit :code', ['code' => $execution->exit_code]) }}
+                                                @endif
+                                            </p>
+                                        </div>
+                                    @empty
+                                        <p class="text-sm text-secondary">{{ __('No commands have been run on this server yet.') }}</p>
+                                    @endforelse
+                                </div>
                             </div>
                             <div class="flex flex-row-reverse gap-2 border-t border-primary bg-secondary px-6 py-3">
                                 <button type="submit" class="button tertiary" wire:loading.attr="disabled" wire:target="run">
