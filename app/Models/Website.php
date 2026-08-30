@@ -42,10 +42,11 @@ class Website extends Model
      */
     protected $guarded = [];
 
-    protected $hidden = ['database_password', 'provisioning_token'];
+    protected $hidden = ['database_password', 'environment', 'provisioning_token'];
 
     protected $casts = [
         'database_password' => 'encrypted',
+        'environment' => 'encrypted',
         'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
         'setup_stage' => 'integer',
