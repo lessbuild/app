@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
@@ -275,6 +276,10 @@ Route::post('builds/{build}/deployment/callback/status', function (Build $build)
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.build.status');
+
+Route::post('builds/{build}/deployment/callback/revision', BuildRevisionCallbackController::class)
+    ->middleware('signed')
+    ->name('callbacks.build.revision');
 
 Route::post('builds/{build}/deployment/callback/failed', function (Build $build) {
     $data = request()->validate([

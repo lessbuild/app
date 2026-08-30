@@ -118,6 +118,11 @@ class RepositorySafetyTest extends TestCase
         $this->assertStringContainsString('curl --fail --silent --show-error --retry 2', $cloneScript);
         $this->assertStringNotContainsString('--insecure', $cloneScript);
         $this->assertStringContainsString("git -C '/var/www/active-website/setup' checkout --force 'release/2026.08'", $checkoutScript);
+        $this->assertStringContainsString('DEPLOYED_REVISION="$(git -C', $checkoutScript);
+        $this->assertStringContainsString('DEPLOYED_MESSAGE="${DEPLOYED_MESSAGE:0:500}"', $checkoutScript);
+        $this->assertStringContainsString('--data-urlencode "revision=$DEPLOYED_REVISION"', $checkoutScript);
+        $this->assertStringContainsString('--data-urlencode "commit_message=$DEPLOYED_MESSAGE"', $checkoutScript);
+        $this->assertStringContainsString('/deployment/callback/revision', $checkoutScript);
 
         $revision = str_repeat('a', 40);
         $build->update(['revision' => $revision]);
@@ -125,6 +130,7 @@ class RepositorySafetyTest extends TestCase
         $this->assertStringContainsString("rev-parse --verify '{$revision}'^{commit}", $revisionScript);
         $this->assertStringContainsString("merge-base --is-ancestor '{$revision}' 'origin/release/2026.08'", $revisionScript);
         $this->assertStringContainsString("checkout --detach --force '{$revision}'", $revisionScript);
+        $this->assertStringContainsString('--data-urlencode "revision=$DEPLOYED_REVISION"', $revisionScript);
         $this->assertStringNotContainsString('checkout --force \'release/2026.08\'', $revisionScript);
         $this->assertShellSyntax($revisionScript);
 

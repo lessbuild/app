@@ -4,6 +4,7 @@ namespace App\Scripts\Repository;
 
 use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
+use App\Services\ProvisioningCallbackUrl;
 
 class CheckoutRepositoryScript extends BuildProvisioningScript
 {
@@ -32,6 +33,7 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
         $branch = escapeshellarg($repository->branch);
         $remoteBranch = escapeshellarg("origin/{$repository->branch}");
         $revision = $build->revision;
+        $revisionCallback = escapeshellarg(ProvisioningCallbackUrl::buildRevision($build));
         $progress = $this->progress($step, $build);
 
         if ($revision) {
@@ -40,22 +42,26 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
             }
 
             $revision = escapeshellarg($revision);
-
-            return <<<SCRIPT
-
-                git -C {$setupPath} rev-parse --verify {$revision}^{commit} >/dev/null
-                git -C {$setupPath} merge-base --is-ancestor {$revision} {$remoteBranch}
-                git -C {$setupPath} checkout --detach --force {$revision}
-
-                # Ping
-                {$progress}
-
+            $checkout = <<<SCRIPT
+            git -C {$setupPath} rev-parse --verify {$revision}^{commit} >/dev/null
+            git -C {$setupPath} merge-base --is-ancestor {$revision} {$remoteBranch}
+            git -C {$setupPath} checkout --detach --force {$revision}
             SCRIPT;
+        } else {
+            $checkout = "git -C {$setupPath} checkout --force {$branch}";
         }
 
         return <<<SCRIPT
 
-            git -C {$setupPath} checkout --force {$branch}
+            {$checkout}
+
+            DEPLOYED_REVISION="$(git -C {$setupPath} rev-parse HEAD)"
+            DEPLOYED_MESSAGE="$(git -C {$setupPath} log -1 --format=%B)"
+            DEPLOYED_MESSAGE="\${DEPLOYED_MESSAGE:0:500}"
+            curl --fail --silent --show-error --retry 2 --user-agent "deployer" \
+                --data-urlencode "revision=\$DEPLOYED_REVISION" \
+                --data-urlencode "commit_message=\$DEPLOYED_MESSAGE" \
+                {$revisionCallback}
 
             # Ping
             {$progress}

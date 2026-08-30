@@ -65,9 +65,10 @@ a push arrives during a deployment, Lessbuild coalesces newer pushes into one
 follow-up deployment rather than running releases concurrently.
 
 Completed, failed, and canceled builds can be redeployed from their build page.
-Webhook builds retain their authenticated commit revision, so redeploying one
-checks out that exact commit and can also be used to restore an earlier release.
-Manual builds created before a revision was recorded retry the configured branch.
+Each checkout reports its actual commit through a short-lived signed callback.
+Redeploying a recorded build checks out that exact commit and can also be used to
+restore an earlier release. Legacy manual builds without a recorded revision
+retry the configured branch.
 
 ### Todo
  
