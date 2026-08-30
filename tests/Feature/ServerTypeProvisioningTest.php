@@ -111,12 +111,15 @@ class ServerTypeProvisioningTest extends TestCase
             ->assertDontSee('Install PHP')
             ->assertDontSee('Install Mysql');
 
+        $this->postJson(URL::signedRoute('callbacks.server', $server), ['status' => 12])
+            ->assertUnprocessable();
+
         $this->post(URL::signedRoute('callbacks.server', $server), ['status' => $finalStage])
             ->assertSuccessful();
         $this->assertSame(Server::STATUS_ACTIVE, $server->fresh()->provisioning_status);
 
-        $this->postJson(URL::signedRoute('callbacks.server', $server), ['status' => 12])
-            ->assertUnprocessable();
+        $this->postJson(URL::signedRoute('callbacks.server', $server), ['status' => 1])
+            ->assertNoContent();
     }
 
     public function test_server_configuration_uses_the_generated_key_and_model_owner(): void

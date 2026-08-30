@@ -3,7 +3,7 @@
 namespace App\Scripts\Server;
 
 use App\Models\Website;
-use Illuminate\Support\Facades\URL;
+use App\Services\ProvisioningCallbackUrl;
 
 class UpdateEnviromentScript
 {
@@ -30,7 +30,7 @@ class UpdateEnviromentScript
         $directory = escapeshellarg("/var/www/{$website->deployment_slug}");
         $environmentPath = escapeshellarg("/var/www/{$website->deployment_slug}/.env");
         $environment = escapeshellarg(base64_encode($website->environment));
-        $callback = escapeshellarg(URL::signedRoute('callbacks.website', $website));
+        $callback = escapeshellarg(ProvisioningCallbackUrl::websiteStatus($website));
 
         return <<<SCRIPT
             # Update the environment file

@@ -53,7 +53,7 @@ class RepositoryDeploymentTest extends TestCase
             'started_at' => now(),
         ]);
 
-        $this->post(URL::signedRoute('callbacks.repository', $repository), ['status' => 7])
+        $this->post(URL::signedRoute('callbacks.build.status', $build), ['status' => 7])
             ->assertSuccessful();
 
         $build->refresh();
@@ -91,6 +91,23 @@ class RepositoryDeploymentTest extends TestCase
         $this->assertSame(Build::STATUS_FAILED, $build->status);
         $this->assertSame('Remote deployment script failed (exit code 127)', $build->failure_message);
         $this->assertNotNull($build->finished_at);
+    }
+
+    public function test_repository_progress_lists_every_stage_and_stops_polling_when_finished(): void
+    {
+        [$user, $repository] = $this->repository();
+        $repository->update(['setup_stage' => 7]);
+        $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'finished_at' => now(),
+        ]);
+
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertSee('Symlink files')
+            ->assertSee('Run artisan commands')
+            ->assertSee('Purge Old Releases')
+            ->assertDontSee('wire:poll.5s', false);
     }
 
     private function repository(): array

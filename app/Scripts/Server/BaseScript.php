@@ -3,18 +3,17 @@
 namespace App\Scripts\Server;
 
 use App\Models\Server;
+use App\Services\ProvisioningCallbackUrl;
 
 class BaseScript
 {
     /**
      * Base Script
-     *
-     * @return string
      */
     public function script(int $step, Server $server): string
     {
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.server', $server);
-        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.server.failed', $server);
+        $callback = ProvisioningCallbackUrl::serverStatus($server);
+        $failureCallback = ProvisioningCallbackUrl::serverFailure($server);
 
         return <<<SCRIPT
         #!/bin/bash

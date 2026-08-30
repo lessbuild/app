@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\Repository\PublishRepositoryJob;
+use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\Server;
@@ -105,9 +106,10 @@ class RepositorySafetyTest extends TestCase
             ...$this->payload($provider, $website),
             'branch' => 'release/2026.08',
         ]);
+        $build = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
 
-        $cloneScript = (new CloneRepositoryScript)->script(1, $repository);
-        $checkoutScript = (new CheckoutRepositoryScript)->script(2, $repository);
+        $cloneScript = (new CloneRepositoryScript)->script(1, $build);
+        $checkoutScript = (new CheckoutRepositoryScript)->script(2, $build);
 
         $this->assertStringNotContainsString($provider->fresh()->token, $cloneScript);
         $this->assertStringContainsString('base64 --decode', $cloneScript);

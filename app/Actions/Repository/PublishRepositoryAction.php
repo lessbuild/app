@@ -12,6 +12,7 @@ use App\Scripts\Repository\CloneRepositoryScript;
 use App\Scripts\Repository\InstallDependenciesScript;
 use App\Scripts\Repository\PurgeOldReleasesScript;
 use App\Scripts\Repository\SymlinkScript;
+use App\Services\ProvisioningCallbackUrl;
 
 class PublishRepositoryAction extends Publishable
 {
@@ -26,9 +27,6 @@ class PublishRepositoryAction extends Publishable
         PurgeOldReleasesScript::class,
     ];
 
-    /**
-     * @var \App\Models\Repository
-     */
     private Repository $repository;
 
     private Build $build;
@@ -36,7 +34,6 @@ class PublishRepositoryAction extends Publishable
     /**
      * Publish Repository Action constructor
      *
-     * @param  \App\Models\Build  $build
      *
      * @throws \Exception
      */
@@ -50,13 +47,11 @@ class PublishRepositoryAction extends Publishable
     }
 
     /**
-     * @return void
-     *
      * @throws \Exception
      */
     public function handle(): void
     {
-        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.build.failed', $this->build);
+        $failureCallback = ProvisioningCallbackUrl::buildFailure($this->build);
         $this->script = <<<SCRIPT
         #!/bin/bash
         set -Eeuo pipefail
@@ -65,7 +60,7 @@ class PublishRepositoryAction extends Publishable
         SCRIPT;
 
         foreach ($this->commands as $key => $command) {
-            $this->script .= app($command)->script(($key + 1), $this->repository);
+            $this->script .= app($command)->script(($key + 1), $this->build);
         }
 
         $this->makeScriptFile($this->repository->name);

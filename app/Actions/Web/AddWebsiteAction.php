@@ -7,6 +7,7 @@ use App\Models\Website;
 use App\Scripts\Database\CreateMysqlDatabase;
 use App\Scripts\Server\UpdateEnviromentScript;
 use App\Scripts\Web\AddWebsiteToCaddyScript;
+use App\Services\ProvisioningCallbackUrl;
 
 class AddWebsiteAction extends Publishable
 {
@@ -17,14 +18,9 @@ class AddWebsiteAction extends Publishable
         UpdateEnviromentScript::class,
     ];
 
-    /**
-     * @var \App\Models\Website
-     */
     private Website $website;
 
     /**
-     * @param  \App\Models\Website  $website
-     *
      * @throws \Exception
      */
     public function __construct(Website $website)
@@ -35,13 +31,11 @@ class AddWebsiteAction extends Publishable
     }
 
     /**
-     * @return void
-     *
      * @throws \Exception
      */
     public function handle(): void
     {
-        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website.failed', $this->website);
+        $failureCallback = ProvisioningCallbackUrl::websiteFailure($this->website);
         $this->script = <<<SCRIPT
         #!/bin/bash
         set -Eeuo pipefail

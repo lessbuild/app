@@ -2,8 +2,8 @@
 
 namespace App\Scripts\Repository;
 
-use App\Models\Repository;
-use Illuminate\Support\Facades\URL;
+use App\Models\Build;
+use App\Services\ProvisioningCallbackUrl;
 
 class SymlinkScript
 {
@@ -25,10 +25,11 @@ class SymlinkScript
     /**
      * The script to run
      */
-    public function script(int $step, Repository $repository): string
+    public function script(int $step, Build $build): string
     {
+        $repository = $build->repository;
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
-        $callback = escapeshellarg(URL::signedRoute('callbacks.repository', $repository));
+        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
 
         return <<<SCRIPT
 
@@ -54,7 +55,7 @@ class SymlinkScript
             find "\$SHARED_STORAGE" "\$CURRENT_PATH/bootstrap/cache" -type f -exec chmod 664 {} +
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" {$callback}
+            curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
         SCRIPT;
     }
 }

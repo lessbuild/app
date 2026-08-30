@@ -3,7 +3,7 @@
 namespace App\Scripts\Web;
 
 use App\Models\Website;
-use Illuminate\Support\Facades\URL;
+use App\Services\ProvisioningCallbackUrl;
 
 class AddWebsiteToCaddyScript
 {
@@ -28,7 +28,7 @@ class AddWebsiteToCaddyScript
     public function script(int $step, Website $website): string
     {
         $slug = $website->deployment_slug;
-        $callback = URL::signedRoute('callbacks.website', $website);
+        $callback = ProvisioningCallbackUrl::websiteStatus($website);
         $config = <<<CADDY
         {$website->url} {
             root * /var/www/{$slug}/current/public

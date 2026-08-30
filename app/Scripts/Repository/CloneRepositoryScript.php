@@ -2,8 +2,8 @@
 
 namespace App\Scripts\Repository;
 
-use App\Models\Repository;
-use Illuminate\Support\Facades\URL;
+use App\Models\Build;
+use App\Services\ProvisioningCallbackUrl;
 
 class CloneRepositoryScript
 {
@@ -25,15 +25,16 @@ class CloneRepositoryScript
     /**
      * The script to run
      */
-    public function script(int $step, Repository $repository): string
+    public function script(int $step, Build $build): string
     {
+        $repository = $build->repository;
         $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
-        $credentialDirectory = escapeshellarg("/tmp/lessbuild-repository-{$repository->id}");
+        $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
         $credentialPayload = escapeshellarg(base64_encode(
             "machine github.com\nlogin x-access-token\npassword {$repository->provider->token}\n",
         ));
         $repositoryUrl = escapeshellarg("https://{$repository->url}");
-        $callback = escapeshellarg(URL::signedRoute('callbacks.repository', $repository));
+        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
 
         return <<<SCRIPT
 
@@ -46,7 +47,7 @@ class CloneRepositoryScript
             HOME="\$CREDENTIALS_DIR" git clone -- {$repositoryUrl} {$setupPath}
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" {$callback}
+            curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
 
         SCRIPT;
     }

@@ -24,9 +24,9 @@ class ReleaseLifecycleTest extends TestCase
     public function test_release_script_generation_does_not_create_phantom_builds(): void
     {
         $repository = $this->repository();
-        $repository->builds()->create(['status' => Build::STATUS_QUEUED]);
+        $build = $repository->builds()->create(['status' => Build::STATUS_QUEUED]);
 
-        $script = (new ActivateReleaseScript)->script(4, $repository);
+        $script = (new ActivateReleaseScript)->script(4, $build);
 
         $this->assertDatabaseCount('builds', 1);
         $this->assertStringContainsString('if [ -d "$CURRENT_PATH" ] && [ ! -L "$CURRENT_PATH" ]', $script);
@@ -36,7 +36,7 @@ class ReleaseLifecycleTest extends TestCase
 
     public function test_dependency_installation_is_lockfile_driven_and_does_not_update_dependencies(): void
     {
-        $script = (new InstallDependenciesScript)->script(3, $this->repository());
+        $script = (new InstallDependenciesScript)->script(3, $this->build());
 
         $this->assertStringContainsString('composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader', $script);
         $this->assertStringNotContainsString('composer update', $script);
@@ -47,7 +47,7 @@ class ReleaseLifecycleTest extends TestCase
 
     public function test_shared_files_use_persistent_storage_without_world_writable_permissions(): void
     {
-        $script = (new SymlinkScript)->script(5, $this->repository());
+        $script = (new SymlinkScript)->script(5, $this->build());
 
         $this->assertStringContainsString('SHARED_STORAGE="$DEPLOY_ROOT/shared/storage"', $script);
         $this->assertStringContainsString('ln -sfn -- "$SHARED_STORAGE" "$CURRENT_PATH/storage"', $script);
@@ -59,9 +59,9 @@ class ReleaseLifecycleTest extends TestCase
 
     public function test_optional_artisan_services_and_old_release_retention_are_safe(): void
     {
-        $repository = $this->repository();
-        $artisan = (new ArtisanCommandsScript)->script(6, $repository);
-        $purge = (new PurgeOldReleasesScript)->script(7, $repository);
+        $build = $this->build();
+        $artisan = (new ArtisanCommandsScript)->script(6, $build);
+        $purge = (new PurgeOldReleasesScript)->script(7, $build);
 
         $this->assertStringContainsString("grep -qx 'horizon:terminate'", $artisan);
         $this->assertStringContainsString('tail -n +6', $purge);
@@ -100,6 +100,11 @@ class ReleaseLifecycleTest extends TestCase
             'branch' => 'main',
             'description' => 'Application source',
         ]);
+    }
+
+    private function build(): Build
+    {
+        return $this->repository()->builds()->create(['status' => Build::STATUS_RUNNING]);
     }
 
     private function assertShellSyntax(string $script): void
