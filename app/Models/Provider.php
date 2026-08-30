@@ -28,6 +28,10 @@ class Provider extends Model
         self::TYPE_BITBUCKET,
     ];
 
+    public const SERVER_TYPES = [
+        self::TYPE_DIGITALOCEAN,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -61,7 +65,7 @@ class Provider extends Model
 
     public function scopeForServers(Builder $query): Builder
     {
-        return $query->where('provider', self::TYPE_DIGITALOCEAN);
+        return $query->whereIn('provider', self::SERVER_TYPES);
     }
 
     public function scopeForRepositories(Builder $query): Builder

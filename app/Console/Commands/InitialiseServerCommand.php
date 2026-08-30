@@ -35,14 +35,11 @@ class InitialiseServerCommand extends Command
     {
         $server = Server::find($this->argument('server_id'));
 
-        (new InitialiseServerJob($server))->handle();
+        InitialiseServerJob::dispatchSync($server);
     }
 
     /**
      * Define the command's schedule.
-     *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
-     * @return void
      */
     public function schedule(Schedule $schedule): void
     {

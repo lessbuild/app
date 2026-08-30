@@ -2,7 +2,7 @@
 
 namespace App\Observers;
 
-use App\Actions\Droplet\DeleteDropletAction;
+use App\Actions\Server\DeleteCloudServerAction;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Repository;
@@ -11,6 +11,8 @@ use App\Models\Website;
 
 class ServerObserver
 {
+    public function __construct(private readonly DeleteCloudServerAction $deleteCloudServer) {}
+
     /**
      * Server Deleting
      *
@@ -20,7 +22,7 @@ class ServerObserver
      */
     public function deleting(Server $server)
     {
-        (new DeleteDropletAction)->handle($server);
+        $this->deleteCloudServer->handle($server);
 
         Website::withTrashed()
             ->where('previous_server_id', $server->id)

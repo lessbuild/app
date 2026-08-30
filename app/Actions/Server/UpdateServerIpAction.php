@@ -3,53 +3,35 @@
 namespace App\Actions\Server;
 
 use App\Models\Server;
-use App\Services\DigitalOcean;
+use App\Services\ServerProviderResolver;
 use RuntimeException;
 
 class UpdateServerIpAction
 {
-    /**
-     * @var \App\Models\Server
-     */
-    private Server $server;
+    public function __construct(private readonly ServerProviderResolver $providers) {}
 
     /**
-     * @var \App\Services\DigitalOcean
-     */
-    private DigitalOcean $serverProvider;
-
-    /**
-     * @param  \App\Models\Server  $server
-     */
-    public function __construct(Server $server)
-    {
-        $this->server = $server;
-        $this->serverProvider = new DigitalOcean($server->provider->token);
-    }
-
-    /**
-     * @return bool
-     *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(Server $server): bool
     {
-        if (! $this->server->identifier) {
+        if (! $server->identifier) {
             throw new RuntimeException('The cloud provider has not assigned a server identifier yet.');
         }
 
-        $droplet = $this->serverProvider->getDroplet($this->server->identifier);
-        $networks = collect($droplet['networks']['v4'] ?? []);
-        $publicIp = $networks->firstWhere('type', 'public')['ip_address'] ?? null;
-        $privateIp = $networks->firstWhere('type', 'private')['ip_address'] ?? null;
+        if (! $server->provider) {
+            throw new RuntimeException('The server cloud provider is no longer available.');
+        }
 
-        if (! $publicIp) {
+        $cloudServer = $this->providers->resolve($server->provider)->server($server->identifier);
+
+        if (! $cloudServer->publicIp) {
             throw new RuntimeException('The server public network is not ready yet.');
         }
 
-        $this->server->update([
-            'public_ip' => $publicIp,
-            'private_ip' => $privateIp,
+        $server->update([
+            'public_ip' => $cloudServer->publicIp,
+            'private_ip' => $cloudServer->privateIp,
         ]);
 
         return true;

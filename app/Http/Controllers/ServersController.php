@@ -2,22 +2,21 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Droplet\CreateDropletAction;
+use App\Actions\Server\CreateCloudServerAction;
+use App\Contracts\ServerProvider;
 use App\Http\Requests\ServerRequest;
 use App\Jobs\Server\InitialiseServerJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
 use App\Models\Server;
 use App\Models\Size;
-use App\Services\DigitalOcean;
+use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Throwable;
-use UnexpectedValueException;
 
 class ServersController extends Controller
 {
@@ -62,13 +61,17 @@ class ServersController extends Controller
     /**
      * Store the resource in storage
      */
-    public function store(ServerRequest $request, SshKeyPair $keypair): RedirectResponse
-    {
-        $token = $request->user()->providers()->find($request->input('provider_id'))->token;
-        $digitalOcean = new DigitalOcean($token);
+    public function store(
+        ServerRequest $request,
+        SshKeyPair $keypair,
+        ServerProviderResolver $providers,
+        CreateCloudServerAction $createCloudServer,
+    ): RedirectResponse {
+        $provider = $request->user()->providers()->forServers()->findOrFail($request->integer('provider_id'));
+        $cloudProvider = $providers->resolve($provider);
 
-        $server = Auth::user()->servers()->create([
-            'provider_id' => $request->input('provider_id'),
+        $server = $request->user()->servers()->create([
+            'provider_id' => $provider->id,
             'type' => $request->enum('type', ServerTypeEnum::class),
             'name' => str($request->input('name'))->slug()->limit(31, ''),
             'provisioning_status' => Server::STATUS_QUEUED,
@@ -84,21 +87,13 @@ class ServersController extends Controller
         $server->recipes()->sync($recipeAssignments);
 
         try {
-            $ssh = $digitalOcean->createSSH([
-                'public_key' => $server->ssh_public_key,
-                'name' => $request->input('name'),
-            ]);
-
-            $fingerprint = $ssh['fingerprint'] ?? null;
-            if (! is_string($fingerprint) || $fingerprint === '') {
-                throw new UnexpectedValueException('DigitalOcean returned an incomplete SSH key response.');
-            }
+            $fingerprint = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);
 
             // Persist this immediately so a failed cleanup can be retried when the
             // failed server record is deleted.
             $server->update(['ssh_fingerprint' => $fingerprint]);
 
-            $droplet = (new CreateDropletAction($server, $digitalOcean))->handle([
+            $cloudServer = $createCloudServer->handle($server, $cloudProvider, [
                 'region' => $request->input('region'),
                 'size' => $request->input('size'),
                 'image' => $request->input('image'),
@@ -106,32 +101,19 @@ class ServersController extends Controller
                 'ssh_keys' => [$fingerprint],
             ]);
 
-            $dropletData = $droplet['droplet'] ?? null;
-            if (! is_array($dropletData)
-                || ! isset(
-                    $dropletData['id'],
-                    $dropletData['name'],
-                    $dropletData['region']['name'],
-                    $dropletData['size']['slug'],
-                    $dropletData['image']['name'],
-                )) {
-                throw new UnexpectedValueException('DigitalOcean returned an incomplete droplet response.');
-            }
-
             $server->update([
-                'provider_id' => $request->input('provider_id'),
-                'identifier' => $dropletData['id'],
-                'name' => $dropletData['name'],
-                'region' => $dropletData['region']['name'],
-                'size' => $dropletData['size']['slug'],
-                'image' => $dropletData['image']['name'],
+                'identifier' => $cloudServer->identifier,
+                'name' => $cloudServer->name,
+                'region' => $cloudServer->region,
+                'size' => $cloudServer->size,
+                'image' => $cloudServer->image,
             ]);
 
             InitialiseServerJob::dispatch($server);
         } catch (Throwable $exception) {
             report($exception);
 
-            $this->cleanUpSshKey($server, $digitalOcean);
+            $this->cleanUpSshKey($server, $cloudProvider);
 
             $server->update([
                 'provisioning_status' => Server::STATUS_FAILED,
@@ -146,14 +128,14 @@ class ServersController extends Controller
         return redirect()->route('servers.show', $server);
     }
 
-    private function cleanUpSshKey(Server $server, DigitalOcean $digitalOcean): void
+    private function cleanUpSshKey(Server $server, ServerProvider $provider): void
     {
         if (! $server->ssh_fingerprint) {
             return;
         }
 
         try {
-            if ($digitalOcean->deleteSSHKey($server->ssh_fingerprint)) {
+            if ($provider->deleteSshKey($server->ssh_fingerprint)) {
                 $server->update(['ssh_fingerprint' => null]);
             }
         } catch (Throwable $exception) {

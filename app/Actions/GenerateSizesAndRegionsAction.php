@@ -2,13 +2,16 @@
 
 namespace App\Actions;
 
+use App\Models\Provider;
 use App\Models\Region;
 use App\Models\Size;
-use App\Services\DigitalOcean;
+use App\Services\ServerProviderResolver;
 use Illuminate\Support\Env;
 
 class GenerateSizesAndRegionsAction
 {
+    public function __construct(private readonly ServerProviderResolver $providers) {}
+
     /**
      * @return void
      *
@@ -16,9 +19,9 @@ class GenerateSizesAndRegionsAction
      */
     public function handle()
     {
-        $digitalOcean = new DigitalOcean(Env::get('DO_KEY'));
+        $provider = $this->providers->resolveCredentials(Provider::TYPE_DIGITALOCEAN, (string) Env::get('DO_KEY'));
 
-        $regions = $digitalOcean->getRegions();
+        $regions = $provider->regions();
         foreach ($regions as $region) {
             Region::updateOrCreate([
                 'name' => $region['name'],
@@ -29,7 +32,7 @@ class GenerateSizesAndRegionsAction
             ]);
         }
 
-        $sizes = $digitalOcean->getSizes();
+        $sizes = $provider->sizes();
 
         foreach ($sizes as $size) {
             $created = Size::updateOrCreate([

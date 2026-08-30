@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Droplet\CreateDropletAction;
+use App\Actions\Server\CreateCloudServerAction;
+use App\Contracts\ServerProvider;
+use App\Data\CloudServerData;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Models\User;
@@ -17,7 +19,6 @@ use App\Scripts\Server\EndScript;
 use App\Scripts\Server\InstallComposerScript;
 use App\Scripts\Server\RecipesScript;
 use App\Scripts\Web\InstallCaddyScript;
-use App\Services\DigitalOcean;
 use App\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
@@ -67,17 +68,17 @@ class ServerTypeProvisioningTest extends TestCase
             'type' => ServerTypeEnum::cache,
             'ssh_public_key' => 'ssh-rsa test-key',
         ]);
-        $digitalOcean = Mockery::mock(DigitalOcean::class);
+        $provider = Mockery::mock(ServerProvider::class);
         $payload = null;
-        $digitalOcean->shouldReceive('createDroplet')->once()->andReturnUsing(
-            function (array $request) use (&$payload): array {
+        $provider->shouldReceive('createServer')->once()->andReturnUsing(
+            function (array $request) use (&$payload): CloudServerData {
                 $payload = $request;
 
-                return ['droplet' => ['id' => 1]];
+                return new CloudServerData(1, 'cache-server', 'nyc1', 'small', 'ubuntu');
             },
         );
 
-        (new CreateDropletAction($server, $digitalOcean))->handle(['name' => 'cache-server']);
+        (new CreateCloudServerAction(new ServerProvisioningPlan))->handle($server, $provider, ['name' => 'cache-server']);
 
         $script = $payload['user_data'];
         $this->assertStringContainsString('yes | sudo apt install redis-server', $script);

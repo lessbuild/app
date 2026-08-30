@@ -49,7 +49,7 @@ php artisan queue:monitor database:default --max=10
 
 - [ ] Need to refactor scripts -- too much logic in them.
 - [x] Use each server's generated key pair for SSH and encrypt private keys at rest
-- [ ] Refactor Server providers so they use a common interface
+- [x] Refactor server providers behind a common lifecycle interface
 - [x] Run selected user-defined recipes during server provisioning
 - [x] Add recipe creation and management
 - [x] Persist server log snapshots and display them without render-time SSH commands

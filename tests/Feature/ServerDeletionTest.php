@@ -32,7 +32,7 @@ class ServerDeletionTest extends TestCase
             ->from(route('servers.show', $server))
             ->delete(route('servers.destroy', $server))
             ->assertRedirect(route('servers.show', $server))
-            ->assertSessionHas('error', 'The server could not be deleted: DigitalOcean could not delete the server droplet.');
+            ->assertSessionHas('error', 'The server could not be deleted: DigitalOcean could not delete the cloud server.');
 
         $this->assertDatabaseHas('servers', ['id' => $server->id]);
         $this->assertDatabaseHas('websites', ['id' => $website->id]);

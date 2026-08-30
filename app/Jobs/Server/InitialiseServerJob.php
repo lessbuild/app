@@ -19,8 +19,6 @@ class InitialiseServerJob implements ShouldQueue
 
     /**
      * The server instance.
-     *
-     * @var \App\Models\Server
      */
     public Server $server;
 
@@ -30,8 +28,6 @@ class InitialiseServerJob implements ShouldQueue
 
     /**
      * Create a new job instance.
-     *
-     * @param  \App\Models\Server  $server
      */
     public function __construct(Server $server)
     {
@@ -45,7 +41,7 @@ class InitialiseServerJob implements ShouldQueue
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(UpdateServerIpAction $updateServerIp)
     {
         $this->server->update([
             'provisioning_status' => Server::STATUS_WAITING_FOR_IP,
@@ -53,7 +49,7 @@ class InitialiseServerJob implements ShouldQueue
         ]);
 
         if (is_null($this->server->public_ip)) {
-            (new UpdateServerIpAction($this->server))->handle();
+            $updateServerIp->handle($this->server);
         }
 
         $this->server->update(['provisioning_status' => Server::STATUS_PROVISIONING]);

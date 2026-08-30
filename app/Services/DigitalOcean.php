@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
+use App\Contracts\ServerProvider;
+use App\Data\CloudServerData;
 use Exception;
 use GuzzleHttp\Promise\PromiseInterface;
 use http\Exception\InvalidArgumentException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
-class DigitalOcean
+class DigitalOcean implements ServerProvider
 {
     private string $_API_TOKEN;
 
@@ -30,6 +32,60 @@ class DigitalOcean
     public function __construct(string $api_token)
     {
         $this->_API_TOKEN = $api_token;
+    }
+
+    public function name(): string
+    {
+        return 'DigitalOcean';
+    }
+
+    public function regions(): array
+    {
+        return $this->getRegions();
+    }
+
+    public function sizes(): array
+    {
+        return $this->getSizes();
+    }
+
+    public function createSshKey(string $name, string $publicKey): string
+    {
+        $sshKey = $this->createSSH([
+            'name' => $name,
+            'public_key' => $publicKey,
+        ]);
+        $fingerprint = $sshKey['fingerprint'] ?? null;
+
+        if (! is_string($fingerprint) || $fingerprint === '') {
+            throw new Exception('DigitalOcean returned an incomplete SSH key response.');
+        }
+
+        return $fingerprint;
+    }
+
+    public function deleteSshKey(string $fingerprint): bool
+    {
+        $response = $this->delete(self::$_KEYS.'/'.$fingerprint);
+
+        return in_array($response->status(), [204, 404]);
+    }
+
+    public function createServer(array $parameters): CloudServerData
+    {
+        $response = $this->createDroplet($parameters);
+
+        return $this->serverData($response['droplet'] ?? null);
+    }
+
+    public function server(int $identifier): CloudServerData
+    {
+        return $this->serverData($this->getDroplet($identifier));
+    }
+
+    public function deleteServer(int $identifier): bool
+    {
+        return $this->destroyDroplet($identifier);
     }
 
     /**
@@ -169,24 +225,6 @@ class DigitalOcean
     }
 
     /**
-     * Delete an SSH Key
-     *
-     * @return bool
-     *
-     * @throws Exception
-     */
-    public function deleteSSHKey(string $fingerprint)
-    {
-        $response = $this->delete(self::$_KEYS.'/'.$fingerprint);
-
-        if (! in_array($response->status(), [204, 404])) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * Destroys a Droplet
      *
      *
@@ -246,5 +284,31 @@ class DigitalOcean
             : '';
 
         return new Exception("DigitalOcean request failed with HTTP {$response->status()}{$detail}");
+    }
+
+    private function serverData(mixed $droplet): CloudServerData
+    {
+        if (! is_array($droplet)
+            || ! isset(
+                $droplet['id'],
+                $droplet['name'],
+                $droplet['region']['name'],
+                $droplet['size']['slug'],
+                $droplet['image']['name'],
+            )) {
+            throw new Exception('DigitalOcean returned an incomplete server response.');
+        }
+
+        $networks = collect($droplet['networks']['v4'] ?? []);
+
+        return new CloudServerData(
+            identifier: (int) $droplet['id'],
+            name: (string) $droplet['name'],
+            region: (string) $droplet['region']['name'],
+            size: (string) $droplet['size']['slug'],
+            image: (string) $droplet['image']['name'],
+            publicIp: $networks->firstWhere('type', 'public')['ip_address'] ?? null,
+            privateIp: $networks->firstWhere('type', 'private')['ip_address'] ?? null,
+        );
     }
 }

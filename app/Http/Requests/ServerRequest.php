@@ -37,7 +37,7 @@ class ServerRequest extends FormRequest
                 Rule::exists('providers', 'id')->where(function ($query) {
                     return $query
                         ->where('user_id', $this->user()->id)
-                        ->where('provider', Provider::TYPE_DIGITALOCEAN)
+                        ->whereIn('provider', Provider::SERVER_TYPES)
                         ->whereNull('deleted_at');
                 }),
             ],
