@@ -69,7 +69,7 @@ class DeploymentLogTest extends TestCase
         $script = null;
         $success = Mockery::mock(Process::class);
         $success->shouldReceive('isSuccessful')->andReturnTrue();
-        $success->shouldReceive('getOutput')->andReturn('started');
+        $success->shouldReceive('getOutput')->andReturn('4321');
         $ssh = Mockery::mock(ManagedSsh::class);
         $ssh->shouldReceive('upload')
             ->once()
@@ -84,8 +84,10 @@ class DeploymentLogTest extends TestCase
         $runner->shouldReceive('server')->once()->andReturnSelf();
         $runner->shouldReceive('create')->once()->andReturn($ssh);
 
-        (new PublishRepositoryAction($build, $runner))->handle();
+        $remoteProcess = (new PublishRepositoryAction($build, $runner))->handle();
 
+        $this->assertSame(4321, $remoteProcess['id']);
+        $this->assertMatchesRegularExpression('#^/tmp/application-repository-[a-z0-9]{8}\.sh$#', $remoteProcess['path']);
         $this->assertNotNull($script);
         $this->assertStringContainsString('exec > "$LOG_FILE" 2>&1', $script);
         $this->assertStringContainsString('tail -c 262144', $script);

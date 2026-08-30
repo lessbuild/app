@@ -46,6 +46,8 @@ Route::middleware('auth')->group(function () {
         ->name('servers.show');
 
     Route::resource('builds', BuildsController::class)->only(['index', 'show']);
+    Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
+        ->name('builds.cancel');
     Route::resource('repositories', RepositoriesController::class);
     Route::resource('recipes', RecipesController::class)->except('show');
     Route::resource('providers', ProviderController::class);
@@ -154,6 +156,8 @@ Route::post('builds/{build}/deployment/callback/status', function (Build $build)
     if ($data['status'] === 7) {
         $build->update([
             'status' => Build::STATUS_SUCCEEDED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
             'built_at' => now(),
             'finished_at' => now(),
         ]);
@@ -174,6 +178,8 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
     ], true)) {
         $build->update([
             'status' => Build::STATUS_FAILED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
             'finished_at' => now(),
             'failure_message' => isset($data['exit_code'])
                 ? "{$data['message']} (exit code {$data['exit_code']})"

@@ -1,7 +1,8 @@
 @php
     $provisioningStatus = $model->provisioning_status ?? null;
     $provisioningFailed = $provisioningStatus === 'failed';
-    $provisioningFinished = in_array($provisioningStatus, ['active', 'failed'], true);
+    $provisioningCanceled = $provisioningStatus === 'canceled';
+    $provisioningFinished = in_array($provisioningStatus, ['active', 'failed', 'canceled'], true);
 @endphp
 
 <div @if (! $provisioningFinished) wire:poll.5s @endif>
@@ -16,6 +17,7 @@
                         'rounded-full px-3 py-1 text-xs font-semibold uppercase',
                         'bg-green-100 text-green-700' => $provisioningStatus === 'active',
                         'bg-red-100 text-red-700' => $provisioningFailed,
+                        'bg-amber-100 text-amber-700' => $provisioningCanceled,
                         'bg-blue-100 text-blue-700' => ! $provisioningFinished,
                     ])>{{ str($provisioningStatus)->replace('_', ' ') }}</span>
                 @endif
@@ -25,6 +27,13 @@
                 <div class="mt-4 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">
                     <p class="font-semibold">{{ __('Provisioning failed') }}</p>
                     <p>{{ $model->provisioning_error ?: __('The remote provisioning process did not complete.') }}</p>
+                </div>
+            @endif
+
+            @if ($provisioningCanceled)
+                <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-700">
+                    <p class="font-semibold">{{ __('Deployment canceled') }}</p>
+                    <p>{{ __('The remote deployment process was stopped before it completed.') }}</p>
                 </div>
             @endif
 
@@ -40,13 +49,14 @@
                             'flex flex-shrink-0 justify-center items-center w-5 h-5 rounded border',
                             'bg-green-200 text-green-600 border-green-700' => $model->setup_stage >= ($key + 1),
                             'bg-red-100 text-red-600 border-red-300' => $provisioningFailed && $model->setup_stage < ($key + 1),
-                            'bg-primary text-primary border-primary' => ! $provisioningFailed && $model->setup_stage < ($key + 1),
+                            'bg-amber-100 text-amber-600 border-amber-300' => $provisioningCanceled && $model->setup_stage < ($key + 1),
+                            'bg-primary text-primary border-primary' => ! $provisioningFailed && ! $provisioningCanceled && $model->setup_stage < ($key + 1),
                     ])>
                         <svg @class([
 							'w-3 h-3 text-secondary stroke-2',
-							'animate-spin' => ! $provisioningFailed && $model->setup_stage < ($key + 1)
+							'animate-spin' => ! $provisioningFinished && $model->setup_stage < ($key + 1)
 						])>
-                            <use xlink:href="/assets/images/icons.svg#{{ $model->setup_stage >= ($key + 1) ? 'check' : ($provisioningFailed ? 'information-circle' : 'refresh') }}"></use>
+                            <use xlink:href="/assets/images/icons.svg#{{ $model->setup_stage >= ($key + 1) ? 'check' : ($provisioningFinished ? 'information-circle' : 'refresh') }}"></use>
                         </svg>
                     </div>
                     <div class="flex justify-between ml-3 w-full text-sm font-semibold tracking-wider text-secondary">
@@ -61,7 +71,7 @@
                             </span>
                         </div>
                         <span class="text-secondary">
-                            {{ $model->setup_stage >= ($key + 1) ? __('Completed') : ($provisioningFailed ? __('Not completed') : __('Pending')) }}
+                            {{ $model->setup_stage >= ($key + 1) ? __('Completed') : ($provisioningFinished ? __('Not completed') : __('Pending')) }}
                         </span>
                     </div>
                 </div>

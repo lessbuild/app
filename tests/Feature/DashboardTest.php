@@ -34,6 +34,7 @@ class DashboardTest extends TestCase
             ->assertSee('My Application')
             ->assertSee('Recent websites')
             ->assertSee('Recent builds')
+            ->assertSee(route('builds.show', $repository->builds()->sole()))
             ->assertDontSee('Someone Else Application');
     }
 

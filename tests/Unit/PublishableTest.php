@@ -30,14 +30,25 @@ class PublishableTest extends TestCase
     {
         $process = Mockery::mock(Process::class);
         $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
-        $process->shouldReceive('getOutput')->once()->andReturn('started');
+        $process->shouldReceive('getOutput')->once()->andReturn("4321\n");
         $ssh = Mockery::mock(Ssh::class);
         $ssh->shouldReceive('execute')
             ->once()
-            ->with(Mockery::on(fn ($command) => str_contains($command, 'nohup') && ! str_contains($command, '/etc/cron.d/')))
+            ->with(Mockery::on(fn ($command) => str_contains($command, 'nohup sudo setsid --')
+                && str_contains($command, 'echo $!')
+                && ! str_contains($command, '/etc/cron.d/')))
             ->andReturn($process);
 
-        $this->assertSame('started', (new TestPublishable($ssh))->runScript());
+        $this->assertSame("4321\n", (new TestPublishable($ssh))->runScript());
+    }
+
+    public function test_remote_script_names_are_safe_for_long_resource_names(): void
+    {
+        $ssh = Mockery::mock(Ssh::class);
+        $path = (new TestPublishable($ssh))->makeFile(str_repeat('long-name-', 40));
+
+        $this->assertLessThanOrEqual(200, strlen(basename($path)));
+        $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', basename($path));
     }
 }
 
@@ -58,5 +69,12 @@ class TestPublishable extends Publishable
     public function runScript(): string
     {
         return $this->run();
+    }
+
+    public function makeFile(string $name): string
+    {
+        $this->script = '#!/bin/bash';
+
+        return $this->makeScriptFile($name);
     }
 }

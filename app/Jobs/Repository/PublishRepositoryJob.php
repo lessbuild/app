@@ -39,23 +39,42 @@ class PublishRepositoryJob implements ShouldQueue
      */
     public function handle(Runner $runner): void
     {
-        $this->build->update([
-            'status' => Build::STATUS_DEPLOYING,
-            'started_at' => now(),
-            'failure_message' => null,
-        ]);
+        $started = Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_QUEUED)
+            ->update([
+                'status' => Build::STATUS_DEPLOYING,
+                'started_at' => now(),
+                'failure_message' => null,
+            ]);
+        if ($started === 0) {
+            return;
+        }
 
-        (new PublishRepositoryAction($this->build, $runner))->handle();
+        $this->build->refresh();
+        $process = (new PublishRepositoryAction($this->build, $runner))->handle();
 
-        $this->build->update(['status' => Build::STATUS_RUNNING]);
+        Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_DEPLOYING)
+            ->update([
+                'status' => Build::STATUS_RUNNING,
+                'remote_process_id' => $process['id'],
+                'remote_process_path' => $process['path'],
+            ]);
     }
 
     public function failed(\Throwable $exception): void
     {
-        $this->build->update([
-            'status' => Build::STATUS_FAILED,
-            'finished_at' => now(),
-            'failure_message' => str($exception->getMessage())->limit(2000),
-        ]);
+        Build::query()
+            ->whereKey($this->build->id)
+            ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+            ->update([
+                'status' => Build::STATUS_FAILED,
+                'remote_process_id' => null,
+                'remote_process_path' => null,
+                'finished_at' => now(),
+                'failure_message' => str($exception->getMessage())->limit(2000),
+            ]);
     }
 }

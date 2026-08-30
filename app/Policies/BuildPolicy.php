@@ -11,4 +11,9 @@ class BuildPolicy
     {
         return (int) $build->repository?->user_id === (int) $user->id;
     }
+
+    public function cancel(User $user, Build $build): bool
+    {
+        return $this->view($user, $build);
+    }
 }

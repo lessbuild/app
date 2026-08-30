@@ -21,6 +21,8 @@ class Build extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const STATUS_CANCELED = 'canceled';
+
     /**
      * The attributes that aren't mass assignable.
      *
@@ -30,21 +32,16 @@ class Build extends Model
 
     protected $casts = [
         'built_at' => 'datetime',
+        'remote_process_id' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
-     */
     public function logs(): MorphMany
     {
         return $this->morphMany(Log::class, 'parentable');
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);

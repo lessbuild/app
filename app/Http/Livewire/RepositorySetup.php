@@ -39,6 +39,7 @@ class RepositorySetup extends Component
         $this->model->setAttribute('provisioning_status', match ($latestBuild?->status) {
             Build::STATUS_SUCCEEDED => 'active',
             Build::STATUS_FAILED => 'failed',
+            Build::STATUS_CANCELED => 'canceled',
             default => $latestBuild?->status,
         });
         $this->model->setAttribute('provisioning_error', $latestBuild?->failure_message);

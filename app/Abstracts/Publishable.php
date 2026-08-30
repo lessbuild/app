@@ -91,7 +91,9 @@ abstract class Publishable
     {
         $script = escapeshellarg("/tmp/$this->fileName.sh");
         $log = escapeshellarg("/tmp/$this->fileName.log");
-        $run = $this->runner->execute("sudo chmod 700 -- $script && nohup sudo $script > $log 2>&1 < /dev/null &");
+        $run = $this->runner->execute(
+            "sudo chmod 700 -- $script && { nohup sudo setsid -- $script > $log 2>&1 < /dev/null & echo \$!; }",
+        );
 
         if (! $run->isSuccessful()) {
             throw new RuntimeException('Unable to start remote script: '.trim($run->getErrorOutput() ?: $run->getOutput()));
@@ -105,7 +107,8 @@ abstract class Publishable
      */
     protected function makeScriptFile(string $name): string
     {
-        $this->fileName = Str::slug($name).'-'.Str::lower(Str::random(8));
+        $slug = rtrim(Str::limit(Str::slug($name), 180, ''), '-') ?: 'deployment';
+        $this->fileName = $slug.'-'.Str::lower(Str::random(8));
 
         Storage::put($this->fileName, $this->script);
 

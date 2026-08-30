@@ -50,7 +50,10 @@ class PublishRepositoryAction extends Publishable
     /**
      * @throws \Exception
      */
-    public function handle(): void
+    /**
+     * @return array{id: int, path: string}
+     */
+    public function handle(): array
     {
         $failureCallback = ProvisioningCallbackUrl::buildFailure($this->build);
         $logCallback = ProvisioningCallbackUrl::buildLog($this->build);
@@ -103,6 +106,14 @@ class PublishRepositoryAction extends Publishable
 
         $this->upload();
 
-        $this->run();
+        $output = trim($this->run());
+        if (! ctype_digit($output) || (int) $output < 1) {
+            throw new \RuntimeException('The remote deployment started without returning a valid process identifier.');
+        }
+
+        return [
+            'id' => (int) $output,
+            'path' => "/tmp/{$this->fileName}.sh",
+        ];
     }
 }

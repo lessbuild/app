@@ -9,6 +9,18 @@
         :description="$build->repository->name"
     >
         <x-slot:buttons>
+            @if ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path)
+                <form method="POST" action="{{ route('builds.cancel', $build) }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="button primary"
+                        onclick="return confirm({{ Illuminate\Support\Js::from(__('Stop this deployment on the remote server?')) }})"
+                    >
+                        {{ __('Cancel deployment') }}
+                    </button>
+                </form>
+            @endif
             <a href="{{ route('repositories.show', $build->repository) }}" class="button primary">
                 {{ __('View repository') }}
             </a>
@@ -33,6 +45,12 @@
     @if ($build->failure_message)
         <div class="mt-6 rounded border border-red-300 bg-red-50 p-4 text-red-800">
             <strong>{{ __('Deployment failed:') }}</strong> {{ $build->failure_message }}
+        </div>
+    @endif
+
+    @if ($build->status === \App\Models\Build::STATUS_CANCELED)
+        <div class="mt-6 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+            {{ __('This deployment was canceled before it completed.') }}
         </div>
     @endif
 

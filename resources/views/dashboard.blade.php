@@ -54,14 +54,15 @@
             </div>
 
             @forelse ($recentBuilds as $build)
-                <a href="{{ route('repositories.show', $build->repository) }}" class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
+                <a href="{{ route('builds.show', $build) }}" class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
                     <div>
                         <p class="font-medium text-primary">{{ $build->repository->name }}</p>
                         <p class="text-sm text-secondary">{{ $build->repository->website?->name }}</p>
                     </div>
-                    <span class="text-sm text-secondary">
-                        {{ ($build->built_at ?? $build->created_at)->diffForHumans() }}
-                    </span>
+                    <div class="text-right text-sm text-secondary">
+                        <span class="block uppercase">{{ $build->status }}</span>
+                        <span>{{ ($build->built_at ?? $build->created_at)->diffForHumans() }}</span>
+                    </div>
                 </a>
             @empty
                 <x-lists.empty
