@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Scripts\Cache\InstallMemcachedScript;
@@ -21,7 +22,7 @@ use App\Scripts\Web\InstallCaddyScript;
 class ServerProvisioningPlan
 {
     /**
-     * @return list<class-string>
+     * @return list<class-string<ServerScript>>
      */
     public function scripts(Server|ServerTypeEnum|string|null $serverOrType): array
     {
@@ -34,7 +35,7 @@ class ServerProvisioningPlan
     }
 
     /**
-     * @return list<class-string>
+     * @return list<class-string<ServerScript>>
      */
     public function steps(Server|ServerTypeEnum|string|null $serverOrType): array
     {

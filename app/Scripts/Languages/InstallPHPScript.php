@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Languages;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class InstallPHPScript
+class InstallPHPScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install PHP';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install PHP and configure PHP';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-php';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

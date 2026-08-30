@@ -2,11 +2,11 @@
 
 namespace App\Scripts\Repository;
 
+use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
-use App\Services\ProvisioningCallbackUrl;
 use Illuminate\Support\Str;
 
-class ActivateReleaseScript
+class ActivateReleaseScript extends BuildProvisioningScript
 {
     /**
      * Title of the script
@@ -31,7 +31,7 @@ class ActivateReleaseScript
         $repository = $build->repository;
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
         $release = escapeshellarg(now()->format('YmdHis').'-'.Str::lower(Str::random(6)));
-        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
+        $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
@@ -53,7 +53,7 @@ class ActivateReleaseScript
             mv -Tf -- "\$NEXT_LINK" "\$CURRENT_PATH"
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
+            {$progress}
 
         SCRIPT;
     }

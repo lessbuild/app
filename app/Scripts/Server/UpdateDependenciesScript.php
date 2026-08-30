@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class UpdateDependenciesScript
+class UpdateDependenciesScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Initialise Server';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Initialise the server, add ssh keys, update IP address.';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'initialised-server';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

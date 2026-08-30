@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class ConfigureSwapScript
+class ConfigureSwapScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Configure Swap';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Configure the swap space';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'configured-swap';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

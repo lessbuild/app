@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Cache;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class InstallMemcachedScript
+class InstallMemcachedScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Memcached';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install Memcached and configure Memcached';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-memcached';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

@@ -2,9 +2,10 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class RecipesScript
+class RecipesScript implements ServerScript
 {
     /**
      * Title of the script

@@ -115,6 +115,8 @@ class RepositorySafetyTest extends TestCase
         $this->assertStringContainsString('base64 --decode', $cloneScript);
         $this->assertStringContainsString('.netrc', $cloneScript);
         $this->assertStringContainsString('rm -f -- "$0"', $cloneScript);
+        $this->assertStringContainsString('curl --fail --silent --show-error --retry 2', $cloneScript);
+        $this->assertStringNotContainsString('--insecure', $cloneScript);
         $this->assertStringContainsString("git -C '/var/www/active-website/setup' checkout --force 'release/2026.08'", $checkoutScript);
 
         foreach ([$cloneScript, $checkoutScript] as $script) {

@@ -84,6 +84,8 @@ class WebsiteProvisioningSecurityTest extends TestCase
         $this->assertStringContainsString('`portal_touch_tmpname_pwned`', $databaseScript);
 
         foreach ([$caddyScript, $databaseScript, $environmentScript] as $script) {
+            $this->assertStringContainsString('curl --fail --silent --show-error --retry 2', $script);
+            $this->assertStringNotContainsString('--insecure', $script);
             $syntaxCheck = new Process(['bash', '-n']);
             $syntaxCheck->setInput($script);
             $syntaxCheck->run();

@@ -47,7 +47,7 @@ php artisan queue:monitor database:default --max=10
 ### Todo
  
 
-- [ ] Need to refactor scripts -- too much logic in them.
+- [x] Refactor scripts behind typed plans, renderers, and shared progress callbacks
 - [x] Use each server's generated key pair for SSH and encrypt private keys at rest
 - [x] Refactor server providers behind a common lifecycle interface
 - [x] Run selected user-defined recipes during server provisioning

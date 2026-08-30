@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Languages;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class InstallNodeScript
+class InstallNodeScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Node';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install Node and configure Node';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
-    public static string $identifier = 'installed-php';
+    public static string $identifier = 'installed-node';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

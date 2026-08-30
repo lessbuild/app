@@ -2,18 +2,19 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class EndScript
+class EndScript implements ServerScript
 {
     public static string $title = 'Finish provisioning';
 
     public static string $description = 'Finish setup and enable automatic system updates';
 
+    public static string $identifier = 'finished-provisioning';
+
     /**
      * Base Script
-     *
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

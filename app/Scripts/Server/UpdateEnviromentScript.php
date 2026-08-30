@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Server;
 
+use App\Abstracts\Scripts\WebsiteProvisioningScript;
 use App\Models\Website;
-use App\Services\ProvisioningCallbackUrl;
 
-class UpdateEnviromentScript
+class UpdateEnviromentScript extends WebsiteProvisioningScript
 {
     /**
      * Title of the script
@@ -30,7 +30,7 @@ class UpdateEnviromentScript
         $directory = escapeshellarg("/var/www/{$website->deployment_slug}");
         $environmentPath = escapeshellarg("/var/www/{$website->deployment_slug}/.env");
         $environment = escapeshellarg(base64_encode($website->environment));
-        $callback = escapeshellarg(ProvisioningCallbackUrl::websiteStatus($website));
+        $progress = $this->progress($step, $website);
 
         return <<<SCRIPT
             # Update the environment file
@@ -38,7 +38,7 @@ class UpdateEnviromentScript
             printf '%s' {$environment} | base64 --decode > {$environmentPath}
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&website_id={$website->id}" {$callback}
+            {$progress}
         SCRIPT;
     }
 }

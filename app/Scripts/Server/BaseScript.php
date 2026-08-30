@@ -2,17 +2,18 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 use App\Services\ProvisioningCallbackUrl;
 
-class BaseScript
+class BaseScript implements ServerScript
 {
     /**
      * Base Script
      */
     public function script(int $step, Server $server): string
     {
-        $callback = ProvisioningCallbackUrl::serverStatus($server);
+        $callback = escapeshellarg(ProvisioningCallbackUrl::serverStatus($server));
         $failureCallback = ProvisioningCallbackUrl::serverFailure($server);
 
         return <<<SCRIPT
@@ -26,7 +27,7 @@ class BaseScript
         rm -f /etc/cron.d/setup-server
 
         provisionPing() {
-          curl --insecure --user-agent "deployer" --data "status=$2&server_id=$1" {$callback}
+          curl --fail --silent --show-error --retry 2 --user-agent "deployer" --data "status=$2&server_id=$1" {$callback}
         }
 
         apt_wait () {

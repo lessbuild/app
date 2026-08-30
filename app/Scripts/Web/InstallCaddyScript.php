@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Web;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class InstallCaddyScript
+class InstallCaddyScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Caddy';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install Caddy server and configure Caddy.';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-caddy';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

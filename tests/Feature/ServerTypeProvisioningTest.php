@@ -148,6 +148,11 @@ class ServerTypeProvisioningTest extends TestCase
         $this->assertStringContainsString("PUBLIC_KEY='ssh-rsa generated-server-key'", $script);
         $this->assertStringContainsString("git config --global user.name 'Grace O'\\''Connor'", $script);
         $this->assertStringNotContainsString('SSH_PUBLIC_KEY', $script);
+
+        $baseScript = (new BaseScript)->script(0, $server);
+        $this->assertStringContainsString('curl --fail --silent --show-error --retry 2', $baseScript);
+        $this->assertStringNotContainsString('--insecure', $baseScript);
+        $this->assertMatchesRegularExpression("#'http[^']+expires=[^']+&signature=[^']+'#", $baseScript);
     }
 
     private function assertSpecializedSteps(

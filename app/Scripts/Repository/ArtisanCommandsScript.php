@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Repository;
 
+use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
-use App\Services\ProvisioningCallbackUrl;
 
-class ArtisanCommandsScript
+class ArtisanCommandsScript extends BuildProvisioningScript
 {
     /**
      * Title of the script
@@ -29,7 +29,7 @@ class ArtisanCommandsScript
     {
         $repository = $build->repository;
         $currentPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/current");
-        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
+        $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
@@ -49,7 +49,7 @@ class ArtisanCommandsScript
         fi
 
         # Ping
-        curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
+        {$progress}
 
         SCRIPT;
     }

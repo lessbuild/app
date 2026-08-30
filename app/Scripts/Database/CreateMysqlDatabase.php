@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Database;
 
+use App\Abstracts\Scripts\WebsiteProvisioningScript;
 use App\Models\Website;
-use App\Services\ProvisioningCallbackUrl;
 
-class CreateMysqlDatabase
+class CreateMysqlDatabase extends WebsiteProvisioningScript
 {
     /**
      * Title of the script
@@ -32,7 +32,7 @@ class CreateMysqlDatabase
         $databasePassword = str_replace(['\\', "'"], ['\\\\', "\\'"], $website->database_password);
         $databaseUser = str_replace("'", "\\'", $database);
         $serverIp = str_replace("'", "\\'", (string) $website->server->public_ip);
-        $callback = escapeshellarg(ProvisioningCallbackUrl::websiteStatus($website));
+        $progress = $this->progress($step, $website);
         $queries = [
             "CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
             "CREATE USER IF NOT EXISTS '{$databaseUser}'@'{$serverIp}' IDENTIFIED BY '{$databasePassword}';",
@@ -51,7 +51,7 @@ class CreateMysqlDatabase
         service mysql restart
 
         # Ping
-        curl --insecure --user-agent "deployer" --data "status={$step}&website_id={$website->id}" $callback
+        {$progress}
         SCRIPT;
     }
 }

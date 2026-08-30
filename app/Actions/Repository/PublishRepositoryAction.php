@@ -5,32 +5,20 @@ namespace App\Actions\Repository;
 use App\Abstracts\Publishable;
 use App\Models\Build;
 use App\Models\Repository;
-use App\Scripts\Repository\ActivateReleaseScript;
-use App\Scripts\Repository\ArtisanCommandsScript;
-use App\Scripts\Repository\CheckoutRepositoryScript;
-use App\Scripts\Repository\CloneRepositoryScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Scripts\Repository\PurgeOldReleasesScript;
-use App\Scripts\Repository\SymlinkScript;
 use App\Services\ProvisioningCallbackUrl;
+use App\Services\ProvisioningScriptRenderer;
+use App\Services\RepositoryDeploymentPlan;
 use App\Services\Runner;
 
 class PublishRepositoryAction extends Publishable
 {
-    // Scripts to run
-    public array $commands = [
-        CloneRepositoryScript::class,
-        CheckoutRepositoryScript::class,
-        InstallDependenciesScript::class,
-        ActivateReleaseScript::class,
-        SymlinkScript::class,
-        ArtisanCommandsScript::class,
-        PurgeOldReleasesScript::class,
-    ];
-
     private Repository $repository;
 
     private Build $build;
+
+    private ProvisioningScriptRenderer $renderer;
+
+    private RepositoryDeploymentPlan $plan;
 
     /**
      * Publish Repository Action constructor
@@ -38,13 +26,19 @@ class PublishRepositoryAction extends Publishable
      *
      * @throws \Exception
      */
-    public function __construct(Build $build, ?Runner $runner = null)
-    {
+    public function __construct(
+        Build $build,
+        ?Runner $runner = null,
+        ?ProvisioningScriptRenderer $renderer = null,
+        ?RepositoryDeploymentPlan $plan = null,
+    ) {
         $repository = $build->repository;
         parent::__construct($repository->website->server, $runner);
 
         $this->repository = $repository;
         $this->build = $build;
+        $this->renderer = $renderer ?? app(ProvisioningScriptRenderer::class);
+        $this->plan = $plan ?? app(RepositoryDeploymentPlan::class);
     }
 
     /**
@@ -91,9 +85,7 @@ class PublishRepositoryAction extends Publishable
 
         SCRIPT;
 
-        foreach ($this->commands as $key => $command) {
-            $this->script .= app($command)->script(($key + 1), $this->build);
-        }
+        $this->script .= $this->renderer->build($this->build, $this->plan->scripts());
 
         $this->script .= <<<'SCRIPT'
 

@@ -13,7 +13,9 @@ use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
+use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -94,12 +96,13 @@ Route::post('websites/{website}/provisioning/callback/status', function (Website
         return response()->noContent();
     }
 
-    $data = request()->validate(['status' => 'required|integer|min:0|max:3']);
+    $finalStage = app(WebsiteProvisioningPlan::class)->finalStage();
+    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
     if ($data['status'] > $website->setup_stage) {
         $website->update(['setup_stage' => $data['status']]);
     }
 
-    if ($data['status'] === 3) {
+    if ($data['status'] === $finalStage) {
         $previousServerId = $website->previous_server_id;
         $website->update([
             'provisioning_status' => Website::STATUS_ACTIVE,
@@ -167,13 +170,14 @@ Route::post('builds/{build}/deployment/callback/status', function (Build $build)
         return response()->noContent();
     }
 
-    $data = request()->validate(['status' => 'required|integer|min:0|max:7']);
+    $finalStage = app(RepositoryDeploymentPlan::class)->finalStage();
+    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
     $repository = $build->repository;
     if ($data['status'] > $repository->setup_stage) {
         $repository->update(['setup_stage' => $data['status']]);
     }
 
-    if ($data['status'] === 7) {
+    if ($data['status'] === $finalStage) {
         $build->update([
             'status' => Build::STATUS_SUCCEEDED,
             'remote_process_id' => null,

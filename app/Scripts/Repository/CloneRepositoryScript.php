@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Repository;
 
+use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
-use App\Services\ProvisioningCallbackUrl;
 
-class CloneRepositoryScript
+class CloneRepositoryScript extends BuildProvisioningScript
 {
     /**
      * Title of the script
@@ -37,7 +37,7 @@ class CloneRepositoryScript
             "machine {$host}\nlogin {$username}\npassword {$provider->token}\n",
         ));
         $repositoryUrl = escapeshellarg("https://{$repository->url}");
-        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
+        $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
@@ -50,7 +50,7 @@ class CloneRepositoryScript
             HOME="\$CREDENTIALS_DIR" git clone -- {$repositoryUrl} {$setupPath}
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
+            {$progress}
 
         SCRIPT;
     }

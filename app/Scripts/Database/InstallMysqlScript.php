@@ -2,10 +2,11 @@
 
 namespace App\Scripts\Database;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 use RuntimeException;
 
-class InstallMysqlScript
+class InstallMysqlScript implements ServerScript
 {
     /**
      * Title of the script

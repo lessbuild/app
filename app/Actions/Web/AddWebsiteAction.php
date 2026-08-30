@@ -4,30 +4,33 @@ namespace App\Actions\Web;
 
 use App\Abstracts\Publishable;
 use App\Models\Website;
-use App\Scripts\Database\CreateMysqlDatabase;
-use App\Scripts\Server\UpdateEnviromentScript;
-use App\Scripts\Web\AddWebsiteToCaddyScript;
 use App\Services\ProvisioningCallbackUrl;
+use App\Services\ProvisioningScriptRenderer;
+use App\Services\Runner;
+use App\Services\WebsiteProvisioningPlan;
 
 class AddWebsiteAction extends Publishable
 {
-    // Scripts to run
-    public array $commands = [
-        AddWebsiteToCaddyScript::class,
-        CreateMysqlDatabase::class,
-        UpdateEnviromentScript::class,
-    ];
-
     private Website $website;
+
+    private ProvisioningScriptRenderer $renderer;
+
+    private WebsiteProvisioningPlan $plan;
 
     /**
      * @throws \Exception
      */
-    public function __construct(Website $website)
-    {
-        parent::__construct($website->server);
+    public function __construct(
+        Website $website,
+        ?Runner $runner = null,
+        ?ProvisioningScriptRenderer $renderer = null,
+        ?WebsiteProvisioningPlan $plan = null,
+    ) {
+        parent::__construct($website->server, $runner);
 
         $this->website = $website;
+        $this->renderer = $renderer ?? app(ProvisioningScriptRenderer::class);
+        $this->plan = $plan ?? app(WebsiteProvisioningPlan::class);
     }
 
     /**
@@ -43,9 +46,7 @@ class AddWebsiteAction extends Publishable
 
         SCRIPT;
 
-        foreach ($this->commands as $key => $command) {
-            $this->script .= app($command)->script(($key + 1), $this->website);
-        }
+        $this->script .= $this->renderer->website($this->website, $this->plan->scripts());
 
         $this->makeScriptFile($this->website->name);
 

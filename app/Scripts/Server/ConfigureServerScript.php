@@ -2,10 +2,11 @@
 
 namespace App\Scripts\Server;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 use RuntimeException;
 
-class ConfigureServerScript
+class ConfigureServerScript implements ServerScript
 {
     /**
      * Title of the script

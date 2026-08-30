@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Web;
 
+use App\Abstracts\Scripts\WebsiteProvisioningScript;
 use App\Models\Website;
-use App\Services\ProvisioningCallbackUrl;
 
-class AddWebsiteToCaddyScript
+class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
 {
     /**
      * Title of the script
@@ -28,7 +28,7 @@ class AddWebsiteToCaddyScript
     public function script(int $step, Website $website): string
     {
         $slug = $website->deployment_slug;
-        $callback = ProvisioningCallbackUrl::websiteStatus($website);
+        $progress = $this->progress($step, $website);
         $config = <<<CADDY
         {$website->url} {
             root * /var/www/{$slug}/current/public
@@ -40,7 +40,6 @@ class AddWebsiteToCaddyScript
         $encodedConfig = escapeshellarg(base64_encode($config));
         $configPath = escapeshellarg("/etc/caddy/websites/{$slug}.conf");
         $cronPath = escapeshellarg("/etc/cron.d/{$slug}");
-        $callback = escapeshellarg($callback);
 
         return <<<SCRIPT
 
@@ -52,7 +51,7 @@ class AddWebsiteToCaddyScript
         sudo systemctl reload caddy
 
         # Ping
-        curl --insecure --user-agent "deployer" --data "status={$step}&website_id={$website->id}" {$callback}
+        {$progress}
         SCRIPT;
     }
 }

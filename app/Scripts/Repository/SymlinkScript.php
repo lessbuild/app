@@ -2,10 +2,10 @@
 
 namespace App\Scripts\Repository;
 
+use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
-use App\Services\ProvisioningCallbackUrl;
 
-class SymlinkScript
+class SymlinkScript extends BuildProvisioningScript
 {
     /**
      * Title of the script
@@ -29,7 +29,7 @@ class SymlinkScript
     {
         $repository = $build->repository;
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
-        $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));
+        $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
@@ -55,7 +55,7 @@ class SymlinkScript
             find "\$SHARED_STORAGE" "\$CURRENT_PATH/bootstrap/cache" -type f -exec chmod 664 {} +
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&build_id={$build->id}" {$callback}
+            {$progress}
         SCRIPT;
     }
 }

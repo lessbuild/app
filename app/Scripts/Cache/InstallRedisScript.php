@@ -2,37 +2,28 @@
 
 namespace App\Scripts\Cache;
 
+use App\Contracts\Scripts\ServerScript;
 use App\Models\Server;
 
-class InstallRedisScript
+class InstallRedisScript implements ServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Redis';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install Redis and configure Redis';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-redis';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {

@@ -8,7 +8,9 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\ProvisioningCallbackUrl;
+use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
+use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -88,6 +90,35 @@ class CallbackIntegrityTest extends TestCase
         $this->assertSame(Build::STATUS_SUCCEEDED, $newBuild->fresh()->status);
         $this->assertNotNull($newBuild->fresh()->finished_at);
         $this->assertSame(Server::STATUS_PROVISIONING, $server->provisioning_status);
+    }
+
+    public function test_completion_callbacks_follow_the_current_plan_lengths(): void
+    {
+        [$user, , $website, $provider] = $this->infrastructure(withWebsite: true);
+        $websitePlan = \Mockery::mock(WebsiteProvisioningPlan::class);
+        $websitePlan->shouldReceive('finalStage')->once()->andReturn(4);
+        $this->app->instance(WebsiteProvisioningPlan::class, $websitePlan);
+
+        $this->post(ProvisioningCallbackUrl::websiteStatus($website), ['status' => 4])
+            ->assertSuccessful();
+        $this->assertSame(Website::STATUS_ACTIVE, $website->fresh()->provisioning_status);
+
+        $repository = $user->repositories()->create([
+            'provider_id' => $provider->id,
+            'website_id' => $website->id,
+            'name' => 'Plan-driven application',
+            'url' => 'github.com/example/plan-driven.git',
+            'branch' => 'main',
+            'description' => 'Application source',
+        ]);
+        $build = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
+        $repositoryPlan = \Mockery::mock(RepositoryDeploymentPlan::class);
+        $repositoryPlan->shouldReceive('finalStage')->once()->andReturn(8);
+        $this->app->instance(RepositoryDeploymentPlan::class, $repositoryPlan);
+
+        $this->post(ProvisioningCallbackUrl::buildStatus($build), ['status' => 8])
+            ->assertNoContent();
+        $this->assertSame(Build::STATUS_SUCCEEDED, $build->fresh()->status);
     }
 
     private function infrastructure(bool $withWebsite = false): array
