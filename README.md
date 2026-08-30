@@ -3,8 +3,11 @@
 ## Run as a daemon
 
 The included systemd installer configures the app to listen on every network
-interface on port `8003`, restart after failures, and start automatically after
-a reboot. On a new development host it also creates a local SQLite database.
+interface on port `8003`, process provisioning jobs in a separate queue worker,
+restart both processes after failures, and start them automatically after a
+reboot. On a new host it also creates a local SQLite database. A `sync` queue
+configuration is automatically upgraded to the database queue so job retries
+and backoff work outside web requests.
 
 ```bash
 sudo ./scripts/install-daemon.sh
@@ -18,6 +21,14 @@ sudo ./scripts/install-daemon.sh 203.0.113.10
 
 The app will be available at `http://PUBLIC_IP:8003`. Ensure that TCP port 8003
 is allowed by the host firewall and cloud-provider firewall.
+
+Check the web and worker processes with:
+
+```bash
+systemctl status lessbuild-app lessbuild-worker
+journalctl -u lessbuild-app -u lessbuild-worker --since today
+php artisan queue:monitor database:default --max=10
+```
 
 ### Todo
  
