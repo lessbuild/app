@@ -13,4 +13,5 @@ return [
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
+    'webhook_max_payload_bytes' => (int) env('WEBHOOK_MAX_PAYLOAD_BYTES', 1048576),
 ];

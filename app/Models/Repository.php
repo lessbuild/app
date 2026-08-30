@@ -14,6 +14,15 @@ class Repository extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected $hidden = ['webhook_secret'];
+
+    protected $casts = [
+        'webhook_enabled' => 'boolean',
+        'webhook_pending' => 'boolean',
+        'webhook_last_received_at' => 'datetime',
+        'webhook_secret' => 'encrypted',
+    ];
+
     /**
      * The attributes that aren't mass assignable.
      *
@@ -44,6 +53,11 @@ class Repository extends Model
     public function latestBuild(): HasOne
     {
         return $this->hasOne(Build::class)->latestOfMany();
+    }
+
+    public function webhookDeliveries(): HasMany
+    {
+        return $this->hasMany(RepositoryWebhookDelivery::class);
     }
 
     public function isDeploymentReady(): bool

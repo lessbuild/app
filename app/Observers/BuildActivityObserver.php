@@ -2,12 +2,16 @@
 
 namespace App\Observers;
 
+use App\Actions\Repository\QueuePendingWebhookDeploymentAction;
 use App\Models\Build;
 use App\Services\ActivityRecorder;
 
 class BuildActivityObserver
 {
-    public function __construct(private readonly ActivityRecorder $activity) {}
+    public function __construct(
+        private readonly ActivityRecorder $activity,
+        private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
+    ) {}
 
     public function created(Build $build): void
     {
@@ -22,6 +26,11 @@ class BuildActivityObserver
             Build::STATUS_CANCELED,
         ], true)) {
             $this->record($build, "Deployment {$build->status}.");
+
+            $build->loadMissing('repository');
+            if ($build->repository) {
+                $this->queuePendingDeployment->handle($build->repository);
+            }
         }
     }
 

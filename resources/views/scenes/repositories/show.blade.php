@@ -61,6 +61,94 @@
         </div>
     @endif
 
+    @php($oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret"))
+    <section id="deployment-webhook" class="my-6 rounded-lg border border-primary bg-primary p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold text-primary">{{ __('Automatic push deployments') }}</h2>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Deploy the configured branch after an authenticated source-control push.') }}
+                </p>
+            </div>
+            <span @class([
+                'rounded-full px-3 py-1 text-xs font-semibold uppercase',
+                'bg-green-100 text-green-700' => $repository->webhook_enabled,
+                'bg-gray-100 text-gray-700' => ! $repository->webhook_enabled,
+            ])>{{ $repository->webhook_enabled ? __('Enabled') : __('Disabled') }}</span>
+        </div>
+
+        <div class="mt-4">
+            <label for="webhook-url" class="block text-xs font-semibold uppercase text-secondary">{{ __('Payload URL') }}</label>
+            <input
+                id="webhook-url"
+                type="text"
+                readonly
+                value="{{ route('webhooks.repositories.receive', $repository) }}"
+                class="input secondary mt-1 w-full rounded font-mono text-sm"
+            >
+        </div>
+
+        @if ($oneTimeWebhookSecret)
+            <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-900">
+                <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
+                <input
+                    type="text"
+                    readonly
+                    value="{{ $oneTimeWebhookSecret }}"
+                    class="input secondary mt-2 w-full rounded font-mono text-sm"
+                >
+            </div>
+        @endif
+
+        <div class="mt-4 text-sm text-secondary">
+            @if ($repository->provider->provider === \App\Models\Provider::TYPE_GITHUB)
+                <p>{{ __('Create a GitHub push webhook using JSON content, the payload URL above, and the generated secret.') }}</p>
+            @elseif ($repository->provider->provider === \App\Models\Provider::TYPE_BITBUCKET)
+                <p>{{ __('Create a Bitbucket repository push webhook using the payload URL above and the generated secret.') }}</p>
+            @else
+                <p>{{ __('Create a GitLab push webhook, copy its whsec_ signing token, and save that token below.') }}</p>
+            @endif
+            <p class="mt-1">{{ __('Only pushes to :branch deploy. Duplicate deliveries are ignored.', ['branch' => $repository->branch]) }}</p>
+            @if ($repository->webhook_pending)
+                <p class="mt-2 font-medium text-amber-700">{{ __('A newer push is waiting for the active deployment to finish.') }}</p>
+            @elseif ($repository->webhook_last_received_at)
+                <p class="mt-2">{{ __('Last accepted delivery: :time', ['time' => $repository->webhook_last_received_at->diffForHumans()]) }}</p>
+            @endif
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+            <form method="POST" action="{{ route('repositories.webhook.store', $repository) }}" class="flex flex-wrap gap-3">
+                @csrf
+                @if ($repository->provider->provider === \App\Models\Provider::TYPE_GITLAB)
+                    <div>
+                        <label for="signing_token" class="sr-only">{{ __('GitLab signing token') }}</label>
+                        <input
+                            id="signing_token"
+                            name="signing_token"
+                            type="password"
+                            required
+                            autocomplete="off"
+                            placeholder="whsec_…"
+                            class="input secondary rounded"
+                        >
+                        <x-forms.errors name="signing_token" />
+                    </div>
+                @endif
+                <button type="submit" class="button primary">
+                    {{ $repository->webhook_enabled ? __('Rotate webhook secret') : __('Enable webhook') }}
+                </button>
+            </form>
+
+            @if ($repository->webhook_enabled)
+                <form method="POST" action="{{ route('repositories.webhook.destroy', $repository) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="button primary">{{ __('Disable webhook') }}</button>
+                </form>
+            @endif
+        </div>
+    </section>
+
     <!--
      ! ------------------------------------------------------------
      ! Repository information

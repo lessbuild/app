@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
+use App\Http\Controllers\RepositoryWebhookSettingsController;
 use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
@@ -68,6 +69,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('providers', ProviderController::class);
     Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
         ->name('repositories.deploy');
+    Route::post('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'store'])
+        ->name('repositories.webhook.store');
+    Route::delete('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'destroy'])
+        ->name('repositories.webhook.destroy');
 });
 
 Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {
