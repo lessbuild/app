@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Provider;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ProviderRequest extends FormRequest
@@ -26,7 +27,10 @@ class ProviderRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'description' => 'required',
-            'provider' => 'required|string|max:255|in:github,digitalocean',
+            'provider' => 'required|string|max:255|in:'.implode(',', [
+                Provider::TYPE_GITHUB,
+                Provider::TYPE_DIGITALOCEAN,
+            ]),
             'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],
         ];
     }

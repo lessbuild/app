@@ -4,7 +4,10 @@
         <label for="provider" class="block text-sm font-medium text-primary">
             {{ __('Provider') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm grid grid-cols-2 gap-4" x-data="{ provider: null }">
+        <div
+            class="mt-1 grid grid-cols-2 gap-4 rounded-md shadow-sm"
+            x-data="{ provider: {{ Illuminate\Support\Js::from(old('provider', $provider->provider ?? null)) }} }"
+        >
             <input type="hidden" name="provider" :value="provider">
             <div
                 class="bg-secondary border border-secondary rounded p-2"
@@ -24,14 +27,6 @@
                 </svg>
             </div>
 
-            <div
-                class="bg-secondary border border-secondary rounded p-2"
-                :class="{ 'bg-tertiary': provider == 'linode' }"
-                @click="provider = 'linode'">
-                <svg class="w-full h-full text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#linode"></use>
-                </svg>
-            </div>
         </div>
         <x-forms.errors name="provider"></x-forms.errors>
     </div>

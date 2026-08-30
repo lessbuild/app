@@ -36,7 +36,7 @@ class ServersController extends Controller
     public function create(Request $request): View
     {
         $types = ServerTypeEnum::cases();
-        $providers = $request->user()->providers()->get();
+        $providers = $request->user()->providers()->forServers()->get();
         $regions = Region::all();
         $sizes = Size::all();
         $recipes = $request->user()->recipes()->oldest()->get();

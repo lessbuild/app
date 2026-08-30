@@ -27,7 +27,7 @@
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
-                        @selected(old('provider_id') == $provider->id || ($website->provider_id ?? null) == $provider->id)
+                        @selected(old('provider_id') == $provider->id || ($repository->provider_id ?? null) == $provider->id)
                     >
                         {{ $provider->name }}
                     </option>

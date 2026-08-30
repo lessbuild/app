@@ -12,9 +12,6 @@ class ProviderController extends Controller
 {
     /**
      * Display a listing of the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function index(Request $request): View
     {
@@ -30,9 +27,6 @@ class ProviderController extends Controller
 
     /**
      * Show the resource
-     *
-     * @param  \App\Models\Provider  $provider
-     * @return \Illuminate\Contracts\View\View
      */
     public function show(Provider $provider): View
     {
@@ -55,8 +49,6 @@ class ProviderController extends Controller
 
     /**
      * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Contracts\View\View
      */
     public function create(): View
     {
@@ -65,9 +57,6 @@ class ProviderController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     *
-     * @param  \App\Http\Requests\ProviderRequest  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function store(ProviderRequest $request): RedirectResponse
     {
@@ -80,9 +69,6 @@ class ProviderController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Provider  $provider
-     * @return \Illuminate\Contracts\View\View
      */
     public function edit(Provider $provider): View
     {
@@ -95,16 +81,19 @@ class ProviderController extends Controller
 
     /**
      * Update the specified resource in storage.
-     *
-     * @param  \App\Http\Requests\ProviderRequest  $request
-     * @param  \App\Models\Provider  $provider
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function update(ProviderRequest $request, Provider $provider): RedirectResponse
     {
         $this->authorize('update', $provider);
 
         $validated = $request->safe()->except('token');
+
+        if ($provider->provider !== $request->input('provider') && $provider->hasAttachedResources()) {
+            return back()->withInput()->withErrors([
+                'provider' => __('A provider type cannot be changed while resources are attached.'),
+            ]);
+        }
+
         if ($request->filled('token')) {
             $validated['token'] = $request->input('token');
         }
@@ -118,13 +107,16 @@ class ProviderController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Provider  $provider
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function destroy(Provider $provider): RedirectResponse
     {
         $this->authorize('delete', $provider);
+
+        if ($provider->hasAttachedResources()) {
+            return back()->withErrors([
+                'provider' => __('Detach or delete this provider’s servers and repositories first.'),
+            ]);
+        }
 
         $provider->delete();
 

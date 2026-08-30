@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Enums\Server\ServerTypeEnum;
+use App\Models\Provider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
@@ -34,7 +35,10 @@ class ServerRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('providers', 'id')->where(function ($query) {
-                    return $query->where('user_id', $this->user()->id);
+                    return $query
+                        ->where('user_id', $this->user()->id)
+                        ->where('provider', Provider::TYPE_DIGITALOCEAN)
+                        ->whereNull('deleted_at');
                 }),
             ],
             'name' => [

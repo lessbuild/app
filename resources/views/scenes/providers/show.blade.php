@@ -44,6 +44,12 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    @if ($errors->has('provider'))
+        <div class="my-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            {{ $errors->first('provider') }}
+        </div>
+    @endif
+
     <!--
      ! ------------------------------------------------------------
      ! List attached servers or repos for this token
