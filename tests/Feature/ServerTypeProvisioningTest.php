@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Server\CreateCloudServerAction;
+use App\Actions\Server\PrepareServerProvisioningAction;
 use App\Contracts\ServerProvider;
 use App\Data\CloudServerData;
 use App\Models\Enums\Server\ServerTypeEnum;
@@ -78,7 +79,9 @@ class ServerTypeProvisioningTest extends TestCase
             },
         );
 
-        (new CreateCloudServerAction(new ServerProvisioningPlan))->handle($server, $provider, ['name' => 'cache-server']);
+        $plan = new ServerProvisioningPlan;
+        (new CreateCloudServerAction($plan, new PrepareServerProvisioningAction($plan)))
+            ->handle($server, $provider, ['name' => 'cache-server']);
 
         $script = $payload['user_data'];
         $this->assertStringContainsString('yes | sudo apt install redis-server', $script);
@@ -134,6 +137,7 @@ class ServerTypeProvisioningTest extends TestCase
             'type' => ServerTypeEnum::cache,
             'ssh_public_key' => 'ssh-rsa generated-server-key',
         ]);
+        $server->setProvisioningRootPassword('generated-root-password');
 
         $script = (new ConfigureServerScript)->script(3, $server);
         $syntaxCheck = new Process(['bash', '-n']);

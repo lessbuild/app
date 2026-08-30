@@ -15,6 +15,8 @@ class Server extends Model
 {
     use HasFactory;
 
+    private ?string $provisioningRootPassword = null;
+
     public const STATUS_QUEUED = 'queued';
 
     public const STATUS_WAITING_FOR_IP = 'waiting_for_ip';
@@ -63,6 +65,7 @@ class Server extends Model
     protected $casts = [
         'setup_stage' => 'integer',
         'type' => ServerTypeEnum::class,
+        'password' => 'encrypted',
         'mysql_root_password' => 'encrypted',
         'ssh_private_key' => 'encrypted',
         'provisioned_at' => 'datetime',
@@ -111,5 +114,15 @@ class Server extends Model
             ->where('provisioning_status', self::STATUS_ACTIVE)
             ->whereIn('type', ServerTypeEnum::websiteHostingValues())
             ->whereNotNull('mysql_root_password');
+    }
+
+    public function provisioningRootPassword(): ?string
+    {
+        return $this->provisioningRootPassword;
+    }
+
+    public function setProvisioningRootPassword(string $password): void
+    {
+        $this->provisioningRootPassword = $password;
     }
 }

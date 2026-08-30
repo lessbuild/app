@@ -3,8 +3,7 @@
 namespace App\Scripts\Database;
 
 use App\Models\Server;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
+use RuntimeException;
 
 class InstallMysqlScript
 {
@@ -29,10 +28,8 @@ class InstallMysqlScript
     public function script(int $step, Server $server): string
     {
         $IP = $server->public_ip;
-        $PASSWORD = Str::random();
-
-        Session::put('mysql_password', $PASSWORD);
-        $server->update(['mysql_root_password' => $PASSWORD]);
+        $PASSWORD = $server->mysql_root_password
+            ?? throw new RuntimeException('MySQL provisioning credentials have not been prepared.');
 
         return <<<SCRIPT
         provisionPing {$server->id} {$step}

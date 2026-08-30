@@ -9,10 +9,15 @@ use App\Services\ServerProvisioningPlan;
 
 class CreateCloudServerAction
 {
-    public function __construct(private readonly ServerProvisioningPlan $plan) {}
+    public function __construct(
+        private readonly ServerProvisioningPlan $plan,
+        private readonly PrepareServerProvisioningAction $prepare,
+    ) {}
 
     public function handle(Server $server, ServerProvider $provider, array $data): CloudServerData
     {
+        $this->prepare->handle($server);
+
         $script = '';
         foreach ($this->plan->scripts($server) as $step => $command) {
             $script .= (new $command)->script($step, $server)."\n";

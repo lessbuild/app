@@ -3,8 +3,7 @@
 namespace App\Scripts\Server;
 
 use App\Models\Server;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
+use RuntimeException;
 
 class ConfigureServerScript
 {
@@ -29,13 +28,12 @@ class ConfigureServerScript
     public function script(int $step, Server $server): string
     {
         $publicKey = escapeshellarg($server->ssh_public_key);
-        $password = Str::random(32);
+        $password = $server->provisioningRootPassword()
+            ?? throw new RuntimeException('Server provisioning credentials have not been prepared.');
         $shellPassword = escapeshellarg($password);
         $serverName = escapeshellarg($server->name);
         $name = escapeshellarg($server->user->name);
         $email = escapeshellarg($server->user->email);
-
-        Session::put('root_password', $password);
 
         return <<<SCRIPT
         apt_wait
