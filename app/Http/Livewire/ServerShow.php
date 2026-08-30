@@ -2,10 +2,11 @@
 
 namespace App\Http\Livewire;
 
+use App\Actions\Server\CollectServerLogAction;
+use App\Jobs\Server\RefreshServerLogJob;
 use App\Models\Server;
-use App\Services\Runner;
+use App\Models\ServerLogSnapshot;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 use Livewire\Component;
 
 class ServerShow extends Component
@@ -19,47 +20,52 @@ class ServerShow extends Component
 
     public Server $server;
 
-    /**
-     * @throws \Exception
-     */
-    public function render(Request $request, Runner $runner): View
+    public function refreshLogs(): void
+    {
+        abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
+        $this->server->refresh();
+        $this->log = $this->selectedLogType();
+
+        if ($this->server->provisioning_status !== Server::STATUS_ACTIVE) {
+            $this->addError('logs', __('Logs are only available after provisioning finishes.'));
+
+            return;
+        }
+
+        $this->server->logSnapshots()->updateOrCreate(
+            ['type' => $this->log],
+            [
+                'status' => ServerLogSnapshot::STATUS_QUEUED,
+                'error' => null,
+            ],
+        );
+
+        RefreshServerLogJob::dispatch($this->server->id, $this->log);
+    }
+
+    public function render(): View
     {
         $this->server->refresh();
         abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
+        $this->log = $this->selectedLogType();
         $websites = $this->server->websites()->get();
         $recipes = $this->server->recipes()->get();
-        $logs = [];
-        $logError = null;
-
-        if ($this->server->provisioning_status === Server::STATUS_ACTIVE) {
-            $logFile = match ($this->log) {
-                'caddy' => '/var/log/caddy',
-                'mysql' => '/var/log/mysql/error.log',
-                'php' => '/var/log/php',
-                default => '/var/log/apt/history.log',
-            };
-
-            try {
-                $process = $runner->server($this->server)->create()->execute([
-                    "tail -200 $logFile",
-                ]);
-
-                if ($process->isSuccessful()) {
-                    $logs = array_filter(explode(PHP_EOL, $process->getOutput()));
-                } else {
-                    $logError = trim($process->getErrorOutput()) ?: __('Unable to retrieve logs.');
-                }
-            } catch (\Throwable $exception) {
-                report($exception);
-                $logError = __('Unable to connect to this server yet.');
-            }
-        }
+        $logSnapshot = $this->server->logSnapshots()->where('type', $this->log)->first();
+        $logs = $logSnapshot?->log === null ? [] : explode(PHP_EOL, $logSnapshot->log);
+        $shouldPoll = ! in_array($this->server->provisioning_status, [Server::STATUS_ACTIVE, Server::STATUS_FAILED], true)
+            || in_array($logSnapshot?->status, [ServerLogSnapshot::STATUS_QUEUED, ServerLogSnapshot::STATUS_REFRESHING], true);
 
         return view('livewire.scenes.servers.show', [
             'websites' => $websites,
             'recipes' => $recipes,
             'logs' => $logs,
-            'logError' => $logError,
+            'logSnapshot' => $logSnapshot,
+            'shouldPoll' => $shouldPoll,
         ])->layout('components.layouts.app');
+    }
+
+    private function selectedLogType(): string
+    {
+        return in_array($this->log, CollectServerLogAction::TYPES, true) ? $this->log : 'apt';
     }
 }

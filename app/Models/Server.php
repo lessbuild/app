@@ -88,6 +88,11 @@ class Server extends Model
         return $this->hasMany(Website::class);
     }
 
+    public function logSnapshots(): HasMany
+    {
+        return $this->hasMany(ServerLogSnapshot::class);
+    }
+
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);

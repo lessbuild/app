@@ -52,5 +52,5 @@ php artisan queue:monitor database:default --max=10
 - [ ] Refactor Server providers so they use a common interface
 - [x] Run selected user-defined recipes during server provisioning
 - [x] Add recipe creation and management
-- [ ] Save logs to a file and output via that rather than a direct SSH command
+- [x] Persist server log snapshots and display them without render-time SSH commands
 - [x] Use a type-specific provisioning plan when creating servers

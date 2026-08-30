@@ -1,4 +1,4 @@
-<div wire:poll.5s>
+<div @if ($shouldPoll) wire:poll.5s @endif>
 
     <!--
      ! ------------------------------------------------------------
@@ -264,28 +264,75 @@
                     >
                         {{ __('Mysql') }}
                     </a>
+                    <a href="?log=php"
+                        @class([
+		                    'pl-2 font-medium text-xs',
+		                    'text-ternary' => $log === 'php',
+		                    'text-primary' => $log !== 'php',
+                        ])
+                    >
+                        {{ __('PHP') }}
+                    </a>
+                    <a href="?log=provisioning"
+                        @class([
+		                    'pl-2 font-medium text-xs',
+		                    'text-ternary' => $log === 'provisioning',
+		                    'text-primary' => $log !== 'provisioning',
+                        ])
+                    >
+                        {{ __('Provisioning') }}
+                    </a>
                 </div>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+                <div class="text-xs text-secondary">
+                    @if ($logSnapshot?->refreshed_at)
+                        {{ __('Updated :time', ['time' => $logSnapshot->refreshed_at->diffForHumans()]) }}
+                    @else
+                        {{ __('No snapshot has been collected yet.') }}
+                    @endif
+                </div>
+                <button
+                    type="button"
+                    class="button primary"
+                    wire:click="refreshLogs"
+                    wire:loading.attr="disabled"
+                    wire:target="refreshLogs"
+                    @disabled(
+                        $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE
+                        || in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true)
+                    )
+                >
+                    {{ __('Refresh logs') }}
+                </button>
             </div>
             <div class="mt-4 flex flex-col max-h-96 overflow-y-scroll">
                 @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
                     <div class="text-secondary">{{ __('Logs will be available when provisioning finishes.') }}</div>
-                @elseif ($logError)
-                    <div class="text-red-500">{{ $logError }}</div>
                 @else
-                @forelse($logs as $log)
-                    @if($log === '') @continue @endif
-                    <div class="w-full">
-                        <span class="text-ternary">{{ $server->name }}:~$</span>
-                        <span class="text-primary">{{ $log }}</span>
-                    </div>
-                @empty
-                    <div class="flex">
-                        <span class="text-ternary">{{ $server->name }}:~$</span>
-                        <span class="flex-1 typing items-center pl-2">
-                            No logs to show
-                        </span>
-                    </div>
-                @endforelse
+                    @if ($errors->has('logs'))
+                        <div class="mb-2 text-red-500">{{ $errors->first('logs') }}</div>
+                    @elseif (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
+                        <div class="mb-2 text-secondary">{{ __('Refreshing this log snapshot…') }}</div>
+                    @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED)
+                        <div class="mb-2 text-red-500">{{ $logSnapshot->error ?: __('Unable to retrieve logs.') }}</div>
+                    @endif
+                    @forelse($logs as $line)
+                        @if($line === '') @continue @endif
+                        <div class="w-full">
+                            <span class="text-ternary">{{ $server->name }}:~$</span>
+                            <span class="text-primary">{{ $line }}</span>
+                        </div>
+                    @empty
+                        @unless (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
+                            <div class="flex">
+                                <span class="text-ternary">{{ $server->name }}:~$</span>
+                                <span class="flex-1 typing items-center pl-2">
+                                    No logs to show
+                                </span>
+                            </div>
+                        @endunless
+                    @endforelse
                 @endif
             </div>
         </div>
