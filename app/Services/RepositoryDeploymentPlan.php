@@ -10,6 +10,7 @@ use App\Scripts\Repository\CloneRepositoryScript;
 use App\Scripts\Repository\InstallDependenciesScript;
 use App\Scripts\Repository\PurgeOldReleasesScript;
 use App\Scripts\Repository\SymlinkScript;
+use App\Scripts\Repository\VerifyDeploymentHealthScript;
 
 class RepositoryDeploymentPlan
 {
@@ -25,6 +26,7 @@ class RepositoryDeploymentPlan
             ActivateReleaseScript::class,
             SymlinkScript::class,
             ArtisanCommandsScript::class,
+            VerifyDeploymentHealthScript::class,
             PurgeOldReleasesScript::class,
         ];
     }

@@ -40,13 +40,19 @@ class ActivateReleaseScript extends BuildProvisioningScript
             RELEASE_PATH="\$DEPLOY_ROOT/releases/\$RELEASE_NAME"
             CURRENT_PATH="\$DEPLOY_ROOT/current"
             NEXT_LINK="\$DEPLOY_ROOT/current.next"
+            PREVIOUS_RELEASE_PATH=""
+
+            if [ -L "\$CURRENT_PATH" ]; then
+                PREVIOUS_RELEASE_PATH="$(readlink -f -- "\$CURRENT_PATH" || true)"
+            fi
 
             mkdir -p -- "\$DEPLOY_ROOT/releases"
             mv -- "\$DEPLOY_ROOT/setup" "\$RELEASE_PATH"
 
             # Convert the legacy directory layout on its first deployment.
             if [ -d "\$CURRENT_PATH" ] && [ ! -L "\$CURRENT_PATH" ]; then
-                mv -- "\$CURRENT_PATH" "\$DEPLOY_ROOT/releases/legacy-\$RELEASE_NAME"
+                PREVIOUS_RELEASE_PATH="\$DEPLOY_ROOT/releases/legacy-\$RELEASE_NAME"
+                mv -- "\$CURRENT_PATH" "\$PREVIOUS_RELEASE_PATH"
             fi
 
             ln -sfn -- "\$RELEASE_PATH" "\$NEXT_LINK"

@@ -120,6 +120,12 @@
                 </div>
             </div>
         </div>
+        <div class="flex items-center mr-6">
+            <span class="mr-1 text-primary">{{ __('Deployment health check') }}</span>
+            <span class="text-secondary">
+                {{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}
+            </span>
+        </div>
     </div>
 
     <livewire:website-provisioning-log :website="$website" />

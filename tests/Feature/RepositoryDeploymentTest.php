@@ -7,6 +7,7 @@ use App\Models\Build;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\RepositoryDeploymentPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -53,7 +54,8 @@ class RepositoryDeploymentTest extends TestCase
             'started_at' => now(),
         ]);
 
-        $this->post(URL::signedRoute('callbacks.build.status', $build), ['status' => 7])
+        $finalStage = app(RepositoryDeploymentPlan::class)->finalStage();
+        $this->post(URL::signedRoute('callbacks.build.status', $build), ['status' => $finalStage])
             ->assertSuccessful();
 
         $build->refresh();
@@ -96,7 +98,7 @@ class RepositoryDeploymentTest extends TestCase
     public function test_repository_progress_lists_every_stage_and_stops_polling_when_finished(): void
     {
         [$user, $repository] = $this->repository();
-        $repository->update(['setup_stage' => 7]);
+        $repository->update(['setup_stage' => app(RepositoryDeploymentPlan::class)->finalStage()]);
         $repository->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'finished_at' => now(),
@@ -106,6 +108,7 @@ class RepositoryDeploymentTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Symlink files')
             ->assertSee('Run artisan commands')
+            ->assertSee('Verify deployment health')
             ->assertSee('Purge Old Releases')
             ->assertDontSee('wire:poll.5s', false);
     }

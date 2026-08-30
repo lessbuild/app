@@ -47,6 +47,7 @@ class Website extends Model
     protected $casts = [
         'database_password' => 'encrypted',
         'environment' => 'encrypted',
+        'health_check_enabled' => 'boolean',
         'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
         'setup_stage' => 'integer',

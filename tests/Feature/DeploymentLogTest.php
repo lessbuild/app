@@ -160,10 +160,15 @@ class DeploymentLogTest extends TestCase
         $this->assertStringContainsString('exec > "$LOG_FILE" 2>&1', $script);
         $this->assertStringContainsString('tail -c 262144', $script);
         $this->assertStringContainsString('--data-urlencode "log@$LOG_UPLOAD_FILE"', $script);
+        $this->assertStringContainsString('--data-urlencode "message=$DEPLOYMENT_FAILURE_MESSAGE"', $script);
         $this->assertStringContainsString('trap deployment_failed ERR', $script);
         $this->assertStringContainsString('while sleep 5; do', $script);
         $this->assertStringContainsString('stream_deployment_log &', $script);
         $this->assertStringContainsString('stop_deployment_log_stream', $script);
+        $this->assertStringContainsString('restore_previous_release()', $script);
+        $this->assertStringContainsString('ln -sfn -- "$PREVIOUS_RELEASE_PATH" "$rollback_link"', $script);
+        $this->assertStringContainsString('mv -Tf -- "$rollback_link" "$DEPLOY_ROOT/current"', $script);
+        $this->assertStringContainsString("stop_deployment_log_stream\n    restore_previous_release\n    upload_deployment_log", $script);
         $this->assertSame(4, substr_count($script, 'upload_deployment_log'));
 
         $syntax = new Process(['bash', '-n']);

@@ -89,15 +89,16 @@ class CallbackIntegrityTest extends TestCase
         $newBuild = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
         $repository->update(['setup_stage' => 0]);
 
-        $this->post(URL::signedRoute('callbacks.build.status', $oldBuild), ['status' => 7])
+        $finalStage = app(RepositoryDeploymentPlan::class)->finalStage();
+        $this->post(URL::signedRoute('callbacks.build.status', $oldBuild), ['status' => $finalStage])
             ->assertNoContent();
 
         $this->assertSame(0, $repository->fresh()->setup_stage);
         $this->assertSame(Build::STATUS_RUNNING, $newBuild->fresh()->status);
 
-        $this->post(ProvisioningCallbackUrl::buildStatus($newBuild), ['status' => 7])
+        $this->post(ProvisioningCallbackUrl::buildStatus($newBuild), ['status' => $finalStage])
             ->assertNoContent();
-        $this->assertSame(7, $repository->fresh()->setup_stage);
+        $this->assertSame($finalStage, $repository->fresh()->setup_stage);
         $this->assertSame(Build::STATUS_SUCCEEDED, $newBuild->fresh()->status);
         $this->assertNotNull($newBuild->fresh()->finished_at);
         $this->assertSame(Server::STATUS_PROVISIONING, $server->provisioning_status);

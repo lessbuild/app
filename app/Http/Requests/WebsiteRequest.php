@@ -34,6 +34,13 @@ class WebsiteRequest extends FormRequest
             'url' => ['required', 'string', 'max:255', new Hostname],
             'description' => ['required', 'string'],
             'environment' => [$this->isMethod('post') ? 'required' : 'present', 'string'],
+            'health_check_enabled' => ['required', 'boolean'],
+            'health_check_path' => [
+                'required',
+                'string',
+                'max:255',
+                "regex:#\A/(?!/)[A-Za-z0-9._~%!$&'()*+,;=:@/\-]*\z#D",
+            ],
         ];
     }
 
@@ -49,6 +56,15 @@ class WebsiteRequest extends FormRequest
         $url = trim((string) $this->input('url'));
         $url = preg_replace('#^https?://#i', '', $url) ?? $url;
 
-        $this->merge(['url' => rtrim($url, '/')]);
+        $path = trim((string) $this->input('health_check_path', '/'));
+        if (! str_starts_with($path, '/')) {
+            $path = '/'.$path;
+        }
+
+        $this->merge([
+            'url' => rtrim($url, '/'),
+            'health_check_enabled' => $this->boolean('health_check_enabled'),
+            'health_check_path' => $path,
+        ]);
     }
 }

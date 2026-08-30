@@ -70,6 +70,11 @@ Redeploying a recorded build checks out that exact commit and can also be used t
 restore an earlier release. Legacy manual builds without a recorded revision
 retry the configured branch.
 
+Websites can optionally verify an HTTP path after each deployment. Lessbuild
+follows redirects and retries transient failures before marking the build
+failed. When an earlier release exists, a failed check atomically restores its
+symlink; application database migrations are intentionally not reversed.
+
 ### Todo
  
 

@@ -60,6 +60,7 @@ class PublishRepositoryAction extends Publishable
 
         LOG_FILE={$logFile}
         LOG_UPLOAD_FILE={$logUploadFile}
+        DEPLOYMENT_FAILURE_MESSAGE="Remote deployment script failed"
 
         upload_deployment_log() {
             tail -c {$logLimit} -- "\$LOG_FILE" > "\$LOG_UPLOAD_FILE"
@@ -82,13 +83,38 @@ class PublishRepositoryAction extends Publishable
             fi
         }
 
+        restore_previous_release() {
+            if [ -z "\${DEPLOY_ROOT:-}" ] \
+                || [ -z "\${PREVIOUS_RELEASE_PATH:-}" ] \
+                || [ ! -d "\$PREVIOUS_RELEASE_PATH" ]; then
+                return 0
+            fi
+
+            current_target="$(readlink -f -- "\$DEPLOY_ROOT/current" 2>/dev/null || true)"
+            if [ "\$current_target" = "\$PREVIOUS_RELEASE_PATH" ]; then
+                return 0
+            fi
+
+            rollback_link="\$DEPLOY_ROOT/current.rollback"
+            if ln -sfn -- "\$PREVIOUS_RELEASE_PATH" "\$rollback_link" \
+                && mv -Tf -- "\$rollback_link" "\$DEPLOY_ROOT/current"; then
+                echo "Restored previous release: \$PREVIOUS_RELEASE_PATH"
+            else
+                echo "Unable to restore previous release: \$PREVIOUS_RELEASE_PATH"
+            fi
+
+            return 0
+        }
+
         deployment_failed() {
             exit_code=\$?
             trap - ERR
             stop_deployment_log_stream
+            restore_previous_release
             upload_deployment_log
             curl --silent --show-error \
-                --data "exit_code=\$exit_code&message=Remote deployment script failed" \
+                --data "exit_code=\$exit_code" \
+                --data-urlencode "message=\$DEPLOYMENT_FAILURE_MESSAGE" \
                 "{$failureCallback}" || true
             rm -f -- "\$LOG_FILE" "\$LOG_UPLOAD_FILE"
             exit "\$exit_code"
