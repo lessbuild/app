@@ -23,6 +23,10 @@ class Build extends Model
 
     public const STATUS_CANCELED = 'canceled';
 
+    public const TRIGGER_MANUAL = 'manual';
+
+    public const TRIGGER_WEBHOOK = 'webhook';
+
     public const DEPLOYMENT_LOG_TYPE = 'deployment';
 
     /**
@@ -52,5 +56,10 @@ class Build extends Model
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);
+    }
+
+    public function shortRevision(): ?string
+    {
+        return $this->revision ? substr($this->revision, 0, 12) : null;
     }
 }

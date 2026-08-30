@@ -119,12 +119,29 @@ class RepositorySafetyTest extends TestCase
         $this->assertStringNotContainsString('--insecure', $cloneScript);
         $this->assertStringContainsString("git -C '/var/www/active-website/setup' checkout --force 'release/2026.08'", $checkoutScript);
 
+        $revision = str_repeat('a', 40);
+        $build->update(['revision' => $revision]);
+        $revisionScript = (new CheckoutRepositoryScript)->script(2, $build->fresh());
+        $this->assertStringContainsString("rev-parse --verify '{$revision}'^{commit}", $revisionScript);
+        $this->assertStringContainsString("merge-base --is-ancestor '{$revision}' 'origin/release/2026.08'", $revisionScript);
+        $this->assertStringContainsString("checkout --detach --force '{$revision}'", $revisionScript);
+        $this->assertStringNotContainsString('checkout --force \'release/2026.08\'', $revisionScript);
+        $this->assertShellSyntax($revisionScript);
+
         foreach ([$cloneScript, $checkoutScript] as $script) {
             $syntaxCheck = new Process(['bash', '-n']);
             $syntaxCheck->setInput($script);
             $syntaxCheck->run();
             $this->assertTrue($syntaxCheck->isSuccessful(), $syntaxCheck->getErrorOutput());
         }
+    }
+
+    private function assertShellSyntax(string $script): void
+    {
+        $syntaxCheck = new Process(['bash', '-n']);
+        $syntaxCheck->setInput($script);
+        $syntaxCheck->run();
+        $this->assertTrue($syntaxCheck->isSuccessful(), $syntaxCheck->getErrorOutput());
     }
 
     private function infrastructure(): array

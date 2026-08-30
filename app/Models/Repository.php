@@ -69,4 +69,16 @@ class Repository extends Model
             && $this->website?->provisioning_status === Website::STATUS_ACTIVE
             && $this->website?->server?->provisioning_status === Server::STATUS_ACTIVE;
     }
+
+    public function revisionUrl(?string $revision): ?string
+    {
+        if (! is_string($revision) || ! preg_match('/\A[0-9a-f]{40,64}\z/D', $revision)) {
+            return null;
+        }
+
+        $path = preg_replace('/\.git\z/i', '', $this->url);
+        $segment = $this->provider?->provider === Provider::TYPE_BITBUCKET ? 'commits' : 'commit';
+
+        return "https://{$path}/{$segment}/{$revision}";
+    }
 }

@@ -138,6 +138,7 @@ class RepositoriesController extends Controller
 
             return $lockedRepository->builds()->create([
                 'status' => Build::STATUS_QUEUED,
+                'trigger_source' => Build::TRIGGER_MANUAL,
             ]);
         });
 

@@ -43,7 +43,7 @@ class RepositoryWebhookController extends Controller
             return response()->json(['status' => 'branch_ignored']);
         }
 
-        $result = $handle->handle($repository, $webhook->deliveryId);
+        $result = $handle->handle($repository, $webhook);
         $status = match ($result->status) {
             RepositoryWebhookResult::QUEUED, RepositoryWebhookResult::PENDING => 202,
             RepositoryWebhookResult::UNAVAILABLE => 409,

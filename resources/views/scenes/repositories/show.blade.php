@@ -191,6 +191,15 @@
                     </a>
                     <p class="text-sm text-secondary">
                         {{ $build->created_at->diffForHumans() }}
+                        &middot; {{ ucfirst($build->trigger_source) }}
+                        @if ($build->revision)
+                            &middot;
+                            @if ($revisionUrl = $repository->revisionUrl($build->revision))
+                                <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="font-mono hover:underline">{{ $build->shortRevision() }}</a>
+                            @else
+                                <span class="font-mono">{{ $build->shortRevision() }}</span>
+                            @endif
+                        @endif
                         @if ($build->failure_message)
                             &middot; {{ $build->failure_message }}
                         @endif

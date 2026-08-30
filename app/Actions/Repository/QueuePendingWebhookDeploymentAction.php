@@ -27,7 +27,13 @@ class QueuePendingWebhookDeploymentAction
                 return null;
             }
 
-            $locked->update(['webhook_pending' => false]);
+            $revision = $locked->webhook_pending_revision;
+            $commitMessage = $locked->webhook_pending_commit_message;
+            $locked->update([
+                'webhook_pending' => false,
+                'webhook_pending_revision' => null,
+                'webhook_pending_commit_message' => null,
+            ]);
             if (! $locked->isDeploymentReady()) {
                 return null;
             }
@@ -37,7 +43,12 @@ class QueuePendingWebhookDeploymentAction
                 ->where('status', RepositoryWebhookDelivery::STATUS_PENDING)
                 ->update(['status' => RepositoryWebhookDelivery::STATUS_QUEUED]);
 
-            return $locked->builds()->create(['status' => Build::STATUS_QUEUED]);
+            return $locked->builds()->create([
+                'status' => Build::STATUS_QUEUED,
+                'trigger_source' => Build::TRIGGER_WEBHOOK,
+                'revision' => $revision,
+                'commit_message' => $commitMessage,
+            ]);
         });
 
         if ($build) {

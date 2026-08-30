@@ -42,13 +42,17 @@ class RepositoryWebhookVerifier
             throw new InvalidRepositoryWebhook('The webhook payload is not a JSON object.', 422);
         }
 
-        [$isPush, $matchesBranch] = match ($provider) {
+        [$isPush, $matchesBranch, $revision, $commitMessage] = match ($provider) {
             Provider::TYPE_GITHUB => $this->githubEvent($request, $payload, $repository->branch),
             Provider::TYPE_GITLAB => $this->gitLabEvent($request, $payload, $repository->branch),
             Provider::TYPE_BITBUCKET => $this->bitbucketEvent($request, $payload, $repository->branch),
         };
 
-        return new VerifiedRepositoryWebhook($deliveryId, $isPush, $matchesBranch);
+        if ($matchesBranch && $revision === null) {
+            throw new InvalidRepositoryWebhook('The webhook commit revision is invalid.', 422);
+        }
+
+        return new VerifiedRepositoryWebhook($deliveryId, $isPush, $matchesBranch, $revision, $commitMessage);
     }
 
     private function verifyGitHub(Request $request, string $raw, string $secret): string
@@ -119,31 +123,81 @@ class RepositoryWebhookVerifier
         return $deliveryId;
     }
 
-    /** @return array{bool, bool} */
+    /** @return array{bool, bool, ?string, ?string} */
     private function githubEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-GitHub-Event') === 'push';
+        $matches = $isPush
+            && ($payload['ref'] ?? null) === "refs/heads/{$branch}"
+            && ($payload['deleted'] ?? false) !== true
+            && ! $this->isNullRevision($payload['after'] ?? null);
 
-        return [$isPush, $isPush && ($payload['ref'] ?? null) === "refs/heads/{$branch}"];
+        return [
+            $isPush,
+            $matches,
+            $matches ? $this->revision($payload['after'] ?? null) : null,
+            $matches ? $this->commitMessage($payload['head_commit']['message'] ?? null) : null,
+        ];
     }
 
-    /** @return array{bool, bool} */
+    /** @return array{bool, bool, ?string, ?string} */
     private function gitLabEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-Gitlab-Event') === 'Push Hook';
+        $matches = $isPush
+            && ($payload['ref'] ?? null) === "refs/heads/{$branch}"
+            && ! $this->isNullRevision($payload['after'] ?? null);
+        $revision = $matches ? $this->revision($payload['after'] ?? $payload['checkout_sha'] ?? null) : null;
+        $commits = is_array($payload['commits'] ?? null) ? $payload['commits'] : [];
+        $commit = collect($commits)->first(fn (mixed $commit): bool => is_array($commit)
+            && $this->revision($commit['id'] ?? null) === $revision);
 
-        return [$isPush, $isPush && ($payload['ref'] ?? null) === "refs/heads/{$branch}"];
+        return [
+            $isPush,
+            $matches,
+            $revision,
+            $matches && is_array($commit) ? $this->commitMessage($commit['message'] ?? null) : null,
+        ];
     }
 
-    /** @return array{bool, bool} */
+    /** @return array{bool, bool, ?string, ?string} */
     private function bitbucketEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-Event-Key') === 'repo:push';
         $changes = is_array($payload['push']['changes'] ?? null) ? $payload['push']['changes'] : [];
-        $matches = collect($changes)->contains(fn (mixed $change): bool => is_array($change)
+        $change = collect($changes)->first(fn (mixed $change): bool => is_array($change)
             && ($change['new']['type'] ?? null) === 'branch'
             && ($change['new']['name'] ?? null) === $branch);
+        $matches = $isPush && is_array($change);
 
-        return [$isPush, $isPush && $matches];
+        return [
+            $isPush,
+            $matches,
+            $matches ? $this->revision($change['new']['target']['hash'] ?? null) : null,
+            $matches ? $this->commitMessage($change['new']['target']['message'] ?? null) : null,
+        ];
+    }
+
+    private function revision(mixed $revision): ?string
+    {
+        return is_string($revision) && preg_match('/\A[0-9a-f]{40,64}\z/Di', $revision)
+            ? strtolower($revision)
+            : null;
+    }
+
+    private function isNullRevision(mixed $revision): bool
+    {
+        return is_string($revision) && preg_match('/\A0{40,64}\z/D', $revision) === 1;
+    }
+
+    private function commitMessage(mixed $message): ?string
+    {
+        if (! is_string($message)) {
+            return null;
+        }
+
+        $message = trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $message) ?? '');
+
+        return $message === '' ? null : mb_substr($message, 0, 500);
     }
 }

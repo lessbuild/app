@@ -47,6 +47,12 @@
                                     <div class="text-secondary">
                                         #{{ $build->repository->website->server->name }}
                                     </div>
+                                    <div class="text-secondary">
+                                        {{ ucfirst($build->trigger_source) }}
+                                        @if ($build->revision)
+                                            &middot; <span class="font-mono">{{ $build->shortRevision() }}</span>
+                                        @endif
+                                    </div>
                                 </a>
                             </div>
                         </td>

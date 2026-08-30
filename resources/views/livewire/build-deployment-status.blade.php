@@ -1,8 +1,22 @@
 <div @if ($shouldPoll) wire:poll.5s @endif>
-    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-3">
+    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-5">
         <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</dt>
             <dd class="mt-1 font-medium text-primary">{{ ucfirst($build->status) }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Triggered by') }}</dt>
+            <dd class="mt-1 font-medium text-primary">{{ ucfirst($build->trigger_source) }}</dd>
+        </div>
+        <div>
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Revision') }}</dt>
+            <dd class="mt-1 font-mono text-sm text-primary">
+                @if ($revisionUrl = $build->repository->revisionUrl($build->revision))
+                    <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ $build->shortRevision() }}</a>
+                @else
+                    {{ __('Current branch') }}
+                @endif
+            </dd>
         </div>
         <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Started') }}</dt>
@@ -13,6 +27,13 @@
             <dd class="mt-1 text-primary">{{ $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</dd>
         </div>
     </dl>
+
+    @if ($build->commit_message)
+        <div class="mt-4 rounded-lg border border-primary bg-primary p-4">
+            <p class="text-xs font-semibold uppercase text-secondary">{{ __('Commit message') }}</p>
+            <p class="mt-1 whitespace-pre-wrap break-words text-sm text-primary">{{ $build->commit_message }}</p>
+        </div>
+    @endif
 
     @if ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path)
         <form method="POST" action="{{ route('builds.cancel', $build) }}" class="mt-4">

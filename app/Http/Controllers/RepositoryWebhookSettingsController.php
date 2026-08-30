@@ -53,6 +53,8 @@ class RepositoryWebhookSettingsController extends Controller
             'webhook_enabled' => false,
             'webhook_secret' => null,
             'webhook_pending' => false,
+            'webhook_pending_revision' => null,
+            'webhook_pending_commit_message' => null,
         ]);
 
         return redirect(route('repositories.show', $repository).'#deployment-webhook')
