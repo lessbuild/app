@@ -124,7 +124,7 @@ class RecipeManagementTest extends TestCase
 
         $this->actingAs($user)->post(route('servers.store'), [
             'provider_id' => $provider->id,
-            'type' => ServerTypeEnum::app->value,
+            'type' => ServerTypeEnum::worker->value,
             'name' => 'Recipe Server',
             'region' => 'nyc1',
             'image' => 'ubuntu-22-04-x64',
@@ -133,6 +133,7 @@ class RecipeManagementTest extends TestCase
         ])->assertRedirect();
 
         $server = Server::query()->sole();
+        $this->assertSame(ServerTypeEnum::worker, $server->type);
         $this->assertSame([$second->id, $first->id], $server->recipes->pluck('id')->all());
         Queue::assertPushed(InitialiseServerJob::class);
 

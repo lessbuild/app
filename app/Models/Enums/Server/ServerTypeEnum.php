@@ -16,28 +16,32 @@ enum ServerTypeEnum: string
         return match ($this) {
             self::app => [
                 'php',
-                'nginx',
-                'database',
+                'composer',
+                'node',
+                'caddy',
+                'mysql',
                 'redis',
                 'memcached',
             ],
             self::web => [
                 'php',
-                'nginx',
+                'composer',
+                'caddy',
             ],
             self::worker => [
                 'php',
+                'composer',
+                'node',
             ],
             self::database => [
                 'mysql',
-                'psql',
             ],
             self::cache => [
                 'redis',
                 'memcached',
             ],
             self::loadbalancer => [
-                'nginx',
+                'caddy',
             ],
         };
     }

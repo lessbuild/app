@@ -13,6 +13,7 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\ServerProvisioningPlan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -54,12 +55,13 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {
-    $data = request()->validate(['status' => 'required|integer|min:0|max:12']);
+    $finalStage = app(ServerProvisioningPlan::class)->finalStage($server);
+    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
     if ($data['status'] > $server->setup_stage) {
         $server->update(['setup_stage' => $data['status']]);
     }
 
-    if ($data['status'] === 12) {
+    if ($data['status'] === $finalStage) {
         $server->update([
             'provisioning_status' => Server::STATUS_ACTIVE,
             'provisioned_at' => now(),

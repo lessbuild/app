@@ -69,6 +69,8 @@ class ServersController extends Controller
 
         $server = Auth::user()->servers()->create([
             'provider_id' => $request->input('provider_id'),
+            'type' => $request->enum('type', ServerTypeEnum::class),
+            'name' => str($request->input('name'))->slug()->limit(31, ''),
             'provisioning_status' => Server::STATUS_QUEUED,
             'ssh_public_key' => $keypair->publicKey(),
             'ssh_private_key' => $keypair->privateKey(),

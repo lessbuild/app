@@ -96,6 +96,13 @@
         </div>
         <div class="flex items-center mr-6">
             <svg class="mr-2 w-4 h-4 text-gray-400">
+                <use xlink:href="/assets/images/icons.svg#server"></use>
+            </svg>
+            <span class="mr-1 text-primary">{{ __('Type') }}</span>
+            <span class="text-secondary">{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
+        </div>
+        <div class="flex items-center mr-6">
+            <svg class="mr-2 w-4 h-4 text-gray-400">
                 <use xlink:href="/assets/images/icons.svg#globe-alt"></use>
             </svg>
             <span class="mr-1 text-primary">

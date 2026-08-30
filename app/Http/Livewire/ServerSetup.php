@@ -3,53 +3,24 @@
 namespace App\Http\Livewire;
 
 use App\Models\Server;
-use App\Scripts\Cache\InstallMemcachedScript;
-use App\Scripts\Cache\InstallRedisScript;
-use App\Scripts\Database\InstallMysqlScript;
-use App\Scripts\Languages\InstallNodeScript;
-use App\Scripts\Languages\InstallPHPScript;
-use App\Scripts\Server\ConfigureServerScript;
-use App\Scripts\Server\ConfigureSwapScript;
-use App\Scripts\Server\EndScript;
-use App\Scripts\Server\InstallComposerScript;
-use App\Scripts\Server\RecipesScript;
-use App\Scripts\Server\UpdateDependenciesScript;
-use App\Scripts\Web\InstallCaddyScript;
+use App\Services\ServerProvisioningPlan;
 use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 class ServerSetup extends Component
 {
-    protected array $processes = [
-        UpdateDependenciesScript::class,
-        ConfigureSwapScript::class,
-        ConfigureServerScript::class,
-        InstallComposerScript::class,
-        InstallPHPScript::class,
-        InstallNodeScript::class,
-        InstallCaddyScript::class,
-        InstallMysqlScript::class,
-        InstallRedisScript::class,
-        InstallMemcachedScript::class,
-        RecipesScript::class,
-        EndScript::class,
-    ];
-
-    /**
-     * @var \App\Models\Server
-     */
     public Server $model;
 
     /**
-     * @return \Illuminate\Contracts\View\View
-     *
      * @throws \Exception
      */
-    public function render(): View
+    public function render(ServerProvisioningPlan $plan): View
     {
         $this->model->refresh();
         abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
 
-        return view('livewire.setup');
+        return view('livewire.setup', [
+            'processes' => $plan->steps($this->model),
+        ]);
     }
 }

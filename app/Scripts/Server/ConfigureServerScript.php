@@ -3,7 +3,6 @@
 namespace App\Scripts\Server;
 
 use App\Models\Server;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Str;
 
@@ -11,46 +10,41 @@ class ConfigureServerScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Configure Server';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Configure the server, users and authorization';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'configured-server';
 
     /**
      * Shell script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {
-        $PUBLIC_KEY = env('SSH_PUBLIC_KEY');
-        $PASSWORD = Str::random();
-        $SERVER_NAME = $server->name;
-        $NAME = Auth::user()->name;
-        $EMAIL = Auth::user()->email;
+        $publicKey = escapeshellarg($server->ssh_public_key);
+        $password = Str::random(32);
+        $shellPassword = escapeshellarg($password);
+        $serverName = escapeshellarg($server->name);
+        $name = escapeshellarg($server->user->name);
+        $email = escapeshellarg($server->user->email);
 
-        Session::put('root_password', $PASSWORD);
+        Session::put('root_password', $password);
 
         return <<<SCRIPT
         apt_wait
 
         provisionPing {$server->id} {$step}
+
+        SERVER_NAME={$serverName}
+        ROOT_PASSWORD={$shellPassword}
+        PUBLIC_KEY={$publicKey}
 
         # Disable Password Authentication Over SSH
         sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
@@ -69,39 +63,34 @@ class ConfigureServerScript
             touch /root/.ssh/authorized_keys
         fi
 
-        # Setup User
-        useradd $SERVER_NAME
-        mkdir -p /home/$SERVER_NAME/.ssh
-        mkdir -p /home/$SERVER_NAME/.$SERVER_NAME
-        adduser $SERVER_NAME sudo
+        # Set root password and create the deploy user
+        echo "root:\$ROOT_PASSWORD" | chpasswd
+        if ! id -u "\$SERVER_NAME" >/dev/null 2>&1; then
+            useradd --create-home --shell /bin/bash "\$SERVER_NAME"
+        fi
+        echo "\$SERVER_NAME:\$ROOT_PASSWORD" | chpasswd
+        usermod -aG sudo "\$SERVER_NAME"
 
-        # Setup Bash For User
-        chsh -s /bin/bash $SERVER_NAME
-        cp /root/.profile /home/$SERVER_NAME/.profile
-        cp /root/.bashrc /home/$SERVER_NAME/.bashrc
-
-        # Set The Sudo Password For The User
-        PASSWORD=$(mkpasswd -m sha-512 $PASSWORD)
-        usermod --password $PASSWORD $SERVER_NAME
-
-        # Build Formatted Keys & Copy Keys To
-        cat > /root/.ssh/authorized_keys << EOF
-            # Laravel
-            $PUBLIC_KEY
-        EOF
-        cp /root/.ssh/authorized_keys /home/$SERVER_NAME/.ssh/authorized_keys
+        # Preserve the cloud key and make the generated server key authoritative
+        touch /root/.ssh/authorized_keys
+        grep -qxF "\$PUBLIC_KEY" /root/.ssh/authorized_keys || printf '%s\\n' "\$PUBLIC_KEY" >> /root/.ssh/authorized_keys
+        install -d -m 700 -o "\$SERVER_NAME" -g "\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh"
+        cp /root/.ssh/authorized_keys "/home/\$SERVER_NAME/.ssh/authorized_keys"
+        chown "\$SERVER_NAME:\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh/authorized_keys"
+        chmod 600 "/home/\$SERVER_NAME/.ssh/authorized_keys"
 
         # Create The Server SSH Key
-        ssh-keygen -f /home/$SERVER_NAME/.ssh/id_rsa -t rsa -N ''
+        sudo -u "\$SERVER_NAME" ssh-keygen -f "/home/\$SERVER_NAME/.ssh/id_rsa" -t rsa -N ''
 
         # Copy Source Control Public Keys Into Known Hosts File
-        ssh-keyscan -H github.com >> /home/$SERVER_NAME/.ssh/known_hosts
-        ssh-keyscan -H bitbucket.org >> /home/$SERVER_NAME/.ssh/known_hosts
-        ssh-keyscan -H gitlab.com >> /home/$SERVER_NAME/.ssh/known_hosts
+        ssh-keyscan -H github.com >> "/home/\$SERVER_NAME/.ssh/known_hosts"
+        ssh-keyscan -H bitbucket.org >> "/home/\$SERVER_NAME/.ssh/known_hosts"
+        ssh-keyscan -H gitlab.com >> "/home/\$SERVER_NAME/.ssh/known_hosts"
+        chown "\$SERVER_NAME:\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh/known_hosts"
 
         # Configure Git Settings
-        git config --global user.name "$NAME"
-        git config --global user.email "$EMAIL"
+        sudo -u "\$SERVER_NAME" git config --global user.name {$name}
+        sudo -u "\$SERVER_NAME" git config --global user.email {$email}
         SCRIPT;
     }
 }

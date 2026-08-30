@@ -28,4 +28,4 @@ is allowed by the host firewall and cloud-provider firewall.
 - [x] Run selected user-defined recipes during server provisioning
 - [x] Add recipe creation and management
 - [ ] Save logs to a file and output via that rather than a direct SSH command
-- [ ] When selecting app type, use different scripts rather than them all.
+- [x] Use a type-specific provisioning plan when creating servers

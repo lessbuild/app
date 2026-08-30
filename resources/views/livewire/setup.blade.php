@@ -33,7 +33,7 @@
                 <span>{{ __('Status') }}</span>
             </div>
 
-            @foreach($this->processes as $key => $process)
+            @foreach($processes as $key => $process)
 
                 <div class="flex items-center mt-4">
                     <div @class([

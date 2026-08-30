@@ -72,6 +72,7 @@
                                 <div class="text-primary flex flex-col">
                                     <span>{{ $server->region }}</span>
                                     <span>{{ $server->image }}</span>
+                                    <span>{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
                                 </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">

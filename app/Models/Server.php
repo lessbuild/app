@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Enums\Server\ServerTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -59,6 +60,7 @@ class Server extends Model
      */
     protected $casts = [
         'setup_stage' => 'integer',
+        'type' => ServerTypeEnum::class,
         'ssh_private_key' => 'encrypted',
         'provisioned_at' => 'datetime',
     ];
