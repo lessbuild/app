@@ -3,19 +3,15 @@
 namespace App\Services;
 
 use Exception;
+use GuzzleHttp\Promise\PromiseInterface;
 use http\Exception\InvalidArgumentException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
 class DigitalOcean
 {
-    /**
-     * @var string
-     */
     private string $_API_TOKEN;
 
-    /**
-     * @var string
-     */
     protected static string $_DROPLETS = 'https://api.digitalocean.com/v2/droplets';
 
     protected static string $_REGIONS = 'https://api.digitalocean.com/v2/regions';
@@ -29,7 +25,7 @@ class DigitalOcean
     /**
      * DigitalOcean constructor.
      *
-     * @param  string  $api_token DO API token
+     * @param  string  $api_token  DO API token
      */
     public function __construct(string $api_token)
     {
@@ -69,10 +65,9 @@ class DigitalOcean
     }
 
     /**
-     * @param  string  $type
      * @return null
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function getImages(string $type = 'distribution')
     {
@@ -90,7 +85,7 @@ class DigitalOcean
      *
      * @return array | null
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function getDroplets()
     {
@@ -106,7 +101,6 @@ class DigitalOcean
     /**
      * Gets information about a single droplet
      *
-     * @param $droplet_id
      * @return Json
      *
      * @throws Exception
@@ -125,10 +119,10 @@ class DigitalOcean
     /**
      * Creates a new droplet.
      *
-     * @param  array  $params Droplet parameters. The only mandatory item is 'name'.
+     * @param  array  $params  Droplet parameters. The only mandatory item is 'name'.
      * @return mixed
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function createDroplet(array $params)
     {
@@ -139,7 +133,7 @@ class DigitalOcean
         $response = $this->post(self::$_DROPLETS, $params);
 
         if (! in_array($response->status(), [200, 202, 204])) {
-            throw new Exception('An API error occurred.');
+            throw $this->apiException($response);
         }
 
         return $response->json();
@@ -150,10 +144,9 @@ class DigitalOcean
      *
      * @todo fix an issue where if the key exists it will throw an error
      *
-     * @param  array  $params
      * @return mixed
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function createSSH(array $params)
     {
@@ -164,19 +157,23 @@ class DigitalOcean
         $response = $this->post(self::$_KEYS, $params);
 
         if (! in_array($response->status(), [201])) {
-            throw new Exception('An API error occurred.');
+            throw $this->apiException($response);
         }
 
-        return $response->json()['ssh_key'];
+        $sshKey = $response->json('ssh_key');
+        if (! is_array($sshKey)) {
+            throw new Exception('DigitalOcean returned an incomplete SSH key response.');
+        }
+
+        return $sshKey;
     }
 
     /**
      * Delete an SSH Key
      *
-     * @param  string  $fingerprint
      * @return bool
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function deleteSSHKey(string $fingerprint)
     {
@@ -192,8 +189,6 @@ class DigitalOcean
     /**
      * Destroys a Droplet
      *
-     * @param $droplet_id
-     * @return bool
      *
      * @throws Exception
      */
@@ -211,8 +206,8 @@ class DigitalOcean
     /**
      * Makes a GET query
      *
-     * @param  string  $endpoint API endpoint
-     * @param  array  $custom_headers optional custom headers
+     * @param  string  $endpoint  API endpoint
+     * @param  array  $custom_headers  optional custom headers
      * @return mixed
      */
     public function get(string $endpoint, array $custom_headers = [])
@@ -224,9 +219,7 @@ class DigitalOcean
     /**
      * Makes a POST query
      *
-     * @param  string  $endpoint
-     * @param  array  $params
-     * @return \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
+     * @return PromiseInterface|Response
      */
     public function post(string $endpoint, array $params)
     {
@@ -237,12 +230,21 @@ class DigitalOcean
     /**
      * Makes a DELETE query
      *
-     * @param  string  $endpoint
-     * @return \GuzzleHttp\Promise\PromiseInterface|\Illuminate\Http\Client\Response
+     * @return PromiseInterface|Response
      */
     public function delete(string $endpoint)
     {
         return Http::withToken($this->_API_TOKEN)
             ->delete($endpoint);
+    }
+
+    private function apiException(Response $response): Exception
+    {
+        $message = $response->json('message');
+        $detail = is_string($message) && $message !== ''
+            ? ': '.str($message)->squish()->limit(500)
+            : '';
+
+        return new Exception("DigitalOcean request failed with HTTP {$response->status()}{$detail}");
     }
 }
