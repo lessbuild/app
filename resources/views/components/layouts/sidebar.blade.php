@@ -89,7 +89,11 @@
         <p class="pl-4 text-xs font-light mb-1 uppercase text-secondary">
             {{ __('Profile') }}
         </p>
-        <a href="{{ route('users.index') }}" class="w-full flex items-center text-ternary bg-primary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer">
+        <a href="{{ route('account.index') }}" @class([
+            'w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer',
+            'bg-secondary' => request()->routeIs('account.*'),
+            'bg-primary' => ! request()->routeIs('account.*'),
+        ])>
             <svg class="w-5 h-5 mr-2 stroke-2">
                 <use xlink:href="/assets/images/icons.svg#user-circle"></use>
             </svg>
@@ -97,13 +101,13 @@
                 {{ __('Account') }}
             </span>
         </a>
-        <div class="w-full flex items-center text-ternary bg-primary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer">
+        <a href="{{ route('account.index') }}#password" class="w-full flex items-center text-ternary bg-primary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer">
             <svg class="w-5 h-5 mr-2 stroke-2">
                 <use xlink:href="/assets/images/icons.svg#cog"></use>
             </svg>
             <span class="text-primary text-sm font-medium">
                 {{ __('Settings') }}
             </span>
-        </div>
+        </a>
     </div>
 </div>

@@ -1,53 +1,106 @@
 <x-layouts.app>
+    <x-layouts.partials.heading
+        icon="user-circle"
+        :title="__('Account')"
+        :description="__('Manage your profile and sign-in credentials.')"
+    />
 
-    <x-forms.section
-        :title="__('Browser Sessions')"
-        :description="__('If necessary, you may log out of all of your other browser sessions across all of your devices. Some of your recent sessions are listed below; however, this list may not be exhaustive. If you feel your account has been compromised, you should also update your password.')"
-    >
-        <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
-            <div class="flex pb-4">
-                <div class="flex items-center mr-3 text-teal-400">
-                    <svg fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        viewBox="0 0 24 24" stroke="currentColor" class="w-8 h-8">
-                        <path
-                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <div class="text-sm text-primary">OS X - Chrome</div>
-                    <div>
-                        <div class="text-secondary text-xs">
-                            <a href="https://tools.keycdn.com/geo?host=2a01:4c8:82f:624d:a432:48a3:5752:b566"
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                class="inline-flex text-teal-400"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                                    class="mr-0.5 w-3 h-3">
-                                    <path fill-rule="evenodd"
-                                        d="M4 10a8 8 0 1 1 16 0c0 3.756-1.824 5.226-3.524 6.596-1.115.898-2.177 1.754-2.636 3.184l-.51 1.54a1 1 0 0 1-1 .68h-.56a1 1 0 0 1-1-.68l-.51-1.54c-.478-1.426-1.555-2.28-2.683-3.176C5.849 15.232 4 13.764 4 10zm5 0a3 3 0 0 0 5.121 2.121A3 3 0 0 0 12 7a3 3 0 0 0-3 3z"></path>
-                                </svg>
-                                <span>2a01:4c8:82f:624d:a432:48a3:5752:b566</span>
-                            </a> ,
-                            &nbsp;
-                            <span class="text-secondary font-semibold">
-                            This browser
-                        </span>
+    <div class="mt-8 space-y-8">
+        <form method="POST" action="{{ route('account.profile.update') }}">
+            @csrf
+            @method('PATCH')
+
+            <x-forms.section
+                :title="__('Profile information')"
+                :description="__('Update the name and email address associated with your account.')"
+            >
+                <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+                    @if (session('profile_status'))
+                        <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                            {{ session('profile_status') }}
                         </div>
-                    </div>
+                    @endif
+
+                    <label class="block">
+                        <span class="text-secondary text-sm pb-1 block">{{ __('Name') }}</span>
+                        <input
+                            class="input secondary rounded"
+                            name="name"
+                            type="text"
+                            autocomplete="name"
+                            value="{{ old('name', auth()->user()->name) }}"
+                            required
+                        >
+                    </label>
+                    <x-forms.errors name="name" bag="profile" />
+
+                    <label class="block">
+                        <span class="text-secondary text-sm pb-1 block">{{ __('Email') }}</span>
+                        <input
+                            class="input secondary rounded"
+                            name="email"
+                            type="email"
+                            autocomplete="email"
+                            value="{{ old('email', auth()->user()->email) }}"
+                            required
+                        >
+                    </label>
+                    <x-forms.errors name="email" bag="profile" />
                 </div>
-            </div>
-        </div>
 
-        <x-slot:footer>
-            <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                <button class="cursor-pointer button primary" type="button">
-                    <span class="flex items-center justify-between">
-                        Log Out Other Browser Sessions
-                    </span>
-                </button>
-            </div>
-        </x-slot:footer>
+                <x-slot:footer>
+                    <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
+                        <button class="button primary" type="submit">{{ __('Save profile') }}</button>
+                    </div>
+                </x-slot:footer>
+            </x-forms.section>
+        </form>
 
-    </x-forms.section>
+        <form id="password" method="POST" action="{{ route('account.password.update') }}">
+            @csrf
+            @method('PATCH')
+
+            <x-forms.section
+                :title="__('Update password')"
+                :description="__('Use a long, unique password to keep your account secure.')"
+            >
+                <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+                    @if (session('password_status'))
+                        <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                            {{ session('password_status') }}
+                        </div>
+                    @endif
+
+                    @if (auth()->user()->auth_type)
+                        <p class="rounded border border-primary bg-secondary p-3 text-sm text-secondary">
+                            {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type)]) }}
+                        </p>
+                    @else
+                        <label class="block">
+                            <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
+                            <input class="input secondary rounded" name="current_password" type="password" autocomplete="current-password" required>
+                        </label>
+                        <x-forms.errors name="current_password" bag="password" />
+                    @endif
+
+                    <label class="block">
+                        <span class="text-secondary text-sm pb-1 block">{{ __('New password') }}</span>
+                        <input class="input secondary rounded" name="password" type="password" autocomplete="new-password" required>
+                    </label>
+                    <x-forms.errors name="password" bag="password" />
+
+                    <label class="block">
+                        <span class="text-secondary text-sm pb-1 block">{{ __('Confirm new password') }}</span>
+                        <input class="input secondary rounded" name="password_confirmation" type="password" autocomplete="new-password" required>
+                    </label>
+                </div>
+
+                <x-slot:footer>
+                    <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
+                        <button class="button primary" type="submit">{{ __('Update password') }}</button>
+                    </div>
+                </x-slot:footer>
+            </x-forms.section>
+        </form>
+    </div>
 </x-layouts.app>

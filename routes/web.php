@@ -8,6 +8,7 @@ use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
 use App\Http\Livewire\ServerShow;
+use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
@@ -31,7 +32,11 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::get('home', DashboardController::class)->name('dashboard');
 
-    Route::resource('users', UsersController::class)->only('index');
+    Route::get('account', [UsersController::class, 'index'])->name('account.index');
+    Route::patch('account/profile', [UsersController::class, 'updateProfile'])
+        ->name('account.profile.update');
+    Route::patch('account/password', [UsersController::class, 'updatePassword'])
+        ->name('account.password.update');
     Route::resource('websites', WebsitesController::class);
 
     Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
@@ -110,29 +115,29 @@ Route::post('repositories/{repository}/deployment/callback/status', function (Re
 
     if ($data['status'] === 7) {
         $repository->builds()
-            ->whereIn('status', [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING])
+            ->whereIn('status', [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
             ->latest()
             ->first()
             ?->update([
-                'status' => \App\Models\Build::STATUS_SUCCEEDED,
+                'status' => Build::STATUS_SUCCEEDED,
                 'built_at' => now(),
                 'finished_at' => now(),
             ]);
     }
 })->middleware('signed')->name('callbacks.repository');
 
-Route::post('builds/{build}/deployment/callback/failed', function (App\Models\Build $build) {
+Route::post('builds/{build}/deployment/callback/failed', function (Build $build) {
     $data = request()->validate([
         'exit_code' => 'nullable|integer',
         'message' => 'required|string|max:2000',
     ]);
 
     if (in_array($build->status, [
-        \App\Models\Build::STATUS_DEPLOYING,
-        \App\Models\Build::STATUS_RUNNING,
+        Build::STATUS_DEPLOYING,
+        Build::STATUS_RUNNING,
     ], true)) {
         $build->update([
-            'status' => \App\Models\Build::STATUS_FAILED,
+            'status' => Build::STATUS_FAILED,
             'finished_at' => now(),
             'failure_message' => isset($data['exit_code'])
                 ? "{$data['message']} (exit code {$data['exit_code']})"
