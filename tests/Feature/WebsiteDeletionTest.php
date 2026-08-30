@@ -131,6 +131,10 @@ class WebsiteDeletionTest extends TestCase
         ]);
         $build = $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
         $build->logs()->create(['type' => 'deployment', 'log' => 'Deployment output']);
+        $website->logs()->create([
+            'type' => Website::PROVISIONING_LOG_TYPE,
+            'log' => 'Provisioning output',
+        ]);
 
         return [$user, $website, $repository, $build];
     }

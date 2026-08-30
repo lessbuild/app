@@ -36,6 +36,7 @@ class RetryWebsiteProvisioningAction
                 'provisioning_error' => null,
                 'provisioned_at' => null,
             ]);
+            $locked->logs()->where('type', Website::PROVISIONING_LOG_TYPE)->delete();
 
             AddWebsiteJob::dispatch($locked)->afterCommit();
 

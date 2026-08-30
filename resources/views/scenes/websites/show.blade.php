@@ -122,6 +122,8 @@
         </div>
     </div>
 
+    <livewire:website-provisioning-log :website="$website" />
+
     <!--
      ! ------------------------------------------------------------
      ! Quick Actions

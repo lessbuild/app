@@ -27,6 +27,10 @@ class WebsiteRelocationTest extends TestCase
     {
         Queue::fake();
         [$user, $oldServer, $newServer, $website] = $this->resources();
+        $website->logs()->create([
+            'type' => Website::PROVISIONING_LOG_TYPE,
+            'log' => 'Previous placement output',
+        ]);
 
         $this->actingAs($user)->patch(route('websites.update', $website), [
             ...$this->payload($newServer),
@@ -37,6 +41,7 @@ class WebsiteRelocationTest extends TestCase
         $this->assertSame($newServer->id, $website->server_id);
         $this->assertSame($oldServer->id, $website->previous_server_id);
         $this->assertSame(Website::STATUS_QUEUED, $website->provisioning_status);
+        $this->assertSame(0, $website->logs()->count());
         Queue::assertPushed(AddWebsiteJob::class);
         Queue::assertNotPushed(CleanupWebsitePlacementJob::class);
 

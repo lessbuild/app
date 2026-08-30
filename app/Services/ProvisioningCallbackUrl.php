@@ -49,6 +49,14 @@ class ProvisioningCallbackUrl
         ], 'deployment_callback_ttl_minutes');
     }
 
+    public static function websiteLog(Website $website): string
+    {
+        return self::temporary('callbacks.website.log', [
+            'website' => $website,
+            'attempt' => $website->provisioning_token,
+        ], 'deployment_callback_ttl_minutes');
+    }
+
     public static function buildStatus(Build $build): string
     {
         return self::temporary('callbacks.build.status', $build, 'deployment_callback_ttl_minutes');

@@ -72,6 +72,8 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
                     $repository->forceDelete();
                 });
 
+            $website->logs()->delete();
+
             Website::withoutEvents(fn () => $website->forceDelete());
         });
     }

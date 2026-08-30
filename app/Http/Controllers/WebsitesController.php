@@ -10,6 +10,7 @@ use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -101,32 +102,35 @@ class WebsitesController extends Controller
     public function update(WebsiteRequest $request, Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
-
-        if (in_array($website->provisioning_status, [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING], true)) {
-            throw ValidationException::withMessages([
-                'server_id' => __('Wait for the current website provisioning operation to finish.'),
-            ]);
-        }
-
         $validated = $request->validated();
-        $moving = (int) $validated['server_id'] !== (int) $website->server_id;
-        if ($moving && $website->previous_server_id) {
-            throw ValidationException::withMessages([
-                'server_id' => __('Finish cleaning up the previous server before moving this website again.'),
-            ]);
-        }
+        DB::transaction(function () use ($validated, $website): void {
+            $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
+            if (in_array($locked->provisioning_status, [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING], true)) {
+                throw ValidationException::withMessages([
+                    'server_id' => __('Wait for the current website provisioning operation to finish.'),
+                ]);
+            }
 
-        $website->update(array_merge($validated, [
-            'previous_server_id' => $moving ? $website->server_id : $website->previous_server_id,
-            'placement_cleanup_error' => $moving ? null : $website->placement_cleanup_error,
-            'provisioning_token' => (string) Str::uuid(),
-            'setup_stage' => 0,
-            'provisioning_status' => Website::STATUS_QUEUED,
-            'provisioning_error' => null,
-            'provisioned_at' => null,
-        ]));
+            $moving = (int) $validated['server_id'] !== (int) $locked->server_id;
+            if ($moving && $locked->previous_server_id) {
+                throw ValidationException::withMessages([
+                    'server_id' => __('Finish cleaning up the previous server before moving this website again.'),
+                ]);
+            }
 
-        AddWebsiteJob::dispatch($website);
+            $locked->update(array_merge($validated, [
+                'previous_server_id' => $moving ? $locked->server_id : $locked->previous_server_id,
+                'placement_cleanup_error' => $moving ? null : $locked->placement_cleanup_error,
+                'provisioning_token' => (string) Str::uuid(),
+                'setup_stage' => 0,
+                'provisioning_status' => Website::STATUS_QUEUED,
+                'provisioning_error' => null,
+                'provisioned_at' => null,
+            ]));
+            $locked->logs()->where('type', Website::PROVISIONING_LOG_TYPE)->delete();
+
+            AddWebsiteJob::dispatch($locked)->afterCommit();
+        });
 
         return redirect()->route('websites.show', $website);
     }

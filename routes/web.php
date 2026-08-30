@@ -17,6 +17,7 @@ use App\Models\Website;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
 use App\Services\WebsiteProvisioningPlan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -175,23 +176,25 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
 })->middleware('signed')->name('callbacks.server.failed');
 
 Route::post('servers/{server}/provisioning/callback/log', function (Server $server) {
-    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
-        return response()->noContent();
-    }
+    DB::transaction(function () use ($server): void {
+        $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
+        if ($locked->provisioning_token && ! hash_equals($locked->provisioning_token, (string) request('attempt'))) {
+            return;
+        }
 
-    $data = request()->validate([
-        'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.server_log_max_characters'))],
-    ]);
-
-    $server->logSnapshots()->updateOrCreate(
-        ['type' => 'provisioning'],
-        [
-            'status' => ServerLogSnapshot::STATUS_READY,
-            'log' => $data['log'],
-            'error' => null,
-            'refreshed_at' => now(),
-        ],
-    );
+        $data = request()->validate([
+            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.server_log_max_characters'))],
+        ]);
+        $locked->logSnapshots()->updateOrCreate(
+            ['type' => 'provisioning'],
+            [
+                'status' => ServerLogSnapshot::STATUS_READY,
+                'log' => $data['log'],
+                'error' => null,
+                'refreshed_at' => now(),
+            ],
+        );
+    });
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.server.log');
@@ -219,6 +222,25 @@ Route::post('websites/{website}/provisioning/callback/failed', function (Website
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.website.failed');
+
+Route::post('websites/{website}/provisioning/callback/log', function (Website $website) {
+    DB::transaction(function () use ($website): void {
+        $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
+        if ($locked->provisioning_token && ! hash_equals($locked->provisioning_token, (string) request('attempt'))) {
+            return;
+        }
+
+        $data = request()->validate([
+            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.website_log_max_characters'))],
+        ]);
+        $locked->logs()->updateOrCreate(
+            ['type' => Website::PROVISIONING_LOG_TYPE],
+            ['log' => $data['log']],
+        );
+    });
+
+    return response()->noContent();
+})->middleware('signed')->name('callbacks.website.log');
 
 Route::post('builds/{build}/deployment/callback/status', function (Build $build) {
     if (! in_array($build->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {

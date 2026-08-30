@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class AddWebsiteJob implements ShouldQueue
 {
@@ -61,15 +62,27 @@ class AddWebsiteJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        $query = Website::query()
-            ->whereKey($this->website->id)
-            ->whereIn('provisioning_status', [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING]);
-        $this->attemptToken === null
-            ? $query->whereNull('provisioning_token')
-            : $query->where('provisioning_token', $this->attemptToken);
-        $query->update([
-            'provisioning_status' => Website::STATUS_FAILED,
-            'provisioning_error' => str($exception->getMessage())->limit(2000),
-        ]);
+        DB::transaction(function () use ($exception): void {
+            $query = Website::query()
+                ->whereKey($this->website->id)
+                ->whereIn('provisioning_status', [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING]);
+            $this->attemptToken === null
+                ? $query->whereNull('provisioning_token')
+                : $query->where('provisioning_token', $this->attemptToken);
+            $website = $query->lockForUpdate()->first();
+            if (! $website) {
+                return;
+            }
+
+            $message = str($exception->getMessage())->limit(2000)->toString();
+            $website->update([
+                'provisioning_status' => Website::STATUS_FAILED,
+                'provisioning_error' => $message,
+            ]);
+            $website->logs()->updateOrCreate(
+                ['type' => Website::PROVISIONING_LOG_TYPE],
+                ['log' => $message],
+            );
+        });
     }
 }

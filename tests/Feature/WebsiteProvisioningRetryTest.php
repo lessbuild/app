@@ -23,6 +23,10 @@ class WebsiteProvisioningRetryTest extends TestCase
         $oldToken = $website->provisioning_token;
         $oldCallback = ProvisioningCallbackUrl::websiteStatus($website);
         $oldJob = new AddWebsiteJob($website);
+        $website->logs()->create([
+            'type' => Website::PROVISIONING_LOG_TYPE,
+            'log' => 'Old failed output',
+        ]);
 
         $this->actingAs($user)->get(route('websites.show', $website))
             ->assertSuccessful()
@@ -39,6 +43,7 @@ class WebsiteProvisioningRetryTest extends TestCase
         $this->assertNull($website->provisioning_error);
         $this->assertNull($website->provisioned_at);
         $this->assertNotNull($website->previous_server_id);
+        $this->assertSame(0, $website->logs()->count());
         Queue::assertPushed(AddWebsiteJob::class, fn (AddWebsiteJob $job): bool => $job->website->is($website)
             && $job->attemptToken === $website->provisioning_token);
 

@@ -17,6 +17,7 @@ class VerifyCsrfToken extends Middleware
         'servers/*/provisioning/callback/log',
         'websites/*/provisioning/callback/status',
         'websites/*/provisioning/callback/failed',
+        'websites/*/provisioning/callback/log',
         'builds/*/deployment/callback/status',
         'builds/*/deployment/callback/failed',
         'builds/*/deployment/callback/log',

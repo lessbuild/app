@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -24,6 +25,8 @@ class Website extends Model
     public const STATUS_ACTIVE = 'active';
 
     public const STATUS_FAILED = 'failed';
+
+    public const PROVISIONING_LOG_TYPE = 'provisioning';
 
     /**
      * The table associated with the model.
@@ -97,6 +100,11 @@ class Website extends Model
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
+    }
+
+    public function logs(): MorphMany
+    {
+        return $this->morphMany(Log::class, 'parentable');
     }
 
     public function scopeReadyForDeployments(Builder $query): Builder

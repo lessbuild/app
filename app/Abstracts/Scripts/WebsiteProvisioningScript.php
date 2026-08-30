@@ -16,6 +16,6 @@ abstract class WebsiteProvisioningScript implements WebsiteScript
             'website_id' => $website->id,
         ]));
 
-        return "curl --fail --silent --show-error --retry 2 --user-agent \"deployer\" --data {$payload} {$callback}";
+        return "uploadWebsiteProvisioningLog\ncurl --fail --silent --show-error --retry 2 --user-agent \"deployer\" --data {$payload} {$callback}";
     }
 }
