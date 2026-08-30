@@ -4,27 +4,35 @@ namespace App\Actions\Droplet;
 
 use App\Models\Server;
 use App\Services\DigitalOcean;
+use RuntimeException;
 
 class DeleteDropletAction
 {
     /**
      * Delete a droplet
      *
-     * @param  \App\Models\Server  $server
      * @return void
      *
      * @throws \Exception
      */
     public function handle(Server $server)
     {
-        $digitalOcean = new DigitalOcean($server->provider->token);
-
-        if(isset($server->ssh_fingerprint)) {
-            $digitalOcean->deleteSSHKey($server->ssh_fingerprint);
+        if (! $server->ssh_fingerprint && ! $server->identifier) {
+            return;
         }
 
-        if(isset($server->identifier)) {
-            $digitalOcean->destroyDroplet($server->identifier);
+        if (! $server->provider) {
+            throw new RuntimeException('The server cloud provider is no longer available.');
+        }
+
+        $digitalOcean = new DigitalOcean($server->provider->token);
+
+        if ($server->ssh_fingerprint && ! $digitalOcean->deleteSSHKey($server->ssh_fingerprint)) {
+            throw new RuntimeException('DigitalOcean could not delete the server SSH key.');
+        }
+
+        if ($server->identifier && ! $digitalOcean->destroyDroplet($server->identifier)) {
+            throw new RuntimeException('DigitalOcean could not delete the server droplet.');
         }
     }
 }

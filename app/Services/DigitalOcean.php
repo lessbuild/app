@@ -179,7 +179,7 @@ class DigitalOcean
     {
         $response = $this->delete(self::$_KEYS.'/'.$fingerprint);
 
-        if (! in_array($response->status(), [204])) {
+        if (! in_array($response->status(), [204, 404])) {
             return false;
         }
 
@@ -196,7 +196,7 @@ class DigitalOcean
     {
         $response = $this->delete(self::$_DROPLETS.'/'.$droplet_id);
 
-        if (! in_array($response->status(), [200, 202, 204])) {
+        if (! in_array($response->status(), [200, 202, 204, 404])) {
             return false;
         }
 

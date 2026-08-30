@@ -15,6 +15,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 use UnexpectedValueException;
 
@@ -162,17 +163,23 @@ class ServersController extends Controller
 
     /**
      * Delete a droplet
-     *
-     * @return RedirectResponse
-     *
-     * @throws \Exception
      */
-    public function destroy(Request $request, Server $server)
+    public function destroy(Request $request, Server $server): RedirectResponse
     {
         $this->authorize('delete', $server);
 
-        $server->delete();
+        try {
+            DB::transaction(fn () => $server->delete());
+        } catch (Throwable $exception) {
+            report($exception);
 
-        return redirect()->route('servers.index');
+            return back()->with('error', __('The server could not be deleted: :message', [
+                'message' => $exception->getMessage(),
+            ]));
+        }
+
+        return redirect()
+            ->route('servers.index')
+            ->with('success', __('Server deleted successfully.'));
     }
 }

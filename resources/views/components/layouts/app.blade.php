@@ -42,6 +42,7 @@
             </div>
 
             <div class="p-6 mb-20">
+                <x-alerts.flash />
                 {{ $slot }}
             </div>
         </div>
