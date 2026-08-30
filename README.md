@@ -54,3 +54,4 @@ php artisan queue:monitor database:default --max=10
 - [x] Add recipe creation and management
 - [x] Persist server log snapshots and display them without render-time SSH commands
 - [x] Use a type-specific provisioning plan when creating servers
+- [x] Safely reuse existing DigitalOcean SSH keys without deleting user-managed keys

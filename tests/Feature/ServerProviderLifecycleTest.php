@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Actions\Server\UpdateServerIpAction;
 use App\Contracts\ServerProvider;
 use App\Data\CloudServerData;
+use App\Data\CloudSshKeyData;
 use App\Jobs\Server\InitialiseServerJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
@@ -35,7 +36,7 @@ class ServerProviderLifecycleTest extends TestCase
         $provider->shouldReceive('createSshKey')
             ->once()
             ->with('Portable Server', 'ssh-ed25519 portable-public-key')
-            ->andReturn('portable-fingerprint');
+            ->andReturn(new CloudSshKeyData('portable-fingerprint', true));
         $provider->shouldReceive('createServer')
             ->once()
             ->withArgs(function (array $parameters): bool {
@@ -68,6 +69,7 @@ class ServerProviderLifecycleTest extends TestCase
         $this->assertSame('portable-server', $server->name);
         $this->assertSame('New York 1', $server->region);
         $this->assertSame('portable-fingerprint', $server->ssh_fingerprint);
+        $this->assertTrue($server->ssh_key_owned);
         $this->assertNotNull($server->provisioning_token);
         $this->assertNotNull($server->initialization_token);
         $this->assertNotSame($server->provisioning_token, $server->initialization_token);

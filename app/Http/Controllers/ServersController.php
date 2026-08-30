@@ -89,18 +89,21 @@ class ServersController extends Controller
         $server->recipes()->sync($recipeAssignments);
 
         try {
-            $fingerprint = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);
+            $sshKey = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);
 
             // Persist this immediately so a failed cleanup can be retried when the
             // failed server record is deleted.
-            $server->update(['ssh_fingerprint' => $fingerprint]);
+            $server->update([
+                'ssh_fingerprint' => $sshKey->fingerprint,
+                'ssh_key_owned' => $sshKey->created,
+            ]);
 
             $cloudServer = $createCloudServer->handle($server, $cloudProvider, [
                 'region' => $request->input('region'),
                 'size' => $request->input('size'),
                 'image' => $request->input('image'),
                 'name' => str()->slug($request->input('name')),
-                'ssh_keys' => [$fingerprint],
+                'ssh_keys' => [$sshKey->fingerprint],
             ]);
 
             $server->update([
@@ -133,7 +136,7 @@ class ServersController extends Controller
 
     private function cleanUpSshKey(Server $server, ServerProvider $provider): void
     {
-        if (! $server->ssh_fingerprint) {
+        if (! $server->ssh_fingerprint || ! $server->ssh_key_owned) {
             return;
         }
 

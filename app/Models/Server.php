@@ -78,6 +78,7 @@ class Server extends Model
         'password' => 'encrypted',
         'mysql_root_password' => 'encrypted',
         'ssh_private_key' => 'encrypted',
+        'ssh_key_owned' => 'boolean',
         'provisioned_at' => 'datetime',
     ];
 

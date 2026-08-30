@@ -85,6 +85,25 @@ class ServerDeletionTest extends TestCase
         $this->assertDatabaseMissing('servers', ['id' => $server->id]);
     }
 
+    public function test_deletion_preserves_a_user_managed_ssh_key(): void
+    {
+        Queue::fake();
+        [$user, $server] = $this->resources();
+        $server->update(['ssh_key_owned' => false]);
+        Http::fake([
+            'https://api.digitalocean.com/v2/droplets/*' => Http::response([], 204),
+        ]);
+
+        $this->actingAs($user)
+            ->delete(route('servers.destroy', $server))
+            ->assertRedirect(route('servers.index'));
+
+        $this->assertDatabaseMissing('servers', ['id' => $server->id]);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
+            && $request->url() === 'https://api.digitalocean.com/v2/droplets/12345');
+        Http::assertNotSent(fn (Request $request): bool => str_contains($request->url(), '/account/keys/'));
+    }
+
     public function test_flash_messages_are_visible_in_the_application_layout(): void
     {
         $user = User::factory()->create();

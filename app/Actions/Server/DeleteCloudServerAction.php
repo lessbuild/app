@@ -12,7 +12,8 @@ class DeleteCloudServerAction
 
     public function handle(Server $server): void
     {
-        if (! $server->ssh_fingerprint && ! $server->identifier) {
+        $hasOwnedSshKey = $server->ssh_fingerprint && $server->ssh_key_owned;
+        if (! $hasOwnedSshKey && ! $server->identifier) {
             return;
         }
 
@@ -22,7 +23,7 @@ class DeleteCloudServerAction
 
         $provider = $this->providers->resolve($server->provider);
 
-        if ($server->ssh_fingerprint && ! $provider->deleteSshKey($server->ssh_fingerprint)) {
+        if ($hasOwnedSshKey && ! $provider->deleteSshKey($server->ssh_fingerprint)) {
             throw new RuntimeException("{$provider->name()} could not delete the server SSH key.");
         }
 

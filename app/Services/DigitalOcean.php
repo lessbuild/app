@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\ServerProvider;
 use App\Data\CloudServerData;
+use App\Data\CloudSshKeyData;
 use Exception;
 use GuzzleHttp\Promise\PromiseInterface;
 use http\Exception\InvalidArgumentException;
@@ -49,7 +50,7 @@ class DigitalOcean implements ServerProvider
         return $this->getSizes();
     }
 
-    public function createSshKey(string $name, string $publicKey): string
+    public function createSshKey(string $name, string $publicKey): CloudSshKeyData
     {
         $sshKey = $this->createSSH([
             'name' => $name,
@@ -61,7 +62,10 @@ class DigitalOcean implements ServerProvider
             throw new Exception('DigitalOcean returned an incomplete SSH key response.');
         }
 
-        return $fingerprint;
+        return new CloudSshKeyData(
+            fingerprint: $fingerprint,
+            created: (bool) ($sshKey['created'] ?? true),
+        );
     }
 
     public function deleteSshKey(string $fingerprint): bool
@@ -196,11 +200,9 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Creates a new SSH.
+     * Creates a new SSH key or reuses the exact key already in the account.
      *
-     * @todo fix an issue where if the key exists it will throw an error
-     *
-     * @return mixed
+     * @return array<string, mixed>
      *
      * @throws Exception
      */
@@ -212,7 +214,14 @@ class DigitalOcean implements ServerProvider
 
         $response = $this->post(self::$_KEYS, $params);
 
-        if (! in_array($response->status(), [201])) {
+        if ($response->status() === 422) {
+            $existing = $this->existingSshKey($params['public_key']);
+            if ($existing) {
+                return array_merge($existing, ['created' => false]);
+            }
+        }
+
+        if ($response->status() !== 201) {
             throw $this->apiException($response);
         }
 
@@ -221,7 +230,7 @@ class DigitalOcean implements ServerProvider
             throw new Exception('DigitalOcean returned an incomplete SSH key response.');
         }
 
-        return $sshKey;
+        return array_merge($sshKey, ['created' => true]);
     }
 
     /**
@@ -284,6 +293,42 @@ class DigitalOcean implements ServerProvider
             : '';
 
         return new Exception("DigitalOcean request failed with HTTP {$response->status()}{$detail}");
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function existingSshKey(string $publicKey): ?array
+    {
+        $blob = $this->publicKeyBlob($publicKey);
+        if ($blob === null) {
+            return null;
+        }
+
+        $fingerprint = implode(':', str_split(md5($blob), 2));
+        $response = $this->get(self::$_KEYS.'/'.$fingerprint);
+        $sshKey = $response->status() === 200 ? $response->json('ssh_key') : null;
+        if (! is_array($sshKey) || ! is_string($sshKey['public_key'] ?? null)) {
+            return null;
+        }
+
+        $existingBlob = $this->publicKeyBlob($sshKey['public_key']);
+
+        return $existingBlob !== null && hash_equals($blob, $existingBlob)
+            ? array_merge($sshKey, ['fingerprint' => $fingerprint])
+            : null;
+    }
+
+    private function publicKeyBlob(string $publicKey): ?string
+    {
+        $parts = preg_split('/\s+/', trim($publicKey));
+        if (! isset($parts[1])) {
+            return null;
+        }
+
+        $decoded = base64_decode($parts[1], true);
+
+        return $decoded === false || $decoded === '' ? null : $decoded;
     }
 
     private function serverData(mixed $droplet): CloudServerData
