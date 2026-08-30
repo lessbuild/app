@@ -32,6 +32,17 @@ class CallbackIntegrityTest extends TestCase
         $this->assertSame(0, $server->fresh()->setup_stage);
     }
 
+    public function test_legacy_servers_without_attempt_tokens_still_accept_signed_callbacks(): void
+    {
+        [, $server] = $this->infrastructure();
+        $server->update(['provisioning_token' => null]);
+
+        $this->post(URL::signedRoute('callbacks.server', $server), ['status' => 1])
+            ->assertSuccessful();
+
+        $this->assertSame(1, $server->fresh()->setup_stage);
+    }
+
     public function test_stale_callbacks_cannot_regress_terminal_server_or_website_states(): void
     {
         [, $server, $website] = $this->infrastructure(withWebsite: true);
@@ -44,7 +55,7 @@ class CallbackIntegrityTest extends TestCase
             'provisioned_at' => now(),
         ]);
 
-        $this->post(URL::signedRoute('callbacks.server.failed', $server), [
+        $this->post(ProvisioningCallbackUrl::serverFailure($server), [
             'message' => 'Late server failure',
         ])->assertNoContent();
         $this->post(ProvisioningCallbackUrl::websiteFailure($website), [
@@ -58,7 +69,7 @@ class CallbackIntegrityTest extends TestCase
 
         $server->update(['provisioning_status' => Server::STATUS_FAILED]);
         $finalStage = app(ServerProvisioningPlan::class)->finalStage($server);
-        $this->post(URL::signedRoute('callbacks.server', $server), ['status' => $finalStage])
+        $this->post(ProvisioningCallbackUrl::serverStatus($server), ['status' => $finalStage])
             ->assertNoContent();
         $this->assertSame(Server::STATUS_FAILED, $server->fresh()->provisioning_status);
     }

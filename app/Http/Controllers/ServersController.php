@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\CreateCloudServerAction;
+use App\Actions\Server\RetryServerInitializationAction;
 use App\Contracts\ServerProvider;
 use App\Http\Requests\ServerRequest;
 use App\Jobs\Server\InitialiseServerJob;
@@ -118,6 +119,7 @@ class ServersController extends Controller
             $server->update([
                 'provisioning_status' => Server::STATUS_FAILED,
                 'provisioning_error' => str($exception->getMessage())->limit(2000),
+                'provisioning_failure_phase' => Server::FAILURE_CREATION,
             ]);
 
             return redirect()
@@ -163,5 +165,18 @@ class ServersController extends Controller
         return redirect()
             ->route('servers.index')
             ->with('success', __('Server deleted successfully.'));
+    }
+
+    public function retryInitialization(
+        Server $server,
+        RetryServerInitializationAction $retry,
+    ): RedirectResponse {
+        $this->authorize('update', $server);
+
+        if (! $retry->handle($server)) {
+            return back()->with('info', __('Server initialization is not eligible for retry.'));
+        }
+
+        return back()->with('success', __('Server initialization retry queued.'));
     }
 }

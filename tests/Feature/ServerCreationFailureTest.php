@@ -50,6 +50,7 @@ class ServerCreationFailureTest extends TestCase
             $server->provisioning_error,
         );
         $this->assertNull($server->ssh_fingerprint);
+        $this->assertSame(Server::FAILURE_CREATION, $server->provisioning_failure_phase);
         Queue::assertNotPushed(InitialiseServerJob::class);
         Http::assertSentCount(1);
     }
@@ -73,6 +74,7 @@ class ServerCreationFailureTest extends TestCase
         $response->assertRedirect(route('servers.show', $server));
         $this->assertSame(Server::STATUS_FAILED, $server->provisioning_status);
         $this->assertNull($server->ssh_fingerprint);
+        $this->assertSame(Server::FAILURE_CREATION, $server->provisioning_failure_phase);
         Queue::assertNotPushed(InitialiseServerJob::class);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
             && $request->url() === 'https://api.digitalocean.com/v2/account/keys/fingerprint-123');

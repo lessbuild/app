@@ -20,9 +20,9 @@ use App\Scripts\Server\EndScript;
 use App\Scripts\Server\InstallComposerScript;
 use App\Scripts\Server\RecipesScript;
 use App\Scripts\Web\InstallCaddyScript;
+use App\Services\ProvisioningCallbackUrl;
 use App\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\URL;
 use Mockery;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
@@ -115,14 +115,14 @@ class ServerTypeProvisioningTest extends TestCase
             ->assertDontSee('Install PHP')
             ->assertDontSee('Install Mysql');
 
-        $this->postJson(URL::signedRoute('callbacks.server', $server), ['status' => 12])
+        $this->postJson(ProvisioningCallbackUrl::serverStatus($server), ['status' => 12])
             ->assertUnprocessable();
 
-        $this->post(URL::signedRoute('callbacks.server', $server), ['status' => $finalStage])
+        $this->post(ProvisioningCallbackUrl::serverStatus($server), ['status' => $finalStage])
             ->assertSuccessful();
         $this->assertSame(Server::STATUS_ACTIVE, $server->fresh()->provisioning_status);
 
-        $this->postJson(URL::signedRoute('callbacks.server', $server), ['status' => 1])
+        $this->postJson(ProvisioningCallbackUrl::serverStatus($server), ['status' => 1])
             ->assertNoContent();
     }
 

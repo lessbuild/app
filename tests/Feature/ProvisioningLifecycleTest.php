@@ -9,7 +9,6 @@ use App\Models\Website;
 use App\Services\ProvisioningCallbackUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class ProvisioningLifecycleTest extends TestCase
@@ -45,7 +44,7 @@ class ProvisioningLifecycleTest extends TestCase
         Queue::fake();
         [, , $server, $website] = $this->infrastructure(withWebsite: true);
 
-        $this->post(URL::signedRoute('callbacks.server', $server), ['status' => 12])->assertSuccessful();
+        $this->post(ProvisioningCallbackUrl::serverStatus($server), ['status' => 12])->assertSuccessful();
         $this->post(ProvisioningCallbackUrl::websiteStatus($website), ['status' => 3])->assertSuccessful();
 
         $this->assertSame(Server::STATUS_ACTIVE, $server->fresh()->provisioning_status);
@@ -59,7 +58,7 @@ class ProvisioningLifecycleTest extends TestCase
         Queue::fake();
         [, , $server, $website] = $this->infrastructure(withWebsite: true);
 
-        $this->post(URL::signedRoute('callbacks.server.failed', $server), [
+        $this->post(ProvisioningCallbackUrl::serverFailure($server), [
             'message' => 'Package installation failed',
             'exit_code' => 100,
         ])->assertSuccessful();
@@ -69,6 +68,7 @@ class ProvisioningLifecycleTest extends TestCase
         ])->assertSuccessful();
 
         $this->assertSame(Server::STATUS_FAILED, $server->fresh()->provisioning_status);
+        $this->assertSame(Server::FAILURE_REMOTE, $server->fresh()->provisioning_failure_phase);
         $this->assertSame('Package installation failed (exit code 100)', $server->fresh()->provisioning_error);
         $this->assertSame(Website::STATUS_FAILED, $website->fresh()->provisioning_status);
         $this->assertSame('Caddy reload failed (exit code 1)', $website->fresh()->provisioning_error);

@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::get('servers/{server}', ServerShow::class)
         ->middleware('can:view,server')
         ->name('servers.show');
+    Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
+        ->name('servers.initialization.retry');
 
     Route::resource('builds', BuildsController::class)->only(['index', 'show']);
     Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
@@ -63,6 +65,10 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {
+    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
+        return response()->noContent();
+    }
+
     if (! in_array($server->provisioning_status, [
         Server::STATUS_QUEUED,
         Server::STATUS_WAITING_FOR_IP,
@@ -82,6 +88,7 @@ Route::post('servers/{server}/provisioning/callback/status', function (Server $s
             'provisioning_status' => Server::STATUS_ACTIVE,
             'provisioned_at' => now(),
             'provisioning_error' => null,
+            'provisioning_failure_phase' => null,
         ]);
     }
 })->middleware('signed')->name('callbacks.server');
@@ -123,6 +130,10 @@ Route::post('websites/{website}/provisioning/callback/status', function (Website
 })->middleware('signed')->name('callbacks.website');
 
 Route::post('servers/{server}/provisioning/callback/failed', function (Server $server) {
+    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
+        return response()->noContent();
+    }
+
     $data = request()->validate([
         'exit_code' => 'nullable|integer',
         'message' => 'required|string|max:2000',
@@ -137,6 +148,7 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
             'provisioning_error' => isset($data['exit_code'])
                 ? "{$data['message']} (exit code {$data['exit_code']})"
                 : $data['message'],
+            'provisioning_failure_phase' => Server::FAILURE_REMOTE,
         ]);
     }
 

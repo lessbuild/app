@@ -11,12 +11,18 @@ class ProvisioningCallbackUrl
 {
     public static function serverStatus(Server $server): string
     {
-        return self::temporary('callbacks.server', $server, 'server_callback_ttl_minutes');
+        return self::temporary('callbacks.server', [
+            'server' => $server,
+            'attempt' => $server->provisioning_token,
+        ], 'server_callback_ttl_minutes');
     }
 
     public static function serverFailure(Server $server): string
     {
-        return self::temporary('callbacks.server.failed', $server, 'server_callback_ttl_minutes');
+        return self::temporary('callbacks.server.failed', [
+            'server' => $server,
+            'attempt' => $server->provisioning_token,
+        ], 'server_callback_ttl_minutes');
     }
 
     public static function websiteStatus(Website $website): string

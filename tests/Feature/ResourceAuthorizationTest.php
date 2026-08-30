@@ -5,10 +5,10 @@ namespace Tests\Feature;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
+use App\Services\ProvisioningCallbackUrl;
 use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
-use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class ResourceAuthorizationTest extends TestCase
@@ -107,11 +107,11 @@ class ResourceAuthorizationTest extends TestCase
         $payload = ['status' => 3];
 
         $this->post(route('callbacks.server', $server), $payload)->assertForbidden();
-        $this->post(URL::signedRoute('callbacks.server', $server), $payload)->assertSuccessful();
+        $this->post(ProvisioningCallbackUrl::serverStatus($server), $payload)->assertSuccessful();
 
         $this->assertSame(3, $server->fresh()->setup_stage);
 
-        $this->post(URL::signedRoute('callbacks.server', $server), ['status' => 1])->assertSuccessful();
+        $this->post(ProvisioningCallbackUrl::serverStatus($server), ['status' => 1])->assertSuccessful();
         $this->assertSame(3, $server->fresh()->setup_stage);
     }
 

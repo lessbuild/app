@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Str;
 
 class Server extends Model
 {
@@ -27,6 +28,12 @@ class Server extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const FAILURE_CREATION = 'creation';
+
+    public const FAILURE_INITIALIZATION = 'initialization';
+
+    public const FAILURE_REMOTE = 'remote';
+
     /**
      * The table associated with the model.
      *
@@ -43,6 +50,7 @@ class Server extends Model
         'password',
         'mysql_root_password',
         'ssh_private_key',
+        'provisioning_token',
     ];
 
     public function user(): BelongsTo
@@ -70,6 +78,13 @@ class Server extends Model
         'ssh_private_key' => 'encrypted',
         'provisioned_at' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Server $server): void {
+            $server->provisioning_token ??= (string) Str::uuid();
+        });
+    }
 
     public function provider(): BelongsTo
     {

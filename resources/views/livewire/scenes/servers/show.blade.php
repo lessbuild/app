@@ -72,6 +72,15 @@
         <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
             <p class="font-semibold">{{ __('Server provisioning failed') }}</p>
             <p class="text-sm">{{ $server->provisioning_error }}</p>
+            @error('retry')
+                <p class="mt-2 text-sm font-semibold">{{ $message }}</p>
+            @enderror
+            @if ($server->provisioning_failure_phase === \App\Models\Server::FAILURE_INITIALIZATION)
+                <form method="POST" action="{{ route('servers.initialization.retry', $server) }}" class="mt-3">
+                    @csrf
+                    <button type="submit" class="button primary">{{ __('Retry initialization') }}</button>
+                </form>
+            @endif
         </div>
     @endif
 

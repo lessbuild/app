@@ -16,4 +16,9 @@ class ServerPolicy
     {
         return $this->view($user, $server);
     }
+
+    public function update(User $user, Server $server): bool
+    {
+        return $this->view($user, $server);
+    }
 }
