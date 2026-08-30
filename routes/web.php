@@ -95,6 +95,7 @@ Route::post('servers/{server}/provisioning/callback/status', function (Server $s
             'provisioning_failure_phase' => null,
             'provisioning_process_id' => null,
             'provisioning_process_path' => null,
+            'initialization_token' => null,
         ]);
     }
 })->middleware('signed')->name('callbacks.server');
@@ -158,6 +159,7 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
             'provisioning_failure_phase' => Server::FAILURE_REMOTE,
             'provisioning_process_id' => null,
             'provisioning_process_path' => null,
+            'initialization_token' => null,
         ]);
         $server->logSnapshots()->updateOrCreate(
             ['type' => 'provisioning'],

@@ -54,6 +54,7 @@ class QueueRemoteServerProvisioningRetryAction
             $locked->update([
                 'password' => $rootPassword,
                 'provisioning_token' => $token,
+                'initialization_token' => null,
                 'provisioning_status' => Server::STATUS_QUEUED,
                 'provisioning_error' => null,
                 'provisioning_failure_phase' => null,

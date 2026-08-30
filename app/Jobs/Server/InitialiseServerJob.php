@@ -35,7 +35,7 @@ class InitialiseServerJob implements ShouldQueue
     public function __construct(Server $server)
     {
         $this->server = $server;
-        $this->attemptToken = $server->provisioning_token;
+        $this->attemptToken = $server->initialization_token;
     }
 
     /**
@@ -69,6 +69,7 @@ class InitialiseServerJob implements ShouldQueue
             ->update([
                 'provisioning_status' => Server::STATUS_PROVISIONING,
                 'provisioning_failure_phase' => null,
+                'initialization_token' => null,
             ]);
     }
 
@@ -80,6 +81,7 @@ class InitialiseServerJob implements ShouldQueue
                 'provisioning_status' => Server::STATUS_FAILED,
                 'provisioning_error' => str($exception->getMessage())->limit(2000),
                 'provisioning_failure_phase' => Server::FAILURE_INITIALIZATION,
+                'initialization_token' => null,
             ]);
     }
 
@@ -88,7 +90,7 @@ class InitialiseServerJob implements ShouldQueue
         $query = Server::query()->whereKey($this->server->id);
 
         return $this->attemptToken === null
-            ? $query->whereNull('provisioning_token')
-            : $query->where('provisioning_token', $this->attemptToken);
+            ? $query->whereNull('initialization_token')
+            : $query->where('initialization_token', $this->attemptToken);
     }
 }

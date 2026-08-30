@@ -8,8 +8,8 @@ use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
 use App\Services\ProvisioningCallbackUrl;
-use App\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use RuntimeException;
@@ -23,9 +23,8 @@ class ServerInitializationRetryTest extends TestCase
     {
         Queue::fake();
         [$user, $server] = $this->resources();
-        $oldToken = $server->provisioning_token;
-        $oldStatusCallback = ProvisioningCallbackUrl::serverStatus($server);
-        $oldFailureCallback = ProvisioningCallbackUrl::serverFailure($server);
+        $provisioningToken = $server->provisioning_token;
+        $oldInitializationToken = $server->initialization_token;
         $oldJob = new InitialiseServerJob($server);
 
         $this->actingAs($user)->get(route('servers.show', $server))
@@ -38,21 +37,39 @@ class ServerInitializationRetryTest extends TestCase
 
         $server->refresh();
         $this->assertSame(Server::STATUS_QUEUED, $server->provisioning_status);
-        $this->assertNotSame($oldToken, $server->provisioning_token);
+        $this->assertSame($provisioningToken, $server->provisioning_token);
+        $this->assertNotSame($oldInitializationToken, $server->initialization_token);
         $this->assertNull($server->provisioning_error);
         $this->assertNull($server->provisioning_failure_phase);
         Queue::assertPushed(InitialiseServerJob::class, fn (InitialiseServerJob $job): bool => $job->server->is($server)
-            && $job->attemptToken === $server->provisioning_token);
+            && $job->attemptToken === $server->initialization_token);
 
         $updateIp = Mockery::mock(UpdateServerIpAction::class);
         $updateIp->shouldNotReceive('handle');
         $oldJob->handle($updateIp);
         $oldJob->failed(new RuntimeException('Late initialization failure'));
-        $this->post($oldStatusCallback, ['status' => app(ServerProvisioningPlan::class)->finalStage($server)])
-            ->assertNoContent();
-        $this->post($oldFailureCallback, ['message' => 'Late remote failure'])
-            ->assertNoContent();
         $this->assertSame(Server::STATUS_QUEUED, $server->fresh()->provisioning_status);
+    }
+
+    public function test_initialization_retry_keeps_the_running_cloud_init_callbacks_valid(): void
+    {
+        Queue::fake();
+        [$user, $server] = $this->resources();
+        $statusCallback = ProvisioningCallbackUrl::serverStatus($server);
+        $failureCallback = ProvisioningCallbackUrl::serverFailure($server);
+
+        $this->actingAs($user)->post(route('servers.initialization.retry', $server))
+            ->assertSessionHas('success');
+
+        $this->post($statusCallback, ['status' => 1])->assertSuccessful();
+        $this->assertSame(1, $server->fresh()->setup_stage);
+
+        $this->post($failureCallback, ['message' => 'Cloud init package failure'])->assertNoContent();
+        $server->refresh();
+        $this->assertSame(Server::STATUS_FAILED, $server->provisioning_status);
+        $this->assertSame(Server::FAILURE_REMOTE, $server->provisioning_failure_phase);
+        $this->assertSame('Cloud init package failure', $server->provisioning_error);
+        $this->assertNull($server->initialization_token);
     }
 
     public function test_retry_is_atomic_and_does_not_queue_duplicates(): void
@@ -131,6 +148,44 @@ class ServerInitializationRetryTest extends TestCase
         $this->assertSame(Server::STATUS_FAILED, $server->provisioning_status);
         $this->assertSame(Server::FAILURE_INITIALIZATION, $server->provisioning_failure_phase);
         $this->assertSame('Address unavailable', $server->provisioning_error);
+        $this->assertNull($server->initialization_token);
+    }
+
+    public function test_successful_initialization_invalidates_late_job_failures(): void
+    {
+        [, $server] = $this->resources();
+        $server->update([
+            'public_ip' => '192.0.2.10',
+            'provisioning_status' => Server::STATUS_QUEUED,
+            'provisioning_failure_phase' => null,
+        ]);
+        $job = new InitialiseServerJob($server->fresh());
+        $updateIp = Mockery::mock(UpdateServerIpAction::class);
+        $updateIp->shouldNotReceive('handle');
+
+        $job->handle($updateIp);
+        $job->failed(new RuntimeException('Late worker failure'));
+
+        $server->refresh();
+        $this->assertSame(Server::STATUS_PROVISIONING, $server->provisioning_status);
+        $this->assertNull($server->initialization_token);
+        $this->assertNull($server->provisioning_error);
+    }
+
+    public function test_migration_preserves_already_queued_initialization_jobs(): void
+    {
+        [, $server] = $this->resources();
+        $server->update(['provisioning_status' => Server::STATUS_QUEUED]);
+        $provisioningToken = $server->provisioning_token;
+        $migration = require database_path('migrations/2026_08_30_150000_add_server_initialization_attempts.php');
+
+        $migration->down();
+        $migration->up();
+
+        $this->assertSame(
+            $provisioningToken,
+            DB::table('servers')->where('id', $server->id)->value('initialization_token'),
+        );
     }
 
     private function resources(): array

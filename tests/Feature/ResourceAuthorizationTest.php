@@ -83,6 +83,8 @@ class ResourceAuthorizationTest extends TestCase
             Server::query()->toBase()->find($server->id)->ssh_private_key,
         );
         $this->assertArrayNotHasKey('ssh_private_key', $server->toArray());
+        $this->assertArrayNotHasKey('provisioning_token', $server->toArray());
+        $this->assertArrayNotHasKey('initialization_token', $server->toArray());
 
         $connection = (new Runner)->server($server->fresh())->create();
         $command = $connection->getExecuteCommand('uptime');

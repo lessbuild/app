@@ -68,7 +68,11 @@ class ServerProviderLifecycleTest extends TestCase
         $this->assertSame('portable-server', $server->name);
         $this->assertSame('New York 1', $server->region);
         $this->assertSame('portable-fingerprint', $server->ssh_fingerprint);
-        Queue::assertPushed(InitialiseServerJob::class, fn (InitialiseServerJob $job): bool => $job->server->is($server));
+        $this->assertNotNull($server->provisioning_token);
+        $this->assertNotNull($server->initialization_token);
+        $this->assertNotSame($server->provisioning_token, $server->initialization_token);
+        Queue::assertPushed(InitialiseServerJob::class, fn (InitialiseServerJob $job): bool => $job->server->is($server)
+            && $job->attemptToken === $server->initialization_token);
     }
 
     public function test_ip_initialization_uses_normalized_provider_network_data(): void
@@ -95,6 +99,7 @@ class ServerProviderLifecycleTest extends TestCase
         $this->assertSame('203.0.113.10', $server->public_ip);
         $this->assertSame('10.0.0.10', $server->private_ip);
         $this->assertSame(Server::STATUS_PROVISIONING, $server->provisioning_status);
+        $this->assertNull($server->initialization_token);
     }
 
     public function test_resolver_rejects_unknown_server_provider_types(): void

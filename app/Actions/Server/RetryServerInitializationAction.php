@@ -27,7 +27,7 @@ class RetryServerInitializationAction
             }
 
             $locked->update([
-                'provisioning_token' => (string) Str::uuid(),
+                'initialization_token' => (string) Str::uuid(),
                 'provisioning_status' => Server::STATUS_QUEUED,
                 'provisioning_error' => null,
                 'provisioning_failure_phase' => null,

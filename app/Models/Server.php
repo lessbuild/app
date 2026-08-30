@@ -51,6 +51,7 @@ class Server extends Model
         'mysql_root_password',
         'ssh_private_key',
         'provisioning_token',
+        'initialization_token',
     ];
 
     public function user(): BelongsTo
@@ -84,6 +85,7 @@ class Server extends Model
     {
         static::creating(function (Server $server): void {
             $server->provisioning_token ??= (string) Str::uuid();
+            $server->initialization_token ??= (string) Str::uuid();
         });
     }
 
