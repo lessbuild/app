@@ -18,7 +18,7 @@
     @if($servers->isEmpty())
         <div class="my-4">
             <x-alerts.info
-                :title="__('You need an active application or web server before you can add a website')"
+                :title="__('You need an active application server with MySQL before you can add a website')"
                 :link="route('servers.create')"
                 :anchor="__('Create Server')"
             ></x-alerts.info>

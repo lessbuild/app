@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
+use App\Rules\Hostname;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class WebsiteRequest extends FormRequest
                     ->where('provisioning_status', Server::STATUS_ACTIVE)
                     ->whereIn('type', ServerTypeEnum::websiteHostingValues())),
             ],
-            'url' => ['required', 'string', 'max:255'],
+            'url' => ['required', 'string', 'max:255', new Hostname],
             'description' => ['required', 'string'],
             'environment' => [$this->isMethod('post') ? 'required' : 'present', 'string'],
         ];
@@ -38,7 +39,15 @@ class WebsiteRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'server_id.exists' => __('Select an active application or web server.'),
+            'server_id.exists' => __('Select an active application server with MySQL configured.'),
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $url = trim((string) $this->input('url'));
+        $url = preg_replace('#^https?://#i', '', $url) ?? $url;
+
+        $this->merge(['url' => rtrim($url, '/')]);
     }
 }

@@ -8,22 +8,16 @@ class DeleteWebsiteCaddy
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Remove website from Caddy';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Remove Website from Caddy';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'removed-website';
 
@@ -31,23 +25,16 @@ class DeleteWebsiteCaddy
      * Shell script to run
      *
      * @param  int  $step
-     * @param  \App\Models\Website  $website
-     * @return string
      */
-    public function script(int $step, Website $website): string
+    public function script(Website $website): string
     {
-        $name = $website->name;
-        $url = $website->url;
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website', $website);
+        $configPath = escapeshellarg("/etc/caddy/websites/{$website->deployment_slug}.conf");
+        $websitePath = escapeshellarg("/var/www/{$website->deployment_slug}");
 
         return <<<SCRIPT
-            rm -f /etc/caddy/websites/{$name}.conf
-
-            # Remove the website from the Caddy config
-            sed -i -e '/import app {$url} /var/www/{$name}/d' /etc/caddy/Caddyfile
-
-            # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&website_id={$website->id}" {$callback}
+            rm -f -- {$configPath}
+            rm -rf -- {$websitePath}
+            sudo systemctl reload caddy
         SCRIPT;
     }
 }

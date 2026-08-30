@@ -19,14 +19,16 @@ class WebsitePlacementTest extends TestCase
     {
         $user = User::factory()->create();
         $application = $this->server($user, 'Application', ServerTypeEnum::app, Server::STATUS_ACTIVE);
-        $web = $this->server($user, 'Web', ServerTypeEnum::web, Server::STATUS_ACTIVE);
+        $secondApplication = $this->server($user, 'Second Application', ServerTypeEnum::app, Server::STATUS_ACTIVE);
+        $this->server($user, 'Web', ServerTypeEnum::web, Server::STATUS_ACTIVE);
         $this->server($user, 'Worker', ServerTypeEnum::worker, Server::STATUS_ACTIVE);
         $this->server($user, 'Pending', ServerTypeEnum::app, Server::STATUS_PROVISIONING);
 
         $this->actingAs($user)->get(route('websites.create'))
             ->assertSuccessful()
             ->assertSee('Application (App)')
-            ->assertSee('Web (Web)')
+            ->assertSee('Second Application (App)')
+            ->assertDontSee('Web (Web)')
             ->assertDontSee('Worker (Worker)')
             ->assertDontSee('Pending (App)');
 
@@ -34,7 +36,7 @@ class WebsitePlacementTest extends TestCase
         $this->actingAs($user)->get(route('websites.edit', $website))
             ->assertSuccessful()
             ->assertSeeInOrder(['value="'.$application->id.'"', 'selected'], false)
-            ->assertSee('value="'.$web->id.'"', false);
+            ->assertSee('value="'.$secondApplication->id.'"', false);
     }
 
     public function test_website_creation_requires_an_active_web_capable_server(): void
@@ -58,7 +60,7 @@ class WebsitePlacementTest extends TestCase
         Queue::fake();
         $user = User::factory()->create();
         $oldServer = $this->server($user, 'Old', ServerTypeEnum::app, Server::STATUS_ACTIVE);
-        $newServer = $this->server($user, 'New', ServerTypeEnum::web, Server::STATUS_ACTIVE);
+        $newServer = $this->server($user, 'New', ServerTypeEnum::app, Server::STATUS_ACTIVE);
         $website = $this->website($user, $oldServer);
 
         $this->actingAs($user)->patch(route('websites.update', $website), [
@@ -79,6 +81,7 @@ class WebsitePlacementTest extends TestCase
             'name' => $name,
             'type' => $type,
             'provisioning_status' => $status,
+            'mysql_root_password' => $type === ServerTypeEnum::app ? 'mysql-root-secret' : null,
         ]);
     }
 

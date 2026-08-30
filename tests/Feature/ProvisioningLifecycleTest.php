@@ -99,6 +99,7 @@ class ProvisioningLifecycleTest extends TestCase
             'name' => 'Production',
             'provider_id' => $provider->id,
             'provisioning_status' => Server::STATUS_PROVISIONING,
+            'mysql_root_password' => 'mysql-root-secret',
         ]);
         $website = null;
 

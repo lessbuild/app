@@ -5,12 +5,12 @@
      ! Show passwords
      ! ------------------------------------------------------------
      !-->
-    @if(session()->has($website->name . '_mysql_password'))
+    @if(session()->has("website:{$website->id}:mysql_password"))
         <div class="my-4">
             <x-alerts.info>
                 <x-slot name="title">
                     The root MYSQL password is: <b class="font-bold">
-                        {{ session()->get($website->name . '_mysql_password') }}
+                        {{ session()->get("website:{$website->id}:mysql_password") }}
                     </b>
                     <br>
                     This will only be shown once, so please save these passwords somewhere safe.

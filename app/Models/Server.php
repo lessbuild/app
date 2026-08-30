@@ -39,6 +39,7 @@ class Server extends Model
      */
     protected $hidden = [
         'password',
+        'mysql_root_password',
         'ssh_private_key',
     ];
 
@@ -62,6 +63,7 @@ class Server extends Model
     protected $casts = [
         'setup_stage' => 'integer',
         'type' => ServerTypeEnum::class,
+        'mysql_root_password' => 'encrypted',
         'ssh_private_key' => 'encrypted',
         'provisioned_at' => 'datetime',
     ];
@@ -102,6 +104,7 @@ class Server extends Model
     {
         return $query
             ->where('provisioning_status', self::STATUS_ACTIVE)
-            ->whereIn('type', ServerTypeEnum::websiteHostingValues());
+            ->whereIn('type', ServerTypeEnum::websiteHostingValues())
+            ->whereNotNull('mysql_root_password');
     }
 }

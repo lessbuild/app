@@ -3,51 +3,50 @@
 namespace App\Scripts\Database;
 
 use App\Models\Website;
+use Illuminate\Support\Facades\URL;
 
 class CreateMysqlDatabase
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Create Mysql Database and User';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Create a mysql database and user for this website';
 
     /**
      * Event Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'created-mysql-database';
 
     /**
      * Shell script run
-     *
-     * @param  int  $step
-     * @param  \App\Models\Website  $website
-     * @return string
      */
     public function script(int $step, Website $website): string
     {
-        $IP = $website->server->public_ip;
-        $WEBSITE_NAME = $website->name;
-        $PASSWORD = $website->database_password;
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website', $website);
+        $database = $website->databaseIdentifier();
+        $rootPassword = escapeshellarg((string) $website->server->mysql_root_password);
+        $databasePassword = str_replace(['\\', "'"], ['\\\\', "\\'"], $website->database_password);
+        $databaseUser = str_replace("'", "\\'", $database);
+        $serverIp = str_replace("'", "\\'", (string) $website->server->public_ip);
+        $callback = escapeshellarg(URL::signedRoute('callbacks.website', $website));
+        $queries = [
+            "CREATE DATABASE `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'{$serverIp}' IDENTIFIED BY '{$databasePassword}';",
+            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'%' IDENTIFIED BY '{$databasePassword}';",
+            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'{$serverIp}';",
+            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'%';",
+            'FLUSH PRIVILEGES;',
+        ];
+        $commands = collect($queries)
+            ->map(fn (string $query): string => 'mysql --user=root --password='.$rootPassword.' --execute='.escapeshellarg($query))
+            ->implode("\n");
 
         return <<<SCRIPT
-        mysql --user="root" --password="$PASSWORD" -e "CREATE DATABASE $WEBSITE_NAME CHARACTER SET utf8 COLLATE utf8_unicode_ci;"
-        mysql --user="root" --password="$PASSWORD" -e "CREATE USER '$WEBSITE_NAME'@'$IP' IDENTIFIED BY '$PASSWORD';"
-        mysql --user="root" --password="$PASSWORD" -e "CREATE USER '$WEBSITE_NAME'@'%' IDENTIFIED BY '$PASSWORD';"
-        mysql --user="root" --password="$PASSWORD" -e "GRANT ALL PRIVILEGES ON $WEBSITE_NAME.* TO '$WEBSITE_NAME'@'$IP' WITH GRANT OPTION;"
-        mysql --user="root" --password="$PASSWORD" -e "GRANT ALL PRIVILEGES ON $WEBSITE_NAME.* TO '$WEBSITE_NAME'@'%' WITH GRANT OPTION;"
-        mysql --user="root" --password="$PASSWORD" -e "FLUSH PRIVILEGES;"
+        {$commands}
 
         service mysql restart
 

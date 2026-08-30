@@ -13,7 +13,9 @@ enum ServerTypeEnum: string
 
     public function canHostWebsites(): bool
     {
-        return in_array($this, [self::app, self::web], true);
+        // Website provisioning currently creates a local MySQL database, so it
+        // requires the complete application stack.
+        return $this === self::app;
     }
 
     /**

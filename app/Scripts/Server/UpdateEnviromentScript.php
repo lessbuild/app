@@ -3,47 +3,39 @@
 namespace App\Scripts\Server;
 
 use App\Models\Website;
+use Illuminate\Support\Facades\URL;
 
 class UpdateEnviromentScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Update Environment';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Update Environment file';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'updated-env';
 
     /**
      * Shell script to run
-     *
-     * @param  int  $step
-     * @param  \App\Models\Website  $website
-     * @return string
      */
     public function script(int $step, Website $website): string
     {
-        $name = $website->name;
-        $env = $website->environment;
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website', $website);
+        $directory = escapeshellarg("/var/www/{$website->deployment_slug}");
+        $environmentPath = escapeshellarg("/var/www/{$website->deployment_slug}/.env");
+        $environment = escapeshellarg(base64_encode($website->environment));
+        $callback = escapeshellarg(URL::signedRoute('callbacks.website', $website));
 
         return <<<SCRIPT
             # Update the environment file
-            mkdir -p /var/www/$name
-            echo '$env' > /var/www/$name/.env
+            mkdir -p -- {$directory}
+            printf '%s' {$environment} | base64 --decode > {$environmentPath}
 
             # Ping
             curl --insecure --user-agent "deployer" --data "status={$step}&website_id={$website->id}" {$callback}

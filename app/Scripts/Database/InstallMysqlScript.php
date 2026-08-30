@@ -10,31 +10,21 @@ class InstallMysqlScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Mysql';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install Mysql and configure Mysql';
 
     /**
      * Event Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-mysql';
 
     /**
      * Shell script to install Mysql
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {
@@ -42,6 +32,7 @@ class InstallMysqlScript
         $PASSWORD = Str::random();
 
         Session::put('mysql_password', $PASSWORD);
+        $server->update(['mysql_root_password' => $PASSWORD]);
 
         return <<<SCRIPT
         provisionPing {$server->id} {$step}

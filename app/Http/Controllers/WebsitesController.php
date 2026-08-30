@@ -68,7 +68,7 @@ class WebsitesController extends Controller
             'database_password' => $password,
             'provisioning_status' => Website::STATUS_QUEUED,
         ]));
-        session()->flash($website->name.'_mysql_password', $password);
+        session()->flash("website:{$website->id}:mysql_password", $password);
         AddWebsiteJob::dispatch($website);
 
         return redirect()->route('websites.show', $website);

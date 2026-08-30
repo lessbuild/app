@@ -37,7 +37,7 @@ class ArtisanCommandsScript
     public function script(int $step, Repository $repository): string
     {
         $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
-        $name = $repository->website->name;
+        $name = $repository->website->deployment_slug;
 
         return <<<SCRIPT
 

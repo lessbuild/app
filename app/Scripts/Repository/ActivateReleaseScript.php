@@ -36,7 +36,7 @@ class ActivateReleaseScript
      */
     public function script(int $step, Repository $repository): string
     {
-        $name = $repository->website->name;
+        $name = $repository->website->deployment_slug;
         $time = now();
         $release = $time->timestamp;
         $repository->builds()->create(['built_at' => $time]);

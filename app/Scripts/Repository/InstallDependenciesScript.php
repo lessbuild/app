@@ -36,7 +36,7 @@ class InstallDependenciesScript
      */
     public function script(int $step, Repository $repository): string
     {
-        $name = $repository->website->name;
+        $name = $repository->website->deployment_slug;
         $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
 
         return <<<SCRIPT

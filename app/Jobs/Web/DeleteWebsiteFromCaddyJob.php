@@ -17,21 +17,15 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    /**
-     * The website instance.
-     *
-     * @var \App\Models\Website
-     */
-    public Website $website;
+    /** @var array<string, mixed> */
+    public array $websiteData;
 
     /**
      * Create a new job instance.
-     *
-     * @param array $website
      */
     public function __construct(array $website)
     {
-        $this->website = Website::make($website);
+        $this->websiteData = $website;
     }
 
     /**
@@ -43,6 +37,8 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
      */
     public function handle()
     {
-        (new DeleteWebsiteFromCaddyAction($this->website))->handle();
+        // Rebuild from the snapshot because the original database row has
+        // already been deleted by the time this queued job runs.
+        (new DeleteWebsiteFromCaddyAction(Website::make($this->websiteData)))->handle();
     }
 }

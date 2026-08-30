@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Website extends Model
 {
@@ -43,25 +44,45 @@ class Website extends Model
         'setup_stage' => 'integer',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
+    protected static function booted(): void
+    {
+        static::creating(function (Website $website): void {
+            if ($website->deployment_slug) {
+                return;
+            }
+
+            $base = Str::slug($website->getRawOriginal('name') ?: $website->name);
+            $base = substr($base ?: 'website', 0, 32);
+            $slug = $base;
+            $suffix = 2;
+
+            while (static::query()
+                ->where('user_id', $website->user_id)
+                ->where('deployment_slug', $slug)
+                ->exists()) {
+                $ending = '-'.$suffix++;
+                $slug = substr($base, 0, 32 - strlen($ending)).$ending;
+            }
+
+            $website->deployment_slug = $slug;
+        });
+    }
+
+    public function databaseIdentifier(): string
+    {
+        return str_replace('-', '_', $this->deployment_slug);
+    }
+
     public function user(): BelongsTo
     {
         return $this->BelongsTo(User::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
