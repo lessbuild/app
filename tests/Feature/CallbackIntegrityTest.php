@@ -45,7 +45,7 @@ class CallbackIntegrityTest extends TestCase
         $this->post(URL::signedRoute('callbacks.server.failed', $server), [
             'message' => 'Late server failure',
         ])->assertNoContent();
-        $this->post(URL::signedRoute('callbacks.website.failed', $website), [
+        $this->post(ProvisioningCallbackUrl::websiteFailure($website), [
             'message' => 'Late website failure',
         ])->assertNoContent();
 

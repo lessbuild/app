@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
 use App\Models\Build;
 use App\Models\Provider;
@@ -44,6 +45,11 @@ class ServerDeletionTest extends TestCase
     {
         Queue::fake();
         [$user, $server, $website, $repository, $build] = $this->resources();
+        $previousServer = $user->servers()->create([
+            'name' => 'Previous server',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $website->update(['previous_server_id' => $previousServer->id]);
         Http::fake([
             'https://api.digitalocean.com/v2/account/keys/*' => Http::response([], 204),
             'https://api.digitalocean.com/v2/droplets/*' => Http::response([], 204),
@@ -59,6 +65,7 @@ class ServerDeletionTest extends TestCase
         $this->assertDatabaseMissing('builds', ['id' => $build->id]);
         $this->assertDatabaseCount('logs', 0);
         Queue::assertNotPushed(DeleteWebsiteFromCaddyJob::class);
+        Queue::assertPushed(CleanupWebsitePlacementJob::class, fn (CleanupWebsitePlacementJob $job): bool => $job->websiteId === $website->id && $job->serverId === $previousServer->id);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE'
             && $request->url() === 'https://api.digitalocean.com/v2/droplets/12345');
     }

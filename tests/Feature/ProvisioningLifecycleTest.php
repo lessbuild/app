@@ -6,6 +6,7 @@ use App\Jobs\Web\AddWebsiteJob;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\ProvisioningCallbackUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
@@ -45,7 +46,7 @@ class ProvisioningLifecycleTest extends TestCase
         [, , $server, $website] = $this->infrastructure(withWebsite: true);
 
         $this->post(URL::signedRoute('callbacks.server', $server), ['status' => 12])->assertSuccessful();
-        $this->post(URL::signedRoute('callbacks.website', $website), ['status' => 3])->assertSuccessful();
+        $this->post(ProvisioningCallbackUrl::websiteStatus($website), ['status' => 3])->assertSuccessful();
 
         $this->assertSame(Server::STATUS_ACTIVE, $server->fresh()->provisioning_status);
         $this->assertNotNull($server->fresh()->provisioned_at);
@@ -62,7 +63,7 @@ class ProvisioningLifecycleTest extends TestCase
             'message' => 'Package installation failed',
             'exit_code' => 100,
         ])->assertSuccessful();
-        $this->post(URL::signedRoute('callbacks.website.failed', $website), [
+        $this->post(ProvisioningCallbackUrl::websiteFailure($website), [
             'message' => 'Caddy reload failed',
             'exit_code' => 1,
         ])->assertSuccessful();

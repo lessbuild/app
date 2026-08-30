@@ -21,12 +21,18 @@ class ProvisioningCallbackUrl
 
     public static function websiteStatus(Website $website): string
     {
-        return self::temporary('callbacks.website', $website, 'deployment_callback_ttl_minutes');
+        return self::temporary('callbacks.website', [
+            'website' => $website,
+            'attempt' => $website->provisioning_token,
+        ], 'deployment_callback_ttl_minutes');
     }
 
     public static function websiteFailure(Website $website): string
     {
-        return self::temporary('callbacks.website.failed', $website, 'deployment_callback_ttl_minutes');
+        return self::temporary('callbacks.website.failed', [
+            'website' => $website,
+            'attempt' => $website->provisioning_token,
+        ], 'deployment_callback_ttl_minutes');
     }
 
     public static function buildStatus(Build $build): string

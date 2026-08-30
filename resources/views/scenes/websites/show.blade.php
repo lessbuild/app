@@ -71,6 +71,29 @@
         </div>
     @endif
 
+    @if ($website->previous_server_id)
+        <div class="my-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+            <p class="font-semibold">{{ __('Previous server cleanup pending') }}</p>
+            <p class="text-sm">
+                @if ($website->placement_cleanup_error)
+                    {{ $website->placement_cleanup_error }}
+                @elseif ($website->provisioning_status === \App\Models\Website::STATUS_ACTIVE)
+                    {{ __('The website is active on its target server and cleanup of its old placement is queued.') }}
+                @elseif ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
+                    {{ __('Target provisioning failed. The source placement was retained so you can retry safely.') }}
+                @else
+                    {{ __('The source placement remains available until target provisioning succeeds.') }}
+                @endif
+            </p>
+            @if ($website->placement_cleanup_error)
+                <form method="POST" action="{{ route('websites.placement.cleanup', $website) }}" class="mt-3">
+                    @csrf
+                    <button type="submit" class="button primary">{{ __('Retry cleanup') }}</button>
+                </form>
+            @endif
+        </div>
+    @endif
+
     <!--
      ! ------------------------------------------------------------
      ! Website information

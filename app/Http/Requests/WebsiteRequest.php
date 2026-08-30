@@ -28,7 +28,8 @@ class WebsiteRequest extends FormRequest
                 Rule::exists('servers', 'id')->where(fn ($query) => $query
                     ->where('user_id', $this->user()->id)
                     ->where('provisioning_status', Server::STATUS_ACTIVE)
-                    ->whereIn('type', ServerTypeEnum::websiteHostingValues())),
+                    ->whereIn('type', ServerTypeEnum::websiteHostingValues())
+                    ->whereNotNull('mysql_root_password')),
             ],
             'url' => ['required', 'string', 'max:255', new Hostname],
             'description' => ['required', 'string'],

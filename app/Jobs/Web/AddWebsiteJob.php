@@ -19,41 +19,55 @@ class AddWebsiteJob implements ShouldQueue
 
     /**
      * The website instance.
-     *
-     * @var \App\Models\Website
      */
     public Website $website;
 
+    public ?string $attemptToken;
+
     /**
      * Create a new job instance.
-     *
-     * @param  \App\Models\Website  $website
      */
     public function __construct(Website $website)
     {
         $this->website = $website;
+        $this->attemptToken = $website->provisioning_token;
     }
 
     /**
      * Execute the job.
      *
-     * @return void
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(): void
     {
-        $this->website->update([
+        $query = Website::query()
+            ->whereKey($this->website->id)
+            ->where('provisioning_status', Website::STATUS_QUEUED);
+        $this->attemptToken === null
+            ? $query->whereNull('provisioning_token')
+            : $query->where('provisioning_token', $this->attemptToken);
+
+        if ($query->update([
             'provisioning_status' => Website::STATUS_PROVISIONING,
             'provisioning_error' => null,
-        ]);
+        ]) === 0) {
+            return;
+        }
 
+        $this->website->refresh();
         (new AddWebsiteAction($this->website))->handle();
     }
 
     public function failed(\Throwable $exception): void
     {
-        $this->website->update([
+        $query = Website::query()
+            ->whereKey($this->website->id)
+            ->whereIn('provisioning_status', [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING]);
+        $this->attemptToken === null
+            ? $query->whereNull('provisioning_token')
+            : $query->where('provisioning_token', $this->attemptToken);
+        $query->update([
             'provisioning_status' => Website::STATUS_FAILED,
             'provisioning_error' => str($exception->getMessage())->limit(2000),
         ]);

@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Actions\Droplet\DeleteDropletAction;
+use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
@@ -21,7 +22,21 @@ class ServerObserver
     {
         (new DeleteDropletAction)->handle($server);
 
-        Website::withTrashed()->where('server_id', $server->id)->each(function (Website $website): void {
+        Website::withTrashed()
+            ->where('previous_server_id', $server->id)
+            ->update([
+                'previous_server_id' => null,
+                'placement_cleanup_error' => null,
+            ]);
+
+        Website::withTrashed()->where('server_id', $server->id)->each(function (Website $website) use ($server): void {
+            if ($website->previous_server_id && $website->previous_server_id !== $server->id) {
+                CleanupWebsitePlacementJob::dispatch(
+                    $website->id,
+                    $website->previous_server_id,
+                    $website->deployment_slug,
+                );
+            }
             Repository::withTrashed()
                 ->where('website_id', $website->id)
                 ->each(function (Repository $repository): void {

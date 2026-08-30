@@ -113,6 +113,7 @@ class WebsiteProvisioningSecurityTest extends TestCase
             ->assertRedirect(route('websites.index'));
 
         $this->assertSoftDeleted($website);
+        $this->assertArrayNotHasKey('provisioning_token', $website->toArray());
         Queue::assertPushed(DeleteWebsiteFromCaddyJob::class, function (DeleteWebsiteFromCaddyJob $job) use ($website): bool {
             return $job->websiteId === $website->id;
         });

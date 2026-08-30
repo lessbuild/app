@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WebsiteRequest;
 use App\Jobs\Web\AddWebsiteJob;
+use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -100,9 +101,24 @@ class WebsitesController extends Controller
     {
         $this->authorize('update', $website);
 
+        if (in_array($website->provisioning_status, [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING], true)) {
+            throw ValidationException::withMessages([
+                'server_id' => __('Wait for the current website provisioning operation to finish.'),
+            ]);
+        }
+
         $validated = $request->validated();
+        $moving = (int) $validated['server_id'] !== (int) $website->server_id;
+        if ($moving && $website->previous_server_id) {
+            throw ValidationException::withMessages([
+                'server_id' => __('Finish cleaning up the previous server before moving this website again.'),
+            ]);
+        }
 
         $website->update(array_merge($validated, [
+            'previous_server_id' => $moving ? $website->server_id : $website->previous_server_id,
+            'placement_cleanup_error' => $moving ? null : $website->placement_cleanup_error,
+            'provisioning_token' => (string) Str::uuid(),
             'setup_stage' => 0,
             'provisioning_status' => Website::STATUS_QUEUED,
             'provisioning_error' => null,
@@ -112,6 +128,24 @@ class WebsitesController extends Controller
         AddWebsiteJob::dispatch($website);
 
         return redirect()->route('websites.show', $website);
+    }
+
+    public function retryPlacementCleanup(Website $website): RedirectResponse
+    {
+        $this->authorize('update', $website);
+
+        if (! $website->previous_server_id) {
+            return back()->with('info', __('There is no previous website placement to clean up.'));
+        }
+
+        $website->update(['placement_cleanup_error' => null]);
+        CleanupWebsitePlacementJob::dispatch(
+            $website->id,
+            $website->previous_server_id,
+            $website->deployment_slug,
+        );
+
+        return back()->with('success', __('Previous server cleanup queued.'));
     }
 
     /**

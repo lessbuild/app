@@ -9,6 +9,7 @@ use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
 use App\Http\Livewire\ServerShow;
+use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Server;
 use App\Models\Website;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->name('account.password.update');
     Route::resource('websites', WebsitesController::class);
+    Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
+        ->name('websites.placement.cleanup');
 
     Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::get('servers/{server}', ServerShow::class)
@@ -80,6 +83,10 @@ Route::post('servers/{server}/provisioning/callback/status', function (Server $s
 })->middleware('signed')->name('callbacks.server');
 
 Route::post('websites/{website}/provisioning/callback/status', function (Website $website) {
+    if ($website->provisioning_token && ! hash_equals($website->provisioning_token, (string) request('attempt'))) {
+        return response()->noContent();
+    }
+
     if (! in_array($website->provisioning_status, [
         Website::STATUS_QUEUED,
         Website::STATUS_PROVISIONING,
@@ -93,11 +100,20 @@ Route::post('websites/{website}/provisioning/callback/status', function (Website
     }
 
     if ($data['status'] === 3) {
+        $previousServerId = $website->previous_server_id;
         $website->update([
             'provisioning_status' => Website::STATUS_ACTIVE,
             'provisioned_at' => now(),
             'provisioning_error' => null,
         ]);
+
+        if ($previousServerId) {
+            CleanupWebsitePlacementJob::dispatch(
+                $website->id,
+                $previousServerId,
+                $website->deployment_slug,
+            );
+        }
     }
 })->middleware('signed')->name('callbacks.website');
 
@@ -123,6 +139,10 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
 })->middleware('signed')->name('callbacks.server.failed');
 
 Route::post('websites/{website}/provisioning/callback/failed', function (Website $website) {
+    if ($website->provisioning_token && ! hash_equals($website->provisioning_token, (string) request('attempt'))) {
+        return response()->noContent();
+    }
+
     $data = request()->validate([
         'exit_code' => 'nullable|integer',
         'message' => 'required|string|max:2000',

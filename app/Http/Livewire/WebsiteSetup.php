@@ -17,14 +17,9 @@ class WebsiteSetup extends Component
         UpdateEnviromentScript::class,
     ];
 
-    /**
-     * @var \App\Models\Website
-     */
     public Website $model;
 
     /**
-     * @return \Illuminate\Contracts\View\View
-     *
      * @throws \Exception
      */
     public function render(): View
@@ -32,6 +27,8 @@ class WebsiteSetup extends Component
         $this->model->refresh();
         abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
 
-        return view('livewire.setup');
+        return view('livewire.setup', [
+            'processes' => $this->processes,
+        ]);
     }
 }

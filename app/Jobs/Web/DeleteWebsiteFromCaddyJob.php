@@ -2,9 +2,10 @@
 
 namespace App\Jobs\Web;
 
-use App\Actions\Web\DeleteWebsiteFromCaddyAction;
+use App\Actions\Web\DeleteWebsitePlacementAction;
 use App\Models\Build;
 use App\Models\Repository;
+use App\Models\Server;
 use App\Models\Website;
 use App\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -48,7 +49,17 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
             return;
         }
 
-        (new DeleteWebsiteFromCaddyAction($website, $runner))->handle();
+        // Remove the stale source first so a failure never takes the active
+        // placement offline before the deletion can be finalized.
+        collect([$website->previous_server_id, $website->server_id])
+            ->filter()
+            ->unique()
+            ->each(function (int $serverId) use ($runner, $website): void {
+                $server = Server::find($serverId);
+                if ($server) {
+                    (new DeleteWebsitePlacementAction($server, $website->deployment_slug, $runner))->handle();
+                }
+            });
 
         DB::transaction(function () use ($website): void {
             Repository::withTrashed()

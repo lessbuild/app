@@ -39,10 +39,11 @@ class Website extends Model
      */
     protected $guarded = [];
 
-    protected $hidden = ['database_password'];
+    protected $hidden = ['database_password', 'provisioning_token'];
 
     protected $casts = [
         'database_password' => 'encrypted',
+        'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
         'setup_stage' => 'integer',
     ];
@@ -50,6 +51,8 @@ class Website extends Model
     protected static function booted(): void
     {
         static::creating(function (Website $website): void {
+            $website->provisioning_token ??= (string) Str::uuid();
+
             if ($website->deployment_slug) {
                 return;
             }
@@ -84,6 +87,11 @@ class Website extends Model
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
+    }
+
+    public function previousServer(): BelongsTo
+    {
+        return $this->belongsTo(Server::class, 'previous_server_id');
     }
 
     public function repositories(): HasMany
