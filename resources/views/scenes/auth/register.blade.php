@@ -87,8 +87,8 @@
                     <input
                         type="password"
                         class="input secondary rounded"
-                        value="{{ old('password') }}"
                         name="password"
+                        autocomplete="new-password"
                         placeholder="********">
                 </label>
                 <x-forms.errors name="password"></x-forms.errors>
@@ -107,8 +107,8 @@
                     <input
                         type="password"
                         class="input secondary rounded"
-                        value="{{ old('password_confirmation') }}"
                         name="password_confirmation"
+                        autocomplete="new-password"
                         placeholder="********">
                 </label>
                 <x-forms.errors name="password_confirmation"></x-forms.errors>
