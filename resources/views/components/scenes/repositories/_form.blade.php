@@ -67,7 +67,7 @@
                 name="url"
                 id="url"
                 class="input secondary rounded-none rounded-r-md"
-                placeholder="github.com/user/repo.git">
+                placeholder="github.com, gitlab.com, or bitbucket.org">
         </div>
         <x-forms.errors name="url"></x-forms.errors>
     </div>

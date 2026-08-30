@@ -18,6 +18,16 @@ class Provider extends Model
 
     public const TYPE_GITHUB = 'github';
 
+    public const TYPE_GITLAB = 'gitlab';
+
+    public const TYPE_BITBUCKET = 'bitbucket';
+
+    public const SOURCE_CONTROL_TYPES = [
+        self::TYPE_GITHUB,
+        self::TYPE_GITLAB,
+        self::TYPE_BITBUCKET,
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -56,7 +66,39 @@ class Provider extends Model
 
     public function scopeForRepositories(Builder $query): Builder
     {
-        return $query->where('provider', self::TYPE_GITHUB);
+        return $query->whereIn('provider', self::SOURCE_CONTROL_TYPES);
+    }
+
+    public function isSourceControl(): bool
+    {
+        return in_array($this->provider, self::SOURCE_CONTROL_TYPES, true);
+    }
+
+    public function repositoryHost(): ?string
+    {
+        return match ($this->provider) {
+            self::TYPE_GITHUB => 'github.com',
+            self::TYPE_GITLAB => 'gitlab.com',
+            self::TYPE_BITBUCKET => 'bitbucket.org',
+            default => null,
+        };
+    }
+
+    public function repositoryCredentialUsername(): ?string
+    {
+        return match ($this->provider) {
+            self::TYPE_GITHUB => 'x-access-token',
+            self::TYPE_GITLAB => 'oauth2',
+            self::TYPE_BITBUCKET => 'x-token-auth',
+            default => null,
+        };
+    }
+
+    public function supportsRepositoryUrl(string $url): bool
+    {
+        $host = $this->repositoryHost();
+
+        return $host !== null && str_starts_with(strtolower($url), $host.'/');
     }
 
     public function hasAttachedResources(): bool

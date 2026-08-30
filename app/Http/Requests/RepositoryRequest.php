@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
-use App\Rules\GitHubRepositoryUrl;
+use App\Rules\SourceRepositoryUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -21,13 +21,18 @@ class RepositoryRequest extends FormRequest
      */
     public function rules(): array
     {
+        $provider = $this->user()->providers()
+            ->whereKey($this->input('provider_id'))
+            ->whereNull('deleted_at')
+            ->first();
+
         return [
             'provider_id' => [
                 'required',
                 'integer',
                 Rule::exists('providers', 'id')->where(fn ($query) => $query
                     ->where('user_id', $this->user()->id)
-                    ->where('provider', Provider::TYPE_GITHUB)
+                    ->whereIn('provider', Provider::SOURCE_CONTROL_TYPES)
                     ->whereNull('deleted_at')),
             ],
             'website_id' => [
@@ -43,7 +48,7 @@ class RepositoryRequest extends FormRequest
                         ->where('servers.provisioning_status', Server::STATUS_ACTIVE))),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'url' => ['required', 'string', 'max:255', new GitHubRepositoryUrl],
+            'url' => ['required', 'string', 'max:255', new SourceRepositoryUrl($provider?->repositoryHost())],
             'branch' => [
                 'required',
                 'string',
@@ -66,8 +71,12 @@ class RepositoryRequest extends FormRequest
     {
         $url = trim((string) $this->input('url'));
         $url = preg_replace('#^(?:https?://|ssh://git@)#i', '', $url) ?? $url;
-        $url = preg_replace('#^git@github\.com:#i', 'github.com/', $url) ?? $url;
-        $url = preg_replace('#^github\.com/#i', 'github.com/', $url) ?? $url;
+        $url = preg_replace('#^git@(github\.com|gitlab\.com|bitbucket\.org):#i', '$1/', $url) ?? $url;
+        $url = preg_replace_callback(
+            '#^(github\.com|gitlab\.com|bitbucket\.org)/#i',
+            static fn (array $matches): string => strtolower($matches[1]).'/',
+            $url,
+        ) ?? $url;
         $url = rtrim($url, '/');
         $url = preg_replace('/\.git$/i', '', $url) ?? $url;
 

@@ -28,10 +28,13 @@ class CloneRepositoryScript
     public function script(int $step, Build $build): string
     {
         $repository = $build->repository;
+        $provider = $repository->provider;
+        $host = $provider->repositoryHost();
+        $username = $provider->repositoryCredentialUsername();
         $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
         $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
         $credentialPayload = escapeshellarg(base64_encode(
-            "machine github.com\nlogin x-access-token\npassword {$repository->provider->token}\n",
+            "machine {$host}\nlogin {$username}\npassword {$provider->token}\n",
         ));
         $repositoryUrl = escapeshellarg("https://{$repository->url}");
         $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));

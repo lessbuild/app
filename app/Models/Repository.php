@@ -50,7 +50,8 @@ class Repository extends Model
     {
         $this->loadMissing(['provider', 'website.server']);
 
-        return $this->provider?->provider === Provider::TYPE_GITHUB
+        return $this->provider?->isSourceControl() === true
+            && $this->provider->supportsRepositoryUrl($this->url)
             && $this->website?->provisioning_status === Website::STATUS_ACTIVE
             && $this->website?->server?->provisioning_status === Server::STATUS_ACTIVE;
     }

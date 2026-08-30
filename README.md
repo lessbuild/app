@@ -1,5 +1,19 @@
 # Deployer
 
+## Source control providers
+
+Repositories can be deployed from GitHub, GitLab, and Bitbucket Cloud over
+HTTPS. Add the matching provider before creating a repository:
+
+- GitHub: a personal access token with repository contents access.
+- GitLab: a personal or OAuth access token with `read_repository` access.
+- Bitbucket Cloud: a repository, project, or workspace access token with
+  repository read access.
+
+Provider tokens are encrypted at rest and are supplied to Git through a
+temporary `.netrc` file that is removed after cloning. Repository URLs must
+match the selected provider.
+
 ## Run as a daemon
 
 The included systemd installer configures the app to listen on every network

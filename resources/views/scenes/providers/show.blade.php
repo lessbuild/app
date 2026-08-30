@@ -57,7 +57,7 @@
      !-->
     <div class="py-4 grid grid-cols-3 gap-6">
 
-        @if(str($provider->provider)->contains(['github']))
+        @if($provider->isSourceControl())
             <div class="col-span-3 lg:col-span-1 space-y-4">
                 <div class="p-4 bg-primary rounded-lg border shadow-md border-primary">
                     <div class="flex justify-between items-center mb-4">

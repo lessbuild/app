@@ -29,6 +29,8 @@ class ProviderRequest extends FormRequest
             'description' => 'required',
             'provider' => 'required|string|max:255|in:'.implode(',', [
                 Provider::TYPE_GITHUB,
+                Provider::TYPE_GITLAB,
+                Provider::TYPE_BITBUCKET,
                 Provider::TYPE_DIGITALOCEAN,
             ]),
             'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],

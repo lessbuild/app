@@ -32,6 +32,8 @@ class ProviderCapabilityTest extends TestCase
             ->assertSuccessful()
             ->assertSee('digitalocean')
             ->assertSee('github')
+            ->assertSee('gitlab')
+            ->assertSee('bitbucket')
             ->assertDontSee('linode');
 
         $this->actingAs($user)->get(route('providers.edit', $github))
