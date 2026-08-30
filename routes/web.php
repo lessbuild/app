@@ -12,6 +12,7 @@ use App\Http\Livewire\ServerShow;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Server;
+use App\Models\ServerLogSnapshot;
 use App\Models\Website;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
@@ -158,10 +159,40 @@ Route::post('servers/{server}/provisioning/callback/failed', function (Server $s
             'provisioning_process_id' => null,
             'provisioning_process_path' => null,
         ]);
+        $server->logSnapshots()->updateOrCreate(
+            ['type' => 'provisioning'],
+            [
+                'status' => ServerLogSnapshot::STATUS_FAILED,
+                'error' => $server->provisioning_error,
+                'refreshed_at' => now(),
+            ],
+        );
     }
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.server.failed');
+
+Route::post('servers/{server}/provisioning/callback/log', function (Server $server) {
+    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
+        return response()->noContent();
+    }
+
+    $data = request()->validate([
+        'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.server_log_max_characters'))],
+    ]);
+
+    $server->logSnapshots()->updateOrCreate(
+        ['type' => 'provisioning'],
+        [
+            'status' => ServerLogSnapshot::STATUS_READY,
+            'log' => $data['log'],
+            'error' => null,
+            'refreshed_at' => now(),
+        ],
+    );
+
+    return response()->noContent();
+})->middleware('signed')->name('callbacks.server.log');
 
 Route::post('websites/{website}/provisioning/callback/failed', function (Website $website) {
     if ($website->provisioning_token && ! hash_equals($website->provisioning_token, (string) request('attempt'))) {

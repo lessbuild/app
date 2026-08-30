@@ -20,6 +20,15 @@ class ServerShow extends Component
 
     public Server $server;
 
+    public function mount(Server $server): void
+    {
+        $this->server = $server;
+
+        if (! request()->query->has('log') && $server->provisioning_status !== Server::STATUS_ACTIVE) {
+            $this->log = 'provisioning';
+        }
+    }
+
     public function refreshLogs(): void
     {
         abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);

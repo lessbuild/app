@@ -14,6 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'servers/*/provisioning/callback/status',
         'servers/*/provisioning/callback/failed',
+        'servers/*/provisioning/callback/log',
         'websites/*/provisioning/callback/status',
         'websites/*/provisioning/callback/failed',
         'builds/*/deployment/callback/status',

@@ -28,6 +28,7 @@ class EndScript implements ServerScript
         EOF
 
         provisionPing {$server->id} {$step}
+        rm -f -- "\$LOG_FILE" "\$LOG_UPLOAD_FILE"
         SCRIPT;
     }
 }

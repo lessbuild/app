@@ -4,6 +4,7 @@ namespace App\Actions\Server;
 
 use App\Jobs\Server\RetryRemoteServerProvisioningJob;
 use App\Models\Server;
+use App\Models\ServerLogSnapshot;
 use App\Scripts\Server\ConfigureServerScript;
 use App\Services\ServerProvisioningPlan;
 use Illuminate\Support\Facades\DB;
@@ -60,6 +61,15 @@ class QueueRemoteServerProvisioningRetryAction
                 'provisioning_process_id' => null,
                 'provisioning_process_path' => null,
             ]);
+            $locked->logSnapshots()->updateOrCreate(
+                ['type' => 'provisioning'],
+                [
+                    'status' => ServerLogSnapshot::STATUS_QUEUED,
+                    'log' => null,
+                    'error' => null,
+                    'refreshed_at' => null,
+                ],
+            );
 
             RetryRemoteServerProvisioningJob::dispatch($locked->id, $token)->afterCommit();
 

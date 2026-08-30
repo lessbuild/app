@@ -6,6 +6,7 @@ use App\Jobs\Server\RetryRemoteServerProvisioningJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerLogSnapshot;
 use App\Models\User;
 use App\Services\ManagedSsh;
 use App\Services\ProvisioningCallbackUrl;
@@ -29,6 +30,13 @@ class ServerRemoteProvisioningRetryTest extends TestCase
         $oldToken = $server->provisioning_token;
         $oldStatusCallback = ProvisioningCallbackUrl::serverStatus($server);
         $oldFailureCallback = ProvisioningCallbackUrl::serverFailure($server);
+        $server->logSnapshots()->create([
+            'type' => 'provisioning',
+            'status' => ServerLogSnapshot::STATUS_FAILED,
+            'log' => 'Old failed attempt',
+            'error' => 'Old error',
+            'refreshed_at' => now()->subMinute(),
+        ]);
 
         $this->actingAs($user)->get(route('servers.show', $server))
             ->assertSuccessful()
@@ -47,6 +55,11 @@ class ServerRemoteProvisioningRetryTest extends TestCase
         $this->assertNull($server->provisioning_error);
         $this->assertNull($server->provisioning_failure_phase);
         $this->assertNotSame($rootPassword, DB::table('servers')->find($server->id)->password);
+        $snapshot = $server->logSnapshots()->sole();
+        $this->assertSame(ServerLogSnapshot::STATUS_QUEUED, $snapshot->status);
+        $this->assertNull($snapshot->log);
+        $this->assertNull($snapshot->error);
+        $this->assertNull($snapshot->refreshed_at);
 
         Queue::assertPushed(RetryRemoteServerProvisioningJob::class, function (RetryRemoteServerProvisioningJob $job) use ($server, $rootPassword): bool {
             $this->assertSame($server->id, $job->serverId);

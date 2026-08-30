@@ -321,8 +321,8 @@
                 </button>
             </div>
             <div class="mt-4 flex flex-col max-h-96 overflow-y-scroll">
-                @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
-                    <div class="text-secondary">{{ __('Logs will be available when provisioning finishes.') }}</div>
+                @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE && $log !== 'provisioning')
+                    <div class="text-secondary">{{ __('Select Provisioning to view logs while setup is running.') }}</div>
                 @else
                     @if ($errors->has('logs'))
                         <div class="mb-2 text-red-500">{{ $errors->first('logs') }}</div>
@@ -342,7 +342,13 @@
                             <div class="flex">
                                 <span class="text-ternary">{{ $server->name }}:~$</span>
                                 <span class="flex-1 typing items-center pl-2">
-                                    No logs to show
+                                    @if ($log === 'provisioning' && $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
+                                        {{ $server->provisioning_status === \App\Models\Server::STATUS_FAILED
+                                            ? __('No provisioning output was received.')
+                                            : __('Waiting for provisioning output…') }}
+                                    @else
+                                        {{ __('No logs to show') }}
+                                    @endif
                                 </span>
                             </div>
                         @endunless

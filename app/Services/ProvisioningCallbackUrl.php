@@ -25,6 +25,14 @@ class ProvisioningCallbackUrl
         ], 'server_callback_ttl_minutes');
     }
 
+    public static function serverLog(Server $server): string
+    {
+        return self::temporary('callbacks.server.log', [
+            'server' => $server,
+            'attempt' => $server->provisioning_token,
+        ], 'server_callback_ttl_minutes');
+    }
+
     public static function websiteStatus(Website $website): string
     {
         return self::temporary('callbacks.website', [

@@ -83,7 +83,7 @@ class ProvisioningLifecycleTest extends TestCase
         $this->actingAs($user)
             ->get(route('servers.show', $server))
             ->assertSuccessful()
-            ->assertSee('Logs will be available when provisioning finishes.')
+            ->assertSee('Waiting for provisioning output…')
             ->assertDontSee('Edit Server');
     }
 
