@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Enums\Server\ServerTypeEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -95,5 +96,12 @@ class Server extends Model
         return $this->belongsToMany(Recipe::class)
             ->withPivot('position')
             ->orderByPivot('position');
+    }
+
+    public function scopeReadyForWebsites(Builder $query): Builder
+    {
+        return $query
+            ->where('provisioning_status', self::STATUS_ACTIVE)
+            ->whereIn('type', ServerTypeEnum::websiteHostingValues());
     }
 }

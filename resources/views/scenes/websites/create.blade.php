@@ -18,7 +18,7 @@
     @if($servers->isEmpty())
         <div class="my-4">
             <x-alerts.info
-                :title="__('You must create a server before you can add a website')"
+                :title="__('You need an active application or web server before you can add a website')"
                 :link="route('servers.create')"
                 :anchor="__('Create Server')"
             ></x-alerts.info>
@@ -40,7 +40,7 @@
 
             <x-slot:footer>
                 <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary" type="submit">
+                    <button class="cursor-pointer button primary" type="submit" @disabled($servers->isEmpty())>
                         <span class="flex items-center justify-between">
                             {{ __('Create Website') }}
                         </span>

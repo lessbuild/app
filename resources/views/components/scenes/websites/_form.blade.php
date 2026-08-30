@@ -8,9 +8,9 @@
             <select name="server_id" class="input secondary rounded">
                 @foreach($servers as $server)
                     <option value="{{ $server->id }}"
-                        @selected(old('server_id') == $server->id || ($server->server_id ?? null) == $server->id)
+                        @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)
                     >
-                        {{ $server->name }}
+                        {{ $server->name }} ({{ str($server->type->value)->replace('-', ' ')->title() }})
                     </option>
                 @endforeach
             </select>

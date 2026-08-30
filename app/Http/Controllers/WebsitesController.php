@@ -2,21 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\WebsiteRequest;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class WebsitesController extends Controller
 {
     /**
      * List all created websites for the user
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function index(Request $request): View
     {
@@ -29,9 +27,6 @@ class WebsitesController extends Controller
 
     /**
      * Show the specified websites
-     *
-     * @param  \App\Models\Website  $website
-     * @return \Illuminate\Contracts\View\View
      */
     public function show(Website $website): View
     {
@@ -47,13 +42,10 @@ class WebsitesController extends Controller
 
     /**
      * Show the resource creation form
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Contracts\View\View
      */
     public function create(Request $request): View
     {
-        $servers = $request->user()->servers()->get();
+        $servers = $request->user()->servers()->readyForWebsites()->get();
 
         return view('scenes.websites.create', [
             'servers' => $servers,
@@ -63,23 +55,13 @@ class WebsitesController extends Controller
     /**
      * Store a newly created resource in storage
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  Request  $request
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(WebsiteRequest $request): RedirectResponse
     {
-        $validated = $this->validate($request, [
-            'name' => 'required|max:255',
-            'server_id' => [
-                'required',
-                Rule::exists('servers', 'id')->where('user_id', $request->user()->id),
-            ],
-            'url' => 'required|max:255',
-            'description' => 'required',
-            'environment' => 'required',
-        ]);
+        $validated = $request->validated();
 
         $password = Str::random(32);
         $website = $request->user()->websites()->create(array_merge($validated, [
@@ -94,16 +76,12 @@ class WebsitesController extends Controller
 
     /**
      * Show the resource edit form
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Website  $website
-     * @return \Illuminate\Contracts\View\View
      */
     public function edit(Request $request, Website $website): View
     {
         $this->authorize('update', $website);
 
-        $servers = $request->user()->servers()->get();
+        $servers = $request->user()->servers()->readyForWebsites()->get();
 
         return view('scenes.websites.edit', [
             'servers' => $servers,
@@ -114,22 +92,15 @@ class WebsitesController extends Controller
     /**
      * Store a newly created resource in storage
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Website  $website
-     * @return \Illuminate\Http\RedirectResponse
+     * @param  Request  $request
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
-    public function update(Request $request, Website $website): RedirectResponse
+    public function update(WebsiteRequest $request, Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
 
-        $validated = $this->validate($request, [
-            'name' => 'required|max:255',
-            'url' => 'required|max:255',
-            'description' => 'required',
-            'environment' => 'present',
-        ]);
+        $validated = $request->validated();
 
         $website->update(array_merge($validated, [
             'setup_stage' => 0,
@@ -146,8 +117,7 @@ class WebsitesController extends Controller
     /**
      * Remove the specified resource from storage
      *
-     * @param  \App\Models\Website  $website
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function destroy(Website $website)
     {

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Jobs\Web\AddWebsiteJob;
-use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
@@ -20,6 +19,7 @@ class ProvisioningLifecycleTest extends TestCase
     {
         Queue::fake();
         [$user, , $server] = $this->infrastructure();
+        $server->update(['provisioning_status' => Server::STATUS_ACTIVE]);
 
         $this->actingAs($user)->post(route('websites.store'), [
             'name' => 'Customer Portal',
