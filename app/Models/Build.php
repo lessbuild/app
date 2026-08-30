@@ -42,6 +42,11 @@ class Build extends Model
         return $this->morphMany(Log::class, 'parentable');
     }
 
+    public function events(): MorphMany
+    {
+        return $this->morphMany(Event::class, 'parentable');
+    }
+
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);

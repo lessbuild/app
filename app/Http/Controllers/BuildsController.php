@@ -8,6 +8,7 @@ use App\Services\Runner;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class BuildsController extends Controller
@@ -55,12 +56,20 @@ class BuildsController extends Controller
             return back()->with('error', __('The deployment could not be canceled. Please try again.'));
         }
 
-        $canceled = Build::query()
-            ->whereKey($build->id)
-            ->where('status', Build::STATUS_RUNNING)
-            ->where('remote_process_id', $build->remote_process_id)
-            ->where('remote_process_path', $build->remote_process_path)
-            ->update([
+        $canceled = DB::transaction(function () use ($build): bool {
+            $locked = Build::query()
+                ->whereKey($build->id)
+                ->where('status', Build::STATUS_RUNNING)
+                ->where('remote_process_id', $build->remote_process_id)
+                ->where('remote_process_path', $build->remote_process_path)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked) {
+                return false;
+            }
+
+            $locked->update([
                 'status' => Build::STATUS_CANCELED,
                 'remote_process_id' => null,
                 'remote_process_path' => null,
@@ -68,7 +77,10 @@ class BuildsController extends Controller
                 'failure_message' => null,
             ]);
 
-        return $canceled === 1
+            return true;
+        });
+
+        return $canceled
             ? back()->with('success', __('Deployment canceled.'))
             : back()->with('info', __('The deployment finished before it could be canceled.'));
     }

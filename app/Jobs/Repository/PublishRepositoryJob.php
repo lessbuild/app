@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class PublishRepositoryJob implements ShouldQueue
 {
@@ -66,15 +67,20 @@ class PublishRepositoryJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        Build::query()
-            ->whereKey($this->build->id)
-            ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
-            ->update([
+        DB::transaction(function () use ($exception): void {
+            $locked = Build::query()
+                ->whereKey($this->build->id)
+                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->lockForUpdate()
+                ->first();
+
+            $locked?->update([
                 'status' => Build::STATUS_FAILED,
                 'remote_process_id' => null,
                 'remote_process_path' => null,
                 'finished_at' => now(),
                 'failure_message' => str($exception->getMessage())->limit(2000),
             ]);
+        });
     }
 }

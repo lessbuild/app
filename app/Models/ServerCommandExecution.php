@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ServerCommandExecution extends Model
 {
@@ -36,6 +37,11 @@ class ServerCommandExecution extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function events(): MorphMany
+    {
+        return $this->morphMany(Event::class, 'parentable');
     }
 
     public function scopeActive(Builder $query): Builder

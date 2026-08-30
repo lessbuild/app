@@ -34,6 +34,8 @@ class DashboardTest extends TestCase
             ->assertSee('My Application')
             ->assertSee('Recent websites')
             ->assertSee('Recent builds')
+            ->assertSee('Recent activity')
+            ->assertSee(route('activity.index'))
             ->assertSee(route('builds.show', $repository->builds()->sole()))
             ->assertDontSee('Someone Else Application');
     }
@@ -46,6 +48,7 @@ class DashboardTest extends TestCase
             ->assertSuccessful()
             ->assertSee('No websites yet')
             ->assertSee('No builds yet')
+            ->assertSee('No activity yet')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
     }

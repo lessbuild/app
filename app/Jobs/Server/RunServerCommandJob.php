@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class RunServerCommandJob implements ShouldQueue
 {
@@ -63,17 +63,22 @@ class RunServerCommandJob implements ShouldQueue
         $output = str($output)->substr(-$maximum)->toString();
         $successful = $process->isSuccessful();
 
-        ServerCommandExecution::query()
-            ->whereKey($execution->id)
-            ->where('status', ServerCommandExecution::STATUS_RUNNING)
-            ->update([
+        DB::transaction(function () use ($execution, $successful, $output, $process): void {
+            $locked = ServerCommandExecution::query()
+                ->whereKey($execution->id)
+                ->where('status', ServerCommandExecution::STATUS_RUNNING)
+                ->lockForUpdate()
+                ->first();
+
+            $locked?->update([
                 'status' => $successful
                     ? ServerCommandExecution::STATUS_SUCCEEDED
                     : ServerCommandExecution::STATUS_FAILED,
-                'output' => Crypt::encryptString($output !== '' ? $output : ($successful ? 'Command completed without output.' : 'Command failed without output.')),
+                'output' => $output !== '' ? $output : ($successful ? 'Command completed without output.' : 'Command failed without output.'),
                 'exit_code' => $process->getExitCode(),
                 'finished_at' => now(),
             ]);
+        });
     }
 
     public function failed(\Throwable $exception): void
@@ -83,13 +88,18 @@ class RunServerCommandJob implements ShouldQueue
             ->substr(-$maximum)
             ->toString();
 
-        ServerCommandExecution::query()
-            ->whereKey($this->executionId)
-            ->whereIn('status', [ServerCommandExecution::STATUS_QUEUED, ServerCommandExecution::STATUS_RUNNING])
-            ->update([
+        DB::transaction(function () use ($message): void {
+            $locked = ServerCommandExecution::query()
+                ->whereKey($this->executionId)
+                ->whereIn('status', [ServerCommandExecution::STATUS_QUEUED, ServerCommandExecution::STATUS_RUNNING])
+                ->lockForUpdate()
+                ->first();
+
+            $locked?->update([
                 'status' => ServerCommandExecution::STATUS_FAILED,
-                'output' => Crypt::encryptString($message),
+                'output' => $message,
                 'finished_at' => now(),
             ]);
+        });
     }
 }

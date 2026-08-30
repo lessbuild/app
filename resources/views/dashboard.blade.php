@@ -72,4 +72,13 @@
             @endforelse
         </section>
     </div>
+
+    <section class="mt-12">
+        <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-primary">{{ __('Recent activity') }}</h2>
+            <a href="{{ route('activity.index') }}" class="text-sm text-ternary">{{ __('View all') }}</a>
+        </div>
+
+        <x-activity-feed :events="$recentEvents" />
+    </section>
 </x-layouts.app>

@@ -8,10 +8,26 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\ActivityRecorder;
 
 class ServerObserver
 {
-    public function __construct(private readonly DeleteCloudServerAction $deleteCloudServer) {}
+    public function __construct(
+        private readonly DeleteCloudServerAction $deleteCloudServer,
+        private readonly ActivityRecorder $activity,
+    ) {}
+
+    public function created(Server $server): void
+    {
+        $this->record($server, "Server \"{$server->name}\" was created.");
+    }
+
+    public function updated(Server $server): void
+    {
+        if ($server->wasChanged('provisioning_status')) {
+            $this->record($server, "Server \"{$server->name}\" is {$server->provisioning_status}.");
+        }
+    }
 
     /**
      * Server Deleting
@@ -23,6 +39,8 @@ class ServerObserver
     public function deleting(Server $server)
     {
         $this->deleteCloudServer->handle($server);
+
+        $this->record($server, "Server \"{$server->name}\" was deleted.");
 
         Website::withTrashed()
             ->where('previous_server_id', $server->id)
@@ -53,5 +71,12 @@ class ServerObserver
             // necessary for each child website.
             $website->forceDeleteQuietly();
         });
+    }
+
+    private function record(Server $server, string $message): void
+    {
+        if ($server->user_id) {
+            $this->activity->record($server, $server->user_id, 'server', $message);
+        }
     }
 }

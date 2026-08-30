@@ -28,6 +28,11 @@ class DashboardController extends Controller
                 ->latest('builds.created_at')
                 ->limit(5)
                 ->get(),
+            'recentEvents' => $user->events()
+                ->with('parentable')
+                ->latest()
+                ->limit(8)
+                ->get(),
         ]);
     }
 }

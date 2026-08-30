@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
@@ -37,6 +38,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('home', DashboardController::class)->name('dashboard');
+    Route::get('activity', ActivityController::class)->name('activity.index');
 
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])

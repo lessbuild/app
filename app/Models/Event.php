@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Event extends Model
@@ -17,13 +18,28 @@ class Event extends Model
      */
     protected $fillable = [
         'event',
+        'category',
+        'user_id',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
-     */
-    public function parentable(): morphTo
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function parentable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function url(): ?string
+    {
+        return match (true) {
+            $this->parentable instanceof Server => route('servers.show', $this->parentable),
+            $this->parentable instanceof Website => route('websites.show', $this->parentable),
+            $this->parentable instanceof Build => route('builds.show', $this->parentable),
+            $this->parentable instanceof ServerCommandExecution && $this->parentable->server => route('servers.show', $this->parentable->server),
+            default => null,
+        };
     }
 }

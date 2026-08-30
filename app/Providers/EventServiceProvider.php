@@ -2,8 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Build;
 use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Models\Website;
+use App\Observers\BuildActivityObserver;
+use App\Observers\ServerCommandExecutionObserver;
 use App\Observers\ServerObserver;
 use App\Observers\WebsiteObserver;
 use Illuminate\Auth\Events\Registered;
@@ -31,7 +35,9 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Build::observe(BuildActivityObserver::class);
         Server::observe(ServerObserver::class);
+        ServerCommandExecution::observe(ServerCommandExecutionObserver::class);
         Website::observe(WebsiteObserver::class);
     }
 
