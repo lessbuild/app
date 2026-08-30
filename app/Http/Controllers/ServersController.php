@@ -39,6 +39,7 @@ class ServersController extends Controller
         $providers = $request->user()->providers()->get();
         $regions = Region::all();
         $sizes = Size::all();
+        $recipes = $request->user()->recipes()->oldest()->get();
         $images = [
             'ubuntu-22-04-x64' => 'Ubuntu 22.04 (LTS) x64',
             'ubuntu-20-04-x64' => 'Ubuntu 20.04 x86',
@@ -51,6 +52,7 @@ class ServersController extends Controller
             'regions' => $regions,
             'sizes' => $sizes,
             'images' => $images,
+            'recipes' => $recipes,
         ]);
     }
 
@@ -65,37 +67,42 @@ class ServersController extends Controller
         $token = $request->user()->providers()->find($request->input('provider_id'))->token;
         $digitalOcean = new DigitalOcean($token);
 
-        $server = tap(Auth::user()->servers()->create([
+        $server = Auth::user()->servers()->create([
             'provider_id' => $request->input('provider_id'),
             'provisioning_status' => Server::STATUS_QUEUED,
             'ssh_public_key' => $keypair->publicKey(),
             'ssh_private_key' => $keypair->privateKey(),
-        ]), function ($server) use ($digitalOcean, $request) {
+        ]);
 
-            // create ssh
-            $ssh = $digitalOcean->createSSH([
-                'public_key' => $server->ssh_public_key,
-                'name' => $request->input('name'),
+        $recipeAssignments = collect($request->input('recipes', []))
+            ->values()
+            ->mapWithKeys(fn ($recipeId, $position) => [
+                (int) $recipeId => ['position' => $position],
             ]);
+        $server->recipes()->sync($recipeAssignments);
 
-            $droplet = (new CreateDropletAction($server, $digitalOcean))->handle([
-                'region' => $request->input('region'),
-                'size' => $request->input('size'),
-                'image' => $request->input('image'),
-                'name' => str()->slug($request->input('name')),
-                'ssh_keys' => [$ssh['fingerprint']],
-            ]);
+        $ssh = $digitalOcean->createSSH([
+            'public_key' => $server->ssh_public_key,
+            'name' => $request->input('name'),
+        ]);
 
-            $server->update([
-                'provider_id' => $request->input('provider_id'),
-                'identifier' => $droplet['droplet']['id'],
-                'name' => $droplet['droplet']['name'],
-                'region' => $droplet['droplet']['region']['name'],
-                'size' => $droplet['droplet']['size']['slug'],
-                'image' => $droplet['droplet']['image']['name'],
-                'ssh_fingerprint' => $ssh['fingerprint'],
-            ]);
-        });
+        $droplet = (new CreateDropletAction($server, $digitalOcean))->handle([
+            'region' => $request->input('region'),
+            'size' => $request->input('size'),
+            'image' => $request->input('image'),
+            'name' => str()->slug($request->input('name')),
+            'ssh_keys' => [$ssh['fingerprint']],
+        ]);
+
+        $server->update([
+            'provider_id' => $request->input('provider_id'),
+            'identifier' => $droplet['droplet']['id'],
+            'name' => $droplet['droplet']['name'],
+            'region' => $droplet['droplet']['region']['name'],
+            'size' => $droplet['droplet']['size']['slug'],
+            'image' => $droplet['droplet']['image']['name'],
+            'ssh_fingerprint' => $ssh['fingerprint'],
+        ]);
 
         InitialiseServerJob::dispatch($server);
 

@@ -45,6 +45,14 @@ class ServerRequest extends FormRequest
             'region' => ['required'],
             'image' => ['required'],
             'size' => ['required'],
+            'recipes' => ['nullable', 'array', 'max:20'],
+            'recipes.*' => [
+                'integer',
+                'distinct',
+                Rule::exists('recipes', 'id')->where(function ($query) {
+                    return $query->where('user_id', $this->user()->id);
+                }),
+            ],
         ];
     }
 }

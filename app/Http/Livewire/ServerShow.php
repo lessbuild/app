@@ -10,9 +10,6 @@ use Livewire\Component;
 
 class ServerShow extends Component
 {
-    /**
-     * @var string
-     */
     public string $log = 'apt';
 
     /**
@@ -20,16 +17,9 @@ class ServerShow extends Component
      */
     protected $queryString = ['log'];
 
-    /**
-     * @var \App\Models\Server
-     */
     public Server $server;
 
     /**
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Services\Runner  $runner
-     * @return \Illuminate\Contracts\View\View
-     *
      * @throws \Exception
      */
     public function render(Request $request, Runner $runner): View
@@ -37,6 +27,7 @@ class ServerShow extends Component
         $this->server->refresh();
         abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
         $websites = $this->server->websites()->get();
+        $recipes = $this->server->recipes()->get();
         $logs = [];
         $logError = null;
 
@@ -66,6 +57,7 @@ class ServerShow extends Component
 
         return view('livewire.scenes.servers.show', [
             'websites' => $websites,
+            'recipes' => $recipes,
             'logs' => $logs,
             'logError' => $logError,
         ])->layout('components.layouts.app');

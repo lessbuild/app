@@ -72,4 +72,9 @@ class User extends Authenticatable
     {
         return $this->hasManyThrough(Build::class, Repository::class);
     }
+
+    public function recipes(): HasMany
+    {
+        return $this->hasMany(Recipe::class);
+    }
 }

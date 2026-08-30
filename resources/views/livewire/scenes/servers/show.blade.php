@@ -201,6 +201,22 @@
             </div>
         </div>
 
+        @if ($recipes->isNotEmpty())
+            <div class="self-start col-span-2 lg:col-span-1 p-4 bg-primary rounded-lg border shadow-md border-primary">
+                <h3 class="mb-4 text-lg font-bold leading-none text-primary">{{ __('Provisioning Recipes') }}</h3>
+                <div class="divide-y divide-primary">
+                    @foreach ($recipes as $recipe)
+                        <div class="py-3">
+                            <p class="text-sm font-medium text-ternary">{{ $recipe->name }}</p>
+                            @if ($recipe->description)
+                                <p class="mt-1 text-sm text-secondary">{{ $recipe->description }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <!--
          ! ------------------------------------------------------------
          ! Server logs

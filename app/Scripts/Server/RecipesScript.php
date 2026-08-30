@@ -8,36 +8,36 @@ class RecipesScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Run Recipes';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Run user defined recipes';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'ran-recipes';
 
     /**
      * Script to run
-     *
-     * @param int $step
-     * @param \App\Models\Server $server
-     * @return string
      */
     public function script(int $step, Server $server): string
     {
-        return <<<SCRIPT
-        provisionPing {$server->id} {$step}
-        SCRIPT;
+        $recipes = $server->recipes()->get()->map(function ($recipe): string {
+            $name = escapeshellarg("Running recipe: {$recipe->name}");
+
+            return <<<SCRIPT
+            printf '%s\\n' {$name}
+            (
+              set -Eeuo pipefail
+            {$recipe->script}
+            )
+            SCRIPT;
+        })->implode("\n\n");
+
+        return trim($recipes).($recipes ? "\n\n" : '')."provisionPing {$server->id} {$step}";
     }
 }

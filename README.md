@@ -25,7 +25,7 @@ is allowed by the host firewall and cloud-provider firewall.
 - [ ] Need to refactor scripts -- too much logic in them.
 - [x] Use each server's generated key pair for SSH and encrypt private keys at rest
 - [ ] Refactor Server providers so they use a common interface
-- [ ] Recipes scripts take scripts from user defined data
-- [ ] Add a way to define recipes
+- [x] Run selected user-defined recipes during server provisioning
+- [x] Add recipe creation and management
 - [ ] Save logs to a file and output via that rather than a direct SSH command
 - [ ] When selecting app type, use different scripts rather than them all.

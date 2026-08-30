@@ -3,6 +3,7 @@
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
+use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
@@ -46,6 +47,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('builds', BuildsController::class)->only('index');
     Route::resource('repositories', RepositoriesController::class);
+    Route::resource('recipes', RecipesController::class)->except('show');
     Route::resource('providers', ProviderController::class);
     Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
         ->name('repositories.deploy');

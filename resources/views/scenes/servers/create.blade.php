@@ -42,6 +42,7 @@
                 :sizes="$sizes"
                 :images="$images"
                 :regions="$regions"
+                :recipes="$recipes"
             ></x-scenes.servers._form>
 
             <x-slot:footer>

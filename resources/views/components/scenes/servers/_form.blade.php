@@ -110,4 +110,32 @@
         </div>
         <x-forms.errors name="size"></x-forms.errors>
     </div>
+
+    @if ($recipes->isNotEmpty())
+        <fieldset class="col-span-3 sm:col-span-2">
+            <legend class="block text-sm font-medium text-primary">{{ __('Provisioning recipes') }}</legend>
+            <p class="mt-1 text-xs text-secondary">{{ __('Selected recipes run as root, in this order, while the server is provisioned.') }}</p>
+            <div class="mt-3 space-y-2 rounded border border-primary bg-secondary p-3">
+                @foreach ($recipes as $recipe)
+                    <label class="flex items-start gap-3">
+                        <input
+                            class="mt-1 rounded border-primary bg-primary text-ternary"
+                            type="checkbox"
+                            name="recipes[]"
+                            value="{{ $recipe->id }}"
+                            @checked(in_array($recipe->id, old('recipes', [])))
+                        >
+                        <span>
+                            <span class="block text-sm font-medium text-primary">{{ $recipe->name }}</span>
+                            @if ($recipe->description)
+                                <span class="block text-xs text-secondary">{{ $recipe->description }}</span>
+                            @endif
+                        </span>
+                    </label>
+                @endforeach
+            </div>
+            <x-forms.errors name="recipes" />
+            <x-forms.errors name="recipes.0" />
+        </fieldset>
+    @endif
 </div>
