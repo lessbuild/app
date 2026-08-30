@@ -4,16 +4,20 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\GithubController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 
-Route::get('auth/social/redirect/{type}', [GithubController::class, 'redirect'])
-    ->name('social.login');
-Route::get('auth/social/callback/{type}', [GithubController::class, 'callback'])
-    ->name('social.callback');
+Route::middleware('guest')->group(function () {
+    Route::get('auth/social/redirect/{provider}', [SocialAuthController::class, 'redirect'])
+        ->whereIn('provider', SocialAuthController::providers())
+        ->name('social.login');
+    Route::get('auth/social/callback/{provider}', [SocialAuthController::class, 'callback'])
+        ->whereIn('provider', SocialAuthController::providers())
+        ->name('social.callback');
+});
 
 Route::get('/register', [RegisteredUserController::class, 'create'])
     ->middleware('guest')

@@ -23,7 +23,10 @@ class User extends Authenticatable
         'email',
         'password',
         'github_id',
+        'gitlab_id',
+        'bitbucket_id',
         'auth_type',
+        'email_verified_at',
     ];
 
     /**
@@ -45,41 +48,26 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function websites(): HasMany
     {
         return $this->hasMany(Website::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function providers(): HasMany
     {
         return $this->hasMany(Provider::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
-     */
     public function builds(): HasManyThrough
     {
         return $this->hasManyThrough(Build::class, Repository::class);

@@ -7,32 +7,7 @@
     <x-slot name="description">
         {{ __('Sign in to your manage your websites and servers.') }}
 
-        <div class="mt-10 flex space-x-4">
-            <a href="{{ route('social.login', 'github') }}" class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#github"></use>
-                </svg>
-                <span>Github</span>
-            </a>
-            <a href="{{ route('social.login', 'gitlab') }}" class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#gitlab"></use>
-                </svg>
-                <span>Gitlab</span>
-            </a>
-            <a href="{{ route('social.login', 'bitbucket') }}" class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#bitbucket"></use>
-                </svg>
-                <span>Bitbucket</span>
-            </a>
-        </div>
-
-        <div class="my-7 flex items-center space-x-3">
-            <div class="h-px flex-1 bg-secondary border border-secondary"></div>
-            <p class="text-xs text-primary uppercase">or sign in with email</p>
-            <div class="h-px flex-1 bg-secondary border border-secondary"></div>
-        </div>
+        <x-auth.social-providers action="in" />
     </x-slot>
 
     <form method="POST" action="{{ route('login') }}">
@@ -119,4 +94,4 @@
         </div>
     </form>
 
-</x-user::layouts.auth>
+</x-layouts.auth>

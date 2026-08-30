@@ -7,26 +7,7 @@
     <x-slot name="description">
         {{ __('Sign up for an account to easily manage your work life.') }}
 
-        <div class="mt-10 flex space-x-4">
-            <button class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#github"></use>
-                </svg>
-                <span>Github</span>
-            </button>
-            <button class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#github"></use>
-                </svg>
-                <span>Github</span>
-            </button>
-        </div>
-
-        <div class="my-7 flex items-center space-x-3">
-            <div class="h-px flex-1 bg-secondary border border-secondary"></div>
-            <p class="text-xs text-primary uppercase">or sign up with email</p>
-            <div class="h-px flex-1 bg-secondary border border-secondary"></div>
-        </div>
+        <x-auth.social-providers action="up" />
     </x-slot>
 
     <form method="POST" action="{{ route('register') }}">
