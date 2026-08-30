@@ -2,10 +2,7 @@
 
 namespace App\Scripts\Database;
 
-use App\Models\Server;
 use App\Models\Website;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Str;
 
 class CreateMysqlDatabase
 {
@@ -33,16 +30,16 @@ class CreateMysqlDatabase
     /**
      * Shell script run
      *
-     * @param int $step
-     * @param \App\Models\Website $website
+     * @param  int  $step
+     * @param  \App\Models\Website  $website
      * @return string
      */
     public function script(int $step, Website $website): string
     {
         $IP = $website->server->public_ip;
         $WEBSITE_NAME = $website->name;
-        $PASSWORD = Session::get("{$WEBSITE_NAME}_mysql_password");
-        $callback = config('app.url') . '/servers/add-website/callback/status';
+        $PASSWORD = $website->database_password;
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website', $website);
 
         return <<<SCRIPT
         mysql --user="root" --password="$PASSWORD" -e "CREATE DATABASE $WEBSITE_NAME CHARACTER SET utf8 COLLATE utf8_unicode_ci;"

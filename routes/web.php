@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BuildsController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\ServersController;
@@ -11,7 +12,6 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,48 +29,116 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('home', DashboardController::class)->name('dashboard');
 
-    Route::get('home', function () {
-        return view('welcome');
-    })->name('dashboard');
-
-    Route::resource('users', UsersController::class);
+    Route::resource('users', UsersController::class)->only('index');
     Route::resource('websites', WebsitesController::class);
 
-    Route::resource('servers', ServersController::class);
-    Route::get('servers/{server}', ServerShow::class)->name('servers.show');
+    Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
+    Route::get('servers/{server}', ServerShow::class)
+        ->middleware('can:view,server')
+        ->name('servers.show');
 
-    Route::resource('builds', BuildsController::class);
+    Route::resource('builds', BuildsController::class)->only('index');
     Route::resource('repositories', RepositoriesController::class);
     Route::resource('providers', ProviderController::class);
-    Route::get('make', [ServersController::class, 'make']);
-
-    Route::get('repositories/deploy/{repository}', [RepositoriesController::class, 'deploy'])
+    Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
         ->name('repositories.deploy');
 });
 
-Route::post('servers/provisioning/callback/status', function () {
-    $server = Server::find(request()->input('server_id'));
-    $step = request()->input('status');
+Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {
+    $data = request()->validate(['status' => 'required|integer|min:0|max:12']);
+    if ($data['status'] > $server->setup_stage) {
+        $server->update(['setup_stage' => $data['status']]);
+    }
+
+    if ($data['status'] === 12) {
+        $server->update([
+            'provisioning_status' => Server::STATUS_ACTIVE,
+            'provisioned_at' => now(),
+            'provisioning_error' => null,
+        ]);
+    }
+})->middleware('signed')->name('callbacks.server');
+
+Route::post('websites/{website}/provisioning/callback/status', function (Website $website) {
+    $data = request()->validate(['status' => 'required|integer|min:0|max:3']);
+    if ($data['status'] > $website->setup_stage) {
+        $website->update(['setup_stage' => $data['status']]);
+    }
+
+    if ($data['status'] === 3) {
+        $website->update([
+            'provisioning_status' => Website::STATUS_ACTIVE,
+            'provisioned_at' => now(),
+            'provisioning_error' => null,
+        ]);
+    }
+})->middleware('signed')->name('callbacks.website');
+
+Route::post('servers/{server}/provisioning/callback/failed', function (Server $server) {
+    $data = request()->validate([
+        'exit_code' => 'nullable|integer',
+        'message' => 'required|string|max:2000',
+    ]);
     $server->update([
-        'setup_stage' => $step,
+        'provisioning_status' => Server::STATUS_FAILED,
+        'provisioning_error' => isset($data['exit_code'])
+            ? "{$data['message']} (exit code {$data['exit_code']})"
+            : $data['message'],
     ]);
-});
+})->middleware('signed')->name('callbacks.server.failed');
 
-Route::post('servers/add-website/callback/status', function () {
-    $website = Website::find(request()->input('website_id'));
-    $step = request()->input('status');
+Route::post('websites/{website}/provisioning/callback/failed', function (Website $website) {
+    $data = request()->validate([
+        'exit_code' => 'nullable|integer',
+        'message' => 'required|string|max:2000',
+    ]);
     $website->update([
-        'setup_stage' => $step,
+        'provisioning_status' => Website::STATUS_FAILED,
+        'provisioning_error' => isset($data['exit_code'])
+            ? "{$data['message']} (exit code {$data['exit_code']})"
+            : $data['message'],
     ]);
-});
+})->middleware('signed')->name('callbacks.website.failed');
 
-Route::post('servers/release-repository/callback/status', function () {
-    $repository = Repository::find(request()->input('repository_id'));
-    $step = request()->input('status');
-    $repository->update([
-        'setup_stage' => $step,
+Route::post('repositories/{repository}/deployment/callback/status', function (Repository $repository) {
+    $data = request()->validate(['status' => 'required|integer|min:0|max:7']);
+    if ($data['status'] > $repository->setup_stage) {
+        $repository->update(['setup_stage' => $data['status']]);
+    }
+
+    if ($data['status'] === 7) {
+        $repository->builds()
+            ->whereIn('status', [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING])
+            ->latest()
+            ->first()
+            ?->update([
+                'status' => \App\Models\Build::STATUS_SUCCEEDED,
+                'built_at' => now(),
+                'finished_at' => now(),
+            ]);
+    }
+})->middleware('signed')->name('callbacks.repository');
+
+Route::post('builds/{build}/deployment/callback/failed', function (App\Models\Build $build) {
+    $data = request()->validate([
+        'exit_code' => 'nullable|integer',
+        'message' => 'required|string|max:2000',
     ]);
-});
+
+    if (in_array($build->status, [
+        \App\Models\Build::STATUS_DEPLOYING,
+        \App\Models\Build::STATUS_RUNNING,
+    ], true)) {
+        $build->update([
+            'status' => \App\Models\Build::STATUS_FAILED,
+            'finished_at' => now(),
+            'failure_message' => isset($data['exit_code'])
+                ? "{$data['message']} (exit code {$data['exit_code']})"
+                : $data['message'],
+        ]);
+    }
+})->middleware('signed')->name('callbacks.build.failed');
 
 require __DIR__.'/auth.php';

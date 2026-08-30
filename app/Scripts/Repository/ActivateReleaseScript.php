@@ -30,8 +30,8 @@ class ActivateReleaseScript
     /**
      * The script to run
      *
-     * @param int $step
-     * @param \App\Models\Repository $repository
+     * @param  int  $step
+     * @param  \App\Models\Repository  $repository
      * @return string
      */
     public function script(int $step, Repository $repository): string
@@ -40,7 +40,7 @@ class ActivateReleaseScript
         $time = now();
         $release = $time->timestamp;
         $repository->builds()->create(['built_at' => $time]);
-        $callback = config('app.url') . '/servers/release-repository/callback/status';
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
         $root = "/var/www/$name";
 
         return <<<SCRIPT

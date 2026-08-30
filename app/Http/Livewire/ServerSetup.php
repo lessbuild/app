@@ -8,8 +8,9 @@ use App\Scripts\Cache\InstallRedisScript;
 use App\Scripts\Database\InstallMysqlScript;
 use App\Scripts\Languages\InstallNodeScript;
 use App\Scripts\Languages\InstallPHPScript;
-use App\Scripts\Server\BaseScript;
+use App\Scripts\Server\ConfigureServerScript;
 use App\Scripts\Server\ConfigureSwapScript;
+use App\Scripts\Server\EndScript;
 use App\Scripts\Server\InstallComposerScript;
 use App\Scripts\Server\RecipesScript;
 use App\Scripts\Server\UpdateDependenciesScript;
@@ -22,6 +23,7 @@ class ServerSetup extends Component
     protected array $processes = [
         UpdateDependenciesScript::class,
         ConfigureSwapScript::class,
+        ConfigureServerScript::class,
         InstallComposerScript::class,
         InstallPHPScript::class,
         InstallNodeScript::class,
@@ -30,6 +32,7 @@ class ServerSetup extends Component
         InstallRedisScript::class,
         InstallMemcachedScript::class,
         RecipesScript::class,
+        EndScript::class,
     ];
 
     /**
@@ -44,6 +47,9 @@ class ServerSetup extends Component
      */
     public function render(): View
     {
+        $this->model->refresh();
+        abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
+
         return view('livewire.setup');
     }
 }

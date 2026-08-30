@@ -13,6 +13,14 @@ class Website extends Model
     use HasFactory;
     use WebsitePresenter;
 
+    public const STATUS_QUEUED = 'queued';
+
+    public const STATUS_PROVISIONING = 'provisioning';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_FAILED = 'failed';
+
     /**
      * The table associated with the model.
      *
@@ -26,6 +34,14 @@ class Website extends Model
      * @var array
      */
     protected $guarded = [];
+
+    protected $hidden = ['database_password'];
+
+    protected $casts = [
+        'database_password' => 'encrypted',
+        'provisioned_at' => 'datetime',
+        'setup_stage' => 'integer',
+    ];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

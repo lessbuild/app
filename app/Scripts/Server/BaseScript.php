@@ -2,6 +2,8 @@
 
 namespace App\Scripts\Server;
 
+use App\Models\Server;
+
 class BaseScript
 {
     /**
@@ -9,12 +11,16 @@ class BaseScript
      *
      * @return string
      */
-    public function script(): string
+    public function script(int $step, Server $server): string
     {
-        $callback = config('app.url') . '/servers/provisioning/callback/status';
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.server', $server);
+        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.server.failed', $server);
 
         return <<<SCRIPT
         #!/bin/bash
+
+        set -Eeuo pipefail
+        trap 'exit_code=$?; curl --silent --show-error --data "exit_code=\$exit_code&message=Remote server provisioning failed" "{$failureCallback}"; exit \$exit_code' ERR
 
         export DEBIAN_FRONTEND=noninteractive
 

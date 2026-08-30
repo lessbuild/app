@@ -1,35 +1,39 @@
 <div>
-    <div class="relative z-10">
-        <div class="fixed inset-0 bg-secondary opacity-70 transition-opacity"></div>
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg border border-primary bg-primary text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                    <div class="bg-primary px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-secondary border border-primary sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="w-6 h-6 text-primary">
-                                    <use xlink:href="/assets/images/icons.svg#terminal"></use>
-                                </svg>
+    @if ($open)
+        <div class="relative z-10" role="dialog" aria-modal="true">
+            <button type="button" wire:click="close" class="fixed inset-0 bg-secondary opacity-70" aria-label="{{ __('Close command dialog') }}"></button>
+            <div class="fixed inset-0 z-10 overflow-y-auto">
+                <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
+                    <div class="relative w-full max-w-2xl rounded-lg border border-primary bg-primary text-left shadow-xl">
+                        <form wire:submit.prevent="run">
+                            <div class="px-6 py-5">
+                                <h3 class="text-lg font-medium text-primary">{{ __('Run command on :server', ['server' => $model->name]) }}</h3>
+                                <p class="mt-1 text-sm text-secondary">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
+                                <input
+                                    wire:model.defer="command"
+                                    type="text"
+                                    class="input secondary mt-4 w-full rounded font-mono"
+                                    placeholder="{{ __('Example: uptime') }}"
+                                    autocomplete="off"
+                                    autofocus
+                                >
+                                @error('command') <p class="mt-2 text-sm text-red-500">{{ $message }}</p> @enderror
+
+                                @if ($output !== '')
+                                    <pre class="mt-4 max-h-80 overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-4 text-sm text-gray-100">{{ $output }}</pre>
+                                @endif
                             </div>
-                            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">
-                                    {{ __('Run command on server') }}
-                                </h3>
-                                <div class="mt-2">
-                                    <input
-                                        type="text"
-                                        class="input secondary rounded"
-                                        placeholder="example: ls -a">
-                                </div>
+                            <div class="flex flex-row-reverse gap-2 border-t border-primary bg-secondary px-6 py-3">
+                                <button type="submit" class="button tertiary" wire:loading.attr="disabled" wire:target="run">
+                                    <span wire:loading.remove wire:target="run">{{ __('Run command') }}</span>
+                                    <span wire:loading wire:target="run">{{ __('Running…') }}</span>
+                                </button>
+                                <button type="button" wire:click="close" class="button primary">{{ __('Close') }}</button>
                             </div>
-                        </div>
-                    </div>
-                    <div class="bg-secondary border-t border-primary grid gap-2 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button class="button primary">Cancel</button>
-                        <button class="button tertiary">Run command</button>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    @endif
 </div>

@@ -40,19 +40,17 @@
     >
         <x-slot:buttons>
 
-            <a href="{{ route('servers.edit', $server) }}" class="button primary">
+            <button
+                type="button"
+                class="button primary"
+                wire:click="$emit('open-server-command')"
+                @disabled($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
+            >
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#terminal"></use>
                 </svg>
                 {{ __('Run Command') }}
-            </a>
-
-            <a href="{{ route('servers.edit', $server) }}" class="button primary">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
-                </svg>
-                {{ __('Edit Server') }}
-            </a>
+            </button>
 
             <x-dialogs.delete
                 id="delete-server"
@@ -69,6 +67,13 @@
             </button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
+
+    @if ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
+        <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+            <p class="font-semibold">{{ __('Server provisioning failed') }}</p>
+            <p class="text-sm">{{ $server->provisioning_error }}</p>
+        </div>
+    @endif
 
     <!--
      ! ------------------------------------------------------------
@@ -239,6 +244,11 @@
                 </div>
             </div>
             <div class="mt-4 flex flex-col max-h-96 overflow-y-scroll">
+                @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
+                    <div class="text-secondary">{{ __('Logs will be available when provisioning finishes.') }}</div>
+                @elseif ($logError)
+                    <div class="text-red-500">{{ $logError }}</div>
+                @else
                 @forelse($logs as $log)
                     @if($log === '') @continue @endif
                     <div class="w-full">
@@ -253,6 +263,7 @@
                         </span>
                     </div>
                 @endforelse
+                @endif
             </div>
         </div>
 
@@ -262,7 +273,9 @@
 
     </div>
 
-    <livewire:server-command :model="$server"></livewire:server-command>
+    <div id="server-command">
+        <livewire:server-command :model="$server"></livewire:server-command>
+    </div>
 
 
 </div>

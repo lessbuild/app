@@ -27,7 +27,7 @@ class ProviderRequest extends FormRequest
             'name' => 'required|string|max:255',
             'description' => 'required',
             'provider' => 'required|string|max:255|in:github,digitalocean',
-            'token' => 'required',
+            'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Actions\Server;
 
 use App\Models\Server;
 use App\Services\DigitalOcean;
+use RuntimeException;
 
 class UpdateServerIpAction
 {
@@ -33,16 +34,22 @@ class UpdateServerIpAction
      */
     public function handle()
     {
-        // Takes a while for the network to be set
-        while (empty($this->droplet['networks']['v4'])) {
-            sleep(1);
+        if (! $this->server->identifier) {
+            throw new RuntimeException('The cloud provider has not assigned a server identifier yet.');
+        }
 
-            $this->droplet = $this->serverProvider->getDroplet($this->server->identifier);
+        $droplet = $this->serverProvider->getDroplet($this->server->identifier);
+        $networks = collect($droplet['networks']['v4'] ?? []);
+        $publicIp = $networks->firstWhere('type', 'public')['ip_address'] ?? null;
+        $privateIp = $networks->firstWhere('type', 'private')['ip_address'] ?? null;
+
+        if (! $publicIp) {
+            throw new RuntimeException('The server public network is not ready yet.');
         }
 
         $this->server->update([
-            'public_ip' => $this->droplet['networks']['v4'][0]['ip_address'],
-            'private_ip' => $this->droplet['networks']['v4'][1]['ip_address'],
+            'public_ip' => $publicIp,
+            'private_ip' => $privateIp,
         ]);
 
         return true;

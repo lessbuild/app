@@ -12,8 +12,11 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        'servers/provisioning/callback/status',
-        'servers/add-website/callback/status',
-        'servers/release-repository/callback/status'
+        'servers/*/provisioning/callback/status',
+        'servers/*/provisioning/callback/failed',
+        'websites/*/provisioning/callback/status',
+        'websites/*/provisioning/callback/failed',
+        'repositories/*/deployment/callback/status',
+        'builds/*/deployment/callback/failed',
     ];
 }

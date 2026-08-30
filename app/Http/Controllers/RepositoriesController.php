@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Jobs\Repository\PublishRepositoryJob;
+use App\Models\Build;
 use App\Models\Repository;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class RepositoriesController extends Controller
 {
@@ -33,8 +35,14 @@ class RepositoriesController extends Controller
      */
     public function show(Repository $repository): View
     {
+        $this->authorize('view', $repository);
+
         return view('scenes.repositories.show', [
             'repository' => $repository,
+            'builds' => $repository->builds()->latest()->limit(10)->get(),
+            'deploymentInProgress' => $repository->builds()
+                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->exists(),
         ]);
     }
 
@@ -64,8 +72,14 @@ class RepositoriesController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'provider_id' => 'required|exists:providers,id',
-            'website_id' => 'required|exists:websites,id',
+            'provider_id' => [
+                'required',
+                Rule::exists('providers', 'id')->where('user_id', $request->user()->id),
+            ],
+            'website_id' => [
+                'required',
+                Rule::exists('websites', 'id')->where('user_id', $request->user()->id),
+            ],
             'name' => 'required|max:255',
             'url' => 'required|max:255',
             'description' => 'required',
@@ -85,6 +99,8 @@ class RepositoriesController extends Controller
      */
     public function edit(Request $request, Repository $repository): View
     {
+        $this->authorize('update', $repository);
+
         $providers = $request->user()->providers()->get();
         $websites = $request->user()->websites()->get();
 
@@ -104,8 +120,13 @@ class RepositoriesController extends Controller
      */
     public function update(Request $request, Repository $repository)
     {
+        $this->authorize('update', $repository);
+
         $validated = $request->validate([
-            'provider_id' => 'required|exists:providers,id',
+            'provider_id' => [
+                'required',
+                Rule::exists('providers', 'id')->where('user_id', $request->user()->id),
+            ],
             'name' => 'required|max:255',
             'url' => 'required|max:255',
             'description' => 'required',
@@ -124,6 +145,8 @@ class RepositoriesController extends Controller
      */
     public function destroy(Repository $repository)
     {
+        $this->authorize('delete', $repository);
+
         $repository->delete();
 
         return redirect()->route('repositories.index');
@@ -132,15 +155,28 @@ class RepositoriesController extends Controller
     /**
      * Deploy a repo
      *
-     * @param \App\Models\Repository $repository
+     * @param  \App\Models\Repository  $repository
      * @return \Illuminate\Http\RedirectResponse
      */
     public function deploy(Repository $repository): RedirectResponse
     {
+        $this->authorize('deploy', $repository);
+
+        $deploymentInProgress = $repository->builds()
+            ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+            ->exists();
+
+        if ($deploymentInProgress) {
+            return back()->with('info', 'A deployment is already in progress');
+        }
+
         $repository->update(['setup_stage' => 0]);
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_QUEUED,
+        ]);
 
-        PublishRepositoryJob::dispatch($repository);
+        PublishRepositoryJob::dispatch($build);
 
-        return back()->with('success', 'Repository deployed');
+        return back()->with('success', 'Deployment queued');
     }
 }

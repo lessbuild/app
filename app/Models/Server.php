@@ -12,6 +12,16 @@ class Server extends Model
 {
     use HasFactory;
 
+    public const STATUS_QUEUED = 'queued';
+
+    public const STATUS_WAITING_FOR_IP = 'waiting_for_ip';
+
+    public const STATUS_PROVISIONING = 'provisioning';
+
+    public const STATUS_ACTIVE = 'active';
+
+    public const STATUS_FAILED = 'failed';
+
     /**
      * The table associated with the model.
      *
@@ -26,7 +36,13 @@ class Server extends Model
      */
     protected $hidden = [
         'password',
+        'keypair',
     ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * The attributes that aren't mass assignable.
@@ -42,7 +58,8 @@ class Server extends Model
      */
     protected $casts = [
         'setup_stage' => 'integer',
-        'keypair' => 'json'
+        'keypair' => 'json',
+        'provisioned_at' => 'datetime',
     ];
 
     /**

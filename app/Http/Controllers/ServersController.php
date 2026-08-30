@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Droplet\CreateDropletAction;
 use App\Http\Requests\ServerRequest;
+use App\Jobs\Server\InitialiseServerJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
 use App\Models\Server;
@@ -12,7 +13,6 @@ use App\Services\DigitalOcean;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Auth;
 use SSX\SSH\KeyPair;
 
@@ -63,8 +63,8 @@ class ServersController extends Controller
     /**
      * Store the resource in storage
      *
-     * @param \App\Http\Requests\ServerRequest $request
-     * @param \SSX\SSH\KeyPair $keypair
+     * @param  \App\Http\Requests\ServerRequest  $request
+     * @param  \SSX\SSH\KeyPair  $keypair
      * @return \Illuminate\Http\RedirectResponse
      *
      * @throws \Exception
@@ -76,11 +76,12 @@ class ServersController extends Controller
 
         $server = tap(Auth::user()->servers()->create([
             'provider_id' => $request->input('provider_id'),
+            'provisioning_status' => Server::STATUS_QUEUED,
             'keypair' => [
                 'public' => $keypair->getPublicKey(),
                 'private' => $keypair->getPrivateKey(),
             ],
-        ]), function($server) use($digitalOcean, $request) {
+        ]), function ($server) use ($digitalOcean, $request) {
 
             // create ssh
             $ssh = $digitalOcean->createSSH([
@@ -107,6 +108,8 @@ class ServersController extends Controller
             ]);
         });
 
+        InitialiseServerJob::dispatch($server);
+
         return redirect()->route('servers.show', $server);
     }
 
@@ -121,6 +124,8 @@ class ServersController extends Controller
      */
     public function destroy(Request $request, Server $server)
     {
+        $this->authorize('delete', $server);
+
         $server->delete();
 
         return redirect()->route('servers.index');

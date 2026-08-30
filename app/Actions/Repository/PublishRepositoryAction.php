@@ -3,6 +3,7 @@
 namespace App\Actions\Repository;
 
 use App\Abstracts\Publishable;
+use App\Models\Build;
 use App\Models\Repository;
 use App\Scripts\Repository\ActivateReleaseScript;
 use App\Scripts\Repository\ArtisanCommandsScript;
@@ -30,17 +31,22 @@ class PublishRepositoryAction extends Publishable
      */
     private Repository $repository;
 
+    private Build $build;
+
     /**
      * Publish Repository Action constructor
      *
-     * @param \App\Models\Repository $repository
+     * @param  \App\Models\Build  $build
+     *
      * @throws \Exception
      */
-    public function __construct(Repository $repository)
+    public function __construct(Build $build)
     {
+        $repository = $build->repository;
         parent::__construct($repository->website->server);
 
         $this->repository = $repository;
+        $this->build = $build;
     }
 
     /**
@@ -50,9 +56,13 @@ class PublishRepositoryAction extends Publishable
      */
     public function handle(): void
     {
-        $build = $this->repository->builds()->create([
-            'built_at' => now(),
-        ]);
+        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.build.failed', $this->build);
+        $this->script = <<<SCRIPT
+        #!/bin/bash
+        set -Eeuo pipefail
+        trap 'exit_code=$?; curl --silent --show-error --data "exit_code=\$exit_code&message=Remote deployment script failed" "{$failureCallback}"; exit \$exit_code' ERR
+
+        SCRIPT;
 
         foreach ($this->commands as $key => $command) {
             $this->script .= app($command)->script(($key + 1), $this->repository);

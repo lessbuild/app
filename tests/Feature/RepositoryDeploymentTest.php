@@ -1,0 +1,121 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Jobs\Repository\PublishRepositoryJob;
+use App\Models\Build;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\URL;
+use Tests\TestCase;
+
+class RepositoryDeploymentTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_deploy_creates_a_queued_build_and_dispatches_it(): void
+    {
+        Queue::fake();
+        [$user, $repository] = $this->repository();
+
+        $this->actingAs($user)
+            ->post(route('repositories.deploy', $repository))
+            ->assertSessionHas('success', 'Deployment queued');
+
+        $build = $repository->builds()->sole();
+        $this->assertSame(Build::STATUS_QUEUED, $build->status);
+        Queue::assertPushed(PublishRepositoryJob::class, fn ($job) => $job->build->is($build));
+    }
+
+    public function test_a_repository_cannot_have_overlapping_deployments(): void
+    {
+        Queue::fake();
+        [$user, $repository] = $this->repository();
+        $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
+
+        $this->actingAs($user)
+            ->post(route('repositories.deploy', $repository))
+            ->assertSessionHas('info', 'A deployment is already in progress');
+
+        $this->assertCount(1, $repository->builds);
+        Queue::assertNotPushed(PublishRepositoryJob::class);
+    }
+
+    public function test_final_signed_callback_marks_the_current_build_as_succeeded(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository();
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_RUNNING,
+            'started_at' => now(),
+        ]);
+
+        $this->post(URL::signedRoute('callbacks.repository', $repository), ['status' => 7])
+            ->assertSuccessful();
+
+        $build->refresh();
+        $this->assertSame(Build::STATUS_SUCCEEDED, $build->status);
+        $this->assertNotNull($build->built_at);
+        $this->assertNotNull($build->finished_at);
+    }
+
+    public function test_job_failure_is_recorded_on_the_build(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository();
+        $build = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
+
+        (new PublishRepositoryJob($build))->failed(new \RuntimeException('SSH connection failed'));
+
+        $build->refresh();
+        $this->assertSame(Build::STATUS_FAILED, $build->status);
+        $this->assertSame('SSH connection failed', $build->failure_message);
+        $this->assertNotNull($build->finished_at);
+    }
+
+    public function test_remote_script_failure_callback_records_the_exit_code(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository();
+        $build = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
+
+        $this->post(URL::signedRoute('callbacks.build.failed', $build), [
+            'exit_code' => 127,
+            'message' => 'Remote deployment script failed',
+        ])->assertSuccessful();
+
+        $build->refresh();
+        $this->assertSame(Build::STATUS_FAILED, $build->status);
+        $this->assertSame('Remote deployment script failed (exit code 127)', $build->failure_message);
+        $this->assertNotNull($build->finished_at);
+    }
+
+    private function repository(): array
+    {
+        $user = User::factory()->create();
+        $provider = $user->providers()->create([
+            'name' => 'GitHub',
+            'provider' => 'github',
+            'token' => 'secret',
+            'description' => 'Git provider',
+        ]);
+        $server = $user->servers()->create(['name' => 'Production', 'provider_id' => $provider->id]);
+        $website = $user->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'Application',
+            'description' => 'Website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'app.test',
+        ]);
+        $repository = $user->repositories()->create([
+            'provider_id' => $provider->id,
+            'website_id' => $website->id,
+            'name' => 'Application repository',
+            'url' => 'github.com/example/app.git',
+            'description' => 'Repository',
+        ]);
+
+        return [$user, $repository];
+    }
+}

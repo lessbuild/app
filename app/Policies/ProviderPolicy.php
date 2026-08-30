@@ -30,7 +30,7 @@ class ProviderPolicy
      */
     public function view(User $user, Provider $provider)
     {
-        //
+        return (int) $provider->user_id === (int) $user->id;
     }
 
     /**
@@ -53,7 +53,7 @@ class ProviderPolicy
      */
     public function update(User $user, Provider $provider)
     {
-        //
+        return $this->view($user, $provider);
     }
 
     /**
@@ -65,7 +65,7 @@ class ProviderPolicy
      */
     public function delete(User $user, Provider $provider)
     {
-        //
+        return $this->view($user, $provider);
     }
 
     /**

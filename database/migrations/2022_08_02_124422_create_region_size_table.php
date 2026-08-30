@@ -1,6 +1,5 @@
 <?php
 
-use App\Actions\GenerateSizesAndRegionsAction;
 use App\Models\Region;
 use App\Models\Size;
 use Illuminate\Database\Migrations\Migration;
@@ -22,8 +21,6 @@ return new class extends Migration
             $table->foreignIdFor(Size::class);
             $table->timestamps();
         });
-
-        (new GenerateSizesAndRegionsAction())->handle();
     }
 
     /**
@@ -33,6 +30,6 @@ return new class extends Migration
      */
     public function down()
     {
-//        Schema::dropIfExists('region_size');
+        Schema::dropIfExists('region_size');
     }
 };

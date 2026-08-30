@@ -7,9 +7,10 @@ use App\Services\Runner;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Spatie\Ssh\Ssh;
 
-Abstract Class Publishable
+abstract class Publishable
 {
     /**
      * Name of the file
@@ -40,7 +41,8 @@ Abstract Class Publishable
     /**
      * Publishable constructor
      *
-     * @param \App\Models\Server $server
+     * @param  \App\Models\Server  $server
+     *
      * @throws \Exception
      */
     public function __construct(Server $server)
@@ -55,29 +57,42 @@ Abstract Class Publishable
      */
     public function __destruct()
     {
-        File::delete($this->file);
+        if ($this->file) {
+            File::delete($this->file);
+        }
     }
 
     /**
      * Upload the script to the server
      *
      * @return bool
+     *
      * @throws \Exception
      */
     protected function upload(): bool
     {
-        upload:
-        $upload = $this->runner->upload(
-            sourcePath: $this->file,
-            destinationPath: "/tmp/$this->fileName.sh"
-        );
+        $attempts = max(1, (int) config('lessbuild.ssh_upload_attempts', 3));
 
-        if (str_contains($upload->getOutput(), 'Connection refused') || ! $upload->isSuccessful()) {
-            sleep(3);
-            goto upload;
+        for ($attempt = 1; $attempt <= $attempts; $attempt++) {
+            $upload = $this->runner->upload(
+                sourcePath: $this->file,
+                destinationPath: "/tmp/$this->fileName.sh"
+            );
+
+            if ($upload->isSuccessful()) {
+                return true;
+            }
+
+            if ($attempt < $attempts) {
+                usleep(max(0, (int) config('lessbuild.ssh_retry_delay_ms', 1000)) * 1000);
+            }
         }
 
-        return true;
+        throw new RuntimeException(sprintf(
+            'Unable to upload deployment script after %d attempts: %s',
+            $attempts,
+            trim($upload->getErrorOutput() ?: $upload->getOutput())
+        ));
     }
 
     /**
@@ -87,10 +102,13 @@ Abstract Class Publishable
      */
     protected function run(): string
     {
-        $run = $this->runner->execute([
-            "sudo chmod +x /tmp/$this->fileName.sh",
-            "sudo echo '* * * * * root /tmp/$this->fileName.sh >> /tmp/$this->fileName.log' >> /etc/cron.d/$this->fileName",
-        ]);
+        $script = escapeshellarg("/tmp/$this->fileName.sh");
+        $log = escapeshellarg("/tmp/$this->fileName.log");
+        $run = $this->runner->execute("sudo chmod 700 -- $script && nohup sudo $script > $log 2>&1 < /dev/null &");
+
+        if (! $run->isSuccessful()) {
+            throw new RuntimeException('Unable to start remote script: '.trim($run->getErrorOutput() ?: $run->getOutput()));
+        }
 
         return $run->getOutput();
     }
@@ -98,12 +116,12 @@ Abstract Class Publishable
     /**
      * Generate the script file
      *
-     * @param string $name
+     * @param  string  $name
      * @return string
      */
     protected function makeScriptFile(string $name): string
     {
-        $this->fileName = $name;
+        $this->fileName = Str::slug($name).'-'.Str::lower(Str::random(8));
 
         Storage::put($this->fileName, $this->script);
 

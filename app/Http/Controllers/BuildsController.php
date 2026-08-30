@@ -15,7 +15,11 @@ class BuildsController extends Controller
      */
     public function index(Request $request): View
     {
-        $builds = $request->user()->builds()->simplePaginate();
+        $builds = $request->user()
+            ->builds()
+            ->with('repository.website.server')
+            ->latest('builds.created_at')
+            ->simplePaginate();
 
         return view('scenes.builds.index', [
             'builds' => $builds,

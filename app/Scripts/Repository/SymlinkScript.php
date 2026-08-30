@@ -30,14 +30,14 @@ class SymlinkScript
     /**
      * The script to run
      *
-     * @param int $step
-     * @param \App\Models\Repository $repository
+     * @param  int  $step
+     * @param  \App\Models\Repository  $repository
      * @return string
      */
     public function script(int $step, Repository $repository): string
     {
         $name = $repository->website->name;
-        $callback = config('app.url') . '/servers/release-repository/callback/status';
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
 
         return <<<SCRIPT
 

@@ -43,9 +43,11 @@
         <div class="mt-1 flex rounded-md shadow-sm">
             <input
                 value="{{ old('token') }}"
-                type="text"
+                type="password"
                 name="token"
-                id="name"
+                id="token"
+                autocomplete="off"
+                @if (! isset($provider)) required @endif
                 class="input secondary rounded"
                 placeholder="************">
         </div>

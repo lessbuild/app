@@ -3,7 +3,7 @@
 namespace App\Jobs\Repository;
 
 use App\Actions\Repository\PublishRepositoryAction;
-use App\Models\Repository;
+use App\Models\Build;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,20 +18,20 @@ class PublishRepositoryJob implements ShouldQueue
     use SerializesModels;
 
     /**
-     * The repository instance.
+     * The build instance.
      *
-     * @var \App\Models\Repository
+     * @var \App\Models\Build
      */
-    public Repository $repository;
+    public Build $build;
 
     /**
      * Create a new job instance.
      *
-     * @param \App\Models\Repository $repository
+     * @param  \App\Models\Build  $build
      */
-    public function __construct(Repository $repository)
+    public function __construct(Build $build)
     {
-        $this->repository = $repository;
+        $this->build = $build;
     }
 
     /**
@@ -43,6 +43,23 @@ class PublishRepositoryJob implements ShouldQueue
      */
     public function handle()
     {
-        (new PublishRepositoryAction($this->repository))->handle();
+        $this->build->update([
+            'status' => Build::STATUS_DEPLOYING,
+            'started_at' => now(),
+            'failure_message' => null,
+        ]);
+
+        (new PublishRepositoryAction($this->build))->handle();
+
+        $this->build->update(['status' => Build::STATUS_RUNNING]);
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->build->update([
+            'status' => Build::STATUS_FAILED,
+            'finished_at' => now(),
+            'failure_message' => str($exception->getMessage())->limit(2000),
+        ]);
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Repository extends Model
@@ -19,6 +20,11 @@ class Repository extends Model
      * @var array
      */
     protected $guarded = [];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -42,5 +48,10 @@ class Repository extends Model
     public function builds(): HasMany
     {
         return $this->hasMany(Build::class);
+    }
+
+    public function latestBuild(): HasOne
+    {
+        return $this->hasOne(Build::class)->latestOfMany();
     }
 }

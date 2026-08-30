@@ -36,6 +36,8 @@ class ProviderController extends Controller
      */
     public function show(Provider $provider): View
     {
+        $this->authorize('view', $provider);
+
         $repositories = $provider->repositories()
             ->latest()
             ->paginate();
@@ -84,6 +86,8 @@ class ProviderController extends Controller
      */
     public function edit(Provider $provider): View
     {
+        $this->authorize('update', $provider);
+
         return view('scenes.providers.edit', [
             'provider' => $provider,
         ]);
@@ -98,7 +102,14 @@ class ProviderController extends Controller
      */
     public function update(ProviderRequest $request, Provider $provider): RedirectResponse
     {
-        $provider = $provider->update(array_merge($request->validated(), [
+        $this->authorize('update', $provider);
+
+        $validated = $request->safe()->except('token');
+        if ($request->filled('token')) {
+            $validated['token'] = $request->input('token');
+        }
+
+        $provider->update(array_merge($validated, [
             'provider' => str($request->input('provider'))->lower(),
         ]));
 
@@ -113,6 +124,8 @@ class ProviderController extends Controller
      */
     public function destroy(Provider $provider): RedirectResponse
     {
+        $this->authorize('delete', $provider);
+
         $provider->delete();
 
         return redirect()->route('providers.index');

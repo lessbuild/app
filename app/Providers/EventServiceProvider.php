@@ -2,10 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
-use App\Observers\RepositoryObserver;
 use App\Observers\ServerObserver;
 use App\Observers\WebsiteObserver;
 use Illuminate\Auth\Events\Registered;
@@ -35,7 +33,6 @@ class EventServiceProvider extends ServiceProvider
     {
         Server::observe(ServerObserver::class);
         Website::observe(WebsiteObserver::class);
-        Repository::observe(RepositoryObserver::class);
     }
 
     /**

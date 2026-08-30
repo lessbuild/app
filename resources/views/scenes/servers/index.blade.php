@@ -45,7 +45,7 @@
                             </span>
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Created') }}
+                            {{ __('Status') }}
                         </th>
                         <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
                     </tr>
@@ -85,9 +85,12 @@
                                 </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ $server->created_at->diffForHumans() }}
-                                </div>
+                                <span @class([
+                                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
+                                    'bg-green-100 text-green-700' => $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE,
+                                    'bg-red-100 text-red-700' => $server->provisioning_status === \App\Models\Server::STATUS_FAILED,
+                                    'bg-blue-100 text-blue-700' => ! in_array($server->provisioning_status, [\App\Models\Server::STATUS_ACTIVE, \App\Models\Server::STATUS_FAILED], true),
+                                ])>{{ str($server->provisioning_status)->replace('_', ' ') }}</span>
                             </td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">

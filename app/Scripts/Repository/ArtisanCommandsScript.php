@@ -30,13 +30,13 @@ class ArtisanCommandsScript
     /**
      * The script to run
      *
-     * @param int $step
-     * @param \App\Models\Repository $repository
+     * @param  int  $step
+     * @param  \App\Models\Repository  $repository
      * @return string
      */
     public function script(int $step, Repository $repository): string
     {
-        $callback = config('app.url') . '/servers/release-repository/callback/status';
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
         $name = $repository->website->name;
 
         return <<<SCRIPT

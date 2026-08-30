@@ -2,7 +2,6 @@
 
 namespace App\Jobs\Server;
 
-use App\Actions\Server\InitialiseServerAction;
 use App\Actions\Server\UpdateServerIpAction;
 use App\Models\Server;
 use Illuminate\Bus\Queueable;
@@ -25,6 +24,10 @@ class InitialiseServerJob implements ShouldQueue
      */
     public Server $server;
 
+    public int $tries = 10;
+
+    public int $backoff = 10;
+
     /**
      * Create a new job instance.
      *
@@ -44,8 +47,23 @@ class InitialiseServerJob implements ShouldQueue
      */
     public function handle()
     {
+        $this->server->update([
+            'provisioning_status' => Server::STATUS_WAITING_FOR_IP,
+            'provisioning_error' => null,
+        ]);
+
         if (is_null($this->server->public_ip)) {
             (new UpdateServerIpAction($this->server))->handle();
         }
+
+        $this->server->update(['provisioning_status' => Server::STATUS_PROVISIONING]);
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->server->update([
+            'provisioning_status' => Server::STATUS_FAILED,
+            'provisioning_error' => str($exception->getMessage())->limit(2000),
+        ]);
     }
 }

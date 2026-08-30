@@ -14,7 +14,7 @@ class WebsiteSetup extends Component
     protected array $processes = [
         AddWebsiteToCaddyScript::class,
         CreateMysqlDatabase::class,
-        UpdateEnviromentScript::class
+        UpdateEnviromentScript::class,
     ];
 
     /**
@@ -29,6 +29,9 @@ class WebsiteSetup extends Component
      */
     public function render(): View
     {
+        $this->model->refresh();
+        abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
+
         return view('livewire.setup');
     }
 }

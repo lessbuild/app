@@ -39,7 +39,7 @@
                             {{ __('Server') }}
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Description') }}
+                            {{ __('Status') }}
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
                             {{ __('Added') }}
@@ -71,9 +71,12 @@
                                 </a>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ $website->description }}
-                                </div>
+                                <span @class([
+                                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
+                                    'bg-green-100 text-green-700' => $website->provisioning_status === \App\Models\Website::STATUS_ACTIVE,
+                                    'bg-red-100 text-red-700' => $website->provisioning_status === \App\Models\Website::STATUS_FAILED,
+                                    'bg-blue-100 text-blue-700' => ! in_array($website->provisioning_status, [\App\Models\Website::STATUS_ACTIVE, \App\Models\Website::STATUS_FAILED], true),
+                                ])>{{ str($website->provisioning_status)->replace('_', ' ') }}</span>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">

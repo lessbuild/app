@@ -30,15 +30,15 @@ class UpdateEnviromentScript
     /**
      * Shell script to run
      *
-     * @param int $step
-     * @param \App\Models\Website $website
+     * @param  int  $step
+     * @param  \App\Models\Website  $website
      * @return string
      */
     public function script(int $step, Website $website): string
     {
         $name = $website->name;
         $env = $website->environment;
-        $callback = config('app.url') . '/servers/add-website/callback/status';
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website', $website);
 
         return <<<SCRIPT
             # Update the environment file

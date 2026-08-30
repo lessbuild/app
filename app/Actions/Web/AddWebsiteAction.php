@@ -14,7 +14,7 @@ class AddWebsiteAction extends Publishable
     public array $commands = [
         AddWebsiteToCaddyScript::class,
         CreateMysqlDatabase::class,
-        UpdateEnviromentScript::class
+        UpdateEnviromentScript::class,
     ];
 
     /**
@@ -23,7 +23,8 @@ class AddWebsiteAction extends Publishable
     private Website $website;
 
     /**
-     * @param \App\Models\Website $website
+     * @param  \App\Models\Website  $website
+     *
      * @throws \Exception
      */
     public function __construct(Website $website)
@@ -40,6 +41,14 @@ class AddWebsiteAction extends Publishable
      */
     public function handle(): void
     {
+        $failureCallback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.website.failed', $this->website);
+        $this->script = <<<SCRIPT
+        #!/bin/bash
+        set -Eeuo pipefail
+        trap 'exit_code=$?; curl --silent --show-error --data "exit_code=\$exit_code&message=Remote website provisioning failed" "{$failureCallback}"; exit \$exit_code' ERR
+
+        SCRIPT;
+
         foreach ($this->commands as $key => $command) {
             $this->script .= app($command)->script(($key + 1), $this->website);
         }

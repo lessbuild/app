@@ -33,6 +33,9 @@ class RepositorySetup extends Component
      */
     public function render(): View
     {
+        $this->model->refresh();
+        abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
+
         return view('livewire.setup');
     }
 }

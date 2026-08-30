@@ -21,12 +21,15 @@
     >
         <x-slot:buttons>
 
-            <a href="{{ route('repositories.deploy', $repository) }}" class="button primary">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                    <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
-                </svg>
-                {{ __('Deploy') }}
-            </a>
+            <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
+                @csrf
+                <button type="submit" class="button primary" @disabled($deploymentInProgress)>
+                    <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                        <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
+                    </svg>
+                    {{ $deploymentInProgress ? __('Deployment in progress') : __('Deploy') }}
+                </button>
+            </form>
 
             <a href="{{ route('repositories.edit', $repository) }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
@@ -76,5 +79,34 @@
     <div class="col-span-3">
         <livewire:repository-setup :model="$repository"></livewire:repository-setup>
     </div>
+
+    <section class="mt-10">
+        <h2 class="mb-4 text-2xl font-bold text-primary">{{ __('Deployment history') }}</h2>
+        @forelse ($builds as $build)
+            <div class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
+                <div>
+                    <p class="font-medium text-primary">{{ __('Build #:id', ['id' => $build->id]) }}</p>
+                    <p class="text-sm text-secondary">
+                        {{ $build->created_at->diffForHumans() }}
+                        @if ($build->failure_message)
+                            &middot; {{ $build->failure_message }}
+                        @endif
+                    </p>
+                </div>
+                <span @class([
+                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
+                    'bg-green-100 text-green-700' => $build->status === \App\Models\Build::STATUS_SUCCEEDED,
+                    'bg-red-100 text-red-700' => $build->status === \App\Models\Build::STATUS_FAILED,
+                    'bg-blue-100 text-blue-700' => in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING]),
+                    'bg-gray-100 text-gray-700' => $build->status === \App\Models\Build::STATUS_QUEUED,
+                ])>{{ $build->status }}</span>
+            </div>
+        @empty
+            <x-lists.empty
+                :title="__('No deployments yet')"
+                :description="__('Deploy this repository to create its first build.')"
+            />
+        @endforelse
+    </section>
 
 </x-layouts.app>

@@ -30,19 +30,21 @@ class PurgeOldReleasesScript
     /**
      * The script to run
      *
-     * @param int $step
-     * @param \App\Models\Repository $repository
+     * @param  int  $step
+     * @param  \App\Models\Repository  $repository
      * @return string
      */
     public function script(int $step, Repository $repository): string
     {
+        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
+
         return <<<SCRIPT
 
             # Delete current file
             # rm -- "$0"
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" http://5653-2a01-4c8-829-a471-f954-95a-81d5-e90d.ngrok.io/servers/release-repository/callback/status
+            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" {$callback}
 
         SCRIPT;
     }

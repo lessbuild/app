@@ -43,6 +43,19 @@ class AddWebsiteJob implements ShouldQueue
      */
     public function handle()
     {
+        $this->website->update([
+            'provisioning_status' => Website::STATUS_PROVISIONING,
+            'provisioning_error' => null,
+        ]);
+
         (new AddWebsiteAction($this->website))->handle();
+    }
+
+    public function failed(\Throwable $exception): void
+    {
+        $this->website->update([
+            'provisioning_status' => Website::STATUS_FAILED,
+            'provisioning_error' => str($exception->getMessage())->limit(2000),
+        ]);
     }
 }

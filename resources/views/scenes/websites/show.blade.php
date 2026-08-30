@@ -5,7 +5,7 @@
      ! Show passwords
      ! ------------------------------------------------------------
      !-->
-    @if(session()->has('mysql_password'))
+    @if(session()->has($website->name . '_mysql_password'))
         <div class="my-4">
             <x-alerts.info>
                 <x-slot name="title">
@@ -64,6 +64,13 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
+        <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+            <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
+            <p class="text-sm">{{ $website->provisioning_error }}</p>
+        </div>
+    @endif
+
     <!--
      ! ------------------------------------------------------------
      ! Website information
@@ -120,8 +127,8 @@
                                             {{ $repository->url }}
                                         </p>
                                     </div>
-                                    <div class="inline-flex items-center text-md font-semibold text-primary dark:text-white">
-                                        Deployed
+                                    <div class="inline-flex items-center text-md font-semibold text-primary dark:text-white uppercase">
+                                        {{ $repository->latestBuild?->status ?? __('Not deployed') }}
                                     </div>
                                 </div>
                             </a>
