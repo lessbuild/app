@@ -3,56 +3,56 @@
 namespace App\Scripts\Repository;
 
 use App\Models\Repository;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 class ActivateReleaseScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Activate Release';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Activate the release on the server, and update the symlink';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'activated-release';
 
     /**
      * The script to run
-     *
-     * @param  int  $step
-     * @param  \App\Models\Repository  $repository
-     * @return string
      */
     public function script(int $step, Repository $repository): string
     {
-        $name = $repository->website->deployment_slug;
-        $time = now();
-        $release = $time->timestamp;
-        $repository->builds()->create(['built_at' => $time]);
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
-        $root = "/var/www/$name";
+        $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
+        $release = escapeshellarg(now()->format('YmdHis').'-'.Str::lower(Str::random(6)));
+        $callback = escapeshellarg(URL::signedRoute('callbacks.repository', $repository));
 
         return <<<SCRIPT
 
-            mkdir -p $root/releases/$release
-            mv $root/current $root/releases/$release
-            mv /var/www/$name/setup /var/www/$name/current
+            DEPLOY_ROOT={$root}
+            RELEASE_NAME={$release}
+            RELEASE_PATH="\$DEPLOY_ROOT/releases/\$RELEASE_NAME"
+            CURRENT_PATH="\$DEPLOY_ROOT/current"
+            NEXT_LINK="\$DEPLOY_ROOT/current.next"
 
-            sudo chmod -R 777 /var/www/$name/current/bootstrap/cache
+            mkdir -p -- "\$DEPLOY_ROOT/releases"
+            mv -- "\$DEPLOY_ROOT/setup" "\$RELEASE_PATH"
+
+            # Convert the legacy directory layout on its first deployment.
+            if [ -d "\$CURRENT_PATH" ] && [ ! -L "\$CURRENT_PATH" ]; then
+                mv -- "\$CURRENT_PATH" "\$DEPLOY_ROOT/releases/legacy-\$RELEASE_NAME"
+            fi
+
+            ln -sfn -- "\$RELEASE_PATH" "\$NEXT_LINK"
+            mv -Tf -- "\$NEXT_LINK" "\$CURRENT_PATH"
 
             # Ping
-            curl --insecure --user-agent "deployer" --data "status=$step&repository_id=$repository->id" {$callback}
+            curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" {$callback}
 
         SCRIPT;
     }

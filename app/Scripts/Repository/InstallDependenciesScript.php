@@ -3,56 +3,49 @@
 namespace App\Scripts\Repository;
 
 use App\Models\Repository;
+use Illuminate\Support\Facades\URL;
 
 class InstallDependenciesScript
 {
     /**
      * Title of the script
-     *
-     * @var string
      */
     public static string $title = 'Install Repository Dependencies';
 
     /**
      * Description of the script
-     *
-     * @var string
      */
     public static string $description = 'Install the repository dependencies on the server';
 
     /**
      * Identifier of the script
-     *
-     * @var string
      */
     public static string $identifier = 'installed-repository-dependencies';
 
     /**
      * The script to run
-     *
-     * @param  int  $step
-     * @param  \App\Models\Repository  $repository
-     * @return string
      */
     public function script(int $step, Repository $repository): string
     {
-        $name = $repository->website->deployment_slug;
-        $callback = \Illuminate\Support\Facades\URL::signedRoute('callbacks.repository', $repository);
+        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $callback = escapeshellarg(URL::signedRoute('callbacks.repository', $repository));
 
         return <<<SCRIPT
 
-            cd /var/www/{$name}/setup
+            cd -- {$setupPath}
 
-            # Install dependencies
-            yes | composer install
+            if [ -f composer.json ]; then
+                composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader
+            fi
 
-            # Composer update
-            yes | composer update
-            yes | composer dump
-
-            # Install packages
-            npm install
-            npm run build
+            if [ -f package.json ]; then
+                if [ -f package-lock.json ]; then
+                    npm ci --no-audit --no-fund
+                else
+                    npm install --no-audit --no-fund
+                fi
+                npm run build --if-present
+            fi
 
             # Ping
             curl --insecure --user-agent "deployer" --data "status={$step}&repository_id={$repository->id}" $callback
