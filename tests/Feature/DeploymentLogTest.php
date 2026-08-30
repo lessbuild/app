@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Repository\PublishRepositoryAction;
+use App\Http\Livewire\BuildDeploymentStatus;
 use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Server;
@@ -12,6 +13,7 @@ use App\Services\ManagedSsh;
 use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
+use Livewire\Livewire;
 use Mockery;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
@@ -61,6 +63,72 @@ class DeploymentLogTest extends TestCase
 
         $this->actingAs($intruder)->get(route('builds.show', $build))
             ->assertForbidden();
+
+        Livewire::actingAs($intruder)
+            ->test(BuildDeploymentStatus::class, ['build' => $build])
+            ->assertForbidden();
+    }
+
+    public function test_running_build_details_poll_for_live_status_and_escaped_logs(): void
+    {
+        [$owner, $build] = $this->build();
+        $build->update([
+            'status' => Build::STATUS_RUNNING,
+            'remote_process_id' => 4321,
+            'remote_process_path' => '/tmp/application-repository-abcd1234.sh',
+            'finished_at' => null,
+        ]);
+        $build->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => "Installing dependencies\n<script>alert('live')</script>",
+        ]);
+
+        $this->actingAs($owner)->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertSee('wire:poll.5s', false)
+            ->assertSee('Running')
+            ->assertSee('Cancel deployment')
+            ->assertSeeText('Installing dependencies')
+            ->assertDontSee("<script>alert('live')</script>", false);
+
+        $component = Livewire::actingAs($owner)
+            ->test(BuildDeploymentStatus::class, ['build' => $build])
+            ->assertSee('Running')
+            ->assertSeeHtml('wire:poll.5s');
+
+        $build->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
+            'finished_at' => now(),
+        ]);
+
+        $this->actingAs($owner)->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertDontSee('wire:poll.5s', false)
+            ->assertDontSee('Cancel deployment');
+
+        $component
+            ->call('$refresh')
+            ->assertSee('Succeeded')
+            ->assertDontSeeHtml('wire:poll.5s')
+            ->assertDontSee('Cancel deployment');
+    }
+
+    public function test_late_log_callback_cannot_replace_a_canceled_deployment_log(): void
+    {
+        [, $build] = $this->build();
+        $build->update(['status' => Build::STATUS_CANCELED]);
+        $build->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => 'Final output captured while canceling',
+        ]);
+
+        $this->post(URL::signedRoute('callbacks.build.log', $build), [
+            'log' => 'Late in-flight snapshot',
+        ])->assertNoContent();
+
+        $this->assertSame('Final output captured while canceling', $build->logs()->sole()->log);
     }
 
     public function test_remote_deployment_script_captures_bounded_output_for_success_and_failure(): void
@@ -93,7 +161,10 @@ class DeploymentLogTest extends TestCase
         $this->assertStringContainsString('tail -c 262144', $script);
         $this->assertStringContainsString('--data-urlencode "log@$LOG_UPLOAD_FILE"', $script);
         $this->assertStringContainsString('trap deployment_failed ERR', $script);
-        $this->assertSame(3, substr_count($script, 'upload_deployment_log'));
+        $this->assertStringContainsString('while sleep 5; do', $script);
+        $this->assertStringContainsString('stream_deployment_log &', $script);
+        $this->assertStringContainsString('stop_deployment_log_stream', $script);
+        $this->assertSame(4, substr_count($script, 'upload_deployment_log'));
 
         $syntax = new Process(['bash', '-n']);
         $syntax->setInput($script);

@@ -294,14 +294,21 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
 })->middleware('signed')->name('callbacks.build.failed');
 
 Route::post('builds/{build}/deployment/callback/log', function (Build $build) {
-    $data = request()->validate([
-        'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.deployment_log_max_characters'))],
-    ]);
+    DB::transaction(function () use ($build): void {
+        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
+        if ($locked->status === Build::STATUS_CANCELED) {
+            return;
+        }
 
-    $build->logs()->updateOrCreate(
-        ['type' => 'deployment'],
-        ['log' => $data['log']],
-    );
+        $data = request()->validate([
+            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.deployment_log_max_characters'))],
+        ]);
+
+        $locked->logs()->updateOrCreate(
+            ['type' => Build::DEPLOYMENT_LOG_TYPE],
+            ['log' => $data['log']],
+        );
+    });
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.build.log');

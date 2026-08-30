@@ -68,9 +68,24 @@ class PublishRepositoryAction extends Publishable
                 "{$logCallback}" || true
         }
 
+        stream_deployment_log() {
+            while sleep 5; do
+                upload_deployment_log
+            done
+        }
+
+        stop_deployment_log_stream() {
+            if [ -n "\${LOG_STREAM_PID:-}" ]; then
+                kill "\$LOG_STREAM_PID" 2>/dev/null || true
+                wait "\$LOG_STREAM_PID" 2>/dev/null || true
+                LOG_STREAM_PID=""
+            fi
+        }
+
         deployment_failed() {
             exit_code=\$?
             trap - ERR
+            stop_deployment_log_stream
             upload_deployment_log
             curl --silent --show-error \
                 --data "exit_code=\$exit_code&message=Remote deployment script failed" \
@@ -82,6 +97,8 @@ class PublishRepositoryAction extends Publishable
         trap deployment_failed ERR
         : > "\$LOG_FILE"
         exec > "\$LOG_FILE" 2>&1
+        stream_deployment_log &
+        LOG_STREAM_PID=\$!
 
         SCRIPT;
 
@@ -89,6 +106,7 @@ class PublishRepositoryAction extends Publishable
 
         $this->script .= <<<'SCRIPT'
 
+        stop_deployment_log_stream
         upload_deployment_log
         rm -f -- "$LOG_FILE" "$LOG_UPLOAD_FILE"
 

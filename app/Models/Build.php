@@ -23,6 +23,8 @@ class Build extends Model
 
     public const STATUS_CANCELED = 'canceled';
 
+    public const DEPLOYMENT_LOG_TYPE = 'deployment';
+
     /**
      * The attributes that aren't mass assignable.
      *

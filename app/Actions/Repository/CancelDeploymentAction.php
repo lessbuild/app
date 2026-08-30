@@ -13,7 +13,7 @@ class CancelDeploymentAction
         private readonly ?Runner $runner = null,
     ) {}
 
-    public function handle(): void
+    public function handle(): ?string
     {
         $processId = $this->build->remote_process_id;
         if (! is_int($processId) || $processId < 1) {
@@ -61,11 +61,6 @@ class CancelDeploymentAction
             throw new RuntimeException('The remote deployment process could not be stopped.');
         }
 
-        if ($result->getOutput() !== '') {
-            $this->build->logs()->updateOrCreate(
-                ['type' => 'deployment'],
-                ['log' => $result->getOutput()],
-            );
-        }
+        return $result->getOutput() !== '' ? $result->getOutput() : null;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Livewire\BuildDeploymentStatus;
 use App\Http\Livewire\RepositorySetup;
 use App\Http\Livewire\ServerCommand;
 use App\Http\Livewire\ServerSetup;
@@ -29,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
         Livewire::component('repository-setup', RepositorySetup::class);
         Livewire::component('server-command', ServerCommand::class);
         Livewire::component('server-setup', ServerSetup::class);

@@ -32,11 +32,10 @@ class BuildsController extends Controller
     public function show(Build $build): View
     {
         $this->authorize('view', $build);
-        $build->load(['repository.website.server', 'logs']);
+        $build->load('repository.website.server');
 
         return view('scenes.builds.show', [
             'build' => $build,
-            'deploymentLog' => $build->logs->firstWhere('type', 'deployment'),
         ]);
     }
 
@@ -49,14 +48,14 @@ class BuildsController extends Controller
         }
 
         try {
-            (new CancelDeploymentAction($build, $runner))->handle();
+            $partialLog = (new CancelDeploymentAction($build, $runner))->handle();
         } catch (Throwable $exception) {
             report($exception);
 
             return back()->with('error', __('The deployment could not be canceled. Please try again.'));
         }
 
-        $canceled = DB::transaction(function () use ($build): bool {
+        $canceled = DB::transaction(function () use ($build, $partialLog): bool {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_RUNNING)
@@ -67,6 +66,13 @@ class BuildsController extends Controller
 
             if (! $locked) {
                 return false;
+            }
+
+            if ($partialLog !== null) {
+                $locked->logs()->updateOrCreate(
+                    ['type' => Build::DEPLOYMENT_LOG_TYPE],
+                    ['log' => $partialLog],
+                );
             }
 
             $locked->update([
