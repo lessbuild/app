@@ -43,7 +43,7 @@
             <button
                 type="button"
                 class="button primary"
-                wire:click="$emit('open-server-command')"
+                wire:click="$dispatch('open-server-command')"
                 @disabled($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
             >
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">

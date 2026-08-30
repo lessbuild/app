@@ -10,11 +10,11 @@ use App\Models\Region;
 use App\Models\Server;
 use App\Models\Size;
 use App\Services\DigitalOcean;
+use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use SSX\SSH\KeyPair;
 
 class ServersController extends Controller
 {
@@ -64,12 +64,12 @@ class ServersController extends Controller
      * Store the resource in storage
      *
      * @param  \App\Http\Requests\ServerRequest  $request
-     * @param  \SSX\SSH\KeyPair  $keypair
+     * @param  \App\Services\SshKeyPair  $keypair
      * @return \Illuminate\Http\RedirectResponse
      *
      * @throws \Exception
      */
-    public function store(ServerRequest $request, KeyPair $keypair): RedirectResponse
+    public function store(ServerRequest $request, SshKeyPair $keypair): RedirectResponse
     {
         $token = $request->user()->providers()->find($request->input('provider_id'))->token;
         $digitalOcean = new DigitalOcean($token);
@@ -78,8 +78,8 @@ class ServersController extends Controller
             'provider_id' => $request->input('provider_id'),
             'provisioning_status' => Server::STATUS_QUEUED,
             'keypair' => [
-                'public' => $keypair->getPublicKey(),
-                'private' => $keypair->getPrivateKey(),
+                'public' => $keypair->publicKey(),
+                'private' => $keypair->privateKey(),
             ],
         ]), function ($server) use ($digitalOcean, $request) {
 
