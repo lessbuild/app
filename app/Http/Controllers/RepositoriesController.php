@@ -36,7 +36,7 @@ class RepositoriesController extends Controller
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
             'deploymentInProgress' => $repository->builds()
-                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->whereIn('status', Build::ACTIVE_STATUSES)
                 ->exists(),
             'deploymentReady' => $repository->isDeploymentReady(),
         ]);

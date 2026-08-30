@@ -27,6 +27,20 @@ class Build extends Model
 
     public const TRIGGER_WEBHOOK = 'webhook';
 
+    public const TRIGGER_REDEPLOY = 'redeploy';
+
+    public const ACTIVE_STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_DEPLOYING,
+        self::STATUS_RUNNING,
+    ];
+
+    public const TERMINAL_STATUSES = [
+        self::STATUS_SUCCEEDED,
+        self::STATUS_FAILED,
+        self::STATUS_CANCELED,
+    ];
+
     public const DEPLOYMENT_LOG_TYPE = 'deployment';
 
     /**
@@ -56,6 +70,11 @@ class Build extends Model
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);
+    }
+
+    public function redeployedFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'redeployed_from_build_id');
     }
 
     public function shortRevision(): ?string

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Repository\CancelDeploymentAction;
+use App\Actions\Repository\RedeployBuildAction;
+use App\Data\BuildRedeploymentResult;
 use App\Models\Build;
 use App\Services\Runner;
 use Illuminate\Contracts\View\View;
@@ -89,5 +91,24 @@ class BuildsController extends Controller
         return $canceled
             ? back()->with('success', __('Deployment canceled.'))
             : back()->with('info', __('The deployment finished before it could be canceled.'));
+    }
+
+    public function redeploy(Build $build, RedeployBuildAction $redeploy): RedirectResponse
+    {
+        $this->authorize('redeploy', $build);
+
+        $result = $redeploy->handle($build);
+
+        return match ($result->status) {
+            BuildRedeploymentResult::QUEUED => redirect()
+                ->route('builds.show', $result->build)
+                ->with('success', __('Redeployment queued.')),
+            BuildRedeploymentResult::UNAVAILABLE => back()
+                ->with('error', __('The website and server must be active before redeployment.')),
+            BuildRedeploymentResult::ACTIVE => back()
+                ->with('info', __('A deployment is already in progress.')),
+            default => back()
+                ->with('info', __('Only completed, failed, or canceled deployments can be redeployed.')),
+        };
     }
 }

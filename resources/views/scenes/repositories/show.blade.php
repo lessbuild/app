@@ -192,6 +192,9 @@
                     <p class="text-sm text-secondary">
                         {{ $build->created_at->diffForHumans() }}
                         &middot; {{ ucfirst($build->trigger_source) }}
+                        @if ($build->redeployed_from_build_id)
+                            {{ __('of build #:id', ['id' => $build->redeployed_from_build_id]) }}
+                        @endif
                         @if ($build->revision)
                             &middot;
                             @if ($revisionUrl = $repository->revisionUrl($build->revision))

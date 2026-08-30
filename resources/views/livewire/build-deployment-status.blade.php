@@ -28,6 +28,15 @@
         </div>
     </dl>
 
+    @if ($build->redeployed_from_build_id)
+        <p class="mt-3 text-sm text-secondary">
+            {{ __('Redeployment of') }}
+            <a href="{{ route('builds.show', $build->redeployed_from_build_id) }}" class="font-medium text-primary hover:underline">
+                {{ __('Build #:id', ['id' => $build->redeployed_from_build_id]) }}
+            </a>
+        </p>
+    @endif
+
     @if ($build->commit_message)
         <div class="mt-4 rounded-lg border border-primary bg-primary p-4">
             <p class="text-xs font-semibold uppercase text-secondary">{{ __('Commit message') }}</p>
@@ -44,6 +53,21 @@
                 onclick="return confirm({{ Illuminate\Support\Js::from(__('Stop this deployment on the remote server?')) }})"
             >
                 {{ __('Cancel deployment') }}
+            </button>
+        </form>
+    @endif
+
+    @if (in_array($build->status, \App\Models\Build::TERMINAL_STATUSES, true))
+        <form method="POST" action="{{ route('builds.redeploy', $build) }}" class="mt-4">
+            @csrf
+            <button
+                type="submit"
+                class="button primary"
+                onclick="return confirm({{ Illuminate\Support\Js::from($build->revision
+                    ? __('Redeploy this exact revision?')
+                    : __('Redeploy the repository branch?')) }})"
+            >
+                {{ $build->revision ? __('Redeploy this revision') : __('Retry deployment') }}
             </button>
         </form>
     @endif

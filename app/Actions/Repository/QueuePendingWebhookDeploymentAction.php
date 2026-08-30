@@ -18,11 +18,7 @@ class QueuePendingWebhookDeploymentAction
                 return null;
             }
 
-            $active = $locked->builds()->whereIn('status', [
-                Build::STATUS_QUEUED,
-                Build::STATUS_DEPLOYING,
-                Build::STATUS_RUNNING,
-            ])->exists();
+            $active = $locked->builds()->whereIn('status', Build::ACTIVE_STATUSES)->exists();
             if ($active) {
                 return null;
             }

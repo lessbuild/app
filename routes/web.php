@@ -64,6 +64,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('builds', BuildsController::class)->only(['index', 'show']);
     Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
         ->name('builds.cancel');
+    Route::post('builds/{build}/redeploy', [BuildsController::class, 'redeploy'])
+        ->name('builds.redeploy');
     Route::resource('repositories', RepositoriesController::class);
     Route::resource('recipes', RecipesController::class)->except('show');
     Route::resource('providers', ProviderController::class);

@@ -64,6 +64,11 @@ delivery IDs are ignored, and GitLab timestamps expire after five minutes. If
 a push arrives during a deployment, Lessbuild coalesces newer pushes into one
 follow-up deployment rather than running releases concurrently.
 
+Completed, failed, and canceled builds can be redeployed from their build page.
+Webhook builds retain their authenticated commit revision, so redeploying one
+checks out that exact commit and can also be used to restore an earlier release.
+Manual builds created before a revision was recorded retry the configured branch.
+
 ### Todo
  
 

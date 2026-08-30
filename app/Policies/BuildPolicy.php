@@ -16,4 +16,9 @@ class BuildPolicy
     {
         return $this->view($user, $build);
     }
+
+    public function redeploy(User $user, Build $build): bool
+    {
+        return $this->view($user, $build);
+    }
 }
