@@ -8,6 +8,7 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,11 +21,82 @@ class RepositoriesController extends Controller
      */
     public function index(Request $request): View
     {
-        $repositories = $request->user()->repositories()->get();
+        $filters = $this->indexFilters($request);
+        $repositories = $this->filteredRepositories($request, $filters)
+            ->with(['provider', 'website.server', 'latestBuild'])
+            ->latest()
+            ->paginate()
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
 
         return view('scenes.repositories.index', [
             'repositories' => $repositories,
+            'filters' => $filters,
+            'providers' => $request->user()->providers()
+                ->forRepositories()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'websites' => $request->user()->websites()
+                ->orderBy('name')
+                ->get(['id', 'name']),
+            'statuses' => $this->repositoryStatuses(),
         ]);
+    }
+
+    /** @return array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string} */
+    private function indexFilters(Request $request): array
+    {
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $status = $request->string('status')->toString();
+
+        return [
+            'search' => $search !== '' ? $search : null,
+            'provider_id' => $this->positiveInteger($request->query('provider_id')),
+            'website_id' => $this->positiveInteger($request->query('website_id')),
+            'status' => in_array($status, $this->repositoryStatuses(), true) ? $status : null,
+        ];
+    }
+
+    /**
+     * @param  array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string}  $filters
+     */
+    private function filteredRepositories(Request $request, array $filters): HasMany
+    {
+        return $request->user()->repositories()
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('url', 'like', "%{$value}%")
+                        ->orWhere('description', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['provider_id'], fn ($query, int $id) => $query
+                ->where('provider_id', $id))
+            ->when($filters['website_id'], fn ($query, int $id) => $query
+                ->where('website_id', $id))
+            ->when($filters['status'] === 'none', fn ($query) => $query
+                ->whereDoesntHave('builds'))
+            ->when($filters['status'] && $filters['status'] !== 'none', fn ($query) => $query
+                ->whereHas('latestBuild', fn ($query) => $query
+                    ->where('status', $filters['status'])));
+    }
+
+    private function positiveInteger(mixed $value): ?int
+    {
+        $integer = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+
+        return $integer ?: null;
+    }
+
+    /** @return list<string> */
+    private function repositoryStatuses(): array
+    {
+        return [
+            'none',
+            ...array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES))),
+        ];
     }
 
     /**
