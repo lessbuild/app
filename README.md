@@ -158,6 +158,11 @@ Local-password users can also invalidate every other browser session without
 changing their password. The current password is revalidated and rehashed, stale
 sessions are rejected by session middleware, and the initiating browser remains
 authenticated.
+Password confirmation, password changes, session revocation, reset-link requests,
+and reset submissions share a six-attempt-per-minute sensitive-action limiter.
+Authenticated attempts are isolated per account; guest reset flows also enforce
+a broader IP ceiling and use hashed IP/email keys without storing email addresses
+in rate-limit cache keys.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

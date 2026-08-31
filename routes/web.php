@@ -54,8 +54,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
+        ->middleware('throttle:sensitive-account')
         ->name('account.password.update');
     Route::post('account/sessions/revoke', [UsersController::class, 'revokeOtherSessions'])
+        ->middleware('throttle:sensitive-account')
         ->name('account.sessions.revoke');
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
