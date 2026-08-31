@@ -34,6 +34,8 @@ batches. Connection failures and recoveries create linked activity and inbox ale
 while repeated states and concurrent stale results do not create duplicate alerts.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
+Authenticated visits to the public root and the sidebar Dashboard link both enter
+the verified dashboard flow; signed-out visitors continue to see the landing page.
 It also separates active deployments from recent history, with owner-scoped
 Queued, Deploying, Running, and Timing out counts plus direct build links.
 Queued and running server commands receive a separate cross-server summary with

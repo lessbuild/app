@@ -11,11 +11,11 @@
         <p class="pl-4 text-xs font-light mb-1 uppercase text-secondary">
             {{ __('System') }}
         </p>
-        <a href="/" @class([
-		    "w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer",
-		    "bg-primary" => !request()->routeIs('/'),
-		    "bg-secondary" => request()->routeIs('/')
-		])>
+        <a href="{{ route('dashboard') }}" @class([
+            'w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer',
+            'bg-primary' => ! request()->routeIs('dashboard'),
+            'bg-secondary' => request()->routeIs('dashboard'),
+        ])>
             <svg class="w-5 h-5 mr-2 stroke-2">
                 <use xlink:href="/assets/images/icons.svg#view-grid"></use>
             </svg>

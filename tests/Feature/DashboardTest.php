@@ -17,6 +17,25 @@ class DashboardTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_guests_see_the_public_landing_page(): void
+    {
+        $this->get('/')
+            ->assertSuccessful()
+            ->assertSee('Easily deploy your web applications')
+            ->assertSee(route('login'));
+    }
+
+    public function test_authenticated_root_visits_redirect_into_the_dashboard_verification_flow(): void
+    {
+        $verified = User::factory()->create(['email_verified_at' => now()]);
+        $this->actingAs($verified)->get('/')->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertSuccessful();
+
+        $unverified = User::factory()->unverified()->create();
+        $this->actingAs($unverified)->get('/')->assertRedirect(route('dashboard'));
+        $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
+    }
+
     public function test_guests_are_redirected_to_login(): void
     {
         $this->get(route('dashboard'))->assertRedirect(route('login'));
@@ -61,6 +80,11 @@ class DashboardTest extends TestCase
             ->assertDontSee('Infrastructure provisioning')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
+
+        $this->assertMatchesRegularExpression(
+            '/<a href="'.preg_quote(route('dashboard'), '/').'" class="[^"]*bg-secondary[^"]*">\s*<svg[^>]*>.*?Dashboard/s',
+            $response->getContent(),
+        );
     }
 
     public function test_dashboard_surfaces_only_the_owners_current_failures(): void
