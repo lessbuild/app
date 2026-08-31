@@ -32,6 +32,13 @@ class SensitiveActionRateLimitTest extends TestCase
                 ->assertSessionHasErrors(['current_password'], errorBag: 'sessions');
         }
 
+        $this->patch(route('account.profile.update'), [
+            'name' => $user->name,
+            'email' => 'rate-limited@example.test',
+            'current_password' => 'current-password',
+        ])->assertTooManyRequests();
+        $this->assertNotSame('rate-limited@example.test', $user->fresh()->email);
+
         $this->patch(route('account.password.update'), [
             'current_password' => 'current-password',
             'password' => 'replacement-password',

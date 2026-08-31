@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\OtherDeviceLogout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SessionRevocationTest extends TestCase
@@ -73,6 +74,35 @@ class SessionRevocationTest extends TestCase
         ])->assertSessionHas('sessions_status', 'Other browser sessions logged out.');
 
         Event::assertDispatched(OtherDeviceLogout::class, fn (OtherDeviceLogout $event) => $event->user->is($user));
+        $this->assertNotSame($previousHash, $user->fresh()->password);
+        $this->assertTrue(Hash::check('current-password', $user->fresh()->password));
+        $this->assertAuthenticatedAs($user);
+        $this->get(route('account.index'))->assertSuccessful();
+
+        $this->actingAs($user->fresh())
+            ->withSession(['password_hash_web' => $previousHash])
+            ->get(route('account.index'))
+            ->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
+    public function test_email_change_keeps_current_browser_and_revokes_stale_sessions(): void
+    {
+        Event::fake([OtherDeviceLogout::class]);
+        Notification::fake();
+        $user = User::factory()->create([
+            'password' => Hash::make('current-password'),
+        ]);
+        $previousHash = $user->password;
+
+        $this->actingAs($user)->get(route('account.index'))->assertSuccessful();
+        $this->patch(route('account.profile.update'), [
+            'name' => $user->name,
+            'email' => 'replacement@example.test',
+            'current_password' => 'current-password',
+        ])->assertSessionHas('status', 'verification-link-sent');
+
+        Event::assertDispatched(OtherDeviceLogout::class, fn (OtherDeviceLogout $event): bool => $event->user->is($user));
         $this->assertNotSame($previousHash, $user->fresh()->password);
         $this->assertTrue(Hash::check('current-password', $user->fresh()->password));
         $this->assertAuthenticatedAs($user);

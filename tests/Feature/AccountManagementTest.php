@@ -3,9 +3,16 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Events\OtherDeviceLogout;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Contracts\Notifications\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
+use Mockery;
+use RuntimeException;
 use Tests\TestCase;
 
 class AccountManagementTest extends TestCase
@@ -45,18 +52,103 @@ class AccountManagementTest extends TestCase
 
     public function test_user_can_update_their_profile(): void
     {
+        Event::fake([OtherDeviceLogout::class]);
+        Notification::fake();
         $user = User::factory()->create(['email_verified_at' => now()]);
 
         $this->actingAs($user)->patch(route('account.profile.update'), [
             'name' => 'Grace Hopper',
             'email' => 'GRACE@example.com',
-        ])->assertSessionHas('profile_status');
+            'current_password' => 'password',
+        ])->assertSessionHas('profile_status')
+            ->assertSessionHas('status', 'verification-link-sent');
 
         $user->refresh();
 
         $this->assertSame('Grace Hopper', $user->name);
         $this->assertSame('grace@example.com', $user->email);
         $this->assertNull($user->email_verified_at);
+        Notification::assertSentTo($user, VerifyEmail::class);
+        Event::assertDispatched(OtherDeviceLogout::class, fn (OtherDeviceLogout $event): bool => $event->user->is($user));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_name_only_profile_update_does_not_require_a_password_or_resend_verification(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('account.profile.update'), [
+            'name' => 'Updated Name',
+            'email' => $user->email,
+        ])->assertSessionHas('profile_status')
+            ->assertSessionMissing('status');
+
+        $user->refresh();
+        $this->assertSame('Updated Name', $user->name);
+        $this->assertTrue($user->hasVerifiedEmail());
+        Notification::assertNotSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_email_change_rejects_an_incorrect_current_password(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('account.profile.update'), [
+            'name' => 'Changed Name',
+            'email' => 'replacement@example.com',
+            'current_password' => 'incorrect-password',
+        ])->assertSessionHasErrors(['current_password'], errorBag: 'profile');
+
+        $user->refresh();
+        $this->assertNotSame('replacement@example.com', $user->email);
+        $this->assertTrue($user->hasVerifiedEmail());
+        Notification::assertNotSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_social_only_user_can_change_email_without_a_local_password(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'auth_type' => 'github',
+            'github_id' => 'github-account',
+        ]);
+
+        $this->actingAs($user)->patch(route('account.profile.update'), [
+            'name' => $user->name,
+            'email' => 'social-replacement@example.com',
+        ])->assertSessionHas('status', 'verification-link-sent');
+
+        $user->refresh();
+        $this->assertSame('social-replacement@example.com', $user->email);
+        $this->assertFalse($user->hasVerifiedEmail());
+        Notification::assertSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_email_change_survives_verification_delivery_failure_and_offers_retry(): void
+    {
+        $dispatcher = Mockery::mock(Dispatcher::class);
+        $dispatcher->shouldReceive('send')->twice()->andThrow(new RuntimeException('Mail transport unavailable'));
+        $this->app->instance(Dispatcher::class, $dispatcher);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('account.profile.update'), [
+            'name' => $user->name,
+            'email' => 'delivery-retry@example.test',
+            'current_password' => 'password',
+        ])->assertSessionHas('profile_status')
+            ->assertSessionHas('verification_error', 'The email address was updated, but the verification message could not be sent. Try sending it again below.')
+            ->assertSessionMissing('status');
+
+        $user->refresh();
+        $this->assertSame('delivery-retry@example.test', $user->email);
+        $this->assertFalse($user->hasVerifiedEmail());
+        $this->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee('Try sending it again below.')
+            ->assertSee(route('verification.send'));
     }
 
     public function test_profile_email_must_be_unique(): void

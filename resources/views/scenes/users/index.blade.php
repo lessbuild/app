@@ -13,6 +13,9 @@
                 @if (session('status') === 'verification-link-sent')
                     <p class="mt-2 font-semibold">{{ __('A new verification link has been sent.') }}</p>
                 @endif
+                @if (session('verification_error'))
+                    <p class="mt-2 font-semibold text-red-700">{{ session('verification_error') }}</p>
+                @endif
                 <form method="POST" action="{{ route('verification.send') }}" class="mt-3">
                     @csrf
                     <button type="submit" class="button primary">{{ __('Send verification email') }}</button>
@@ -60,6 +63,22 @@
                         >
                     </label>
                     <x-forms.errors name="email" bag="profile" />
+
+                    @if (auth()->user()->hasLocalPassword())
+                        <label class="block">
+                            <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
+                            <input
+                                class="input secondary rounded"
+                                name="current_password"
+                                type="password"
+                                autocomplete="current-password"
+                            >
+                        </label>
+                        <p class="text-sm text-secondary">
+                            {{ __('Required only when changing your email address. Other browser sessions will be logged out after the change.') }}
+                        </p>
+                        <x-forms.errors name="current_password" bag="profile" />
+                    @endif
                 </div>
 
                 <x-slot:footer>

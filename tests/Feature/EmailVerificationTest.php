@@ -81,14 +81,18 @@ class EmailVerificationTest extends TestCase
 
     public function test_changing_email_requires_reverification_but_keeps_account_settings_available(): void
     {
+        Notification::fake();
         $user = User::factory()->create();
 
         $this->actingAs($user)->patch(route('account.profile.update'), [
             'name' => $user->name,
             'email' => 'replacement@example.com',
-        ])->assertSessionHas('profile_status');
+            'current_password' => 'password',
+        ])->assertSessionHas('profile_status')
+            ->assertSessionHas('status', 'verification-link-sent');
 
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
+        Notification::assertSentTo($user, VerifyEmail::class);
         $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
         $this->get(route('account.index'))
             ->assertSuccessful()

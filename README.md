@@ -166,6 +166,9 @@ New local accounts must verify their email before managing deployments or
 infrastructure. Account settings remain available so an incorrect address can
 be corrected and the signed verification link resent. Social identities are
 treated as verified when their provider supplies the account email.
+Changing a local-password account's email requires its current password, logs
+out other browser sessions, and automatically sends a verification link to the
+new address. Name-only profile edits do not require password confirmation.
 The account page lists linked GitHub, GitLab, and Bitbucket sign-in identities.
 Configured identities can be connected explicitly and disconnected while a
 local password or another linked provider remains available, preventing
@@ -178,8 +181,9 @@ Local-password users can also invalidate every other browser session without
 changing their password. The current password is revalidated and rehashed, stale
 sessions are rejected by session middleware, and the initiating browser remains
 authenticated.
-Password confirmation, password changes, session revocation, reset-link requests,
-and reset submissions share a six-attempt-per-minute sensitive-action limiter.
+Password confirmation, profile updates, password changes, session revocation,
+reset-link requests, and reset submissions share a six-attempt-per-minute
+sensitive-action limiter.
 Authenticated attempts are isolated per account; guest reset flows also enforce
 a broader IP ceiling and use hashed IP/email keys without storing email addresses
 in rate-limit cache keys.

@@ -27,6 +27,7 @@ class AccountSecurityActivityTest extends TestCase
         $this->actingAs($user)->patch(route('account.profile.update'), [
             'name' => 'Updated Owner',
             'email' => 'updated@example.test',
+            'current_password' => 'current-password',
         ])->assertSessionHas('profile_status');
         $this->patch(route('account.password.update'), [
             'current_password' => 'current-password',

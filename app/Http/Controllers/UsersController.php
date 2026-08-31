@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
+use Throwable;
 
 class UsersController extends Controller
 {
@@ -39,6 +40,10 @@ class UsersController extends Controller
         $request->merge([
             'email' => Str::lower((string) $request->input('email')),
         ]);
+        $emailChanged = $request->user()->email !== $request->input('email');
+        $currentPasswordRules = $emailChanged && $request->user()->hasLocalPassword()
+            ? ['required', 'current_password']
+            : ['exclude'];
 
         $validated = $request->validateWithBag('profile', [
             'name' => ['required', 'string', 'max:255'],
@@ -50,14 +55,23 @@ class UsersController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($request->user()->id),
             ],
+            'current_password' => $currentPasswordRules,
         ]);
 
-        $emailChanged = $request->user()->email !== $validated['email'];
         if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
-        $request->user()->fill($validated)->save();
+        $request->user()->fill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+        ])->save();
+
+        if ($emailChanged && $request->user()->hasLocalPassword()) {
+            Auth::guard('web')->logoutOtherDevices($validated['current_password']);
+            $request->session()->regenerate();
+        }
+
         $activity->recordAccount(
             $request->user(),
             $emailChanged
@@ -65,7 +79,22 @@ class UsersController extends Controller
                 : 'Account profile was updated.',
         );
 
-        return back()->with('profile_status', __('Profile updated.'));
+        $response = back()->with('profile_status', __('Profile updated.'));
+        if (! $emailChanged) {
+            return $response;
+        }
+
+        try {
+            $request->user()->sendEmailVerificationNotification();
+
+            return $response->with('status', 'verification-link-sent');
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $response->with('verification_error', __(
+                'The email address was updated, but the verification message could not be sent. Try sending it again below.',
+            ));
+        }
     }
 
     public function updatePassword(Request $request, ActivityRecorder $activity): RedirectResponse

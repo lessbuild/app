@@ -52,6 +52,7 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])
+        ->middleware('throttle:sensitive-account')
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->middleware('throttle:sensitive-account')
