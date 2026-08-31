@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProviderController extends Controller
 {
@@ -28,6 +29,65 @@ class ProviderController extends Controller
             'filters' => $filters,
             'types' => $this->providerTypes(),
             'usages' => ['in_use', 'unused'],
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->indexFilters($request);
+        $filename = 'lessbuild-providers-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Provider ID',
+                'Name',
+                'Type',
+                'Description',
+                'Servers',
+                'Server count',
+                'Repositories',
+                'Repository count',
+                'Created at',
+                'Updated at',
+            ], ',', '"', '');
+
+            $this->filteredProviders($request, $filters)
+                ->with([
+                    'servers' => fn ($query) => $query
+                        ->select(['id', 'provider_id', 'name'])
+                        ->orderBy('name'),
+                    'repositories' => fn ($query) => $query
+                        ->select(['id', 'provider_id', 'name'])
+                        ->orderBy('name'),
+                ])
+                ->withCount(['servers', 'repositories'])
+                ->latest('providers.id')
+                ->lazy(250)
+                ->each(function (Provider $provider) use ($output): void {
+                    fputcsv($output, [
+                        $provider->id,
+                        $this->csvCell($provider->name),
+                        $this->csvCell($provider->provider),
+                        $this->csvCell($provider->description),
+                        $this->csvCell($provider->servers->pluck('name')->implode('; ')),
+                        $provider->servers_count,
+                        $this->csvCell($provider->repositories->pluck('name')->implode('; ')),
+                        $provider->repositories_count,
+                        $provider->created_at?->toIso8601String(),
+                        $provider->updated_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -172,5 +232,16 @@ class ProviderController extends Controller
             ...Provider::SERVER_TYPES,
             ...Provider::SOURCE_CONTROL_TYPES,
         ]));
+    }
+
+    private function csvCell(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }

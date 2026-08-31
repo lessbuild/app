@@ -11,6 +11,12 @@
     >
         <x-slot:buttons>
             <a
+                href="{{ route('providers.export', array_filter($filters, fn ($value) => $value !== null)) }}"
+                class="button secondary"
+            >
+                {{ __('Export CSV') }}
+            </a>
+            <a
                 href="{{ route('providers.create') }}"
                 class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary"
             >

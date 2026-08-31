@@ -113,6 +113,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('recipes', RecipesController::class)->except('show');
     Route::post('recipes/{recipe}/duplicate', [RecipesController::class, 'duplicate'])
         ->name('recipes.duplicate');
+    Route::get('providers/export', [ProviderController::class, 'export'])
+        ->name('providers.export');
     Route::resource('providers', ProviderController::class);
     Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
         ->name('repositories.deploy');
