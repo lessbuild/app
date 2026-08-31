@@ -18,6 +18,10 @@ The control-panel UI uses local initials avatars, system fonts, and bundled
 scripts/icons, so page rendering does not depend on third-party visual-asset
 hosts.
 
+Provider inventory can be searched and filtered by provider type or whether
+resources are attached. Resource counts are visible in the list, and pagination
+controls keep every provider, attached repository, and attached server reachable.
+
 ## Source control providers
 
 Repositories can be deployed from GitHub, GitLab, and Bitbucket Cloud over

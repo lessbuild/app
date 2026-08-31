@@ -93,6 +93,11 @@
                                 <x-alerts.info :title="__('No Repositories using this provider')"></x-alerts.info>
                             @endforelse
                         </ul>
+                        @if ($repositories->hasPages())
+                            <div class="mt-4 border-t border-primary pt-4">
+                                {{ $repositories->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -134,6 +139,11 @@
                                 <x-alerts.info :title="__('No Servers using this provider')"></x-alerts.info>
                             @endforelse
                         </ul>
+                        @if ($servers->hasPages())
+                            <div class="mt-4 border-t border-primary pt-4">
+                                {{ $servers->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
