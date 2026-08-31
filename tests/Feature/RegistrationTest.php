@@ -25,6 +25,7 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $this->assertSame('Ada Lovelace', $user->name);
         $this->assertTrue(Hash::check('correct-horse-battery-staple', $user->password));
+        $this->assertTrue($user->hasLocalPassword());
         $response->assertRedirect(route('dashboard'));
     }
 

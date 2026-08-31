@@ -82,6 +82,7 @@ class SocialAuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $this->assertSame('social@example.com', $user->email);
         $this->assertSame('gitlab', $user->auth_type);
+        $this->assertFalse($user->hasLocalPassword());
         $this->assertNotNull($user->email_verified_at);
         $response->assertRedirect(route('dashboard'));
     }

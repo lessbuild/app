@@ -60,6 +60,7 @@ class RegisteredUserController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
+                'password_set_at' => now(),
             ]);
         });
 

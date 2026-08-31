@@ -71,9 +71,9 @@
                         </div>
                     @endif
 
-                    @if (auth()->user()->auth_type)
+                    @if (! auth()->user()->hasLocalPassword())
                         <p class="rounded border border-primary bg-secondary p-3 text-sm text-secondary">
-                            {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type)]) }}
+                            {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type ?? 'a social provider')]) }}
                         </p>
                     @else
                         <label class="block">

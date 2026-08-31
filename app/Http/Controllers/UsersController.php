@@ -46,9 +46,9 @@ class UsersController extends Controller
 
     public function updatePassword(Request $request): RedirectResponse
     {
-        $currentPasswordRules = $request->user()->auth_type
-            ? ['nullable']
-            : ['required', 'current_password'];
+        $currentPasswordRules = $request->user()->hasLocalPassword()
+            ? ['required', 'current_password']
+            : ['nullable'];
 
         $validated = $request->validateWithBag('password', [
             'current_password' => $currentPasswordRules,
@@ -57,6 +57,7 @@ class UsersController extends Controller
 
         $request->user()->update([
             'password' => Hash::make($validated['password']),
+            'password_set_at' => now(),
         ]);
 
         $request->session()->regenerate();

@@ -99,6 +99,7 @@ class SocialAuthController extends Controller
                 $providerColumn => $providerId,
                 'auth_type' => $provider,
                 'password' => Hash::make(Str::password(40)),
+                'password_set_at' => null,
                 'email_verified_at' => now(),
             ]);
         });

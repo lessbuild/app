@@ -8,6 +8,10 @@ continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
 or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
 account will be inserted by another provisioning process.
 
+Social-only accounts may establish a local password once without an existing
+password. After that first setup, every password change requires the current
+local password while the linked social sign-in remains available.
+
 The control-panel UI uses local initials avatars, system fonts, and bundled
 scripts/icons, so page rendering does not depend on third-party visual-asset
 hosts.

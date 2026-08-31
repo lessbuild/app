@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'password_set_at',
         'github_id',
         'gitlab_id',
         'bitbucket_id',
@@ -36,6 +37,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'password_set_at',
         'remember_token',
     ];
 
@@ -46,7 +48,13 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'password_set_at' => 'datetime',
     ];
+
+    public function hasLocalPassword(): bool
+    {
+        return $this->password_set_at !== null;
+    }
 
     public function websites(): HasMany
     {
