@@ -21,7 +21,7 @@
                     type="search"
                     maxlength="100"
                     value="{{ $filters['search'] }}"
-                    placeholder="{{ __('Repository, revision, or commit') }}"
+                    placeholder="{{ __('Repository, revision, commit, or note') }}"
                     class="input secondary mt-1 w-full rounded"
                 >
             </div>
@@ -138,6 +138,11 @@
                                             &middot; <span class="font-mono">{{ $build->shortRevision() }}</span>
                                         @endif
                                     </div>
+                                    @if ($build->operator_note)
+                                        <div class="mt-1 max-w-xl truncate text-xs text-secondary" title="{{ $build->operator_note }}">
+                                            {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
+                                        </div>
+                                    @endif
                                 </a>
                             </div>
                         </td>

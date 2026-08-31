@@ -24,6 +24,7 @@ class BuildHistoryExportTest extends TestCase
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'revision' => str_repeat('a', 40),
             'commit_message' => " \t@SUM(1,1)\nShip searchable release",
+            'operator_note' => " -1+1\nApproved incident handoff",
             'started_at' => $started,
             'finished_at' => now(),
             'created_at' => '2026-08-20 12:00:00',
@@ -78,6 +79,7 @@ class BuildHistoryExportTest extends TestCase
             'Trigger',
             'Revision',
             'Commit message',
+            'Operator note',
             'Created at',
             'Started at',
             'Finished at',
@@ -87,7 +89,8 @@ class BuildHistoryExportTest extends TestCase
         $this->assertSame((string) $matching->id, $rows[1][0]);
         $this->assertSame("'=2+2", $rows[1][1]);
         $this->assertSame("' \t@SUM(1,1)\nShip searchable release", $rows[1][7]);
-        $this->assertSame('90', $rows[1][11]);
+        $this->assertSame("' -1+1\nApproved incident handoff", $rows[1][8]);
+        $this->assertSame('90', $rows[1][12]);
         $this->actingAs($owner)->get(route('builds.index', $filters))
             ->assertSuccessful()
             ->assertSee(route('builds.export', $filters));

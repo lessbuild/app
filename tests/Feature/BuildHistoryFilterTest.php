@@ -86,7 +86,7 @@ class BuildHistoryFilterTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="View build #'));
     }
 
-    public function test_search_matches_repository_name_revision_and_commit_message(): void
+    public function test_search_matches_repository_name_revision_commit_message_and_operator_note(): void
     {
         [$owner, $first, $second] = $this->repositories('Owner');
         $byName = $first->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
@@ -98,6 +98,10 @@ class BuildHistoryFilterTest extends TestCase
             'status' => Build::STATUS_SUCCEEDED,
             'commit_message' => 'Correct a payment timeout',
         ]);
+        $byNote = $second->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'operator_note' => 'Investigate incident INC-2048 before retrying',
+        ]);
 
         $this->actingAs($owner)->get(route('builds.index', ['search' => 'First']))
             ->assertSee(route('builds.show', $byName))
@@ -107,6 +111,10 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee(route('builds.show', $byName));
         $this->actingAs($owner)->get(route('builds.index', ['search' => 'payment timeout']))
             ->assertSee(route('builds.show', $byMessage))
+            ->assertDontSee(route('builds.show', $byName));
+        $this->actingAs($owner)->get(route('builds.index', ['search' => 'INC-2048']))
+            ->assertSee(route('builds.show', $byNote))
+            ->assertSee('Note: Investigate incident INC-2048 before retrying')
             ->assertDontSee(route('builds.show', $byName));
     }
 

@@ -89,6 +89,7 @@ class DemoSeederTest extends TestCase
         $this->assertSame(0, $user->websites()->where('health_monitoring_enabled', true)->count());
         $this->assertSame(3, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(6, $user->builds()->count());
+        $this->assertSame(2, $user->builds()->whereNotNull('operator_note')->count());
         $this->assertEqualsCanonicalizing(Build::TERMINAL_STATUSES, $user->builds()->distinct()->pluck('status')->all());
         $this->assertEqualsCanonicalizing([
             Build::TRIGGER_MANUAL,
@@ -257,6 +258,11 @@ class DemoSeederTest extends TestCase
             ->assertSee('name="social_provider" value="github"', false)
             ->assertSee('name="current_password"', false)
             ->assertSee(route('account.social.destroy', 'github'));
+        $this->actingAs($user)->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertSee('[Demo] Approved rollback for incident DEMO-1042 after the checkout failure.')
+            ->assertSee(route('builds.note.update', $build))
+            ->assertSee('Save note');
 
         foreach ([
             route('dashboard'),

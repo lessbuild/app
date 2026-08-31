@@ -151,6 +151,8 @@ Route::middleware('auth')->group(function () {
             ->name('builds.cancel');
         Route::post('builds/{build}/redeploy', [BuildsController::class, 'redeploy'])
             ->name('builds.redeploy');
+        Route::patch('builds/{build}/note', [BuildsController::class, 'updateNote'])
+            ->name('builds.note.update');
         Route::get('repositories/export', [RepositoriesController::class, 'export'])
             ->name('repositories.export');
         Route::get('repositories/{repository}/webhook-deliveries/export', [RepositoriesController::class, 'exportWebhookDeliveries'])

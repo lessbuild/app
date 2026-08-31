@@ -8,6 +8,7 @@ use App\Actions\Repository\RedeployBuildAction;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
+use App\Services\ActivityRecorder;
 use App\Services\Runner;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
@@ -62,6 +63,7 @@ class BuildsController extends Controller
                 'Trigger',
                 'Revision',
                 'Commit message',
+                'Operator note',
                 'Created at',
                 'Started at',
                 'Finished at',
@@ -87,6 +89,7 @@ class BuildsController extends Controller
                         $build->trigger_source,
                         $build->revision,
                         $this->csvCell($build->commit_message),
+                        $this->csvCell($build->operator_note),
                         $build->created_at?->toIso8601String(),
                         $build->started_at?->toIso8601String(),
                         $build->finished_at?->toIso8601String(),
@@ -203,6 +206,32 @@ class BuildsController extends Controller
         };
     }
 
+    public function updateNote(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
+    {
+        $this->authorize('updateNote', $build);
+        $validated = $request->validateWithBag('buildNote', [
+            'operator_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+        $note = trim($validated['operator_note'] ?? '');
+        $note = $note === '' ? null : $note;
+
+        if ($build->operator_note === $note) {
+            return back()->with('info', __('Deployment note is unchanged.'));
+        }
+
+        $build->update(['operator_note' => $note]);
+        $activity->record(
+            $build,
+            $request->user()->id,
+            'deployment',
+            $note === null ? 'Deployment note was cleared.' : 'Deployment note was updated.',
+        );
+
+        return back()->with('success', $note === null
+            ? __('Deployment note cleared.')
+            : __('Deployment note saved.'));
+    }
+
     /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
@@ -244,6 +273,7 @@ class BuildsController extends Controller
                     $query
                         ->where('builds.revision', 'like', "%{$value}%")
                         ->orWhere('builds.commit_message', 'like', "%{$value}%")
+                        ->orWhere('builds.operator_note', 'like', "%{$value}%")
                         ->orWhereHas('repository', fn ($query) => $query
                             ->where('name', 'like', "%{$value}%"));
                 });

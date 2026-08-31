@@ -21,4 +21,9 @@ class BuildPolicy
     {
         return $this->view($user, $build);
     }
+
+    public function updateNote(User $user, Build $build): bool
+    {
+        return $this->view($user, $build);
+    }
 }

@@ -283,6 +283,10 @@ retry the configured branch.
 Build history can be filtered by repository, status, trigger, and created-date
 range, or searched by repository name, commit message, and revision. The current
 filtered view can be exported as a streamed, spreadsheet-safe CSV file.
+Owners can attach a 2,000-character operational note to any deployment for
+incident IDs, rollback reasons, approvals, and handoff context. Notes are escaped,
+searchable in build history, and spreadsheet-safe in exports. Note changes create
+metadata-only deployment activity without copying note contents into the audit.
 The repository inventory can be searched and filtered by source provider,
 deployment website, and latest deployment state. It also shows each target,
 provider, and latest deployment without loading the entire inventory at once.

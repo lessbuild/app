@@ -57,6 +57,32 @@
         </div>
     @endif
 
+    <section class="mt-4 rounded-lg border border-primary bg-primary p-4">
+        <h2 class="font-semibold text-primary">{{ __('Operator note') }}</h2>
+        <p class="mt-1 text-sm text-secondary">
+            {{ __('Record an incident ticket, rollback reason, approval, or handoff context. Notes are searchable and included in build exports, so do not store secrets.') }}
+        </p>
+        <form method="POST" action="{{ route('builds.note.update', $build) }}" class="mt-4">
+            @csrf
+            @method('PATCH')
+            <label class="block">
+                <span class="sr-only">{{ __('Operator note') }}</span>
+                <textarea
+                    name="operator_note"
+                    rows="4"
+                    maxlength="2000"
+                    class="input secondary w-full rounded"
+                    placeholder="{{ __('Example: Approved rollback for incident INC-1042.') }}"
+                >{{ old('operator_note', $build->operator_note) }}</textarea>
+            </label>
+            <x-forms.errors name="operator_note" bag="buildNote" />
+            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs text-secondary">{{ __('Remove all text and save to clear the note.') }}</p>
+                <button type="submit" class="button primary">{{ __('Save note') }}</button>
+            </div>
+        </form>
+    </section>
+
     @if ($build->status === \App\Models\Build::STATUS_QUEUED || ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path))
         <form method="POST" action="{{ route('builds.cancel', $build) }}" class="mt-4">
             @csrf
