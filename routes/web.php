@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::post('account/sessions/revoke', [UsersController::class, 'revokeOtherSessions'])
         ->middleware('throttle:sensitive-account')
         ->name('account.sessions.revoke');
+    Route::delete('account/sessions/{session}', [UsersController::class, 'revokeSession'])
+        ->where('session', '[A-Za-z0-9]{1,255}')
+        ->middleware('throttle:sensitive-account')
+        ->name('account.sessions.destroy');
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
         ->middleware('throttle:sensitive-account')

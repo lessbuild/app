@@ -57,6 +57,8 @@ set_env_value APP_DEBUG false
 set_env_value APP_URL "http://${PUBLIC_IP}:8003"
 set_env_value LOG_LEVEL info
 set_env_value DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS true
+set_env_value SESSION_DRIVER database
+set_env_value SESSION_ENCRYPT true
 
 if grep -q '^QUEUE_CONNECTION=sync$' "${APP_DIR}/.env"; then
     set_env_value QUEUE_CONNECTION database

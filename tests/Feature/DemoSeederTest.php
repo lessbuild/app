@@ -10,6 +10,7 @@ use App\Models\ServerCommandExecution;
 use App\Models\ServerLogSnapshot;
 use App\Models\User;
 use App\Models\Website;
+use Database\Seeders\DemoAccountSeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -34,6 +35,11 @@ class DemoSeederTest extends TestCase
         $this->assertNotNull($user->password_set_at);
         $this->assertSame('demo-github-identity', $user->github_id);
         $this->assertSame('github', $user->auth_type);
+        $this->assertDatabaseHas('sessions', [
+            'id' => DemoAccountSeeder::SESSION_ID,
+            'user_id' => $user->id,
+            'ip_address' => '192.0.2.10',
+        ]);
         $this->assertSame(4, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
             Provider::TYPE_DIGITALOCEAN,
@@ -218,12 +224,20 @@ class DemoSeederTest extends TestCase
             ->assertSee(DemoSeeder::PREFIX.'Primary production')
             ->assertSee(DemoSeeder::PREFIX.'GitHub')
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
+        config([
+            'session.driver' => 'database',
+            'session.encrypt' => true,
+        ]);
+        $this->app['session']->forgetDrivers();
         $this->actingAs($user)->get(route('account.index'))
             ->assertSuccessful()
             ->assertSee('Recent security activity')
             ->assertSee('Demo: account security settings were reviewed.')
             ->assertSee(route('activity.index', ['category' => 'account']))
             ->assertSee('Browser sessions')
+            ->assertSee('Chrome on macOS')
+            ->assertSee('192.0.2.10')
+            ->assertSee(route('account.sessions.destroy', DemoAccountSeeder::SESSION_ID))
             ->assertSee(route('account.sessions.revoke'))
             ->assertSee('GitHub')
             ->assertSee('name="social_provider" value="github"', false)
@@ -276,6 +290,10 @@ class DemoSeederTest extends TestCase
                 ->count(),
             'events' => $user->events()->where('event', 'like', 'Demo:%')->count(),
             'notifications' => $user->notifications()->where('data->demo', true)->count(),
+            'browser_sessions' => DB::table('sessions')
+                ->where('id', DemoAccountSeeder::SESSION_ID)
+                ->where('user_id', $user->id)
+                ->count(),
         ];
     }
 }

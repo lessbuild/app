@@ -179,10 +179,13 @@ connection and provide it again when disconnecting one; both operations are rate
 limited. Connection confirmation expires using Laravel's configured password
 timeout. Social-only accounts can still connect or disconnect a second provider
 while retaining another provider as fallback.
-Local-password users can also invalidate every other browser session without
-changing their password. The current password is revalidated and rehashed, stale
-sessions are rejected by session middleware, and the initiating browser remains
-authenticated.
+Browser sessions are encrypted in the application database and the account page
+shows each active browser's derived browser/platform label, IP address, and last
+activity time without loading session payloads. Local-password users can revoke
+one owner-scoped session or invalidate every other browser session after providing
+their current password. The current browser cannot be individually revoked; bulk
+revocation rehashes the password, stale sessions are rejected by session middleware,
+and the initiating browser remains authenticated.
 Password confirmation, profile updates, password changes, session revocation,
 reset-link requests, and reset submissions share a six-attempt-per-minute
 sensitive-action limiter.
@@ -212,6 +215,9 @@ IP addresses are deliberately non-functional examples. Server and website
 fixtures cover every provisioning state, including queued, waiting-for-IP, and
 in-progress records, without dispatching real cloud jobs. Running the seeder
 again updates the demo workspace without deleting other account-owned records.
+The account also includes a harmless non-authenticating Chrome-on-macOS session
+fixture using a documentation-only IP address so individual session revocation
+is testable.
 Automatic provider and website monitoring is paused for all demo fixtures, so
 scheduled timers never contact their deliberately non-functional endpoints.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and

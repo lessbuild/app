@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -45,6 +46,21 @@ class SensitiveActionRateLimitTest extends TestCase
             'current_password' => 'current-password',
         ])->assertTooManyRequests();
         $this->assertSame('github-account', $user->fresh()->github_id);
+
+        $sessionId = str_repeat('s', 40);
+        DB::table('sessions')->insert([
+            'id' => $sessionId,
+            'user_id' => $user->id,
+            'ip_address' => '192.0.2.40',
+            'user_agent' => 'Rate limit test browser',
+            'payload' => base64_encode(''),
+            'last_activity' => now()->timestamp,
+        ]);
+        $this->delete(route('account.sessions.destroy', $sessionId), [
+            'session_id' => $sessionId,
+            'current_password' => 'current-password',
+        ])->assertTooManyRequests();
+        $this->assertDatabaseHas('sessions', ['id' => $sessionId]);
 
         $this->patch(route('account.password.update'), [
             'current_password' => 'current-password',

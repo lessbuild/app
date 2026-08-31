@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Models\User;
 use App\Services\ActivityRecorder;
+use App\Services\BrowserSessionManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,11 +19,16 @@ use Throwable;
 
 class UsersController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, BrowserSessionManager $browserSessions): View
     {
         $connected = $request->user()->connectedSocialProviders();
 
         return view('scenes.users.index', [
+            'browserSessionManagementAvailable' => $browserSessions->available(),
+            'browserSessions' => $browserSessions->activeFor(
+                $request->user(),
+                $request->session()->getId(),
+            ),
             'recentAccountEvents' => $request->user()
                 ->accountEvents()
                 ->select(['id', 'event', 'category', 'created_at'])
@@ -43,8 +49,11 @@ class UsersController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request, ActivityRecorder $activity): RedirectResponse
-    {
+    public function updateProfile(
+        Request $request,
+        ActivityRecorder $activity,
+        BrowserSessionManager $browserSessions,
+    ): RedirectResponse {
         $request->merge([
             'email' => Str::lower((string) $request->input('email')),
         ]);
@@ -77,7 +86,8 @@ class UsersController extends Controller
 
         if ($emailChanged && $request->user()->hasLocalPassword()) {
             Auth::guard('web')->logoutOtherDevices($validated['current_password']);
-            $request->session()->regenerate();
+            $browserSessions->revokeOthers($request->user(), $request->session()->getId());
+            $request->session()->regenerate(true);
         }
 
         $activity->recordAccount(
@@ -105,8 +115,11 @@ class UsersController extends Controller
         }
     }
 
-    public function updatePassword(Request $request, ActivityRecorder $activity): RedirectResponse
-    {
+    public function updatePassword(
+        Request $request,
+        ActivityRecorder $activity,
+        BrowserSessionManager $browserSessions,
+    ): RedirectResponse {
         $currentPasswordRules = $request->user()->hasLocalPassword()
             ? ['required', 'current_password']
             : ['nullable'];
@@ -121,24 +134,58 @@ class UsersController extends Controller
             'password_set_at' => now(),
         ]);
         Auth::guard('web')->logoutOtherDevices($validated['password']);
+        $browserSessions->revokeOthers($request->user(), $request->session()->getId());
 
-        $request->session()->regenerate();
+        $request->session()->regenerate(true);
         $activity->recordAccount($request->user(), 'Account password was changed.');
 
         return back()->with('password_status', __('Password updated.'));
     }
 
-    public function revokeOtherSessions(Request $request, ActivityRecorder $activity): RedirectResponse
-    {
+    public function revokeOtherSessions(
+        Request $request,
+        ActivityRecorder $activity,
+        BrowserSessionManager $browserSessions,
+    ): RedirectResponse {
         $validated = $request->validateWithBag('sessions', [
             'current_password' => ['required', 'current_password'],
         ]);
 
         Auth::guard('web')->logoutOtherDevices($validated['current_password']);
-        $request->session()->regenerate();
+        $browserSessions->revokeOthers($request->user(), $request->session()->getId());
+        $request->session()->regenerate(true);
         $activity->recordAccount($request->user(), 'Other browser sessions were logged out.');
 
         return back()->with('sessions_status', __('Other browser sessions logged out.'));
+    }
+
+    public function revokeSession(
+        Request $request,
+        string $session,
+        ActivityRecorder $activity,
+        BrowserSessionManager $browserSessions,
+    ): RedirectResponse {
+        $request->validateWithBag('sessions', [
+            'session_id' => ['required', 'string', 'max:255', Rule::in([$session])],
+            'current_password' => ['required', 'current_password'],
+        ]);
+
+        $result = $browserSessions->revoke(
+            $request->user(),
+            $session,
+            $request->session()->getId(),
+        );
+
+        if ($result === 'revoked') {
+            $activity->recordAccount($request->user(), 'A browser session was logged out.');
+        }
+
+        return match ($result) {
+            'revoked' => back()->with('sessions_status', __('Browser session logged out.')),
+            'current' => back()->with('sessions_error', __('You cannot log out the browser you are using now.')),
+            'unavailable' => back()->with('sessions_error', __('Individual session management is not available on this installation.')),
+            default => back()->with('sessions_status', __('That browser session is no longer active.')),
+        };
     }
 
     public function disconnectSocial(Request $request, string $provider, ActivityRecorder $activity): RedirectResponse

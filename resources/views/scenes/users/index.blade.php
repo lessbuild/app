@@ -161,7 +161,7 @@
 
         <x-forms.section
             :title="__('Browser sessions')"
-            :description="__('Log out browsers and devices other than the one you are using now.')"
+            :description="__('Review active browsers and log out sessions you no longer recognize.')"
         >
             <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
                 @if (session('sessions_status'))
@@ -169,9 +169,79 @@
                         {{ session('sessions_status') }}
                     </div>
                 @endif
+                @if (session('sessions_error'))
+                    <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                        {{ session('sessions_error') }}
+                    </div>
+                @endif
+
+                @if ($browserSessionManagementAvailable)
+                    <div class="divide-y divide-primary rounded border border-primary">
+                        @forelse ($browserSessions as $browserSession)
+                            <div class="flex flex-wrap items-start justify-between gap-4 p-4">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-medium text-primary">{{ $browserSession['device'] }}</p>
+                                        @if ($browserSession['is_current'])
+                                            <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                                {{ __('Current browser') }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <p class="mt-1 text-sm text-secondary">
+                                        {{ $browserSession['ip_address'] }}
+                                        <span aria-hidden="true">&middot;</span>
+                                        <span title="{{ $browserSession['last_active_at']->toIso8601String() }}">
+                                            {{ __('Active :time', ['time' => $browserSession['last_active_at']->diffForHumans()]) }}
+                                        </span>
+                                    </p>
+                                </div>
+
+                                @if (! $browserSession['is_current'] && auth()->user()->hasLocalPassword())
+                                    <form method="POST" action="{{ route('account.sessions.destroy', $browserSession['id']) }}" class="flex flex-wrap items-end justify-end gap-3">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="session_id" value="{{ $browserSession['id'] }}">
+                                        <label class="block min-w-52 text-left">
+                                            <span class="block pb-1 text-xs font-medium text-secondary">
+                                                {{ __('Current password') }}
+                                            </span>
+                                            <input
+                                                class="input secondary rounded"
+                                                name="current_password"
+                                                type="password"
+                                                autocomplete="current-password"
+                                                required
+                                            >
+                                            @if (old('session_id') === $browserSession['id'])
+                                                <x-forms.errors name="current_password" bag="sessions" />
+                                            @endif
+                                        </label>
+                                        <button
+                                            type="submit"
+                                            class="button primary"
+                                            onclick="return confirm({{ Illuminate\Support\Js::from(__('Log out this browser session?')) }})"
+                                        >
+                                            {{ __('Log out') }}
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="p-4 text-sm text-secondary">
+                                {{ __('No active database-backed browser sessions were found.') }}
+                            </p>
+                        @endforelse
+                    </div>
+                    @if ($browserSessions->count() === App\Services\BrowserSessionManager::MAX_VISIBLE_SESSIONS)
+                        <p class="text-xs text-secondary">
+                            {{ __('Showing the 20 most recently active sessions. Use the control below to log out every other session.') }}
+                        </p>
+                    @endif
+                @endif
 
                 @if (auth()->user()->hasLocalPassword())
-                    <form method="POST" action="{{ route('account.sessions.revoke') }}" class="space-y-6">
+                    <form method="POST" action="{{ route('account.sessions.revoke') }}" class="space-y-6 border-t border-primary pt-6">
                         @csrf
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
@@ -183,7 +253,9 @@
                                 required
                             >
                         </label>
-                        <x-forms.errors name="current_password" bag="sessions" />
+                        @if (blank(old('session_id')))
+                            <x-forms.errors name="current_password" bag="sessions" />
+                        @endif
                         <button class="button primary" type="submit">{{ __('Log out other sessions') }}</button>
                     </form>
                 @else
