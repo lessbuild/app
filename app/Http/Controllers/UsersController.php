@@ -38,6 +38,7 @@ class UsersController extends Controller
                     'connected' => in_array($provider, $connected, true),
                     'configured' => SocialAuthController::configured($provider),
                     'can_disconnect' => $request->user()->hasLocalPassword() || count($connected) > 1,
+                    'requires_password' => $request->user()->hasLocalPassword(),
                 ]),
         ]);
     }
@@ -142,6 +143,14 @@ class UsersController extends Controller
 
     public function disconnectSocial(Request $request, string $provider, ActivityRecorder $activity): RedirectResponse
     {
+        if ($request->user()->hasLocalPassword()
+            && in_array($provider, $request->user()->connectedSocialProviders(), true)) {
+            $request->validateWithBag('social', [
+                'social_provider' => ['required', Rule::in([$provider])],
+                'current_password' => ['required', 'current_password'],
+            ]);
+        }
+
         $result = DB::transaction(function () use ($request, $provider): string {
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
             $column = User::SOCIAL_PROVIDER_COLUMNS[$provider];

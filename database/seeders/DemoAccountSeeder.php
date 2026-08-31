@@ -17,6 +17,10 @@ class DemoAccountSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'password_set_at' => now(),
                 'email_verified_at' => now(),
+                'github_id' => 'demo-github-identity',
+                'gitlab_id' => null,
+                'bitbucket_id' => null,
+                'auth_type' => 'github',
             ],
         );
     }

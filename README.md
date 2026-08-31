@@ -175,8 +175,10 @@ local password or another linked provider remains available, preventing
 accidental account lockout. A guest social callback never links an existing
 account merely because its email matches; the user must authenticate first.
 Accounts with a local password must reconfirm it before starting a new social
-connection; the confirmation expires using Laravel's configured password
-timeout. Social-only accounts can still connect a second provider as fallback.
+connection and provide it again when disconnecting one; both operations are rate
+limited. Connection confirmation expires using Laravel's configured password
+timeout. Social-only accounts can still connect or disconnect a second provider
+while retaining another provider as fallback.
 Local-password users can also invalidate every other browser session without
 changing their password. The current password is revalidated and rehashed, stale
 sessions are rejected by session middleware, and the initiating browser remains

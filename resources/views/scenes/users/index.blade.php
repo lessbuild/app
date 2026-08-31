@@ -220,9 +220,27 @@
                             </p>
                         </div>
                         @if ($provider['connected'] && $provider['can_disconnect'])
-                            <form method="POST" action="{{ route('account.social.destroy', $provider['key']) }}">
+                            <form method="POST" action="{{ route('account.social.destroy', $provider['key']) }}" class="flex flex-wrap items-end justify-end gap-3">
                                 @csrf
                                 @method('DELETE')
+                                <input type="hidden" name="social_provider" value="{{ $provider['key'] }}">
+                                @if ($provider['requires_password'])
+                                    <label class="block min-w-52 text-left">
+                                        <span class="block pb-1 text-xs font-medium text-secondary">
+                                            {{ __('Current password') }}
+                                        </span>
+                                        <input
+                                            class="input secondary rounded"
+                                            name="current_password"
+                                            type="password"
+                                            autocomplete="current-password"
+                                            required
+                                        >
+                                        @if (old('social_provider') === $provider['key'])
+                                            <x-forms.errors name="current_password" bag="social" />
+                                        @endif
+                                    </label>
+                                @endif
                                 <button
                                     type="submit"
                                     class="button primary"

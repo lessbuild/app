@@ -278,8 +278,23 @@ class AccountManagementTest extends TestCase
         $this->actingAs($user)->get(route('account.index'))
             ->assertSuccessful()
             ->assertSee('Connected accounts')
-            ->assertSee(route('account.social.destroy', 'github'));
-        $this->delete(route('account.social.destroy', 'github'))
+            ->assertSee(route('account.social.destroy', 'github'))
+            ->assertSee('name="social_provider" value="github"', false)
+            ->assertSee('name="current_password"', false);
+
+        $this->delete(route('account.social.destroy', 'github'), ['social_provider' => 'github'])
+            ->assertSessionHasErrors(['current_password'], errorBag: 'social');
+        $this->delete(route('account.social.destroy', 'github'), [
+            'social_provider' => 'github',
+            'current_password' => 'incorrect-password',
+        ])->assertSessionHasErrors(['current_password'], errorBag: 'social')
+            ->assertSessionMissing('_old_input.current_password');
+        $this->assertSame('github-account-id', $user->fresh()->github_id);
+
+        $this->delete(route('account.social.destroy', 'github'), [
+            'social_provider' => 'github',
+            'current_password' => 'password',
+        ])
             ->assertSessionHas('social_status', 'GitHub disconnected.');
 
         $user->refresh();
@@ -315,6 +330,12 @@ class AccountManagementTest extends TestCase
             'gitlab_id' => 'gitlab-account',
             'auth_type' => 'github',
         ]);
+
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee(route('account.social.destroy', 'github'))
+            ->assertSee(route('account.social.destroy', 'gitlab'))
+            ->assertDontSee('name="current_password"', false);
 
         $this->actingAs($user)->delete(route('account.social.destroy', 'github'))
             ->assertSessionHas('social_status', 'GitHub disconnected.');

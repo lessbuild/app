@@ -16,6 +16,7 @@ class SensitiveActionRateLimitTest extends TestCase
     {
         $user = User::factory()->create([
             'password' => Hash::make('current-password'),
+            'github_id' => 'github-account',
         ]);
         $originalHash = $user->password;
         $this->actingAs($user);
@@ -38,6 +39,12 @@ class SensitiveActionRateLimitTest extends TestCase
             'current_password' => 'current-password',
         ])->assertTooManyRequests();
         $this->assertNotSame('rate-limited@example.test', $user->fresh()->email);
+
+        $this->delete(route('account.social.destroy', 'github'), [
+            'social_provider' => 'github',
+            'current_password' => 'current-password',
+        ])->assertTooManyRequests();
+        $this->assertSame('github-account', $user->fresh()->github_id);
 
         $this->patch(route('account.password.update'), [
             'current_password' => 'current-password',

@@ -37,7 +37,10 @@ class AccountSecurityActivityTest extends TestCase
         $this->post(route('account.sessions.revoke'), [
             'current_password' => 'replacement-password',
         ])->assertSessionHas('sessions_status');
-        $this->delete(route('account.social.destroy', 'github'))
+        $this->delete(route('account.social.destroy', 'github'), [
+            'social_provider' => 'github',
+            'current_password' => 'replacement-password',
+        ])
             ->assertSessionHas('social_status', 'GitHub disconnected.');
 
         $events = $user->events()->where('category', 'account')->oldest()->get();

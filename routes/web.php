@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
         ->name('account.sessions.revoke');
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
+        ->middleware('throttle:sensitive-account')
         ->name('account.social.destroy');
     Route::get('account/social/{provider}/connect', [SocialAuthController::class, 'connect'])
         ->whereIn('provider', SocialAuthController::providers())

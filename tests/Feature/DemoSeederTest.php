@@ -32,6 +32,8 @@ class DemoSeederTest extends TestCase
         $this->assertTrue(Hash::check('password', $user->password));
         $this->assertNotNull($user->email_verified_at);
         $this->assertNotNull($user->password_set_at);
+        $this->assertSame('demo-github-identity', $user->github_id);
+        $this->assertSame('github', $user->auth_type);
         $this->assertSame(4, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
             Provider::TYPE_DIGITALOCEAN,
@@ -222,7 +224,11 @@ class DemoSeederTest extends TestCase
             ->assertSee('Demo: account security settings were reviewed.')
             ->assertSee(route('activity.index', ['category' => 'account']))
             ->assertSee('Browser sessions')
-            ->assertSee(route('account.sessions.revoke'));
+            ->assertSee(route('account.sessions.revoke'))
+            ->assertSee('GitHub')
+            ->assertSee('name="social_provider" value="github"', false)
+            ->assertSee('name="current_password"', false)
+            ->assertSee(route('account.social.destroy', 'github'));
 
         foreach ([
             route('dashboard'),
