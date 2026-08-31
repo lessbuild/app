@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityRecorder;
 use App\Services\RegistrationAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,8 @@ use Throwable;
 
 class SocialAuthController extends Controller
 {
+    public function __construct(private readonly ActivityRecorder $activity) {}
+
     /**
      * @return list<string>
      */
@@ -178,6 +181,10 @@ class SocialAuthController extends Controller
 
             return 'connected';
         });
+
+        if ($result === 'connected') {
+            $this->activity->recordAccount(Auth::user(), ucfirst($provider).' sign-in was connected.');
+        }
 
         return $result === 'connected'
             ? redirect()->route('account.index')->with('social_status', __(':provider connected.', [

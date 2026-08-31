@@ -17,6 +17,7 @@ class Event extends Model
         'server',
         'command',
         'provider',
+        'account',
         'general',
     ];
 

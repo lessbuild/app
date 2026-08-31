@@ -137,6 +137,13 @@ class SocialAuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame('bitbucket-456', $user->fresh()->bitbucket_id);
+        $this->assertDatabaseHas('events', [
+            'user_id' => $user->id,
+            'category' => 'account',
+            'event' => 'Bitbucket sign-in was connected.',
+            'parentable_type' => User::class,
+            'parentable_id' => $user->id,
+        ]);
     }
 
     public function test_social_identity_connected_to_another_user_cannot_be_claimed(): void

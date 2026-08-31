@@ -112,5 +112,12 @@ class PasswordResetPrivacyTest extends TestCase
         $user->refresh();
         $this->assertTrue(Hash::check('replacement-password', $user->password));
         $this->assertTrue($user->hasLocalPassword());
+        $this->assertDatabaseHas('events', [
+            'user_id' => $user->id,
+            'category' => 'account',
+            'event' => 'Account password was reset.',
+            'parentable_type' => User::class,
+            'parentable_id' => $user->id,
+        ]);
     }
 }

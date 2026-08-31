@@ -329,6 +329,16 @@ class DemoOperationsSeeder extends Seeder
                 'updated_at' => now()->subHours(count($definitions) - $index),
             ])->save();
         }
+
+        $accountEvent = $user->accountEvents()->create([
+            'user_id' => $user->id,
+            'category' => 'account',
+            'event' => 'Demo: account security settings were reviewed.',
+        ]);
+        $accountEvent->forceFill([
+            'created_at' => now()->subMinutes(30),
+            'updated_at' => now()->subMinutes(30),
+        ])->save();
     }
 
     private function notifications(User $user, Server $server, Website $website, Build $build): void

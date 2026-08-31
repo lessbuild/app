@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.heading
         :title="__('Activity')"
-        :description="__('A chronological history of your infrastructure, deployments, and server commands.')"
+        :description="__('A chronological history of account security, infrastructure, deployments, and server commands.')"
     />
 
     <form method="GET" action="{{ route('activity.index') }}" class="mb-6 mt-8 rounded-lg border border-primary bg-primary p-4">

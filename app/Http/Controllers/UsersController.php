@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Models\User;
+use App\Services\ActivityRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +34,7 @@ class UsersController extends Controller
         ]);
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(Request $request, ActivityRecorder $activity): RedirectResponse
     {
         $request->merge([
             'email' => Str::lower((string) $request->input('email')),
@@ -51,16 +52,23 @@ class UsersController extends Controller
             ],
         ]);
 
-        if ($request->user()->email !== $validated['email']) {
+        $emailChanged = $request->user()->email !== $validated['email'];
+        if ($emailChanged) {
             $request->user()->email_verified_at = null;
         }
 
         $request->user()->fill($validated)->save();
+        $activity->recordAccount(
+            $request->user(),
+            $emailChanged
+                ? 'Account email address was changed and requires verification.'
+                : 'Account profile was updated.',
+        );
 
         return back()->with('profile_status', __('Profile updated.'));
     }
 
-    public function updatePassword(Request $request): RedirectResponse
+    public function updatePassword(Request $request, ActivityRecorder $activity): RedirectResponse
     {
         $currentPasswordRules = $request->user()->hasLocalPassword()
             ? ['required', 'current_password']
@@ -78,11 +86,12 @@ class UsersController extends Controller
         Auth::guard('web')->logoutOtherDevices($validated['password']);
 
         $request->session()->regenerate();
+        $activity->recordAccount($request->user(), 'Account password was changed.');
 
         return back()->with('password_status', __('Password updated.'));
     }
 
-    public function revokeOtherSessions(Request $request): RedirectResponse
+    public function revokeOtherSessions(Request $request, ActivityRecorder $activity): RedirectResponse
     {
         $validated = $request->validateWithBag('sessions', [
             'current_password' => ['required', 'current_password'],
@@ -90,11 +99,12 @@ class UsersController extends Controller
 
         Auth::guard('web')->logoutOtherDevices($validated['current_password']);
         $request->session()->regenerate();
+        $activity->recordAccount($request->user(), 'Other browser sessions were logged out.');
 
         return back()->with('sessions_status', __('Other browser sessions logged out.'));
     }
 
-    public function disconnectSocial(Request $request, string $provider): RedirectResponse
+    public function disconnectSocial(Request $request, string $provider, ActivityRecorder $activity): RedirectResponse
     {
         $result = DB::transaction(function () use ($request, $provider): string {
             $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
@@ -119,6 +129,10 @@ class UsersController extends Controller
 
             return 'disconnected';
         });
+
+        if ($result === 'disconnected') {
+            $activity->recordAccount($request->user(), $this->socialProviderName($provider).' sign-in was disconnected.');
+        }
 
         return match ($result) {
             'disconnected' => back()->with('social_status', __(':provider disconnected.', [

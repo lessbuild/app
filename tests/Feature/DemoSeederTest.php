@@ -104,7 +104,7 @@ class DemoSeederTest extends TestCase
             ->sole();
         $this->assertSame($demoRerun->command, $demoRerun->rerunFrom->command);
         $this->assertEqualsCanonicalizing(
-            ['deployment', 'website', 'server', 'command', 'provider', 'general'],
+            ['deployment', 'website', 'server', 'command', 'provider', 'account', 'general'],
             $user->events()->pluck('category')->all(),
         );
         $this->assertSame(5, $user->notifications()->count());

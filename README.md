@@ -167,6 +167,10 @@ Forgot-password requests return the same generic result for registered and
 unregistered addresses, while failed reset submissions use one invalid-or-expired
 message. Reset emails are still delivered only to real accounts, preventing
 public response content from disclosing account existence.
+Profile and email changes, password changes and resets, other-session revocation,
+and social sign-in connection changes are recorded in an owner-scoped Account
+activity category. These entries contain action descriptions only—never IP
+addresses, session identifiers, provider IDs, tokens, or credential content.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

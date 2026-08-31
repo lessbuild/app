@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -112,6 +113,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function accountEvents(): MorphMany
+    {
+        return $this->morphMany(Event::class, 'parentable');
     }
 
     public function commandExecutions(): HasMany
