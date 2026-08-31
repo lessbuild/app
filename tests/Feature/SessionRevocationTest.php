@@ -1,0 +1,61 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use Illuminate\Auth\Events\OtherDeviceLogout;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
+use Tests\TestCase;
+
+class SessionRevocationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    public function test_password_change_keeps_the_current_browser_authenticated_and_revokes_other_devices(): void
+    {
+        Event::fake([OtherDeviceLogout::class]);
+        $user = User::factory()->create([
+            'password' => Hash::make('current-password'),
+        ]);
+
+        $this->actingAs($user)->get(route('account.index'))->assertSuccessful();
+
+        $this->patch(route('account.password.update'), [
+            'current_password' => 'current-password',
+            'password' => 'replacement-password',
+            'password_confirmation' => 'replacement-password',
+        ])->assertSessionHas('password_status');
+
+        Event::assertDispatched(OtherDeviceLogout::class, fn (OtherDeviceLogout $event) => $event->user->is($user));
+        $this->assertAuthenticatedAs($user);
+        $this->get(route('account.index'))->assertSuccessful();
+    }
+
+    public function test_a_session_with_a_stale_password_hash_is_forced_to_reauthenticate(): void
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old-password'),
+        ]);
+        $oldPasswordHash = $user->password;
+        $user->update(['password' => Hash::make('new-password')]);
+
+        $this->actingAs($user)
+            ->withSession(['password_hash_web' => $oldPasswordHash])
+            ->get(route('account.index'))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
+    public function test_a_session_without_a_stored_password_hash_is_initialized_normally(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('account.index'))->assertSuccessful();
+
+        $this->assertNotNull(session('password_hash_web'));
+        $this->assertAuthenticatedAs($user);
+    }
+}

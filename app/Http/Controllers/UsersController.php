@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -59,6 +60,7 @@ class UsersController extends Controller
             'password' => Hash::make($validated['password']),
             'password_set_at' => now(),
         ]);
+        Auth::guard('web')->logoutOtherDevices($validated['password']);
 
         $request->session()->regenerate();
 

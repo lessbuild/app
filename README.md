@@ -11,6 +11,8 @@ account will be inserted by another provisioning process.
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current
 local password while the linked social sign-in remains available.
+Password changes and resets invalidate authenticated sessions in other browsers;
+the browser performing an in-account change remains signed in.
 
 The control-panel UI uses local initials avatars, system fonts, and bundled
 scripts/icons, so page rendering does not depend on third-party visual-asset
