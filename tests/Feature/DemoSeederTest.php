@@ -81,12 +81,14 @@ class DemoSeederTest extends TestCase
                 ->pluck('status')
                 ->all(),
         );
-        $this->assertEqualsCanonicalizing([
-            ServerCommandExecution::STATUS_QUEUED,
-            ServerCommandExecution::STATUS_SUCCEEDED,
-            ServerCommandExecution::STATUS_FAILED,
-            ServerCommandExecution::STATUS_CANCELED,
-        ], ServerCommandExecution::query()->where('user_id', $user->id)->distinct()->pluck('status')->all());
+        $this->assertEqualsCanonicalizing(
+            ServerCommandExecution::STATUSES,
+            ServerCommandExecution::query()->where('user_id', $user->id)->distinct()->pluck('status')->all(),
+        );
+        $this->assertSame(2, ServerCommandExecution::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ServerCommandExecution::ACTIVE_STATUSES)
+            ->count());
         $demoRerun = ServerCommandExecution::query()
             ->where('user_id', $user->id)
             ->whereNotNull('rerun_from_execution_id')
@@ -161,7 +163,10 @@ class DemoSeederTest extends TestCase
             ->assertSee('Infrastructure provisioning')
             ->assertSee('5 resources are being prepared')
             ->assertSee(DemoSeeder::PREFIX.'Waiting for IP')
-            ->assertSee(DemoSeeder::PREFIX.'Provisioning website');
+            ->assertSee(DemoSeeder::PREFIX.'Provisioning website')
+            ->assertSee('Active server commands')
+            ->assertSee('2 commands are active')
+            ->assertSee('Running');
 
         foreach ([
             route('dashboard'),

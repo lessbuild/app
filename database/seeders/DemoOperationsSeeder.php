@@ -223,6 +223,7 @@ class DemoOperationsSeeder extends Seeder
     private function commands(User $user, Server $server): array
     {
         $definitions = [
+            'running' => ['php artisan queue:work --once', ServerCommandExecution::STATUS_RUNNING, 'Demo worker is processing one queued job.', null],
             'succeeded' => ['php -v', ServerCommandExecution::STATUS_SUCCEEDED, "PHP 8.3.24 (cli)\nDemo command completed.", 0],
             'failed' => ['php artisan demo:missing', ServerCommandExecution::STATUS_FAILED, 'ERROR: Command "demo:missing" is not defined.', 1],
             'canceled' => ['composer audit', ServerCommandExecution::STATUS_CANCELED, null, null],

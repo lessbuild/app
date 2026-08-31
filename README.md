@@ -159,6 +159,8 @@ IP addresses are deliberately non-functional examples. Server and website
 fixtures cover every provisioning state, including queued, waiting-for-IP, and
 in-progress records, without dispatching real cloud jobs. Running the seeder
 again updates the demo workspace without deleting other account-owned records.
+Server-command fixtures likewise cover queued, running, succeeded, failed, and
+canceled states without dispatching remote command jobs.
 
 ## Automatic push deployments
 
