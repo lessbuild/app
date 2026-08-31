@@ -50,6 +50,9 @@
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            <a href="{{ route('servers.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+                {{ __('Export CSV') }}
+            </a>
             @if (array_filter($filters, fn ($value) => $value !== null))
                 <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
             @endif
@@ -128,9 +131,11 @@
                                 ])>{{ str($server->provisioning_status)->replace('_', ' ') }}</span>
                             </td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                                    <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                </svg>
+                                <a href="{{ route('servers.show', $server) }}" aria-label="{{ __('View :name', ['name' => $server->name]) }}">
+                                    <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
+                                        <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
+                                    </svg>
+                                </a>
                             </td>
                         </tr>
                     @endforeach

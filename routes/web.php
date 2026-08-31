@@ -72,6 +72,8 @@ Route::middleware('auth')->group(function () {
     Route::get('websites/{website}/provisioning-log', [WebsitesController::class, 'downloadProvisioningLog'])
         ->name('websites.provisioning-log.download');
 
+    Route::get('servers/export', [ServersController::class, 'export'])
+        ->name('servers.export');
     Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::get('servers/{server}', ServerShow::class)
         ->middleware('can:view,server')

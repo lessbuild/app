@@ -17,10 +17,12 @@ use App\Models\Size;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class ServersController extends Controller
@@ -31,18 +33,7 @@ class ServersController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $servers = $request->user()->servers()
-            ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
-                    $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('identifier', 'like', "%{$value}%")
-                        ->orWhere('public_ip', 'like', "%{$value}%")
-                        ->orWhere('private_ip', 'like', "%{$value}%");
-                });
-            })
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('provisioning_status', $value))
+        $servers = $this->filteredServers($request, $filters)
             ->latest()
             ->paginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -51,6 +42,68 @@ class ServersController extends Controller
             'servers' => $servers,
             'filters' => $filters,
             'statuses' => $this->serverStatuses(),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->indexFilters($request);
+        $filename = 'lessbuild-servers-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Server ID',
+                'Name',
+                'Cloud identifier',
+                'Type',
+                'Region',
+                'Size',
+                'Image',
+                'Public IP',
+                'Private IP',
+                'Provider',
+                'Provider type',
+                'Status',
+                'Website count',
+                'Provisioned at',
+                'Created at',
+            ], ',', '"', '');
+
+            $this->filteredServers($request, $filters)
+                ->with('provider')
+                ->withCount('websites')
+                ->latest('servers.id')
+                ->lazy(250)
+                ->each(function (Server $server) use ($output): void {
+                    fputcsv($output, [
+                        $server->id,
+                        $this->csvCell($server->name),
+                        $this->csvCell($server->identifier),
+                        $this->csvCell($server->type?->value),
+                        $this->csvCell($server->region),
+                        $this->csvCell($server->size),
+                        $this->csvCell($server->image),
+                        $this->csvCell($server->public_ip),
+                        $this->csvCell($server->private_ip),
+                        $this->csvCell($server->provider?->name),
+                        $this->csvCell($server->provider?->provider),
+                        $this->csvCell($server->provisioning_status),
+                        $server->websites_count,
+                        $server->provisioned_at?->toIso8601String(),
+                        $server->created_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -248,6 +301,23 @@ class ServersController extends Controller
         ];
     }
 
+    /** @param array{search: ?string, status: ?string} $filters */
+    private function filteredServers(Request $request, array $filters): HasMany
+    {
+        return $request->user()->servers()
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('identifier', 'like', "%{$value}%")
+                        ->orWhere('public_ip', 'like', "%{$value}%")
+                        ->orWhere('private_ip', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('provisioning_status', $value));
+    }
+
     /** @return list<string> */
     private function serverStatuses(): array
     {
@@ -258,5 +328,16 @@ class ServersController extends Controller
             Server::STATUS_ACTIVE,
             Server::STATUS_FAILED,
         ];
+    }
+
+    private function csvCell(string|int|null $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', (string) $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }
