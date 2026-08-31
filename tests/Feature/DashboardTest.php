@@ -58,6 +58,7 @@ class DashboardTest extends TestCase
             ->assertDontSee('Active deployments')
             ->assertDontSee('Active server commands')
             ->assertDontSee('Webhook deliveries')
+            ->assertDontSee('Infrastructure provisioning')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
     }
@@ -358,6 +359,87 @@ class DashboardTest extends TestCase
             ->assertDontSee('old-sensitive', false)
             ->assertDontSee('foreign-sensitive', false)
             ->assertDontSee('Foreign Webhook Application');
+    }
+
+    public function test_dashboard_summarizes_owner_provisioning_without_loading_credentials_or_environment(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $serverStatuses = [
+            Server::STATUS_QUEUED,
+            Server::STATUS_WAITING_FOR_IP,
+            Server::STATUS_PROVISIONING,
+        ];
+        $waitingServer = null;
+
+        foreach ($serverStatuses as $position => $status) {
+            $repository = $this->createResources($owner, "Provisioning Server {$position}");
+            $server = $repository->website->server;
+            $server->update([
+                'provisioning_status' => $status,
+                'password' => "sensitive-server-password-{$position}",
+                'mysql_root_password' => "sensitive-mysql-password-{$position}",
+                'ssh_private_key' => "sensitive-private-key-{$position}",
+            ]);
+
+            if ($status === Server::STATUS_WAITING_FOR_IP) {
+                $waitingServer = $server;
+            }
+        }
+
+        $websiteStatuses = [
+            Website::STATUS_QUEUED,
+            Website::STATUS_PROVISIONING,
+            Website::STATUS_QUEUED,
+        ];
+        $latestWebsite = null;
+
+        foreach ($websiteStatuses as $position => $status) {
+            $repository = $this->createResources($owner, "Provisioning Website {$position}");
+            $latestWebsite = $repository->website;
+            $latestWebsite->update([
+                'provisioning_status' => $status,
+                'environment' => "SENSITIVE_ENVIRONMENT={$position}",
+                'database_password' => "sensitive-database-password-{$position}",
+            ]);
+        }
+
+        $waitingServer->forceFill(['created_at' => now()->addMinutes(2)])->save();
+        $latestWebsite->forceFill(['created_at' => now()->addMinute()])->save();
+
+        $other = User::factory()->create();
+        $foreignRepository = $this->createResources($other, 'Foreign Provisioning Resource');
+        $foreignRepository->website->server->update(['provisioning_status' => Server::STATUS_PROVISIONING]);
+        $foreignRepository->website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('provisioningCounts', [
+                'servers' => 3,
+                'websites' => 3,
+            ])
+            ->assertViewHas('provisioningResources', function ($resources): bool {
+                $safeAttributes = ['id', 'user_id', 'name', 'provisioning_status', 'created_at'];
+
+                return $resources->count() === 5
+                    && $resources->every(fn (Server|Website $resource): bool => array_diff(
+                        array_keys($resource->getAttributes()),
+                        $safeAttributes,
+                    ) === []);
+            })
+            ->assertSee('Infrastructure provisioning')
+            ->assertSee('6 resources are being prepared')
+            ->assertSee('1 more resource is provisioning')
+            ->assertSee(route('servers.index'))
+            ->assertSee(route('websites.index'))
+            ->assertSee(route('websites.show', $latestWebsite))
+            ->assertSee('waiting for ip')
+            ->assertDontSee('sensitive-server-password', false)
+            ->assertDontSee('sensitive-mysql-password', false)
+            ->assertDontSee('sensitive-private-key', false)
+            ->assertDontSee('SENSITIVE_ENVIRONMENT', false)
+            ->assertDontSee('sensitive-database-password', false)
+            ->assertDontSee('Foreign Provisioning Resource');
     }
 
     private function createResources(User $user, string $name)

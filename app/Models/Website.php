@@ -25,6 +25,11 @@ class Website extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const ACTIVE_PROVISIONING_STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_PROVISIONING,
+    ];
+
     public const HEALTH_UNKNOWN = 'unknown';
 
     public const HEALTH_HEALTHY = 'healthy';

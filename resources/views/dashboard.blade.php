@@ -42,6 +42,60 @@
         </div>
     </section>
 
+    @php($provisioningTotal = array_sum($provisioningCounts))
+    @if ($provisioningTotal > 0)
+        <section class="mb-12 rounded-lg border border-amber-300 bg-amber-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-amber-900">{{ __('Infrastructure provisioning') }}</h2>
+                    <p class="mt-1 text-sm text-amber-800">
+                        {{ trans_choice(':count resource is being prepared|:count resources are being prepared', $provisioningTotal, ['count' => $provisioningTotal]) }}
+                    </p>
+                </div>
+                <div class="flex gap-3 text-sm font-medium text-amber-800">
+                    <a href="{{ route('servers.index') }}" class="underline">{{ __('View servers') }}</a>
+                    <a href="{{ route('websites.index') }}" class="underline">{{ __('View websites') }}</a>
+                </div>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-3">
+                <div class="rounded border border-amber-200 bg-white p-3">
+                    <span class="block text-xl font-bold text-amber-900">{{ $provisioningCounts['servers'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-amber-700">{{ __('Servers') }}</span>
+                </div>
+                <div class="rounded border border-amber-200 bg-white p-3">
+                    <span class="block text-xl font-bold text-amber-900">{{ $provisioningCounts['websites'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-amber-700">{{ __('Websites') }}</span>
+                </div>
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($provisioningResources as $resource)
+                    @php($isServer = $resource instanceof \App\Models\Server)
+                    <a
+                        href="{{ $isServer ? route('servers.show', $resource) : route('websites.show', $resource) }}"
+                        class="flex items-center justify-between gap-4 rounded border border-amber-200 bg-white p-4"
+                    >
+                        <div>
+                            <span class="block font-medium text-primary">{{ $resource->name }}</span>
+                            <span class="mt-1 block text-sm text-secondary">{{ $isServer ? __('Server') : __('Website') }}</span>
+                        </div>
+                        <div class="text-right text-xs text-amber-800">
+                            <span class="block font-semibold uppercase">{{ str($resource->provisioning_status)->replace('_', ' ') }}</span>
+                            <span class="mt-1 block">{{ $resource->created_at->diffForHumans() }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($provisioningTotal > $provisioningResources->count())
+                <p class="mt-4 text-sm text-amber-800">
+                    {{ trans_choice(':count more resource is provisioning|:count more resources are provisioning', $provisioningTotal - $provisioningResources->count(), ['count' => $provisioningTotal - $provisioningResources->count()]) }}
+                </p>
+            @endif
+        </section>
+    @endif
+
     @php($activeDeploymentTotal = array_sum($activeDeploymentCounts))
     @if ($activeDeploymentTotal > 0)
         <section class="mb-12 rounded-lg border border-blue-300 bg-blue-50 p-5">

@@ -43,6 +43,9 @@ Webhook deliveries from the last 24 hours are summarized across the account by
 status with direct, filtered repository-history links. The dashboard query loads
 only internal record IDs, repository IDs, statuses, and timestamps; provider
 delivery IDs, revisions, and commit messages remain outside dashboard data.
+Queued and provisioning servers and websites are combined into a safe infrastructure
+progress panel. It loads only resource IDs, owner IDs, names, statuses, and creation
+timestamps, leaving credentials and environment configuration outside dashboard data.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

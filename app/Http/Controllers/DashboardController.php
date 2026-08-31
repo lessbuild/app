@@ -51,6 +51,27 @@ class DashboardController extends Controller
             ->select('repository_webhook_deliveries.status', DB::raw('COUNT(*) as total'))
             ->groupBy('repository_webhook_deliveries.status')
             ->pluck('total', 'repository_webhook_deliveries.status');
+        $provisioningServers = $user->servers()
+            ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES);
+        $provisioningWebsites = $user->websites()
+            ->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES);
+        $provisioningCounts = [
+            'servers' => (clone $provisioningServers)->count(),
+            'websites' => (clone $provisioningWebsites)->count(),
+        ];
+        $provisioningResources = $provisioningServers
+            ->select(['id', 'user_id', 'name', 'provisioning_status', 'created_at'])
+            ->latest('id')
+            ->limit(5)
+            ->get()
+            ->concat($provisioningWebsites
+                ->select(['id', 'user_id', 'name', 'provisioning_status', 'created_at'])
+                ->latest('id')
+                ->limit(5)
+                ->get())
+            ->sortByDesc('created_at')
+            ->take(5)
+            ->values();
 
         return view('dashboard', [
             'stats' => [
@@ -107,6 +128,8 @@ class DashboardController extends Controller
                 ->latest('repository_webhook_deliveries.id')
                 ->limit(5)
                 ->get(),
+            'provisioningCounts' => $provisioningCounts,
+            'provisioningResources' => $provisioningResources,
             'attentionWebsites' => $attentionWebsites
                 ->with('server')
                 ->latest()

@@ -29,6 +29,12 @@ class Server extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const ACTIVE_PROVISIONING_STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_WAITING_FOR_IP,
+        self::STATUS_PROVISIONING,
+    ];
+
     public const FAILURE_CREATION = 'creation';
 
     public const FAILURE_INITIALIZATION = 'initialization';
