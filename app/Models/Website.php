@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Presenters\WebsitePresenter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +16,6 @@ class Website extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    use WebsitePresenter;
 
     public const STATUS_QUEUED = 'queued';
 

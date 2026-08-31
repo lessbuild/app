@@ -75,7 +75,7 @@ class RepositorySafetyTest extends TestCase
 
         $this->actingAs($user)->get(route('repositories.create'))
             ->assertSuccessful()
-            ->assertSee('active website')
+            ->assertSee('Active Website')
             ->assertDontSee($inactiveWebsite->name);
 
         $this->actingAs($user)->get(route('repositories.edit', $repository))

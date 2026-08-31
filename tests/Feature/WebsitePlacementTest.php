@@ -71,7 +71,7 @@ class WebsitePlacementTest extends TestCase
         $website->refresh();
         $this->assertTrue($website->server->is($newServer));
         $this->assertSame($oldServer->id, $website->previous_server_id);
-        $this->assertSame('updated site', $website->name);
+        $this->assertSame('Updated Site', $website->name);
         $this->assertSame(Website::STATUS_QUEUED, $website->provisioning_status);
         Queue::assertPushed(AddWebsiteJob::class, fn (AddWebsiteJob $job): bool => $job->website->is($website));
     }

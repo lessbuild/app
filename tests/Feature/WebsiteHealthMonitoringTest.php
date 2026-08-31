@@ -44,12 +44,12 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertSame(1, $owner->unreadNotifications()->count());
         $notification = $owner->unreadNotifications()->sole();
         $this->assertSame('website', $notification->data['category']);
-        $this->assertSame('Website "application" is unhealthy', $notification->data['title']);
+        $this->assertSame('Website "Application" is unhealthy', $notification->data['title']);
         $this->assertSame('HTTP 503', $notification->data['message']);
         $this->assertDatabaseHas('events', [
             'parentable_type' => Website::class,
             'parentable_id' => $website->id,
-            'event' => 'Website "application" is unhealthy.',
+            'event' => 'Website "Application" is unhealthy.',
         ]);
 
         $this->app->instance(Runner::class, $this->runner(false, 'HTTP 503 again', $command));
@@ -67,7 +67,7 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertDatabaseHas('events', [
             'parentable_type' => Website::class,
             'parentable_id' => $website->id,
-            'event' => 'Website "application" recovered.',
+            'event' => 'Website "Application" recovered.',
         ]);
 
         $this->assertStringContainsString("'http://app.example.com/health/ready'", $command);

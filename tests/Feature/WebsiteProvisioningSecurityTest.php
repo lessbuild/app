@@ -53,10 +53,12 @@ class WebsiteProvisioningSecurityTest extends TestCase
         $first = $this->website($user, $server, "Customer Portal'; touch /tmp/pwn");
         $second = $this->website($user, $server, "Customer Portal'; touch /tmp/pwn");
 
+        $this->assertSame("Customer Portal'; touch /tmp/pwn", $first->name);
         $this->assertSame('customer-portal-touch-tmppwn', $first->deployment_slug);
         $this->assertSame('customer-portal-touch-tmppwn-2', $second->deployment_slug);
 
         $first->update(['name' => 'Renamed Portal']);
+        $this->assertSame('Renamed Portal', $first->fresh()->name);
         $this->assertSame('customer-portal-touch-tmppwn', $first->fresh()->deployment_slug);
     }
 

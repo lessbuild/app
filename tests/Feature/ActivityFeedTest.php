@@ -40,7 +40,7 @@ class ActivityFeedTest extends TestCase
         $execution->update(['status' => ServerCommandExecution::STATUS_SUCCEEDED]);
 
         $this->assertDatabaseHas('events', ['user_id' => $user->id, 'category' => 'server', 'event' => 'Server "Primary Server" is active.']);
-        $this->assertDatabaseHas('events', ['user_id' => $user->id, 'category' => 'website', 'event' => 'Website "primary website" is active.']);
+        $this->assertDatabaseHas('events', ['user_id' => $user->id, 'category' => 'website', 'event' => 'Website "Primary Website" is active.']);
         $this->assertDatabaseHas('events', ['user_id' => $user->id, 'category' => 'deployment', 'event' => 'Deployment succeeded.']);
         $this->assertDatabaseHas('events', ['user_id' => $user->id, 'category' => 'command', 'event' => 'Server command succeeded.']);
         $this->assertFalse(Event::query()->where('event', 'like', '%super-secret-value%')->exists());

@@ -59,9 +59,9 @@ class InfrastructureListFilterTest extends TestCase
             ->assertSee('value="failed" selected', false)
             ->assertSee('value="unhealthy" selected', false)
             ->assertSee('name="attention" value="1" checked', false)
-            ->assertDontSee('customer healthy')
-            ->assertDontSee('unrelated outage')
-            ->assertDontSee('customer private');
+            ->assertDontSee('Customer Healthy')
+            ->assertDontSee('Unrelated Outage')
+            ->assertDontSee('Customer Private');
     }
 
     public function test_owner_can_filter_servers_by_status_and_any_address_field(): void
@@ -143,7 +143,7 @@ class InfrastructureListFilterTest extends TestCase
             'search' => '   ',
         ]))
             ->assertSuccessful()
-            ->assertSee('visible website')
+            ->assertSee('Visible Website')
             ->assertDontSee('Clear filters');
 
         $this->actingAs($owner)->get(route('servers.index', [
