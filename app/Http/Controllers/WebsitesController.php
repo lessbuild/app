@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Web\RetryWebsiteProvisioningAction;
 use App\Http\Requests\WebsiteRequest;
+use App\Http\Responses\PlainTextLogDownload;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\CheckWebsiteHealthJob;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
@@ -12,6 +13,7 @@ use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -252,6 +254,22 @@ class WebsitesController extends Controller
         CheckWebsiteHealthJob::dispatch($website->id);
 
         return back()->with('success', __('Health check queued. Refresh shortly to see the result.'));
+    }
+
+    public function downloadProvisioningLog(
+        Website $website,
+        PlainTextLogDownload $download,
+    ): Response {
+        $this->authorize('view', $website);
+
+        $log = $website->logs()
+            ->where('type', Website::PROVISIONING_LOG_TYPE)
+            ->firstOrFail();
+
+        return $download->make(
+            $log->log,
+            "lessbuild-website-{$website->id}-provisioning.log",
+        );
     }
 
     /**

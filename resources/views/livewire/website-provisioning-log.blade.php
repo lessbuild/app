@@ -12,7 +12,14 @@
                 @endif
             </p>
         </div>
-        <span class="font-sans text-xs uppercase text-secondary">{{ $website->provisioning_status }}</span>
+        <div class="flex items-center gap-3 font-sans">
+            @if ($hasLog)
+                <a href="{{ route('websites.provisioning-log.download', $website) }}" class="text-xs font-medium text-ternary hover:underline">
+                    {{ __('Download log') }}
+                </a>
+            @endif
+            <span class="text-xs uppercase text-secondary">{{ $website->provisioning_status }}</span>
+        </div>
     </div>
 
     <div class="mt-4 flex max-h-96 flex-col overflow-y-auto">

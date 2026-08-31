@@ -6,6 +6,7 @@ use App\Actions\Repository\CancelDeploymentAction;
 use App\Actions\Repository\CancelQueuedDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
 use App\Data\BuildRedeploymentResult;
+use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
 use App\Services\Runner;
 use Illuminate\Contracts\View\View;
@@ -14,7 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -111,7 +111,7 @@ class BuildsController extends Controller
         ]);
     }
 
-    public function downloadLog(Build $build): Response
+    public function downloadLog(Build $build, PlainTextLogDownload $download): Response
     {
         $this->authorize('view', $build);
 
@@ -120,15 +120,7 @@ class BuildsController extends Controller
             ->firstOrFail();
         $filename = "lessbuild-build-{$build->id}-deployment.log";
 
-        return response($log->log, 200, [
-            'Cache-Control' => 'private, no-store',
-            'Content-Disposition' => HeaderUtils::makeDisposition(
-                HeaderUtils::DISPOSITION_ATTACHMENT,
-                $filename,
-            ),
-            'Content-Type' => 'text/plain; charset=UTF-8',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $download->make($log->log, $filename);
     }
 
     public function cancel(

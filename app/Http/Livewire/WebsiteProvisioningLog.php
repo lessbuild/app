@@ -20,6 +20,7 @@ class WebsiteProvisioningLog extends Component
             ->first();
 
         return view('livewire.website-provisioning-log', [
+            'hasLog' => $log !== null,
             'lines' => $log ? explode(PHP_EOL, $log->log) : [],
             'updatedAt' => $log?->updated_at,
             'shouldPoll' => in_array($this->website->provisioning_status, [

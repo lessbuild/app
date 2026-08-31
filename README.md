@@ -86,6 +86,9 @@ retry the configured branch.
 Build history can be filtered by repository, status, and trigger, or searched by
 repository name, commit message, and revision. The current filtered view can be
 exported as a streamed, spreadsheet-safe CSV file.
+Deployment output, website provisioning output, and allowlisted server log
+snapshots can be downloaded as owner-authorized plain-text files for incident
+review and support handoff.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment

@@ -306,19 +306,26 @@
                         {{ __('No snapshot has been collected yet.') }}
                     @endif
                 </div>
-                <button
-                    type="button"
-                    class="button primary"
-                    wire:click="refreshLogs"
-                    wire:loading.attr="disabled"
-                    wire:target="refreshLogs"
-                    @disabled(
-                        $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE
-                        || in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true)
-                    )
-                >
-                    {{ __('Refresh logs') }}
-                </button>
+                <div class="flex items-center gap-3">
+                    @if ($logSnapshot?->log !== null)
+                        <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="text-xs font-medium text-ternary hover:underline">
+                            {{ __('Download log') }}
+                        </a>
+                    @endif
+                    <button
+                        type="button"
+                        class="button primary"
+                        wire:click="refreshLogs"
+                        wire:loading.attr="disabled"
+                        wire:target="refreshLogs"
+                        @disabled(
+                            $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE
+                            || in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true)
+                        )
+                    >
+                        {{ __('Refresh logs') }}
+                    </button>
+                </div>
             </div>
             <div class="mt-4 flex flex-col max-h-96 overflow-y-scroll">
                 @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE && $log !== 'provisioning')

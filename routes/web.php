@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Server\CollectServerLogAction;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
@@ -61,11 +62,16 @@ Route::middleware('auth')->group(function () {
         ->name('websites.provisioning.retry');
     Route::post('websites/{website}/health/check', [WebsitesController::class, 'checkHealth'])
         ->name('websites.health.check');
+    Route::get('websites/{website}/provisioning-log', [WebsitesController::class, 'downloadProvisioningLog'])
+        ->name('websites.provisioning-log.download');
 
     Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::get('servers/{server}', ServerShow::class)
         ->middleware('can:view,server')
         ->name('servers.show');
+    Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
+        ->whereIn('type', CollectServerLogAction::TYPES)
+        ->name('servers.logs.download');
     Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
         ->name('servers.initialization.retry');
     Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])

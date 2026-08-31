@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Server\CollectServerLogAction;
 use App\Actions\Server\CreateCloudServerAction;
 use App\Actions\Server\QueueRemoteServerProvisioningRetryAction;
 use App\Actions\Server\RetryServerInitializationAction;
 use App\Contracts\ServerProvider;
 use App\Http\Requests\ServerRequest;
+use App\Http\Responses\PlainTextLogDownload;
 use App\Jobs\Server\InitialiseServerJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
@@ -17,6 +19,7 @@ use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -212,6 +215,25 @@ class ServersController extends Controller
         }
 
         return back()->with('success', __('Remote server provisioning retry queued.'));
+    }
+
+    public function downloadLog(
+        Server $server,
+        string $type,
+        PlainTextLogDownload $download,
+    ): Response {
+        $this->authorize('view', $server);
+        abort_unless(in_array($type, CollectServerLogAction::TYPES, true), 404);
+
+        $snapshot = $server->logSnapshots()
+            ->where('type', $type)
+            ->whereNotNull('log')
+            ->firstOrFail();
+
+        return $download->make(
+            $snapshot->log,
+            "lessbuild-server-{$server->id}-{$type}.log",
+        );
     }
 
     /** @return array{search: ?string, status: ?string} */
