@@ -77,6 +77,8 @@ Each checkout reports its actual commit through a short-lived signed callback.
 Redeploying a recorded build checks out that exact commit and can also be used to
 restore an earlier release. Legacy manual builds without a recorded revision
 retry the configured branch.
+Build history can be filtered by repository, status, and trigger, or searched by
+repository name, commit message, and revision.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment

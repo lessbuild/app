@@ -37,7 +37,7 @@ class Repository extends Model
 
     public function website(): BelongsTo
     {
-        return $this->belongsTo(Website::class);
+        return $this->belongsTo(Website::class)->withTrashed();
     }
 
     public function provider(): BelongsTo
@@ -66,6 +66,7 @@ class Repository extends Model
 
         return $this->provider?->isSourceControl() === true
             && $this->provider->supportsRepositoryUrl($this->url)
+            && $this->website?->trashed() === false
             && $this->website?->provisioning_status === Website::STATUS_ACTIVE
             && $this->website?->server?->provisioning_status === Server::STATUS_ACTIVE;
     }

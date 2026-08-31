@@ -11,17 +11,73 @@
     >
     </x-layouts.partials.heading>
 
+    <form method="GET" action="{{ route('builds.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div>
+                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <input
+                    id="search"
+                    name="search"
+                    type="search"
+                    maxlength="100"
+                    value="{{ $filters['search'] }}"
+                    placeholder="{{ __('Repository, revision, or commit') }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="repository_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Repository') }}</label>
+                <select id="repository_id" name="repository_id" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All repositories') }}</option>
+                    @foreach ($repositories as $repository)
+                        <option value="{{ $repository->id }}" @selected((int) $filters['repository_id'] === $repository->id)>
+                            {{ $repository->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All statuses') }}</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status }}" @selected($filters['status'] === $status)>
+                            {{ str($status)->replace('_', ' ')->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="trigger" class="block text-xs font-semibold uppercase text-secondary">{{ __('Trigger') }}</label>
+                <select id="trigger" name="trigger" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All triggers') }}</option>
+                    @foreach ($triggers as $trigger)
+                        <option value="{{ $trigger }}" @selected($filters['trigger'] === $trigger)>
+                            {{ str($trigger)->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            @if (array_filter($filters, fn ($value) => $value !== null))
+                <a href="{{ route('builds.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
     <!--
      ! ------------------------------------------------------------
      ! List Builds
      ! ------------------------------------------------------------
      !-->
     @if(!$builds->isEmpty())
-        <table class="mt-10 min-w-full divide-y divide-primary border-t border-b border-primary">
+        <table class="mt-6 min-w-full divide-y divide-primary border-t border-b border-primary">
             <thead class="bg-primary border-l border-r border-primary">
                 <tr>
                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                        {{ __('Server') }}
+                        {{ __('Repository') }}
                     </th>
                     <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
                         {{ __('Status') }}
@@ -81,9 +137,15 @@
     @else
         <div class="max-w-3xl mx-auto">
             <x-lists.empty
-                title="{{ __('You have no builds') }}"
-                description="{{ __('You have no recent builds') }}"
-            ></x-lists.empty>
+                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No builds match these filters') : __('You have no builds')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('You have no recent builds')"
+            >
+                @if (array_filter($filters, fn ($value) => $value !== null))
+                    <x-slot:button>
+                        <a href="{{ route('builds.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                    </x-slot:button>
+                @endif
+            </x-lists.empty>
         </div>
     @endif
 </x-layouts.app>

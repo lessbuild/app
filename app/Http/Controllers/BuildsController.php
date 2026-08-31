@@ -21,14 +21,48 @@ class BuildsController extends Controller
      */
     public function index(Request $request): View
     {
-        $builds = $request->user()
-            ->builds()
+        $statuses = array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES)));
+        $triggers = [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY];
+        $status = $request->string('status')->toString();
+        $trigger = $request->string('trigger')->toString();
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $repositoryId = filter_var($request->query('repository_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        $filters = [
+            'repository_id' => $repositoryId ?: null,
+            'status' => in_array($status, $statuses, true) ? $status : null,
+            'trigger' => in_array($trigger, $triggers, true) ? $trigger : null,
+            'search' => $search !== '' ? $search : null,
+        ];
+
+        $builds = $request->user()->builds()
             ->with('repository.website.server')
+            ->when($filters['repository_id'], fn ($query, int $id) => $query
+                ->where('builds.repository_id', $id))
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('builds.status', $value))
+            ->when($filters['trigger'], fn ($query, string $value) => $query
+                ->where('builds.trigger_source', $value))
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('builds.revision', 'like', "%{$value}%")
+                        ->orWhere('builds.commit_message', 'like', "%{$value}%")
+                        ->orWhereHas('repository', fn ($query) => $query
+                            ->where('name', 'like', "%{$value}%"));
+                });
+            })
             ->latest('builds.created_at')
-            ->simplePaginate();
+            ->simplePaginate()
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
 
         return view('scenes.builds.index', [
             'builds' => $builds,
+            'filters' => $filters,
+            'repositories' => $request->user()->repositories()->orderBy('name')->get(['id', 'name']),
+            'statuses' => $statuses,
+            'triggers' => $triggers,
         ]);
     }
 
