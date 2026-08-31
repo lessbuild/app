@@ -143,10 +143,11 @@ Webhook payloads are verified against their raw request bodies, duplicate
 delivery IDs are ignored, and GitLab timestamps expire after five minutes. If
 a push arrives during a deployment, Lessbuild coalesces newer pushes into one
 follow-up deployment rather than running releases concurrently. Repository
-pages retain a filterable delivery history with safe commit metadata and build
-links plus a spreadsheet-safe CSV export; older coalesced deliveries are marked
-as superseded. Request payloads, signatures, provider tokens, and webhook
-secrets are never included in history or exports.
+pages retain delivery history filterable by status and received-date range with
+safe commit metadata and build links plus a private, spreadsheet-safe CSV
+export; older coalesced deliveries are marked as superseded. Request payloads,
+signatures, provider tokens, and webhook secrets are never included in history
+or exports.
 
 Completed delivery history is retained for 90 days by default and pruned only
 after the daily database backup has been created and verified. Pending and

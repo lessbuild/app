@@ -154,28 +154,48 @@
                     <h3 class="text-lg font-semibold text-primary">{{ __('Webhook delivery history') }}</h3>
                     <p class="mt-1 text-sm text-secondary">{{ __('Review accepted deliveries without exposing webhook payloads or credentials.') }}</p>
                 </div>
-                <form method="GET" action="{{ route('repositories.show', $repository) }}" class="flex flex-wrap items-end gap-2">
+                <form method="GET" action="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="flex flex-wrap items-end gap-2">
                     <div>
                         <label for="delivery_status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
                         <select id="delivery_status" name="delivery_status" class="input secondary mt-1 rounded">
                             <option value="">{{ __('All statuses') }}</option>
                             @foreach ($deliveryStatuses as $status)
-                                <option value="{{ $status }}" @selected($deliveryStatus === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
+                                <option value="{{ $status }}" @selected($deliveryFilters['delivery_status'] === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
                             @endforeach
                         </select>
                     </div>
+                    <div>
+                        <label for="delivery_date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Received from') }}</label>
+                        <input
+                            id="delivery_date_from"
+                            name="delivery_date_from"
+                            type="date"
+                            value="{{ $deliveryFilters['delivery_date_from'] }}"
+                            class="input secondary mt-1 rounded"
+                        >
+                    </div>
+                    <div>
+                        <label for="delivery_date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Received through') }}</label>
+                        <input
+                            id="delivery_date_to"
+                            name="delivery_date_to"
+                            type="date"
+                            value="{{ $deliveryFilters['delivery_date_to'] }}"
+                            class="input secondary mt-1 rounded"
+                        >
+                    </div>
                     <button type="submit" class="button primary">{{ __('Apply') }}</button>
-                    @if ($deliveryStatus)
+                    @if (array_filter($deliveryFilters, fn ($value) => $value !== null))
                         <a href="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="button tertiary">{{ __('Clear') }}</a>
                     @endif
-                    <a href="{{ route('repositories.webhook-deliveries.export', [$repository, 'delivery_status' => $deliveryStatus]) }}" class="button tertiary">{{ __('Export CSV') }}</a>
+                    <a href="{{ route('repositories.webhook-deliveries.export', [$repository, ...array_filter($deliveryFilters, fn ($value) => $value !== null)]) }}" class="button tertiary">{{ __('Export CSV') }}</a>
                 </form>
             </div>
 
             <div id="webhook-deliveries" class="mt-4">
                 @if ($webhookDeliveries->isEmpty())
                     <p class="rounded border border-primary p-4 text-sm text-secondary">
-                        {{ $deliveryStatus ? __('No webhook deliveries match this status.') : __('No webhook deliveries have been accepted yet.') }}
+                        {{ array_filter($deliveryFilters, fn ($value) => $value !== null) ? __('No webhook deliveries match these filters.') : __('No webhook deliveries have been accepted yet.') }}
                     </p>
                 @else
                     <div class="overflow-x-auto">

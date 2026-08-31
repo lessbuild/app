@@ -179,18 +179,17 @@ class RepositoriesController extends Controller
     public function show(Request $request, Repository $repository): View
     {
         $this->authorize('view', $repository);
-        $deliveryStatus = $this->deliveryStatus($request);
+        $deliveryFilters = $this->deliveryFilters($request);
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
-            'webhookDeliveries' => $repository->webhookDeliveries()
+            'webhookDeliveries' => $this->filteredWebhookDeliveries($repository, $deliveryFilters)
                 ->with('build')
-                ->when($deliveryStatus, fn ($query, string $status) => $query->where('status', $status))
                 ->latest('id')
                 ->paginate(10, pageName: 'webhook_page')
-                ->appends(array_filter(['delivery_status' => $deliveryStatus])),
-            'deliveryStatus' => $deliveryStatus,
+                ->appends(array_filter($deliveryFilters, fn ($value) => $value !== null)),
+            'deliveryFilters' => $deliveryFilters,
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
@@ -200,11 +199,11 @@ class RepositoriesController extends Controller
     public function exportWebhookDeliveries(Request $request, Repository $repository): StreamedResponse
     {
         $this->authorize('view', $repository);
-        $deliveryStatus = $this->deliveryStatus($request);
+        $deliveryFilters = $this->deliveryFilters($request);
         $filename = "lessbuild-repository-{$repository->id}-webhook-deliveries-"
             .now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($repository, $deliveryStatus): void {
+        return response()->streamDownload(function () use ($repository, $deliveryFilters): void {
             $output = fopen('php://output', 'wb');
             if ($output === false) {
                 throw new \RuntimeException('Unable to open the CSV output stream.');
@@ -222,9 +221,8 @@ class RepositoriesController extends Controller
                 'Updated at',
             ], ',', '"', '');
 
-            $repository->webhookDeliveries()
+            $this->filteredWebhookDeliveries($repository, $deliveryFilters)
                 ->with('build')
-                ->when($deliveryStatus, fn ($query, string $status) => $query->where('status', $status))
                 ->latest('id')
                 ->lazy(250)
                 ->each(function (RepositoryWebhookDelivery $delivery) use ($output): void {
@@ -243,15 +241,40 @@ class RepositoriesController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
-    private function deliveryStatus(Request $request): ?string
+    /** @return array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string} */
+    private function deliveryFilters(Request $request): array
     {
         $status = $request->string('delivery_status')->toString();
 
-        return in_array($status, RepositoryWebhookDelivery::STATUSES, true) ? $status : null;
+        return [
+            'delivery_status' => in_array($status, RepositoryWebhookDelivery::STATUSES, true) ? $status : null,
+            'delivery_date_from' => $this->date($request->string('delivery_date_from')->toString()),
+            'delivery_date_to' => $this->date($request->string('delivery_date_to')->toString()),
+        ];
+    }
+
+    /** @param array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string} $filters */
+    private function filteredWebhookDeliveries(Repository $repository, array $filters): HasMany
+    {
+        return $repository->webhookDeliveries()
+            ->when($filters['delivery_status'], fn ($query, string $status) => $query
+                ->where('status', $status))
+            ->when($filters['delivery_date_from'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '>=', $date))
+            ->when($filters['delivery_date_to'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /**

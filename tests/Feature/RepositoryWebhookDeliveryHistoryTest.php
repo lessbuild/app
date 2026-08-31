@@ -34,19 +34,39 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             'commit_message' => $message,
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
             'build_id' => $build->id,
+            'created_at' => '2026-08-20 12:00:00',
+            'updated_at' => '2026-08-20 12:00:00',
         ]);
         $repository->webhookDeliveries()->create([
             'delivery_id' => 'hidden-pending-delivery',
             'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+            'created_at' => '2026-08-20 11:00:00',
+            'updated_at' => '2026-08-20 11:00:00',
+        ]);
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'before-window-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-19 23:59:59',
+            'updated_at' => '2026-08-19 23:59:59',
+        ]);
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'after-window-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-21 00:00:00',
+            'updated_at' => '2026-08-21 00:00:00',
         ]);
         $foreignRepository->webhookDeliveries()->create([
             'delivery_id' => 'foreign-private-delivery',
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-20 10:00:00',
+            'updated_at' => '2026-08-20 10:00:00',
         ]);
 
         $response = $this->actingAs($owner)->get(route('repositories.show', [
             $repository,
             'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'delivery_date_from' => '2026-08-20',
+            'delivery_date_to' => '2026-08-20',
         ]));
 
         $response
@@ -59,6 +79,8 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertSee('&lt;script&gt;alert(&quot;delivery&quot;)&lt;/script&gt;', false)
             ->assertDontSee($message, false)
             ->assertDontSee('hidden-pending-delivery')
+            ->assertDontSee('before-window-delivery')
+            ->assertDontSee('after-window-delivery')
             ->assertDontSee('foreign-private-delivery')
             ->assertDontSee('provider-secret')
             ->assertDontSee('webhook-secret');
@@ -72,24 +94,37 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             $repository->webhookDeliveries()->create([
                 'delivery_id' => sprintf('pending-delivery-%02d', $number),
                 'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+                'created_at' => '2026-08-20 12:00:00',
+                'updated_at' => '2026-08-20 12:00:00',
             ]);
         }
 
         $this->actingAs($owner)->get(route('repositories.show', [
             $repository,
             'delivery_status' => RepositoryWebhookDelivery::STATUS_PENDING,
+            'delivery_date_from' => '2026-08-20',
+            'delivery_date_to' => '2026-08-20',
         ]))
             ->assertSuccessful()
             ->assertSee('webhook_page=2', false)
             ->assertSee('delivery_status=pending', false)
+            ->assertSee('delivery_date_from=2026-08-20', false)
+            ->assertSee('delivery_date_to=2026-08-20', false)
             ->assertSee('pending-delivery-11')
             ->assertDontSee('pending-delivery-01');
 
         $this->actingAs($owner)->get(route('repositories.show', [
             $repository,
             'delivery_status' => 'not-a-status',
+            'delivery_date_from' => '2026-02-31',
+            'delivery_date_to' => '../../etc/passwd',
         ]))
             ->assertSuccessful()
+            ->assertViewHas('deliveryFilters', [
+                'delivery_status' => null,
+                'delivery_date_from' => null,
+                'delivery_date_to' => null,
+            ])
             ->assertSee('pending-delivery-11')
             ->assertDontSee('not-a-status', false);
     }
@@ -108,24 +143,45 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             'commit_message' => " \t@spreadsheet-message",
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
             'build_id' => $build->id,
+            'created_at' => '2026-08-20 12:00:00',
+            'updated_at' => '2026-08-20 12:00:00',
         ]);
         $repository->webhookDeliveries()->create([
             'delivery_id' => 'filtered-pending-delivery',
             'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+            'created_at' => '2026-08-20 11:00:00',
+            'updated_at' => '2026-08-20 11:00:00',
+        ]);
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'before-window-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-19 23:59:59',
+            'updated_at' => '2026-08-19 23:59:59',
+        ]);
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'after-window-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-21 00:00:00',
+            'updated_at' => '2026-08-21 00:00:00',
         ]);
         $foreignRepository->webhookDeliveries()->create([
             'delivery_id' => 'foreign-private-delivery',
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => '2026-08-20 10:00:00',
+            'updated_at' => '2026-08-20 10:00:00',
         ]);
 
         $response = $this->actingAs($owner)->get(route('repositories.webhook-deliveries.export', [
             $repository,
             'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'delivery_date_from' => '2026-08-20',
+            'delivery_date_to' => '2026-08-20',
         ]));
 
         $response
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString(
             "attachment; filename=lessbuild-repository-{$repository->id}-webhook-deliveries-",
@@ -134,6 +190,8 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
 
         $content = $response->streamedContent();
         $this->assertStringNotContainsString('filtered-pending-delivery', $content);
+        $this->assertStringNotContainsString('before-window-delivery', $content);
+        $this->assertStringNotContainsString('after-window-delivery', $content);
         $this->assertStringNotContainsString('foreign-private-delivery', $content);
         $this->assertStringNotContainsString('provider-secret', $content);
         $this->assertStringNotContainsString('webhook-secret', $content);
