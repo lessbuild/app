@@ -11,6 +11,7 @@ use App\Models\ServerCommandExecution;
 use App\Models\ServerLogSnapshot;
 use App\Models\User;
 use App\Models\Website;
+use App\Notifications\AccountSecurityNotification;
 use App\Notifications\FailureNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
@@ -350,6 +351,7 @@ class DemoOperationsSeeder extends Seeder
             'd0000000-0000-4000-8000-000000000003' => ['deployment', $build->id, 'Demo deployment failed', 'The demo health check failed and restored the previous release.', 'failed', now()->subDay()],
             'd0000000-0000-4000-8000-000000000004' => ['provider', $provider->id, 'Demo provider connection failed', 'The demo GitLab credential was rejected.', 'failed', null],
             'd0000000-0000-4000-8000-000000000005' => ['provider', $provider->id, 'Demo provider connection recovered', 'The demo provider credential was restored.', 'healthy', now()->subHours(12)],
+            'd0000000-0000-4000-8000-000000000006' => ['account', $user->id, 'Demo account security changed', 'Demo: another browser session was logged out.', 'info', null],
         ];
 
         foreach ($definitions as $position => $definition) {
@@ -357,7 +359,9 @@ class DemoOperationsSeeder extends Seeder
             $notification = $user->notifications()->updateOrCreate(
                 ['id' => $position],
                 [
-                    'type' => FailureNotification::class,
+                    'type' => $category === 'account'
+                        ? AccountSecurityNotification::class
+                        : FailureNotification::class,
                     'data' => compact('category', 'title', 'message', 'status') + [
                         'resource_id' => $resourceId,
                         'demo' => true,

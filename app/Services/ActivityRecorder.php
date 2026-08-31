@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\AccountSecurityNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Throwable;
 
 class ActivityRecorder
 {
@@ -20,10 +22,18 @@ class ActivityRecorder
 
     public function recordAccount(User $user, string $message): Event
     {
-        return $user->accountEvents()->create([
+        $event = $user->accountEvents()->create([
             'user_id' => $user->id,
             'category' => 'account',
             'event' => Str::limit($message, 255, ''),
         ]);
+
+        try {
+            $user->notify(new AccountSecurityNotification($event->event));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return $event;
     }
 }

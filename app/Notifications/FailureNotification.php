@@ -9,12 +9,7 @@ class FailureNotification extends Notification
 {
     use Queueable;
 
-    public const CATEGORIES = [
-        'deployment',
-        'website',
-        'server',
-        'provider',
-    ];
+    public const CATEGORIES = NotificationInbox::CATEGORIES;
 
     public function __construct(
         private readonly string $category,
@@ -38,28 +33,15 @@ class FailureNotification extends Notification
             'resource_id' => $this->resourceId,
             'title' => str($this->title)->limit(255)->toString(),
             'message' => str($this->message)->limit(500)->toString(),
-            'status' => $this->status === 'healthy' ? 'healthy' : 'failed',
+            'status' => $this->status === NotificationInbox::STATUS_HEALTHY
+                ? NotificationInbox::STATUS_HEALTHY
+                : NotificationInbox::STATUS_FAILED,
         ];
     }
 
     /** @param array<string, mixed> $data */
     public static function destination(array $data): ?string
     {
-        $resourceId = filter_var($data['resource_id'] ?? null, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        if (! $resourceId) {
-            return null;
-        }
-
-        $route = match ($data['category'] ?? null) {
-            'deployment' => 'builds.show',
-            'website' => 'websites.show',
-            'server' => 'servers.show',
-            'provider' => 'providers.show',
-            default => null,
-        };
-
-        return $route ? route($route, $resourceId) : null;
+        return NotificationInbox::destination($data);
     }
 }

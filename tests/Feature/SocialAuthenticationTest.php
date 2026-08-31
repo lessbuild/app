@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Notifications\AccountSecurityNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
@@ -143,6 +144,14 @@ class SocialAuthenticationTest extends TestCase
             'event' => 'Bitbucket sign-in was connected.',
             'parentable_type' => User::class,
             'parentable_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'type' => AccountSecurityNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data->category' => 'account',
+            'data->message' => 'Bitbucket sign-in was connected.',
+            'data->status' => 'info',
         ]);
     }
 

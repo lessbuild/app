@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Event;
 use App\Models\User;
+use App\Notifications\AccountSecurityNotification;
+use App\Notifications\NotificationInbox;
 use App\Services\ActivityRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -61,6 +63,19 @@ class AccountSecurityActivityTest extends TestCase
         $this->assertStringNotContainsString('current-password', $serialized);
         $this->assertStringNotContainsString('replacement-password', $serialized);
         $this->assertStringNotContainsString('private-github-identity', $serialized);
+
+        $notifications = $user->notifications()->where('data->category', 'account')->oldest()->get();
+        $this->assertSame($events->pluck('event')->all(), $notifications->pluck('data.message')->all());
+        $this->assertTrue($notifications->every(fn ($notification): bool => $notification->type === AccountSecurityNotification::class
+            && $notification->data['title'] === 'Account security changed'
+            && $notification->data['status'] === NotificationInbox::STATUS_INFO
+            && $notification->data['resource_id'] === $user->id));
+        $notificationData = $notifications->pluck('data')->toJson();
+        $this->assertStringNotContainsString('original@example.test', $notificationData);
+        $this->assertStringNotContainsString('updated@example.test', $notificationData);
+        $this->assertStringNotContainsString('current-password', $notificationData);
+        $this->assertStringNotContainsString('replacement-password', $notificationData);
+        $this->assertStringNotContainsString('private-github-identity', $notificationData);
     }
 
     public function test_account_activity_filter_and_export_are_owner_scoped(): void
@@ -70,6 +85,7 @@ class AccountSecurityActivityTest extends TestCase
         $recorder = app(ActivityRecorder::class);
         $ownerEvent = $recorder->recordAccount($owner, 'Owner reviewed account security.');
         $recorder->recordAccount($other, 'Foreign account security event.');
+        $ownerNotification = $owner->notifications()->sole();
 
         $this->actingAs($owner)->get(route('activity.index', ['category' => 'account']))
             ->assertSuccessful()
@@ -85,5 +101,23 @@ class AccountSecurityActivityTest extends TestCase
         $this->assertStringContainsString(',account,', $content);
         $this->assertStringContainsString(',User,'.$owner->id.',', $content);
         $this->assertStringNotContainsString('Foreign account security event.', $content);
+
+        $this->get(route('notifications.index', ['category' => 'account']))
+            ->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1
+                && $notifications->sole()->id === $ownerNotification->id)
+            ->assertSee('Owner reviewed account security.')
+            ->assertSee('border-blue-300', false)
+            ->assertDontSee('Foreign account security event.');
+        $notificationExport = $this->get(route('notifications.export', ['category' => 'account']))
+            ->assertSuccessful()
+            ->streamedContent();
+        $this->assertStringContainsString(',account,', $notificationExport);
+        $this->assertStringContainsString(',info,unread,', $notificationExport);
+        $this->assertStringNotContainsString('Foreign account security event.', $notificationExport);
+
+        $this->post(route('notifications.read', $ownerNotification))
+            ->assertRedirect(route('account.index'));
+        $this->assertNotNull($ownerNotification->fresh()->read_at);
     }
 }

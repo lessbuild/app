@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.heading
         :title="__('Notifications')"
-        :description="__('Review deployment and infrastructure alerts that need your attention.')"
+        :description="__('Review account security, deployment, and infrastructure alerts.')"
     >
         @if ($hasUnreadNotifications || $hasReadNotifications)
             <x-slot:buttons>
@@ -37,7 +37,7 @@
                     type="search"
                     maxlength="100"
                     value="{{ $filters['search'] }}"
-                    placeholder="{{ __('Title or failure message') }}"
+                    placeholder="{{ __('Notification title or message') }}"
                     class="input secondary mt-1 w-full rounded"
                 >
             </div>
@@ -92,27 +92,29 @@
 
     <div class="space-y-3">
         @forelse ($notifications as $notification)
-            @php($destination = \App\Notifications\FailureNotification::destination($notification->data))
-            @php($notificationStatus = $notification->data['status'] ?? 'failed')
+            @php($destination = \App\Notifications\NotificationInbox::destination($notification->data))
+            @php($notificationStatus = $notification->data['status'] ?? \App\Notifications\NotificationInbox::STATUS_FAILED)
             <article @class([
                 'rounded-lg border p-5',
-                'border-red-300 bg-red-50' => $notification->read_at === null && $notificationStatus !== 'healthy',
-                'border-green-300 bg-green-50' => $notification->read_at === null && $notificationStatus === 'healthy',
+                'border-red-300 bg-red-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
+                'border-green-300 bg-green-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
+                'border-blue-300 bg-blue-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
                 'border-primary bg-primary' => $notification->read_at !== null,
             ])>
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Infrastructure failure') }}</h2>
+                            <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Notification') }}</h2>
                             @if ($notification->read_at === null)
                                 <span @class([
                                     'rounded-full px-2 py-0.5 text-xs font-semibold uppercase text-white',
-                                    'bg-red-600' => $notificationStatus !== 'healthy',
-                                    'bg-green-600' => $notificationStatus === 'healthy',
+                                    'bg-red-600' => $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
+                                    'bg-green-600' => $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
+                                    'bg-blue-600' => $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
                                 ])>{{ __('Unread') }}</span>
                             @endif
                         </div>
-                        <p class="mt-1 whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('The operation failed.') }}</p>
+                        <p class="mt-1 whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
                         <p class="mt-2 text-xs text-secondary">{{ $notification->created_at->diffForHumans() }}</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -147,7 +149,7 @@
         @empty
             <x-lists.empty
                 :title="array_filter($filters, fn ($value) => $value !== null) ? __('No notifications match these filters') : __('No notifications')"
-                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('New deployment and infrastructure alerts will appear here.')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('New account security and operational alerts will appear here.')"
             />
         @endforelse
     </div>

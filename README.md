@@ -186,6 +186,9 @@ Profile and email changes, password changes and resets, other-session revocation
 and social sign-in connection changes are recorded in an owner-scoped Account
 activity category. These entries contain action descriptions only—never IP
 addresses, session identifiers, provider IDs, tokens, or credential content.
+The same metadata-only actions create neutral Account alerts in the notification
+inbox, including password resets performed while signed out. Account alerts can
+be filtered, exported, marked read, or opened directly back to account settings.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

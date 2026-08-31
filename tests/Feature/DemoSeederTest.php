@@ -111,9 +111,16 @@ class DemoSeederTest extends TestCase
             ['deployment', 'website', 'server', 'command', 'provider', 'account', 'general'],
             $user->events()->pluck('category')->all(),
         );
-        $this->assertSame(5, $user->notifications()->count());
-        $this->assertSame(3, $user->unreadNotifications()->count());
+        $this->assertSame(6, $user->notifications()->count());
+        $this->assertSame(4, $user->unreadNotifications()->count());
         $this->assertSame(2, $user->readNotifications()->count());
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data->category' => 'account',
+            'data->status' => 'info',
+            'data->demo' => true,
+        ]);
         $this->assertDatabaseCount('jobs', 0);
 
         $counts = $this->demoCounts($user);

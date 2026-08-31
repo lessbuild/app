@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Notifications\AccountSecurityNotification;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -118,6 +119,14 @@ class PasswordResetPrivacyTest extends TestCase
             'event' => 'Account password was reset.',
             'parentable_type' => User::class,
             'parentable_id' => $user->id,
+        ]);
+        $this->assertDatabaseHas('notifications', [
+            'type' => AccountSecurityNotification::class,
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data->category' => 'account',
+            'data->message' => 'Account password was reset.',
+            'data->status' => 'info',
         ]);
     }
 }

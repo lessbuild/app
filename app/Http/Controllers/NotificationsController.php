@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Notifications\FailureNotification;
+use App\Notifications\NotificationInbox;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +23,7 @@ class NotificationsController extends Controller
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
-            'categories' => FailureNotification::CATEGORIES,
+            'categories' => NotificationInbox::CATEGORIES,
             'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
             'hasReadNotifications' => $user->readNotifications()->exists(),
         ]);
@@ -83,7 +83,7 @@ class NotificationsController extends Controller
         $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
         $notification->markAsRead();
 
-        return redirect(FailureNotification::destination($notification->data) ?? route('notifications.index'));
+        return redirect(NotificationInbox::destination($notification->data) ?? route('notifications.index'));
     }
 
     public function readAll(Request $request): RedirectResponse
@@ -129,7 +129,7 @@ class NotificationsController extends Controller
 
         return [
             'search' => $search !== '' ? $search : null,
-            'category' => in_array($category, FailureNotification::CATEGORIES, true) ? $category : null,
+            'category' => in_array($category, NotificationInbox::CATEGORIES, true) ? $category : null,
             'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
             'date_from' => $this->date($request->string('date_from')->toString()),
             'date_to' => $this->date($request->string('date_to')->toString()),
