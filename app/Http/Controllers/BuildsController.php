@@ -203,7 +203,7 @@ class BuildsController extends Controller
         };
     }
 
-    /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string} */
+    /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
@@ -219,10 +219,12 @@ class BuildsController extends Controller
             'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
             'search' => $search !== '' ? $search : null,
             'latest' => $request->boolean('latest') ? '1' : null,
+            'date_from' => $this->date($request->string('date_from')->toString()),
+            'date_to' => $this->date($request->string('date_to')->toString()),
         ];
     }
 
-    /** @param array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string} $filters */
+    /** @param array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
     private function filteredBuilds(Request $request, array $filters): HasManyThrough
     {
         return $request->user()->builds()
@@ -245,7 +247,18 @@ class BuildsController extends Controller
                         ->orWhereHas('repository', fn ($query) => $query
                             ->where('name', 'like', "%{$value}%"));
                 });
-            });
+            })
+            ->when($filters['date_from'], fn ($query, string $date) => $query
+                ->whereDate('builds.created_at', '>=', $date))
+            ->when($filters['date_to'], fn ($query, string $date) => $query
+                ->whereDate('builds.created_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /** @return list<string> */

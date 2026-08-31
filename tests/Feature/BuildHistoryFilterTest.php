@@ -25,26 +25,43 @@ class BuildHistoryFilterTest extends TestCase
             'revision' => str_repeat('a', 40),
             'commit_message' => 'Ship searchable release',
             'finished_at' => now(),
+            'created_at' => '2026-08-20 12:00:00',
         ]);
         $first->builds()->create([
             'status' => Build::STATUS_FAILED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'commit_message' => 'Ship searchable release',
+            'created_at' => '2026-08-20 11:00:00',
         ]);
         $second->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'commit_message' => 'Ship searchable release',
+            'created_at' => '2026-08-20 10:00:00',
         ]);
         $first->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'trigger_source' => Build::TRIGGER_MANUAL,
             'commit_message' => 'Ship searchable release',
+            'created_at' => '2026-08-20 09:00:00',
         ]);
         $first->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'commit_message' => 'Unrelated change',
+            'created_at' => '2026-08-20 08:00:00',
+        ]);
+        $beforeRange = $first->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'commit_message' => 'Ship searchable release before window',
+            'created_at' => '2026-08-19 23:59:59',
+        ]);
+        $afterRange = $first->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'commit_message' => 'Ship searchable release after window',
+            'created_at' => '2026-08-21 00:00:00',
         ]);
 
         $response = $this->actingAs($owner)->get(route('builds.index', [
@@ -52,6 +69,8 @@ class BuildHistoryFilterTest extends TestCase
             'status' => Build::STATUS_SUCCEEDED,
             'trigger' => Build::TRIGGER_WEBHOOK,
             'search' => 'searchable',
+            'date_from' => '2026-08-20',
+            'date_to' => '2026-08-20',
         ]));
 
         $response
@@ -60,7 +79,10 @@ class BuildHistoryFilterTest extends TestCase
             ->assertSee('value="'.$first->id.'" selected', false)
             ->assertSee('value="succeeded" selected', false)
             ->assertSee('value="webhook" selected', false)
-            ->assertSee('value="searchable"', false);
+            ->assertSee('value="searchable"', false)
+            ->assertSee('value="2026-08-20"', false)
+            ->assertDontSee(route('builds.show', $beforeRange))
+            ->assertDontSee(route('builds.show', $afterRange));
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="View build #'));
     }
 
@@ -149,6 +171,8 @@ class BuildHistoryFilterTest extends TestCase
             'status' => Build::STATUS_FAILED,
             'trigger' => Build::TRIGGER_MANUAL,
             'search' => 'Release',
+            'date_from' => now()->toDateString(),
+            'date_to' => now()->toDateString(),
         ]));
 
         $response
@@ -157,6 +181,8 @@ class BuildHistoryFilterTest extends TestCase
             ->assertSee('status=failed', false)
             ->assertSee('trigger=manual', false)
             ->assertSee('search=Release', false)
+            ->assertSee('date_from='.now()->toDateString(), false)
+            ->assertSee('date_to='.now()->toDateString(), false)
             ->assertSee('page=2', false);
 
         $this->actingAs($owner)->get(route('builds.index', [
@@ -164,8 +190,19 @@ class BuildHistoryFilterTest extends TestCase
             'trigger' => 'not-a-trigger',
             'repository_id' => 'not-an-id',
             'latest' => 'sometimes',
+            'date_from' => '2026-02-31',
+            'date_to' => '../../etc/passwd',
         ]))
             ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'repository_id' => null,
+                'status' => null,
+                'trigger' => null,
+                'search' => null,
+                'latest' => null,
+                'date_from' => null,
+                'date_to' => null,
+            ])
             ->assertDontSee('No builds match these filters')
             ->assertDontSee('not-a-status', false)
             ->assertDontSee('not-a-trigger', false)

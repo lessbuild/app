@@ -26,22 +26,39 @@ class BuildHistoryExportTest extends TestCase
             'commit_message' => " \t@SUM(1,1)\nShip searchable release",
             'started_at' => $started,
             'finished_at' => now(),
+            'created_at' => '2026-08-20 12:00:00',
         ]);
         $repository->builds()->create([
             'status' => Build::STATUS_FAILED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'commit_message' => 'Ship searchable release',
+            'created_at' => '2026-08-20 11:00:00',
+        ]);
+        $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'commit_message' => 'Ship searchable release before window',
+            'created_at' => '2026-08-19 23:59:59',
+        ]);
+        $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'commit_message' => 'Ship searchable release after window',
+            'created_at' => '2026-08-21 00:00:00',
         ]);
         $otherRepository->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
             'commit_message' => 'Ship searchable release',
+            'created_at' => '2026-08-20 10:00:00',
         ]);
         $filters = [
             'repository_id' => $repository->id,
             'status' => Build::STATUS_SUCCEEDED,
             'trigger' => Build::TRIGGER_WEBHOOK,
             'search' => 'searchable',
+            'date_from' => '2026-08-20',
+            'date_to' => '2026-08-20',
         ];
 
         $response = $this->actingAs($owner)->get(route('builds.export', $filters));

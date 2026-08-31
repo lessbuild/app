@@ -165,9 +165,9 @@ Each checkout reports its actual commit through a short-lived signed callback.
 Redeploying a recorded build checks out that exact commit and can also be used to
 restore an earlier release. Legacy manual builds without a recorded revision
 retry the configured branch.
-Build history can be filtered by repository, status, and trigger, or searched by
-repository name, commit message, and revision. The current filtered view can be
-exported as a streamed, spreadsheet-safe CSV file.
+Build history can be filtered by repository, status, trigger, and created-date
+range, or searched by repository name, commit message, and revision. The current
+filtered view can be exported as a streamed, spreadsheet-safe CSV file.
 The repository inventory can be searched and filtered by source provider,
 deployment website, and latest deployment state. It also shows each target,
 provider, and latest deployment without loading the entire inventory at once.
