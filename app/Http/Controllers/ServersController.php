@@ -160,6 +160,7 @@ class ServersController extends Controller
                 (int) $recipeId => ['position' => $position],
             ]);
         $server->recipes()->sync($recipeAssignments);
+        $server->captureProvisioningRecipes();
 
         try {
             $sshKey = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);

@@ -27,14 +27,14 @@ class RecipesScript implements ServerScript
      */
     public function script(int $step, Server $server): string
     {
-        $recipes = $server->recipes()->get()->map(function ($recipe): string {
-            $name = escapeshellarg("Running recipe: {$recipe->name}");
+        $recipes = $server->provisioningRecipes()->map(function (array $recipe): string {
+            $name = escapeshellarg("Running recipe: {$recipe['name']}");
 
             return <<<SCRIPT
             printf '%s\\n' {$name}
             (
               set -Eeuo pipefail
-            {$recipe->script}
+            {$recipe['script']}
             )
             SCRIPT;
         })->implode("\n\n");

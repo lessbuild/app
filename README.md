@@ -25,6 +25,9 @@ controls keep every provider, attached repository, and attached server reachable
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or
 rendering an authorized server provisioning plan.
+Each server also stores an encrypted snapshot of the ordered recipes selected
+at creation. Provisioning retries and server history use that immutable snapshot,
+so later recipe edits or deletion cannot silently change an existing server plan.
 
 ## Source control providers
 

@@ -157,6 +157,14 @@ class RecipeManagementTest extends TestCase
         $server = Server::query()->sole();
         $this->assertSame(ServerTypeEnum::worker, $server->type);
         $this->assertSame([$second->id, $first->id], $server->recipes->pluck('id')->all());
+        $this->assertSame(
+            ['Second recipe', 'First recipe'],
+            $server->recipe_snapshot === null ? [] : array_column($server->recipe_snapshot, 'name'),
+        );
+        $rawSnapshot = Server::query()->toBase()->find($server->id)->recipe_snapshot;
+        $this->assertStringNotContainsString('echo second-recipe', $rawSnapshot);
+        $this->assertStringNotContainsString('echo first-recipe', $rawSnapshot);
+        $this->assertArrayNotHasKey('recipe_snapshot', $server->toArray());
         Queue::assertPushed(InitialiseServerJob::class);
 
         Http::assertSent(function (Request $request): bool {
@@ -221,6 +229,70 @@ class RecipeManagementTest extends TestCase
         $this->assertSame(
             "provisionPing {$emptyServer->id} 11",
             (new RecipesScript)->script(11, $emptyServer),
+        );
+    }
+
+    public function test_server_snapshot_survives_recipe_edit_and_deletion(): void
+    {
+        $user = User::factory()->create();
+        $provider = $user->providers()->create([
+            'name' => 'DigitalOcean',
+            'provider' => 'digitalocean',
+            'token' => 'provider-secret',
+            'description' => 'Cloud provider',
+        ]);
+        $server = $user->servers()->create([
+            'provider_id' => $provider->id,
+            'name' => 'Stable Server',
+            'type' => ServerTypeEnum::app,
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $recipe = $user->recipes()->create([
+            'name' => 'Original Recipe',
+            'description' => 'Original description',
+            'script' => 'echo original-command',
+        ]);
+        $server->recipes()->attach($recipe, ['position' => 0]);
+        $server->captureProvisioningRecipes();
+
+        $recipe->update([
+            'name' => 'Changed Recipe',
+            'description' => 'Changed description',
+            'script' => 'echo changed-command',
+        ]);
+        $recipe->delete();
+        $server->refresh();
+
+        $script = (new RecipesScript)->script(11, $server);
+        $this->assertStringContainsString('Running recipe: Original Recipe', $script);
+        $this->assertStringContainsString('echo original-command', $script);
+        $this->assertStringNotContainsString('Changed Recipe', $script);
+        $this->assertStringNotContainsString('echo changed-command', $script);
+        $this->assertDatabaseCount('recipe_server', 0);
+
+        $this->actingAs($user)->get(route('servers.show', $server))
+            ->assertSuccessful()
+            ->assertSee('Original Recipe')
+            ->assertSee('Original description')
+            ->assertDontSee('Changed Recipe')
+            ->assertDontSee('Changed description');
+    }
+
+    public function test_an_explicit_empty_snapshot_does_not_pick_up_recipes_attached_later(): void
+    {
+        $user = User::factory()->create();
+        $server = $user->servers()->create(['name' => 'Empty Snapshot']);
+        $server->captureProvisioningRecipes();
+        $recipe = $user->recipes()->create([
+            'name' => 'Later Recipe',
+            'description' => null,
+            'script' => 'echo later-command',
+        ]);
+        $server->recipes()->attach($recipe, ['position' => 0]);
+
+        $this->assertSame(
+            "provisionPing {$server->id} 11",
+            (new RecipesScript)->script(11, $server->fresh()),
         );
     }
 }

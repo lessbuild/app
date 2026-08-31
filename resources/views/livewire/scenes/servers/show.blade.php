@@ -232,9 +232,9 @@
                 <div class="divide-y divide-primary">
                     @foreach ($recipes as $recipe)
                         <div class="py-3">
-                            <p class="text-sm font-medium text-ternary">{{ $recipe->name }}</p>
-                            @if ($recipe->description)
-                                <p class="mt-1 text-sm text-secondary">{{ $recipe->description }}</p>
+                            <p class="text-sm font-medium text-ternary">{{ $recipe['name'] }}</p>
+                            @if ($recipe['description'])
+                                <p class="mt-1 text-sm text-secondary">{{ $recipe['description'] }}</p>
                             @endif
                         </div>
                     @endforeach

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 class Server extends Model
@@ -52,6 +53,7 @@ class Server extends Model
         'ssh_private_key',
         'provisioning_token',
         'initialization_token',
+        'recipe_snapshot',
     ];
 
     public function user(): BelongsTo
@@ -79,6 +81,7 @@ class Server extends Model
         'mysql_root_password' => 'encrypted',
         'ssh_private_key' => 'encrypted',
         'ssh_key_owned' => 'boolean',
+        'recipe_snapshot' => 'encrypted:array',
         'provisioned_at' => 'datetime',
     ];
 
@@ -130,6 +133,33 @@ class Server extends Model
         return $this->belongsToMany(Recipe::class)
             ->withPivot('position')
             ->orderByPivot('position');
+    }
+
+    /**
+     * @return Collection<int, array{name: string, description: ?string, script: string}>
+     */
+    public function provisioningRecipes(): Collection
+    {
+        if ($this->recipe_snapshot !== null) {
+            return collect($this->recipe_snapshot);
+        }
+
+        return $this->recipes()->get()->map(fn (Recipe $recipe): array => [
+            'name' => $recipe->name,
+            'description' => $recipe->description,
+            'script' => $recipe->script,
+        ]);
+    }
+
+    public function captureProvisioningRecipes(): void
+    {
+        $this->forceFill([
+            'recipe_snapshot' => $this->recipes()->get()->map(fn (Recipe $recipe): array => [
+                'name' => $recipe->name,
+                'description' => $recipe->description,
+                'script' => $recipe->script,
+            ])->values()->all(),
+        ])->save();
     }
 
     public function scopeReadyForWebsites(Builder $query): Builder

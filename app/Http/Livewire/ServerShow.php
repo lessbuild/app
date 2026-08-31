@@ -58,7 +58,7 @@ class ServerShow extends Component
         abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
         $this->log = $this->selectedLogType();
         $websites = $this->server->websites()->get();
-        $recipes = $this->server->recipes()->get();
+        $recipes = $this->server->provisioningRecipes();
         $logSnapshot = $this->server->logSnapshots()->where('type', $this->log)->first();
         $logs = $logSnapshot?->log === null ? [] : explode(PHP_EOL, $logSnapshot->log);
         $shouldPoll = ! in_array($this->server->provisioning_status, [Server::STATUS_ACTIVE, Server::STATUS_FAILED], true)
