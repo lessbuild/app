@@ -31,6 +31,9 @@ so later recipe edits or deletion cannot silently change an existing server plan
 The recipe inventory can be searched by name or description and filtered by
 whether a recipe is assigned to servers. Encrypted script bodies are deliberately
 excluded from search results and list output.
+Recipes can be duplicated into a new encrypted, unassigned copy. The copy opens
+for review and renaming, while the source recipe and all server assignments remain
+unchanged.
 
 ## Source control providers
 

@@ -1,6 +1,12 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
+    @if (session('status'))
+        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+            {{ session('status') }}
+        </div>
+    @endif
+
     <form method="POST" action="{{ route('recipes.update', $recipe) }}">
         @csrf
         @method('PATCH')

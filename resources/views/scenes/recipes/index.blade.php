@@ -93,6 +93,10 @@
                             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-6">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ route('recipes.edit', $recipe) }}" class="button tertiary">{{ __('Edit') }}</a>
+                                    <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
+                                        @csrf
+                                        <button type="submit" class="button tertiary">{{ __('Duplicate') }}</button>
+                                    </form>
                                     <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm('{{ __('Delete this recipe?') }}')">
                                         @csrf
                                         @method('DELETE')

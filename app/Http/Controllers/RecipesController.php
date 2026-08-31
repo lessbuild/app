@@ -6,6 +6,7 @@ use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class RecipesController extends Controller
@@ -70,6 +71,21 @@ class RecipesController extends Controller
         $recipe->delete();
 
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
+    }
+
+    public function duplicate(Request $request, Recipe $recipe): RedirectResponse
+    {
+        $this->authorize('update', $recipe);
+
+        $copy = $request->user()->recipes()->create([
+            'name' => Str::of("Copy of {$recipe->name}")->limit(255, '')->toString(),
+            'description' => $recipe->description,
+            'script' => $recipe->script,
+        ]);
+
+        return redirect()
+            ->route('recipes.edit', $copy)
+            ->with('status', __('Recipe duplicated. Review and rename the copy before using it.'));
     }
 
     /** @return array{search: ?string, usage: ?string} */
