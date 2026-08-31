@@ -197,10 +197,7 @@
                         <a href="{{ route('websites.show', $website) }}" class="block py-2">
                             <div class="flex items-center space-x-4">
                                 <div class="flex-shrink-0">
-                                    <img
-                                        class="w-8 h-8 rounded"
-                                        src="https://ui-avatars.com/api/?name={{ $website->name }}&size=128&background=1e293b&color=fff"
-                                    >
+                                    <x-avatar :name="$website->name" class="h-8 w-8 rounded text-xs" />
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-ternary truncate">

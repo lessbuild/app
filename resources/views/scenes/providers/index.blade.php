@@ -50,7 +50,7 @@
                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                 <div class="flex items-center">
                                     <div class="h-10 w-10 flex-shrink-0">
-                                        <img class="h-10 w-10 rounded-md" src="https://ui-avatars.com/api/?name={{ $provider->name }}&size=128&background=1e293b&color=fff" alt="">
+                                        <x-avatar :name="$provider->name" class="h-10 w-10 rounded-md text-sm" />
                                     </div>
                                     <a href="{{ route('providers.show', $provider) }}" class="ml-4">
                                         <div class="font-medium text-primary">

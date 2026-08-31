@@ -187,10 +187,7 @@
                             <a href="{{ route('repositories.show', $repository) }}" class="py-3">
                                 <div class="flex items-center space-x-4">
                                     <div class="flex-shrink-0">
-                                        <img
-                                            class="w-8 h-8 rounded-full"
-                                            src="https://ui-avatars.com/api/?name={{ $repository->name }}&size=128&background=1e293b&color=fff"
-                                        >
+                                        <x-avatar :name="$repository->name" class="h-8 w-8 rounded-full text-xs" />
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p class="text-sm font-medium text-ternary truncate">

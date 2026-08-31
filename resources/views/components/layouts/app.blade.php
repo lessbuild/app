@@ -26,8 +26,7 @@
                         </div>
                     </div>
                     <div class="flex items-center relative">
-                        <img src="https://ui-avatars.com/api/?name={{ auth()->user()->name }}&size=128&background=1e293b&color=fff"
-                            class="h-6 h-6 rounded shadow-lg">
+                        <x-avatar :name="auth()->user()->name" class="h-6 w-6 rounded text-[10px] shadow-lg" />
 
                         <form action="{{ route('logout') }}" method="post" class="ml-4">
                             @csrf

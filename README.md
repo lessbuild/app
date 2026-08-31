@@ -8,6 +8,10 @@ continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
 or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
 account will be inserted by another provisioning process.
 
+The control-panel UI uses local initials avatars, system fonts, and bundled
+scripts/icons, so page rendering does not depend on third-party visual-asset
+hosts.
+
 ## Source control providers
 
 Repositories can be deployed from GitHub, GitLab, and Bitbucket Cloud over

@@ -1,6 +1,6 @@
 <x-layouts.core>
 
-    <div class="z-40 max-w-4xl mx-auto">
+    <div id="home" class="z-40 max-w-4xl mx-auto">
         <div class="relative flex items-center justify-between">
             <div class="px-4">
                 <a href="/" class="text-primary text-2xl font-bold block w-full py-5">
@@ -84,9 +84,34 @@
             </div>
 
             <div class="w-full px-4">
-                <div class="relative z-10 mx-auto">
-                    <div class="mt-5">
-                        <img src="https://i.imgur.com/qg053pp.png" alt="hero" class="w-2/3 mx-auto rounded-t-xl rounded-tr-xl">
+                <div class="relative z-10 mx-auto mt-10 max-w-4xl overflow-hidden rounded-t-2xl border border-primary bg-primary shadow-2xl">
+                    <div class="flex items-center justify-between border-b border-primary px-5 py-4">
+                        <div class="flex gap-2" aria-hidden="true">
+                            <span class="h-3 w-3 rounded-full bg-red-400"></span>
+                            <span class="h-3 w-3 rounded-full bg-amber-400"></span>
+                            <span class="h-3 w-3 rounded-full bg-green-400"></span>
+                        </div>
+                        <span class="text-xs font-semibold uppercase tracking-wider text-secondary">{{ __('Infrastructure overview') }}</span>
+                    </div>
+                    <div class="grid gap-4 p-6 sm:grid-cols-3">
+                        @foreach ([
+                            ['icon' => 'cloud', 'value' => '3', 'label' => __('Active servers')],
+                            ['icon' => 'link', 'value' => '8', 'label' => __('Managed websites')],
+                            ['icon' => 'cloud-upload', 'value' => '24', 'label' => __('Successful releases')],
+                        ] as $preview)
+                            <div class="rounded-lg border border-primary bg-secondary p-5 text-left">
+                                <svg class="h-6 w-6 stroke-2 text-ternary">
+                                    <use xlink:href="/assets/images/icons.svg#{{ $preview['icon'] }}"></use>
+                                </svg>
+                                <p class="mt-4 text-3xl font-bold text-primary">{{ $preview['value'] }}</p>
+                                <p class="mt-1 text-sm text-secondary">{{ $preview['label'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mx-6 mb-6 rounded-lg bg-slate-950 p-5 text-left font-mono text-xs leading-6 text-slate-300">
+                        <p><span class="text-blue-400">deploy</span> Fetching revision <span class="text-slate-100">a71c8ef</span></p>
+                        <p><span class="text-blue-400">deploy</span> Activating release</p>
+                        <p class="text-green-400">Deployment completed successfully</p>
                     </div>
                 </div>
             </div>
@@ -408,118 +433,23 @@
     </div>
 
 
-    <footer class="bg-secondary border-t border-primary px-4 py-12">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex flex-wrap -mx-4">
-
-                <div class="w-full lg:w-1/3 px-4 mb-12 lg:mb-0 flex flex-col">
-                    <span class="text-3xl font-bold mb-2 text-primary">
-                        {{ config('app.name') }}
-                    </span>
-                    <span class="text-secondary mr-4">
-                        {{ __('Easily deploy your applications, databases, workers and more.') }}
-                    </span>
-                </div>
-
-                <div class="w-full lg:w-2/3 px-4">
-                    <div class="flex flex-wrap -mx-4">
-
-                        <div class="w-full flex-grow sm:w-auto px-4 mb-12 lg:mb-0">
-                            <h3 class="mb-5 text-lg font-bold font-heading text-primary">
-                                {{ __('Other producs') }}
-                            </h3>
-                            <ul>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline"
-                                        href="https://somecv.com"
-                                        target="_blank"
-                                    >
-                                        Somecv (Connect with professionals)
-                                    </a>
-                                </li>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline"
-                                        href="https://gopayee.com"
-                                        target="_blank"
-                                    >
-                                        Gopayee (Mange contacts, leads, invoices and more)
-                                    </a>
-                                </li>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline"
-                                        href="https://onlysort.com"
-                                        target="_blank"
-                                    >
-                                        Onlysort (Mange assets, warehouses and more.)
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!--
-                         ! ------------------------------------------------------------
-                         ! General company information.
-                         ! ------------------------------------------------------------
-                         !-->
-                        <div class="w-full flex-grow sm:w-auto px-4 mb-12 lg:mb-0">
-                            <h3 class="mb-5 text-lg font-bold font-heading text-primary">
-                                Company
-                            </h3>
-                            <ul>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline" href="http://gopayee.test/useful/about">
-                                        About us
-                                    </a>
-                                </li>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline" href="http://gopayee.test/billing/pricing">
-                                        Pricing
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <!--
-                         ! ------------------------------------------------------------
-                         ! Show the terms and privacy links
-                         ! ------------------------------------------------------------
-                         !-->
-                        <div class="w-full flex-grow sm:w-auto px-4 mb-12 lg:mb-0">
-                            <h3 class="mb-5 text-lg font-bold font-heading text-primary">
-                                Legal
-                            </h3>
-                            <ul>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline" href="http://gopayee.test/legal/terms">
-                                        Terms of service
-                                    </a>
-                                </li>
-                                <li class="mb-3">
-                                    <a class="text-sm text-secondary hover:underline" href="http://gopayee.test/legal/privacy">
-                                        Privacy Policy
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
-                    </div>
-                </div>
+    <footer class="border-t border-primary bg-secondary px-4 py-10">
+        <div class="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div>
+                <p class="text-2xl font-bold text-primary">{{ config('app.name') }}</p>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Provision infrastructure and deploy applications from one control panel.') }}
+                </p>
             </div>
+            <nav aria-label="{{ __('Footer navigation') }}" class="flex flex-wrap gap-5 text-sm text-secondary">
+                <a href="#home" class="hover:text-primary">{{ __('Home') }}</a>
+                <a href="#about" class="hover:text-primary">{{ __('About') }}</a>
+                <a href="#pricing" class="hover:text-primary">{{ __('Pricing') }}</a>
+                <a href="{{ route('login') }}" class="hover:text-primary">{{ __('Sign in') }}</a>
+            </nav>
         </div>
-        <div class="max-w-6xl mx-auto">
-            <div class="flex flex-col md:flex-row justify-between items-center space-y-4 mt-8 lg:mt-10 border-t-2 border-primary pt-8 ">
-                <div class="text-secondary text-sm space-y-4 md:space-y-1 text-center md:text-left">
-                    <p>
-                        &copy;
-                        <script>document.write(new Date().getFullYear())</script>
-                        {{ config('app.name') }}.
-                        All rights reserved.
-                    </p>
-                    <p>
-                        {{ __('By using our website your agree to our terms of service and privacy policy') }}
-                    </p>
-                </div>
-            </div>
+        <div class="mx-auto mt-8 max-w-6xl border-t border-primary pt-6 text-sm text-secondary">
+            &copy; {{ now()->year }} {{ config('app.name') }}. {{ __('All rights reserved.') }}
         </div>
     </footer>
 
