@@ -34,6 +34,8 @@ batches. Connection failures and recoveries create linked activity and inbox ale
 while repeated states and concurrent stale results do not create duplicate alerts.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
+It also separates active deployments from recent history, with owner-scoped
+Queued, Deploying, Running, and Timing out counts plus direct build links.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

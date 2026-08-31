@@ -42,6 +42,61 @@
         </div>
     </section>
 
+    @php($activeDeploymentTotal = array_sum($activeDeploymentCounts))
+    @if ($activeDeploymentTotal > 0)
+        <section class="mb-12 rounded-lg border border-blue-300 bg-blue-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-blue-900">{{ __('Active deployments') }}</h2>
+                    <p class="mt-1 text-sm text-blue-800">
+                        {{ trans_choice(':count deployment is in progress|:count deployments are in progress', $activeDeploymentTotal, ['count' => $activeDeploymentTotal]) }}
+                    </p>
+                </div>
+                <a href="{{ route('builds.index') }}" class="text-sm font-medium text-blue-800 underline">{{ __('View build history') }}</a>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                @foreach ([
+                    \App\Models\Build::STATUS_QUEUED => __('Queued'),
+                    \App\Models\Build::STATUS_DEPLOYING => __('Deploying'),
+                    \App\Models\Build::STATUS_RUNNING => __('Running'),
+                    \App\Models\Build::STATUS_TIMING_OUT => __('Timing out'),
+                ] as $status => $label)
+                    <div class="rounded border border-blue-200 bg-white p-3">
+                        <span class="block text-xl font-bold text-blue-900">{{ $activeDeploymentCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-blue-700">{{ $label }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($activeDeployments as $build)
+                    <a href="{{ route('builds.show', $build) }}" class="flex items-center justify-between gap-4 rounded border border-blue-200 bg-white p-4">
+                        <div>
+                            <span class="block font-medium text-primary">{{ $build->repository->name }}</span>
+                            <span class="mt-1 block text-sm text-secondary">
+                                {{ $build->repository->website?->name }}
+                                @if ($build->repository->website?->server)
+                                    &middot; {{ $build->repository->website->server->name }}
+                                @endif
+                            </span>
+                        </div>
+                        <div class="text-right text-xs text-blue-800">
+                            <span class="block font-semibold uppercase">{{ str($build->status)->replace('_', ' ') }}</span>
+                            <span class="mt-1 block">{{ $build->created_at->diffForHumans() }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($activeDeploymentTotal > $activeDeployments->count())
+                <a href="{{ route('builds.index') }}" class="mt-4 inline-block text-sm font-medium text-blue-800 underline">
+                    {{ trans_choice(':count more active deployment|:count more active deployments', $activeDeploymentTotal - $activeDeployments->count(), ['count' => $activeDeploymentTotal - $activeDeployments->count()]) }}
+                </a>
+            @endif
+        </section>
+    @endif
+
     @php($attentionTotal = array_sum($attentionCounts))
     <section @class([
         'mb-12 rounded-lg border p-5',

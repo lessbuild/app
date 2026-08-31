@@ -8,6 +8,7 @@ use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -30,6 +31,12 @@ class DashboardController extends Controller
         $providers = $user->providers();
         $attentionProviders = (clone $providers)
             ->where('connection_status', Provider::CONNECTION_FAILED);
+        $activeDeployments = $user->builds()
+            ->whereIn('builds.status', Build::ACTIVE_STATUSES);
+        $activeDeploymentCounts = (clone $activeDeployments)
+            ->select('builds.status', DB::raw('COUNT(*) as total'))
+            ->groupBy('builds.status')
+            ->pluck('total', 'builds.status');
 
         return view('dashboard', [
             'stats' => [
@@ -49,6 +56,16 @@ class DashboardController extends Controller
                 'failed' => (clone $attentionProviders)->count(),
                 'unchecked' => (clone $providers)->whereNull('connection_status')->count(),
             ],
+            'activeDeploymentCounts' => collect(Build::ACTIVE_STATUSES)
+                ->mapWithKeys(fn (string $status): array => [
+                    $status => (int) ($activeDeploymentCounts[$status] ?? 0),
+                ])
+                ->all(),
+            'activeDeployments' => $activeDeployments
+                ->with('repository.website.server')
+                ->latest('builds.created_at')
+                ->limit(5)
+                ->get(),
             'attentionWebsites' => $attentionWebsites
                 ->with('server')
                 ->latest()

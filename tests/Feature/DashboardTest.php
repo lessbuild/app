@@ -53,6 +53,7 @@ class DashboardTest extends TestCase
             ->assertSee('No websites yet')
             ->assertSee('No builds yet')
             ->assertSee('No activity yet')
+            ->assertDontSee('Active deployments')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
     }
@@ -168,6 +169,68 @@ class DashboardTest extends TestCase
             ->assertSee(route('providers.show', $failed))
             ->assertDontSee(route('providers.show', $healthy))
             ->assertDontSee('Foreign Failed Provider');
+    }
+
+    public function test_dashboard_summarizes_only_the_owners_active_deployments(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $repository = $this->createResources($owner, 'Active Application');
+        $queued = Build::create([
+            'repository_id' => $repository->id,
+            'status' => Build::STATUS_QUEUED,
+        ]);
+        $running = Build::create([
+            'repository_id' => $repository->id,
+            'status' => Build::STATUS_RUNNING,
+        ]);
+        Build::create([
+            'repository_id' => $repository->id,
+            'status' => Build::STATUS_SUCCEEDED,
+        ]);
+        $other = User::factory()->create();
+        $otherRepository = $this->createResources($other, 'Foreign Active Application');
+        $foreign = Build::create([
+            'repository_id' => $otherRepository->id,
+            'status' => Build::STATUS_DEPLOYING,
+        ]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('activeDeploymentCounts', [
+                Build::STATUS_QUEUED => 1,
+                Build::STATUS_DEPLOYING => 0,
+                Build::STATUS_RUNNING => 1,
+                Build::STATUS_TIMING_OUT => 0,
+            ])
+            ->assertViewHas('activeDeployments', fn ($builds): bool => $builds->count() === 2)
+            ->assertSee('Active deployments')
+            ->assertSee('2 deployments are in progress')
+            ->assertSee(route('builds.show', $queued))
+            ->assertSee(route('builds.show', $running))
+            ->assertDontSee(route('builds.show', $foreign))
+            ->assertDontSee('Foreign Active Application');
+    }
+
+    public function test_active_deployment_panel_limits_rows_and_links_to_full_history(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $repository = $this->createResources($owner, 'Busy Application');
+        foreach (range(1, 6) as $position) {
+            Build::create([
+                'repository_id' => $repository->id,
+                'status' => Build::STATUS_QUEUED,
+                'created_at' => now()->addSeconds($position),
+            ]);
+        }
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('activeDeployments', fn ($builds): bool => $builds->count() === 5)
+            ->assertSee('6 deployments are in progress')
+            ->assertSee('1 more active deployment')
+            ->assertSee(route('builds.index'));
     }
 
     private function createResources(User $user, string $name)
