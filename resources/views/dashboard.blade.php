@@ -20,6 +20,124 @@
         <x-panel.stats icon="code" :title="$stats['repositories']" :description="__('Repositories')" />
     </div>
 
+    @php($attentionTotal = array_sum($attentionCounts))
+    <section @class([
+        'mb-12 rounded-lg border p-5',
+        'border-red-300 bg-red-50' => $attentionTotal > 0,
+        'border-green-300 bg-green-50' => $attentionTotal === 0,
+    ])>
+        <div class="flex items-start justify-between gap-4">
+            <div>
+                <h2 @class([
+                    'text-xl font-semibold',
+                    'text-red-800' => $attentionTotal > 0,
+                    'text-green-800' => $attentionTotal === 0,
+                ])>
+                    {{ $attentionTotal > 0 ? __('Needs attention') : __('No active failures') }}
+                </h2>
+                <p @class([
+                    'mt-1 text-sm',
+                    'text-red-700' => $attentionTotal > 0,
+                    'text-green-700' => $attentionTotal === 0,
+                ])>
+                    @if ($attentionTotal > 0)
+                        {{ trans_choice(':count active issue|:count active issues', $attentionTotal, ['count' => $attentionTotal]) }}
+                    @else
+                        {{ __('No unhealthy websites, provisioning failures, or failed latest deployments.') }}
+                    @endif
+                </p>
+            </div>
+            @if ($attentionTotal > 0)
+                <a href="{{ route('notifications.index') }}" class="text-sm font-medium text-red-700 underline">
+                    {{ __('View notifications') }}
+                </a>
+            @endif
+        </div>
+
+        @if ($attentionTotal > 0)
+            <div class="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div>
+                    <h3 class="mb-2 text-sm font-semibold uppercase text-red-800">
+                        {{ __('Websites') }} ({{ $attentionCounts['websites'] }})
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse ($attentionWebsites as $website)
+                            <a href="{{ route('websites.show', $website) }}" class="block rounded border border-red-200 bg-white p-3">
+                                <span class="block font-medium text-primary">{{ $website->name }}</span>
+                                <span class="text-sm text-red-700">
+                                    @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
+                                        {{ __('Provisioning failed') }}
+                                    @endif
+                                    @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED
+                                        && $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
+                                        &middot;
+                                    @endif
+                                    @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
+                                        {{ __('Health check failing') }}
+                                    @endif
+                                </span>
+                            </a>
+                        @empty
+                            <p class="text-sm text-red-700">{{ __('No website failures.') }}</p>
+                        @endforelse
+                        @if ($attentionCounts['websites'] > $attentionWebsites->count())
+                            <a href="{{ route('websites.index') }}" class="block text-sm font-medium text-red-700 underline">
+                                {{ trans_choice(':count more website|:count more websites', $attentionCounts['websites'] - $attentionWebsites->count(), ['count' => $attentionCounts['websites'] - $attentionWebsites->count()]) }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="mb-2 text-sm font-semibold uppercase text-red-800">
+                        {{ __('Servers') }} ({{ $attentionCounts['servers'] }})
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse ($attentionServers as $server)
+                            <a href="{{ route('servers.show', $server) }}" class="block rounded border border-red-200 bg-white p-3">
+                                <span class="block font-medium text-primary">{{ $server->name }}</span>
+                                <span class="text-sm text-red-700">{{ __('Provisioning failed') }}</span>
+                            </a>
+                        @empty
+                            <p class="text-sm text-red-700">{{ __('No server failures.') }}</p>
+                        @endforelse
+                        @if ($attentionCounts['servers'] > $attentionServers->count())
+                            <a href="{{ route('servers.index') }}" class="block text-sm font-medium text-red-700 underline">
+                                {{ trans_choice(':count more server|:count more servers', $attentionCounts['servers'] - $attentionServers->count(), ['count' => $attentionCounts['servers'] - $attentionServers->count()]) }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="mb-2 text-sm font-semibold uppercase text-red-800">
+                        {{ __('Deployments') }} ({{ $attentionCounts['deployments'] }})
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse ($attentionRepositories as $repository)
+                            <a href="{{ route('builds.show', $repository->latestBuild) }}" class="block rounded border border-red-200 bg-white p-3">
+                                <span class="block font-medium text-primary">{{ $repository->name }}</span>
+                                <span class="text-sm text-red-700">
+                                    {{ __('Latest deployment failed') }}
+                                    @if ($repository->website)
+                                        &middot; {{ $repository->website->name }}
+                                    @endif
+                                </span>
+                            </a>
+                        @empty
+                            <p class="text-sm text-red-700">{{ __('No deployment failures.') }}</p>
+                        @endforelse
+                        @if ($attentionCounts['deployments'] > $attentionRepositories->count())
+                            <a href="{{ route('builds.index', ['status' => \App\Models\Build::STATUS_FAILED]) }}" class="block text-sm font-medium text-red-700 underline">
+                                {{ trans_choice(':count more deployment|:count more deployments', $attentionCounts['deployments'] - $attentionRepositories->count(), ['count' => $attentionCounts['deployments'] - $attentionRepositories->count()]) }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        @endif
+    </section>
+
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <section>
             <div class="mb-4 flex items-center justify-between">
