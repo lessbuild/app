@@ -154,6 +154,10 @@ account merely because its email matches; the user must authenticate first.
 Accounts with a local password must reconfirm it before starting a new social
 connection; the confirmation expires using Laravel's configured password
 timeout. Social-only accounts can still connect a second provider as fallback.
+Local-password users can also invalidate every other browser session without
+changing their password. The current password is revalidated and rehashed, stale
+sessions are rejected by session middleware, and the initiating browser remains
+authenticated.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

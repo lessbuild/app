@@ -193,6 +193,10 @@ class DemoSeederTest extends TestCase
             ->assertSee(DemoSeeder::PREFIX.'Production application')
             ->assertSee(DemoSeeder::PREFIX.'GitHub')
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee('Browser sessions')
+            ->assertSee(route('account.sessions.revoke'));
 
         foreach ([
             route('dashboard'),

@@ -55,6 +55,8 @@ Route::middleware('auth')->group(function () {
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->name('account.password.update');
+    Route::post('account/sessions/revoke', [UsersController::class, 'revokeOtherSessions'])
+        ->name('account.sessions.revoke');
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
         ->name('account.social.destroy');

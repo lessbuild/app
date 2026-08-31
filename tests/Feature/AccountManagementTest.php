@@ -17,6 +17,7 @@ class AccountManagementTest extends TestCase
         $this->get(route('account.index'))->assertRedirect(route('login'));
         $this->patch(route('account.profile.update'))->assertRedirect(route('login'));
         $this->patch(route('account.password.update'))->assertRedirect(route('login'));
+        $this->post(route('account.sessions.revoke'))->assertRedirect(route('login'));
         $this->delete(route('account.social.destroy', 'github'))->assertRedirect(route('login'));
     }
 
@@ -37,6 +38,8 @@ class AccountManagementTest extends TestCase
             ->assertSee($user->email)
             ->assertSee('Save profile')
             ->assertSee('Update password')
+            ->assertSee(route('account.sessions.revoke'))
+            ->assertSee('Log out other sessions')
             ->assertSee(route('account.social.connect', 'github'));
     }
 

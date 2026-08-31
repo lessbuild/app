@@ -58,4 +58,64 @@ class SessionRevocationTest extends TestCase
         $this->assertNotNull(session('password_hash_web'));
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_user_can_revoke_other_sessions_without_changing_their_password(): void
+    {
+        Event::fake([OtherDeviceLogout::class]);
+        $user = User::factory()->create([
+            'password' => Hash::make('current-password'),
+        ]);
+        $previousHash = $user->password;
+
+        $this->actingAs($user)->get(route('account.index'))->assertSuccessful();
+        $this->post(route('account.sessions.revoke'), [
+            'current_password' => 'current-password',
+        ])->assertSessionHas('sessions_status', 'Other browser sessions logged out.');
+
+        Event::assertDispatched(OtherDeviceLogout::class, fn (OtherDeviceLogout $event) => $event->user->is($user));
+        $this->assertNotSame($previousHash, $user->fresh()->password);
+        $this->assertTrue(Hash::check('current-password', $user->fresh()->password));
+        $this->assertAuthenticatedAs($user);
+        $this->get(route('account.index'))->assertSuccessful();
+
+        $this->actingAs($user->fresh())
+            ->withSession(['password_hash_web' => $previousHash])
+            ->get(route('account.index'))
+            ->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
+    public function test_session_revocation_rejects_an_incorrect_current_password(): void
+    {
+        Event::fake([OtherDeviceLogout::class]);
+        $user = User::factory()->create([
+            'password' => Hash::make('current-password'),
+        ]);
+        $previousHash = $user->password;
+
+        $this->actingAs($user)->post(route('account.sessions.revoke'), [
+            'current_password' => 'incorrect-password',
+        ])->assertSessionHasErrors(['current_password'], errorBag: 'sessions');
+
+        Event::assertNotDispatched(OtherDeviceLogout::class);
+        $this->assertSame($previousHash, $user->fresh()->password);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_social_only_user_is_prompted_to_set_a_password_before_revoking_sessions(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'auth_type' => 'github',
+        ]);
+
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee('Set a local password before revoking other browser sessions.')
+            ->assertDontSee(route('account.sessions.revoke'));
+
+        $this->post(route('account.sessions.revoke'), [
+            'current_password' => 'unknown-password',
+        ])->assertSessionHasErrors(['current_password'], errorBag: 'sessions');
+    }
 }

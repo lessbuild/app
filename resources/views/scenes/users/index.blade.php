@@ -118,6 +118,42 @@
         </form>
 
         <x-forms.section
+            :title="__('Browser sessions')"
+            :description="__('Log out browsers and devices other than the one you are using now.')"
+        >
+            <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+                @if (session('sessions_status'))
+                    <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        {{ session('sessions_status') }}
+                    </div>
+                @endif
+
+                @if (auth()->user()->hasLocalPassword())
+                    <form method="POST" action="{{ route('account.sessions.revoke') }}" class="space-y-6">
+                        @csrf
+                        <label class="block">
+                            <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
+                            <input
+                                class="input secondary rounded"
+                                name="current_password"
+                                type="password"
+                                autocomplete="current-password"
+                                required
+                            >
+                        </label>
+                        <x-forms.errors name="current_password" bag="sessions" />
+                        <button class="button primary" type="submit">{{ __('Log out other sessions') }}</button>
+                    </form>
+                @else
+                    <p class="text-sm text-secondary">
+                        {{ __('Set a local password before revoking other browser sessions.') }}
+                        <a href="#password" class="font-medium text-ternary underline">{{ __('Set password') }}</a>
+                    </p>
+                @endif
+            </div>
+        </x-forms.section>
+
+        <x-forms.section
             :title="__('Connected accounts')"
             :description="__('Review and disconnect social sign-in methods linked to your account.')"
         >

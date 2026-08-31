@@ -82,6 +82,18 @@ class UsersController extends Controller
         return back()->with('password_status', __('Password updated.'));
     }
 
+    public function revokeOtherSessions(Request $request): RedirectResponse
+    {
+        $validated = $request->validateWithBag('sessions', [
+            'current_password' => ['required', 'current_password'],
+        ]);
+
+        Auth::guard('web')->logoutOtherDevices($validated['current_password']);
+        $request->session()->regenerate();
+
+        return back()->with('sessions_status', __('Other browser sessions logged out.'));
+    }
+
     public function disconnectSocial(Request $request, string $provider): RedirectResponse
     {
         $result = DB::transaction(function () use ($request, $provider): string {
