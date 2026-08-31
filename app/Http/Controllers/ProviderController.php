@@ -29,6 +29,7 @@ class ProviderController extends Controller
             'filters' => $filters,
             'types' => $this->providerTypes(),
             'usages' => ['in_use', 'unused'],
+            'connectionStatuses' => Provider::CONNECTION_STATUSES,
         ]);
     }
 
@@ -53,6 +54,8 @@ class ProviderController extends Controller
                 'Server count',
                 'Repositories',
                 'Repository count',
+                'Connection status',
+                'Connection checked at',
                 'Created at',
                 'Updated at',
             ], ',', '"', '');
@@ -79,6 +82,8 @@ class ProviderController extends Controller
                         $provider->servers_count,
                         $this->csvCell($provider->repositories->pluck('name')->implode('; ')),
                         $provider->repositories_count,
+                        $provider->connectionHealth(),
+                        $provider->connection_checked_at?->toIso8601String(),
                         $provider->created_at?->toIso8601String(),
                         $provider->updated_at?->toIso8601String(),
                     ], ',', '"', '');
@@ -153,6 +158,8 @@ class ProviderController extends Controller
         $this->authorize('update', $provider);
 
         $validated = $request->safe()->except('token');
+        $providerType = str($request->input('provider'))->lower()->toString();
+        $credentialChanged = $request->filled('token') || $provider->provider !== $providerType;
 
         if ($provider->provider !== $request->input('provider') && $provider->hasAttachedResources()) {
             return back()->withInput()->withErrors([
@@ -165,8 +172,12 @@ class ProviderController extends Controller
         }
 
         $provider->update(array_merge($validated, [
-            'provider' => str($request->input('provider'))->lower(),
+            'provider' => $providerType,
         ]));
+
+        if ($credentialChanged) {
+            $provider->resetConnectionHealth();
+        }
 
         return redirect()->route('providers.show', $provider);
     }
@@ -189,21 +200,23 @@ class ProviderController extends Controller
         return redirect()->route('providers.index');
     }
 
-    /** @return array{search: ?string, type: ?string, usage: ?string} */
+    /** @return array{search: ?string, type: ?string, usage: ?string, connection: ?string} */
     private function indexFilters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
         $type = $request->string('type')->toString();
         $usage = $request->string('usage')->toString();
+        $connection = $request->string('connection')->toString();
 
         return [
             'search' => $search !== '' ? $search : null,
             'type' => in_array($type, $this->providerTypes(), true) ? $type : null,
             'usage' => in_array($usage, ['in_use', 'unused'], true) ? $usage : null,
+            'connection' => in_array($connection, Provider::CONNECTION_STATUSES, true) ? $connection : null,
         ];
     }
 
-    /** @param array{search: ?string, type: ?string, usage: ?string} $filters */
+    /** @param array{search: ?string, type: ?string, usage: ?string, connection: ?string} $filters */
     private function filteredProviders(Request $request, array $filters): HasMany
     {
         return $request->user()->providers()
@@ -222,7 +235,11 @@ class ProviderController extends Controller
                 }))
             ->when($filters['usage'] === 'unused', fn ($query) => $query
                 ->whereDoesntHave('servers')
-                ->whereDoesntHave('repositories'));
+                ->whereDoesntHave('repositories'))
+            ->when($filters['connection'] === Provider::CONNECTION_UNCHECKED, fn ($query) => $query
+                ->whereNull('connection_status'))
+            ->when($filters['connection'] && $filters['connection'] !== Provider::CONNECTION_UNCHECKED, fn ($query) => $query
+                ->where('connection_status', $filters['connection']));
     }
 
     /** @return list<string> */

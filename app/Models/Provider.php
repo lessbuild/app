@@ -22,6 +22,18 @@ class Provider extends Model
 
     public const TYPE_BITBUCKET = 'bitbucket';
 
+    public const CONNECTION_UNCHECKED = 'unchecked';
+
+    public const CONNECTION_HEALTHY = 'healthy';
+
+    public const CONNECTION_FAILED = 'failed';
+
+    public const CONNECTION_STATUSES = [
+        self::CONNECTION_HEALTHY,
+        self::CONNECTION_FAILED,
+        self::CONNECTION_UNCHECKED,
+    ];
+
     public const SOURCE_CONTROL_TYPES = [
         self::TYPE_GITHUB,
         self::TYPE_GITLAB,
@@ -42,11 +54,16 @@ class Provider extends Model
         'description',
         'provider',
         'token',
+        'connection_status',
+        'connection_checked_at',
     ];
 
     protected $hidden = ['token'];
 
-    protected $casts = ['token' => 'encrypted'];
+    protected $casts = [
+        'token' => 'encrypted',
+        'connection_checked_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {
@@ -108,5 +125,43 @@ class Provider extends Model
     public function hasAttachedResources(): bool
     {
         return $this->servers()->exists() || $this->repositories()->exists();
+    }
+
+    public function connectionHealth(): string
+    {
+        return $this->connection_status ?? self::CONNECTION_UNCHECKED;
+    }
+
+    public function recordConnectionResult(
+        bool $successful,
+        string $providerType,
+        string $encryptedToken,
+    ): bool {
+        $attributes = [
+            'connection_status' => $successful ? self::CONNECTION_HEALTHY : self::CONNECTION_FAILED,
+            'connection_checked_at' => now(),
+        ];
+
+        $recorded = static::withoutTimestamps(fn () => static::query()
+            ->whereKey($this->getKey())
+            ->where('provider', $providerType)
+            ->where('token', $encryptedToken)
+            ->update($attributes) === 1);
+
+        if ($recorded) {
+            $this->forceFill($attributes);
+        }
+
+        return $recorded;
+    }
+
+    public function resetConnectionHealth(): void
+    {
+        static::withoutTimestamps(function (): void {
+            $this->forceFill([
+                'connection_status' => null,
+                'connection_checked_at' => null,
+            ])->save();
+        });
     }
 }

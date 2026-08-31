@@ -40,6 +40,10 @@ class ProviderConnectionTest extends TestCase
                 ->assertRedirect(route('providers.show', $provider))
                 ->assertSessionHas('provider_connection.successful', true);
 
+            $provider->refresh();
+            $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->connection_status);
+            $this->assertNotNull($provider->connection_checked_at);
+
             Http::assertSent(function (Request $request) use ($type, $url): bool {
                 $authorization = $request->header('Authorization')[0] ?? null;
                 $privateToken = $request->header('PRIVATE-TOKEN')[0] ?? null;
@@ -72,6 +76,7 @@ class ProviderConnectionTest extends TestCase
                 'successful' => true,
                 'message' => 'Connection successful. GitHub accepted this credential.',
             ]);
+        $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->fresh()->connection_status);
 
         $response = $this->actingAs($owner)
             ->post(route('providers.connection.test', $provider));
@@ -79,6 +84,8 @@ class ProviderConnectionTest extends TestCase
             'successful' => false,
             'message' => 'Connection failed. GitHub returned HTTP 401. Verify the credential and its permissions.',
         ]);
+        $this->assertSame(Provider::CONNECTION_FAILED, $provider->fresh()->connection_status);
+        $this->assertNotNull($provider->fresh()->connection_checked_at);
 
         $page = $this->actingAs($owner)
             ->withSession(['provider_connection' => $response->getSession()->get('provider_connection')])
@@ -103,6 +110,8 @@ class ProviderConnectionTest extends TestCase
                 'successful' => false,
                 'message' => 'Could not reach DigitalOcean. Try again later.',
             ]);
+        $this->assertSame(Provider::CONNECTION_FAILED, $provider->fresh()->connection_status);
+        $this->assertNotNull($provider->fresh()->connection_checked_at);
     }
 
     public function test_other_users_and_guests_cannot_test_a_provider_credential(): void
@@ -131,6 +140,9 @@ class ProviderConnectionTest extends TestCase
             ->assertSuccessful()
             ->assertSee(route('providers.connection.test', $provider))
             ->assertSee('Test connection')
+            ->assertSee('Latest connection check:')
+            ->assertSee('Unchecked')
+            ->assertSee('Run a connection check to verify this credential.')
             ->assertSee('name="_token"', false);
     }
 
@@ -153,6 +165,92 @@ class ProviderConnectionTest extends TestCase
             ->post(route('providers.connection.test', $provider))
             ->assertTooManyRequests();
         Http::assertSentCount(6);
+    }
+
+    public function test_credential_changes_reset_health_while_metadata_edits_preserve_it(): void
+    {
+        $owner = User::factory()->create();
+        $provider = $this->provider($owner, Provider::TYPE_GITHUB, 'private-secret');
+        $provider->forceFill([
+            'connection_status' => Provider::CONNECTION_HEALTHY,
+            'connection_checked_at' => now()->subMinute(),
+        ])->save();
+
+        $this->actingAs($owner)->patch(route('providers.update', $provider), [
+            'name' => 'Renamed GitHub',
+            'description' => 'Updated description',
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => '',
+        ])->assertRedirect(route('providers.show', $provider));
+        $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->fresh()->connection_status);
+        $this->assertNotNull($provider->fresh()->connection_checked_at);
+
+        $this->actingAs($owner)->patch(route('providers.update', $provider), [
+            'name' => 'Renamed GitHub',
+            'description' => 'Updated description',
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => 'replacement-secret',
+        ])->assertRedirect(route('providers.show', $provider));
+        $this->assertNull($provider->fresh()->connection_status);
+        $this->assertNull($provider->fresh()->connection_checked_at);
+
+        $provider->forceFill([
+            'connection_status' => Provider::CONNECTION_HEALTHY,
+            'connection_checked_at' => now(),
+        ])->save();
+        $this->actingAs($owner)->patch(route('providers.update', $provider), [
+            'name' => 'Cloud Provider',
+            'description' => 'Updated description',
+            'provider' => Provider::TYPE_DIGITALOCEAN,
+            'token' => '',
+        ])->assertRedirect(route('providers.show', $provider));
+        $this->assertNull($provider->fresh()->connection_status);
+        $this->assertNull($provider->fresh()->connection_checked_at);
+    }
+
+    public function test_recording_health_does_not_reclassify_the_provider_as_recently_edited(): void
+    {
+        $this->freezeTime();
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.github.com/user' => Http::response(['login' => 'owner']),
+        ]);
+        $owner = User::factory()->create();
+        $provider = $this->provider($owner, Provider::TYPE_GITHUB, 'private-secret');
+        $metadataUpdatedAt = $provider->updated_at;
+        $this->travel(5)->minutes();
+
+        $this->actingAs($owner)
+            ->post(route('providers.connection.test', $provider))
+            ->assertRedirect(route('providers.show', $provider));
+
+        $provider->refresh();
+        $this->assertTrue($provider->updated_at->equalTo($metadataUpdatedAt));
+        $this->assertSame(now()->timestamp, $provider->connection_checked_at->timestamp);
+    }
+
+    public function test_a_result_cannot_overwrite_health_after_the_credential_changes_mid_check(): void
+    {
+        Http::preventStrayRequests();
+        $owner = User::factory()->create();
+        $provider = $this->provider($owner, Provider::TYPE_GITHUB, 'original-secret');
+        Http::fake(function () use ($provider) {
+            $provider->update(['token' => 'replacement-secret']);
+
+            return Http::response(['login' => 'owner']);
+        });
+
+        $this->actingAs($owner)
+            ->post(route('providers.connection.test', $provider))
+            ->assertSessionHas('provider_connection', [
+                'successful' => false,
+                'message' => 'The provider credential changed during this check. Run it again to verify the new credential.',
+            ]);
+
+        $provider->refresh();
+        $this->assertNull($provider->connection_status);
+        $this->assertNull($provider->connection_checked_at);
+        $this->assertSame('replacement-secret', $provider->token);
     }
 
     private function provider(User $user, string $type, string $token): Provider

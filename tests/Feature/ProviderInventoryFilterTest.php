@@ -17,6 +17,10 @@ class ProviderInventoryFilterTest extends TestCase
     {
         $owner = User::factory()->create();
         $matching = $this->provider($owner, 'Production DigitalOcean', Provider::TYPE_DIGITALOCEAN);
+        $matching->forceFill([
+            'connection_status' => Provider::CONNECTION_HEALTHY,
+            'connection_checked_at' => now(),
+        ])->save();
         $this->server($owner, $matching, 'Production Edge');
         $this->provider($owner, 'Production Spare', Provider::TYPE_DIGITALOCEAN);
         $source = $this->provider($owner, 'Production GitHub', Provider::TYPE_GITHUB);
@@ -30,6 +34,7 @@ class ProviderInventoryFilterTest extends TestCase
             'search' => 'Production',
             'type' => Provider::TYPE_DIGITALOCEAN,
             'usage' => 'in_use',
+            'connection' => Provider::CONNECTION_HEALTHY,
         ];
 
         $this->actingAs($owner)->get(route('providers.index', $filters))
@@ -40,6 +45,8 @@ class ProviderInventoryFilterTest extends TestCase
             ->assertSee('value="Production"', false)
             ->assertSee('value="digitalocean" selected', false)
             ->assertSee('value="in_use" selected', false)
+            ->assertSee('value="healthy" selected', false)
+            ->assertSee('Healthy')
             ->assertDontSee('Production Spare')
             ->assertDontSee('Production GitHub')
             ->assertDontSee('Private Production DigitalOcean');
@@ -70,6 +77,7 @@ class ProviderInventoryFilterTest extends TestCase
             'search' => '   ',
             'type' => 'unsupported',
             'usage' => 'busy',
+            'connection' => 'broken',
         ]))
             ->assertSuccessful()
             ->assertSee('Visible Provider')
@@ -93,12 +101,14 @@ class ProviderInventoryFilterTest extends TestCase
             'search' => 'Fleet',
             'type' => Provider::TYPE_GITHUB,
             'usage' => 'unused',
+            'connection' => Provider::CONNECTION_UNCHECKED,
         ]))
             ->assertSuccessful()
             ->assertSee('page=2', false)
             ->assertSee('search=Fleet', false)
             ->assertSee('type=github', false)
-            ->assertSee('usage=unused', false);
+            ->assertSee('usage=unused', false)
+            ->assertSee('connection=unchecked', false);
     }
 
     public function test_provider_detail_paginates_all_attached_servers_and_repositories(): void

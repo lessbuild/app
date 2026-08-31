@@ -29,7 +29,7 @@
     </x-layouts.partials.heading>
 
     <form method="GET" action="{{ route('providers.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input
@@ -64,6 +64,17 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="connection" class="block text-xs font-semibold uppercase text-secondary">{{ __('Connection') }}</label>
+                <select id="connection" name="connection" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All connection states') }}</option>
+                    @foreach ($connectionStatuses as $status)
+                        <option value="{{ $status }}" @selected($filters['connection'] === $status)>
+                            {{ str($status)->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
@@ -91,6 +102,9 @@
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
                             {{ __('Attached resources') }}
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
+                            {{ __('Connection') }}
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
                             {{ __('Created At') }}
@@ -128,6 +142,19 @@
                                 <div class="text-secondary">
                                     {{ trans_choice(':count repository|:count repositories', $provider->repositories_count, ['count' => $provider->repositories_count]) }}
                                 </div>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm">
+                                <div @class([
+                                    'font-medium',
+                                    'text-green-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY,
+                                    'text-red-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED,
+                                    'text-secondary' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_UNCHECKED,
+                                ])>
+                                    {{ str($provider->connectionHealth())->title() }}
+                                </div>
+                                @if ($provider->connection_checked_at)
+                                    <div class="text-xs text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</div>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">

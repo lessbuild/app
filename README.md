@@ -26,6 +26,9 @@ attached resource metadata. Encrypted provider tokens are never exported.
 Each provider can be checked on demand against its provider's fixed HTTPS account
 endpoint. Checks are authorized, rate limited, time bounded, and never display
 credentials or upstream response bodies.
+The latest safe health state and check time remain visible in provider detail,
+inventory filters, and exports. Replacing a credential or changing provider type
+resets the state to unchecked so stale success cannot be mistaken for current health.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

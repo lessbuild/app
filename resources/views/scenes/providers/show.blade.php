@@ -62,6 +62,23 @@
         </div>
     @endif
 
+    <div class="my-4 flex flex-wrap items-center gap-2 rounded border border-primary bg-primary p-3 text-sm">
+        <span class="font-medium text-primary">{{ __('Latest connection check:') }}</span>
+        <span @class([
+            'font-medium',
+            'text-green-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY,
+            'text-red-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED,
+            'text-secondary' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_UNCHECKED,
+        ])>
+            {{ str($provider->connectionHealth())->title() }}
+        </span>
+        @if ($provider->connection_checked_at)
+            <span class="text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</span>
+        @else
+            <span class="text-secondary">{{ __('Run a connection check to verify this credential.') }}</span>
+        @endif
+    </div>
+
     @if ($errors->has('provider'))
         <div class="my-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
             {{ $errors->first('provider') }}

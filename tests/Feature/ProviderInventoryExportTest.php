@@ -20,6 +20,10 @@ class ProviderInventoryExportTest extends TestCase
             'description' => " \t@HANDOFF infrastructure",
             'token' => 'owner-token-never-export',
         ]);
+        $matching->forceFill([
+            'connection_status' => Provider::CONNECTION_HEALTHY,
+            'connection_checked_at' => now()->subMinute(),
+        ])->save();
         $this->server($owner, $matching, '+Primary');
         $this->server($owner, $matching, '-Recovery');
         $this->provider($owner, 'Production Spare', Provider::TYPE_DIGITALOCEAN);
@@ -36,6 +40,7 @@ class ProviderInventoryExportTest extends TestCase
             'search' => 'Production',
             'type' => Provider::TYPE_DIGITALOCEAN,
             'usage' => 'in_use',
+            'connection' => Provider::CONNECTION_HEALTHY,
         ];
         $response = $this->actingAs($owner)->get(route('providers.export', $filters));
 
@@ -65,6 +70,8 @@ class ProviderInventoryExportTest extends TestCase
             'Server count',
             'Repositories',
             'Repository count',
+            'Connection status',
+            'Connection checked at',
             'Created at',
             'Updated at',
         ], $rows[0]);
@@ -77,8 +84,10 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertSame('2', $rows[1][5]);
         $this->assertSame('', $rows[1][6]);
         $this->assertSame('0', $rows[1][7]);
-        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][8]);
-        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][9]);
+        $this->assertSame(Provider::CONNECTION_HEALTHY, $rows[1][8]);
+        $this->assertSame($matching->connection_checked_at->toIso8601String(), $rows[1][9]);
+        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][10]);
+        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][11]);
 
         $this->actingAs($owner)->get(route('providers.index', $filters))
             ->assertSuccessful()
@@ -101,6 +110,8 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertCount(2, $rows);
         $this->assertSame("'+Web; =API", $rows[1][6]);
         $this->assertSame('2', $rows[1][7]);
+        $this->assertSame(Provider::CONNECTION_UNCHECKED, $rows[1][8]);
+        $this->assertSame('', $rows[1][9]);
     }
 
     public function test_export_requires_authentication(): void
