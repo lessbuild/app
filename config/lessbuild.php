@@ -23,4 +23,5 @@ return [
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
     'webhook_max_payload_bytes' => (int) env('WEBHOOK_MAX_PAYLOAD_BYTES', 1048576),
+    'webhook_delivery_retention_days' => (int) env('WEBHOOK_DELIVERY_RETENTION_DAYS', 90),
 ];

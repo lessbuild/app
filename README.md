@@ -128,6 +128,11 @@ links plus a spreadsheet-safe CSV export; older coalesced deliveries are marked
 as superseded. Request payloads, signatures, provider tokens, and webhook
 secrets are never included in history or exports.
 
+Completed delivery history is retained for 90 days by default and pruned only
+after the daily database backup has been created and verified. Pending and
+in-flight deliveries are always preserved. Set `WEBHOOK_DELIVERY_RETENTION_DAYS`
+to choose a different retention window.
+
 Deployment serialization follows the website rather than the repository. When
 multiple repositories target one website, only one may write its release path
 at a time. Pending webhook pushes from sibling repositories are handed off in

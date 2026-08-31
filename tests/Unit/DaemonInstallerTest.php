@@ -22,6 +22,11 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('Description=Lessbuild consistent SQLite database backup', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backup', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune', $installer);
+        $this->assertLessThan(
+            strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune'),
+            strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all'),
+        );
         $this->assertStringContainsString('TimeoutStartSec=900', $installer);
         $this->assertStringContainsString('UMask=0027', $installer);
         $this->assertStringContainsString('OnCalendar=daily', $installer);
