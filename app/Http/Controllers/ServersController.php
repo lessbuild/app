@@ -7,6 +7,7 @@ use App\Actions\Server\CreateCloudServerAction;
 use App\Actions\Server\QueueRemoteServerProvisioningRetryAction;
 use App\Actions\Server\RetryServerInitializationAction;
 use App\Contracts\ServerProvider;
+use App\Http\Requests\ServerDisplayNameRequest;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Jobs\Server\InitialiseServerJob;
@@ -14,6 +15,7 @@ use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
 use App\Models\Server;
 use App\Models\Size;
+use App\Services\ActivityRecorder;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
@@ -59,7 +61,8 @@ class ServersController extends Controller
             fwrite($output, "\xEF\xBB\xBF");
             fputcsv($output, [
                 'Server ID',
-                'Name',
+                'Display name',
+                'Cloud hostname',
                 'Cloud identifier',
                 'Type',
                 'Region',
@@ -83,6 +86,7 @@ class ServersController extends Controller
                 ->each(function (Server $server) use ($output): void {
                     fputcsv($output, [
                         $server->id,
+                        $this->csvCell($server->label),
                         $this->csvCell($server->name),
                         $this->csvCell($server->identifier),
                         $this->csvCell($server->type?->value),
@@ -131,6 +135,41 @@ class ServersController extends Controller
             'images' => $images,
             'recipes' => $recipes,
         ]);
+    }
+
+    public function edit(Server $server): View
+    {
+        $this->authorize('update', $server);
+
+        return view('scenes.servers.edit', ['server' => $server]);
+    }
+
+    public function update(
+        ServerDisplayNameRequest $request,
+        Server $server,
+        ActivityRecorder $activity,
+    ): RedirectResponse {
+        $this->authorize('update', $server);
+
+        $oldLabel = $server->label;
+        $displayName = $request->validated('display_name');
+        if ($displayName === $server->name) {
+            $displayName = null;
+        }
+
+        $server->update(['display_name' => $displayName]);
+        if ($oldLabel !== $server->label) {
+            $activity->record(
+                $server,
+                $server->user_id,
+                'server',
+                "Server display name changed from \"{$oldLabel}\" to \"{$server->label}\".",
+            );
+        }
+
+        return redirect()
+            ->route('servers.show', $server)
+            ->with('success', __('Server display name updated.'));
     }
 
     /**
@@ -309,7 +348,8 @@ class ServersController extends Controller
             ->when($filters['search'], function ($query, string $value): void {
                 $query->where(function ($query) use ($value): void {
                     $query
-                        ->where('name', 'like', "%{$value}%")
+                        ->where('display_name', 'like', "%{$value}%")
+                        ->orWhere('name', 'like', "%{$value}%")
                         ->orWhere('identifier', 'like', "%{$value}%")
                         ->orWhere('public_ip', 'like', "%{$value}%")
                         ->orWhere('private_ip', 'like', "%{$value}%");

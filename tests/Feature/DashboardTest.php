@@ -443,13 +443,15 @@ class DashboardTest extends TestCase
                 'websites' => 3,
             ])
             ->assertViewHas('provisioningResources', function ($resources): bool {
-                $safeAttributes = ['id', 'user_id', 'name', 'provisioning_status', 'created_at'];
-
                 return $resources->count() === 5
-                    && $resources->every(fn (Server|Website $resource): bool => array_diff(
-                        array_keys($resource->getAttributes()),
-                        $safeAttributes,
-                    ) === []);
+                    && $resources->every(function (Server|Website $resource): bool {
+                        $safeAttributes = ['id', 'user_id', 'name', 'provisioning_status', 'created_at'];
+                        if ($resource instanceof Server) {
+                            $safeAttributes[] = 'display_name';
+                        }
+
+                        return array_diff(array_keys($resource->getAttributes()), $safeAttributes) === [];
+                    });
             })
             ->assertSee('Infrastructure provisioning')
             ->assertSee('6 resources are being prepared')

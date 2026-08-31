@@ -38,7 +38,7 @@
 
     <div class="col-span-3 sm:col-span-2">
         <label for="region" class="block text-sm font-medium text-primary">
-            {{ __('Name') }}
+            {{ __('Cloud server name') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
             <input

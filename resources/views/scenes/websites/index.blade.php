@@ -124,7 +124,7 @@
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm">
                                 <a href="{{ route('servers.show', $website->server) }}" class="text-ternary cursor-pointer">
-                                    {{ $website->server->name }}
+                                    {{ $website->server->label }}
                                 </a>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">

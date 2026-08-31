@@ -19,6 +19,7 @@ class ServerInventoryExportTest extends TestCase
         $owner = User::factory()->create();
         $provider = $this->provider($owner, '=DigitalOcean');
         $matching = $this->server($owner, $provider, '+Production Edge', Server::STATUS_FAILED, [
+            'display_name' => '=Customer Edge',
             'identifier' => 4242,
             'region' => '-nyc3',
             'size' => '@s-1vcpu-1gb',
@@ -71,7 +72,8 @@ class ServerInventoryExportTest extends TestCase
         $rows = $this->csvRows($content);
         $this->assertSame([
             'Server ID',
-            'Name',
+            'Display name',
+            'Cloud hostname',
             'Cloud identifier',
             'Type',
             'Region',
@@ -88,18 +90,19 @@ class ServerInventoryExportTest extends TestCase
         ], $rows[0]);
         $this->assertCount(2, $rows);
         $this->assertSame((string) $matching->id, $rows[1][0]);
-        $this->assertSame("'+Production Edge", $rows[1][1]);
-        $this->assertSame('4242', $rows[1][2]);
-        $this->assertSame(ServerTypeEnum::app->value, $rows[1][3]);
-        $this->assertSame("'-nyc3", $rows[1][4]);
-        $this->assertSame("'@s-1vcpu-1gb", $rows[1][5]);
-        $this->assertSame("'=ubuntu-22-04-x64", $rows[1][6]);
-        $this->assertSame('203.0.113.10', $rows[1][7]);
-        $this->assertSame("'=DigitalOcean", $rows[1][9]);
-        $this->assertSame(Provider::TYPE_DIGITALOCEAN, $rows[1][10]);
-        $this->assertSame(Server::STATUS_FAILED, $rows[1][11]);
-        $this->assertSame('2', $rows[1][12]);
-        $this->assertSame($matching->provisioned_at->toIso8601String(), $rows[1][13]);
+        $this->assertSame("'=Customer Edge", $rows[1][1]);
+        $this->assertSame("'+Production Edge", $rows[1][2]);
+        $this->assertSame('4242', $rows[1][3]);
+        $this->assertSame(ServerTypeEnum::app->value, $rows[1][4]);
+        $this->assertSame("'-nyc3", $rows[1][5]);
+        $this->assertSame("'@s-1vcpu-1gb", $rows[1][6]);
+        $this->assertSame("'=ubuntu-22-04-x64", $rows[1][7]);
+        $this->assertSame('203.0.113.10', $rows[1][8]);
+        $this->assertSame("'=DigitalOcean", $rows[1][10]);
+        $this->assertSame(Provider::TYPE_DIGITALOCEAN, $rows[1][11]);
+        $this->assertSame(Server::STATUS_FAILED, $rows[1][12]);
+        $this->assertSame('2', $rows[1][13]);
+        $this->assertSame($matching->provisioned_at->toIso8601String(), $rows[1][14]);
 
         $this->actingAs($owner)->get(route('servers.index', $filters))
             ->assertSuccessful()

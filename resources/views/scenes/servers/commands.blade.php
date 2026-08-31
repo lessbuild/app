@@ -1,13 +1,13 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs
         :route="route('servers.show', $server)"
-        :title="__('Back to :server', ['server' => $server->name])"
+        :title="__('Back to :server', ['server' => $server->label])"
     />
 
     <x-layouts.partials.heading
         icon="terminal"
         :title="__('Command history')"
-        :description="__('Review commands queued for :server and download their retained output.', ['server' => $server->name])"
+        :description="__('Review commands queued for :server and download their retained output.', ['server' => $server->label])"
     />
 
     <form method="GET" action="{{ route('servers.commands.index', $server) }}" class="mb-6 rounded-lg border border-primary bg-primary p-4">

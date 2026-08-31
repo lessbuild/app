@@ -134,7 +134,7 @@
                                     <a href="{{ route('websites.show', $repository->website) }}" class="font-medium text-ternary">
                                         {{ $repository->website->name }}
                                     </a>
-                                    <div>{{ $repository->website->server?->name ?? __('Server unavailable') }}</div>
+                                    <div>{{ $repository->website->server?->label ?? __('Server unavailable') }}</div>
                                 @elseif ($repository->website)
                                     <span class="font-medium text-secondary">{{ __('Deleted website') }}</span>
                                     <div>{{ $repository->website->name }}</div>

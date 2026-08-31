@@ -89,7 +89,7 @@ class RepositoriesController extends Controller
                         $this->csvCell($repository->provider?->provider),
                         $this->csvCell($repository->website?->name),
                         $this->csvCell($repository->website?->url),
-                        $this->csvCell($repository->website?->server?->name),
+                        $this->csvCell($repository->website?->server?->label),
                         $this->csvCell($repository->latestBuild?->status),
                         $this->csvCell($repository->latestBuild?->revision),
                         $repository->latestBuild?->created_at?->toIso8601String(),

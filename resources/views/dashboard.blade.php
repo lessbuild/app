@@ -77,7 +77,7 @@
                         class="flex items-center justify-between gap-4 rounded border border-amber-200 bg-white p-4"
                     >
                         <div>
-                            <span class="block font-medium text-primary">{{ $resource->name }}</span>
+                            <span class="block font-medium text-primary">{{ $isServer ? $resource->label : $resource->name }}</span>
                             <span class="mt-1 block text-sm text-secondary">{{ $isServer ? __('Server') : __('Website') }}</span>
                         </div>
                         <div class="text-right text-xs text-amber-800">
@@ -131,7 +131,7 @@
                             <span class="mt-1 block text-sm text-secondary">
                                 {{ $build->repository->website?->name }}
                                 @if ($build->repository->website?->server)
-                                    &middot; {{ $build->repository->website->server->name }}
+                                    &middot; {{ $build->repository->website->server->label }}
                                 @endif
                             </span>
                         </div>
@@ -241,7 +241,7 @@
                         class="flex items-center justify-between gap-4 rounded border border-violet-200 bg-white p-4"
                     >
                         <div>
-                            <span class="block font-medium text-primary">{{ $execution->server->name }}</span>
+                            <span class="block font-medium text-primary">{{ $execution->server->label }}</span>
                             <span class="mt-1 block text-sm text-secondary">{{ __('Command #:id', ['id' => $execution->id]) }}</span>
                         </div>
                         <div class="text-right text-xs text-violet-800">
@@ -335,7 +335,7 @@
                     <div class="space-y-2">
                         @forelse ($attentionServers as $server)
                             <a href="{{ route('servers.show', $server) }}" class="block rounded border border-red-200 bg-white p-3">
-                                <span class="block font-medium text-primary">{{ $server->name }}</span>
+                                <span class="block font-medium text-primary">{{ $server->label }}</span>
                                 <span class="text-sm text-red-700">{{ __('Provisioning failed') }}</span>
                             </a>
                         @empty
@@ -417,7 +417,7 @@
                         <p class="font-medium text-primary">{{ $website->name }}</p>
                         <p class="text-sm text-secondary">{{ $website->url }}</p>
                     </div>
-                    <span class="text-sm text-secondary">{{ $website->server?->name ?? __('No server') }}</span>
+                    <span class="text-sm text-secondary">{{ $website->server?->label ?? __('No server') }}</span>
                 </a>
             @empty
                 <x-lists.empty

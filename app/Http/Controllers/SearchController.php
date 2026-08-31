@@ -47,10 +47,11 @@ class SearchController extends Controller
             ]);
 
         $servers = $user->servers()
-            ->select(['id', 'user_id', 'name', 'provisioning_status'])
+            ->select(['id', 'user_id', 'name', 'display_name', 'provisioning_status'])
             ->where(function ($builder) use ($query): void {
                 $builder
-                    ->where('name', 'like', "%{$query}%")
+                    ->where('display_name', 'like', "%{$query}%")
+                    ->orWhere('name', 'like', "%{$query}%")
                     ->orWhere('identifier', 'like', "%{$query}%")
                     ->orWhere('public_ip', 'like', "%{$query}%")
                     ->orWhere('private_ip', 'like', "%{$query}%");
@@ -59,7 +60,7 @@ class SearchController extends Controller
             ->limit(6)
             ->get()
             ->map(fn (Server $server): array => [
-                'title' => $server->name,
+                'title' => $server->label,
                 'subtitle' => str($server->provisioning_status)->replace('_', ' ')->title()->toString(),
                 'url' => route('servers.show', $server),
             ]);

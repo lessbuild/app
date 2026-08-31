@@ -20,19 +20,19 @@ class ServerObserver
 
     public function created(Server $server): void
     {
-        $this->record($server, "Server \"{$server->name}\" was created.");
+        $this->record($server, "Server \"{$server->label}\" was created.");
     }
 
     public function updated(Server $server): void
     {
         if ($server->wasChanged('provisioning_status')) {
-            $this->record($server, "Server \"{$server->name}\" is {$server->provisioning_status}.");
+            $this->record($server, "Server \"{$server->label}\" is {$server->provisioning_status}.");
 
             if ($server->provisioning_status === Server::STATUS_FAILED) {
                 $server->user?->notify(new FailureNotification(
                     'server',
                     $server->id,
-                    "Server \"{$server->name}\" failed",
+                    "Server \"{$server->label}\" failed",
                     $server->provisioning_error ?: 'Server provisioning failed before it completed.',
                 ));
             }
@@ -50,7 +50,7 @@ class ServerObserver
     {
         $this->deleteCloudServer->handle($server);
 
-        $this->record($server, "Server \"{$server->name}\" was deleted.");
+        $this->record($server, "Server \"{$server->label}\" was deleted.");
 
         Website::withTrashed()
             ->where('previous_server_id', $server->id)

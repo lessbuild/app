@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -97,6 +98,13 @@ class Server extends Model
             $server->provisioning_token ??= (string) Str::uuid();
             $server->initialization_token ??= (string) Str::uuid();
         });
+    }
+
+    protected function label(): Attribute
+    {
+        return Attribute::get(fn (): ?string => is_string($this->display_name) && $this->display_name !== ''
+            ? $this->display_name
+            : $this->name);
     }
 
     public function provider(): BelongsTo

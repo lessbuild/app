@@ -200,6 +200,10 @@ canceled states without dispatching remote command jobs.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
 and result views remain testable without opening SSH connections or dispatching
 log-refresh jobs.
+Servers can also have an optional 80-character control-panel display name. The
+label is used consistently in inventories, search, dashboards, related-resource
+views, and exports while the original provider hostname remains unchanged and
+visible on the server page. Clearing the label restores the cloud hostname.
 
 ## Automatic push deployments
 
@@ -245,7 +249,8 @@ provider, and latest deployment without loading the entire inventory at once.
 The current filtered inventory can be exported as a streamed,
 spreadsheet-safe CSV without credentials or deployment commands.
 The filtered server inventory can also be streamed as a spreadsheet-safe CSV
-with platform, address, provider, status, and website-count fields while
+with display label, cloud hostname, platform, address, provider, status, and
+website-count fields while
 excluding server credentials and operational logs.
 Website inventory exports preserve provisioning, health, and attention filters
 and include target, health, retention, and repository-count fields without

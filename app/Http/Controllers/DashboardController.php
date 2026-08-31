@@ -60,7 +60,7 @@ class DashboardController extends Controller
             'websites' => (clone $provisioningWebsites)->count(),
         ];
         $provisioningResources = $provisioningServers
-            ->select(['id', 'user_id', 'name', 'provisioning_status', 'created_at'])
+            ->select(['id', 'user_id', 'name', 'display_name', 'provisioning_status', 'created_at'])
             ->latest('id')
             ->limit(5)
             ->get()
@@ -108,7 +108,7 @@ class DashboardController extends Controller
                 ->all(),
             'activeCommands' => $activeCommands
                 ->select(['id', 'server_id', 'user_id', 'status', 'created_at', 'started_at'])
-                ->with('server:id,name')
+                ->with('server:id,name,display_name')
                 ->latest('id')
                 ->limit(5)
                 ->get(),

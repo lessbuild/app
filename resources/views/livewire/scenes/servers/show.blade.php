@@ -35,10 +35,17 @@
      !-->
     <x-layouts.partials.heading
         icon="digital-ocean"
-        :title="$server->name"
-        :description="__('Easily manage :name', ['name' => $server->name])"
+        :title="$server->label"
+        :description="__('Easily manage :name', ['name' => $server->label])"
     >
         <x-slot:buttons>
+
+            <a href="{{ route('servers.edit', $server) }}" class="button primary">
+                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                    <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
+                </svg>
+                {{ __('Edit Display Name') }}
+            </a>
 
             <a href="{{ route('servers.commands.index', $server) }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
@@ -102,6 +109,15 @@
      ! ------------------------------------------------------------
      !-->
     <div class="flex flex-col iems-start lg:flex-row lg:items-center mt-4 text-primary">
+        @if (filled($server->display_name))
+            <div class="flex items-center mr-6">
+                <svg class="mr-2 w-4 h-4 text-gray-400">
+                    <use xlink:href="/assets/images/icons.svg#server"></use>
+                </svg>
+                <span class="mr-1 text-primary">{{ __('Cloud hostname') }}</span>
+                <span class="text-secondary">{{ $server->name }}</span>
+            </div>
+        @endif
         <div class="flex items-center mr-6">
             <svg class="mr-2 w-4 h-4 text-gray-400">
                 <use xlink:href="/assets/images/icons.svg#globe-alt"></use>

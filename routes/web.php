@@ -102,7 +102,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('servers/export', [ServersController::class, 'export'])
             ->name('servers.export');
-        Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
+        Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
         Route::get('servers/{server}', ServerShow::class)
             ->middleware('can:view,server')
             ->name('servers.show');

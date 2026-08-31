@@ -82,7 +82,7 @@ class WebsitesController extends Controller
                         $this->csvCell($website->name),
                         $this->csvCell($website->url),
                         $this->csvCell($website->description),
-                        $this->csvCell($website->server?->name),
+                        $this->csvCell($website->server?->label),
                         $this->csvCell($website->provisioning_status),
                         $website->health_check_enabled ? 'enabled' : 'disabled',
                         $this->csvCell($website->health_check_enabled ? $website->health_status : 'disabled'),

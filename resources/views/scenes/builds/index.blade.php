@@ -130,7 +130,7 @@
                                         {{ $build->repository->name }}
                                     </div>
                                     <div class="text-secondary">
-                                        #{{ $build->repository->website->server->name }}
+                                        #{{ $build->repository->website->server->label }}
                                     </div>
                                     <div class="text-secondary">
                                         {{ ucfirst($build->trigger_source) }}

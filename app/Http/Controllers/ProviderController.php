@@ -63,7 +63,7 @@ class ProviderController extends Controller
             $this->filteredProviders($request, $filters)
                 ->with([
                     'servers' => fn ($query) => $query
-                        ->select(['id', 'provider_id', 'name'])
+                        ->select(['id', 'provider_id', 'name', 'display_name'])
                         ->orderBy('name'),
                     'repositories' => fn ($query) => $query
                         ->select(['id', 'provider_id', 'name'])
@@ -78,7 +78,7 @@ class ProviderController extends Controller
                         $this->csvCell($provider->name),
                         $this->csvCell($provider->provider),
                         $this->csvCell($provider->description),
-                        $this->csvCell($provider->servers->pluck('name')->implode('; ')),
+                        $this->csvCell($provider->servers->map->label->implode('; ')),
                         $provider->servers_count,
                         $this->csvCell($provider->repositories->pluck('name')->implode('; ')),
                         $provider->repositories_count,

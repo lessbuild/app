@@ -52,7 +52,7 @@ class RecipesController extends Controller
             ], ',', '"', '');
 
             $this->filteredRecipes($request, $filters)
-                ->with(['servers:id,name'])
+                ->with(['servers:id,name,display_name'])
                 ->withCount('servers')
                 ->latest('recipes.id')
                 ->lazy(250)
@@ -61,7 +61,7 @@ class RecipesController extends Controller
                         $recipe->id,
                         $this->csvCell($recipe->name),
                         $this->csvCell($recipe->description),
-                        $this->csvCell($recipe->servers->pluck('name')->implode('; ')),
+                        $this->csvCell($recipe->servers->map->label->implode('; ')),
                         $recipe->servers_count,
                         $recipe->created_at?->toIso8601String(),
                         $recipe->updated_at?->toIso8601String(),

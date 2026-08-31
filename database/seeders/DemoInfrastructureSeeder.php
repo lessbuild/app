@@ -99,6 +99,7 @@ class DemoInfrastructureSeeder extends Seeder
         $active = $user->servers()->updateOrCreate(
             ['name' => DemoSeeder::PREFIX.'Production application'],
             [
+                'display_name' => DemoSeeder::PREFIX.'Primary production',
                 'provider_id' => $provider->id,
                 'identifier' => 900001,
                 'type' => ServerTypeEnum::app,
@@ -126,6 +127,7 @@ class DemoInfrastructureSeeder extends Seeder
         $failed = $user->servers()->updateOrCreate(
             ['name' => DemoSeeder::PREFIX.'Failed worker'],
             [
+                'display_name' => null,
                 'provider_id' => $provider->id,
                 'identifier' => 900002,
                 'type' => ServerTypeEnum::worker,
@@ -186,6 +188,7 @@ class DemoInfrastructureSeeder extends Seeder
             $servers[$key] = $user->servers()->updateOrCreate(
                 ['name' => DemoSeeder::PREFIX.$definition['name']],
                 [
+                    'display_name' => null,
                     'provider_id' => $provider->id,
                     'identifier' => $definition['identifier'],
                     'type' => $definition['type'],

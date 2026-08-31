@@ -10,7 +10,7 @@
                     <option value="{{ $server->id }}"
                         @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)
                     >
-                        {{ $server->name }} ({{ str($server->type->value)->replace('-', ' ')->title() }})
+                        {{ $server->label }} ({{ str($server->type->value)->replace('-', ' ')->title() }})
                     </option>
                 @endforeach
             </select>

@@ -82,7 +82,7 @@ class BuildsController extends Controller
                         $build->id,
                         $this->csvCell($repository->name),
                         $this->csvCell($website?->name),
-                        $this->csvCell($website?->server?->name),
+                        $this->csvCell($website?->server?->label),
                         $build->status,
                         $build->trigger_source,
                         $build->revision,

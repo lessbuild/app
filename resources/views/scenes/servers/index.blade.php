@@ -93,13 +93,16 @@
                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                 <div class="flex items-center">
                                     <div class="h-10 w-10 flex-shrink-0">
-                                        <x-avatar :name="$server->name" class="h-10 w-10 rounded-md text-sm" />
+                                        <x-avatar :name="$server->label" class="h-10 w-10 rounded-md text-sm" />
                                     </div>
                                     <a href="{{ route('servers.show', $server) }}" class="ml-4">
                                         <div class="font-medium text-ternary">
-                                            {{ $server->name }}
+                                            {{ $server->label }}
                                         </div>
                                         <div class="text-secondary">
+                                            @if (filled($server->display_name))
+                                                {{ $server->name }} &middot;
+                                            @endif
                                             #{{ $server->identifier }}
                                         </div>
                                     </a>
@@ -131,7 +134,7 @@
                                 ])>{{ str($server->provisioning_status)->replace('_', ' ') }}</span>
                             </td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <a href="{{ route('servers.show', $server) }}" aria-label="{{ __('View :name', ['name' => $server->name]) }}">
+                                <a href="{{ route('servers.show', $server) }}" aria-label="{{ __('View :name', ['name' => $server->label]) }}">
                                     <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
                                         <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
                                     </svg>

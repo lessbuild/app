@@ -46,6 +46,10 @@ class DemoSeederTest extends TestCase
         ], $user->providers()->distinct()->pluck('connection_status')->all());
         $this->assertSame(2, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(
+            DemoSeeder::PREFIX.'Primary production',
+            $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->sole()->label,
+        );
         $this->assertEqualsCanonicalizing([
             Server::STATUS_QUEUED,
             Server::STATUS_WAITING_FOR_IP,
@@ -190,7 +194,7 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('search.index', ['q' => 'Demo']))
             ->assertSuccessful()
             ->assertSee(DemoSeeder::PREFIX.'Storefront')
-            ->assertSee(DemoSeeder::PREFIX.'Production application')
+            ->assertSee(DemoSeeder::PREFIX.'Primary production')
             ->assertSee(DemoSeeder::PREFIX.'GitHub')
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
         $this->actingAs($user)->get(route('account.index'))
@@ -205,6 +209,7 @@ class DemoSeederTest extends TestCase
             route('recipes.index'),
             route('servers.index'),
             route('servers.show', $server),
+            route('servers.edit', $server),
             route('websites.index'),
             route('websites.show', $website),
             route('repositories.index'),
