@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
         ->name('account.social.destroy');
     Route::get('account/social/{provider}/connect', [SocialAuthController::class, 'connect'])
         ->whereIn('provider', SocialAuthController::providers())
+        ->middleware('password.confirm.local')
         ->name('account.social.connect');
 
     Route::middleware('verified')->group(function () {

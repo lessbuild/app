@@ -4,31 +4,38 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 
 class ConfirmablePasswordController extends Controller
 {
-    /**
-     * Show the confirm password view.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\View\View
-     */
-    public function show(Request $request)
+    public function show(Request $request): View|RedirectResponse
     {
-        return view('users::scenes.auth.confirm-password');
+        if (! $request->user()->hasLocalPassword()) {
+            return redirect()->route('account.index')->with(
+                'social_error',
+                __('This account does not have a local password to confirm.'),
+            );
+        }
+
+        return view('scenes.auth.confirm-password');
     }
 
-    /**
-     * Confirm the user's password.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return mixed
-     */
-    public function store(Request $request)
+    /** Confirm the user's password. */
+    public function store(Request $request): RedirectResponse
     {
+        if (! $request->user()->hasLocalPassword()) {
+            return redirect()->route('account.index')->with(
+                'social_error',
+                __('This account does not have a local password to confirm.'),
+            );
+        }
+
+        $request->validate(['password' => ['required', 'string']]);
+
         if (! Auth::guard('web')->validate([
             'email' => $request->user()->email,
             'password' => $request->password,
@@ -38,7 +45,7 @@ class ConfirmablePasswordController extends Controller
             ]);
         }
 
-        $request->session()->put('scenes::auth.password_confirmed_at', time());
+        $request->session()->put('auth.password_confirmed_at', now()->timestamp);
 
         return redirect()->intended(RouteServiceProvider::HOME);
     }

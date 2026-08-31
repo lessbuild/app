@@ -133,6 +133,9 @@ Configured identities can be connected explicitly and disconnected while a
 local password or another linked provider remains available, preventing
 accidental account lockout. A guest social callback never links an existing
 account merely because its email matches; the user must authenticate first.
+Accounts with a local password must reconfirm it before starting a new social
+connection; the confirmation expires using Laravel's configured password
+timeout. Social-only accounts can still connect a second provider as fallback.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

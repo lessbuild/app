@@ -90,7 +90,10 @@ class SocialAuthenticationTest extends TestCase
 
     public function test_guest_callback_refuses_to_link_an_existing_account_by_email(): void
     {
-        $user = User::factory()->create(['email' => 'linked@example.com']);
+        $user = User::factory()->create([
+            'email' => 'linked@example.com',
+            'password_set_at' => null,
+        ]);
         $this->mockSocialUser('bitbucket', $this->socialUser(
             id: 'bitbucket-456',
             email: 'LINKED@example.com',
@@ -110,7 +113,10 @@ class SocialAuthenticationTest extends TestCase
     public function test_authenticated_user_can_explicitly_connect_a_configured_provider(): void
     {
         $this->configureProvider('bitbucket');
-        $user = User::factory()->create(['email' => 'linked@example.com']);
+        $user = User::factory()->create([
+            'email' => 'linked@example.com',
+            'password_set_at' => null,
+        ]);
         $redirectProvider = Mockery::mock(Provider::class);
         $redirectProvider->shouldReceive('redirect')
             ->once()
@@ -143,7 +149,9 @@ class SocialAuthenticationTest extends TestCase
             ->once()
             ->andReturn(redirect()->away('https://github.example/oauth'));
         Socialite::shouldReceive('driver')->once()->with('github')->andReturn($redirectProvider);
-        $this->actingAs($user)->get(route('account.social.connect', 'github'));
+        $this->actingAs($user)
+            ->withSession(['auth.password_confirmed_at' => now()->timestamp])
+            ->get(route('account.social.connect', 'github'));
         $this->mockSocialUser('github', $this->socialUser(
             id: 'claimed-github-id',
             email: 'attacker@example.com',
@@ -161,7 +169,7 @@ class SocialAuthenticationTest extends TestCase
     public function test_connect_requires_authentication_and_configuration(): void
     {
         $this->get(route('account.social.connect', 'github'))->assertRedirect(route('login'));
-        $user = User::factory()->create();
+        $user = User::factory()->create(['password_set_at' => null]);
         config([
             'services.github.client_id' => null,
             'services.github.client_secret' => null,
