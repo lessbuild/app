@@ -34,6 +34,16 @@ class ProviderRequest extends FormRequest
                 Provider::TYPE_DIGITALOCEAN,
             ]),
             'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],
+            'connection_monitoring_enabled' => ['required', 'boolean'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'connection_monitoring_enabled' => $this->has('connection_monitoring_enabled')
+                ? $this->boolean('connection_monitoring_enabled')
+                : ($this->route('provider')?->connection_monitoring_enabled ?? true),
+        ]);
     }
 }

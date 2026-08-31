@@ -44,6 +44,7 @@ class DemoSeederTest extends TestCase
             Provider::CONNECTION_FAILED,
             null,
         ], $user->providers()->distinct()->pluck('connection_status')->all());
+        $this->assertSame(0, $user->providers()->where('connection_monitoring_enabled', true)->count());
         $this->assertSame(2, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
@@ -71,6 +72,7 @@ class DemoSeederTest extends TestCase
             Website::HEALTH_UNHEALTHY,
             Website::HEALTH_UNKNOWN,
         ], $user->websites()->distinct()->pluck('health_status')->all());
+        $this->assertSame(0, $user->websites()->where('health_monitoring_enabled', true)->count());
         $this->assertSame(3, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(6, $user->builds()->count());
         $this->assertEqualsCanonicalizing(Build::TERMINAL_STATUSES, $user->builds()->distinct()->pluck('status')->all());

@@ -150,6 +150,16 @@
                     <span class="ml-1 text-secondary">({{ $website->health_last_checked_at->diffForHumans() }})</span>
                 @endif
             </div>
+            <div class="flex items-center mr-6">
+                <span class="mr-1 text-primary">{{ __('Automatic monitoring') }}</span>
+                <span @class([
+                    'font-medium',
+                    'text-green-600' => $website->health_monitoring_enabled,
+                    'text-amber-700' => ! $website->health_monitoring_enabled,
+                ])>
+                    {{ $website->health_monitoring_enabled ? __('Enabled') : __('Paused') }}
+                </span>
+            </div>
         @endif
         <div class="flex items-center mr-6">
             <span class="mr-1 text-primary">{{ __('Retained releases') }}</span>

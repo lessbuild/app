@@ -21,6 +21,7 @@ class MonitorProviderHealthCommand extends Command
             ->values();
         $batchSize = max(1, (int) config('lessbuild.provider_health_batch_size'));
         $query = Provider::query()
+            ->where('connection_monitoring_enabled', true)
             ->orderByRaw('connection_checked_at IS NOT NULL')
             ->orderBy('connection_checked_at')
             ->orderBy('id');
@@ -40,7 +41,7 @@ class MonitorProviderHealthCommand extends Command
         $failed = 0;
         $discarded = 0;
         foreach ($query->limit($batchSize)->get() as $provider) {
-            $result = $monitor->check($provider);
+            $result = $monitor->check($provider, automatic: true);
             if (! $result['recorded']) {
                 $discarded++;
 

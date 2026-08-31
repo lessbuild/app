@@ -145,6 +145,9 @@
                                         'text-red-600' => $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY,
                                         'text-secondary' => $website->health_status === \App\Models\Website::HEALTH_UNKNOWN,
                                     ])>{{ $website->health_status }}</span>
+                                    @unless ($website->health_monitoring_enabled)
+                                        <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
+                                    @endunless
                                 @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">

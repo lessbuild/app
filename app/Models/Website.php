@@ -17,6 +17,10 @@ class Website extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected $attributes = [
+        'health_monitoring_enabled' => true,
+    ];
+
     public const STATUS_QUEUED = 'queued';
 
     public const STATUS_PROVISIONING = 'provisioning';
@@ -58,6 +62,7 @@ class Website extends Model
         'database_password' => 'encrypted',
         'environment' => 'encrypted',
         'health_check_enabled' => 'boolean',
+        'health_monitoring_enabled' => 'boolean',
         'health_failure_count' => 'integer',
         'health_last_checked_at' => 'datetime',
         'previous_server_id' => 'integer',

@@ -16,6 +16,10 @@ class Provider extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected $attributes = [
+        'connection_monitoring_enabled' => true,
+    ];
+
     public const TYPE_DIGITALOCEAN = 'digitalocean';
 
     public const TYPE_GITHUB = 'github';
@@ -58,6 +62,7 @@ class Provider extends Model
         'token',
         'connection_status',
         'connection_checked_at',
+        'connection_monitoring_enabled',
     ];
 
     protected $hidden = ['token'];
@@ -65,6 +70,7 @@ class Provider extends Model
     protected $casts = [
         'token' => 'encrypted',
         'connection_checked_at' => 'datetime',
+        'connection_monitoring_enabled' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -144,6 +150,7 @@ class Provider extends Model
         string $providerType,
         string $encryptedToken,
         ?string $previousCheckedAt,
+        bool $automatic = false,
     ): bool {
         $checkedAt = now();
         if ($previousCheckedAt !== null && $checkedAt->lessThanOrEqualTo($previousCheckedAt)) {
@@ -160,11 +167,16 @@ class Provider extends Model
             $encryptedToken,
             $previousCheckedAt,
             $attributes,
+            $automatic,
         ): bool {
             $query = static::query()
                 ->whereKey($this->getKey())
                 ->where('provider', $providerType)
                 ->where('token', $encryptedToken);
+
+            if ($automatic) {
+                $query->where('connection_monitoring_enabled', true);
+            }
 
             $previousCheckedAt === null
                 ? $query->whereNull('connection_checked_at')

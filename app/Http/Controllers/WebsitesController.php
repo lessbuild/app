@@ -62,6 +62,7 @@ class WebsitesController extends Controller
                 'Server',
                 'Provisioning status',
                 'Health check',
+                'Automatic monitoring',
                 'Health status',
                 'Health failure count',
                 'Last health check at',
@@ -85,6 +86,9 @@ class WebsitesController extends Controller
                         $this->csvCell($website->server?->label),
                         $this->csvCell($website->provisioning_status),
                         $website->health_check_enabled ? 'enabled' : 'disabled',
+                        $website->health_check_enabled
+                            ? ($website->health_monitoring_enabled ? 'enabled' : 'paused')
+                            : 'disabled',
                         $this->csvCell($website->health_check_enabled ? $website->health_status : 'disabled'),
                         $website->health_failure_count,
                         $website->health_last_checked_at?->toIso8601String(),

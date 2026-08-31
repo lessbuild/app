@@ -35,6 +35,7 @@ class WebsiteRequest extends FormRequest
             'description' => ['required', 'string'],
             'environment' => [$this->isMethod('post') ? 'required' : 'present', 'string'],
             'health_check_enabled' => ['required', 'boolean'],
+            'health_monitoring_enabled' => ['required', 'boolean'],
             'health_check_path' => [
                 'required',
                 'string',
@@ -65,6 +66,10 @@ class WebsiteRequest extends FormRequest
         $this->merge([
             'url' => rtrim($url, '/'),
             'health_check_enabled' => $this->boolean('health_check_enabled'),
+            'health_monitoring_enabled' => $this->boolean('health_check_enabled')
+                && ($this->has('health_monitoring_enabled')
+                    ? $this->boolean('health_monitoring_enabled')
+                    : ($this->route('website')?->health_monitoring_enabled ?? true)),
             'health_check_path' => $path,
             'release_retention' => $this->input(
                 'release_retention',

@@ -32,6 +32,9 @@ resets the state to unchecked so stale success cannot be mistaken for current he
 The existing health timer also checks unchecked or day-stale providers in bounded
 batches. Connection failures and recoveries create linked activity and inbox alerts,
 while repeated states and concurrent stale results do not create duplicate alerts.
+Automatic provider credential monitoring can be paused per provider without
+disabling owner-authorized manual connection tests. A check already in flight is
+discarded if automatic monitoring is paused before it records a result.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
 Authenticated visits to the public root and the sidebar Dashboard link both enter
@@ -198,6 +201,8 @@ IP addresses are deliberately non-functional examples. Server and website
 fixtures cover every provisioning state, including queued, waiting-for-IP, and
 in-progress records, without dispatching real cloud jobs. Running the seeder
 again updates the demo workspace without deleting other account-owned records.
+Automatic provider and website monitoring is paused for all demo fixtures, so
+scheduled timers never contact their deliberately non-functional endpoints.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
@@ -301,6 +306,9 @@ minutes. Three consecutive failures mark a site unhealthy and create one unread
 notification; a successful check records recovery and resets the failure count.
 Website owners can also queue an immediate, deduplicated check from the website
 page without waiting for the next timer run.
+Scheduled website monitoring can be paused independently of deployment-time and
+manual health checks. This preserves the last known state while stopping outbound
+scheduled checks and alerts until monitoring is resumed.
 Set `HEALTH_MONITOR_BATCH_SIZE` or `HEALTH_MONITOR_FAILURE_THRESHOLD` to tune
 the number of sites checked per run or the number of failures required.
 Each website can retain between two and twenty releases on its server; five are

@@ -126,4 +126,27 @@
         </p>
         <x-forms.errors name="description"></x-forms.errors>
     </div>
+
+    <div class="rounded-lg border border-primary p-4">
+        <div class="flex items-start gap-3">
+            <input type="hidden" name="connection_monitoring_enabled" value="0">
+            <input
+                id="connection_monitoring_enabled"
+                name="connection_monitoring_enabled"
+                type="checkbox"
+                value="1"
+                class="mt-1 rounded border-primary"
+                @checked((bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true))
+            >
+            <div>
+                <label for="connection_monitoring_enabled" class="block text-sm font-medium text-primary">
+                    {{ __('Automatically monitor credential health') }}
+                </label>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Periodically verify this credential and alert on failures or recovery. Manual connection tests remain available when paused.') }}
+                </p>
+            </div>
+        </div>
+        <x-forms.errors name="connection_monitoring_enabled"></x-forms.errors>
+    </div>
 </div>

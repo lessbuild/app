@@ -155,6 +155,9 @@
                                 @if ($provider->connection_checked_at)
                                     <div class="text-xs text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</div>
                                 @endif
+                                @unless ($provider->connection_monitoring_enabled)
+                                    <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
+                                @endunless
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">

@@ -138,6 +138,27 @@
             <x-forms.errors name="health_check_enabled"></x-forms.errors>
             <x-forms.errors name="health_check_path"></x-forms.errors>
         </div>
+
+        <div class="mt-4 flex items-start gap-3 border-t border-primary pt-4">
+            <input type="hidden" name="health_monitoring_enabled" value="0">
+            <input
+                id="health_monitoring_enabled"
+                name="health_monitoring_enabled"
+                type="checkbox"
+                value="1"
+                class="mt-1 rounded border-primary"
+                @checked((bool) old('health_monitoring_enabled', $website->health_monitoring_enabled ?? true))
+            >
+            <div>
+                <label for="health_monitoring_enabled" class="block text-sm font-medium text-primary">
+                    {{ __('Automatically monitor website health') }}
+                </label>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Run scheduled checks and alert on outages. Deployment checks and manual checks remain available when scheduled monitoring is paused.') }}
+                </p>
+            </div>
+        </div>
+        <x-forms.errors name="health_monitoring_enabled"></x-forms.errors>
     </div>
 
     <div>

@@ -14,8 +14,16 @@ class ProviderHealthMonitor
     ) {}
 
     /** @return array{successful: bool, message: string, recorded: bool} */
-    public function check(Provider $provider): array
+    public function check(Provider $provider, bool $automatic = false): array
     {
+        if ($automatic && ! $provider->connection_monitoring_enabled) {
+            return [
+                'successful' => false,
+                'message' => __('Automatic connection monitoring is paused for this provider.'),
+                'recorded' => false,
+            ];
+        }
+
         $providerType = $provider->provider;
         $encryptedToken = (string) $provider->getRawOriginal('token');
         $previousCheckedAt = $provider->getRawOriginal('connection_checked_at');
@@ -29,12 +37,14 @@ class ProviderHealthMonitor
             $previousCheckedAt,
             $previousStatus,
             $result,
+            $automatic,
         ): bool {
             if (! $provider->recordConnectionResult(
                 $result['successful'],
                 $providerType,
                 $encryptedToken,
                 $previousCheckedAt,
+                $automatic,
             )) {
                 return false;
             }

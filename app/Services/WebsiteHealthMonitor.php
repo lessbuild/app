@@ -21,10 +21,11 @@ class WebsiteHealthMonitor
      * Returns null when the website is no longer eligible, true when a new
      * outage is recorded, and false for every other completed result.
      */
-    public function check(Website $website): ?bool
+    public function check(Website $website, bool $automatic = false): ?bool
     {
         $website->loadMissing('server');
         if (! $website->health_check_enabled
+            || ($automatic && ! $website->health_monitoring_enabled)
             || $website->provisioning_status !== Website::STATUS_ACTIVE
             || $website->server?->provisioning_status !== Server::STATUS_ACTIVE) {
             return null;
@@ -32,7 +33,7 @@ class WebsiteHealthMonitor
 
         [$successful, $error] = $this->execute($website);
 
-        return $this->recordResult($website, $successful, $error);
+        return $this->recordResult($website, $successful, $error, $automatic);
     }
 
     /** @return array{bool, ?string} */
@@ -64,12 +65,13 @@ class WebsiteHealthMonitor
         return [false, str($error ?: 'The website did not return a successful response.')->limit(500)->toString()];
     }
 
-    private function recordResult(Website $website, bool $successful, ?string $error): bool
+    private function recordResult(Website $website, bool $successful, ?string $error, bool $automatic): bool
     {
-        return DB::transaction(function () use ($website, $successful, $error): bool {
+        return DB::transaction(function () use ($website, $successful, $error, $automatic): bool {
             $locked = Website::query()->lockForUpdate()->find($website->id);
             if (! $locked
                 || ! $locked->health_check_enabled
+                || ($automatic && ! $locked->health_monitoring_enabled)
                 || $locked->provisioning_status !== Website::STATUS_ACTIVE
                 || $locked->server?->provisioning_status !== Server::STATUS_ACTIVE
                 || $locked->server_id !== $website->server_id

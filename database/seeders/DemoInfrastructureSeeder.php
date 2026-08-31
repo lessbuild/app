@@ -63,6 +63,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'description' => "Demo {$label} provider for testing inventory, filters, exports, and health states.",
                 'connection_status' => $status,
                 'connection_checked_at' => $status === null ? null : now()->subMinutes(15),
+                'connection_monitoring_enabled' => false,
             ]);
             $provider->deleted_at = null;
             $provider->save();
@@ -242,6 +243,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'description' => 'Healthy production-style website with deployment checks enabled.',
                 'url' => 'demo-storefront.example.com',
                 'health_check_enabled' => true,
+                'health_monitoring_enabled' => false,
                 'health_check_path' => '/up',
                 'health_status' => Website::HEALTH_HEALTHY,
                 'health_failure_count' => 0,
@@ -260,6 +262,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'description' => 'Website fixture showing an active service with a failing health check.',
                 'url' => 'demo-status.example.com',
                 'health_check_enabled' => true,
+                'health_monitoring_enabled' => false,
                 'health_check_path' => '/health',
                 'health_status' => Website::HEALTH_UNHEALTHY,
                 'health_failure_count' => 3,
@@ -282,6 +285,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'provisioning_error' => 'Demo Caddy configuration validation failed.',
                 'provisioned_at' => null,
                 'health_check_enabled' => false,
+                'health_monitoring_enabled' => false,
                 'health_check_path' => '/',
                 'health_status' => Website::HEALTH_UNKNOWN,
                 'health_failure_count' => 0,
@@ -325,6 +329,7 @@ class DemoInfrastructureSeeder extends Seeder
                     'provisioning_status' => $definition['status'],
                     'provisioned_at' => null,
                     'health_check_enabled' => false,
+                    'health_monitoring_enabled' => false,
                     'health_check_path' => '/',
                     'health_status' => Website::HEALTH_UNKNOWN,
                     'health_failure_count' => 0,

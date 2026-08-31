@@ -77,6 +77,14 @@
         @else
             <span class="text-secondary">{{ __('Run a connection check to verify this credential.') }}</span>
         @endif
+        <span class="text-secondary">&middot;</span>
+        <span @class([
+            'font-medium',
+            'text-green-600' => $provider->connection_monitoring_enabled,
+            'text-amber-700' => ! $provider->connection_monitoring_enabled,
+        ])>
+            {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
+        </span>
     </div>
 
     @if ($errors->has('provider'))

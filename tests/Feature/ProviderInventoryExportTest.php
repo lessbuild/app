@@ -19,6 +19,7 @@ class ProviderInventoryExportTest extends TestCase
         $matching = $this->provider($owner, '=Production Cloud', Provider::TYPE_DIGITALOCEAN, [
             'description' => " \t@HANDOFF infrastructure",
             'token' => 'owner-token-never-export',
+            'connection_monitoring_enabled' => false,
         ]);
         $matching->forceFill([
             'connection_status' => Provider::CONNECTION_HEALTHY,
@@ -71,6 +72,7 @@ class ProviderInventoryExportTest extends TestCase
             'Repositories',
             'Repository count',
             'Connection status',
+            'Automatic monitoring',
             'Connection checked at',
             'Created at',
             'Updated at',
@@ -85,9 +87,10 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertSame('', $rows[1][6]);
         $this->assertSame('0', $rows[1][7]);
         $this->assertSame(Provider::CONNECTION_HEALTHY, $rows[1][8]);
-        $this->assertSame($matching->connection_checked_at->toIso8601String(), $rows[1][9]);
-        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][10]);
-        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][11]);
+        $this->assertSame('paused', $rows[1][9]);
+        $this->assertSame($matching->connection_checked_at->toIso8601String(), $rows[1][10]);
+        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][11]);
+        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][12]);
 
         $this->actingAs($owner)->get(route('providers.index', $filters))
             ->assertSuccessful()
@@ -111,7 +114,8 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertSame("'+Web; =API", $rows[1][6]);
         $this->assertSame('2', $rows[1][7]);
         $this->assertSame(Provider::CONNECTION_UNCHECKED, $rows[1][8]);
-        $this->assertSame('', $rows[1][9]);
+        $this->assertSame('enabled', $rows[1][9]);
+        $this->assertSame('', $rows[1][10]);
     }
 
     public function test_export_requires_authentication(): void

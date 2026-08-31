@@ -23,6 +23,7 @@ class MonitorWebsiteHealthCommand extends Command
         $batchSize = max(1, (int) config('lessbuild.health_monitor_batch_size'));
         $query = Website::query()
             ->where('health_check_enabled', true)
+            ->where('health_monitoring_enabled', true)
             ->where('provisioning_status', Website::STATUS_ACTIVE)
             ->whereHas('server', fn ($query) => $query->where('provisioning_status', Server::STATUS_ACTIVE))
             ->with('server')
@@ -43,7 +44,7 @@ class MonitorWebsiteHealthCommand extends Command
         $checked = 0;
         $unhealthy = 0;
         foreach ($query->limit($batchSize)->get() as $website) {
-            $becameUnhealthy = $monitor->check($website);
+            $becameUnhealthy = $monitor->check($website, automatic: true);
             if ($becameUnhealthy === null) {
                 continue;
             }
