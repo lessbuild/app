@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -37,6 +38,12 @@ class DashboardController extends Controller
             ->select('builds.status', DB::raw('COUNT(*) as total'))
             ->groupBy('builds.status')
             ->pluck('total', 'builds.status');
+        $activeCommands = $user->commandExecutions()
+            ->whereIn('status', ServerCommandExecution::ACTIVE_STATUSES);
+        $activeCommandCounts = (clone $activeCommands)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status');
 
         return view('dashboard', [
             'stats' => [
@@ -64,6 +71,17 @@ class DashboardController extends Controller
             'activeDeployments' => $activeDeployments
                 ->with('repository.website.server')
                 ->latest('builds.created_at')
+                ->limit(5)
+                ->get(),
+            'activeCommandCounts' => collect(ServerCommandExecution::ACTIVE_STATUSES)
+                ->mapWithKeys(fn (string $status): array => [
+                    $status => (int) ($activeCommandCounts[$status] ?? 0),
+                ])
+                ->all(),
+            'activeCommands' => $activeCommands
+                ->select(['id', 'server_id', 'user_id', 'status', 'created_at', 'started_at'])
+                ->with('server:id,name')
+                ->latest('id')
                 ->limit(5)
                 ->get(),
             'attentionWebsites' => $attentionWebsites

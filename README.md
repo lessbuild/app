@@ -36,6 +36,9 @@ The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
 It also separates active deployments from recent history, with owner-scoped
 Queued, Deploying, Running, and Timing out counts plus direct build links.
+Queued and running server commands receive a separate cross-server summary with
+safe server/history links; its active-command query omits encrypted command text
+and output.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

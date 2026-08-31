@@ -97,6 +97,59 @@
         </section>
     @endif
 
+    @php($activeCommandTotal = array_sum($activeCommandCounts))
+    @if ($activeCommandTotal > 0)
+        <section class="mb-12 rounded-lg border border-violet-300 bg-violet-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-violet-900">{{ __('Active server commands') }}</h2>
+                    <p class="mt-1 text-sm text-violet-800">
+                        {{ trans_choice(':count command is active|:count commands are active', $activeCommandTotal, ['count' => $activeCommandTotal]) }}
+                    </p>
+                </div>
+                <a href="{{ route('activity.index', ['category' => 'command']) }}" class="text-sm font-medium text-violet-800 underline">
+                    {{ __('View command activity') }}
+                </a>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-3">
+                @foreach ([
+                    \App\Models\ServerCommandExecution::STATUS_QUEUED => __('Queued'),
+                    \App\Models\ServerCommandExecution::STATUS_RUNNING => __('Running'),
+                ] as $status => $label)
+                    <div class="rounded border border-violet-200 bg-white p-3">
+                        <span class="block text-xl font-bold text-violet-900">{{ $activeCommandCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-violet-700">{{ $label }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($activeCommands as $execution)
+                    <a
+                        href="{{ route('servers.commands.index', ['server' => $execution->server, 'status' => $execution->status]) }}"
+                        class="flex items-center justify-between gap-4 rounded border border-violet-200 bg-white p-4"
+                    >
+                        <div>
+                            <span class="block font-medium text-primary">{{ $execution->server->name }}</span>
+                            <span class="mt-1 block text-sm text-secondary">{{ __('Command #:id', ['id' => $execution->id]) }}</span>
+                        </div>
+                        <div class="text-right text-xs text-violet-800">
+                            <span class="block font-semibold uppercase">{{ $execution->status }}</span>
+                            <span class="mt-1 block">{{ $execution->created_at->diffForHumans() }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($activeCommandTotal > $activeCommands->count())
+                <p class="mt-4 text-sm text-violet-800">
+                    {{ trans_choice(':count more active command is available in server history|:count more active commands are available in server history', $activeCommandTotal - $activeCommands->count(), ['count' => $activeCommandTotal - $activeCommands->count()]) }}
+                </p>
+            @endif
+        </section>
+    @endif
+
     @php($attentionTotal = array_sum($attentionCounts))
     <section @class([
         'mb-12 rounded-lg border p-5',

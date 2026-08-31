@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -54,6 +55,7 @@ class DashboardTest extends TestCase
             ->assertSee('No builds yet')
             ->assertSee('No activity yet')
             ->assertDontSee('Active deployments')
+            ->assertDontSee('Active server commands')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
     }
@@ -231,6 +233,60 @@ class DashboardTest extends TestCase
             ->assertSee('6 deployments are in progress')
             ->assertSee('1 more active deployment')
             ->assertSee(route('builds.index'));
+    }
+
+    public function test_dashboard_summarizes_active_commands_without_loading_encrypted_content(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $repository = $this->createResources($owner, 'Command Application');
+        $server = $repository->website->server;
+        foreach (range(1, 6) as $position) {
+            $server->commandExecutions()->create([
+                'user_id' => $owner->id,
+                'command' => "dashboard-sensitive-command-{$position}",
+                'output' => "dashboard-sensitive-output-{$position}",
+                'status' => $position % 2 === 0
+                    ? ServerCommandExecution::STATUS_RUNNING
+                    : ServerCommandExecution::STATUS_QUEUED,
+            ]);
+        }
+        $server->commandExecutions()->create([
+            'user_id' => $owner->id,
+            'command' => 'completed-dashboard-command',
+            'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+        ]);
+        $other = User::factory()->create();
+        $otherRepository = $this->createResources($other, 'Foreign Command Application');
+        $otherRepository->website->server->commandExecutions()->create([
+            'user_id' => $other->id,
+            'command' => 'foreign-dashboard-command',
+            'status' => ServerCommandExecution::STATUS_RUNNING,
+        ]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('activeCommandCounts', [
+                ServerCommandExecution::STATUS_QUEUED => 3,
+                ServerCommandExecution::STATUS_RUNNING => 3,
+            ])
+            ->assertViewHas('activeCommands', function ($executions): bool {
+                return $executions->count() === 5
+                    && $executions->every(fn (ServerCommandExecution $execution): bool => ! array_key_exists('command', $execution->getAttributes())
+                        && ! array_key_exists('output', $execution->getAttributes()));
+            })
+            ->assertSee('Active server commands')
+            ->assertSee('6 commands are active')
+            ->assertSee('1 more active command is available in server history')
+            ->assertSee(route('servers.commands.index', [
+                'server' => $server,
+                'status' => ServerCommandExecution::STATUS_RUNNING,
+            ]))
+            ->assertSee(route('activity.index', ['category' => 'command']))
+            ->assertDontSee('dashboard-sensitive-command', false)
+            ->assertDontSee('dashboard-sensitive-output', false)
+            ->assertDontSee('foreign-dashboard-command', false)
+            ->assertDontSee('Foreign Command Application');
     }
 
     private function createResources(User $user, string $name)
