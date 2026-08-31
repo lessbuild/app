@@ -67,6 +67,15 @@ class ServerCommand extends Component
         }
     }
 
+    public function rerun(int $executionId, QueueServerCommandAction $queue): void
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && (int) $user->id === (int) $this->model->user_id, 403);
+        $source = $this->model->commandExecutions()->findOrFail($executionId);
+
+        $queue->handle($this->model, $user, $source->command, $source->id);
+    }
+
     /**
      * @throws \Exception
      */
@@ -75,6 +84,7 @@ class ServerCommand extends Component
         abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
 
         $executions = $this->model->commandExecutions()
+            ->with('rerunFrom:id')
             ->latest('id')
             ->limit(10)
             ->get();

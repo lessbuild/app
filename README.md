@@ -188,7 +188,9 @@ for audits and incident handoff.
 Each server retains an encrypted command history with status filtering and
 owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead
-of claiming to stop an in-flight remote process.
+of claiming to stop an in-flight remote process. Completed, failed, and canceled
+commands can be queued again from history while retaining explicit lineage to
+the original encrypted execution.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment

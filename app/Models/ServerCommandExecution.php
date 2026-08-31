@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ServerCommandExecution extends Model
@@ -55,6 +56,16 @@ class ServerCommandExecution extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function rerunFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rerun_from_execution_id');
+    }
+
+    public function reruns(): HasMany
+    {
+        return $this->hasMany(self::class, 'rerun_from_execution_id');
     }
 
     public function events(): MorphMany

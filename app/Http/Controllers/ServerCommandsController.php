@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\CancelServerCommandAction;
+use App\Actions\Server\QueueServerCommandAction;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -22,6 +23,7 @@ class ServerCommandsController extends Controller
         return view('scenes.servers.commands', [
             'server' => $server,
             'executions' => $server->commandExecutions()
+                ->with('rerunFrom:id')
                 ->when($status, fn ($query, string $value) => $query->where('status', $value))
                 ->latest('id')
                 ->paginate(25)
@@ -43,6 +45,19 @@ class ServerCommandsController extends Controller
         return $cancel->handle($execution, $request->user())
             ? back()->with('success', __('Queued command canceled.'))
             : back()->with('info', __('This command is no longer queued and cannot be canceled.'));
+    }
+
+    public function rerun(
+        Request $request,
+        Server $server,
+        int $execution,
+        QueueServerCommandAction $queue,
+    ): RedirectResponse {
+        $this->authorize('view', $server);
+        $source = $server->commandExecutions()->findOrFail($execution);
+        $rerun = $queue->handle($server, $request->user(), $source->command, $source->id);
+
+        return back()->with('success', __('Command #:id was queued from history.', ['id' => $rerun->id]));
     }
 
     public function downloadOutput(

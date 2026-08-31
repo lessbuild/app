@@ -34,6 +34,9 @@
                                                 <code class="min-w-0 break-all text-xs text-primary">{{ $execution->command }}</code>
                                                 <span class="shrink-0 text-xs font-semibold uppercase text-secondary">{{ $execution->status }}</span>
                                             </div>
+                                            @if ($execution->rerun_from_execution_id)
+                                                <p class="mt-1 text-xs text-secondary">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
+                                            @endif
                                             @if ($execution->output !== null)
                                                 <pre class="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-3 text-xs text-gray-100">{{ $execution->output }}</pre>
                                             @elseif (in_array($execution->status, \App\Models\ServerCommandExecution::ACTIVE_STATUSES, true))
@@ -61,6 +64,18 @@
                                                             class="text-xs font-medium text-red-500 hover:underline"
                                                         >
                                                             {{ __('Cancel') }}
+                                                        </button>
+                                                    @endif
+                                                    @if ($model->provisioning_status === \App\Models\Server::STATUS_ACTIVE
+                                                        && in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
+                                                        <button
+                                                            type="button"
+                                                            wire:click="rerun({{ $execution->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="rerun({{ $execution->id }})"
+                                                            class="text-xs font-medium text-ternary hover:underline"
+                                                        >
+                                                            {{ __('Run again') }}
                                                         </button>
                                                     @endif
                                                 </div>

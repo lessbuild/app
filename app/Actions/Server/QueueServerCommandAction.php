@@ -12,9 +12,13 @@ use Illuminate\Validation\ValidationException;
 
 class QueueServerCommandAction
 {
-    public function handle(Server $server, User $user, string $command): ServerCommandExecution
-    {
-        return DB::transaction(function () use ($command, $server, $user): ServerCommandExecution {
+    public function handle(
+        Server $server,
+        User $user,
+        string $command,
+        ?int $rerunFromExecutionId = null,
+    ): ServerCommandExecution {
+        return DB::transaction(function () use ($command, $rerunFromExecutionId, $server, $user): ServerCommandExecution {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if ((int) $locked->user_id !== (int) $user->id) {
                 throw new AuthorizationException;
@@ -32,10 +36,24 @@ class QueueServerCommandAction
                 ]);
             }
 
+            $rerunFrom = null;
+            if ($rerunFromExecutionId !== null) {
+                $rerunFrom = $locked->commandExecutions()
+                    ->lockForUpdate()
+                    ->findOrFail($rerunFromExecutionId);
+                if (! in_array($rerunFrom->status, ServerCommandExecution::TERMINAL_STATUSES, true)) {
+                    throw ValidationException::withMessages([
+                        'command' => __('Only completed commands can be run again.'),
+                    ]);
+                }
+                $command = $rerunFrom->command;
+            }
+
             $execution = $locked->commandExecutions()->create([
                 'user_id' => $user->id,
                 'command' => $command,
                 'status' => ServerCommandExecution::STATUS_QUEUED,
+                'rerun_from_execution_id' => $rerunFrom?->id,
             ]);
 
             RunServerCommandJob::dispatch($execution->id)->afterCommit();

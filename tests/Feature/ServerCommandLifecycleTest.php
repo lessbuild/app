@@ -57,6 +57,107 @@ class ServerCommandLifecycleTest extends TestCase
         Queue::assertPushedTimes(RunServerCommandJob::class, 2);
     }
 
+    public function test_owner_can_rerun_a_terminal_command_with_encrypted_lineage(): void
+    {
+        Queue::fake();
+        [$owner, $server] = $this->resources();
+        $command = 'systemctl restart caddy';
+        $source = $this->execution($server, ServerCommandExecution::STATUS_FAILED, $command);
+        $source->update([
+            'output' => 'Demo failure output',
+            'exit_code' => 1,
+            'finished_at' => now()->subMinute(),
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('servers.commands.index', $server))
+            ->assertSuccessful()
+            ->assertSee('Run again')
+            ->assertSee(route('servers.commands.rerun', [
+                'server' => $server,
+                'execution' => $source,
+            ]));
+        $this->post(route('servers.commands.rerun', [
+            'server' => $server,
+            'execution' => $source,
+        ]))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $rerun = $server->commandExecutions()->where('id', '!=', $source->id)->sole();
+        $this->assertSame(ServerCommandExecution::STATUS_QUEUED, $rerun->status);
+        $this->assertSame($command, $rerun->command);
+        $this->assertSame($source->id, $rerun->rerun_from_execution_id);
+        $this->assertTrue($rerun->rerunFrom->is($source));
+        $this->assertNotSame(
+            $command,
+            ServerCommandExecution::query()->toBase()->find($rerun->id)->command,
+        );
+        $this->assertSame(ServerCommandExecution::STATUS_FAILED, $source->fresh()->status);
+        $this->assertSame('Demo failure output', $source->fresh()->output);
+        Queue::assertPushed(RunServerCommandJob::class, function (RunServerCommandJob $job) use ($command, $rerun): bool {
+            $this->assertSame($rerun->id, $job->executionId);
+            $this->assertStringNotContainsString($command, serialize($job));
+
+            return true;
+        });
+
+        $this->get(route('servers.commands.index', $server))
+            ->assertSuccessful()
+            ->assertSee("Rerun of command #{$source->id}");
+    }
+
+    public function test_rerun_respects_active_command_and_server_lifecycle_guards(): void
+    {
+        Queue::fake();
+        [$owner, $server] = $this->resources();
+        $source = $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'uptime');
+        $active = $this->execution($server, ServerCommandExecution::STATUS_RUNNING, 'whoami');
+
+        $this->actingAs($owner)->post(route('servers.commands.rerun', [
+            'server' => $server,
+            'execution' => $source,
+        ]))
+            ->assertSessionHasErrors('command');
+        $this->assertDatabaseCount('server_command_executions', 2);
+        Queue::assertNothingPushed();
+
+        $active->update([
+            'status' => ServerCommandExecution::STATUS_FAILED,
+            'finished_at' => now(),
+        ]);
+        $server->update(['provisioning_status' => Server::STATUS_FAILED]);
+        $this->post(route('servers.commands.rerun', [
+            'server' => $server,
+            'execution' => $source,
+        ]))
+            ->assertSessionHasErrors('command');
+        $this->assertDatabaseCount('server_command_executions', 2);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_livewire_history_can_rerun_a_terminal_command(): void
+    {
+        Queue::fake();
+        [$owner, $server] = $this->resources();
+        $source = $this->execution($server, ServerCommandExecution::STATUS_CANCELED, 'hostname');
+
+        Livewire::actingAs($owner)
+            ->test(ServerCommand::class, ['model' => $server])
+            ->call('open')
+            ->assertSee('Run again')
+            ->call('rerun', $source->id)
+            ->assertHasNoErrors()
+            ->assertSee("Rerun of command #{$source->id}");
+
+        $this->assertDatabaseHas('server_command_executions', [
+            'server_id' => $server->id,
+            'status' => ServerCommandExecution::STATUS_QUEUED,
+            'rerun_from_execution_id' => $source->id,
+        ]);
+        Queue::assertPushedTimes(RunServerCommandJob::class, 1);
+    }
+
     public function test_cancellation_loses_safely_when_the_worker_has_started(): void
     {
         [$owner, $server] = $this->resources();
@@ -161,10 +262,20 @@ class ServerCommandLifecycleTest extends TestCase
             'server' => $server,
             'execution' => $foreignExecution,
         ]))->assertNotFound();
+        $this->post(route('servers.commands.rerun', [
+            'server' => $server,
+            'execution' => $foreignExecution,
+        ]))->assertNotFound();
         $this->get(route('servers.commands.output', [
             'server' => $server,
             'execution' => $foreignExecution,
         ]))->assertNotFound();
+
+        $intruder = User::factory()->create();
+        $this->actingAs($intruder)->post(route('servers.commands.rerun', [
+            'server' => $server,
+            'execution' => $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'hostname'),
+        ]))->assertForbidden();
     }
 
     private function resources(): array

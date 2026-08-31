@@ -11,6 +11,9 @@
     />
 
     <form method="GET" action="{{ route('servers.commands.index', $server) }}" class="mb-6 rounded-lg border border-primary bg-primary p-4">
+        @error('command')
+            <p class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
+        @enderror
         <div class="flex flex-wrap items-end gap-4">
             <div class="min-w-64 flex-1">
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
@@ -48,6 +51,9 @@
                             @if ($execution->exit_code !== null)
                                 <p class="mt-2 text-xs text-secondary">{{ __('Exit code: :code', ['code' => $execution->exit_code]) }}</p>
                             @endif
+                            @if ($execution->rerun_from_execution_id)
+                                <p class="mt-2 text-xs text-secondary">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
+                            @endif
                         </td>
                         <td class="whitespace-nowrap px-4 py-4 align-top text-xs font-semibold uppercase text-secondary">
                             {{ $execution->status }}
@@ -73,6 +79,15 @@
                                         @csrf
                                         <button type="submit" class="button primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
                                             {{ __('Cancel') }}
+                                        </button>
+                                    </form>
+                                @endif
+                                @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE
+                                    && in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
+                                    <form method="POST" action="{{ route('servers.commands.rerun', ['server' => $server, 'execution' => $execution]) }}">
+                                        @csrf
+                                        <button type="submit" class="button primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
+                                            {{ __('Run again') }}
                                         </button>
                                     </form>
                                 @endif
