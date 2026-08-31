@@ -9,6 +9,8 @@ use App\Scripts\Repository\CheckoutRepositoryScript;
 use App\Scripts\Repository\CloneRepositoryScript;
 use App\Scripts\Repository\InstallDependenciesScript;
 use App\Scripts\Repository\PurgeOldReleasesScript;
+use App\Scripts\Repository\RunBuildCommandsScript;
+use App\Scripts\Repository\RunPostDeploymentCommandsScript;
 use App\Scripts\Repository\SymlinkScript;
 use App\Scripts\Repository\VerifyDeploymentHealthScript;
 
@@ -23,9 +25,11 @@ class RepositoryDeploymentPlan
             CloneRepositoryScript::class,
             CheckoutRepositoryScript::class,
             InstallDependenciesScript::class,
+            RunBuildCommandsScript::class,
             ActivateReleaseScript::class,
             SymlinkScript::class,
             ArtisanCommandsScript::class,
+            RunPostDeploymentCommandsScript::class,
             VerifyDeploymentHealthScript::class,
             PurgeOldReleasesScript::class,
         ];

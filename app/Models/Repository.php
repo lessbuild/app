@@ -14,9 +14,11 @@ class Repository extends Model
     use HasFactory;
     use SoftDeletes;
 
-    protected $hidden = ['webhook_secret'];
+    protected $hidden = ['build_commands', 'post_deployment_commands', 'webhook_secret'];
 
     protected $casts = [
+        'build_commands' => 'encrypted',
+        'post_deployment_commands' => 'encrypted',
         'webhook_enabled' => 'boolean',
         'webhook_pending' => 'boolean',
         'webhook_last_received_at' => 'datetime',

@@ -55,6 +55,8 @@ class RepositoryRequest extends FormRequest
                 'max:255',
                 'regex:/^(?![-\/]|.*(?:\/\.|\.\.|\/\/|@\{|[~^:?*\[\\\\]))(?!.*[\/.]$)[A-Za-z0-9._\/-]+$/',
             ],
+            'build_commands' => ['nullable', 'string', 'max:10000'],
+            'post_deployment_commands' => ['nullable', 'string', 'max:10000'],
             'description' => ['required', 'string'],
         ];
     }
@@ -80,9 +82,22 @@ class RepositoryRequest extends FormRequest
         $url = rtrim($url, '/');
         $url = preg_replace('/\.git$/i', '', $url) ?? $url;
 
+        $repository = $this->route('repository');
+        $buildCommands = $this->input('build_commands', $repository?->build_commands);
+        $postDeploymentCommands = $this->input(
+            'post_deployment_commands',
+            $repository?->post_deployment_commands,
+        );
+
         $this->merge([
             'url' => $url.'.git',
             'branch' => trim((string) $this->input('branch', 'main')),
+            'build_commands' => is_string($buildCommands) && trim($buildCommands) === ''
+                ? null
+                : $buildCommands,
+            'post_deployment_commands' => is_string($postDeploymentCommands) && trim($postDeploymentCommands) === ''
+                ? null
+                : $postDeploymentCommands,
         ]);
     }
 }

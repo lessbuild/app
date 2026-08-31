@@ -175,6 +175,16 @@
             <span class="mr-1 text-primary">{{ __('Branch') }}</span>
             <span class="text-secondary">{{ $repository->branch }}</span>
         </div>
+        @if ($repository->build_commands)
+            <div class="flex items-center mr-6">
+                <span class="text-secondary">{{ __('Build hook configured') }}</span>
+            </div>
+        @endif
+        @if ($repository->post_deployment_commands)
+            <div class="flex items-center mr-6">
+                <span class="text-secondary">{{ __('Post-deployment hook configured') }}</span>
+            </div>
+        @endif
     </div>
 
     <div class="col-span-3">

@@ -93,6 +93,11 @@ symlink; application database migrations are intentionally not reversed.
 Each website can retain between two and twenty releases on its server; five are
 kept by default for rollback and recovery.
 
+Repositories can define encrypted custom build commands that run before release
+activation and post-deployment commands that run before the health check. Hooks
+execute in isolated Bash processes, and a failed post-deployment hook restores
+the previous release through the normal deployment failure path.
+
 ### Todo
  
 

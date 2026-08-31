@@ -89,6 +89,49 @@
     </div>
 
     <div>
+        <label for="build_commands" class="block text-sm font-medium text-primary">
+            {{ __('Build commands') }}
+        </label>
+        <div class="mt-1">
+            <textarea
+                id="build_commands"
+                name="build_commands"
+                rows="6"
+                maxlength="10000"
+                autocomplete="off"
+                class="input secondary rounded font-mono"
+                placeholder="php artisan test&#10;npm run build">{{ old('build_commands', $repository->build_commands ?? '') }}</textarea>
+        </div>
+        <p class="mt-2 text-sm text-secondary">
+            {{ __('Optional Bash commands run in the checked-out release after dependencies install and before activation.') }}
+        </p>
+        <x-forms.errors name="build_commands"></x-forms.errors>
+    </div>
+
+    <div>
+        <label for="post_deployment_commands" class="block text-sm font-medium text-primary">
+            {{ __('Post-deployment commands') }}
+        </label>
+        <div class="mt-1">
+            <textarea
+                id="post_deployment_commands"
+                name="post_deployment_commands"
+                rows="6"
+                maxlength="10000"
+                autocomplete="off"
+                class="input secondary rounded font-mono"
+                placeholder="php artisan queue:restart">{{ old('post_deployment_commands', $repository->post_deployment_commands ?? '') }}</textarea>
+        </div>
+        <p class="mt-2 text-sm text-secondary">
+            {{ __('Optional Bash commands run in the active release before its health check. Hook failures restore the previous release symlink; database changes are not reversed.') }}
+        </p>
+        <p class="mt-1 text-sm text-amber-700">
+            {{ __('Commands run with the deployment process privileges on your server. Do not place secrets directly in these fields.') }}
+        </p>
+        <x-forms.errors name="post_deployment_commands"></x-forms.errors>
+    </div>
+
+    <div>
         <label for="description" class="block text-sm font-medium text-primary">
             {{ __('Description') }}
         </label>
