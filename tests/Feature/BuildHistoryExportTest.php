@@ -91,6 +91,26 @@ class BuildHistoryExportTest extends TestCase
         $this->assertCount(1, $this->csvRows($response));
     }
 
+    public function test_latest_filter_excludes_failures_superseded_by_a_successful_build(): void
+    {
+        [$owner, $repository] = $this->repository('Recovered repository');
+        $repository->builds()->create(['status' => Build::STATUS_FAILED]);
+        $latest = $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $failedResponse = $this->actingAs($owner)->get(route('builds.export', [
+            'status' => Build::STATUS_FAILED,
+            'latest' => 1,
+        ]));
+        $failedResponse->assertSuccessful();
+        $this->assertCount(1, $this->csvRows($failedResponse));
+
+        $latestResponse = $this->actingAs($owner)->get(route('builds.export', ['latest' => 1]));
+        $latestResponse->assertSuccessful();
+        $rows = $this->csvRows($latestResponse);
+        $this->assertCount(2, $rows);
+        $this->assertSame((string) $latest->id, $rows[1][0]);
+    }
+
     public function test_export_requires_authentication(): void
     {
         $this->get(route('builds.export'))->assertRedirect(route('login'));

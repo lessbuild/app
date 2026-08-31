@@ -189,7 +189,7 @@ class BuildsController extends Controller
         };
     }
 
-    /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string} */
+    /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string} */
     private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
@@ -204,10 +204,11 @@ class BuildsController extends Controller
             'status' => in_array($status, $this->statuses(), true) ? $status : null,
             'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
             'search' => $search !== '' ? $search : null,
+            'latest' => $request->boolean('latest') ? '1' : null,
         ];
     }
 
-    /** @param array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string} $filters */
+    /** @param array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string} $filters */
     private function filteredBuilds(Request $request, array $filters): HasManyThrough
     {
         return $request->user()->builds()
@@ -218,6 +219,10 @@ class BuildsController extends Controller
                 ->where('builds.status', $value))
             ->when($filters['trigger'], fn ($query, string $value) => $query
                 ->where('builds.trigger_source', $value))
+            ->when($filters['latest'], fn ($query) => $query
+                ->whereIn('builds.id', Build::query()
+                    ->selectRaw('MAX(id)')
+                    ->groupBy('repository_id')))
             ->when($filters['search'], function ($query, string $value): void {
                 $query->where(function ($query) use ($value): void {
                     $query

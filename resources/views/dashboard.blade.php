@@ -128,7 +128,7 @@
                             <p class="text-sm text-red-700">{{ __('No deployment failures.') }}</p>
                         @endforelse
                         @if ($attentionCounts['deployments'] > $attentionRepositories->count())
-                            <a href="{{ route('builds.index', ['status' => \App\Models\Build::STATUS_FAILED]) }}" class="block text-sm font-medium text-red-700 underline">
+                            <a href="{{ route('builds.index', ['status' => \App\Models\Build::STATUS_FAILED, 'latest' => 1]) }}" class="block text-sm font-medium text-red-700 underline">
                                 {{ trans_choice(':count more deployment|:count more deployments', $attentionCounts['deployments'] - $attentionRepositories->count(), ['count' => $attentionCounts['deployments'] - $attentionRepositories->count()]) }}
                             </a>
                         @endif

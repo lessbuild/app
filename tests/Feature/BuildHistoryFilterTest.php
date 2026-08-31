@@ -107,6 +107,31 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee(route('builds.show', $ownBuild));
     }
 
+    public function test_latest_filter_returns_only_each_owned_repository_current_build(): void
+    {
+        [$owner, $first, $second] = $this->repositories('Owner');
+        [, $foreign] = $this->repositories('Foreign');
+        $obsoleteFailure = $first->builds()->create(['status' => Build::STATUS_FAILED]);
+        $currentSuccess = $first->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $currentFailure = $second->builds()->create(['status' => Build::STATUS_FAILED]);
+        $foreignFailure = $foreign->builds()->create(['status' => Build::STATUS_FAILED]);
+
+        $this->actingAs($owner)->get(route('builds.index', [
+            'status' => Build::STATUS_FAILED,
+            'latest' => 1,
+        ]))
+            ->assertSuccessful()
+            ->assertSee(route('builds.show', $currentFailure))
+            ->assertSee(route('builds.export', [
+                'status' => Build::STATUS_FAILED,
+                'latest' => 1,
+            ]))
+            ->assertSee('name="latest" value="1" checked', false)
+            ->assertDontSee(route('builds.show', $obsoleteFailure))
+            ->assertDontSee(route('builds.show', $currentSuccess))
+            ->assertDontSee(route('builds.show', $foreignFailure));
+    }
+
     public function test_filter_query_is_preserved_across_pagination_and_invalid_values_are_discarded(): void
     {
         [$owner, $repository] = $this->repositories('Owner');
@@ -138,12 +163,49 @@ class BuildHistoryFilterTest extends TestCase
             'status' => 'not-a-status',
             'trigger' => 'not-a-trigger',
             'repository_id' => 'not-an-id',
+            'latest' => 'sometimes',
         ]))
             ->assertSuccessful()
             ->assertDontSee('No builds match these filters')
             ->assertDontSee('not-a-status', false)
             ->assertDontSee('not-a-trigger', false)
-            ->assertDontSee('not-an-id', false);
+            ->assertDontSee('not-an-id', false)
+            ->assertDontSee('name="latest" value="1" checked', false);
+    }
+
+    public function test_latest_filter_is_preserved_across_repository_pagination(): void
+    {
+        [$owner, $first] = $this->repositories('Owner');
+        $repositories = collect([$first]);
+        foreach (range(2, 16) as $index) {
+            $repositories->push($owner->repositories()->create([
+                'provider_id' => $first->provider_id,
+                'website_id' => $first->website_id,
+                'name' => "Owner Repository {$index}",
+                'url' => "github.com/example/repository-{$index}.git",
+                'branch' => 'main',
+                'description' => 'Source',
+            ]));
+        }
+        foreach ($repositories as $repository) {
+            $repository->builds()->create(['status' => Build::STATUS_FAILED]);
+        }
+
+        $this->actingAs($owner)->get(route('builds.index', [
+            'status' => Build::STATUS_FAILED,
+            'latest' => 1,
+        ]))
+            ->assertSuccessful()
+            ->assertSee('status=failed', false)
+            ->assertSee('latest=1', false)
+            ->assertSee('page=2', false);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee(route('builds.index', [
+                'status' => Build::STATUS_FAILED,
+                'latest' => 1,
+            ]));
     }
 
     public function test_history_remains_readable_while_website_deletion_is_pending(): void

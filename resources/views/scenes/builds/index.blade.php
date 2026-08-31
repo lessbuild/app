@@ -12,7 +12,7 @@
     </x-layouts.partials.heading>
 
     <form method="GET" action="{{ route('builds.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input
@@ -57,6 +57,12 @@
                         </option>
                     @endforeach
                 </select>
+            </div>
+            <div class="flex items-end">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="latest" value="1" @checked($filters['latest'])>
+                    {{ __('Latest per repository only') }}
+                </label>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
