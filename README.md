@@ -163,6 +163,10 @@ and reset submissions share a six-attempt-per-minute sensitive-action limiter.
 Authenticated attempts are isolated per account; guest reset flows also enforce
 a broader IP ceiling and use hashed IP/email keys without storing email addresses
 in rate-limit cache keys.
+Forgot-password requests return the same generic result for registered and
+unregistered addresses, while failed reset submissions use one invalid-or-expired
+message. Reset emails are still delivered only to real accounts, preventing
+public response content from disclosing account existence.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,
