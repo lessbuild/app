@@ -147,6 +147,104 @@
                 </form>
             @endif
         </div>
+
+        <div class="mt-8 border-t border-primary pt-6">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-primary">{{ __('Webhook delivery history') }}</h3>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Review accepted deliveries without exposing webhook payloads or credentials.') }}</p>
+                </div>
+                <form method="GET" action="{{ route('repositories.show', $repository) }}" class="flex flex-wrap items-end gap-2">
+                    <div>
+                        <label for="delivery_status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
+                        <select id="delivery_status" name="delivery_status" class="input secondary mt-1 rounded">
+                            <option value="">{{ __('All statuses') }}</option>
+                            @foreach ($deliveryStatuses as $status)
+                                <option value="{{ $status }}" @selected($deliveryStatus === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="button primary">{{ __('Apply') }}</button>
+                    @if ($deliveryStatus)
+                        <a href="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="button tertiary">{{ __('Clear') }}</a>
+                    @endif
+                </form>
+            </div>
+
+            <div id="webhook-deliveries" class="mt-4">
+                @if ($webhookDeliveries->isEmpty())
+                    <p class="rounded border border-primary p-4 text-sm text-secondary">
+                        {{ $deliveryStatus ? __('No webhook deliveries match this status.') : __('No webhook deliveries have been accepted yet.') }}
+                    </p>
+                @else
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-primary border-y border-primary">
+                            <thead>
+                                <tr>
+                                    <th class="py-3 pr-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Delivery') }}</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Revision') }}</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</th>
+                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Result') }}</th>
+                                    <th class="py-3 pl-3 text-right text-xs font-semibold uppercase text-secondary">{{ __('Received') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-primary">
+                                @foreach ($webhookDeliveries as $delivery)
+                                    <tr>
+                                        <td class="py-3 pr-3 text-sm">
+                                            <span class="font-mono text-primary">{{ $delivery->delivery_id }}</span>
+                                            @if ($delivery->commit_message)
+                                                <p class="mt-1 max-w-md truncate text-secondary" title="{{ $delivery->commit_message }}">{{ $delivery->commit_message }}</p>
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-secondary">
+                                            @if ($delivery->revision)
+                                                @if ($revisionUrl = $repository->revisionUrl($delivery->revision))
+                                                    <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ str($delivery->revision)->take(12) }}</a>
+                                                @else
+                                                    {{ str($delivery->revision)->take(12) }}
+                                                @endif
+                                            @else
+                                                &mdash;
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-3 text-sm">
+                                            <span @class([
+                                                'rounded-full px-2 py-1 text-xs font-semibold uppercase',
+                                                'bg-green-100 text-green-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED,
+                                                'bg-amber-100 text-amber-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING,
+                                                'bg-red-100 text-red-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
+                                                'bg-gray-100 text-gray-700' => in_array($delivery->status, [
+                                                    \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED,
+                                                    \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED,
+                                                ], true),
+                                            ])>{{ str($delivery->status)->replace('_', ' ') }}</span>
+                                        </td>
+                                        <td class="whitespace-nowrap px-3 py-3 text-sm text-secondary">
+                                            @if ($delivery->build)
+                                                <a href="{{ route('builds.show', $delivery->build) }}" class="font-medium text-primary hover:underline">{{ __('Build #:id', ['id' => $delivery->build->id]) }}</a>
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED)
+                                                {{ __('Replaced by a newer push') }}
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING)
+                                                {{ __('Waiting for active deployment') }}
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE)
+                                                {{ __('Deployment unavailable') }}
+                                            @else
+                                                &mdash;
+                                            @endif
+                                        </td>
+                                        <td class="whitespace-nowrap py-3 pl-3 text-right text-sm text-secondary" title="{{ $delivery->created_at }}">
+                                            {{ $delivery->created_at->diffForHumans() }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-4">{{ $webhookDeliveries->links() }}</div>
+                @endif
+            </div>
+        </div>
     </section>
 
     <!--

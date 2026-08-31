@@ -45,16 +45,30 @@ class QueuePendingWebhookDeploymentAction
                 }
 
                 $locked->update(['setup_stage' => 0]);
-                $locked->webhookDeliveries()
+                $pendingDeliveries = $locked->webhookDeliveries()
                     ->where('status', RepositoryWebhookDelivery::STATUS_PENDING)
-                    ->update(['status' => RepositoryWebhookDelivery::STATUS_QUEUED]);
-
-                return $locked->builds()->create([
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
+                $build = $locked->builds()->create([
                     'status' => Build::STATUS_QUEUED,
                     'trigger_source' => Build::TRIGGER_WEBHOOK,
                     'revision' => $revision,
                     'commit_message' => $commitMessage,
                 ]);
+                $latestDelivery = $pendingDeliveries->last();
+                if ($latestDelivery) {
+                    $locked->webhookDeliveries()
+                        ->where('status', RepositoryWebhookDelivery::STATUS_PENDING)
+                        ->where('id', '!=', $latestDelivery->id)
+                        ->update(['status' => RepositoryWebhookDelivery::STATUS_SUPERSEDED]);
+                    $latestDelivery->update([
+                        'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+                        'build_id' => $build->id,
+                    ]);
+                }
+
+                return $build;
             }
 
             return null;

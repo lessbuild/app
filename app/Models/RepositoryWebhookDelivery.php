@@ -15,10 +15,25 @@ class RepositoryWebhookDelivery extends Model
 
     public const STATUS_UNAVAILABLE = 'unavailable';
 
+    public const STATUS_SUPERSEDED = 'superseded';
+
+    public const STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_PENDING,
+        self::STATUS_UNAVAILABLE,
+        self::STATUS_SUPERSEDED,
+        self::STATUS_RECEIVED,
+    ];
+
     protected $guarded = [];
 
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);
+    }
+
+    public function build(): BelongsTo
+    {
+        return $this->belongsTo(Build::class);
     }
 }

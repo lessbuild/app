@@ -113,7 +113,10 @@ class RepositoryWebhookTest extends TestCase
         $this->assertDatabaseHas('repository_webhook_deliveries', [
             'repository_id' => $repository->id,
             'delivery_id' => 'github-1',
+            'revision' => $revision,
+            'commit_message' => "Ship immutable deployments\n\nSafely.",
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'build_id' => $build->id,
         ]);
         Queue::assertPushed(PublishRepositoryJob::class, 1);
     }
@@ -222,13 +225,28 @@ class RepositoryWebhookTest extends TestCase
 
         $this->assertFalse($repository->fresh()->webhook_pending);
         $this->assertCount(2, $repository->fresh()->builds);
-        $this->assertSame(2, $repository->webhookDeliveries()
+        $this->assertSame(1, $repository->webhookDeliveries()
             ->where('status', RepositoryWebhookDelivery::STATUS_QUEUED)
+            ->count());
+        $this->assertSame(1, $repository->webhookDeliveries()
+            ->where('status', RepositoryWebhookDelivery::STATUS_SUPERSEDED)
             ->count());
         $queued = $repository->builds()->where('status', Build::STATUS_QUEUED)->sole();
         $this->assertSame(Build::TRIGGER_WEBHOOK, $queued->trigger_source);
         $this->assertSame($revisions[1], $queued->revision);
         $this->assertSame('Pending release 1', $queued->commit_message);
+        $this->assertDatabaseHas('repository_webhook_deliveries', [
+            'delivery_id' => 'github-pending-1',
+            'revision' => $revisions[0],
+            'status' => RepositoryWebhookDelivery::STATUS_SUPERSEDED,
+            'build_id' => null,
+        ]);
+        $this->assertDatabaseHas('repository_webhook_deliveries', [
+            'delivery_id' => 'github-pending-2',
+            'revision' => $revisions[1],
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'build_id' => $queued->id,
+        ]);
         Queue::assertPushed(PublishRepositoryJob::class, fn (PublishRepositoryJob $job): bool => $job->build->is($queued));
     }
 

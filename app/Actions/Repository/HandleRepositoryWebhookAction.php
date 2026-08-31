@@ -25,6 +25,8 @@ class HandleRepositoryWebhookAction
             $inserted = DB::table('repository_webhook_deliveries')->insertOrIgnore([
                 'repository_id' => $locked->id,
                 'delivery_id' => $webhook->deliveryId,
+                'revision' => $webhook->revision,
+                'commit_message' => $webhook->commitMessage,
                 'status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -60,7 +62,10 @@ class HandleRepositoryWebhookAction
                 'revision' => $webhook->revision,
                 'commit_message' => $webhook->commitMessage,
             ]);
-            $delivery->update(['status' => RepositoryWebhookDelivery::STATUS_QUEUED]);
+            $delivery->update([
+                'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+                'build_id' => $build->id,
+            ]);
 
             return new RepositoryWebhookResult(RepositoryWebhookResult::QUEUED, $build);
         });

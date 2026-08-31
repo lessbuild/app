@@ -6,6 +6,7 @@ use App\Http\Requests\RepositoryRequest;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
+use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -175,13 +176,25 @@ class RepositoriesController extends Controller
     /**
      * Show the resource
      */
-    public function show(Repository $repository): View
+    public function show(Request $request, Repository $repository): View
     {
         $this->authorize('view', $repository);
+        $deliveryStatus = $request->string('delivery_status')->toString();
+        $deliveryStatus = in_array($deliveryStatus, RepositoryWebhookDelivery::STATUSES, true)
+            ? $deliveryStatus
+            : null;
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
+            'webhookDeliveries' => $repository->webhookDeliveries()
+                ->with('build')
+                ->when($deliveryStatus, fn ($query, string $status) => $query->where('status', $status))
+                ->latest('id')
+                ->paginate(10, pageName: 'webhook_page')
+                ->appends(array_filter(['delivery_status' => $deliveryStatus])),
+            'deliveryStatus' => $deliveryStatus,
+            'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
         ]);

@@ -122,7 +122,10 @@ Lessbuild. Only pushes to the repository's configured branch deploy.
 Webhook payloads are verified against their raw request bodies, duplicate
 delivery IDs are ignored, and GitLab timestamps expire after five minutes. If
 a push arrives during a deployment, Lessbuild coalesces newer pushes into one
-follow-up deployment rather than running releases concurrently.
+follow-up deployment rather than running releases concurrently. Repository
+pages retain a filterable delivery history with safe commit metadata and build
+links; older coalesced deliveries are marked as superseded. Request payloads,
+signatures, provider tokens, and webhook secrets are never included in history.
 
 Deployment serialization follows the website rather than the repository. When
 multiple repositories target one website, only one may write its release path
