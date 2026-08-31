@@ -21,6 +21,8 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"', $installer);
         $this->assertStringContainsString('Description=Lessbuild consistent SQLite database backup', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backup', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all', $installer);
+        $this->assertStringContainsString('TimeoutStartSec=900', $installer);
         $this->assertStringContainsString('UMask=0027', $installer);
         $this->assertStringContainsString('OnCalendar=daily', $installer);
         $this->assertStringContainsString('RandomizedDelaySec=30m', $installer);

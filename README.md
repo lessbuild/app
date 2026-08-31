@@ -47,6 +47,7 @@ systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild
 journalctl -u lessbuild-app -u lessbuild-worker --since today
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup
+php artisan lessbuild:backups:verify --all
 php artisan lessbuild:deployments:watchdog
 php artisan lessbuild:websites:health
 ```
@@ -54,6 +55,8 @@ php artisan lessbuild:websites:health
 Set `DATABASE_BACKUP_RETENTION_DAYS` or `DATABASE_BACKUP_DIRECTORY` to adjust
 automatic backup retention and storage. Manual release backups use different
 filenames and are never pruned by the automatic backup command.
+Each new snapshot is integrity-checked before publication, and the daily systemd
+service rechecks every retained SQLite backup so later corruption fails visibly.
 
 ## Automatic push deployments
 

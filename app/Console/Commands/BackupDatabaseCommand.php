@@ -2,11 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Services\SqliteBackupVerifier;
 use Illuminate\Console\Command;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use PDO;
 use Throwable;
 
 class BackupDatabaseCommand extends Command
@@ -16,7 +16,7 @@ class BackupDatabaseCommand extends Command
 
     protected $description = 'Create a consistent SQLite database snapshot and prune expired automatic backups';
 
-    public function handle(): int
+    public function handle(SqliteBackupVerifier $verifier): int
     {
         $connection = DB::connection($this->option('connection') ?: null);
         if ($connection->getDriverName() !== 'sqlite') {
@@ -42,7 +42,7 @@ class BackupDatabaseCommand extends Command
 
         try {
             $this->snapshot($connection, $temporaryPath);
-            $this->validateSnapshot($temporaryPath);
+            $verifier->verify($temporaryPath);
 
             if (! rename($temporaryPath, $path)) {
                 throw new \RuntimeException('The completed database snapshot could not be finalized.');
@@ -81,17 +81,6 @@ class BackupDatabaseCommand extends Command
             if ($path !== $currentPath && File::lastModified($path) < $cutoff) {
                 File::delete($path);
             }
-        }
-    }
-
-    private function validateSnapshot(string $path): void
-    {
-        $snapshot = new PDO('sqlite:'.$path, null, null, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        ]);
-
-        if ($snapshot->query('PRAGMA integrity_check')->fetchColumn() !== 'ok') {
-            throw new \RuntimeException('SQLite reported that the database snapshot is not valid.');
         }
     }
 }
