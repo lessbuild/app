@@ -43,103 +43,106 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('home', DashboardController::class)->name('dashboard');
-    Route::get('activity/export', [ActivityController::class, 'export'])
-        ->name('activity.export');
-    Route::get('activity', ActivityController::class)->name('activity.index');
-    Route::get('notifications/export', [NotificationsController::class, 'export'])
-        ->name('notifications.export');
-    Route::get('notifications', [NotificationsController::class, 'index'])
-        ->name('notifications.index');
-    Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
-        ->name('notifications.read-all');
-    Route::post('notifications/clear-read', [NotificationsController::class, 'clearRead'])
-        ->name('notifications.clear-read');
-    Route::post('notifications/{notification}/read', [NotificationsController::class, 'read'])
-        ->name('notifications.read');
-    Route::post('notifications/{notification}/unread', [NotificationsController::class, 'unread'])
-        ->name('notifications.unread');
-    Route::delete('notifications/{notification}', [NotificationsController::class, 'destroy'])
-        ->name('notifications.destroy');
-
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->name('account.password.update');
-    Route::get('websites/export', [WebsitesController::class, 'export'])
-        ->name('websites.export');
-    Route::resource('websites', WebsitesController::class);
-    Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
-        ->name('websites.placement.cleanup');
-    Route::post('websites/{website}/provisioning/retry', [WebsitesController::class, 'retryProvisioning'])
-        ->name('websites.provisioning.retry');
-    Route::post('websites/{website}/health/check', [WebsitesController::class, 'checkHealth'])
-        ->name('websites.health.check');
-    Route::get('websites/{website}/provisioning-log', [WebsitesController::class, 'downloadProvisioningLog'])
-        ->name('websites.provisioning-log.download');
 
-    Route::get('servers/export', [ServersController::class, 'export'])
-        ->name('servers.export');
-    Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
-    Route::get('servers/{server}', ServerShow::class)
-        ->middleware('can:view,server')
-        ->name('servers.show');
-    Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
-        ->whereIn('type', CollectServerLogAction::TYPES)
-        ->name('servers.logs.download');
-    Route::get('servers/{server}/commands', [ServerCommandsController::class, 'index'])
-        ->name('servers.commands.index');
-    Route::get('servers/{server}/commands/export', [ServerCommandsController::class, 'export'])
-        ->name('servers.commands.export');
-    Route::post('servers/{server}/commands/{execution}/cancel', [ServerCommandsController::class, 'cancel'])
-        ->whereNumber('execution')
-        ->name('servers.commands.cancel');
-    Route::post('servers/{server}/commands/{execution}/rerun', [ServerCommandsController::class, 'rerun'])
-        ->whereNumber('execution')
-        ->name('servers.commands.rerun');
-    Route::delete('servers/{server}/commands/{execution}', [ServerCommandsController::class, 'destroy'])
-        ->whereNumber('execution')
-        ->name('servers.commands.destroy');
-    Route::get('servers/{server}/commands/{execution}/output', [ServerCommandsController::class, 'downloadOutput'])
-        ->whereNumber('execution')
-        ->name('servers.commands.output');
-    Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
-        ->name('servers.initialization.retry');
-    Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])
-        ->name('servers.provisioning.retry');
+    Route::middleware('verified')->group(function () {
+        Route::get('home', DashboardController::class)->name('dashboard');
+        Route::get('activity/export', [ActivityController::class, 'export'])
+            ->name('activity.export');
+        Route::get('activity', ActivityController::class)->name('activity.index');
+        Route::get('notifications/export', [NotificationsController::class, 'export'])
+            ->name('notifications.export');
+        Route::get('notifications', [NotificationsController::class, 'index'])
+            ->name('notifications.index');
+        Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
+            ->name('notifications.read-all');
+        Route::post('notifications/clear-read', [NotificationsController::class, 'clearRead'])
+            ->name('notifications.clear-read');
+        Route::post('notifications/{notification}/read', [NotificationsController::class, 'read'])
+            ->name('notifications.read');
+        Route::post('notifications/{notification}/unread', [NotificationsController::class, 'unread'])
+            ->name('notifications.unread');
+        Route::delete('notifications/{notification}', [NotificationsController::class, 'destroy'])
+            ->name('notifications.destroy');
 
-    Route::get('builds/export', [BuildsController::class, 'export'])
-        ->name('builds.export');
-    Route::get('builds/{build}/log', [BuildsController::class, 'downloadLog'])
-        ->name('builds.log.download');
-    Route::resource('builds', BuildsController::class)->only(['index', 'show']);
-    Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
-        ->name('builds.cancel');
-    Route::post('builds/{build}/redeploy', [BuildsController::class, 'redeploy'])
-        ->name('builds.redeploy');
-    Route::get('repositories/export', [RepositoriesController::class, 'export'])
-        ->name('repositories.export');
-    Route::get('repositories/{repository}/webhook-deliveries/export', [RepositoriesController::class, 'exportWebhookDeliveries'])
-        ->name('repositories.webhook-deliveries.export');
-    Route::resource('repositories', RepositoriesController::class);
-    Route::get('recipes/export', [RecipesController::class, 'export'])
-        ->name('recipes.export');
-    Route::resource('recipes', RecipesController::class)->except('show');
-    Route::post('recipes/{recipe}/duplicate', [RecipesController::class, 'duplicate'])
-        ->name('recipes.duplicate');
-    Route::get('providers/export', [ProviderController::class, 'export'])
-        ->name('providers.export');
-    Route::resource('providers', ProviderController::class);
-    Route::post('providers/{provider}/connection/test', ProviderConnectionController::class)
-        ->middleware('throttle:6,1')
-        ->name('providers.connection.test');
-    Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
-        ->name('repositories.deploy');
-    Route::post('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'store'])
-        ->name('repositories.webhook.store');
-    Route::delete('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'destroy'])
-        ->name('repositories.webhook.destroy');
+        Route::get('websites/export', [WebsitesController::class, 'export'])
+            ->name('websites.export');
+        Route::resource('websites', WebsitesController::class);
+        Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
+            ->name('websites.placement.cleanup');
+        Route::post('websites/{website}/provisioning/retry', [WebsitesController::class, 'retryProvisioning'])
+            ->name('websites.provisioning.retry');
+        Route::post('websites/{website}/health/check', [WebsitesController::class, 'checkHealth'])
+            ->name('websites.health.check');
+        Route::get('websites/{website}/provisioning-log', [WebsitesController::class, 'downloadProvisioningLog'])
+            ->name('websites.provisioning-log.download');
+
+        Route::get('servers/export', [ServersController::class, 'export'])
+            ->name('servers.export');
+        Route::resource('servers', ServersController::class)->only(['index', 'create', 'store', 'destroy']);
+        Route::get('servers/{server}', ServerShow::class)
+            ->middleware('can:view,server')
+            ->name('servers.show');
+        Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
+            ->whereIn('type', CollectServerLogAction::TYPES)
+            ->name('servers.logs.download');
+        Route::get('servers/{server}/commands', [ServerCommandsController::class, 'index'])
+            ->name('servers.commands.index');
+        Route::get('servers/{server}/commands/export', [ServerCommandsController::class, 'export'])
+            ->name('servers.commands.export');
+        Route::post('servers/{server}/commands/{execution}/cancel', [ServerCommandsController::class, 'cancel'])
+            ->whereNumber('execution')
+            ->name('servers.commands.cancel');
+        Route::post('servers/{server}/commands/{execution}/rerun', [ServerCommandsController::class, 'rerun'])
+            ->whereNumber('execution')
+            ->name('servers.commands.rerun');
+        Route::delete('servers/{server}/commands/{execution}', [ServerCommandsController::class, 'destroy'])
+            ->whereNumber('execution')
+            ->name('servers.commands.destroy');
+        Route::get('servers/{server}/commands/{execution}/output', [ServerCommandsController::class, 'downloadOutput'])
+            ->whereNumber('execution')
+            ->name('servers.commands.output');
+        Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
+            ->name('servers.initialization.retry');
+        Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])
+            ->name('servers.provisioning.retry');
+
+        Route::get('builds/export', [BuildsController::class, 'export'])
+            ->name('builds.export');
+        Route::get('builds/{build}/log', [BuildsController::class, 'downloadLog'])
+            ->name('builds.log.download');
+        Route::resource('builds', BuildsController::class)->only(['index', 'show']);
+        Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
+            ->name('builds.cancel');
+        Route::post('builds/{build}/redeploy', [BuildsController::class, 'redeploy'])
+            ->name('builds.redeploy');
+        Route::get('repositories/export', [RepositoriesController::class, 'export'])
+            ->name('repositories.export');
+        Route::get('repositories/{repository}/webhook-deliveries/export', [RepositoriesController::class, 'exportWebhookDeliveries'])
+            ->name('repositories.webhook-deliveries.export');
+        Route::resource('repositories', RepositoriesController::class);
+        Route::get('recipes/export', [RecipesController::class, 'export'])
+            ->name('recipes.export');
+        Route::resource('recipes', RecipesController::class)->except('show');
+        Route::post('recipes/{recipe}/duplicate', [RecipesController::class, 'duplicate'])
+            ->name('recipes.duplicate');
+        Route::get('providers/export', [ProviderController::class, 'export'])
+            ->name('providers.export');
+        Route::resource('providers', ProviderController::class);
+        Route::post('providers/{provider}/connection/test', ProviderConnectionController::class)
+            ->middleware('throttle:6,1')
+            ->name('providers.connection.test');
+        Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
+            ->name('repositories.deploy');
+        Route::post('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'store'])
+            ->name('repositories.webhook.store');
+        Route::delete('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'destroy'])
+            ->name('repositories.webhook.destroy');
+    });
 });
 
 Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {

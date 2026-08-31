@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -13,6 +15,7 @@ class RegistrationTest extends TestCase
 
     public function test_a_visitor_can_register_with_the_fields_shown_by_the_form(): void
     {
+        Notification::fake();
         $response = $this->post(route('register'), [
             'name' => 'Ada Lovelace',
             'email' => 'ADA@example.com',
@@ -26,7 +29,9 @@ class RegistrationTest extends TestCase
         $this->assertSame('Ada Lovelace', $user->name);
         $this->assertTrue(Hash::check('correct-horse-battery-staple', $user->password));
         $this->assertTrue($user->hasLocalPassword());
-        $response->assertRedirect(route('dashboard'));
+        $this->assertFalse($user->hasVerifiedEmail());
+        Notification::assertSentTo($user, VerifyEmail::class);
+        $response->assertRedirect(route('verification.notice'));
     }
 
     public function test_registration_validates_the_visible_fields(): void
@@ -73,6 +78,7 @@ class RegistrationTest extends TestCase
 
     public function test_operator_can_explicitly_enable_additional_registration(): void
     {
+        Notification::fake();
         config(['lessbuild.registration.enabled' => true]);
         User::factory()->create();
 
@@ -82,10 +88,12 @@ class RegistrationTest extends TestCase
             'email' => 'second@example.com',
             'password' => 'correct-horse-battery-staple',
             'password_confirmation' => 'correct-horse-battery-staple',
-        ])->assertRedirect(route('dashboard'));
+        ])->assertRedirect(route('verification.notice'));
 
         $this->assertDatabaseCount('users', 2);
-        $this->assertAuthenticatedAs(User::query()->where('email', 'second@example.com')->firstOrFail());
+        $newUser = User::query()->where('email', 'second@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($newUser);
+        Notification::assertSentTo($newUser, VerifyEmail::class);
     }
 
     public function test_operator_can_disable_even_first_user_registration(): void

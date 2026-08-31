@@ -6,6 +6,20 @@
     />
 
     <div class="mt-8 space-y-8">
+        @if (! auth()->user()->hasVerifiedEmail())
+            <div class="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                <p class="font-semibold">{{ __('Verify your email') }}</p>
+                <p class="mt-1">{{ __('Verify :email before managing infrastructure or deployments.', ['email' => auth()->user()->email]) }}</p>
+                @if (session('status') === 'verification-link-sent')
+                    <p class="mt-2 font-semibold">{{ __('A new verification link has been sent.') }}</p>
+                @endif
+                <form method="POST" action="{{ route('verification.send') }}" class="mt-3">
+                    @csrf
+                    <button type="submit" class="button primary">{{ __('Send verification email') }}</button>
+                </form>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('account.profile.update') }}">
             @csrf
             @method('PATCH')
