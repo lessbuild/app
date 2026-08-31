@@ -34,6 +34,8 @@ excluded from search results and list output.
 Recipes can be duplicated into a new encrypted, unassigned copy. The copy opens
 for review and renaming, while the source recipe and all server assignments remain
 unchanged.
+The current filtered recipe inventory can be exported as a spreadsheet-safe CSV
+with assignment metadata. Encrypted script bodies are never included.
 
 ## Source control providers
 

@@ -4,6 +4,9 @@
         :description="__('Create reusable Bash scripts for new servers.')"
     >
         <x-slot:buttons>
+            <a href="{{ route('recipes.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button secondary">
+                {{ __('Export CSV') }}
+            </a>
             <a href="{{ route('recipes.create') }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
