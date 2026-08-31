@@ -76,10 +76,6 @@ class BuildsController extends Controller
                 ->each(function (Build $build) use ($output): void {
                     $repository = $build->repository;
                     $website = $repository->website;
-                    $duration = $build->started_at && $build->finished_at
-                        ? $build->started_at->diffInSeconds($build->finished_at)
-                        : null;
-
                     fputcsv($output, [
                         $build->id,
                         $this->csvCell($repository->name),
@@ -93,7 +89,7 @@ class BuildsController extends Controller
                         $build->created_at?->toIso8601String(),
                         $build->started_at?->toIso8601String(),
                         $build->finished_at?->toIso8601String(),
-                        $duration,
+                        $build->durationSeconds(),
                     ], ',', '"', '');
                 });
 

@@ -1,5 +1,5 @@
 <div @if ($shouldPoll) wire:poll.5s @endif>
-    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-6">
+    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</dt>
             <dd class="mt-1 font-medium text-primary">{{ str($build->status)->replace('_', ' ')->title() }}</dd>
@@ -27,10 +27,58 @@
             <dd class="mt-1 text-primary">{{ $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</dd>
         </div>
         <div>
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Duration') }}</dt>
+            <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
+        </div>
+        <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last heartbeat') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->last_heartbeat_at?->format('Y-m-d H:i:s T') ?? __('Not received') }}</dd>
         </div>
     </dl>
+
+    <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
+        @if ($previousBuild)
+            <a href="{{ route('builds.show', $previousBuild) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
+                <span class="block text-xs font-semibold uppercase text-secondary">{{ __('Previous deployment') }}</span>
+                <span class="mt-1 block font-medium text-primary">
+                    {{ __('Build #:id', ['id' => $previousBuild->id]) }}
+                    &middot; {{ str($previousBuild->status)->replace('_', ' ')->title() }}
+                </span>
+                <span class="mt-1 block text-xs text-secondary">
+                    {{ $previousBuild->durationLabel() ?? __('Duration not recorded') }}
+                    @if ($previousBuild->shortRevision())
+                        &middot; <span class="font-mono">{{ $previousBuild->shortRevision() }}</span>
+                    @endif
+                </span>
+            </a>
+        @else
+            <div class="rounded-lg border border-primary bg-primary p-4 text-secondary">
+                <span class="block text-xs font-semibold uppercase">{{ __('Previous deployment') }}</span>
+                <span class="mt-1 block text-sm">{{ __('This is the first recorded deployment for this repository.') }}</span>
+            </div>
+        @endif
+
+        @if ($nextBuild)
+            <a href="{{ route('builds.show', $nextBuild) }}" class="rounded-lg border border-primary bg-primary p-4 text-right hover:bg-secondary">
+                <span class="block text-xs font-semibold uppercase text-secondary">{{ __('Next deployment') }}</span>
+                <span class="mt-1 block font-medium text-primary">
+                    {{ __('Build #:id', ['id' => $nextBuild->id]) }}
+                    &middot; {{ str($nextBuild->status)->replace('_', ' ')->title() }}
+                </span>
+                <span class="mt-1 block text-xs text-secondary">
+                    {{ $nextBuild->durationLabel() ?? __('Duration not recorded') }}
+                    @if ($nextBuild->shortRevision())
+                        &middot; <span class="font-mono">{{ $nextBuild->shortRevision() }}</span>
+                    @endif
+                </span>
+            </a>
+        @else
+            <div class="rounded-lg border border-primary bg-primary p-4 text-right text-secondary">
+                <span class="block text-xs font-semibold uppercase">{{ __('Next deployment') }}</span>
+                <span class="mt-1 block text-sm">{{ __('This is the latest recorded deployment for this repository.') }}</span>
+            </div>
+        @endif
+    </nav>
 
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
         <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">

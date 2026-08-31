@@ -237,6 +237,10 @@ Automatic provider and website monitoring is paused for all demo fixtures, so
 scheduled timers never contact their deliberately non-functional endpoints.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
+Deployment detail pages show a validated elapsed duration and stable previous/next
+navigation within the same repository. The permanent build fixtures include timed
+history for trying both controls; unfinished or inconsistent timestamps are shown
+as not recorded instead of producing misleading durations.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
 and result views remain testable without opening SSH connections or dispatching
 log-refresh jobs.

@@ -262,6 +262,11 @@ class DemoSeederTest extends TestCase
             ->assertSuccessful()
             ->assertSee('[Demo] Approved rollback for incident DEMO-1042 after the checkout failure.')
             ->assertSee(route('builds.note.update', $build))
+            ->assertSee('Duration')
+            ->assertSee('3m')
+            ->assertSee('Previous deployment')
+            ->assertSee(route('builds.show', $build->previousInRepository()))
+            ->assertSee('This is the latest recorded deployment for this repository.')
             ->assertSee('Save note');
 
         foreach ([

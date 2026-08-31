@@ -152,6 +152,9 @@
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                             <div class="text-primary flex flex-col">
                                 {{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}
+                                <span class="mt-1 text-xs text-secondary">
+                                    {{ __('Duration: :duration', ['duration' => $build->durationLabel() ?? __('Not recorded')]) }}
+                                </span>
                             </div>
                         </td>
                         <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
