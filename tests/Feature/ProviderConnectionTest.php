@@ -244,7 +244,7 @@ class ProviderConnectionTest extends TestCase
             ->post(route('providers.connection.test', $provider))
             ->assertSessionHas('provider_connection', [
                 'successful' => false,
-                'message' => 'The provider credential changed during this check. Run it again to verify the new credential.',
+                'message' => 'The provider changed or another check completed first. Run it again if verification is still needed.',
             ]);
 
         $provider->refresh();

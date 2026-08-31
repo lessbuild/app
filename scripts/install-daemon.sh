@@ -178,7 +178,7 @@ TIMER
 
 cat > "${HEALTH_SERVICE_FILE}" <<SERVICE
 [Unit]
-Description=Monitor Lessbuild website health
+Description=Monitor Lessbuild website and provider health
 After=network-online.target
 Wants=network-online.target
 
@@ -188,6 +188,7 @@ User=root
 Group=root
 WorkingDirectory=${APP_DIR}
 ExecStart=${PHP_BIN} artisan lessbuild:websites:health
+ExecStart=${PHP_BIN} artisan lessbuild:providers:health
 TimeoutStartSec=600
 Nice=5
 Environment=APP_ENV=production
@@ -196,7 +197,7 @@ SERVICE
 
 cat > "${HEALTH_TIMER_FILE}" <<TIMER
 [Unit]
-Description=Check enabled Lessbuild websites every five minutes
+Description=Check Lessbuild website and provider health every five minutes
 
 [Timer]
 OnCalendar=*-*-* *:0/5:00

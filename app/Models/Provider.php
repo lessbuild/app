@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 class Provider extends Model
 {
@@ -80,6 +82,11 @@ class Provider extends Model
         return $this->hasMany(Repository::class);
     }
 
+    public function events(): MorphMany
+    {
+        return $this->morphMany(Event::class, 'parentable');
+    }
+
     public function scopeForServers(Builder $query): Builder
     {
         return $query->whereIn('provider', self::SERVER_TYPES);
@@ -136,17 +143,35 @@ class Provider extends Model
         bool $successful,
         string $providerType,
         string $encryptedToken,
+        ?string $previousCheckedAt,
     ): bool {
+        $checkedAt = now();
+        if ($previousCheckedAt !== null && $checkedAt->lessThanOrEqualTo($previousCheckedAt)) {
+            $checkedAt = Carbon::parse($previousCheckedAt)->addSecond();
+        }
+
         $attributes = [
             'connection_status' => $successful ? self::CONNECTION_HEALTHY : self::CONNECTION_FAILED,
-            'connection_checked_at' => now(),
+            'connection_checked_at' => $checkedAt,
         ];
 
-        $recorded = static::withoutTimestamps(fn () => static::query()
-            ->whereKey($this->getKey())
-            ->where('provider', $providerType)
-            ->where('token', $encryptedToken)
-            ->update($attributes) === 1);
+        $recorded = static::withoutTimestamps(function () use (
+            $providerType,
+            $encryptedToken,
+            $previousCheckedAt,
+            $attributes,
+        ): bool {
+            $query = static::query()
+                ->whereKey($this->getKey())
+                ->where('provider', $providerType)
+                ->where('token', $encryptedToken);
+
+            $previousCheckedAt === null
+                ? $query->whereNull('connection_checked_at')
+                : $query->where('connection_checked_at', $previousCheckedAt);
+
+            return $query->update($attributes) === 1;
+        });
 
         if ($recorded) {
             $this->forceFill($attributes);

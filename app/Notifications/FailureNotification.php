@@ -13,6 +13,7 @@ class FailureNotification extends Notification
         'deployment',
         'website',
         'server',
+        'provider',
     ];
 
     public function __construct(
@@ -20,6 +21,7 @@ class FailureNotification extends Notification
         private readonly int $resourceId,
         private readonly string $title,
         private readonly string $message,
+        private readonly string $status = 'failed',
     ) {}
 
     /** @return list<string> */
@@ -28,7 +30,7 @@ class FailureNotification extends Notification
         return ['database'];
     }
 
-    /** @return array{category: string, resource_id: int, title: string, message: string} */
+    /** @return array{category: string, resource_id: int, title: string, message: string, status: string} */
     public function toDatabase(object $notifiable): array
     {
         return [
@@ -36,6 +38,7 @@ class FailureNotification extends Notification
             'resource_id' => $this->resourceId,
             'title' => str($this->title)->limit(255)->toString(),
             'message' => str($this->message)->limit(500)->toString(),
+            'status' => $this->status === 'healthy' ? 'healthy' : 'failed',
         ];
     }
 
@@ -53,6 +56,7 @@ class FailureNotification extends Notification
             'deployment' => 'builds.show',
             'website' => 'websites.show',
             'server' => 'servers.show',
+            'provider' => 'providers.show',
             default => null,
         };
 

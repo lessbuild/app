@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.heading
         :title="__('Notifications')"
-        :description="__('Review deployment and infrastructure failures that need your attention.')"
+        :description="__('Review deployment and infrastructure alerts that need your attention.')"
     >
         @if ($hasUnreadNotifications || $hasReadNotifications)
             <x-slot:buttons>
@@ -70,9 +70,11 @@
     <div class="space-y-3">
         @forelse ($notifications as $notification)
             @php($destination = \App\Notifications\FailureNotification::destination($notification->data))
+            @php($notificationStatus = $notification->data['status'] ?? 'failed')
             <article @class([
                 'rounded-lg border p-5',
-                'border-red-300 bg-red-50' => $notification->read_at === null,
+                'border-red-300 bg-red-50' => $notification->read_at === null && $notificationStatus !== 'healthy',
+                'border-green-300 bg-green-50' => $notification->read_at === null && $notificationStatus === 'healthy',
                 'border-primary bg-primary' => $notification->read_at !== null,
             ])>
                 <div class="flex flex-wrap items-start justify-between gap-4">
@@ -80,7 +82,11 @@
                         <div class="flex flex-wrap items-center gap-2">
                             <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Infrastructure failure') }}</h2>
                             @if ($notification->read_at === null)
-                                <span class="rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold uppercase text-white">{{ __('Unread') }}</span>
+                                <span @class([
+                                    'rounded-full px-2 py-0.5 text-xs font-semibold uppercase text-white',
+                                    'bg-red-600' => $notificationStatus !== 'healthy',
+                                    'bg-green-600' => $notificationStatus === 'healthy',
+                                ])>{{ __('Unread') }}</span>
                             @endif
                         </div>
                         <p class="mt-1 whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('The operation failed.') }}</p>
@@ -108,8 +114,8 @@
             </article>
         @empty
             <x-lists.empty
-                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No notifications match these filters') : __('No failure notifications')"
-                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('New deployment and infrastructure failures will appear here.')"
+                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No notifications match these filters') : __('No notifications')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('New deployment and infrastructure alerts will appear here.')"
             />
         @endforelse
     </div>

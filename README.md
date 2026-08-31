@@ -29,6 +29,9 @@ credentials or upstream response bodies.
 The latest safe health state and check time remain visible in provider detail,
 inventory filters, and exports. Replacing a credential or changing provider type
 resets the state to unchecked so stale success cannot be mistaken for current health.
+The existing health timer also checks unchecked or day-stale providers in bounded
+batches. Connection failures and recoveries create linked activity and inbox alerts,
+while repeated states and concurrent stale results do not create duplicate alerts.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

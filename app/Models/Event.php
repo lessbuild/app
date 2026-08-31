@@ -16,6 +16,7 @@ class Event extends Model
         'website',
         'server',
         'command',
+        'provider',
         'general',
     ];
 
@@ -47,6 +48,7 @@ class Event extends Model
             $this->parentable instanceof Website => route('websites.show', $this->parentable),
             $this->parentable instanceof Build => route('builds.show', $this->parentable),
             $this->parentable instanceof ServerCommandExecution && $this->parentable->server => route('servers.show', $this->parentable->server),
+            $this->parentable instanceof Provider => route('providers.show', $this->parentable),
             default => null,
         };
     }
