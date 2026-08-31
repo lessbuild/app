@@ -23,6 +23,9 @@ resources are attached. Resource counts are visible in the list, and pagination
 controls keep every provider, attached repository, and attached server reachable.
 The filtered provider inventory can be streamed as a spreadsheet-safe CSV with
 attached resource metadata. Encrypted provider tokens are never exported.
+Each provider can be checked on demand against its provider's fixed HTTPS account
+endpoint. Checks are authorized, rate limited, time bounded, and never display
+credentials or upstream response bodies.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

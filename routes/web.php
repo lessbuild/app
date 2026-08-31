@@ -6,6 +6,7 @@ use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\ProviderConnectionController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
@@ -116,6 +117,9 @@ Route::middleware('auth')->group(function () {
     Route::get('providers/export', [ProviderController::class, 'export'])
         ->name('providers.export');
     Route::resource('providers', ProviderController::class);
+    Route::post('providers/{provider}/connection/test', ProviderConnectionController::class)
+        ->middleware('throttle:6,1')
+        ->name('providers.connection.test');
     Route::post('repositories/{repository}/deploy', [RepositoriesController::class, 'deploy'])
         ->name('repositories.deploy');
     Route::post('repositories/{repository}/webhook', [RepositoryWebhookSettingsController::class, 'store'])

@@ -20,6 +20,13 @@
         :description="$provider->description"
     >
         <x-slot:buttons>
+            <form method="POST" action="{{ route('providers.connection.test', $provider) }}">
+                @csrf
+                <button type="submit" class="button secondary">
+                    {{ __('Test connection') }}
+                </button>
+            </form>
+
             <a href="{{ route('providers.edit', $provider) }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
@@ -43,6 +50,17 @@
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
+
+    @if (session('provider_connection'))
+        @php($connection = session('provider_connection'))
+        <div @class([
+            'my-4 rounded border p-3 text-sm',
+            'border-green-300 bg-green-50 text-green-700' => $connection['successful'],
+            'border-red-300 bg-red-50 text-red-700' => ! $connection['successful'],
+        ])>
+            {{ $connection['message'] }}
+        </div>
+    @endif
 
     @if ($errors->has('provider'))
         <div class="my-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
