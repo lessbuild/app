@@ -105,6 +105,11 @@ class WebsitesController extends Controller
         $validated = $request->validated();
         DB::transaction(function () use ($validated, $website): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
+            if ($locked->hasActiveDeployment()) {
+                throw ValidationException::withMessages([
+                    'server_id' => __('Wait for the current website deployment to finish before editing this website.'),
+                ]);
+            }
             if (in_array($locked->provisioning_status, [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING], true)) {
                 throw ValidationException::withMessages([
                     'server_id' => __('Wait for the current website provisioning operation to finish.'),
@@ -175,7 +180,18 @@ class WebsitesController extends Controller
     {
         $this->authorize('delete', $website);
 
-        $website->delete();
+        $deleted = DB::transaction(function () use ($website): bool {
+            $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
+            if ($locked->hasActiveDeployment()) {
+                return false;
+            }
+
+            return (bool) $locked->delete();
+        });
+
+        if (! $deleted) {
+            return back()->with('error', __('Wait for the current deployment to finish before deleting this website.'));
+        }
 
         return redirect()
             ->route('websites.index')

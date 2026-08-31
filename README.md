@@ -65,6 +65,11 @@ delivery IDs are ignored, and GitLab timestamps expire after five minutes. If
 a push arrives during a deployment, Lessbuild coalesces newer pushes into one
 follow-up deployment rather than running releases concurrently.
 
+Deployment serialization follows the website rather than the repository. When
+multiple repositories target one website, only one may write its release path
+at a time. Pending webhook pushes from sibling repositories are handed off in
+arrival order, while repositories on different websites remain independent.
+
 Completed, failed, and canceled builds can be redeployed from their build page.
 Each checkout reports its actual commit through a short-lived signed callback.
 Redeploying a recorded build checks out that exact commit and can also be used to

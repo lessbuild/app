@@ -6,10 +6,12 @@ use App\Http\Requests\RepositoryRequest;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
+use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class RepositoriesController extends Controller
 {
@@ -35,9 +37,7 @@ class RepositoriesController extends Controller
         return view('scenes.repositories.show', [
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
-            'deploymentInProgress' => $repository->builds()
-                ->whereIn('status', Build::ACTIVE_STATUSES)
-                ->exists(),
+            'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
         ]);
     }
@@ -94,7 +94,18 @@ class RepositoriesController extends Controller
     {
         $this->authorize('update', $repository);
 
-        $repository->update($request->validated());
+        $validated = $request->validated();
+        DB::transaction(function () use ($repository, $validated): void {
+            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
+            $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
+            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
+                throw ValidationException::withMessages([
+                    'website_id' => __('Wait for the current website deployment to finish before editing this repository.'),
+                ]);
+            }
+
+            $locked->update($validated);
+        });
 
         return redirect()->route('repositories.show', $repository);
     }
@@ -108,7 +119,19 @@ class RepositoriesController extends Controller
     {
         $this->authorize('delete', $repository);
 
-        $repository->delete();
+        $deleted = DB::transaction(function () use ($repository): bool {
+            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
+            $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
+            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
+                return false;
+            }
+
+            return (bool) $locked->delete();
+        });
+
+        if (! $deleted) {
+            return back()->with('error', __('Wait for the current website deployment to finish before deleting this repository.'));
+        }
 
         return redirect()->route('repositories.index');
     }
@@ -125,12 +148,13 @@ class RepositoriesController extends Controller
         }
 
         $build = DB::transaction(function () use ($repository): ?Build {
+            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            $deploymentInProgress = $lockedRepository->builds()
-                ->whereIn('status', Build::ACTIVE_STATUSES)
-                ->exists();
+            if ((int) $lockedRepository->website_id !== (int) $website->id) {
+                return null;
+            }
 
-            if ($deploymentInProgress) {
+            if ($website->hasActiveDeployment()) {
                 return null;
             }
 

@@ -8,13 +8,19 @@ use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
+use App\Models\Website;
 use Illuminate\Support\Facades\DB;
 
 class HandleRepositoryWebhookAction
 {
+    public function __construct(
+        private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
+    ) {}
+
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): RepositoryWebhookResult
     {
         $result = DB::transaction(function () use ($repository, $webhook): RepositoryWebhookResult {
+            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             $inserted = DB::table('repository_webhook_deliveries')->insertOrIgnore([
                 'repository_id' => $locked->id,
@@ -36,8 +42,7 @@ class HandleRepositoryWebhookAction
                 return new RepositoryWebhookResult(RepositoryWebhookResult::UNAVAILABLE);
             }
 
-            $active = $locked->builds()->whereIn('status', Build::ACTIVE_STATUSES)->exists();
-            if ($active) {
+            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
                 $locked->update([
                     'webhook_pending' => true,
                     'webhook_pending_revision' => $webhook->revision,
@@ -62,6 +67,8 @@ class HandleRepositoryWebhookAction
 
         if ($result->build) {
             PublishRepositoryJob::dispatch($result->build);
+        } elseif ($result->status === RepositoryWebhookResult::PENDING) {
+            $this->queuePendingDeployment->handle($repository->fresh());
         }
 
         return $result;

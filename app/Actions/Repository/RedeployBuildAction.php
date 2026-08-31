@@ -6,6 +6,7 @@ use App\Data\BuildRedeploymentResult;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
+use App\Models\Website;
 use Illuminate\Support\Facades\DB;
 
 class RedeployBuildAction
@@ -13,6 +14,8 @@ class RedeployBuildAction
     public function handle(Build $source): BuildRedeploymentResult
     {
         $result = DB::transaction(function () use ($source): BuildRedeploymentResult {
+            $websiteId = Repository::query()->whereKey($source->repository_id)->value('website_id');
+            $website = Website::query()->lockForUpdate()->findOrFail($websiteId);
             $repository = Repository::query()->lockForUpdate()->findOrFail($source->repository_id);
             $lockedSource = $repository->builds()->findOrFail($source->id);
 
@@ -24,8 +27,7 @@ class RedeployBuildAction
                 return new BuildRedeploymentResult(BuildRedeploymentResult::UNAVAILABLE);
             }
 
-            $active = $repository->builds()->whereIn('status', Build::ACTIVE_STATUSES)->exists();
-            if ($active) {
+            if ((int) $repository->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
                 return new BuildRedeploymentResult(BuildRedeploymentResult::ACTIVE);
             }
 
