@@ -71,6 +71,29 @@
         <x-forms.errors name="environment"></x-forms.errors>
     </div>
 
+    <div class="col-span-3 sm:col-span-2">
+        <label for="release_retention" class="block text-sm font-medium text-primary">
+            {{ __('Retained releases') }}
+        </label>
+        <div class="mt-1 flex rounded-md shadow-sm">
+            <input
+                value="{{ old('release_retention', $website->release_retention ?? 5) }}"
+                type="number"
+                name="release_retention"
+                id="release_retention"
+                min="2"
+                max="20"
+                step="1"
+                inputmode="numeric"
+                class="input secondary rounded"
+            >
+        </div>
+        <p class="mt-2 text-sm text-secondary">
+            {{ __('Keep between 2 and 20 releases on the server for rollback and recovery.') }}
+        </p>
+        <x-forms.errors name="release_retention"></x-forms.errors>
+    </div>
+
     <div class="rounded-lg border border-primary p-4">
         <div class="flex items-start gap-3">
             <input type="hidden" name="health_check_enabled" value="0">

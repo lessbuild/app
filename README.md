@@ -87,6 +87,8 @@ Websites can optionally verify an HTTP path after each deployment. Lessbuild
 follows redirects and retries transient failures before marking the build
 failed. When an earlier release exists, a failed check atomically restores its
 symlink; application database migrations are intentionally not reversed.
+Each website can retain between two and twenty releases on its server; five are
+kept by default for rollback and recovery.
 
 ### Todo
  

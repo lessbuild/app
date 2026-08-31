@@ -123,6 +123,16 @@ class WebsitesController extends Controller
                 ]);
             }
 
+            $requiresProvisioning = $locked->provisioning_status === Website::STATUS_FAILED
+                || $moving
+                || $validated['url'] !== $locked->url
+                || $validated['environment'] !== $locked->environment;
+            if (! $requiresProvisioning) {
+                $locked->update($validated);
+
+                return;
+            }
+
             $locked->update(array_merge($validated, [
                 'previous_server_id' => $moving ? $locked->server_id : $locked->previous_server_id,
                 'placement_cleanup_error' => $moving ? null : $locked->placement_cleanup_error,

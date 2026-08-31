@@ -29,6 +29,8 @@ class PurgeOldReleasesScript extends BuildProvisioningScript
     {
         $repository = $build->repository;
         $releasesPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/releases");
+        $releaseRetention = max(2, min(20, (int) $repository->website->release_retention));
+        $firstPrunedRelease = $releaseRetention + 1;
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
@@ -36,7 +38,7 @@ class PurgeOldReleasesScript extends BuildProvisioningScript
             RELEASES_PATH={$releasesPath}
             find "\$RELEASES_PATH" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' \
                 | sort -nr \
-                | tail -n +6 \
+                | tail -n +{$firstPrunedRelease} \
                 | cut -d' ' -f2- \
                 | while IFS= read -r release; do
                     [ -n "\$release" ] && rm -rf -- "\$release"

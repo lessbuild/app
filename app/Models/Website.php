@@ -51,6 +51,7 @@ class Website extends Model
         'health_check_enabled' => 'boolean',
         'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
+        'release_retention' => 'integer',
         'setup_stage' => 'integer',
     ];
 

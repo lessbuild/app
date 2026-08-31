@@ -41,6 +41,7 @@ class WebsiteRequest extends FormRequest
                 'max:255',
                 "regex:#\A/(?!/)[A-Za-z0-9._~%!$&'()*+,;=:@/\-]*\z#D",
             ],
+            'release_retention' => ['required', 'integer', 'between:2,20'],
         ];
     }
 
@@ -65,6 +66,10 @@ class WebsiteRequest extends FormRequest
             'url' => rtrim($url, '/'),
             'health_check_enabled' => $this->boolean('health_check_enabled'),
             'health_check_path' => $path,
+            'release_retention' => $this->input(
+                'release_retention',
+                $this->route('website')?->release_retention ?? 5,
+            ),
         ]);
     }
 }
