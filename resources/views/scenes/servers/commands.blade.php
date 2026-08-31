@@ -114,6 +114,15 @@
                                         </button>
                                     </form>
                                 @endif
+                                @if (in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
+                                    <form method="POST" action="{{ route('servers.commands.destroy', ['server' => $server, 'execution' => $execution]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="button primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
+                                            {{ __('Delete') }}
+                                        </button>
+                                    </form>
+                                @endif
                             </div>
                         </td>
                     </tr>

@@ -110,6 +110,20 @@ class ServerCommandsController extends Controller
         return back()->with('success', __('Command #:id was queued from history.', ['id' => $rerun->id]));
     }
 
+    public function destroy(Server $server, int $execution): RedirectResponse
+    {
+        $this->authorize('view', $server);
+        $execution = $server->commandExecutions()->findOrFail($execution);
+        $deleted = $server->commandExecutions()
+            ->whereKey($execution->id)
+            ->whereIn('status', ServerCommandExecution::TERMINAL_STATUSES)
+            ->delete();
+
+        return $deleted === 1
+            ? back()->with('success', __('Command history record deleted.'))
+            : back()->with('info', __('Queued or running commands cannot be deleted.'));
+    }
+
     public function downloadOutput(
         Server $server,
         int $execution,

@@ -346,6 +346,54 @@ class ServerCommandLifecycleTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
+    public function test_owner_can_delete_terminal_history_while_active_commands_and_reruns_are_preserved(): void
+    {
+        [$owner, $server] = $this->resources();
+        $source = $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'sensitive completed command');
+        $source->update([
+            'output' => 'sensitive retained output',
+            'exit_code' => 1,
+            'finished_at' => now(),
+        ]);
+        $rerun = $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'sensitive completed command');
+        $rerun->update([
+            'rerun_from_execution_id' => $source->id,
+            'finished_at' => now(),
+        ]);
+        $queued = $this->execution($server, ServerCommandExecution::STATUS_QUEUED, 'queued command');
+        $running = $this->execution($server, ServerCommandExecution::STATUS_RUNNING, 'running command');
+        $history = route('servers.commands.index', [
+            'server' => $server,
+            'status' => ServerCommandExecution::STATUS_FAILED,
+        ]);
+
+        $this->actingAs($owner)->get($history)
+            ->assertSuccessful()
+            ->assertSee(route('servers.commands.destroy', [
+                'server' => $server,
+                'execution' => $source,
+            ]));
+
+        $this->from($history)->delete(route('servers.commands.destroy', [
+            'server' => $server,
+            'execution' => $source,
+        ]))
+            ->assertRedirect($history)
+            ->assertSessionHas('success', 'Command history record deleted.');
+        $this->assertModelMissing($source);
+        $this->assertModelExists($rerun);
+        $this->assertNull($rerun->fresh()->rerun_from_execution_id);
+
+        foreach ([$queued, $running] as $active) {
+            $this->delete(route('servers.commands.destroy', [
+                'server' => $server,
+                'execution' => $active,
+            ]))
+                ->assertSessionHas('info', 'Queued or running commands cannot be deleted.');
+            $this->assertModelExists($active);
+        }
+    }
+
     public function test_nested_command_actions_reject_an_execution_from_another_server(): void
     {
         [$owner, $server] = $this->resources();
@@ -367,12 +415,26 @@ class ServerCommandLifecycleTest extends TestCase
             'server' => $server,
             'execution' => $foreignExecution,
         ]))->assertNotFound();
+        $this->delete(route('servers.commands.destroy', [
+            'server' => $server,
+            'execution' => $foreignExecution,
+        ]))->assertNotFound();
 
         $intruder = User::factory()->create();
+        $ownedExecution = $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'hostname');
         $this->actingAs($intruder)->post(route('servers.commands.rerun', [
             'server' => $server,
-            'execution' => $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'hostname'),
+            'execution' => $ownedExecution,
         ]))->assertForbidden();
+        $this->delete(route('servers.commands.destroy', [
+            'server' => $server,
+            'execution' => $ownedExecution,
+        ]))->assertForbidden();
+        auth()->logout();
+        $this->delete(route('servers.commands.destroy', [
+            'server' => $server,
+            'execution' => $ownedExecution,
+        ]))->assertRedirect(route('login'));
     }
 
     /** @return list<list<string|null>> */

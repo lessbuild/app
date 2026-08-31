@@ -201,7 +201,9 @@ of claiming to stop an in-flight remote process. Completed, failed, and canceled
 commands can be queued again from history while retaining explicit lineage to
 the original encrypted execution. Filtered command history can be exported as
 a spreadsheet-safe CSV with lineage and timing metadata; retained output remains
-available only through its separate owner-authorized download.
+available only through its separate owner-authorized download. Terminal command
+records and their encrypted output can also be deleted individually; active
+commands remain protected.
 Terminal command records and encrypted output are retained for 180 days by
 default, then pruned only after the daily database backup is verified. Queued
 and running commands are preserved regardless of age. Set

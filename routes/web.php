@@ -98,6 +98,9 @@ Route::middleware('auth')->group(function () {
     Route::post('servers/{server}/commands/{execution}/rerun', [ServerCommandsController::class, 'rerun'])
         ->whereNumber('execution')
         ->name('servers.commands.rerun');
+    Route::delete('servers/{server}/commands/{execution}', [ServerCommandsController::class, 'destroy'])
+        ->whereNumber('execution')
+        ->name('servers.commands.destroy');
     Route::get('servers/{server}/commands/{execution}/output', [ServerCommandsController::class, 'downloadOutput'])
         ->whereNumber('execution')
         ->name('servers.commands.output');
