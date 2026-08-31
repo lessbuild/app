@@ -41,10 +41,11 @@ is allowed by the host firewall and cloud-provider firewall.
 Check the web and worker processes with:
 
 ```bash
-systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer
+systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild-watchdog.timer
 journalctl -u lessbuild-app -u lessbuild-worker --since today
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup
+php artisan lessbuild:deployments:watchdog
 ```
 
 Set `DATABASE_BACKUP_RETENTION_DAYS` or `DATABASE_BACKUP_DIRECTORY` to adjust
@@ -69,6 +70,11 @@ Each checkout reports its actual commit through a short-lived signed callback.
 Redeploying a recorded build checks out that exact commit and can also be used to
 restore an earlier release. Legacy manual builds without a recorded revision
 retry the configured branch.
+
+The daemon installer also runs a deployment watchdog every minute. Remote log,
+progress, and revision callbacks refresh a build heartbeat. If a deployment
+stops reporting for ten minutes, Lessbuild identifies and stops its exact remote
+process before marking the build failed and allowing a queued follow-up release.
 
 Websites can optionally verify an HTTP path after each deployment. Lessbuild
 follows redirects and retries transient failures before marking the build

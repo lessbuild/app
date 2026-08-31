@@ -138,7 +138,11 @@ class PublishRepositoryAction extends Publishable
 
         SCRIPT;
 
-        $this->makeScriptFile($this->repository->name);
+        $this->makeScriptFile(
+            $this->repository->name,
+            "lessbuild-deployment-{$this->build->id}",
+        );
+        $remotePath = "/tmp/{$this->fileName}.sh";
 
         $this->upload();
 
@@ -149,7 +153,7 @@ class PublishRepositoryAction extends Publishable
 
         return [
             'id' => (int) $output,
-            'path' => "/tmp/{$this->fileName}.sh",
+            'path' => $remotePath,
         ];
     }
 }

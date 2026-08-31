@@ -91,8 +91,9 @@ abstract class Publishable
     {
         $script = escapeshellarg("/tmp/$this->fileName.sh");
         $log = escapeshellarg("/tmp/$this->fileName.log");
+        $pid = escapeshellarg("/tmp/$this->fileName.pid");
         $run = $this->runner->execute(
-            "sudo chmod 700 -- $script && { nohup sudo setsid -- $script > $log 2>&1 < /dev/null & echo \$!; }",
+            "sudo chmod 700 -- $script && { nohup sudo setsid -- $script > $log 2>&1 < /dev/null & process_id=\$!; if printf '%s\\n' \"\$process_id\" | sudo tee $pid >/dev/null && sudo chmod 600 -- $pid; then echo \"\$process_id\"; else sudo kill -TERM -- \"-\$process_id\" 2>/dev/null || true; exit 1; fi; }",
         );
 
         if (! $run->isSuccessful()) {
@@ -105,10 +106,13 @@ abstract class Publishable
     /**
      * Generate the script file
      */
-    protected function makeScriptFile(string $name): string
+    protected function makeScriptFile(string $name, ?string $fileName = null): string
     {
         $slug = rtrim(Str::limit(Str::slug($name), 180, ''), '-') ?: 'deployment';
-        $this->fileName = $slug.'-'.Str::lower(Str::random(8));
+        if ($fileName !== null && ! preg_match('/\A[a-z0-9-]+\z/D', $fileName)) {
+            throw new RuntimeException('The remote script identifier is invalid.');
+        }
+        $this->fileName = $fileName ?? $slug.'-'.Str::lower(Str::random(8));
 
         Storage::put($this->fileName, $this->script);
 

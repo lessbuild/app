@@ -26,6 +26,11 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('systemctl enable --now "${BACKUP_TIMER_NAME}.timer"', $installer);
         $this->assertStringContainsString('if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]', $installer);
         $this->assertStringContainsString('systemctl disable --now "${BACKUP_TIMER_NAME}.timer"', $installer);
+        $this->assertStringContainsString('Description=Recover stale Lessbuild deployments', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:deployments:watchdog', $installer);
+        $this->assertStringContainsString('TimeoutStartSec=120', $installer);
+        $this->assertStringContainsString('OnCalendar=*-*-* *:*:00', $installer);
+        $this->assertStringContainsString('systemctl enable --now "${WATCHDOG_TIMER_NAME}.timer"', $installer);
 
         $syntaxCheck = new Process(['bash', '-n', dirname(__DIR__, 2).'/scripts/install-daemon.sh']);
         $syntaxCheck->run();

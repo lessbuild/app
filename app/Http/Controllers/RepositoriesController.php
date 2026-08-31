@@ -127,7 +127,7 @@ class RepositoriesController extends Controller
         $build = DB::transaction(function () use ($repository): ?Build {
             $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             $deploymentInProgress = $lockedRepository->builds()
-                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->whereIn('status', Build::ACTIVE_STATUSES)
                 ->exists();
 
             if ($deploymentInProgress) {

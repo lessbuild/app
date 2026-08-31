@@ -57,7 +57,7 @@
                             </div>
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                            <span class="uppercase">{{ $build->status }}</span>
+                            <span class="uppercase">{{ str($build->status)->replace('_', ' ') }}</span>
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                             <div class="text-primary flex flex-col">

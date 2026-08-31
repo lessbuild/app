@@ -25,6 +25,7 @@ class DeploymentLogTest extends TestCase
     public function test_signed_callback_records_and_replaces_a_bounded_deployment_log(): void
     {
         [, $build] = $this->build();
+        $build->update(['status' => Build::STATUS_RUNNING, 'finished_at' => null]);
         $callback = URL::signedRoute('callbacks.build.log', $build);
 
         $this->post(route('callbacks.build.log', $build), ['log' => 'unsigned'])
@@ -155,7 +156,7 @@ class DeploymentLogTest extends TestCase
         $remoteProcess = (new PublishRepositoryAction($build, $runner))->handle();
 
         $this->assertSame(4321, $remoteProcess['id']);
-        $this->assertMatchesRegularExpression('#^/tmp/application-repository-[a-z0-9]{8}\.sh$#', $remoteProcess['path']);
+        $this->assertSame("/tmp/lessbuild-deployment-{$build->id}.sh", $remoteProcess['path']);
         $this->assertNotNull($script);
         $this->assertStringContainsString('exec > "$LOG_FILE" 2>&1', $script);
         $this->assertStringContainsString('tail -c 262144', $script);

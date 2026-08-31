@@ -212,10 +212,13 @@
                     'rounded-full px-3 py-1 text-xs font-semibold uppercase',
                     'bg-green-100 text-green-700' => $build->status === \App\Models\Build::STATUS_SUCCEEDED,
                     'bg-red-100 text-red-700' => $build->status === \App\Models\Build::STATUS_FAILED,
-                    'bg-amber-100 text-amber-700' => $build->status === \App\Models\Build::STATUS_CANCELED,
+                    'bg-amber-100 text-amber-700' => in_array($build->status, [
+                        \App\Models\Build::STATUS_CANCELED,
+                        \App\Models\Build::STATUS_TIMING_OUT,
+                    ], true),
                     'bg-blue-100 text-blue-700' => in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING]),
                     'bg-gray-100 text-gray-700' => $build->status === \App\Models\Build::STATUS_QUEUED,
-                ])>{{ $build->status }}</span>
+                ])>{{ str($build->status)->replace('_', ' ') }}</span>
             </div>
         @empty
             <x-lists.empty

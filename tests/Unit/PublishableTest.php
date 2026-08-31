@@ -28,18 +28,31 @@ class PublishableTest extends TestCase
 
     public function test_remote_script_is_started_once_in_the_background(): void
     {
+        $command = null;
         $process = Mockery::mock(Process::class);
         $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
         $process->shouldReceive('getOutput')->once()->andReturn("4321\n");
         $ssh = Mockery::mock(Ssh::class);
         $ssh->shouldReceive('execute')
             ->once()
-            ->with(Mockery::on(fn ($command) => str_contains($command, 'nohup sudo setsid --')
-                && str_contains($command, 'echo $!')
-                && ! str_contains($command, '/etc/cron.d/')))
+            ->with(Mockery::on(function (string $value) use (&$command): bool {
+                $command = $value;
+
+                return str_contains($value, 'nohup sudo setsid --')
+                    && str_contains($value, 'process_id=$!')
+                    && str_contains($value, "sudo tee '/tmp/test-script.pid'")
+                    && str_contains($value, "sudo chmod 600 -- '/tmp/test-script.pid'")
+                    && str_contains($value, 'sudo kill -TERM -- "-$process_id"')
+                    && str_contains($value, 'echo "$process_id"')
+                    && ! str_contains($value, '/etc/cron.d/');
+            }))
             ->andReturn($process);
 
         $this->assertSame("4321\n", (new TestPublishable($ssh))->runScript());
+        $syntax = new Process(['bash', '-n']);
+        $syntax->setInput($command);
+        $syntax->run();
+        $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
     }
 
     public function test_remote_script_names_are_safe_for_long_resource_names(): void
@@ -49,6 +62,16 @@ class PublishableTest extends TestCase
 
         $this->assertLessThanOrEqual(200, strlen(basename($path)));
         $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', basename($path));
+    }
+
+    public function test_explicit_remote_script_identifiers_reject_shell_input(): void
+    {
+        $ssh = Mockery::mock(Ssh::class);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('remote script identifier is invalid');
+
+        (new TestPublishable($ssh))->makeFile('Deployment', 'build; touch /tmp/pwned');
     }
 }
 
@@ -71,10 +94,10 @@ class TestPublishable extends Publishable
         return $this->run();
     }
 
-    public function makeFile(string $name): string
+    public function makeFile(string $name, ?string $fileName = null): string
     {
         $this->script = '#!/bin/bash';
 
-        return $this->makeScriptFile($name);
+        return $this->makeScriptFile($name, $fileName);
     }
 }

@@ -12,6 +12,10 @@ BACKUP_SERVICE_NAME="lessbuild-backup"
 BACKUP_SERVICE_FILE="/etc/systemd/system/${BACKUP_SERVICE_NAME}.service"
 BACKUP_TIMER_NAME="lessbuild-backup"
 BACKUP_TIMER_FILE="/etc/systemd/system/${BACKUP_TIMER_NAME}.timer"
+WATCHDOG_SERVICE_NAME="lessbuild-watchdog"
+WATCHDOG_SERVICE_FILE="/etc/systemd/system/${WATCHDOG_SERVICE_NAME}.service"
+WATCHDOG_TIMER_NAME="lessbuild-watchdog"
+WATCHDOG_TIMER_FILE="/etc/systemd/system/${WATCHDOG_TIMER_NAME}.timer"
 PUBLIC_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -133,8 +137,40 @@ Unit=${BACKUP_SERVICE_NAME}.service
 WantedBy=timers.target
 TIMER
 
+cat > "${WATCHDOG_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Recover stale Lessbuild deployments
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan lessbuild:deployments:watchdog
+TimeoutStartSec=120
+Nice=5
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+SERVICE
+
+cat > "${WATCHDOG_TIMER_FILE}" <<TIMER
+[Unit]
+Description=Check for stale Lessbuild deployments every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=${WATCHDOG_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
+systemctl enable --now "${WATCHDOG_TIMER_NAME}.timer"
 DATABASE_CONNECTION="$(sed -n 's/^DB_CONNECTION=//p' "${APP_DIR}/.env" | tail -n 1 | tr -d "\"'")"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl enable --now "${BACKUP_TIMER_NAME}.timer"
@@ -146,6 +182,7 @@ systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
 echo "Lessbuild is running at http://${PUBLIC_IP}:8003"
 systemctl --no-pager --full status "${SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WORKER_SERVICE_NAME}.service"
+systemctl --no-pager --full status "${WATCHDOG_TIMER_NAME}.timer"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl --no-pager --full status "${BACKUP_TIMER_NAME}.timer"
 else

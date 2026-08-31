@@ -46,6 +46,8 @@ class PublishRepositoryJob implements ShouldQueue
             ->update([
                 'status' => Build::STATUS_DEPLOYING,
                 'started_at' => now(),
+                'last_heartbeat_at' => now(),
+                'remote_process_path' => "/tmp/lessbuild-deployment-{$this->build->id}.sh",
                 'failure_message' => null,
             ]);
         if ($started === 0) {
@@ -55,7 +57,7 @@ class PublishRepositoryJob implements ShouldQueue
         $this->build->refresh();
         $process = (new PublishRepositoryAction($this->build, $runner))->handle();
 
-        Build::query()
+        $running = Build::query()
             ->whereKey($this->build->id)
             ->where('status', Build::STATUS_DEPLOYING)
             ->update([
@@ -63,6 +65,15 @@ class PublishRepositoryJob implements ShouldQueue
                 'remote_process_id' => $process['id'],
                 'remote_process_path' => $process['path'],
             ]);
+        if ($running === 0) {
+            Build::query()
+                ->whereKey($this->build->id)
+                ->whereIn('status', Build::TERMINAL_STATUSES)
+                ->update([
+                    'remote_process_id' => null,
+                    'remote_process_path' => null,
+                ]);
+        }
     }
 
     public function failed(\Throwable $exception): void

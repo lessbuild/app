@@ -8,6 +8,7 @@ return [
     'server_callback_ttl_minutes' => (int) env('SERVER_CALLBACK_TTL_MINUTES', 2880),
     'deployment_callback_ttl_minutes' => (int) env('DEPLOYMENT_CALLBACK_TTL_MINUTES', 360),
     'deployment_log_max_characters' => (int) env('DEPLOYMENT_LOG_MAX_CHARACTERS', 262144),
+    'deployment_stale_minutes' => (int) env('DEPLOYMENT_STALE_MINUTES', 10),
     'website_log_max_characters' => (int) env('WEBSITE_LOG_MAX_CHARACTERS', 262144),
     'server_log_max_characters' => (int) env('SERVER_LOG_MAX_CHARACTERS', 262144),
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),

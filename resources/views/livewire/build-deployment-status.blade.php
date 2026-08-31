@@ -1,8 +1,8 @@
 <div @if ($shouldPoll) wire:poll.5s @endif>
-    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-5">
+    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-6">
         <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</dt>
-            <dd class="mt-1 font-medium text-primary">{{ ucfirst($build->status) }}</dd>
+            <dd class="mt-1 font-medium text-primary">{{ str($build->status)->replace('_', ' ')->title() }}</dd>
         </div>
         <div>
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Triggered by') }}</dt>
@@ -26,7 +26,20 @@
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Finished') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</dd>
         </div>
+        <div>
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last heartbeat') }}</dt>
+            <dd class="mt-1 text-primary">{{ $build->last_heartbeat_at?->format('Y-m-d H:i:s T') ?? __('Not received') }}</dd>
+        </div>
     </dl>
+
+    @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
+        <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+            <p>{{ __('This deployment stopped reporting progress. Lessbuild is safely stopping its remote process before allowing another deployment.') }}</p>
+            @if ($build->failure_message)
+                <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
+            @endif
+        </div>
+    @endif
 
     @if ($build->redeployed_from_build_id)
         <p class="mt-3 text-sm text-secondary">
@@ -72,7 +85,7 @@
         </form>
     @endif
 
-    @if ($build->failure_message)
+    @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
         <div class="mt-6 rounded border border-red-300 bg-red-50 p-4 text-red-800">
             <strong>{{ __('Deployment failed:') }}</strong> {{ $build->failure_message }}
         </div>

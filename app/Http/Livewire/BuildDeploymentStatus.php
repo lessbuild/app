@@ -21,11 +21,7 @@ class BuildDeploymentStatus extends Component
 
         return view('livewire.build-deployment-status', [
             'deploymentLog' => $log,
-            'shouldPoll' => in_array($this->build->status, [
-                Build::STATUS_QUEUED,
-                Build::STATUS_DEPLOYING,
-                Build::STATUS_RUNNING,
-            ], true),
+            'shouldPoll' => in_array($this->build->status, Build::ACTIVE_STATUSES, true),
         ]);
     }
 }

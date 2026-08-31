@@ -28,6 +28,7 @@ class BuildRevisionAttestationTest extends TestCase
         $build->refresh();
         $this->assertSame(strtolower($revision), $build->revision);
         $this->assertSame("Manual release\n\nReady", $build->commit_message);
+        $this->assertNotNull($build->last_heartbeat_at);
     }
 
     public function test_pinned_build_accepts_only_the_revision_it_was_queued_for(): void

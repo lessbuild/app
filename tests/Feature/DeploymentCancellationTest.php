@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Repository\CancelDeploymentAction;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Provider;
@@ -39,9 +40,11 @@ class DeploymentCancellationTest extends TestCase
         $this->assertNull($build->remote_process_path);
         $this->assertNotNull($build->finished_at);
         $this->assertSame("Installing dependencies\n", $build->logs()->sole()->log);
-        $this->assertStringContainsString('sudo kill -TERM -- -4242', $command);
-        $this->assertStringContainsString('sudo kill -KILL -- -4242', $command);
-        $this->assertStringContainsString('/proc/4242/cmdline', $command);
+        $this->assertStringContainsString("PROCESS_ID='4242'", $command);
+        $this->assertStringContainsString('sudo kill -TERM -- "-$PROCESS_ID"', $command);
+        $this->assertStringContainsString('sudo kill -KILL -- "-$PROCESS_ID"', $command);
+        $this->assertStringContainsString('/proc/$PROCESS_ID/cmdline', $command);
+        $this->assertStringContainsString("PID_FILE='/tmp/application-repository-abcd1234.pid'", $command);
         $this->assertStringContainsString($processPath, $command);
         $this->assertStringContainsString("lessbuild-deployment-{$build->id}.log", $command);
         $this->assertStringNotContainsString("\0", $command);
@@ -76,6 +79,22 @@ class DeploymentCancellationTest extends TestCase
         $this->assertSame(4242, $build->remote_process_id);
         $this->assertSame('/tmp/application-repository-abcd1234.sh', $build->remote_process_path);
         $this->assertNull($build->finished_at);
+    }
+
+    public function test_cancellation_can_recover_the_process_id_from_its_restricted_pid_file(): void
+    {
+        [, $build] = $this->build();
+        $build->update(['remote_process_id' => null]);
+        $command = null;
+
+        (new CancelDeploymentAction(
+            $build->fresh(),
+            $this->runner(successful: true, output: '', command: $command),
+        ))->handle();
+
+        $this->assertStringContainsString("PROCESS_ID=''", $command);
+        $this->assertStringContainsString('PROCESS_ID="$(sudo head -n 1 -- "$PID_FILE")"', $command);
+        $this->assertStringContainsString('*[!0-9]* ) exit 2', $command);
     }
 
     public function test_other_users_and_non_running_builds_cannot_cancel(): void
@@ -147,7 +166,7 @@ class DeploymentCancellationTest extends TestCase
         $build->refresh();
         $this->assertSame(Build::STATUS_RUNNING, $build->status);
         $this->assertSame(9876, $build->remote_process_id);
-        $this->assertMatchesRegularExpression('#^/tmp/application-repository-[a-z0-9]{8}\.sh$#', $build->remote_process_path);
+        $this->assertSame("/tmp/lessbuild-deployment-{$build->id}.sh", $build->remote_process_path);
         $this->assertNotNull($build->started_at);
     }
 
@@ -174,7 +193,7 @@ class DeploymentCancellationTest extends TestCase
         $process = Mockery::mock(Process::class);
         $process->shouldReceive('isSuccessful')->once()->andReturn($successful);
         if ($successful) {
-            $process->shouldReceive('getOutput')->twice()->andReturn($output);
+            $process->shouldReceive('getOutput')->andReturn($output);
         }
 
         $ssh = Mockery::mock(ManagedSsh::class);

@@ -25,6 +25,7 @@ class RecordBuildRevisionAction
             $locked->update([
                 'revision' => $revision,
                 'commit_message' => $commitMessage,
+                'last_heartbeat_at' => now(),
             ]);
 
             return BuildRevisionResult::RECORDED;

@@ -17,6 +17,8 @@ class Build extends Model
 
     public const STATUS_RUNNING = 'running';
 
+    public const STATUS_TIMING_OUT = 'timing_out';
+
     public const STATUS_SUCCEEDED = 'succeeded';
 
     public const STATUS_FAILED = 'failed';
@@ -33,6 +35,7 @@ class Build extends Model
         self::STATUS_QUEUED,
         self::STATUS_DEPLOYING,
         self::STATUS_RUNNING,
+        self::STATUS_TIMING_OUT,
     ];
 
     public const TERMINAL_STATUSES = [
@@ -55,6 +58,7 @@ class Build extends Model
         'remote_process_id' => 'integer',
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+        'last_heartbeat_at' => 'datetime',
     ];
 
     public function logs(): MorphMany

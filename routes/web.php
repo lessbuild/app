@@ -253,26 +253,31 @@ Route::post('websites/{website}/provisioning/callback/log', function (Website $w
 })->middleware('signed')->name('callbacks.website.log');
 
 Route::post('builds/{build}/deployment/callback/status', function (Build $build) {
-    if (! in_array($build->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
-        return response()->noContent();
-    }
-
     $finalStage = app(RepositoryDeploymentPlan::class)->finalStage();
     $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
-    $repository = $build->repository;
-    if ($data['status'] > $repository->setup_stage) {
-        $repository->update(['setup_stage' => $data['status']]);
-    }
+    DB::transaction(function () use ($build, $data, $finalStage): void {
+        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
+        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
+            return;
+        }
 
-    if ($data['status'] === $finalStage) {
-        $build->update([
-            'status' => Build::STATUS_SUCCEEDED,
-            'remote_process_id' => null,
-            'remote_process_path' => null,
-            'built_at' => now(),
-            'finished_at' => now(),
-        ]);
-    }
+        $repository = $locked->repository;
+        if ($data['status'] > $repository->setup_stage) {
+            $repository->update(['setup_stage' => $data['status']]);
+        }
+
+        $attributes = ['last_heartbeat_at' => now()];
+        if ($data['status'] === $finalStage) {
+            $attributes = array_merge($attributes, [
+                'status' => Build::STATUS_SUCCEEDED,
+                'remote_process_id' => null,
+                'remote_process_path' => null,
+                'built_at' => now(),
+                'finished_at' => now(),
+            ]);
+        }
+        $locked->update($attributes);
+    });
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.build.status');
@@ -287,11 +292,13 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
         'message' => 'required|string|max:2000',
     ]);
 
-    if (in_array($build->status, [
-        Build::STATUS_DEPLOYING,
-        Build::STATUS_RUNNING,
-    ], true)) {
-        $build->update([
+    DB::transaction(function () use ($build, $data): void {
+        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
+        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
+            return;
+        }
+
+        $locked->update([
             'status' => Build::STATUS_FAILED,
             'remote_process_id' => null,
             'remote_process_path' => null,
@@ -300,7 +307,7 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
                 ? "{$data['message']} (exit code {$data['exit_code']})"
                 : $data['message'],
         ]);
-    }
+    });
 
     return response()->noContent();
 })->middleware('signed')->name('callbacks.build.failed');
@@ -308,7 +315,7 @@ Route::post('builds/{build}/deployment/callback/failed', function (Build $build)
 Route::post('builds/{build}/deployment/callback/log', function (Build $build) {
     DB::transaction(function () use ($build): void {
         $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
-        if ($locked->status === Build::STATUS_CANCELED) {
+        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
             return;
         }
 
@@ -320,6 +327,7 @@ Route::post('builds/{build}/deployment/callback/log', function (Build $build) {
             ['type' => Build::DEPLOYMENT_LOG_TYPE],
             ['log' => $data['log']],
         );
+        $locked->update(['last_heartbeat_at' => now()]);
     });
 
     return response()->noContent();

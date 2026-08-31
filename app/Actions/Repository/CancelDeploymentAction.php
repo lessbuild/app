@@ -16,7 +16,7 @@ class CancelDeploymentAction
     public function handle(): ?string
     {
         $processId = $this->build->remote_process_id;
-        if (! is_int($processId) || $processId < 1) {
+        if ($processId !== null && (! is_int($processId) || $processId < 1)) {
             throw new RuntimeException('The deployment does not have a valid remote process identifier.');
         }
         $processPath = $this->build->remote_process_path;
@@ -28,28 +28,42 @@ class CancelDeploymentAction
         $logFile = escapeshellarg("/tmp/lessbuild-deployment-{$this->build->id}.log");
         $uploadFile = escapeshellarg("/tmp/lessbuild-deployment-{$this->build->id}.upload.log");
         $scriptFile = escapeshellarg($processPath);
+        $pidFile = escapeshellarg(substr($processPath, 0, -3).'.pid');
+        $knownProcessId = escapeshellarg($processId === null ? '' : (string) $processId);
         $command = <<<BASH
         DEPLOYMENT_SCRIPT={$scriptFile}
+        PID_FILE={$pidFile}
+        PROCESS_ID={$knownProcessId}
+
+        if [ -z "\$PROCESS_ID" ] && [ -r "\$PID_FILE" ]; then
+            PROCESS_ID="$(sudo head -n 1 -- "\$PID_FILE")"
+        fi
+
+        case "\$PROCESS_ID" in
+            '' ) ;;
+            *[!0-9]* ) exit 2 ;;
+        esac
+
         matches_deployment() {
-            [ -r /proc/{$processId}/cmdline ] && sudo tr '\\0' ' ' < /proc/{$processId}/cmdline | grep -Fq -- "\$DEPLOYMENT_SCRIPT"
+            [ -r "/proc/\$PROCESS_ID/cmdline" ] && sudo tr '\\0' ' ' < "/proc/\$PROCESS_ID/cmdline" | grep -Fq -- "\$DEPLOYMENT_SCRIPT"
         }
 
-        if sudo kill -0 -- {$processId} 2>/dev/null; then
+        if [ -n "\$PROCESS_ID" ] && sudo kill -0 -- "\$PROCESS_ID" 2>/dev/null; then
             matches_deployment || exit 2
-            sudo kill -TERM -- -{$processId}
+            sudo kill -TERM -- "-\$PROCESS_ID"
 
             for attempt in 1 2 3 4 5; do
-                sudo kill -0 -- {$processId} 2>/dev/null || break
+                sudo kill -0 -- "\$PROCESS_ID" 2>/dev/null || break
                 sleep 1
             done
 
-            if sudo kill -0 -- {$processId} 2>/dev/null; then
+            if sudo kill -0 -- "\$PROCESS_ID" 2>/dev/null; then
                 matches_deployment || exit 2
-                sudo kill -KILL -- -{$processId}
+                sudo kill -KILL -- "-\$PROCESS_ID"
             fi
         fi
         tail -c {$logLimit} -- {$logFile} 2>/dev/null || true
-        sudo rm -f -- {$logFile} {$uploadFile} {$scriptFile}
+        sudo rm -f -- {$logFile} {$uploadFile} {$scriptFile} {$pidFile}
         BASH;
 
         $result = ($this->runner ?? new Runner)
