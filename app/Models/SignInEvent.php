@@ -36,4 +36,15 @@ class SignInEvent extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function methodName(): string
+    {
+        return match ($this->method) {
+            self::METHOD_PASSWORD => __('Password'),
+            'github' => 'GitHub',
+            'gitlab' => 'GitLab',
+            'bitbucket' => 'Bitbucket',
+            default => __('Unknown'),
+        };
+    }
 }

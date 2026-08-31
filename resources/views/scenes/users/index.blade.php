@@ -164,6 +164,11 @@
             :description="__('Review successful sign-ins retained for account security history.')"
         >
             <div class="divide-y divide-primary bg-primary">
+                @if (session('sign_ins_status'))
+                    <div class="m-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        {{ session('sign_ins_status') }}
+                    </div>
+                @endif
                 @forelse ($recentSignIns as $signIn)
                     <div class="flex flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6">
                         <div>
@@ -192,6 +197,46 @@
                     </div>
                 @endforelse
             </div>
+
+            <x-slot:footer>
+                <div class="flex flex-wrap items-end justify-between gap-4 bg-tertiary px-4 py-3 sm:px-6">
+                    <a href="{{ route('account.sign-ins.export') }}" class="button primary">
+                        {{ __('Export CSV') }}
+                    </a>
+
+                    @if ($recentSignIns->isNotEmpty() && auth()->user()->hasLocalPassword())
+                        <form method="POST" action="{{ route('account.sign-ins.destroy') }}" class="flex flex-wrap items-end justify-end gap-3">
+                            @csrf
+                            @method('DELETE')
+                            <label class="block min-w-52 text-left">
+                                <span class="block pb-1 text-xs font-medium text-secondary">
+                                    {{ __('Current password') }}
+                                </span>
+                                <input
+                                    class="input secondary rounded"
+                                    name="current_password"
+                                    type="password"
+                                    autocomplete="current-password"
+                                    required
+                                >
+                                <x-forms.errors name="current_password" bag="signIns" />
+                            </label>
+                            <button
+                                type="submit"
+                                class="button primary"
+                                onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently clear your successful sign-in history?')) }})"
+                            >
+                                {{ __('Clear history') }}
+                            </button>
+                        </form>
+                    @elseif ($recentSignIns->isNotEmpty())
+                        <p class="text-sm text-secondary">
+                            {{ __('Set a local password before clearing sign-in history.') }}
+                            <a href="#password" class="font-medium text-ternary underline">{{ __('Set password') }}</a>
+                        </p>
+                    @endif
+                </div>
+            </x-slot:footer>
         </x-forms.section>
 
         <x-forms.section

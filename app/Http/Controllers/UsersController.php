@@ -42,7 +42,7 @@ class UsersController extends Controller
                 ->limit(10)
                 ->get()
                 ->map(fn (SignInEvent $event): array => [
-                    'method' => $this->signInMethodName($event->method),
+                    'method' => $event->methodName(),
                     'device' => $clients->deviceName($event->user_agent),
                     'ip_address' => $clients->displayIp($event->ip_address),
                     'signed_in_at' => $event->signed_in_at,
@@ -259,17 +259,6 @@ class UsersController extends Controller
             'github' => 'GitHub',
             'gitlab' => 'GitLab',
             'bitbucket' => 'Bitbucket',
-        };
-    }
-
-    private function signInMethodName(string $method): string
-    {
-        return match ($method) {
-            SignInEvent::METHOD_PASSWORD => __('Password'),
-            'github' => 'GitHub',
-            'gitlab' => 'GitLab',
-            'bitbucket' => 'Bitbucket',
-            default => __('Unknown'),
         };
     }
 }

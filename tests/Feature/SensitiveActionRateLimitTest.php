@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\SignInEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -61,6 +62,17 @@ class SensitiveActionRateLimitTest extends TestCase
             'current_password' => 'current-password',
         ])->assertTooManyRequests();
         $this->assertDatabaseHas('sessions', ['id' => $sessionId]);
+
+        $signIn = $user->signIns()->create([
+            'method' => SignInEvent::METHOD_PASSWORD,
+            'ip_address' => '192.0.2.41',
+            'user_agent' => 'Rate limit sign-in browser',
+            'signed_in_at' => now(),
+        ]);
+        $this->delete(route('account.sign-ins.destroy'), [
+            'current_password' => 'current-password',
+        ])->assertTooManyRequests();
+        $this->assertDatabaseHas('sign_in_events', ['id' => $signIn->id]);
 
         $this->patch(route('account.password.update'), [
             'current_password' => 'current-password',

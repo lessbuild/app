@@ -26,6 +26,8 @@ class AccountManagementTest extends TestCase
         $this->patch(route('account.password.update'))->assertRedirect(route('login'));
         $this->post(route('account.sessions.revoke'))->assertRedirect(route('login'));
         $this->delete(route('account.sessions.destroy', str_repeat('a', 40)))->assertRedirect(route('login'));
+        $this->get(route('account.sign-ins.export'))->assertRedirect(route('login'));
+        $this->delete(route('account.sign-ins.destroy'))->assertRedirect(route('login'));
         $this->delete(route('account.social.destroy', 'github'))->assertRedirect(route('login'));
     }
 

@@ -15,6 +15,7 @@ use App\Http\Controllers\RepositoryWebhookSettingsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServerCommandsController;
 use App\Http\Controllers\ServersController;
+use App\Http\Controllers\SignInHistoryController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
 use App\Http\Livewire\ServerShow;
@@ -64,6 +65,11 @@ Route::middleware('auth')->group(function () {
         ->where('session', '[A-Za-z0-9]{1,255}')
         ->middleware('throttle:sensitive-account')
         ->name('account.sessions.destroy');
+    Route::get('account/sign-ins/export', [SignInHistoryController::class, 'export'])
+        ->name('account.sign-ins.export');
+    Route::delete('account/sign-ins', [SignInHistoryController::class, 'destroy'])
+        ->middleware('throttle:sensitive-account')
+        ->name('account.sign-ins.destroy');
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
         ->middleware('throttle:sensitive-account')

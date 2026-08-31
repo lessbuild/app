@@ -17,6 +17,10 @@ browser/platform labels without exposing credentials or session data. Failed
 attempts are never written to this history, so it cannot become an account-discovery
 trail. Set `SIGN_IN_RETENTION_DAYS` to change the window; pruning runs only after
 the daily database backup has been created and verified.
+Owners can export all retained history as a spreadsheet-safe CSV containing only
+derived browser/device labels, validated IPs, methods, and timestamps; raw user
+agents are never exported. Local-password owners can also clear their history
+after current-password validation through the shared sensitive-action limiter.
 
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current
