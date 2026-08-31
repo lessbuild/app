@@ -15,6 +15,22 @@ class SourceRepositoryUrl implements ValidationRule
 
     public function __construct(private readonly ?string $expectedHost = null) {}
 
+    public static function normalize(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('#^(?:https?://|ssh://git@)#i', '', $value) ?? $value;
+        $value = preg_replace('#^git@(github\.com|gitlab\.com|bitbucket\.org):#i', '$1/', $value) ?? $value;
+        $value = preg_replace_callback(
+            '#^(github\.com|gitlab\.com|bitbucket\.org)/#i',
+            static fn (array $matches): string => strtolower($matches[1]).'/',
+            $value,
+        ) ?? $value;
+        $value = rtrim($value, '/');
+        $value = preg_replace('/\.git$/i', '', $value) ?? $value;
+
+        return $value.'.git';
+    }
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (! is_string($value)) {

@@ -82,6 +82,21 @@ Provider tokens are encrypted at rest and are supplied to Git through a
 temporary `.netrc` file that is removed after cloning. Repository URLs must
 match the selected provider.
 
+Operators can also create a shallow local checkout of a public repository for
+inspection or tooling without registering it as a deployment target:
+
+```bash
+php artisan lessbuild:repository https://github.com/lessbuild/app.git main --name=lessbuild-app
+```
+
+The command accepts public GitHub, GitLab, and Bitbucket HTTPS or common SSH URL
+forms, validates the branch and destination name, disables interactive Git
+credential prompts, and invokes Git without a shell. Existing checkouts are
+left untouched unless `--force` is supplied; forced replacement clones into a
+temporary directory first and only swaps it into place after Git succeeds.
+Checkouts default to `storage/repositories`; set
+`REPOSITORY_CHECKOUT_DIRECTORY` to use another operator-controlled directory.
+
 ## Run as a daemon
 
 The included systemd installer configures the app to listen on every network

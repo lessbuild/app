@@ -24,6 +24,7 @@ return [
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 90),
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
+    'repository_checkout_directory' => env('REPOSITORY_CHECKOUT_DIRECTORY') ?: storage_path('repositories'),
     'prohibit_destructive_database_commands' => (bool) env(
         'DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS',
         env('APP_ENV', 'production') === 'production',

@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
+use App\Rules\GitBranch;
 use App\Rules\SourceRepositoryUrl;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -53,7 +54,7 @@ class RepositoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                'regex:/^(?![-\/]|.*(?:\/\.|\.\.|\/\/|@\{|[~^:?*\[\\\\]))(?!.*[\/.]$)[A-Za-z0-9._\/-]+$/',
+                new GitBranch,
             ],
             'build_commands' => ['nullable', 'string', 'max:10000'],
             'post_deployment_commands' => ['nullable', 'string', 'max:10000'],
@@ -65,23 +66,11 @@ class RepositoryRequest extends FormRequest
     {
         return [
             'website_id.exists' => __('Select an active website.'),
-            'branch.regex' => __('Enter a valid Git branch name.'),
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        $url = trim((string) $this->input('url'));
-        $url = preg_replace('#^(?:https?://|ssh://git@)#i', '', $url) ?? $url;
-        $url = preg_replace('#^git@(github\.com|gitlab\.com|bitbucket\.org):#i', '$1/', $url) ?? $url;
-        $url = preg_replace_callback(
-            '#^(github\.com|gitlab\.com|bitbucket\.org)/#i',
-            static fn (array $matches): string => strtolower($matches[1]).'/',
-            $url,
-        ) ?? $url;
-        $url = rtrim($url, '/');
-        $url = preg_replace('/\.git$/i', '', $url) ?? $url;
-
         $repository = $this->route('repository');
         $buildCommands = $this->input('build_commands', $repository?->build_commands);
         $postDeploymentCommands = $this->input(
@@ -90,7 +79,7 @@ class RepositoryRequest extends FormRequest
         );
 
         $this->merge([
-            'url' => $url.'.git',
+            'url' => SourceRepositoryUrl::normalize((string) $this->input('url')),
             'branch' => trim((string) $this->input('branch', 'main')),
             'build_commands' => is_string($buildCommands) && trim($buildCommands) === ''
                 ? null

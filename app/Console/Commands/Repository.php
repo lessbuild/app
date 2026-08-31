@@ -2,83 +2,204 @@
 
 namespace App\Console\Commands;
 
+use App\Rules\GitBranch;
+use App\Rules\SourceRepositoryUrl;
 use Illuminate\Console\Command;
-use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Throwable;
 
 class Repository extends Command
 {
-    /**
-     * Place to save cloned repositories
-     *
-     * @var string
-     */
-    protected string $storage = './storage/repositories/';
-
-    /**
-     * The signature of the command.
-     *
-     * @var string
-     */
     protected $signature = 'lessbuild:repository
-        {repository : The repository to clone}
-        {branch=main : The branch to clone}';
+        {repository : Public GitHub, GitLab, or Bitbucket repository URL}
+        {branch=main : Branch to check out}
+        {--name= : Safe destination directory name; generated when omitted}
+        {--force : Replace an existing checkout only after the new clone succeeds}
+        {--timeout=300 : Clone timeout in seconds (1-3600)}';
 
-    /**
-     * The description of the command.
-     *
-     * @var string
-     */
-    protected $description = 'Clone a git repo repository';
+    protected $description = 'Safely clone a public source repository into local checkout storage';
 
-    /**
-     * Execute the console command.
-     *
-     * @return mixed
-     */
-    public function handle()
+    public function handle(): int
     {
-        $repository = $this->argument('repository');
-        $branch = $this->argument('branch');
+        $input = $this->validatedInput();
+        if ($input === null) {
+            return self::FAILURE;
+        }
 
-        $name = ($config['name'] ?? Str::random('16'));
-        $location = $this->storage.$name;
+        $root = $this->checkoutRoot();
+        if ($root === null) {
+            return self::FAILURE;
+        }
 
-        $this->task('Removing old repository', function () use ($location, $process) {
-            $process->execute([
-                '',
-            ]);
-            if (is_dir($location)) {
-                shell_exec("rm -rf {$location}");
-            }
-        });
+        $destination = $root.DIRECTORY_SEPARATOR.$input['name'];
+        if (is_link($destination)) {
+            $this->error('Checkout destination cannot be a symbolic link.');
 
-        $this->task('Configuring Deploy.yaml', function () use ($config, $name, $repository) {
-            $yaml = Yaml::dump(array_merge($config, [
-                'name' => $name,
-                'repository' => $repository,
-            ]));
+            return self::FAILURE;
+        }
+        if (File::exists($destination) && ! File::isDirectory($destination)) {
+            $this->error("Checkout destination is not a directory: {$destination}");
 
-            file_put_contents('./deploy.yaml', $yaml);
-        });
+            return self::FAILURE;
+        }
+        if (File::isDirectory($destination) && ! $this->option('force')) {
+            $this->error('Checkout already exists. Use --force to replace it after a successful clone.');
 
-        $this->task('Cloning repository', function () use ($repository, $location) {
-            shell_exec("git clone {$repository} {$location}");
-        });
+            return self::FAILURE;
+        }
 
-        $this->task('Checking out branch', function () use ($location, $branch) {
-            shell_exec("git -C $location checkout {$branch}");
-        });
+        $temporary = $root.DIRECTORY_SEPARATOR.'.'.$input['name'].'.'.Str::lower(Str::random(12)).'.tmp';
+        try {
+            $result = Process::timeout($input['timeout'])
+                ->env([
+                    'GIT_TERMINAL_PROMPT' => '0',
+                    'GIT_CONFIG_NOSYSTEM' => '1',
+                ])
+                ->run([
+                    'git',
+                    'clone',
+                    '--depth',
+                    '1',
+                    '--single-branch',
+                    '--branch',
+                    $input['branch'],
+                    '--no-tags',
+                    '--',
+                    'https://'.$input['repository'],
+                    $temporary,
+                ]);
+        } catch (Throwable $exception) {
+            $this->deleteCheckout($temporary);
+            report($exception);
+            $this->error('Repository checkout failed before it completed.');
+
+            return self::FAILURE;
+        }
+
+        if (! $result->successful() || ! File::isDirectory($temporary.DIRECTORY_SEPARATOR.'.git')) {
+            $this->deleteCheckout($temporary);
+            $message = trim($result->errorOutput()) ?: trim($result->output());
+            $this->error($message === '' ? 'Git did not create a valid checkout.' : Str::limit($message, 500));
+
+            return self::FAILURE;
+        }
+
+        if (! $this->publish($temporary, $destination, $root, $input['name'])) {
+            return self::FAILURE;
+        }
+
+        $this->info("Repository checked out to {$destination}");
+
+        return self::SUCCESS;
     }
 
-    /**
-     * Define the command's schedule.
-     *
-     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
-     * @return void
-     */
-    public function schedule(Schedule $schedule): void
+    private function checkoutRoot(): ?string
     {
-        // $schedule->command(static::class)->everyMinute();
+        $configured = rtrim((string) config('lessbuild.repository_checkout_directory'), DIRECTORY_SEPARATOR);
+        if ($configured === '') {
+            $this->error('Repository checkout storage is not configured.');
+
+            return null;
+        }
+
+        try {
+            File::ensureDirectoryExists($configured, 0755, true);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->error('Repository checkout storage could not be created.');
+
+            return null;
+        }
+
+        $root = realpath($configured);
+        if ($root === false || dirname($root) === $root) {
+            $this->error('Repository checkout storage must be a dedicated directory below a filesystem root.');
+
+            return null;
+        }
+
+        return $root;
+    }
+
+    /** @return array{repository: string, branch: string, name: string, timeout: int}|null */
+    private function validatedInput(): ?array
+    {
+        $repository = SourceRepositoryUrl::normalize((string) $this->argument('repository'));
+        $branch = trim((string) $this->argument('branch'));
+        $name = trim((string) ($this->option('name') ?: Str::lower(Str::random(16))));
+        $validator = Validator::make([
+            'repository' => $repository,
+            'branch' => $branch,
+            'name' => $name,
+            'timeout' => $this->option('timeout'),
+        ], [
+            'repository' => ['required', 'string', 'max:255', new SourceRepositoryUrl],
+            'branch' => ['required', 'string', 'max:255', new GitBranch],
+            'name' => ['required', 'string', 'max:64', 'regex:/\A[A-Za-z0-9](?:[A-Za-z0-9._-]{0,63})\z/D'],
+            'timeout' => ['required', 'integer', 'min:1', 'max:3600'],
+        ]);
+
+        if ($validator->fails()) {
+            foreach ($validator->errors()->all() as $message) {
+                $this->error($message);
+            }
+
+            return null;
+        }
+
+        return [
+            'repository' => $repository,
+            'branch' => $branch,
+            'name' => $name,
+            'timeout' => (int) $this->option('timeout'),
+        ];
+    }
+
+    private function publish(string $temporary, string $destination, string $root, string $name): bool
+    {
+        $backup = null;
+
+        try {
+            if (File::isDirectory($destination)) {
+                $backup = $root.DIRECTORY_SEPARATOR.'.'.$name.'.'.Str::lower(Str::random(12)).'.backup';
+                if (! File::moveDirectory($destination, $backup)) {
+                    throw new \RuntimeException('The existing checkout could not be staged for replacement.');
+                }
+            }
+
+            if (! File::moveDirectory($temporary, $destination)) {
+                throw new \RuntimeException('The completed checkout could not be moved into place.');
+            }
+
+            if ($backup !== null) {
+                File::deleteDirectory($backup);
+            }
+
+            return true;
+        } catch (Throwable $exception) {
+            $this->deleteCheckout($temporary);
+            if ($backup !== null && File::isDirectory($backup) && ! File::exists($destination)) {
+                File::moveDirectory($backup, $destination);
+            }
+
+            report($exception);
+            $this->error($exception->getMessage());
+
+            return false;
+        }
+    }
+
+    private function deleteCheckout(string $path): void
+    {
+        if (is_link($path)) {
+            File::delete($path);
+
+            return;
+        }
+
+        File::deleteDirectory($path);
     }
 }
