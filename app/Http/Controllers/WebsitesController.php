@@ -11,12 +11,14 @@ use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WebsitesController extends Controller
 {
@@ -26,39 +28,8 @@ class WebsitesController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $websites = $request->user()->websites()
+        $websites = $this->filteredWebsites($request, $filters)
             ->with('server')
-            ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
-                    $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('url', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
-                });
-            })
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('provisioning_status', $value))
-            ->when($filters['health'], function ($query, string $value): void {
-                if ($value === 'disabled') {
-                    $query->where('health_check_enabled', false);
-
-                    return;
-                }
-
-                $query
-                    ->where('health_check_enabled', true)
-                    ->where('health_status', $value);
-            })
-            ->when($filters['attention'], fn ($query) => $query
-                ->where(function ($query): void {
-                    $query
-                        ->where('provisioning_status', Website::STATUS_FAILED)
-                        ->orWhere(function ($query): void {
-                            $query
-                                ->where('health_check_enabled', true)
-                                ->where('health_status', Website::HEALTH_UNHEALTHY);
-                        });
-                }))
             ->latest()
             ->paginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -68,6 +39,66 @@ class WebsitesController extends Controller
             'filters' => $filters,
             'statuses' => $this->websiteStatuses(),
             'healthStatuses' => ['disabled', Website::HEALTH_UNKNOWN, Website::HEALTH_HEALTHY, Website::HEALTH_UNHEALTHY],
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->indexFilters($request);
+        $filename = 'lessbuild-websites-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Website ID',
+                'Name',
+                'Domain',
+                'Description',
+                'Server',
+                'Provisioning status',
+                'Health check',
+                'Health status',
+                'Health failure count',
+                'Last health check at',
+                'Release retention',
+                'Repository count',
+                'Provisioned at',
+                'Created at',
+            ], ',', '"', '');
+
+            $this->filteredWebsites($request, $filters)
+                ->with('server')
+                ->withCount('repositories')
+                ->latest('websites.id')
+                ->lazy(250)
+                ->each(function (Website $website) use ($output): void {
+                    fputcsv($output, [
+                        $website->id,
+                        $this->csvCell($website->name),
+                        $this->csvCell($website->url),
+                        $this->csvCell($website->description),
+                        $this->csvCell($website->server?->name),
+                        $this->csvCell($website->provisioning_status),
+                        $website->health_check_enabled ? 'enabled' : 'disabled',
+                        $this->csvCell($website->health_check_enabled ? $website->health_status : 'disabled'),
+                        $website->health_failure_count,
+                        $website->health_last_checked_at?->toIso8601String(),
+                        $website->release_retention,
+                        $website->repositories_count,
+                        $website->provisioned_at?->toIso8601String(),
+                        $website->created_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -315,6 +346,43 @@ class WebsitesController extends Controller
         ];
     }
 
+    /** @param array{search: ?string, status: ?string, health: ?string, attention: ?string} $filters */
+    private function filteredWebsites(Request $request, array $filters): HasMany
+    {
+        return $request->user()->websites()
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('url', 'like', "%{$value}%")
+                        ->orWhere('description', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('provisioning_status', $value))
+            ->when($filters['health'], function ($query, string $value): void {
+                if ($value === 'disabled') {
+                    $query->where('health_check_enabled', false);
+
+                    return;
+                }
+
+                $query
+                    ->where('health_check_enabled', true)
+                    ->where('health_status', $value);
+            })
+            ->when($filters['attention'], fn ($query) => $query
+                ->where(function ($query): void {
+                    $query
+                        ->where('provisioning_status', Website::STATUS_FAILED)
+                        ->orWhere(function ($query): void {
+                            $query
+                                ->where('health_check_enabled', true)
+                                ->where('health_status', Website::HEALTH_UNHEALTHY);
+                        });
+                }));
+    }
+
     /** @return list<string> */
     private function websiteStatuses(): array
     {
@@ -324,5 +392,16 @@ class WebsitesController extends Controller
             Website::STATUS_ACTIVE,
             Website::STATUS_FAILED,
         ];
+    }
+
+    private function csvCell(string|int|null $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', (string) $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }

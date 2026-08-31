@@ -62,6 +62,8 @@ Route::middleware('auth')->group(function () {
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->name('account.password.update');
+    Route::get('websites/export', [WebsitesController::class, 'export'])
+        ->name('websites.export');
     Route::resource('websites', WebsitesController::class);
     Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
         ->name('websites.placement.cleanup');

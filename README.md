@@ -109,6 +109,9 @@ spreadsheet-safe CSV without credentials or deployment commands.
 The filtered server inventory can also be streamed as a spreadsheet-safe CSV
 with platform, address, provider, status, and website-count fields while
 excluding server credentials and operational logs.
+Website inventory exports preserve provisioning, health, and attention filters
+and include target, health, retention, and repository-count fields without
+environment values, database credentials, tokens, or raw health errors.
 Deployment output, website provisioning output, and allowlisted server log
 snapshots can be downloaded as owner-authorized plain-text files for incident
 review and support handoff.
