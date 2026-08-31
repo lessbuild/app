@@ -1,4 +1,8 @@
-@props(['events'])
+@props([
+    'events',
+    'emptyTitle' => __('No activity yet'),
+    'emptyDescription' => __('Infrastructure and deployment updates will appear here.'),
+])
 
 <div class="overflow-hidden rounded-lg border border-primary bg-primary">
     @forelse ($events as $event)
@@ -20,8 +24,8 @@
         </div>
     @empty
         <div class="p-6 text-center">
-            <p class="font-medium text-primary">{{ __('No activity yet') }}</p>
-            <p class="mt-1 text-sm text-secondary">{{ __('Infrastructure and deployment updates will appear here.') }}</p>
+            <p class="font-medium text-primary">{{ $emptyTitle }}</p>
+            <p class="mt-1 text-sm text-secondary">{{ $emptyDescription }}</p>
         </div>
     @endforelse
 </div>

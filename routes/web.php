@@ -42,6 +42,8 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('home', DashboardController::class)->name('dashboard');
+    Route::get('activity/export', [ActivityController::class, 'export'])
+        ->name('activity.export');
     Route::get('activity', ActivityController::class)->name('activity.index');
     Route::get('notifications', [NotificationsController::class, 'index'])
         ->name('notifications.index');

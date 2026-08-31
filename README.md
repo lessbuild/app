@@ -89,6 +89,9 @@ exported as a streamed, spreadsheet-safe CSV file.
 Deployment output, website provisioning output, and allowlisted server log
 snapshots can be downloaded as owner-authorized plain-text files for incident
 review and support handoff.
+The activity timeline can be searched and filtered by category or date range;
+the same owner-scoped view can be exported as a streamed, spreadsheet-safe CSV
+for audits and incident handoff.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment

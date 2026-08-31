@@ -11,6 +11,14 @@ class Event extends Model
 {
     use HasFactory;
 
+    public const CATEGORIES = [
+        'deployment',
+        'website',
+        'server',
+        'command',
+        'general',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
