@@ -161,6 +161,9 @@ in-progress records, without dispatching real cloud jobs. Running the seeder
 again updates the demo workspace without deleting other account-owned records.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
+Server log snapshots cover queued, refreshing, ready, and failed states so polling
+and result views remain testable without opening SSH connections or dispatching
+log-refresh jobs.
 
 ## Automatic push deployments
 

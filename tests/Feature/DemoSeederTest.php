@@ -7,6 +7,7 @@ use App\Models\Provider;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
+use App\Models\ServerLogSnapshot;
 use App\Models\User;
 use App\Models\Website;
 use Database\Seeders\DemoSeeder;
@@ -89,6 +90,14 @@ class DemoSeederTest extends TestCase
             ->where('user_id', $user->id)
             ->whereIn('status', ServerCommandExecution::ACTIVE_STATUSES)
             ->count());
+        $this->assertEqualsCanonicalizing(
+            ServerLogSnapshot::STATUSES,
+            ServerLogSnapshot::query()
+                ->whereHas('server', fn ($query) => $query->where('user_id', $user->id))
+                ->distinct()
+                ->pluck('status')
+                ->all(),
+        );
         $demoRerun = ServerCommandExecution::query()
             ->where('user_id', $user->id)
             ->whereNotNull('rerun_from_execution_id')
@@ -154,6 +163,8 @@ class DemoSeederTest extends TestCase
         $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
         $provider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitHub')->sole();
         $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->sole();
+        $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->sole();
+        $provisioningServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Provisioning worker')->sole();
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
@@ -167,6 +178,15 @@ class DemoSeederTest extends TestCase
             ->assertSee('Active server commands')
             ->assertSee('2 commands are active')
             ->assertSee('Running');
+        $this->actingAs($user)->get(route('servers.show', $queuedServer))
+            ->assertSuccessful()
+            ->assertSee('wire:poll.5s', false)
+            ->assertSee('Log refresh queued.');
+        $this->actingAs($user)->get(route('servers.show', $provisioningServer))
+            ->assertSuccessful()
+            ->assertSee('wire:poll.5s', false)
+            ->assertSee('Refreshing this log snapshot')
+            ->assertSee('Demo provisioning is still running');
 
         foreach ([
             route('dashboard'),
@@ -208,6 +228,9 @@ class DemoSeederTest extends TestCase
                 ->whereHas('repository', fn ($query) => $query->where('user_id', $user->id))
                 ->count(),
             'commands' => ServerCommandExecution::query()->where('user_id', $user->id)->count(),
+            'server_logs' => ServerLogSnapshot::query()
+                ->whereHas('server', fn ($query) => $query->where('user_id', $user->id))
+                ->count(),
             'events' => $user->events()->where('event', 'like', 'Demo:%')->count(),
             'notifications' => $user->notifications()->where('data->demo', true)->count(),
         ];

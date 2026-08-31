@@ -337,7 +337,9 @@
                 @else
                     @if ($errors->has('logs'))
                         <div class="mb-2 text-red-500">{{ $errors->first('logs') }}</div>
-                    @elseif (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
+                    @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_QUEUED)
+                        <div class="mb-2 text-secondary">{{ __('Log refresh queued.') }}</div>
+                    @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_REFRESHING)
                         <div class="mb-2 text-secondary">{{ __('Refreshing this log snapshot…') }}</div>
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED)
                         <div class="mb-2 text-red-500">{{ $logSnapshot->error ?: __('Unable to retrieve logs.') }}</div>

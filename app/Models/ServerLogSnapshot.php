@@ -15,6 +15,13 @@ class ServerLogSnapshot extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_REFRESHING,
+        self::STATUS_READY,
+        self::STATUS_FAILED,
+    ];
+
     protected $guarded = [];
 
     protected $casts = [

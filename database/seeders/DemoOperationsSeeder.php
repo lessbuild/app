@@ -25,6 +25,8 @@ class DemoOperationsSeeder extends Seeder
                 $user = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
                 $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->firstOrFail();
                 $failedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Failed worker')->firstOrFail();
+                $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->firstOrFail();
+                $provisioningServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Provisioning worker')->firstOrFail();
                 $healthyWebsite = $user->websites()->where('deployment_slug', 'demo-storefront')->firstOrFail();
                 $unhealthyWebsite = $user->websites()->where('deployment_slug', 'demo-status')->firstOrFail();
                 $failedWebsite = $user->websites()->where('deployment_slug', 'demo-provisioning-failure')->firstOrFail();
@@ -34,7 +36,7 @@ class DemoOperationsSeeder extends Seeder
 
                 $builds = $this->builds($github, $gitlab, $bitbucket);
                 $this->webhookDeliveries($github, $gitlab, $bitbucket, $builds);
-                $this->logs($server, $failedServer, $healthyWebsite, $failedWebsite, $builds);
+                $this->logs($server, $failedServer, $queuedServer, $provisioningServer, $healthyWebsite, $failedWebsite, $builds);
                 $commands = $this->commands($user, $server);
                 $this->activity($user, $server, $failedServer, $healthyWebsite, $unhealthyWebsite, $builds, $commands);
                 $this->notifications($user, $failedServer, $unhealthyWebsite, $builds['gitlab_failed']);
@@ -168,6 +170,8 @@ class DemoOperationsSeeder extends Seeder
     private function logs(
         Server $server,
         Server $failedServer,
+        Server $queuedServer,
+        Server $provisioningServer,
         Website $healthyWebsite,
         Website $failedWebsite,
         array $builds,
@@ -196,6 +200,24 @@ class DemoOperationsSeeder extends Seeder
                 'log' => "Installing Node.js\nDemo package mirror returned HTTP 503",
                 'error' => 'Demo remote provisioning command exited with status 1.',
                 'refreshed_at' => now()->subDays(3),
+            ],
+        );
+        $queuedServer->logSnapshots()->updateOrCreate(
+            ['type' => 'provisioning'],
+            [
+                'status' => ServerLogSnapshot::STATUS_QUEUED,
+                'log' => null,
+                'error' => null,
+                'refreshed_at' => null,
+            ],
+        );
+        $provisioningServer->logSnapshots()->updateOrCreate(
+            ['type' => 'provisioning'],
+            [
+                'status' => ServerLogSnapshot::STATUS_REFRESHING,
+                'log' => "Installing system packages\nDemo provisioning is still running",
+                'error' => null,
+                'refreshed_at' => now()->subMinute(),
             ],
         );
         $healthyWebsite->logs()->updateOrCreate(
