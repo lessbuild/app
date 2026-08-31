@@ -218,6 +218,9 @@ class DemoSeederTest extends TestCase
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
         $this->actingAs($user)->get(route('account.index'))
             ->assertSuccessful()
+            ->assertSee('Recent security activity')
+            ->assertSee('Demo: account security settings were reviewed.')
+            ->assertSee(route('activity.index', ['category' => 'account']))
             ->assertSee('Browser sessions')
             ->assertSee(route('account.sessions.revoke'));
 

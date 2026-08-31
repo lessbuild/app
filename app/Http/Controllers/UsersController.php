@@ -23,6 +23,13 @@ class UsersController extends Controller
         $connected = $request->user()->connectedSocialProviders();
 
         return view('scenes.users.index', [
+            'recentAccountEvents' => $request->user()
+                ->accountEvents()
+                ->select(['id', 'event', 'category', 'created_at'])
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get(),
             'socialProviders' => collect(User::SOCIAL_PROVIDER_COLUMNS)
                 ->keys()
                 ->map(fn (string $provider): array => [

@@ -137,6 +137,29 @@
         </form>
 
         <x-forms.section
+            :title="__('Recent security activity')"
+            :description="__('Review recent changes to your profile, credentials, sessions, and connected sign-in methods.')"
+        >
+            <div class="bg-primary p-4 sm:p-6">
+                <x-activity-feed
+                    :events="$recentAccountEvents"
+                    :empty-title="__('No security activity yet')"
+                    :empty-description="__('Account security changes will appear here without credential, provider identity, session, or network details.')"
+                />
+            </div>
+
+            @if (auth()->user()->hasVerifiedEmail())
+                <x-slot:footer>
+                    <div class="flex justify-end bg-tertiary px-4 py-3 sm:px-6">
+                        <a href="{{ route('activity.index', ['category' => 'account']) }}" class="button primary">
+                            {{ __('View full account audit') }}
+                        </a>
+                    </div>
+                </x-slot:footer>
+            @endif
+        </x-forms.section>
+
+        <x-forms.section
             :title="__('Browser sessions')"
             :description="__('Log out browsers and devices other than the one you are using now.')"
         >

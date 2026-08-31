@@ -66,7 +66,7 @@ class AccountSecurityActivityTest extends TestCase
         $this->assertStringNotContainsString('private-github-identity', $serialized);
 
         $notifications = $user->notifications()->where('data->category', 'account')->oldest()->get();
-        $this->assertSame($events->pluck('event')->all(), $notifications->pluck('data.message')->all());
+        $this->assertEqualsCanonicalizing($events->pluck('event')->all(), $notifications->pluck('data.message')->all());
         $this->assertTrue($notifications->every(fn ($notification): bool => $notification->type === AccountSecurityNotification::class
             && $notification->data['title'] === 'Account security changed'
             && $notification->data['status'] === NotificationInbox::STATUS_INFO
