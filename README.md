@@ -110,6 +110,9 @@ automatic backup retention and storage. Manual release backups use different
 filenames and are never pruned by the automatic backup command.
 Each new snapshot is integrity-checked before publication, and the daily systemd
 service rechecks every retained SQLite backup so later corruption fails visibly.
+The daemon installer also prohibits destructive database commands (`db:wipe`,
+`migrate:fresh`, `migrate:refresh`, `migrate:reset`, and `migrate:rollback`),
+even if an Artisan invocation supplies a different environment label.
 
 ## Automatic push deployments
 

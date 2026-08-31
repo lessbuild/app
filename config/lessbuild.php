@@ -22,6 +22,10 @@ return [
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
+    'prohibit_destructive_database_commands' => (bool) env(
+        'DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS',
+        env('APP_ENV', 'production') === 'production',
+    ),
     'webhook_max_payload_bytes' => (int) env('WEBHOOK_MAX_PAYLOAD_BYTES', 1048576),
     'webhook_delivery_retention_days' => (int) env('WEBHOOK_DELIVERY_RETENTION_DAYS', 90),
 ];

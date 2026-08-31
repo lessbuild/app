@@ -11,6 +11,7 @@ class TestingEnvironmentIsolationTest extends TestCase
         $this->assertTrue($this->app->environment('testing'));
         $this->assertSame('sqlite', config('database.default'));
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
+        $this->assertFalse(config('lessbuild.prohibit_destructive_database_commands'));
         $this->assertSame('array', config('cache.default'));
         $this->assertSame('sync', config('queue.default'));
         $this->assertSame('array', config('session.driver'));

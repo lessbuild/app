@@ -8,6 +8,7 @@ use App\Http\Livewire\ServerCommand;
 use App\Http\Livewire\ServerSetup;
 use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -30,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        DB::prohibitDestructiveCommands(
+            (bool) config('lessbuild.prohibit_destructive_database_commands'),
+        );
+
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
         Livewire::component('repository-setup', RepositorySetup::class);
         Livewire::component('server-command', ServerCommand::class);

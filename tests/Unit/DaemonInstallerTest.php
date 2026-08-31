@@ -16,6 +16,7 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('artisan queue:work --queue=default', $installer);
         $this->assertStringContainsString('--tries=3 --timeout=80 --max-time=3600', $installer);
         $this->assertStringContainsString('Environment=APP_DEBUG=false', $installer);
+        $this->assertStringContainsString('set_env_value DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS true', $installer);
         $this->assertStringContainsString('ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/api/health 15 1', $installer);
         $this->assertStringContainsString('TimeoutStartSec=50', $installer);
         $this->assertStringContainsString('systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"', $installer);
