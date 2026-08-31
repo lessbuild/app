@@ -17,6 +17,24 @@ class ServerCommandExecution extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const STATUS_CANCELED = 'canceled';
+
+    public const ACTIVE_STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_RUNNING,
+    ];
+
+    public const TERMINAL_STATUSES = [
+        self::STATUS_SUCCEEDED,
+        self::STATUS_FAILED,
+        self::STATUS_CANCELED,
+    ];
+
+    public const STATUSES = [
+        ...self::ACTIVE_STATUSES,
+        ...self::TERMINAL_STATUSES,
+    ];
+
     protected $guarded = [];
 
     protected $hidden = ['command', 'output'];
@@ -46,6 +64,6 @@ class ServerCommandExecution extends Model
 
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', [self::STATUS_QUEUED, self::STATUS_RUNNING]);
+        return $query->whereIn('status', self::ACTIVE_STATUSES);
     }
 }

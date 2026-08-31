@@ -19,6 +19,7 @@ class ServerCommandExecutionObserver
         if ($execution->wasChanged('status') && in_array($execution->status, [
             ServerCommandExecution::STATUS_SUCCEEDED,
             ServerCommandExecution::STATUS_FAILED,
+            ServerCommandExecution::STATUS_CANCELED,
         ], true)) {
             $this->record($execution, "Server command {$execution->status}.");
         }

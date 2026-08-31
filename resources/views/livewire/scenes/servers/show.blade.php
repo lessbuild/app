@@ -40,6 +40,13 @@
     >
         <x-slot:buttons>
 
+            <a href="{{ route('servers.commands.index', $server) }}" class="button primary">
+                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                    <use xlink:href="/assets/images/icons.svg#clock"></use>
+                </svg>
+                {{ __('Command History') }}
+            </a>
+
             <button
                 type="button"
                 class="button primary"

@@ -19,7 +19,15 @@
                                 >
                                 @error('command') <p class="mt-2 text-sm text-red-500">{{ $message }}</p> @enderror
 
-                                <div class="mt-5 max-h-96 space-y-3 overflow-y-auto">
+                                <div class="mt-4 flex items-center justify-between gap-3">
+                                    <p class="text-xs font-semibold uppercase text-secondary">{{ __('Recent commands') }}</p>
+                                    <a href="{{ route('servers.commands.index', $model) }}" class="text-xs font-medium text-ternary hover:underline">
+                                        {{ __('View full history') }}
+                                    </a>
+                                </div>
+                                @error('cancel') <p class="mt-2 text-sm text-red-500">{{ $message }}</p> @enderror
+
+                                <div class="mt-3 max-h-96 space-y-3 overflow-y-auto">
                                     @forelse ($executions as $execution)
                                         <div class="rounded border border-primary bg-secondary p-3" wire:key="server-command-{{ $execution->id }}">
                                             <div class="flex items-center justify-between gap-3">
@@ -28,15 +36,35 @@
                                             </div>
                                             @if ($execution->output !== null)
                                                 <pre class="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded bg-gray-900 p-3 text-xs text-gray-100">{{ $execution->output }}</pre>
-                                            @elseif (in_array($execution->status, [\App\Models\ServerCommandExecution::STATUS_QUEUED, \App\Models\ServerCommandExecution::STATUS_RUNNING], true))
+                                            @elseif (in_array($execution->status, \App\Models\ServerCommandExecution::ACTIVE_STATUSES, true))
                                                 <p class="mt-2 text-xs text-secondary">{{ __('Waiting for command output…') }}</p>
                                             @endif
-                                            <p class="mt-2 text-xs text-secondary">
-                                                {{ $execution->created_at->diffForHumans() }}
-                                                @if ($execution->exit_code !== null)
-                                                    · {{ __('exit :code', ['code' => $execution->exit_code]) }}
-                                                @endif
-                                            </p>
+                                            <div class="mt-2 flex items-center justify-between gap-3">
+                                                <p class="text-xs text-secondary">
+                                                    {{ $execution->created_at->diffForHumans() }}
+                                                    @if ($execution->exit_code !== null)
+                                                        · {{ __('exit :code', ['code' => $execution->exit_code]) }}
+                                                    @endif
+                                                </p>
+                                                <div class="flex items-center gap-3">
+                                                    @if ($execution->output !== null)
+                                                        <a href="{{ route('servers.commands.output', ['server' => $model, 'execution' => $execution]) }}" class="text-xs font-medium text-ternary hover:underline">
+                                                            {{ __('Download') }}
+                                                        </a>
+                                                    @endif
+                                                    @if ($execution->status === \App\Models\ServerCommandExecution::STATUS_QUEUED)
+                                                        <button
+                                                            type="button"
+                                                            wire:click="cancel({{ $execution->id }})"
+                                                            wire:loading.attr="disabled"
+                                                            wire:target="cancel({{ $execution->id }})"
+                                                            class="text-xs font-medium text-red-500 hover:underline"
+                                                        >
+                                                            {{ __('Cancel') }}
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </div>
                                     @empty
                                         <p class="text-sm text-secondary">{{ __('No commands have been run on this server yet.') }}</p>

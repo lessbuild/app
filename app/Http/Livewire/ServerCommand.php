@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Actions\Server\CancelServerCommandAction;
 use App\Actions\Server\QueueServerCommandAction;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -55,6 +56,17 @@ class ServerCommand extends Component
         $this->reset('command');
     }
 
+    public function cancel(int $executionId, CancelServerCommandAction $cancel): void
+    {
+        $user = auth()->user();
+        abort_unless($user instanceof User && (int) $user->id === (int) $this->model->user_id, 403);
+        $execution = $this->model->commandExecutions()->findOrFail($executionId);
+
+        if (! $cancel->handle($execution, $user)) {
+            $this->addError('cancel', __('This command is no longer queued and cannot be canceled.'));
+        }
+    }
+
     /**
      * @throws \Exception
      */
@@ -63,17 +75,18 @@ class ServerCommand extends Component
         abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
 
         $executions = $this->model->commandExecutions()
-            ->latest()
+            ->latest('id')
             ->limit(10)
             ->get();
 
         return view('livewire.scenes.servers.command', [
             'executions' => $executions,
             'shouldPoll' => $this->open && $executions->contains(
-                fn (ServerCommandExecution $execution): bool => in_array($execution->status, [
-                    ServerCommandExecution::STATUS_QUEUED,
-                    ServerCommandExecution::STATUS_RUNNING,
-                ], true),
+                fn (ServerCommandExecution $execution): bool => in_array(
+                    $execution->status,
+                    ServerCommandExecution::ACTIVE_STATUSES,
+                    true,
+                ),
             ),
         ]);
     }

@@ -10,6 +10,7 @@ use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\RepositoryWebhookSettingsController;
+use App\Http\Controllers\ServerCommandsController;
 use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
@@ -74,6 +75,14 @@ Route::middleware('auth')->group(function () {
     Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
         ->whereIn('type', CollectServerLogAction::TYPES)
         ->name('servers.logs.download');
+    Route::get('servers/{server}/commands', [ServerCommandsController::class, 'index'])
+        ->name('servers.commands.index');
+    Route::post('servers/{server}/commands/{execution}/cancel', [ServerCommandsController::class, 'cancel'])
+        ->whereNumber('execution')
+        ->name('servers.commands.cancel');
+    Route::get('servers/{server}/commands/{execution}/output', [ServerCommandsController::class, 'downloadOutput'])
+        ->whereNumber('execution')
+        ->name('servers.commands.output');
     Route::post('servers/{server}/initialization/retry', [ServersController::class, 'retryInitialization'])
         ->name('servers.initialization.retry');
     Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])
