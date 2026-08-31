@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
@@ -41,6 +42,12 @@ Route::get('/', function () {
 Route::middleware('auth')->group(function () {
     Route::get('home', DashboardController::class)->name('dashboard');
     Route::get('activity', ActivityController::class)->name('activity.index');
+    Route::get('notifications', [NotificationsController::class, 'index'])
+        ->name('notifications.index');
+    Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
+        ->name('notifications.read-all');
+    Route::post('notifications/{notification}/read', [NotificationsController::class, 'read'])
+        ->name('notifications.read');
 
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])

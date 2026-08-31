@@ -71,6 +71,24 @@
                 {{ __('Repositories') }}
             </span>
         </a>
+        <a href="{{ route('notifications.index') }}" @class([
+            'w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer',
+            'bg-primary' => ! request()->routeIs('notifications.*'),
+            'bg-secondary' => request()->routeIs('notifications.*'),
+        ])>
+            <svg class="w-5 h-5 mr-2 stroke-2">
+                <use xlink:href="/assets/images/icons.svg#information-circle"></use>
+            </svg>
+            <span class="text-primary text-sm font-medium">{{ __('Notifications') }}</span>
+            @if ($unreadNotificationCount = auth()->user()->unreadNotifications()->count())
+                <span
+                    class="ml-auto mr-3 rounded-full bg-red-600 px-2 py-0.5 text-xs font-semibold text-white"
+                    aria-label="{{ __('Unread notifications: :count', ['count' => $unreadNotificationCount]) }}"
+                >
+                    {{ $unreadNotificationCount > 99 ? '99+' : $unreadNotificationCount }}
+                </span>
+            @endif
+        </a>
         <a href="{{ route('providers.index') }}" @class([
 		    "w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer",
 		    "bg-primary" => !request()->routeIs('providers.*'),

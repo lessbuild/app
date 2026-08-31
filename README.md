@@ -98,6 +98,10 @@ activation and post-deployment commands that run before the health check. Hooks
 execute in isolated Bash processes, and a failed post-deployment hook restores
 the previous release through the normal deployment failure path.
 
+Deployment, website, and server failures create unread in-app notifications.
+The notification inbox links directly to the failed resource and supports
+individual or bulk read acknowledgement.
+
 ### Todo
  
 

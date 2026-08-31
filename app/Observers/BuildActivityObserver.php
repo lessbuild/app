@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Actions\Repository\QueuePendingWebhookDeploymentAction;
 use App\Models\Build;
+use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
 
 class BuildActivityObserver
@@ -29,6 +30,15 @@ class BuildActivityObserver
 
             $build->loadMissing('repository');
             if ($build->repository) {
+                if ($build->status === Build::STATUS_FAILED) {
+                    $build->repository->user?->notify(new FailureNotification(
+                        'deployment',
+                        $build->id,
+                        "Deployment #{$build->id} failed",
+                        $build->failure_message ?: 'The deployment failed before it completed.',
+                    ));
+                }
+
                 $this->queuePendingDeployment->handle($build->repository);
             }
         }

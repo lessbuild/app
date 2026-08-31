@@ -8,6 +8,7 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
+use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
 
 class ServerObserver
@@ -26,6 +27,15 @@ class ServerObserver
     {
         if ($server->wasChanged('provisioning_status')) {
             $this->record($server, "Server \"{$server->name}\" is {$server->provisioning_status}.");
+
+            if ($server->provisioning_status === Server::STATUS_FAILED) {
+                $server->user?->notify(new FailureNotification(
+                    'server',
+                    $server->id,
+                    "Server \"{$server->name}\" failed",
+                    $server->provisioning_error ?: 'Server provisioning failed before it completed.',
+                ));
+            }
         }
     }
 

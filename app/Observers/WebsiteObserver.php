@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
 use App\Models\Website;
+use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
 
 class WebsiteObserver
@@ -19,6 +20,15 @@ class WebsiteObserver
     {
         if ($website->wasChanged('provisioning_status')) {
             $this->record($website, "Website \"{$website->name}\" is {$website->provisioning_status}.");
+
+            if ($website->provisioning_status === Website::STATUS_FAILED) {
+                $website->user?->notify(new FailureNotification(
+                    'website',
+                    $website->id,
+                    "Website \"{$website->name}\" failed",
+                    $website->provisioning_error ?: 'Website provisioning failed before it completed.',
+                ));
+            }
         }
     }
 
