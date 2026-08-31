@@ -103,7 +103,12 @@
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-2xl font-bold text-primary">{{ __('Deployment log') }}</h2>
             @if ($deploymentLog)
-                <span class="text-xs text-secondary">{{ __('Updated :time', ['time' => $deploymentLog->updated_at->diffForHumans()]) }}</span>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-secondary">{{ __('Updated :time', ['time' => $deploymentLog->updated_at->diffForHumans()]) }}</span>
+                    <a href="{{ route('builds.log.download', $build) }}" class="text-sm font-medium text-ternary hover:underline">
+                        {{ __('Download log') }}
+                    </a>
+                </div>
             @endif
         </div>
 

@@ -12,7 +12,9 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -106,6 +108,26 @@ class BuildsController extends Controller
 
         return view('scenes.builds.show', [
             'build' => $build,
+        ]);
+    }
+
+    public function downloadLog(Build $build): Response
+    {
+        $this->authorize('view', $build);
+
+        $log = $build->logs()
+            ->where('type', Build::DEPLOYMENT_LOG_TYPE)
+            ->firstOrFail();
+        $filename = "lessbuild-build-{$build->id}-deployment.log";
+
+        return response($log->log, 200, [
+            'Cache-Control' => 'private, no-store',
+            'Content-Disposition' => HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                $filename,
+            ),
+            'Content-Type' => 'text/plain; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 

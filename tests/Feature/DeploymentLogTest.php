@@ -70,6 +70,48 @@ class DeploymentLogTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_owner_can_download_the_exact_deployment_log_as_plain_text(): void
+    {
+        [$owner, $build] = $this->build();
+        $output = "Installing dependencies\r\nDeployment complete\n\x1b[32mOK\x1b[0m";
+        $build->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => $output,
+        ]);
+
+        $this->actingAs($owner)->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertSee('Download log')
+            ->assertSee(route('builds.log.download', $build), false);
+
+        $response = $this->actingAs($owner)->get(route('builds.log.download', $build));
+
+        $response
+            ->assertSuccessful()
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->assertHeader('Content-Disposition', "attachment; filename=lessbuild-build-{$build->id}-deployment.log")
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertSame($output, $response->getContent());
+    }
+
+    public function test_deployment_log_download_enforces_ownership_and_existing_output(): void
+    {
+        [$owner, $build] = $this->build();
+        $intruder = User::factory()->create();
+
+        $this->actingAs($owner)->get(route('builds.log.download', $build))
+            ->assertNotFound();
+
+        $build->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => 'Private deployment output',
+        ]);
+
+        $this->actingAs($intruder)->get(route('builds.log.download', $build))
+            ->assertForbidden();
+    }
+
     public function test_running_build_details_poll_for_live_status_and_escaped_logs(): void
     {
         [$owner, $build] = $this->build();
