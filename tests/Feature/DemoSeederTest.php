@@ -184,7 +184,7 @@ class DemoSeederTest extends TestCase
         $this->post(route('login'), [
             'email' => DemoSeeder::EMAIL,
             'password' => 'password',
-        ])->assertRedirect(route('websites.index'));
+        ])->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($user);
     }
 

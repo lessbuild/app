@@ -8,6 +8,10 @@ continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
 or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
 account will be inserted by another provisioning process.
 
+Password and social sign-in return the user to the protected page they originally
+requested, including its filters and query string. Direct visits to the login page
+continue to use the verified Dashboard as the default destination.
+
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current
 local password while the linked social sign-in remains available.

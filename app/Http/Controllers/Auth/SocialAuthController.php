@@ -154,7 +154,7 @@ class SocialAuthController extends Controller
         Auth::login($user);
         request()->session()->regenerate();
 
-        return redirect()->route('dashboard');
+        return redirect()->intended(route('dashboard'));
     }
 
     public static function configured(string $provider): bool

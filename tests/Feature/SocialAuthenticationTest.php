@@ -245,6 +245,27 @@ class SocialAuthenticationTest extends TestCase
         $this->assertDatabaseCount('users', 1);
     }
 
+    public function test_social_login_returns_to_the_original_filtered_page(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'existing-social@example.com',
+            'github_id' => 'existing-github-account',
+        ]);
+        $intended = route('repositories.index', ['search' => 'storefront release']);
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'existing-github-account',
+            email: 'existing-social@example.com',
+            name: 'Existing User',
+        ));
+
+        $this->withSession(['url.intended' => $intended])
+            ->get(route('social.callback', 'github'))
+            ->assertRedirect($intended)
+            ->assertSessionMissing('url.intended');
+
+        $this->assertAuthenticatedAs($user);
+    }
+
     public function test_explicitly_open_registration_allows_an_additional_social_account(): void
     {
         config(['lessbuild.registration.enabled' => true]);
