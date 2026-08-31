@@ -145,7 +145,74 @@ class DemoInfrastructureSeeder extends Seeder
             ],
         );
 
-        return ['active' => $active, 'failed' => $failed];
+        $servers = ['active' => $active, 'failed' => $failed];
+        $provisioningStates = [
+            'queued' => [
+                'name' => 'Queued application',
+                'identifier' => 900003,
+                'type' => ServerTypeEnum::app,
+                'region' => 'demo-nyc3',
+                'size' => 'demo-s-2vcpu-4gb',
+                'status' => Server::STATUS_QUEUED,
+                'setup_stage' => 0,
+                'public_ip' => null,
+                'private_ip' => null,
+            ],
+            'waiting_for_ip' => [
+                'name' => 'Waiting for IP',
+                'identifier' => 900004,
+                'type' => ServerTypeEnum::app,
+                'region' => 'demo-nyc3',
+                'size' => 'demo-s-2vcpu-4gb',
+                'status' => Server::STATUS_WAITING_FOR_IP,
+                'setup_stage' => 0,
+                'public_ip' => null,
+                'private_ip' => null,
+            ],
+            'provisioning' => [
+                'name' => 'Provisioning worker',
+                'identifier' => 900005,
+                'type' => ServerTypeEnum::worker,
+                'region' => 'demo-sfo3',
+                'size' => 'demo-s-1vcpu-1gb',
+                'status' => Server::STATUS_PROVISIONING,
+                'setup_stage' => 3,
+                'public_ip' => '192.0.2.30',
+                'private_ip' => '10.0.0.30',
+            ],
+        ];
+
+        foreach ($provisioningStates as $key => $definition) {
+            $servers[$key] = $user->servers()->updateOrCreate(
+                ['name' => DemoSeeder::PREFIX.$definition['name']],
+                [
+                    'provider_id' => $provider->id,
+                    'identifier' => $definition['identifier'],
+                    'type' => $definition['type'],
+                    'region' => $definition['region'],
+                    'image' => 'ubuntu-24-04-x64',
+                    'size' => $definition['size'],
+                    'ssh_fingerprint' => null,
+                    'ssh_public_key' => null,
+                    'ssh_private_key' => null,
+                    'ssh_key_owned' => false,
+                    'mysql_root_password' => null,
+                    'recipe_snapshot' => null,
+                    'setup_stage' => $definition['setup_stage'],
+                    'setup' => false,
+                    'public_ip' => $definition['public_ip'],
+                    'private_ip' => $definition['private_ip'],
+                    'provisioning_status' => $definition['status'],
+                    'provisioning_error' => null,
+                    'provisioning_failure_phase' => null,
+                    'provisioned_at' => null,
+                    'provisioning_process_id' => null,
+                    'provisioning_process_path' => null,
+                ],
+            );
+        }
+
+        return $servers;
     }
 
     /**
@@ -223,7 +290,51 @@ class DemoInfrastructureSeeder extends Seeder
             ],
         );
 
-        return ['healthy' => $healthy, 'unhealthy' => $unhealthy, 'failed' => $failed];
+        $provisioningStates = [
+            'queued' => [
+                'slug' => 'demo-queued-site',
+                'name' => 'Queued website',
+                'description' => 'Website fixture waiting for its provisioning worker.',
+                'url' => 'demo-queued.example.com',
+                'status' => Website::STATUS_QUEUED,
+                'setup_stage' => 0,
+            ],
+            'provisioning' => [
+                'slug' => 'demo-provisioning-site',
+                'name' => 'Provisioning website',
+                'description' => 'Website fixture partway through its provisioning plan.',
+                'url' => 'demo-provisioning.example.com',
+                'status' => Website::STATUS_PROVISIONING,
+                'setup_stage' => 2,
+            ],
+        ];
+        $websites = ['healthy' => $healthy, 'unhealthy' => $unhealthy, 'failed' => $failed];
+
+        foreach ($provisioningStates as $key => $definition) {
+            $websites[$key] = Website::withTrashed()->updateOrCreate(
+                ['user_id' => $user->id, 'deployment_slug' => $definition['slug']],
+                [
+                    ...$common,
+                    'name' => DemoSeeder::PREFIX.$definition['name'],
+                    'description' => $definition['description'],
+                    'url' => $definition['url'],
+                    'setup_stage' => $definition['setup_stage'],
+                    'provisioning_status' => $definition['status'],
+                    'provisioned_at' => null,
+                    'health_check_enabled' => false,
+                    'health_check_path' => '/',
+                    'health_status' => Website::HEALTH_UNKNOWN,
+                    'health_failure_count' => 0,
+                    'health_last_checked_at' => null,
+                    'health_last_error' => null,
+                    'previous_server_id' => null,
+                    'placement_cleanup_error' => null,
+                    'deleted_at' => null,
+                ],
+            );
+        }
+
+        return $websites;
     }
 
     /**

@@ -153,8 +153,10 @@ The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,
 recipes, servers, websites, repositories, deployment and webhook history,
 logs, server commands, activity, and notifications. Tokens, keys, domains, and
-IP addresses are deliberately non-functional examples. Running the seeder again
-updates the demo workspace without deleting other records owned by the account.
+IP addresses are deliberately non-functional examples. Server and website
+fixtures cover every provisioning state, including queued, waiting-for-IP, and
+in-progress records, without dispatching real cloud jobs. Running the seeder
+again updates the demo workspace without deleting other account-owned records.
 
 ## Automatic push deployments
 

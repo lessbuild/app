@@ -44,17 +44,28 @@ class DemoSeederTest extends TestCase
             null,
         ], $user->providers()->distinct()->pluck('connection_status')->all());
         $this->assertSame(2, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
-        $this->assertSame(2, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
+            Server::STATUS_QUEUED,
+            Server::STATUS_WAITING_FOR_IP,
+            Server::STATUS_PROVISIONING,
             Server::STATUS_ACTIVE,
             Server::STATUS_FAILED,
         ], $user->servers()->pluck('provisioning_status')->all());
-        $this->assertSame(3, $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(3, $user->servers()->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES)->count());
+        $this->assertSame(5, $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertEqualsCanonicalizing([
+            Website::STATUS_QUEUED,
+            Website::STATUS_PROVISIONING,
+            Website::STATUS_ACTIVE,
+            Website::STATUS_FAILED,
+        ], $user->websites()->distinct()->pluck('provisioning_status')->all());
+        $this->assertSame(2, $user->websites()->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES)->count());
         $this->assertEqualsCanonicalizing([
             Website::HEALTH_HEALTHY,
             Website::HEALTH_UNHEALTHY,
             Website::HEALTH_UNKNOWN,
-        ], $user->websites()->pluck('health_status')->all());
+        ], $user->websites()->distinct()->pluck('health_status')->all());
         $this->assertSame(3, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(6, $user->builds()->count());
         $this->assertEqualsCanonicalizing(Build::TERMINAL_STATUSES, $user->builds()->distinct()->pluck('status')->all());
@@ -144,6 +155,13 @@ class DemoSeederTest extends TestCase
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('Infrastructure provisioning')
+            ->assertSee('5 resources are being prepared')
+            ->assertSee(DemoSeeder::PREFIX.'Waiting for IP')
+            ->assertSee(DemoSeeder::PREFIX.'Provisioning website');
 
         foreach ([
             route('dashboard'),
