@@ -24,8 +24,13 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backup', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:commands:prune', $installer);
         $this->assertLessThan(
             strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune'),
+            strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all'),
+        );
+        $this->assertLessThan(
+            strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:commands:prune'),
             strpos($installer, 'ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all'),
         );
         $this->assertStringContainsString('TimeoutStartSec=900', $installer);

@@ -126,6 +126,7 @@ WorkingDirectory=${APP_DIR}
 ExecStart=${PHP_BIN} artisan lessbuild:backup
 ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all
 ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune
+ExecStart=${PHP_BIN} artisan lessbuild:commands:prune
 TimeoutStartSec=900
 Nice=10
 UMask=0027

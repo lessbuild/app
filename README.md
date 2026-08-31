@@ -193,6 +193,10 @@ commands can be queued again from history while retaining explicit lineage to
 the original encrypted execution. Filtered command history can be exported as
 a spreadsheet-safe CSV with lineage and timing metadata; retained output remains
 available only through its separate owner-authorized download.
+Terminal command records and encrypted output are retained for 180 days by
+default, then pruned only after the daily database backup is verified. Queued
+and running commands are preserved regardless of age. Set
+`SERVER_COMMAND_RETENTION_DAYS` to adjust the window.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment
