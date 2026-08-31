@@ -97,6 +97,62 @@
         </section>
     @endif
 
+    @php($webhookDeliveryTotal = array_sum($webhookDeliveryCounts))
+    @if ($webhookDeliveryTotal > 0)
+        <section class="mb-12 rounded-lg border border-cyan-300 bg-cyan-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-cyan-900">{{ __('Webhook deliveries') }}</h2>
+                    <p class="mt-1 text-sm text-cyan-800">
+                        {{ trans_choice(':count delivery received in the last 24 hours|:count deliveries received in the last 24 hours', $webhookDeliveryTotal, ['count' => $webhookDeliveryTotal]) }}
+                    </p>
+                </div>
+                <a href="{{ route('activity.index', ['category' => 'deployment']) }}" class="text-sm font-medium text-cyan-800 underline">
+                    {{ __('View deployment activity') }}
+                </a>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                @foreach ([
+                    \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED => __('Queued'),
+                    \App\Models\RepositoryWebhookDelivery::STATUS_PENDING => __('Pending'),
+                    \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE => __('Unavailable'),
+                    \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
+                    \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),
+                ] as $status => $label)
+                    <div class="rounded border border-cyan-200 bg-white p-3">
+                        <span class="block text-xl font-bold text-cyan-900">{{ $webhookDeliveryCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-cyan-700">{{ $label }}</span>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($recentWebhookDeliveries as $delivery)
+                    <a
+                        href="{{ route('repositories.show', ['repository' => $delivery->repository, 'delivery_status' => $delivery->status]) }}#webhook-deliveries"
+                        class="flex items-center justify-between gap-4 rounded border border-cyan-200 bg-white p-4"
+                    >
+                        <div>
+                            <span class="block font-medium text-primary">{{ $delivery->repository->name }}</span>
+                            <span class="mt-1 block text-sm text-secondary">{{ __('Delivery #:id', ['id' => $delivery->id]) }}</span>
+                        </div>
+                        <div class="text-right text-xs text-cyan-800">
+                            <span class="block font-semibold uppercase">{{ $delivery->status }}</span>
+                            <span class="mt-1 block">{{ $delivery->created_at->diffForHumans() }}</span>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($webhookDeliveryTotal > $recentWebhookDeliveries->count())
+                <p class="mt-4 text-sm text-cyan-800">
+                    {{ trans_choice(':count more delivery is available in repository history|:count more deliveries are available in repository history', $webhookDeliveryTotal - $recentWebhookDeliveries->count(), ['count' => $webhookDeliveryTotal - $recentWebhookDeliveries->count()]) }}
+                </p>
+            @endif
+        </section>
+    @endif
+
     @php($activeCommandTotal = array_sum($activeCommandCounts))
     @if ($activeCommandTotal > 0)
         <section class="mb-12 rounded-lg border border-violet-300 bg-violet-50 p-5">

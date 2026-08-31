@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
@@ -56,6 +57,7 @@ class DashboardTest extends TestCase
             ->assertSee('No activity yet')
             ->assertDontSee('Active deployments')
             ->assertDontSee('Active server commands')
+            ->assertDontSee('Webhook deliveries')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
     }
@@ -287,6 +289,75 @@ class DashboardTest extends TestCase
             ->assertDontSee('dashboard-sensitive-output', false)
             ->assertDontSee('foreign-dashboard-command', false)
             ->assertDontSee('Foreign Command Application');
+    }
+
+    public function test_dashboard_summarizes_recent_webhook_deliveries_without_loading_commit_content(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $repository = $this->createResources($owner, 'Webhook Application');
+        $statuses = [
+            RepositoryWebhookDelivery::STATUS_QUEUED,
+            RepositoryWebhookDelivery::STATUS_PENDING,
+            RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
+            RepositoryWebhookDelivery::STATUS_SUPERSEDED,
+            RepositoryWebhookDelivery::STATUS_RECEIVED,
+            RepositoryWebhookDelivery::STATUS_QUEUED,
+        ];
+
+        foreach ($statuses as $position => $status) {
+            $repository->webhookDeliveries()->create([
+                'delivery_id' => "owner-sensitive-delivery-{$position}",
+                'revision' => str_repeat((string) ($position + 1), 40),
+                'commit_message' => "owner-sensitive-commit-{$position}",
+                'status' => $status,
+                'created_at' => now()->subMinutes($position),
+            ]);
+        }
+
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'old-sensitive-delivery',
+            'commit_message' => 'old-sensitive-commit',
+            'status' => RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
+            'created_at' => now()->subDays(2),
+        ]);
+
+        $other = User::factory()->create();
+        $foreignRepository = $this->createResources($other, 'Foreign Webhook Application');
+        $foreignRepository->webhookDeliveries()->create([
+            'delivery_id' => 'foreign-sensitive-delivery',
+            'commit_message' => 'foreign-sensitive-commit',
+            'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('webhookDeliveryCounts', [
+                RepositoryWebhookDelivery::STATUS_QUEUED => 2,
+                RepositoryWebhookDelivery::STATUS_PENDING => 1,
+                RepositoryWebhookDelivery::STATUS_UNAVAILABLE => 1,
+                RepositoryWebhookDelivery::STATUS_SUPERSEDED => 1,
+                RepositoryWebhookDelivery::STATUS_RECEIVED => 1,
+            ])
+            ->assertViewHas('recentWebhookDeliveries', function ($deliveries): bool {
+                return $deliveries->count() === 5
+                    && $deliveries->every(fn (RepositoryWebhookDelivery $delivery): bool => ! array_key_exists('delivery_id', $delivery->getAttributes())
+                        && ! array_key_exists('revision', $delivery->getAttributes())
+                        && ! array_key_exists('commit_message', $delivery->getAttributes()));
+            })
+            ->assertSee('Webhook deliveries')
+            ->assertSee('6 deliveries received in the last 24 hours')
+            ->assertSee('1 more delivery is available in repository history')
+            ->assertSee(route('repositories.show', [
+                'repository' => $repository,
+                'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            ]).'#webhook-deliveries')
+            ->assertSee(route('activity.index', ['category' => 'deployment']))
+            ->assertDontSee('owner-sensitive-delivery', false)
+            ->assertDontSee('owner-sensitive-commit', false)
+            ->assertDontSee('old-sensitive', false)
+            ->assertDontSee('foreign-sensitive', false)
+            ->assertDontSee('Foreign Webhook Application');
     }
 
     private function createResources(User $user, string $name)

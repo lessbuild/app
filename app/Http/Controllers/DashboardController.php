@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\Website;
@@ -44,6 +45,12 @@ class DashboardController extends Controller
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status');
+        $recentWebhookDeliveries = $user->webhookDeliveries()
+            ->where('repository_webhook_deliveries.created_at', '>=', now()->subDay());
+        $webhookDeliveryCounts = (clone $recentWebhookDeliveries)
+            ->select('repository_webhook_deliveries.status', DB::raw('COUNT(*) as total'))
+            ->groupBy('repository_webhook_deliveries.status')
+            ->pluck('total', 'repository_webhook_deliveries.status');
 
         return view('dashboard', [
             'stats' => [
@@ -82,6 +89,22 @@ class DashboardController extends Controller
                 ->select(['id', 'server_id', 'user_id', 'status', 'created_at', 'started_at'])
                 ->with('server:id,name')
                 ->latest('id')
+                ->limit(5)
+                ->get(),
+            'webhookDeliveryCounts' => collect(RepositoryWebhookDelivery::STATUSES)
+                ->mapWithKeys(fn (string $status): array => [
+                    $status => (int) ($webhookDeliveryCounts[$status] ?? 0),
+                ])
+                ->all(),
+            'recentWebhookDeliveries' => $recentWebhookDeliveries
+                ->select([
+                    'repository_webhook_deliveries.id',
+                    'repository_webhook_deliveries.repository_id',
+                    'repository_webhook_deliveries.status',
+                    'repository_webhook_deliveries.created_at',
+                ])
+                ->with('repository:id,name')
+                ->latest('repository_webhook_deliveries.id')
                 ->limit(5)
                 ->get(),
             'attentionWebsites' => $attentionWebsites

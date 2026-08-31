@@ -39,6 +39,10 @@ Queued, Deploying, Running, and Timing out counts plus direct build links.
 Queued and running server commands receive a separate cross-server summary with
 safe server/history links; its active-command query omits encrypted command text
 and output.
+Webhook deliveries from the last 24 hours are summarized across the account by
+status with direct, filtered repository-history links. The dashboard query loads
+only internal record IDs, repository IDs, statuses, and timestamps; provider
+delivery IDs, revisions, and commit messages remain outside dashboard data.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

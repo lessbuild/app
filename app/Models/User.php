@@ -99,6 +99,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasManyThrough(Build::class, Repository::class);
     }
 
+    public function webhookDeliveries(): HasManyThrough
+    {
+        return $this->hasManyThrough(RepositoryWebhookDelivery::class, Repository::class);
+    }
+
     public function recipes(): HasMany
     {
         return $this->hasMany(Recipe::class);
