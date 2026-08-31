@@ -168,6 +168,7 @@
                     @if ($deliveryStatus)
                         <a href="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="button tertiary">{{ __('Clear') }}</a>
                     @endif
+                    <a href="{{ route('repositories.webhook-deliveries.export', [$repository, 'delivery_status' => $deliveryStatus]) }}" class="button tertiary">{{ __('Export CSV') }}</a>
                 </form>
             </div>
 

@@ -94,6 +94,76 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertDontSee('not-a-status', false);
     }
 
+    public function test_filtered_delivery_export_is_owner_scoped_and_spreadsheet_safe(): void
+    {
+        [$owner, $repository] = $this->repository();
+        [$intruder, $foreignRepository] = $this->repository();
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+        ]);
+        $delivery = $repository->webhookDeliveries()->create([
+            'delivery_id' => '=spreadsheet-delivery',
+            'revision' => '-spreadsheet-revision',
+            'commit_message' => " \t@spreadsheet-message",
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'build_id' => $build->id,
+        ]);
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'filtered-pending-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+        ]);
+        $foreignRepository->webhookDeliveries()->create([
+            'delivery_id' => 'foreign-private-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('repositories.webhook-deliveries.export', [
+            $repository,
+            'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('x-content-type-options', 'nosniff');
+        $this->assertStringContainsString(
+            "attachment; filename=lessbuild-repository-{$repository->id}-webhook-deliveries-",
+            (string) $response->headers->get('content-disposition'),
+        );
+
+        $content = $response->streamedContent();
+        $this->assertStringNotContainsString('filtered-pending-delivery', $content);
+        $this->assertStringNotContainsString('foreign-private-delivery', $content);
+        $this->assertStringNotContainsString('provider-secret', $content);
+        $this->assertStringNotContainsString('webhook-secret', $content);
+        $rows = $this->csvRows($content);
+        $this->assertSame([
+            'Delivery ID',
+            'Status',
+            'Revision',
+            'Commit message',
+            'Build ID',
+            'Build status',
+            'Received at',
+            'Updated at',
+        ], $rows[0]);
+        $this->assertCount(2, $rows);
+        $this->assertSame("'=spreadsheet-delivery", $rows[1][0]);
+        $this->assertSame(RepositoryWebhookDelivery::STATUS_QUEUED, $rows[1][1]);
+        $this->assertSame("'-spreadsheet-revision", $rows[1][2]);
+        $this->assertSame("' \t@spreadsheet-message", $rows[1][3]);
+        $this->assertSame((string) $delivery->build_id, $rows[1][4]);
+        $this->assertSame(Build::STATUS_FAILED, $rows[1][5]);
+
+        $this->actingAs($intruder)
+            ->get(route('repositories.webhook-deliveries.export', $repository))
+            ->assertForbidden();
+        auth()->logout();
+        $this->get(route('repositories.webhook-deliveries.export', $repository))
+            ->assertRedirect(route('login'));
+    }
+
     /** @return array{User, Repository} */
     private function repository(): array
     {
@@ -127,5 +197,22 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
         ]);
 
         return [$owner, $repository];
+    }
+
+    /** @return list<list<string|null>> */
+    private function csvRows(string $content): array
+    {
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+        $stream = fopen('php://temp', 'w+b');
+        $this->assertNotFalse($stream);
+        fwrite($stream, substr($content, 3));
+        rewind($stream);
+        $rows = [];
+        while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+            $rows[] = $row;
+        }
+        fclose($stream);
+
+        return $rows;
     }
 }

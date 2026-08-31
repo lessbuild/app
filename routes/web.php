@@ -108,6 +108,8 @@ Route::middleware('auth')->group(function () {
         ->name('builds.redeploy');
     Route::get('repositories/export', [RepositoriesController::class, 'export'])
         ->name('repositories.export');
+    Route::get('repositories/{repository}/webhook-deliveries/export', [RepositoriesController::class, 'exportWebhookDeliveries'])
+        ->name('repositories.webhook-deliveries.export');
     Route::resource('repositories', RepositoriesController::class);
     Route::get('recipes/export', [RecipesController::class, 'export'])
         ->name('recipes.export');

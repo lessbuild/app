@@ -179,10 +179,7 @@ class RepositoriesController extends Controller
     public function show(Request $request, Repository $repository): View
     {
         $this->authorize('view', $repository);
-        $deliveryStatus = $request->string('delivery_status')->toString();
-        $deliveryStatus = in_array($deliveryStatus, RepositoryWebhookDelivery::STATUSES, true)
-            ? $deliveryStatus
-            : null;
+        $deliveryStatus = $this->deliveryStatus($request);
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
@@ -198,6 +195,63 @@ class RepositoriesController extends Controller
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
         ]);
+    }
+
+    public function exportWebhookDeliveries(Request $request, Repository $repository): StreamedResponse
+    {
+        $this->authorize('view', $repository);
+        $deliveryStatus = $this->deliveryStatus($request);
+        $filename = "lessbuild-repository-{$repository->id}-webhook-deliveries-"
+            .now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($repository, $deliveryStatus): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Delivery ID',
+                'Status',
+                'Revision',
+                'Commit message',
+                'Build ID',
+                'Build status',
+                'Received at',
+                'Updated at',
+            ], ',', '"', '');
+
+            $repository->webhookDeliveries()
+                ->with('build')
+                ->when($deliveryStatus, fn ($query, string $status) => $query->where('status', $status))
+                ->latest('id')
+                ->lazy(250)
+                ->each(function (RepositoryWebhookDelivery $delivery) use ($output): void {
+                    fputcsv($output, [
+                        $this->csvCell($delivery->delivery_id),
+                        $this->csvCell($delivery->status),
+                        $this->csvCell($delivery->revision),
+                        $this->csvCell($delivery->commit_message),
+                        $delivery->build_id,
+                        $this->csvCell($delivery->build?->status),
+                        $delivery->created_at?->toIso8601String(),
+                        $delivery->updated_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    private function deliveryStatus(Request $request): ?string
+    {
+        $status = $request->string('delivery_status')->toString();
+
+        return in_array($status, RepositoryWebhookDelivery::STATUSES, true) ? $status : null;
     }
 
     /**
