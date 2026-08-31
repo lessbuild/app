@@ -126,11 +126,31 @@
                 {{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}
             </span>
         </div>
+        @if ($website->health_check_enabled)
+            <div class="flex items-center mr-6">
+                <span class="mr-1 text-primary">{{ __('Current health') }}</span>
+                <span @class([
+                    'font-medium',
+                    'text-green-600' => $website->health_status === \App\Models\Website::HEALTH_HEALTHY,
+                    'text-red-600' => $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY,
+                    'text-secondary' => $website->health_status === \App\Models\Website::HEALTH_UNKNOWN,
+                ])>{{ str($website->health_status)->title() }}</span>
+                @if ($website->health_last_checked_at)
+                    <span class="ml-1 text-secondary">({{ $website->health_last_checked_at->diffForHumans() }})</span>
+                @endif
+            </div>
+        @endif
         <div class="flex items-center mr-6">
             <span class="mr-1 text-primary">{{ __('Retained releases') }}</span>
             <span class="text-secondary">{{ $website->release_retention }}</span>
         </div>
     </div>
+
+    @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY && $website->health_last_error)
+        <div class="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-800">
+            <strong>{{ __('Health check failed:') }}</strong> {{ $website->health_last_error }}
+        </div>
+    @endif
 
     <livewire:website-provisioning-log :website="$website" />
 

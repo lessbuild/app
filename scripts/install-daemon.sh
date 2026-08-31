@@ -16,6 +16,10 @@ WATCHDOG_SERVICE_NAME="lessbuild-watchdog"
 WATCHDOG_SERVICE_FILE="/etc/systemd/system/${WATCHDOG_SERVICE_NAME}.service"
 WATCHDOG_TIMER_NAME="lessbuild-watchdog"
 WATCHDOG_TIMER_FILE="/etc/systemd/system/${WATCHDOG_TIMER_NAME}.timer"
+HEALTH_SERVICE_NAME="lessbuild-health"
+HEALTH_SERVICE_FILE="/etc/systemd/system/${HEALTH_SERVICE_NAME}.service"
+HEALTH_TIMER_NAME="lessbuild-health"
+HEALTH_TIMER_FILE="/etc/systemd/system/${HEALTH_TIMER_NAME}.timer"
 PUBLIC_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -168,9 +172,41 @@ Unit=${WATCHDOG_SERVICE_NAME}.service
 WantedBy=timers.target
 TIMER
 
+cat > "${HEALTH_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Monitor Lessbuild website health
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan lessbuild:websites:health
+TimeoutStartSec=600
+Nice=5
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+SERVICE
+
+cat > "${HEALTH_TIMER_FILE}" <<TIMER
+[Unit]
+Description=Check enabled Lessbuild websites every five minutes
+
+[Timer]
+OnCalendar=*-*-* *:0/5:00
+Persistent=true
+Unit=${HEALTH_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
 systemctl enable --now "${WATCHDOG_TIMER_NAME}.timer"
+systemctl enable --now "${HEALTH_TIMER_NAME}.timer"
 DATABASE_CONNECTION="$(sed -n 's/^DB_CONNECTION=//p' "${APP_DIR}/.env" | tail -n 1 | tr -d "\"'")"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl enable --now "${BACKUP_TIMER_NAME}.timer"
@@ -183,6 +219,7 @@ echo "Lessbuild is running at http://${PUBLIC_IP}:8003"
 systemctl --no-pager --full status "${SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WORKER_SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WATCHDOG_TIMER_NAME}.timer"
+systemctl --no-pager --full status "${HEALTH_TIMER_NAME}.timer"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl --no-pager --full status "${BACKUP_TIMER_NAME}.timer"
 else

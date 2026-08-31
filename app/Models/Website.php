@@ -27,6 +27,12 @@ class Website extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    public const HEALTH_UNKNOWN = 'unknown';
+
+    public const HEALTH_HEALTHY = 'healthy';
+
+    public const HEALTH_UNHEALTHY = 'unhealthy';
+
     public const PROVISIONING_LOG_TYPE = 'provisioning';
 
     /**
@@ -49,6 +55,8 @@ class Website extends Model
         'database_password' => 'encrypted',
         'environment' => 'encrypted',
         'health_check_enabled' => 'boolean',
+        'health_failure_count' => 'integer',
+        'health_last_checked_at' => 'datetime',
         'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
         'release_retention' => 'integer',

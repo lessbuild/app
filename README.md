@@ -41,11 +41,12 @@ is allowed by the host firewall and cloud-provider firewall.
 Check the web and worker processes with:
 
 ```bash
-systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild-watchdog.timer
+systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
 journalctl -u lessbuild-app -u lessbuild-worker --since today
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup
 php artisan lessbuild:deployments:watchdog
+php artisan lessbuild:websites:health
 ```
 
 Set `DATABASE_BACKUP_RETENTION_DAYS` or `DATABASE_BACKUP_DIRECTORY` to adjust
@@ -90,6 +91,11 @@ Websites can optionally verify an HTTP path after each deployment. Lessbuild
 follows redirects and retries transient failures before marking the build
 failed. When an earlier release exists, a failed check atomically restores its
 symlink; application database migrations are intentionally not reversed.
+The daemon also checks enabled sites from their managed servers every five
+minutes. Three consecutive failures mark a site unhealthy and create one unread
+notification; a successful check records recovery and resets the failure count.
+Set `HEALTH_MONITOR_BATCH_SIZE` or `HEALTH_MONITOR_FAILURE_THRESHOLD` to tune
+the number of sites checked per run or the number of failures required.
 Each website can retain between two and twenty releases on its server; five are
 kept by default for rollback and recovery.
 

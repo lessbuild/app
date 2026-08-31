@@ -117,6 +117,19 @@ class WebsitesController extends Controller
             }
 
             $moving = (int) $validated['server_id'] !== (int) $locked->server_id;
+            $healthSettingsChanged = ! $validated['health_check_enabled']
+                || ! $locked->health_check_enabled
+                || $validated['health_check_path'] !== $locked->health_check_path
+                || $validated['url'] !== $locked->url
+                || $moving;
+            if ($healthSettingsChanged) {
+                $validated = array_merge($validated, [
+                    'health_status' => Website::HEALTH_UNKNOWN,
+                    'health_failure_count' => 0,
+                    'health_last_checked_at' => null,
+                    'health_last_error' => null,
+                ]);
+            }
             if ($moving && $locked->previous_server_id) {
                 throw ValidationException::withMessages([
                     'server_id' => __('Finish cleaning up the previous server before moving this website again.'),

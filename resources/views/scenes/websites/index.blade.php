@@ -42,6 +42,9 @@
                             {{ __('Status') }}
                         </th>
                         <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
+                            {{ __('Health') }}
+                        </th>
+                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
                             {{ __('Added') }}
                         </th>
                         <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
@@ -77,6 +80,18 @@
                                     'bg-red-100 text-red-700' => $website->provisioning_status === \App\Models\Website::STATUS_FAILED,
                                     'bg-blue-100 text-blue-700' => ! in_array($website->provisioning_status, [\App\Models\Website::STATUS_ACTIVE, \App\Models\Website::STATUS_FAILED], true),
                                 ])>{{ str($website->provisioning_status)->replace('_', ' ') }}</span>
+                            </td>
+                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
+                                @if (! $website->health_check_enabled)
+                                    {{ __('Disabled') }}
+                                @else
+                                    <span @class([
+                                        'font-medium uppercase',
+                                        'text-green-600' => $website->health_status === \App\Models\Website::HEALTH_HEALTHY,
+                                        'text-red-600' => $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY,
+                                        'text-secondary' => $website->health_status === \App\Models\Website::HEALTH_UNKNOWN,
+                                    ])>{{ $website->health_status }}</span>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">
