@@ -2,6 +2,7 @@
 
 use App\Actions\Server\CollectServerLogAction;
 use App\Http\Controllers\ActivityController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\DashboardController;
@@ -52,6 +53,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
         ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
         ->name('account.social.destroy');
+    Route::get('account/social/{provider}/connect', [SocialAuthController::class, 'connect'])
+        ->whereIn('provider', SocialAuthController::providers())
+        ->name('account.social.connect');
 
     Route::middleware('verified')->group(function () {
         Route::get('home', DashboardController::class)->name('dashboard');

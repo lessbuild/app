@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ class UsersController extends Controller
                     'key' => $provider,
                     'name' => $this->socialProviderName($provider),
                     'connected' => in_array($provider, $connected, true),
+                    'configured' => SocialAuthController::configured($provider),
                     'can_disconnect' => $request->user()->hasLocalPassword() || count($connected) > 1,
                 ]),
         ]);

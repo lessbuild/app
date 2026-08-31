@@ -19,6 +19,7 @@ class SocialAuthenticationTest extends TestCase
     {
         $this->get('/auth/social/redirect/unsupported')->assertNotFound();
         $this->get('/auth/social/callback/unsupported')->assertNotFound();
+        $this->get('/account/social/unsupported/connect')->assertNotFound();
     }
 
     public function test_unconfigured_provider_returns_to_login_with_an_error(): void
@@ -87,7 +88,7 @@ class SocialAuthenticationTest extends TestCase
         $response->assertRedirect(route('dashboard'));
     }
 
-    public function test_callback_links_a_matching_email_instead_of_creating_a_duplicate(): void
+    public function test_guest_callback_refuses_to_link_an_existing_account_by_email(): void
     {
         $user = User::factory()->create(['email' => 'linked@example.com']);
         $this->mockSocialUser('bitbucket', $this->socialUser(
@@ -97,12 +98,90 @@ class SocialAuthenticationTest extends TestCase
         ));
 
         $this->get(route('social.callback', 'bitbucket'))
-            ->assertRedirect(route('dashboard'));
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors(['social_auth']);
+
+        $this->assertGuest();
+        $this->assertSame(1, User::query()->count());
+        $this->assertNull($user->fresh()->bitbucket_id);
+        $this->assertNull($user->fresh()->auth_type);
+    }
+
+    public function test_authenticated_user_can_explicitly_connect_a_configured_provider(): void
+    {
+        $this->configureProvider('bitbucket');
+        $user = User::factory()->create(['email' => 'linked@example.com']);
+        $redirectProvider = Mockery::mock(Provider::class);
+        $redirectProvider->shouldReceive('redirect')
+            ->once()
+            ->andReturn(redirect()->away('https://bitbucket.example/oauth'));
+        Socialite::shouldReceive('driver')->once()->with('bitbucket')->andReturn($redirectProvider);
+
+        $this->actingAs($user)->get(route('account.social.connect', 'bitbucket'))
+            ->assertRedirect('https://bitbucket.example/oauth');
+
+        $this->mockSocialUser('bitbucket', $this->socialUser(
+            id: 'bitbucket-456',
+            email: 'different-provider-email@example.com',
+            name: 'Different Name',
+        ));
+        $this->get(route('social.callback', 'bitbucket'))
+            ->assertRedirect(route('account.index'))
+            ->assertSessionHas('social_status', 'Bitbucket connected.');
 
         $this->assertAuthenticatedAs($user);
-        $this->assertSame(1, User::query()->count());
         $this->assertSame('bitbucket-456', $user->fresh()->bitbucket_id);
-        $this->assertNull($user->fresh()->auth_type);
+    }
+
+    public function test_social_identity_connected_to_another_user_cannot_be_claimed(): void
+    {
+        $this->configureProvider('github');
+        $owner = User::factory()->create(['github_id' => 'claimed-github-id']);
+        $user = User::factory()->create();
+        $redirectProvider = Mockery::mock(Provider::class);
+        $redirectProvider->shouldReceive('redirect')
+            ->once()
+            ->andReturn(redirect()->away('https://github.example/oauth'));
+        Socialite::shouldReceive('driver')->once()->with('github')->andReturn($redirectProvider);
+        $this->actingAs($user)->get(route('account.social.connect', 'github'));
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'claimed-github-id',
+            email: 'attacker@example.com',
+            name: 'Claim attempt',
+        ));
+
+        $this->get(route('social.callback', 'github'))
+            ->assertRedirect(route('account.index'))
+            ->assertSessionHas('social_error', 'That social identity is already connected to another account.');
+
+        $this->assertNull($user->fresh()->github_id);
+        $this->assertSame('claimed-github-id', $owner->fresh()->github_id);
+    }
+
+    public function test_connect_requires_authentication_and_configuration(): void
+    {
+        $this->get(route('account.social.connect', 'github'))->assertRedirect(route('login'));
+        $user = User::factory()->create();
+        config([
+            'services.github.client_id' => null,
+            'services.github.client_secret' => null,
+            'services.github.redirect' => null,
+        ]);
+
+        $this->actingAs($user)->get(route('account.social.connect', 'github'))
+            ->assertRedirect()
+            ->assertSessionHas('social_error');
+    }
+
+    public function test_authenticated_callback_without_connection_intent_is_rejected_before_oauth(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('social.callback', 'github'))
+            ->assertRedirect(route('account.index'))
+            ->assertSessionHas('social_error', 'Start social account connections from your account settings.');
+
+        $this->assertNull($user->fresh()->github_id);
     }
 
     public function test_closed_registration_rejects_an_unknown_social_identity(): void

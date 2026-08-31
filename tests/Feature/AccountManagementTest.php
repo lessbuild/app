@@ -22,6 +22,11 @@ class AccountManagementTest extends TestCase
 
     public function test_account_page_shows_the_authenticated_users_forms(): void
     {
+        config([
+            'services.github.client_id' => 'client-id',
+            'services.github.client_secret' => 'client-secret',
+            'services.github.redirect' => 'https://app.example/auth/social/callback/github',
+        ]);
         $user = User::factory()->create();
 
         $this->assertArrayNotHasKey('password_set_at', $user->toArray());
@@ -31,7 +36,8 @@ class AccountManagementTest extends TestCase
             ->assertSee($user->name)
             ->assertSee($user->email)
             ->assertSee('Save profile')
-            ->assertSee('Update password');
+            ->assertSee('Update password')
+            ->assertSee(route('account.social.connect', 'github'));
     }
 
     public function test_user_can_update_their_profile(): void

@@ -129,8 +129,10 @@ infrastructure. Account settings remain available so an incorrect address can
 be corrected and the signed verification link resent. Social identities are
 treated as verified when their provider supplies the account email.
 The account page lists linked GitHub, GitLab, and Bitbucket sign-in identities.
-Users can disconnect any identity while a local password or another linked
-provider remains available, preventing accidental account lockout.
+Configured identities can be connected explicitly and disconnected while a
+local password or another linked provider remains available, preventing
+accidental account lockout. A guest social callback never links an existing
+account merely because its email matches; the user must authenticate first.
 
 The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
 Fixtures use a stable `[Demo]` prefix and include provider health states,

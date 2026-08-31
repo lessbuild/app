@@ -157,6 +157,12 @@
                             <p class="max-w-sm text-right text-xs text-secondary">
                                 {{ __('Set a local password before disconnecting your only sign-in method.') }}
                             </p>
+                        @elseif ($provider['configured'])
+                            <a href="{{ route('account.social.connect', $provider['key']) }}" class="button primary">
+                                {{ __('Connect') }}
+                            </a>
+                        @else
+                            <p class="text-xs text-secondary">{{ __('Not configured') }}</p>
                         @endif
                     </div>
                 @endforeach

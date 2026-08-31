@@ -14,10 +14,11 @@ Route::middleware('guest')->group(function () {
     Route::get('auth/social/redirect/{provider}', [SocialAuthController::class, 'redirect'])
         ->whereIn('provider', SocialAuthController::providers())
         ->name('social.login');
-    Route::get('auth/social/callback/{provider}', [SocialAuthController::class, 'callback'])
-        ->whereIn('provider', SocialAuthController::providers())
-        ->name('social.callback');
 });
+
+Route::get('auth/social/callback/{provider}', [SocialAuthController::class, 'callback'])
+    ->whereIn('provider', SocialAuthController::providers())
+    ->name('social.callback');
 
 Route::get('/register', [RegisteredUserController::class, 'create'])
     ->middleware('guest')
