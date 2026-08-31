@@ -185,6 +185,9 @@ review and support handoff.
 The activity timeline can be searched and filtered by category or date range;
 the same owner-scoped view can be exported as a streamed, spreadsheet-safe CSV
 for audits and incident handoff.
+The notification inbox can likewise export its filtered, owner-scoped alert
+metadata as a spreadsheet-safe CSV without exposing raw notification payloads
+or framework ownership fields.
 Each server retains an encrypted command history with status filtering and
 owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead

@@ -47,6 +47,8 @@ Route::middleware('auth')->group(function () {
     Route::get('activity/export', [ActivityController::class, 'export'])
         ->name('activity.export');
     Route::get('activity', ActivityController::class)->name('activity.index');
+    Route::get('notifications/export', [NotificationsController::class, 'export'])
+        ->name('notifications.export');
     Route::get('notifications', [NotificationsController::class, 'index'])
         ->name('notifications.index');
     Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])

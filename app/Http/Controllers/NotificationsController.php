@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Notifications\FailureNotification;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class NotificationsController extends Controller
 {
@@ -15,19 +18,7 @@ class NotificationsController extends Controller
         $user = $request->user();
 
         return view('notifications.index', [
-            'notifications' => $user
-                ->notifications()
-                ->when($filters['state'] === 'unread', fn ($query) => $query->whereNull('read_at'))
-                ->when($filters['state'] === 'read', fn ($query) => $query->whereNotNull('read_at'))
-                ->when($filters['category'], fn ($query, string $category) => $query
-                    ->where('data->category', $category))
-                ->when($filters['search'], function ($query, string $search): void {
-                    $query->where(function ($query) use ($search): void {
-                        $query
-                            ->where('data->title', 'like', "%{$search}%")
-                            ->orWhere('data->message', 'like', "%{$search}%");
-                    });
-                })
+            'notifications' => $this->filteredNotifications($request, $filters)
                 ->latest('created_at')
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
@@ -35,6 +26,55 @@ class NotificationsController extends Controller
             'categories' => FailureNotification::CATEGORIES,
             'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
             'hasReadNotifications' => $user->readNotifications()->exists(),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->filters($request);
+        $filename = 'lessbuild-notifications-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Notification ID',
+                'Category',
+                'Title',
+                'Message',
+                'Status',
+                'State',
+                'Resource ID',
+                'Created at',
+                'Read at',
+            ], ',', '"', '');
+
+            $this->filteredNotifications($request, $filters)
+                ->latest('created_at')
+                ->lazy(250)
+                ->each(function (DatabaseNotification $notification) use ($output): void {
+                    fputcsv($output, [
+                        $notification->id,
+                        $this->csvCell($this->dataValue($notification, 'category')),
+                        $this->csvCell($this->dataValue($notification, 'title')),
+                        $this->csvCell($this->dataValue($notification, 'message')),
+                        $this->csvCell($this->dataValue($notification, 'status')),
+                        $notification->read_at === null ? 'unread' : 'read',
+                        $this->csvCell($this->dataValue($notification, 'resource_id')),
+                        $notification->created_at?->toIso8601String(),
+                        $notification->read_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -84,5 +124,41 @@ class NotificationsController extends Controller
             'category' => in_array($category, FailureNotification::CATEGORIES, true) ? $category : null,
             'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
         ];
+    }
+
+    /** @param array{search: ?string, category: ?string, state: ?string} $filters */
+    private function filteredNotifications(Request $request, array $filters): MorphMany
+    {
+        return $request->user()
+            ->notifications()
+            ->when($filters['state'] === 'unread', fn ($query) => $query->whereNull('read_at'))
+            ->when($filters['state'] === 'read', fn ($query) => $query->whereNotNull('read_at'))
+            ->when($filters['category'], fn ($query, string $category) => $query
+                ->where('data->category', $category))
+            ->when($filters['search'], function ($query, string $search): void {
+                $query->where(function ($query) use ($search): void {
+                    $query
+                        ->where('data->title', 'like', "%{$search}%")
+                        ->orWhere('data->message', 'like', "%{$search}%");
+                });
+            });
+    }
+
+    private function dataValue(DatabaseNotification $notification, string $key): string|int|null
+    {
+        $value = $notification->data[$key] ?? null;
+
+        return is_string($value) || is_int($value) ? $value : null;
+    }
+
+    private function csvCell(string|int|null $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', (string) $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }

@@ -148,6 +148,7 @@ class FailureNotificationTest extends TestCase
             ->assertSuccessful()
             ->assertViewHas('filters', $filters)
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1 && $notifications->sole()->id === $matching->id)
+            ->assertSee(route('notifications.export', $filters))
             ->assertSee('Caddy returned an unavailable response')
             ->assertDontSee($read->data['message'])
             ->assertDontSee($server->data['message'])
@@ -165,6 +166,65 @@ class FailureNotificationTest extends TestCase
                 'state' => null,
             ])
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 3);
+    }
+
+    public function test_filtered_notification_export_is_owner_scoped_spreadsheet_safe_and_payload_free(): void
+    {
+        $owner = User::factory()->create();
+        $matching = $this->notification(
+            $owner,
+            'website',
+            '=HYPERLINK("https://example.test") Spreadsheet alert',
+            " \t@Spreadsheet message",
+        );
+        $matching->update([
+            'data' => [...$matching->data, 'internal_context' => 'do-not-export-this-payload'],
+        ]);
+        $this->notification($owner, 'website', 'Read Spreadsheet alert', 'Excluded read alert', read: true);
+        $this->notification($owner, 'server', 'Server Spreadsheet alert', 'Excluded category alert');
+        $other = User::factory()->create();
+        $this->notification($other, 'website', 'Foreign Spreadsheet alert', 'Excluded foreign alert');
+        $filters = [
+            'search' => 'Spreadsheet',
+            'category' => 'website',
+            'state' => 'unread',
+        ];
+
+        $response = $this->actingAs($owner)->get(route('notifications.export', $filters));
+
+        $response
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
+            ->assertHeader('x-content-type-options', 'nosniff');
+        $this->assertStringContainsString('attachment; filename=lessbuild-notifications-', (string) $response->headers->get('content-disposition'));
+        $content = $response->streamedContent();
+        $this->assertStringNotContainsString('do-not-export-this-payload', $content);
+        $this->assertStringNotContainsString('internal_context', $content);
+        $this->assertStringNotContainsString('Excluded read alert', $content);
+        $this->assertStringNotContainsString('Excluded category alert', $content);
+        $this->assertStringNotContainsString('Excluded foreign alert', $content);
+        $rows = $this->csvRows($content);
+        $this->assertSame([
+            'Notification ID',
+            'Category',
+            'Title',
+            'Message',
+            'Status',
+            'State',
+            'Resource ID',
+            'Created at',
+            'Read at',
+        ], $rows[0]);
+        $this->assertCount(2, $rows);
+        $this->assertSame($matching->id, $rows[1][0]);
+        $this->assertSame('website', $rows[1][1]);
+        $this->assertSame("'=HYPERLINK(\"https://example.test\") Spreadsheet alert", $rows[1][2]);
+        $this->assertSame("' \t@Spreadsheet message", $rows[1][3]);
+        $this->assertSame('failed', $rows[1][4]);
+        $this->assertSame('unread', $rows[1][5]);
+        $this->assertSame('1', $rows[1][6]);
+        $this->assertSame('', $rows[1][8]);
     }
 
     public function test_filtered_notification_pagination_preserves_query_parameters(): void
@@ -220,6 +280,7 @@ class FailureNotificationTest extends TestCase
     public function test_notification_routes_require_authentication(): void
     {
         $this->get(route('notifications.index'))->assertRedirect(route('login'));
+        $this->get(route('notifications.export'))->assertRedirect(route('login'));
         $this->post(route('notifications.read-all'))->assertRedirect(route('login'));
         $this->post(route('notifications.clear-read'))->assertRedirect(route('login'));
         $this->post(route('notifications.read', 'missing'))->assertRedirect(route('login'));
@@ -250,6 +311,23 @@ class FailureNotificationTest extends TestCase
         }
 
         return $notification->fresh();
+    }
+
+    /** @return list<list<string|null>> */
+    private function csvRows(string $content): array
+    {
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+        $stream = fopen('php://temp', 'w+b');
+        $this->assertNotFalse($stream);
+        fwrite($stream, substr($content, 3));
+        rewind($stream);
+        $rows = [];
+        while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+            $rows[] = $row;
+        }
+        fclose($stream);
+
+        return $rows;
     }
 
     /** @return array{User, Server, Website, Repository} */
