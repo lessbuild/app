@@ -277,6 +277,34 @@ class FailureNotificationTest extends TestCase
         $this->assertDatabaseHas('notifications', ['id' => $foreign->id]);
     }
 
+    public function test_notifications_can_be_deleted_individually_without_leaving_the_filtered_inbox(): void
+    {
+        $owner = User::factory()->create();
+        $deleted = $this->notification($owner, 'website', 'Delete one', 'Dismiss this specific alert');
+        $preserved = $this->notification($owner, 'website', 'Keep one', 'Keep this specific alert', read: true);
+        $other = User::factory()->create();
+        $foreign = $this->notification($other, 'website', 'Foreign alert', 'Another account owns this alert');
+        $filteredInbox = route('notifications.index', [
+            'search' => 'specific',
+            'category' => 'website',
+            'state' => 'unread',
+        ]);
+
+        $this->actingAs($owner)->get($filteredInbox)
+            ->assertSuccessful()
+            ->assertSee(route('notifications.destroy', $deleted));
+
+        $this->from($filteredInbox)
+            ->delete(route('notifications.destroy', $deleted))
+            ->assertRedirect($filteredInbox)
+            ->assertSessionHas('success', 'Notification deleted.');
+
+        $this->assertModelMissing($deleted);
+        $this->assertModelExists($preserved);
+        $this->delete(route('notifications.destroy', $foreign))->assertNotFound();
+        $this->assertModelExists($foreign);
+    }
+
     public function test_notification_routes_require_authentication(): void
     {
         $this->get(route('notifications.index'))->assertRedirect(route('login'));
@@ -285,6 +313,7 @@ class FailureNotificationTest extends TestCase
         $this->post(route('notifications.clear-read'))->assertRedirect(route('login'));
         $this->post(route('notifications.read', 'missing'))->assertRedirect(route('login'));
         $this->post(route('notifications.unread', 'missing'))->assertRedirect(route('login'));
+        $this->delete(route('notifications.destroy', 'missing'))->assertRedirect(route('login'));
     }
 
     private function destinationFor(mixed $notification): ?string

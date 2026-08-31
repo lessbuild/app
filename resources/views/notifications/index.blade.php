@@ -112,6 +112,15 @@
                                 <button type="submit" class="button primary">{{ __('Mark unread') }}</button>
                             </form>
                         @endif
+                        <form
+                            method="POST"
+                            action="{{ route('notifications.destroy', $notification->id) }}"
+                            onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Delete this notification?')) }})"
+                        >
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="button primary">{{ __('Delete') }}</button>
+                        </form>
                     </div>
                 </div>
             </article>

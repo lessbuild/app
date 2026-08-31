@@ -112,6 +112,14 @@ class NotificationsController extends Controller
         ));
     }
 
+    public function destroy(Request $request, string $notification): RedirectResponse
+    {
+        $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $notification->delete();
+
+        return back()->with('success', __('Notification deleted.'));
+    }
+
     /** @return array{search: ?string, category: ?string, state: ?string} */
     private function filters(Request $request): array
     {

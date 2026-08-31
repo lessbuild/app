@@ -59,6 +59,8 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.read');
     Route::post('notifications/{notification}/unread', [NotificationsController::class, 'unread'])
         ->name('notifications.unread');
+    Route::delete('notifications/{notification}', [NotificationsController::class, 'destroy'])
+        ->name('notifications.destroy');
 
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])
