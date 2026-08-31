@@ -8,6 +8,7 @@ use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,17 +19,16 @@ class ServerCommandsController extends Controller
     public function index(Request $request, Server $server): View
     {
         $this->authorize('view', $server);
-        $status = $this->status($request);
+        $filters = $this->filters($request);
 
         return view('scenes.servers.commands', [
             'server' => $server,
-            'executions' => $server->commandExecutions()
+            'executions' => $this->filteredExecutions($server, $filters)
                 ->with('rerunFrom:id')
-                ->when($status, fn ($query, string $value) => $query->where('status', $value))
                 ->latest('id')
                 ->paginate(25)
-                ->appends(array_filter(['status' => $status])),
-            'status' => $status,
+                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'filters' => $filters,
             'statuses' => ServerCommandExecution::STATUSES,
         ]);
     }
@@ -36,10 +36,10 @@ class ServerCommandsController extends Controller
     public function export(Request $request, Server $server): StreamedResponse
     {
         $this->authorize('view', $server);
-        $status = $this->status($request);
+        $filters = $this->filters($request);
         $filename = "lessbuild-server-{$server->id}-commands-".now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($server, $status): void {
+        return response()->streamDownload(function () use ($server, $filters): void {
             $output = fopen('php://output', 'wb');
             if ($output === false) {
                 throw new \RuntimeException('Unable to open the CSV output stream.');
@@ -58,8 +58,7 @@ class ServerCommandsController extends Controller
                 'Output available',
             ], ',', '"', '');
 
-            $server->commandExecutions()
-                ->when($status, fn ($query, string $value) => $query->where('status', $value))
+            $this->filteredExecutions($server, $filters)
                 ->latest('id')
                 ->lazy(250)
                 ->each(function (ServerCommandExecution $execution) use ($output): void {
@@ -127,11 +126,35 @@ class ServerCommandsController extends Controller
         );
     }
 
-    private function status(Request $request): ?string
+    /** @return array{status: ?string, date_from: ?string, date_to: ?string} */
+    private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
 
-        return in_array($status, ServerCommandExecution::STATUSES, true) ? $status : null;
+        return [
+            'status' => in_array($status, ServerCommandExecution::STATUSES, true) ? $status : null,
+            'date_from' => $this->date($request->string('date_from')->toString()),
+            'date_to' => $this->date($request->string('date_to')->toString()),
+        ];
+    }
+
+    /** @param array{status: ?string, date_from: ?string, date_to: ?string} $filters */
+    private function filteredExecutions(Server $server, array $filters): HasMany
+    {
+        return $server->commandExecutions()
+            ->when($filters['status'], fn ($query, string $status) => $query
+                ->where('status', $status))
+            ->when($filters['date_from'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '>=', $date))
+            ->when($filters['date_to'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     private function csvCell(?string $value): ?string

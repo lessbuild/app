@@ -14,21 +14,43 @@
         @error('command')
             <p class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
         @enderror
-        <div class="flex flex-wrap items-end gap-4">
+        <div class="grid gap-4 md:grid-cols-3">
             <div class="min-w-64 flex-1">
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
                 <select id="status" name="status" class="input secondary mt-1 w-full rounded">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $option)
-                        <option value="{{ $option }}" @selected($status === $option)>
+                        <option value="{{ $option }}" @selected($filters['status'] === $option)>
                             {{ str($option)->title() }}
                         </option>
                     @endforeach
                 </select>
             </div>
+            <div>
+                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued from') }}</label>
+                <input
+                    id="date_from"
+                    name="date_from"
+                    type="date"
+                    value="{{ $filters['date_from'] }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued through') }}</label>
+                <input
+                    id="date_to"
+                    name="date_to"
+                    type="date"
+                    value="{{ $filters['date_to'] }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filter') }}</button>
-            <a href="{{ route('servers.commands.export', [$server, 'status' => $status]) }}" class="button primary">{{ __('Export CSV') }}</a>
-            @if ($status)
+            <a href="{{ route('servers.commands.export', [$server, ...array_filter($filters, fn ($value) => $value !== null)]) }}" class="button primary">{{ __('Export CSV') }}</a>
+            @if (array_filter($filters, fn ($value) => $value !== null))
                 <a href="{{ route('servers.commands.index', $server) }}" class="button primary">{{ __('Clear filter') }}</a>
             @endif
         </div>
@@ -99,9 +121,9 @@
                     <tr>
                         <td colspan="4" class="px-6 py-10 text-center">
                             <p class="font-medium text-primary">
-                                {{ $status ? __('No commands match this status') : __('No commands have been run on this server yet') }}
+                                {{ array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet') }}
                             </p>
-                            @if ($status)
+                            @if (array_filter($filters, fn ($value) => $value !== null))
                                 <a href="{{ route('servers.commands.index', $server) }}" class="mt-2 inline-block text-sm text-ternary hover:underline">
                                     {{ __('Clear filter') }}
                                 </a>

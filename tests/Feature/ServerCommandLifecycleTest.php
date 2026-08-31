@@ -186,20 +186,44 @@ class ServerCommandLifecycleTest extends TestCase
                 $server,
                 ServerCommandExecution::STATUS_SUCCEEDED,
                 "successful-command-{$position}",
+                '2026-08-20 12:00:00',
             );
         }
-        $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'failed-command');
+        $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'failed-command', '2026-08-20 11:00:00');
+        $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'before-window-command', '2026-08-19 23:59:59');
+        $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'after-window-command', '2026-08-21 00:00:00');
         [$intruder] = $this->resources();
 
-        $this->actingAs($owner)
+        $response = $this->actingAs($owner)
             ->get(route('servers.commands.index', [
                 'server' => $server,
                 'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+                'date_from' => '2026-08-20',
+                'date_to' => '2026-08-20',
             ]))
             ->assertSuccessful()
             ->assertViewHas('executions', fn ($executions): bool => $executions->count() === 25 && $executions->lastPage() === 2)
             ->assertSee('successful-command-26')
-            ->assertDontSee('failed-command');
+            ->assertDontSee('failed-command')
+            ->assertDontSee('before-window-command')
+            ->assertDontSee('after-window-command');
+        $nextPageUrl = $response->viewData('executions')->nextPageUrl();
+        $this->assertStringContainsString('status=succeeded', $nextPageUrl);
+        $this->assertStringContainsString('date_from=2026-08-20', $nextPageUrl);
+        $this->assertStringContainsString('date_to=2026-08-20', $nextPageUrl);
+
+        $this->get(route('servers.commands.index', [
+            'server' => $server,
+            'status' => 'unknown',
+            'date_from' => '2026-02-31',
+            'date_to' => '../../etc/passwd',
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'status' => null,
+                'date_from' => null,
+                'date_to' => null,
+            ]);
 
         $this->actingAs($intruder)
             ->get(route('servers.commands.index', $server))
@@ -256,6 +280,7 @@ class ServerCommandLifecycleTest extends TestCase
             $server,
             ServerCommandExecution::STATUS_FAILED,
             '=HYPERLINK("https://example.test")',
+            '2026-08-20 12:00:00',
         );
         $source->update([
             'output' => 'sensitive-output-must-use-separate-download',
@@ -263,15 +288,19 @@ class ServerCommandLifecycleTest extends TestCase
             'started_at' => now()->subMinutes(2),
             'finished_at' => now()->subMinute(),
         ]);
-        $rerun = $this->execution($server, ServerCommandExecution::STATUS_FAILED, $source->command);
+        $rerun = $this->execution($server, ServerCommandExecution::STATUS_FAILED, $source->command, '2026-08-20 13:00:00');
         $rerun->update(['rerun_from_execution_id' => $source->id]);
-        $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'filtered-out-command');
+        $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'filtered-out-command', '2026-08-20 11:00:00');
+        $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'before-window-command', '2026-08-19 23:59:59');
+        $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'after-window-command', '2026-08-21 00:00:00');
         [$otherOwner, $otherServer] = $this->resources();
-        $this->execution($otherServer, ServerCommandExecution::STATUS_FAILED, 'foreign-private-command');
+        $this->execution($otherServer, ServerCommandExecution::STATUS_FAILED, 'foreign-private-command', '2026-08-20 10:00:00');
 
         $response = $this->actingAs($owner)->get(route('servers.commands.export', [
             $server,
             'status' => ServerCommandExecution::STATUS_FAILED,
+            'date_from' => '2026-08-20',
+            'date_to' => '2026-08-20',
         ]));
 
         $response
@@ -286,6 +315,8 @@ class ServerCommandLifecycleTest extends TestCase
         $content = $response->streamedContent();
         $this->assertStringNotContainsString('sensitive-output-must-use-separate-download', $content);
         $this->assertStringNotContainsString('filtered-out-command', $content);
+        $this->assertStringNotContainsString('before-window-command', $content);
+        $this->assertStringNotContainsString('after-window-command', $content);
         $this->assertStringNotContainsString('foreign-private-command', $content);
         $rows = $this->csvRows($content);
         $this->assertSame([
@@ -374,12 +405,20 @@ class ServerCommandLifecycleTest extends TestCase
         return [$owner, $server];
     }
 
-    private function execution(Server $server, string $status, string $command): ServerCommandExecution
-    {
+    private function execution(
+        Server $server,
+        string $status,
+        string $command,
+        mixed $createdAt = null,
+    ): ServerCommandExecution {
         return $server->commandExecutions()->create([
             'user_id' => $server->user_id,
             'command' => $command,
             'status' => $status,
+            ...($createdAt === null ? [] : [
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ]),
         ]);
     }
 }

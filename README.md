@@ -193,8 +193,8 @@ notifications.
 Read notifications are retained for 90 days after review by default and pruned
 only after the daily database backup is verified. Unread notifications are
 always preserved. Set `NOTIFICATION_RETENTION_DAYS` to adjust the window.
-Each server retains an encrypted command history with status filtering and
-owner-authorized output downloads. Queued commands can be canceled atomically;
+Each server retains an encrypted command history with status and queued-date
+filtering plus owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead
 of claiming to stop an in-flight remote process. Completed, failed, and canceled
 commands can be queued again from history while retaining explicit lineage to
