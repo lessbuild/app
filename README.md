@@ -1,5 +1,13 @@
 # Deployer
 
+## Account registration
+
+Fresh installations allow one bootstrap owner account and then close public
+registration automatically. Existing password and linked social accounts can
+continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
+or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
+account will be inserted by another provisioning process.
+
 ## Source control providers
 
 Repositories can be deployed from GitHub, GitLab, and Bitbucket Cloud over

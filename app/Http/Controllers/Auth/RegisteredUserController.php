@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RegistrationAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,8 +20,12 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(): View
+    public function create(RegistrationAccess $registration): View|RedirectResponse
     {
+        if (! $registration->allowsNewUser()) {
+            return $this->closedResponse();
+        }
+
         return view('scenes.auth.register');
     }
 
@@ -30,8 +35,12 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, RegistrationAccess $registration): RedirectResponse
     {
+        if (! $registration->allowsNewUser()) {
+            return $this->closedResponse();
+        }
+
         $request->merge([
             'email' => Str::lower((string) $request->input('email')),
         ]);
@@ -42,16 +51,35 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        Auth::login($user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]));
+        $user = $registration->synchronized(function () use ($registration, $validated): ?User {
+            if (! $registration->allowsNewUser()) {
+                return null;
+            }
+
+            return User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
+        });
+
+        if (! $user) {
+            return $this->closedResponse();
+        }
+
+        Auth::login($user);
 
         event(new Registered($user));
 
         $request->session()->regenerate();
 
         return redirect()->route('dashboard');
+    }
+
+    private function closedResponse(): RedirectResponse
+    {
+        return redirect()->route('login')->withErrors([
+            'registration' => __('Registration is closed. Ask the owner to enable new account creation.'),
+        ]);
     }
 }

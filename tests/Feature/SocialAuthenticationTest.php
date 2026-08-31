@@ -104,6 +104,61 @@ class SocialAuthenticationTest extends TestCase
         $this->assertNull($user->fresh()->auth_type);
     }
 
+    public function test_closed_registration_rejects_an_unknown_social_identity(): void
+    {
+        User::factory()->create();
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'unknown-github-account',
+            email: 'unknown@example.com',
+            name: 'Unknown User',
+        ));
+
+        $this->get(route('social.callback', 'github'))
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors(['social_auth']);
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseMissing('users', ['email' => 'unknown@example.com']);
+    }
+
+    public function test_existing_social_identity_can_sign_in_while_registration_is_closed(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'existing-social@example.com',
+            'github_id' => 'existing-github-account',
+        ]);
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'existing-github-account',
+            email: 'existing-social@example.com',
+            name: 'Existing User',
+        ));
+
+        $this->get(route('social.callback', 'github'))
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_explicitly_open_registration_allows_an_additional_social_account(): void
+    {
+        config(['lessbuild.registration.enabled' => true]);
+        User::factory()->create();
+        $this->mockSocialUser('gitlab', $this->socialUser(
+            id: 'additional-gitlab-account',
+            email: 'additional@example.com',
+            name: 'Additional User',
+        ));
+
+        $this->get(route('social.callback', 'gitlab'))
+            ->assertRedirect(route('dashboard'));
+
+        $user = User::query()->where('email', 'additional@example.com')->firstOrFail();
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseCount('users', 2);
+    }
+
     public function test_callback_rejects_a_social_account_without_an_email(): void
     {
         $this->mockSocialUser('github', $this->socialUser(

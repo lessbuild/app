@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RegistrationAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -40,7 +41,7 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
-    public function callback(string $provider): RedirectResponse
+    public function callback(string $provider, RegistrationAccess $registration): RedirectResponse
     {
         try {
             $socialUser = Socialite::driver($provider)->user();
@@ -66,24 +67,47 @@ class SocialAuthController extends Controller
         }
 
         $providerColumn = self::PROVIDER_COLUMNS[$provider];
-        $user = User::query()->where($providerColumn, $providerId)->first();
+        $user = $registration->synchronized(function () use (
+            $email,
+            $provider,
+            $providerColumn,
+            $providerId,
+            $registration,
+            $socialUser,
+        ): ?User {
+            $user = User::query()->where($providerColumn, $providerId)->first();
 
-        if (! $user) {
-            $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
-        }
-
-        if ($user) {
-            if ($user->{$providerColumn} !== $providerId) {
-                $user->forceFill([$providerColumn => $providerId])->save();
+            if (! $user) {
+                $user = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
             }
-        } else {
-            $user = User::create([
+
+            if ($user) {
+                if ($user->{$providerColumn} !== $providerId) {
+                    $user->forceFill([$providerColumn => $providerId])->save();
+                }
+
+                return $user;
+            }
+
+            if (! $registration->allowsNewUser()) {
+                return null;
+            }
+
+            return User::create([
                 'name' => $socialUser->getName() ?: $socialUser->getNickname() ?: Str::before($email, '@'),
                 'email' => $email,
                 $providerColumn => $providerId,
                 'auth_type' => $provider,
                 'password' => Hash::make(Str::password(40)),
                 'email_verified_at' => now(),
+            ]);
+        });
+
+        if (! $user) {
+            return redirect()->route('login')->withErrors([
+                'social_auth' => __('No account matches this :provider identity, and registration is closed.', [
+                    'provider' => ucfirst($provider),
+                ]),
             ]);
         }
 

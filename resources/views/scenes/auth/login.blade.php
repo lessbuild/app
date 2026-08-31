@@ -73,12 +73,14 @@
         </div>
 
         <div class="flex items-center gap-2 lg:justify-end mt-4">
-            <a
-                href="{{ route('register') }}"
-                class="mr-4 underline tracking-tight text-sm text-secondary hover:text-primary"
-            >
-                {{ __('Need an account?') }}
-            </a>
+            @if (app(\App\Services\RegistrationAccess::class)->allowsNewUser())
+                <a
+                    href="{{ route('register') }}"
+                    class="mr-4 underline tracking-tight text-sm text-secondary hover:text-primary"
+                >
+                    {{ __('Need an account?') }}
+                </a>
+            @endif
             @if (Route::has('password.request'))
                 <a
                     class="underline tracking-tight text-sm text-secondary hover:text-primary"

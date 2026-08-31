@@ -38,9 +38,11 @@
                     <a href="{{ route('login') }}" class="button tertiary">
                         Sign In
                     </a>
-                    <a href="{{ route('register') }}" class="ml-2 button tertiary">
-                        Sign Up
-                    </a>
+                    @if (app(\App\Services\RegistrationAccess::class)->allowsNewUser())
+                        <a href="{{ route('register') }}" class="ml-2 button tertiary">
+                            Sign Up
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
