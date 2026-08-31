@@ -19,7 +19,9 @@ match the selected provider.
 The included systemd installer configures the app to listen on every network
 interface on port `8003`, process provisioning jobs in a separate queue worker,
 restart both processes after failures, and start them automatically after a
-reboot. On a new host it also creates a local SQLite database and a persistent
+reboot. Service installation and restarts wait for a successful loopback HTTP
+response before reporting the web process ready. On a new host it also creates
+a local SQLite database and a persistent
 systemd timer that takes a consistent database snapshot every day. Automatic
 backups are stored in `storage/app/backups` and retained for seven days by
 default. A `sync` queue configuration is automatically upgraded to the database

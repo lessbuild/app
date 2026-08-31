@@ -16,6 +16,8 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('artisan queue:work --queue=default', $installer);
         $this->assertStringContainsString('--tries=3 --timeout=80 --max-time=3600', $installer);
         $this->assertStringContainsString('Environment=APP_DEBUG=false', $installer);
+        $this->assertStringContainsString('ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/ 15 1', $installer);
+        $this->assertStringContainsString('TimeoutStartSec=50', $installer);
         $this->assertStringContainsString('systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"', $installer);
         $this->assertStringContainsString('Description=Lessbuild consistent SQLite database backup', $installer);
         $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan lessbuild:backup', $installer);
@@ -38,6 +40,27 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('systemctl enable --now "${HEALTH_TIMER_NAME}.timer"', $installer);
 
         $syntaxCheck = new Process(['bash', '-n', dirname(__DIR__, 2).'/scripts/install-daemon.sh']);
+        $syntaxCheck->run();
+        $this->assertTrue($syntaxCheck->isSuccessful(), $syntaxCheck->getErrorOutput());
+    }
+
+    public function test_http_readiness_probe_succeeds_and_times_out_deterministically(): void
+    {
+        $probe = dirname(__DIR__, 2).'/scripts/wait-for-http.sh';
+
+        $success = new Process([$probe, 'file:///etc/hosts', '1', '0']);
+        $success->run();
+        $this->assertTrue($success->isSuccessful(), $success->getErrorOutput());
+
+        $failure = new Process([$probe, 'http://127.0.0.1:1/', '2', '0']);
+        $failure->run();
+        $this->assertFalse($failure->isSuccessful());
+        $this->assertStringContainsString(
+            'HTTP readiness check failed after 2 attempt(s)',
+            $failure->getErrorOutput(),
+        );
+
+        $syntaxCheck = new Process(['bash', '-n', $probe]);
         $syntaxCheck->run();
         $this->assertTrue($syntaxCheck->isSuccessful(), $syntaxCheck->getErrorOutput());
     }
