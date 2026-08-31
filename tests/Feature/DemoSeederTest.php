@@ -116,6 +116,16 @@ class DemoSeederTest extends TestCase
         $this->assertSame(6, $user->notifications()->count());
         $this->assertSame(4, $user->unreadNotifications()->count());
         $this->assertSame(2, $user->readNotifications()->count());
+        $providerFailure = $user->notifications()
+            ->where('data->category', 'provider')
+            ->where('data->status', 'failed')
+            ->sole();
+        $providerRecovery = $user->notifications()
+            ->where('data->category', 'provider')
+            ->where('data->status', 'healthy')
+            ->sole();
+        $this->assertNotNull($providerFailure->read_at);
+        $this->assertNull($providerRecovery->read_at);
         $this->assertDatabaseHas('notifications', [
             'notifiable_type' => User::class,
             'notifiable_id' => $user->id,

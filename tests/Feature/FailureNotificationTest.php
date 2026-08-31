@@ -86,6 +86,50 @@ class FailureNotificationTest extends TestCase
         $this->assertSame(0, $owner->notifications()->count());
     }
 
+    public function test_successful_provisioning_retries_resolve_open_server_and_website_incidents(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure('Recovery');
+        $server->update([
+            'provisioning_status' => Server::STATUS_FAILED,
+            'provisioning_error' => 'Server setup failed',
+        ]);
+        $website->update([
+            'provisioning_status' => Website::STATUS_FAILED,
+            'provisioning_error' => 'Website setup failed',
+        ]);
+        $failures = $owner->unreadNotifications()->get();
+        $this->assertCount(2, $failures);
+
+        $server->update(['provisioning_status' => Server::STATUS_QUEUED]);
+        $website->update(['provisioning_status' => Website::STATUS_QUEUED]);
+        $server->update(['provisioning_status' => Server::STATUS_PROVISIONING]);
+        $website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+        $this->assertSame(2, $owner->unreadNotifications()->count());
+
+        $server->update(['provisioning_status' => Server::STATUS_ACTIVE]);
+        $website->update(['provisioning_status' => Website::STATUS_ACTIVE]);
+
+        $this->assertTrue($failures->every(fn ($notification): bool => $notification->fresh()->read_at !== null));
+        $recoveries = $owner->unreadNotifications()->where('data->status', 'healthy')->get();
+        $this->assertCount(2, $recoveries);
+        $this->assertEqualsCanonicalizing([
+            'Server "Recovery server" recovered',
+            'Website "Recovery website" recovered',
+        ], $recoveries->pluck('data.title')->all());
+        $this->assertEqualsCanonicalizing([
+            'Server provisioning completed successfully.',
+            'Website provisioning completed successfully.',
+        ], $recoveries->pluck('data.message')->all());
+
+        $this->actingAs($owner)->get(route('notifications.index', ['state' => 'unread']))
+            ->assertSuccessful()
+            ->assertSee('Server &quot;Recovery server&quot; recovered', false)
+            ->assertSee('Website &quot;Recovery website&quot; recovered', false)
+            ->assertSee('border-green-300', false)
+            ->assertDontSee('Server setup failed')
+            ->assertDontSee('Website setup failed');
+    }
+
     public function test_notifications_and_read_actions_are_isolated_per_user(): void
     {
         [$owner, , $website] = $this->infrastructure('Owner');

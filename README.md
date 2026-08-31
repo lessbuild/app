@@ -32,6 +32,8 @@ resets the state to unchecked so stale success cannot be mistaken for current he
 The existing health timer also checks unchecked or day-stale providers in bounded
 batches. Connection failures and recoveries create linked activity and inbox alerts,
 while repeated states and concurrent stale results do not create duplicate alerts.
+Recovery automatically acknowledges unread failure alerts for that provider while
+retaining them as read incident history.
 Automatic provider credential monitoring can be paused per provider without
 disabling owner-authorized manual connection tests. A check already in flight is
 discarded if automatic monitoring is paused before it records a result.
@@ -304,6 +306,8 @@ symlink; application database migrations are intentionally not reversed.
 The daemon also checks enabled sites from their managed servers every five
 minutes. Three consecutive failures mark a site unhealthy and create one unread
 notification; a successful check records recovery and resets the failure count.
+Recovery also acknowledges unread failure alerts for that website and adds a green
+recovery alert, preserving both sides of the incident in the inbox.
 Website owners can also queue an immediate, deduplicated check from the website
 page without waiting for the next timer run.
 Scheduled website monitoring can be paused independently of deployment-time and
@@ -320,6 +324,9 @@ execute in isolated Bash processes, and a failed post-deployment hook restores
 the previous release through the normal deployment failure path.
 
 Deployment, website, and server failures create unread in-app notifications.
+When failed server or website provisioning later reaches active state, Lessbuild
+acknowledges its open failure and adds a green recovery alert. Intermediate retry
+states do not close the incident prematurely.
 The notification inbox links directly to the failed resource and supports
 individual or bulk read acknowledgement, title/message search, category and
 read-state filters, reopening acknowledged items, and cleanup that deletes read

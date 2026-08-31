@@ -80,10 +80,13 @@ class ProviderHealthMonitoringTest extends TestCase
         $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->connection_status);
         $this->assertSame(2, $owner->notifications()->count());
         $this->assertSame(2, $provider->events()->count());
+        $this->assertNotNull($failure->fresh()->read_at);
+        $this->assertSame(1, $owner->unreadNotifications()->count());
         $recovery = $owner->notifications()
             ->where('data->status', 'healthy')
             ->sole();
         $this->assertSame('Provider "Production GitHub" connection recovered', $recovery->data['title']);
+        $this->assertNull($recovery->read_at);
         $this->assertSame(route('providers.show', $provider), FailureNotification::destination($recovery->data));
 
         $this->actingAs($owner)->get(route('notifications.index', ['category' => 'provider']))

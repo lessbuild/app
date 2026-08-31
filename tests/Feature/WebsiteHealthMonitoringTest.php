@@ -63,12 +63,24 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
         $this->assertSame(0, $website->health_failure_count);
         $this->assertNull($website->health_last_error);
-        $this->assertSame(1, $owner->notifications()->count());
+        $this->assertSame(2, $owner->notifications()->count());
+        $this->assertNotNull($notification->fresh()->read_at);
+        $this->assertSame(1, $owner->unreadNotifications()->count());
+        $recovery = $owner->unreadNotifications()->sole();
+        $this->assertSame('website', $recovery->data['category']);
+        $this->assertSame('healthy', $recovery->data['status']);
+        $this->assertSame('Website "Application" recovered', $recovery->data['title']);
+        $this->assertSame('The website returned a successful health response again.', $recovery->data['message']);
         $this->assertDatabaseHas('events', [
             'parentable_type' => Website::class,
             'parentable_id' => $website->id,
             'event' => 'Website "Application" recovered.',
         ]);
+
+        $this->actingAs($owner)->get(route('notifications.index', ['category' => 'website']))
+            ->assertSuccessful()
+            ->assertSee('Website &quot;Application&quot; recovered', false)
+            ->assertSee('border-green-300', false);
 
         $this->assertStringContainsString("'http://app.example.com/health/ready'", $command);
         $this->assertStringContainsString('--connect-timeout 5 --max-time 15', $command);

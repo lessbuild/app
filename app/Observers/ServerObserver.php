@@ -8,14 +8,15 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
-use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
+use App\Services\IncidentNotifier;
 
 class ServerObserver
 {
     public function __construct(
         private readonly DeleteCloudServerAction $deleteCloudServer,
         private readonly ActivityRecorder $activity,
+        private readonly IncidentNotifier $incidents,
     ) {}
 
     public function created(Server $server): void
@@ -29,12 +30,23 @@ class ServerObserver
             $this->record($server, "Server \"{$server->label}\" is {$server->provisioning_status}.");
 
             if ($server->provisioning_status === Server::STATUS_FAILED) {
-                $server->user?->notify(new FailureNotification(
+                if ($server->user) {
+                    $this->incidents->fail(
+                        $server->user,
+                        'server',
+                        $server->id,
+                        "Server \"{$server->label}\" failed",
+                        $server->provisioning_error ?: 'Server provisioning failed before it completed.',
+                    );
+                }
+            } elseif ($server->provisioning_status === Server::STATUS_ACTIVE && $server->user) {
+                $this->incidents->recoverIfOpen(
+                    $server->user,
                     'server',
                     $server->id,
-                    "Server \"{$server->label}\" failed",
-                    $server->provisioning_error ?: 'Server provisioning failed before it completed.',
-                ));
+                    "Server \"{$server->label}\" recovered",
+                    __('Server provisioning completed successfully.'),
+                );
             }
         }
     }

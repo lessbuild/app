@@ -349,8 +349,8 @@ class DemoOperationsSeeder extends Seeder
             'd0000000-0000-4000-8000-000000000001' => ['server', $server->id, 'Demo server provisioning failed', 'The demo worker stopped while installing Node.js.', 'failed', null],
             'd0000000-0000-4000-8000-000000000002' => ['website', $website->id, 'Demo website is unhealthy', 'The demo health endpoint returned HTTP 503.', 'failed', null],
             'd0000000-0000-4000-8000-000000000003' => ['deployment', $build->id, 'Demo deployment failed', 'The demo health check failed and restored the previous release.', 'failed', now()->subDay()],
-            'd0000000-0000-4000-8000-000000000004' => ['provider', $provider->id, 'Demo provider connection failed', 'The demo GitLab credential was rejected.', 'failed', null],
-            'd0000000-0000-4000-8000-000000000005' => ['provider', $provider->id, 'Demo provider connection recovered', 'The demo provider credential was restored.', 'healthy', now()->subHours(12)],
+            'd0000000-0000-4000-8000-000000000004' => ['provider', $provider->id, 'Demo provider connection failed', 'The demo GitLab credential was rejected.', 'failed', now()->subHours(12)],
+            'd0000000-0000-4000-8000-000000000005' => ['provider', $provider->id, 'Demo provider connection recovered', 'The demo provider credential was restored.', 'healthy', null],
             'd0000000-0000-4000-8000-000000000006' => ['account', $user->id, 'Demo account security changed', 'Demo: another browser session was logged out.', 'info', null],
         ];
 

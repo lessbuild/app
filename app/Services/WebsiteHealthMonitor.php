@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Server;
 use App\Models\Website;
-use App\Notifications\FailureNotification;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -13,6 +12,7 @@ class WebsiteHealthMonitor
     public function __construct(
         private readonly Runner $runner,
         private readonly ActivityRecorder $activity,
+        private readonly IncidentNotifier $incidents,
     ) {}
 
     /**
@@ -91,6 +91,15 @@ class WebsiteHealthMonitor
                 ]);
                 if ($previousStatus === Website::HEALTH_UNHEALTHY) {
                     $this->activity->record($locked, $locked->user_id, 'website', "Website \"{$locked->name}\" recovered.");
+                    if ($locked->user) {
+                        $this->incidents->recover(
+                            $locked->user,
+                            'website',
+                            $locked->id,
+                            "Website \"{$locked->name}\" recovered",
+                            __('The website returned a successful health response again.'),
+                        );
+                    }
                 }
 
                 return false;
@@ -110,12 +119,15 @@ class WebsiteHealthMonitor
             }
 
             $this->activity->record($locked, $locked->user_id, 'website', "Website \"{$locked->name}\" is unhealthy.");
-            $locked->user?->notify(new FailureNotification(
-                'website',
-                $locked->id,
-                "Website \"{$locked->name}\" is unhealthy",
-                $error ?: 'The website did not return a successful response.',
-            ));
+            if ($locked->user) {
+                $this->incidents->fail(
+                    $locked->user,
+                    'website',
+                    $locked->id,
+                    "Website \"{$locked->name}\" is unhealthy",
+                    $error ?: 'The website did not return a successful response.',
+                );
+            }
 
             return true;
         });

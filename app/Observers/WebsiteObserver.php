@@ -4,12 +4,15 @@ namespace App\Observers;
 
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
 use App\Models\Website;
-use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
+use App\Services\IncidentNotifier;
 
 class WebsiteObserver
 {
-    public function __construct(private readonly ActivityRecorder $activity) {}
+    public function __construct(
+        private readonly ActivityRecorder $activity,
+        private readonly IncidentNotifier $incidents,
+    ) {}
 
     public function created(Website $website): void
     {
@@ -22,12 +25,23 @@ class WebsiteObserver
             $this->record($website, "Website \"{$website->name}\" is {$website->provisioning_status}.");
 
             if ($website->provisioning_status === Website::STATUS_FAILED) {
-                $website->user?->notify(new FailureNotification(
+                if ($website->user) {
+                    $this->incidents->fail(
+                        $website->user,
+                        'website',
+                        $website->id,
+                        "Website \"{$website->name}\" failed",
+                        $website->provisioning_error ?: 'Website provisioning failed before it completed.',
+                    );
+                }
+            } elseif ($website->provisioning_status === Website::STATUS_ACTIVE && $website->user) {
+                $this->incidents->recoverIfOpen(
+                    $website->user,
                     'website',
                     $website->id,
-                    "Website \"{$website->name}\" failed",
-                    $website->provisioning_error ?: 'Website provisioning failed before it completed.',
-                ));
+                    "Website \"{$website->name}\" recovered",
+                    __('Website provisioning completed successfully.'),
+                );
             }
         }
     }

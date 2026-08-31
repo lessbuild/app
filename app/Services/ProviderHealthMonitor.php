@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Provider;
-use App\Notifications\FailureNotification;
 use Illuminate\Support\Facades\DB;
 
 class ProviderHealthMonitor
@@ -11,6 +10,7 @@ class ProviderHealthMonitor
     public function __construct(
         private readonly ProviderConnectionTester $tester,
         private readonly ActivityRecorder $activity,
+        private readonly IncidentNotifier $incidents,
     ) {}
 
     /** @return array{successful: bool, message: string, recorded: bool} */
@@ -80,12 +80,15 @@ class ProviderHealthMonitor
                 'provider',
                 "Provider \"{$provider->name}\" connection failed.",
             );
-            $provider->user?->notify(new FailureNotification(
-                'provider',
-                $provider->id,
-                "Provider \"{$provider->name}\" connection failed",
-                $result['message'],
-            ));
+            if ($provider->user) {
+                $this->incidents->fail(
+                    $provider->user,
+                    'provider',
+                    $provider->id,
+                    "Provider \"{$provider->name}\" connection failed",
+                    $result['message'],
+                );
+            }
 
             return;
         }
@@ -97,13 +100,15 @@ class ProviderHealthMonitor
                 'provider',
                 "Provider \"{$provider->name}\" connection recovered.",
             );
-            $provider->user?->notify(new FailureNotification(
-                'provider',
-                $provider->id,
-                "Provider \"{$provider->name}\" connection recovered",
-                __('The provider accepted its stored credential again.'),
-                'healthy',
-            ));
+            if ($provider->user) {
+                $this->incidents->recover(
+                    $provider->user,
+                    'provider',
+                    $provider->id,
+                    "Provider \"{$provider->name}\" connection recovered",
+                    __('The provider accepted its stored credential again.'),
+                );
+            }
         }
     }
 }
