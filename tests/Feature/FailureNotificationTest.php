@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Notifications\FailureNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;
 
 class FailureNotificationTest extends TestCase
@@ -113,11 +114,116 @@ class FailureNotificationTest extends TestCase
         $this->assertNull($otherNotification->fresh()->read_at);
     }
 
+    public function test_notification_inbox_filters_title_message_category_and_state(): void
+    {
+        $owner = User::factory()->create();
+        $matching = $this->notification(
+            $owner,
+            'website',
+            'Website health failed',
+            'Caddy returned an unavailable response',
+        );
+        $read = $this->notification(
+            $owner,
+            'website',
+            'Older website failure',
+            'Caddy returned a previous error',
+            read: true,
+        );
+        $server = $this->notification(
+            $owner,
+            'server',
+            'Server provisioning failed',
+            'Caddy package installation failed',
+        );
+        $other = User::factory()->create();
+        $this->notification($other, 'website', 'Foreign website failed', 'Caddy failed for another owner');
+        $filters = [
+            'search' => 'Caddy',
+            'category' => 'website',
+            'state' => 'unread',
+        ];
+
+        $this->actingAs($owner)->get(route('notifications.index', $filters))
+            ->assertSuccessful()
+            ->assertViewHas('filters', $filters)
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1 && $notifications->sole()->id === $matching->id)
+            ->assertSee('Caddy returned an unavailable response')
+            ->assertDontSee($read->data['message'])
+            ->assertDontSee($server->data['message'])
+            ->assertDontSee('Caddy failed for another owner');
+
+        $this->actingAs($owner)->get(route('notifications.index', [
+            'search' => '   ',
+            'category' => 'credentials',
+            'state' => 'deleted',
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'search' => null,
+                'category' => null,
+                'state' => null,
+            ])
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 3);
+    }
+
+    public function test_filtered_notification_pagination_preserves_query_parameters(): void
+    {
+        $owner = User::factory()->create();
+        foreach (range(1, 26) as $position) {
+            $this->notification(
+                $owner,
+                'deployment',
+                "Batch deployment {$position} failed",
+                'Searchable release failure',
+            );
+        }
+
+        $response = $this->actingAs($owner)->get(route('notifications.index', [
+            'search' => 'Searchable',
+            'category' => 'deployment',
+            'state' => 'unread',
+        ]))->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 25 && $notifications->lastPage() === 2);
+
+        $nextPageUrl = $response->viewData('notifications')->nextPageUrl();
+        $this->assertStringContainsString('search=Searchable', $nextPageUrl);
+        $this->assertStringContainsString('category=deployment', $nextPageUrl);
+        $this->assertStringContainsString('state=unread', $nextPageUrl);
+    }
+
+    public function test_read_notifications_can_be_reopened_and_bulk_cleanup_keeps_unread_and_foreign_items(): void
+    {
+        $owner = User::factory()->create();
+        $reopened = $this->notification($owner, 'server', 'Reopen me', 'Review this again', read: true);
+        $deletable = $this->notification($owner, 'website', 'Delete me', 'Already reviewed', read: true);
+        $unread = $this->notification($owner, 'deployment', 'Keep unread', 'Still needs attention');
+        $other = User::factory()->create();
+        $foreign = $this->notification($other, 'server', 'Foreign read', 'Another owner reviewed this', read: true);
+
+        $this->actingAs($owner)->post(route('notifications.unread', $reopened))
+            ->assertSessionHas('success', 'Notification marked as unread.');
+        $this->assertNull($reopened->fresh()->read_at);
+
+        $this->post(route('notifications.unread', $foreign))->assertNotFound();
+        $this->assertNotNull($foreign->fresh()->read_at);
+
+        $this->post(route('notifications.clear-read'))
+            ->assertSessionHas('success', '1 read notification deleted.');
+
+        $this->assertDatabaseMissing('notifications', ['id' => $deletable->id]);
+        $this->assertDatabaseHas('notifications', ['id' => $reopened->id, 'read_at' => null]);
+        $this->assertDatabaseHas('notifications', ['id' => $unread->id, 'read_at' => null]);
+        $this->assertDatabaseHas('notifications', ['id' => $foreign->id]);
+    }
+
     public function test_notification_routes_require_authentication(): void
     {
         $this->get(route('notifications.index'))->assertRedirect(route('login'));
         $this->post(route('notifications.read-all'))->assertRedirect(route('login'));
+        $this->post(route('notifications.clear-read'))->assertRedirect(route('login'));
         $this->post(route('notifications.read', 'missing'))->assertRedirect(route('login'));
+        $this->post(route('notifications.unread', 'missing'))->assertRedirect(route('login'));
     }
 
     private function destinationFor(mixed $notification): ?string
@@ -125,6 +231,25 @@ class FailureNotificationTest extends TestCase
         return $notification
             ? FailureNotification::destination($notification->data)
             : null;
+    }
+
+    private function notification(
+        User $user,
+        string $category,
+        string $title,
+        string $message,
+        bool $read = false,
+    ): DatabaseNotification {
+        $user->notify(new FailureNotification($category, 1, $title, $message));
+        $notification = $user->notifications()
+            ->where('data->title', $title)
+            ->sole();
+
+        if ($read) {
+            $notification->markAsRead();
+        }
+
+        return $notification->fresh();
     }
 
     /** @return array{User, Server, Website, Repository} */

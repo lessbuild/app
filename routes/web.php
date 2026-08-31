@@ -50,8 +50,12 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.index');
     Route::post('notifications/read-all', [NotificationsController::class, 'readAll'])
         ->name('notifications.read-all');
+    Route::post('notifications/clear-read', [NotificationsController::class, 'clearRead'])
+        ->name('notifications.clear-read');
     Route::post('notifications/{notification}/read', [NotificationsController::class, 'read'])
         ->name('notifications.read');
+    Route::post('notifications/{notification}/unread', [NotificationsController::class, 'unread'])
+        ->name('notifications.unread');
 
     Route::get('account', [UsersController::class, 'index'])->name('account.index');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])

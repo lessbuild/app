@@ -9,6 +9,12 @@ class FailureNotification extends Notification
 {
     use Queueable;
 
+    public const CATEGORIES = [
+        'deployment',
+        'website',
+        'server',
+    ];
+
     public function __construct(
         private readonly string $category,
         private readonly int $resourceId,

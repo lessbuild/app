@@ -135,7 +135,9 @@ the previous release through the normal deployment failure path.
 
 Deployment, website, and server failures create unread in-app notifications.
 The notification inbox links directly to the failed resource and supports
-individual or bulk read acknowledgement.
+individual or bulk read acknowledgement, title/message search, category and
+read-state filters, reopening acknowledged items, and cleanup that deletes read
+notifications while always retaining unread failures.
 
 ### Todo
  
