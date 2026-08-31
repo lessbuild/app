@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Build;
+use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
@@ -64,6 +65,15 @@ class DashboardTest extends TestCase
         $repository = $this->createResources($user, 'Broken Application');
         $otherRepository = $this->createResources($otherUser, 'Private Failure');
 
+        $repository->provider->forceFill([
+            'connection_status' => Provider::CONNECTION_FAILED,
+            'connection_checked_at' => now(),
+        ])->save();
+        $otherRepository->provider->forceFill([
+            'connection_status' => Provider::CONNECTION_FAILED,
+            'connection_checked_at' => now(),
+        ])->save();
+
         $repository->website->update([
             'provisioning_status' => Website::STATUS_FAILED,
             'health_check_enabled' => true,
@@ -89,13 +99,16 @@ class DashboardTest extends TestCase
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSuccessful()
             ->assertSee('Needs attention')
-            ->assertSee('3 active issues')
+            ->assertSee('4 active issues')
             ->assertSee('Health check failing')
             ->assertSee('Provisioning failed')
             ->assertSee('Latest deployment failed')
+            ->assertSee('Connection failed')
             ->assertSee(route('websites.show', $repository->website))
             ->assertSee(route('servers.show', $repository->website->server))
             ->assertSee(route('builds.show', $failedBuild))
+            ->assertSee(route('providers.show', $repository->provider))
+            ->assertSee(route('providers.index', ['connection' => Provider::CONNECTION_FAILED]))
             ->assertDontSee('Private Failure');
     }
 
@@ -118,12 +131,43 @@ class DashboardTest extends TestCase
             'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
         $repository->website->server->update(['provisioning_status' => Server::STATUS_ACTIVE]);
+        $repository->provider->forceFill([
+            'connection_status' => Provider::CONNECTION_HEALTHY,
+            'connection_checked_at' => now(),
+        ])->save();
 
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSuccessful()
             ->assertSee('No active failures')
-            ->assertSee('No unhealthy websites, provisioning failures, or failed latest deployments.')
+            ->assertSee('No unhealthy websites, provisioning failures, failed latest deployments, or provider connection failures.')
             ->assertDontSee('Needs attention');
+    }
+
+    public function test_dashboard_provider_health_summary_is_owner_scoped(): void
+    {
+        $owner = User::factory()->create();
+        $healthy = $this->provider($owner, 'Healthy Provider', Provider::CONNECTION_HEALTHY);
+        $failed = $this->provider($owner, 'Failed Provider', Provider::CONNECTION_FAILED);
+        $this->provider($owner, 'Unchecked Provider');
+        $other = User::factory()->create();
+        $this->provider($other, 'Foreign Failed Provider', Provider::CONNECTION_FAILED);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('providerHealthCounts', [
+                'healthy' => 1,
+                'failed' => 1,
+                'unchecked' => 1,
+            ])
+            ->assertViewHas('attentionCounts', fn (array $counts): bool => $counts['providers'] === 1)
+            ->assertViewHas('attentionProviders', fn ($providers): bool => $providers->count() === 1 && $providers->sole()->is($failed))
+            ->assertSee('Provider credential health')
+            ->assertSee(route('providers.index', ['connection' => Provider::CONNECTION_HEALTHY]))
+            ->assertSee(route('providers.index', ['connection' => Provider::CONNECTION_FAILED]))
+            ->assertSee(route('providers.index', ['connection' => Provider::CONNECTION_UNCHECKED]))
+            ->assertSee(route('providers.show', $failed))
+            ->assertDontSee(route('providers.show', $healthy))
+            ->assertDontSee('Foreign Failed Provider');
     }
 
     private function createResources(User $user, string $name)
@@ -154,6 +198,18 @@ class DashboardTest extends TestCase
             'name' => "$name Repository",
             'url' => 'github.com/example/project.git',
             'description' => 'Repository',
+        ]);
+    }
+
+    private function provider(User $user, string $name, ?string $status = null): Provider
+    {
+        return $user->providers()->create([
+            'name' => $name,
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => 'secret',
+            'description' => 'Dashboard provider',
+            'connection_status' => $status,
+            'connection_checked_at' => $status === null ? null : now(),
         ]);
     }
 }

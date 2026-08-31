@@ -27,7 +27,8 @@ class ProviderHealthMonitoringTest extends TestCase
         $owner = User::factory()->create();
         $unchecked = $this->provider($owner, 'Unchecked');
         $stale = $this->provider($owner, 'Stale', Provider::CONNECTION_HEALTHY, now()->subHours(2));
-        $recent = $this->provider($owner, 'Recent', Provider::CONNECTION_FAILED, now()->subMinutes(10));
+        $recentCheckedAt = now()->subMinutes(10);
+        $recent = $this->provider($owner, 'Recent', Provider::CONNECTION_FAILED, $recentCheckedAt);
 
         $this->assertSame(0, Artisan::call('lessbuild:providers:health'));
         $this->assertStringContainsString(
@@ -37,7 +38,7 @@ class ProviderHealthMonitoringTest extends TestCase
         $this->assertSame(Provider::CONNECTION_HEALTHY, $unchecked->fresh()->connection_status);
         $this->assertSame(Provider::CONNECTION_FAILED, $stale->fresh()->connection_status);
         $this->assertSame(Provider::CONNECTION_FAILED, $recent->fresh()->connection_status);
-        $this->assertSame(now()->subMinutes(10)->timestamp, $recent->fresh()->connection_checked_at->timestamp);
+        $this->assertSame($recentCheckedAt->timestamp, $recent->fresh()->connection_checked_at->timestamp);
         Http::assertSentCount(2);
 
         Artisan::call('lessbuild:providers:health');

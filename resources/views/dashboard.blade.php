@@ -20,6 +20,28 @@
         <x-panel.stats icon="code" :title="$stats['repositories']" :description="__('Repositories')" />
     </div>
 
+    <section class="mb-12 rounded-lg border border-primary bg-primary p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-semibold text-primary">{{ __('Provider credential health') }}</h2>
+                <p class="mt-1 text-sm text-secondary">{{ __('Latest automated and manual provider connection results.') }}</p>
+            </div>
+            <a href="{{ route('providers.index') }}" class="text-sm font-medium text-ternary underline">{{ __('Manage providers') }}</a>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+            @foreach ([
+                ['status' => \App\Models\Provider::CONNECTION_HEALTHY, 'label' => __('Healthy'), 'count' => $providerHealthCounts['healthy'], 'classes' => 'border-green-300 bg-green-50 text-green-800'],
+                ['status' => \App\Models\Provider::CONNECTION_FAILED, 'label' => __('Failed'), 'count' => $providerHealthCounts['failed'], 'classes' => 'border-red-300 bg-red-50 text-red-800'],
+                ['status' => \App\Models\Provider::CONNECTION_UNCHECKED, 'label' => __('Unchecked'), 'count' => $providerHealthCounts['unchecked'], 'classes' => 'border-primary bg-secondary text-primary'],
+            ] as $health)
+                <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="rounded border p-4 {{ $health['classes'] }}">
+                    <span class="block text-2xl font-bold">{{ $health['count'] }}</span>
+                    <span class="text-sm font-medium">{{ $health['label'] }}</span>
+                </a>
+            @endforeach
+        </div>
+    </section>
+
     @php($attentionTotal = array_sum($attentionCounts))
     <section @class([
         'mb-12 rounded-lg border p-5',
@@ -43,7 +65,7 @@
                     @if ($attentionTotal > 0)
                         {{ trans_choice(':count active issue|:count active issues', $attentionTotal, ['count' => $attentionTotal]) }}
                     @else
-                        {{ __('No unhealthy websites, provisioning failures, or failed latest deployments.') }}
+                        {{ __('No unhealthy websites, provisioning failures, failed latest deployments, or provider connection failures.') }}
                     @endif
                 </p>
             </div>
@@ -55,7 +77,7 @@
         </div>
 
         @if ($attentionTotal > 0)
-            <div class="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div class="mt-5 grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-4">
                 <div>
                     <h3 class="mb-2 text-sm font-semibold uppercase text-red-800">
                         {{ __('Websites') }} ({{ $attentionCounts['websites'] }})
@@ -130,6 +152,32 @@
                         @if ($attentionCounts['deployments'] > $attentionRepositories->count())
                             <a href="{{ route('builds.index', ['status' => \App\Models\Build::STATUS_FAILED, 'latest' => 1]) }}" class="block text-sm font-medium text-red-700 underline">
                                 {{ trans_choice(':count more deployment|:count more deployments', $attentionCounts['deployments'] - $attentionRepositories->count(), ['count' => $attentionCounts['deployments'] - $attentionRepositories->count()]) }}
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="mb-2 text-sm font-semibold uppercase text-red-800">
+                        {{ __('Providers') }} ({{ $attentionCounts['providers'] }})
+                    </h3>
+                    <div class="space-y-2">
+                        @forelse ($attentionProviders as $provider)
+                            <a href="{{ route('providers.show', $provider) }}" class="block rounded border border-red-200 bg-white p-3">
+                                <span class="block font-medium text-primary">{{ $provider->name }}</span>
+                                <span class="text-sm text-red-700">
+                                    {{ __('Connection failed') }}
+                                    @if ($provider->connection_checked_at)
+                                        &middot; {{ $provider->connection_checked_at->diffForHumans() }}
+                                    @endif
+                                </span>
+                            </a>
+                        @empty
+                            <p class="text-sm text-red-700">{{ __('No provider failures.') }}</p>
+                        @endforelse
+                        @if ($attentionCounts['providers'] > $attentionProviders->count())
+                            <a href="{{ route('providers.index', ['connection' => \App\Models\Provider::CONNECTION_FAILED]) }}" class="block text-sm font-medium text-red-700 underline">
+                                {{ trans_choice(':count more provider|:count more providers', $attentionCounts['providers'] - $attentionProviders->count(), ['count' => $attentionCounts['providers'] - $attentionProviders->count()]) }}
                             </a>
                         @endif
                     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Build;
+use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
@@ -26,6 +27,9 @@ class DashboardController extends Controller
             ->where('provisioning_status', Server::STATUS_FAILED);
         $attentionRepositories = $user->repositories()
             ->whereHas('latestBuild', fn ($query) => $query->where('status', Build::STATUS_FAILED));
+        $providers = $user->providers();
+        $attentionProviders = (clone $providers)
+            ->where('connection_status', Provider::CONNECTION_FAILED);
 
         return view('dashboard', [
             'stats' => [
@@ -38,6 +42,12 @@ class DashboardController extends Controller
                 'websites' => (clone $attentionWebsites)->count(),
                 'servers' => (clone $attentionServers)->count(),
                 'deployments' => (clone $attentionRepositories)->count(),
+                'providers' => (clone $attentionProviders)->count(),
+            ],
+            'providerHealthCounts' => [
+                'healthy' => (clone $providers)->where('connection_status', Provider::CONNECTION_HEALTHY)->count(),
+                'failed' => (clone $attentionProviders)->count(),
+                'unchecked' => (clone $providers)->whereNull('connection_status')->count(),
             ],
             'attentionWebsites' => $attentionWebsites
                 ->with('server')
@@ -51,6 +61,10 @@ class DashboardController extends Controller
             'attentionRepositories' => $attentionRepositories
                 ->with(['latestBuild', 'website'])
                 ->latest()
+                ->limit(5)
+                ->get(),
+            'attentionProviders' => $attentionProviders
+                ->latest('connection_checked_at')
                 ->limit(5)
                 ->get(),
             'recentWebsites' => $user->websites()

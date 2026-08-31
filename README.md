@@ -32,6 +32,8 @@ resets the state to unchecked so stale success cannot be mistaken for current he
 The existing health timer also checks unchecked or day-stale providers in bounded
 batches. Connection failures and recoveries create linked activity and inbox alerts,
 while repeated states and concurrent stale results do not create duplicate alerts.
+The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
+includes failed providers in the active attention total with direct inventory links.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or
