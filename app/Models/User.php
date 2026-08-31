@@ -120,6 +120,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->morphMany(Event::class, 'parentable');
     }
 
+    public function signIns(): HasMany
+    {
+        return $this->hasMany(SignInEvent::class);
+    }
+
     public function commandExecutions(): HasMany
     {
         return $this->hasMany(ServerCommandExecution::class);

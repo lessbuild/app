@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\LoginRequest;
+use App\Models\SignInEvent;
+use App\Services\SignInRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,11 +31,12 @@ class AuthenticatedSessionController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(LoginRequest $request)
+    public function store(LoginRequest $request, SignInRecorder $signIns)
     {
         $request->authenticate();
 
         $request->session()->regenerate();
+        $signIns->record($request->user(), SignInEvent::METHOD_PASSWORD, $request);
 
         return redirect()->intended(route('dashboard'));
     }

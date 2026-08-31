@@ -8,6 +8,7 @@ use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\ServerLogSnapshot;
+use App\Models\SignInEvent;
 use App\Models\User;
 use App\Models\Website;
 use Database\Seeders\DemoAccountSeeder;
@@ -35,6 +36,11 @@ class DemoSeederTest extends TestCase
         $this->assertNotNull($user->password_set_at);
         $this->assertSame('demo-github-identity', $user->github_id);
         $this->assertSame('github', $user->auth_type);
+        $this->assertSame(3, $user->signIns()->count());
+        $this->assertEqualsCanonicalizing(
+            [SignInEvent::METHOD_PASSWORD, 'github', 'gitlab'],
+            $user->signIns()->pluck('method')->all(),
+        );
         $this->assertDatabaseHas('sessions', [
             'id' => DemoAccountSeeder::SESSION_ID,
             'user_id' => $user->id,
@@ -232,6 +238,11 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('account.index'))
             ->assertSuccessful()
             ->assertSee('Recent security activity')
+            ->assertSee('Recent sign-ins')
+            ->assertSee('Chrome on macOS')
+            ->assertSee('Safari on iPhone')
+            ->assertSee('Firefox on Windows')
+            ->assertSee('192.0.2.11')
             ->assertSee('Demo: account security settings were reviewed.')
             ->assertSee(route('activity.index', ['category' => 'account']))
             ->assertSee('Browser sessions')
@@ -293,6 +304,9 @@ class DemoSeederTest extends TestCase
             'browser_sessions' => DB::table('sessions')
                 ->where('id', DemoAccountSeeder::SESSION_ID)
                 ->where('user_id', $user->id)
+                ->count(),
+            'sign_ins' => $user->signIns()
+                ->whereIn('ip_address', ['192.0.2.11', '198.51.100.21', '203.0.113.31'])
                 ->count(),
         ];
     }

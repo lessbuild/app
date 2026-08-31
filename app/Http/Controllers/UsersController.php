@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Models\SignInEvent;
 use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\BrowserSessionManager;
+use App\Services\ClientMetadata;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,8 +21,11 @@ use Throwable;
 
 class UsersController extends Controller
 {
-    public function index(Request $request, BrowserSessionManager $browserSessions): View
-    {
+    public function index(
+        Request $request,
+        BrowserSessionManager $browserSessions,
+        ClientMetadata $clients,
+    ): View {
         $connected = $request->user()->connectedSocialProviders();
 
         return view('scenes.users.index', [
@@ -29,6 +34,19 @@ class UsersController extends Controller
                 $request->user(),
                 $request->session()->getId(),
             ),
+            'recentSignIns' => $request->user()
+                ->signIns()
+                ->select(['id', 'method', 'ip_address', 'user_agent', 'signed_in_at'])
+                ->orderByDesc('signed_in_at')
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get()
+                ->map(fn (SignInEvent $event): array => [
+                    'method' => $this->signInMethodName($event->method),
+                    'device' => $clients->deviceName($event->user_agent),
+                    'ip_address' => $clients->displayIp($event->ip_address),
+                    'signed_in_at' => $event->signed_in_at,
+                ]),
             'recentAccountEvents' => $request->user()
                 ->accountEvents()
                 ->select(['id', 'event', 'category', 'created_at'])
@@ -241,6 +259,17 @@ class UsersController extends Controller
             'github' => 'GitHub',
             'gitlab' => 'GitLab',
             'bitbucket' => 'Bitbucket',
+        };
+    }
+
+    private function signInMethodName(string $method): string
+    {
+        return match ($method) {
+            SignInEvent::METHOD_PASSWORD => __('Password'),
+            'github' => 'GitHub',
+            'gitlab' => 'GitLab',
+            'bitbucket' => 'Bitbucket',
+            default => __('Unknown'),
         };
     }
 }

@@ -11,6 +11,12 @@ account will be inserted by another provisioning process.
 Password and social sign-in return the user to the protected page they originally
 requested, including its filters and query string. Direct visits to the login page
 continue to use the verified Dashboard as the default destination.
+Successful password and social sign-ins are retained for 90 days with a bounded
+user agent, validated IP address, method, and timestamp. The Account page derives
+browser/platform labels without exposing credentials or session data. Failed
+attempts are never written to this history, so it cannot become an account-discovery
+trail. Set `SIGN_IN_RETENTION_DAYS` to change the window; pruning runs only after
+the daily database backup has been created and verified.
 
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current
@@ -221,7 +227,8 @@ in-progress records, without dispatching real cloud jobs. Running the seeder
 again updates the demo workspace without deleting other account-owned records.
 The account also includes a harmless non-authenticating Chrome-on-macOS session
 fixture using a documentation-only IP address so individual session revocation
-is testable.
+is testable. Successful password, GitHub, and GitLab sign-in fixtures cover desktop
+and mobile history rendering without creating functional external identities.
 Automatic provider and website monitoring is paused for all demo fixtures, so
 scheduled timers never contact their deliberately non-functional endpoints.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and

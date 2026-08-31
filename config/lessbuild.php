@@ -22,6 +22,7 @@ return [
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),
     'server_command_retention_days' => (int) env('SERVER_COMMAND_RETENTION_DAYS', 180),
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 90),
+    'sign_in_retention_days' => (int) env('SIGN_IN_RETENTION_DAYS', 90),
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
     'repository_checkout_directory' => env('REPOSITORY_CHECKOUT_DIRECTORY') ?: storage_path('repositories'),

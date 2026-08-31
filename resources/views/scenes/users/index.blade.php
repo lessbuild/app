@@ -160,6 +160,41 @@
         </x-forms.section>
 
         <x-forms.section
+            :title="__('Recent sign-ins')"
+            :description="__('Review successful sign-ins retained for account security history.')"
+        >
+            <div class="divide-y divide-primary bg-primary">
+                @forelse ($recentSignIns as $signIn)
+                    <div class="flex flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="font-medium text-primary">{{ $signIn['device'] }}</p>
+                                <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary">
+                                    {{ $signIn['method'] }}
+                                </span>
+                            </div>
+                            <p class="mt-1 text-sm text-secondary">{{ $signIn['ip_address'] }}</p>
+                        </div>
+                        <time
+                            class="text-sm text-secondary"
+                            datetime="{{ $signIn['signed_in_at']->toIso8601String() }}"
+                            title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}"
+                        >
+                            {{ $signIn['signed_in_at']->diffForHumans() }}
+                        </time>
+                    </div>
+                @empty
+                    <div class="p-6 text-center">
+                        <p class="font-medium text-primary">{{ __('No sign-in history yet') }}</p>
+                        <p class="mt-1 text-sm text-secondary">
+                            {{ __('Successful password and social sign-ins will appear here.') }}
+                        </p>
+                    </div>
+                @endforelse
+            </div>
+        </x-forms.section>
+
+        <x-forms.section
             :title="__('Browser sessions')"
             :description="__('Review active browsers and log out sessions you no longer recognize.')"
         >

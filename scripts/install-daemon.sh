@@ -130,6 +130,7 @@ ExecStart=${PHP_BIN} artisan lessbuild:backups:verify --all
 ExecStart=${PHP_BIN} artisan lessbuild:webhooks:prune
 ExecStart=${PHP_BIN} artisan lessbuild:commands:prune
 ExecStart=${PHP_BIN} artisan lessbuild:notifications:prune
+ExecStart=${PHP_BIN} artisan lessbuild:sign-ins:prune
 TimeoutStartSec=900
 Nice=10
 UMask=0027

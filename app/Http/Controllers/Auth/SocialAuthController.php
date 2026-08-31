@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\RegistrationAccess;
+use App\Services\SignInRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,10 @@ use Throwable;
 
 class SocialAuthController extends Controller
 {
-    public function __construct(private readonly ActivityRecorder $activity) {}
+    public function __construct(
+        private readonly ActivityRecorder $activity,
+        private readonly SignInRecorder $signIns,
+    ) {}
 
     /**
      * @return list<string>
@@ -153,6 +157,7 @@ class SocialAuthController extends Controller
         $user = $resolution['user'];
         Auth::login($user);
         request()->session()->regenerate();
+        $this->signIns->record($user, $provider, request());
 
         return redirect()->intended(route('dashboard'));
     }

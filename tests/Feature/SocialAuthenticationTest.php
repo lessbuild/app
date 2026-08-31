@@ -86,6 +86,10 @@ class SocialAuthenticationTest extends TestCase
         $this->assertSame('gitlab', $user->auth_type);
         $this->assertFalse($user->hasLocalPassword());
         $this->assertNotNull($user->email_verified_at);
+        $this->assertDatabaseHas('sign_in_events', [
+            'user_id' => $user->id,
+            'method' => 'gitlab',
+        ]);
         $response->assertRedirect(route('dashboard'));
     }
 
@@ -309,6 +313,8 @@ class SocialAuthenticationTest extends TestCase
         $this->get(route('social.callback', 'github'))
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors(['social_auth']);
+
+        $this->assertDatabaseCount('sign_in_events', 0);
     }
 
     private function configureProvider(string $provider): void
