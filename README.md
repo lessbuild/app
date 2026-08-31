@@ -114,6 +114,23 @@ The daemon installer also prohibits destructive database commands (`db:wipe`,
 `migrate:fresh`, `migrate:refresh`, `migrate:reset`, and `migrate:rollback`),
 even if an Artisan invocation supplies a different environment label.
 
+## Demo data
+
+Local and test environments can load an idempotent full-feature demo workspace
+with `php artisan db:seed`. To refresh the same fixtures explicitly, including
+on a dedicated externally hosted test installation, run:
+
+```bash
+php artisan db:seed --class=DemoSeeder --force
+```
+
+The seeded owner signs in as `ncorkish@icloud.com` with password `password`.
+Fixtures use a stable `[Demo]` prefix and include provider health states,
+recipes, servers, websites, repositories, deployment and webhook history,
+logs, server commands, activity, and notifications. Tokens, keys, domains, and
+IP addresses are deliberately non-functional examples. Running the seeder again
+updates the demo workspace without deleting other records owned by the account.
+
 ## Automatic push deployments
 
 Each repository page can enable an authenticated deployment webhook. GitHub
