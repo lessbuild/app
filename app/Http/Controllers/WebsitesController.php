@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\Web\RetryWebsiteProvisioningAction;
 use App\Http\Requests\WebsiteRequest;
 use App\Jobs\Web\AddWebsiteJob;
+use App\Jobs\Web\CheckWebsiteHealthJob;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
+use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -192,6 +194,25 @@ class WebsitesController extends Controller
         }
 
         return back()->with('success', __('Website provisioning retry queued.'));
+    }
+
+    public function checkHealth(Website $website): RedirectResponse
+    {
+        $this->authorize('update', $website);
+        $website->loadMissing('server');
+
+        if (! $website->health_check_enabled) {
+            return back()->with('info', __('Enable health checks before requesting a manual check.'));
+        }
+
+        if ($website->provisioning_status !== Website::STATUS_ACTIVE
+            || $website->server?->provisioning_status !== Server::STATUS_ACTIVE) {
+            return back()->with('info', __('The website and its server must be active before checking health.'));
+        }
+
+        CheckWebsiteHealthJob::dispatch($website->id);
+
+        return back()->with('success', __('Health check queued. Refresh shortly to see the result.'));
     }
 
     /**

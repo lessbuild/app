@@ -40,6 +40,17 @@
         :description="$website->description"
     >
         <x-slot:buttons>
+            @if ($website->health_check_enabled
+                && $website->provisioning_status === \App\Models\Website::STATUS_ACTIVE
+                && $website->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+                <form method="POST" action="{{ route('websites.health.check', $website) }}">
+                    @csrf
+                    <button type="submit" class="button primary">
+                        {{ __('Check health now') }}
+                    </button>
+                </form>
+            @endif
+
             <a href="{{ route('websites.edit', $website) }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>

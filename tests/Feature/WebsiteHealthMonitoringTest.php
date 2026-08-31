@@ -2,14 +2,18 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\Web\CheckWebsiteHealthJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\ManagedSsh;
 use App\Services\Runner;
+use App\Services\WebsiteHealthMonitor;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
@@ -199,6 +203,68 @@ class WebsiteHealthMonitoringTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Health')
             ->assertSee('unhealthy');
+    }
+
+    public function test_owner_can_queue_a_deduplicated_manual_health_check(): void
+    {
+        Queue::fake();
+        [$owner, , $website] = $this->infrastructure();
+
+        $this->actingAs($owner)->get(route('websites.show', $website))
+            ->assertSuccessful()
+            ->assertSee('Check health now')
+            ->assertSee(route('websites.health.check', $website));
+
+        $this->actingAs($owner)->post(route('websites.health.check', $website))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Health check queued. Refresh shortly to see the result.');
+
+        Queue::assertPushed(CheckWebsiteHealthJob::class, function (CheckWebsiteHealthJob $job) use ($website): bool {
+            $this->assertInstanceOf(ShouldBeUnique::class, $job);
+            $this->assertSame((string) $website->id, $job->uniqueId());
+            $this->assertSame(240, $job->uniqueFor);
+
+            return $job->websiteId === $website->id;
+        });
+    }
+
+    public function test_manual_health_check_requires_ownership_and_eligible_infrastructure(): void
+    {
+        Queue::fake();
+        [$owner, $server, $website] = $this->infrastructure();
+
+        $this->actingAs(User::factory()->create())
+            ->post(route('websites.health.check', $website))
+            ->assertForbidden();
+        Queue::assertNothingPushed();
+
+        $website->update(['health_check_enabled' => false]);
+        $this->actingAs($owner)->post(route('websites.health.check', $website))
+            ->assertRedirect()
+            ->assertSessionHas('info', 'Enable health checks before requesting a manual check.');
+        Queue::assertNothingPushed();
+
+        $website->update(['health_check_enabled' => true]);
+        $server->update(['provisioning_status' => Server::STATUS_FAILED]);
+        $this->actingAs($owner)->post(route('websites.health.check', $website))
+            ->assertRedirect()
+            ->assertSessionHas('info', 'The website and its server must be active before checking health.');
+        Queue::assertNothingPushed();
+    }
+
+    public function test_manual_health_job_uses_the_same_monitoring_state_machine(): void
+    {
+        [, , $website] = $this->infrastructure();
+        $command = null;
+        $this->app->instance(Runner::class, $this->runner(true, '', $command));
+
+        (new CheckWebsiteHealthJob($website->id))->handle(app(WebsiteHealthMonitor::class));
+
+        $website->refresh();
+        $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
+        $this->assertSame(0, $website->health_failure_count);
+        $this->assertNotNull($website->health_last_checked_at);
+        $this->assertStringContainsString("'http://app.example.com/health/ready'", $command);
     }
 
     private function runner(bool $successful, string $error, ?string &$command): Runner

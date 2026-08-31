@@ -94,6 +94,8 @@ symlink; application database migrations are intentionally not reversed.
 The daemon also checks enabled sites from their managed servers every five
 minutes. Three consecutive failures mark a site unhealthy and create one unread
 notification; a successful check records recovery and resets the failure count.
+Website owners can also queue an immediate, deduplicated check from the website
+page without waiting for the next timer run.
 Set `HEALTH_MONITOR_BATCH_SIZE` or `HEALTH_MONITOR_FAILURE_THRESHOLD` to tune
 the number of sites checked per run or the number of failures required.
 Each website can retain between two and twenty releases on its server; five are
