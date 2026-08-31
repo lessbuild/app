@@ -78,7 +78,8 @@ Redeploying a recorded build checks out that exact commit and can also be used t
 restore an earlier release. Legacy manual builds without a recorded revision
 retry the configured branch.
 Build history can be filtered by repository, status, and trigger, or searched by
-repository name, commit message, and revision.
+repository name, commit message, and revision. The current filtered view can be
+exported as a streamed, spreadsheet-safe CSV file.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment

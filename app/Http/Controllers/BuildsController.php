@@ -9,9 +9,11 @@ use App\Data\BuildRedeploymentResult;
 use App\Models\Build;
 use App\Services\Runner;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
 class BuildsController extends Controller
@@ -21,38 +23,9 @@ class BuildsController extends Controller
      */
     public function index(Request $request): View
     {
-        $statuses = array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES)));
-        $triggers = [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY];
-        $status = $request->string('status')->toString();
-        $trigger = $request->string('trigger')->toString();
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $repositoryId = filter_var($request->query('repository_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        $filters = [
-            'repository_id' => $repositoryId ?: null,
-            'status' => in_array($status, $statuses, true) ? $status : null,
-            'trigger' => in_array($trigger, $triggers, true) ? $trigger : null,
-            'search' => $search !== '' ? $search : null,
-        ];
+        $filters = $this->filters($request);
 
-        $builds = $request->user()->builds()
-            ->with('repository.website.server')
-            ->when($filters['repository_id'], fn ($query, int $id) => $query
-                ->where('builds.repository_id', $id))
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('builds.status', $value))
-            ->when($filters['trigger'], fn ($query, string $value) => $query
-                ->where('builds.trigger_source', $value))
-            ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
-                    $query
-                        ->where('builds.revision', 'like', "%{$value}%")
-                        ->orWhere('builds.commit_message', 'like', "%{$value}%")
-                        ->orWhereHas('repository', fn ($query) => $query
-                            ->where('name', 'like', "%{$value}%"));
-                });
-            })
+        $builds = $this->filteredBuilds($request, $filters)
             ->latest('builds.created_at')
             ->simplePaginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -61,8 +34,68 @@ class BuildsController extends Controller
             'builds' => $builds,
             'filters' => $filters,
             'repositories' => $request->user()->repositories()->orderBy('name')->get(['id', 'name']),
-            'statuses' => $statuses,
-            'triggers' => $triggers,
+            'statuses' => $this->statuses(),
+            'triggers' => $this->triggers(),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->filters($request);
+        $filename = 'lessbuild-builds-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Build ID',
+                'Repository',
+                'Website',
+                'Server',
+                'Status',
+                'Trigger',
+                'Revision',
+                'Commit message',
+                'Created at',
+                'Started at',
+                'Finished at',
+                'Duration seconds',
+            ], ',', '"', '');
+
+            $this->filteredBuilds($request, $filters)
+                ->latest('builds.id')
+                ->lazy(250)
+                ->each(function (Build $build) use ($output): void {
+                    $repository = $build->repository;
+                    $website = $repository->website;
+                    $duration = $build->started_at && $build->finished_at
+                        ? $build->started_at->diffInSeconds($build->finished_at)
+                        : null;
+
+                    fputcsv($output, [
+                        $build->id,
+                        $this->csvCell($repository->name),
+                        $this->csvCell($website?->name),
+                        $this->csvCell($website?->server?->name),
+                        $build->status,
+                        $build->trigger_source,
+                        $build->revision,
+                        $this->csvCell($build->commit_message),
+                        $build->created_at?->toIso8601String(),
+                        $build->started_at?->toIso8601String(),
+                        $build->finished_at?->toIso8601String(),
+                        $duration,
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -154,5 +187,68 @@ class BuildsController extends Controller
             default => back()
                 ->with('info', __('Only completed, failed, or canceled deployments can be redeployed.')),
         };
+    }
+
+    /** @return array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string} */
+    private function filters(Request $request): array
+    {
+        $status = $request->string('status')->toString();
+        $trigger = $request->string('trigger')->toString();
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $repositoryId = filter_var($request->query('repository_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+
+        return [
+            'repository_id' => $repositoryId ?: null,
+            'status' => in_array($status, $this->statuses(), true) ? $status : null,
+            'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
+            'search' => $search !== '' ? $search : null,
+        ];
+    }
+
+    /** @param array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string} $filters */
+    private function filteredBuilds(Request $request, array $filters): HasManyThrough
+    {
+        return $request->user()->builds()
+            ->with('repository.website.server')
+            ->when($filters['repository_id'], fn ($query, int $id) => $query
+                ->where('builds.repository_id', $id))
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('builds.status', $value))
+            ->when($filters['trigger'], fn ($query, string $value) => $query
+                ->where('builds.trigger_source', $value))
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('builds.revision', 'like', "%{$value}%")
+                        ->orWhere('builds.commit_message', 'like', "%{$value}%")
+                        ->orWhereHas('repository', fn ($query) => $query
+                            ->where('name', 'like', "%{$value}%"));
+                });
+            });
+    }
+
+    /** @return list<string> */
+    private function statuses(): array
+    {
+        return array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES)));
+    }
+
+    /** @return list<string> */
+    private function triggers(): array
+    {
+        return [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY];
+    }
+
+    private function csvCell(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 }

@@ -62,6 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::post('servers/{server}/provisioning/retry', [ServersController::class, 'retryRemoteProvisioning'])
         ->name('servers.provisioning.retry');
 
+    Route::get('builds/export', [BuildsController::class, 'export'])
+        ->name('builds.export');
     Route::resource('builds', BuildsController::class)->only(['index', 'show']);
     Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
         ->name('builds.cancel');
