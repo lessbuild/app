@@ -28,7 +28,7 @@
     </x-layouts.partials.heading>
 
     <form method="GET" action="{{ route('notifications.index') }}" class="mb-6 mt-8 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input
@@ -57,6 +57,26 @@
                     <option value="unread" @selected($filters['state'] === 'unread')>{{ __('Unread') }}</option>
                     <option value="read" @selected($filters['state'] === 'read')>{{ __('Read') }}</option>
                 </select>
+            </div>
+            <div>
+                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Created from') }}</label>
+                <input
+                    id="date_from"
+                    name="date_from"
+                    type="date"
+                    value="{{ $filters['date_from'] }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Created through') }}</label>
+                <input
+                    id="date_to"
+                    name="date_to"
+                    type="date"
+                    value="{{ $filters['date_to'] }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

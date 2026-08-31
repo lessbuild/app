@@ -114,7 +114,7 @@ class FailureNotificationTest extends TestCase
         $this->assertNull($otherNotification->fresh()->read_at);
     }
 
-    public function test_notification_inbox_filters_title_message_category_and_state(): void
+    public function test_notification_inbox_filters_title_message_category_state_and_created_dates(): void
     {
         $owner = User::factory()->create();
         $matching = $this->notification(
@@ -122,6 +122,7 @@ class FailureNotificationTest extends TestCase
             'website',
             'Website health failed',
             'Caddy returned an unavailable response',
+            createdAt: '2026-08-20 12:00:00',
         );
         $read = $this->notification(
             $owner,
@@ -129,19 +130,43 @@ class FailureNotificationTest extends TestCase
             'Older website failure',
             'Caddy returned a previous error',
             read: true,
+            createdAt: '2026-08-20 11:00:00',
         );
         $server = $this->notification(
             $owner,
             'server',
             'Server provisioning failed',
             'Caddy package installation failed',
+            createdAt: '2026-08-20 10:00:00',
+        );
+        $beforeRange = $this->notification(
+            $owner,
+            'website',
+            'Historic website failure',
+            'Caddy returned an old unavailable response',
+            createdAt: '2026-08-19 23:59:59',
+        );
+        $afterRange = $this->notification(
+            $owner,
+            'website',
+            'Future website failure',
+            'Caddy returned a future unavailable response',
+            createdAt: '2026-08-21 00:00:00',
         );
         $other = User::factory()->create();
-        $this->notification($other, 'website', 'Foreign website failed', 'Caddy failed for another owner');
+        $this->notification(
+            $other,
+            'website',
+            'Foreign website failed',
+            'Caddy failed for another owner',
+            createdAt: '2026-08-20 09:00:00',
+        );
         $filters = [
             'search' => 'Caddy',
             'category' => 'website',
             'state' => 'unread',
+            'date_from' => '2026-08-20',
+            'date_to' => '2026-08-20',
         ];
 
         $this->actingAs($owner)->get(route('notifications.index', $filters))
@@ -152,20 +177,26 @@ class FailureNotificationTest extends TestCase
             ->assertSee('Caddy returned an unavailable response')
             ->assertDontSee($read->data['message'])
             ->assertDontSee($server->data['message'])
+            ->assertDontSee($beforeRange->data['message'])
+            ->assertDontSee($afterRange->data['message'])
             ->assertDontSee('Caddy failed for another owner');
 
         $this->actingAs($owner)->get(route('notifications.index', [
             'search' => '   ',
             'category' => 'credentials',
             'state' => 'deleted',
+            'date_from' => '2026-02-31',
+            'date_to' => '../../etc/passwd',
         ]))
             ->assertSuccessful()
             ->assertViewHas('filters', [
                 'search' => null,
                 'category' => null,
                 'state' => null,
+                'date_from' => null,
+                'date_to' => null,
             ])
-            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 3);
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 5);
     }
 
     public function test_filtered_notification_export_is_owner_scoped_spreadsheet_safe_and_payload_free(): void
@@ -176,18 +207,54 @@ class FailureNotificationTest extends TestCase
             'website',
             '=HYPERLINK("https://example.test") Spreadsheet alert',
             " \t@Spreadsheet message",
+            createdAt: '2026-08-20 12:00:00',
         );
         $matching->update([
             'data' => [...$matching->data, 'internal_context' => 'do-not-export-this-payload'],
         ]);
-        $this->notification($owner, 'website', 'Read Spreadsheet alert', 'Excluded read alert', read: true);
-        $this->notification($owner, 'server', 'Server Spreadsheet alert', 'Excluded category alert');
+        $this->notification(
+            $owner,
+            'website',
+            'Read Spreadsheet alert',
+            'Excluded read alert',
+            read: true,
+            createdAt: '2026-08-20 11:00:00',
+        );
+        $this->notification(
+            $owner,
+            'server',
+            'Server Spreadsheet alert',
+            'Excluded category alert',
+            createdAt: '2026-08-20 10:00:00',
+        );
+        $this->notification(
+            $owner,
+            'website',
+            'Historic Spreadsheet alert',
+            'Excluded date alert',
+            createdAt: '2026-08-19 23:59:59',
+        );
+        $this->notification(
+            $owner,
+            'website',
+            'Future Spreadsheet alert',
+            'Excluded future date alert',
+            createdAt: '2026-08-21 00:00:00',
+        );
         $other = User::factory()->create();
-        $this->notification($other, 'website', 'Foreign Spreadsheet alert', 'Excluded foreign alert');
+        $this->notification(
+            $other,
+            'website',
+            'Foreign Spreadsheet alert',
+            'Excluded foreign alert',
+            createdAt: '2026-08-20 09:00:00',
+        );
         $filters = [
             'search' => 'Spreadsheet',
             'category' => 'website',
             'state' => 'unread',
+            'date_from' => '2026-08-20',
+            'date_to' => '2026-08-20',
         ];
 
         $response = $this->actingAs($owner)->get(route('notifications.export', $filters));
@@ -203,6 +270,8 @@ class FailureNotificationTest extends TestCase
         $this->assertStringNotContainsString('internal_context', $content);
         $this->assertStringNotContainsString('Excluded read alert', $content);
         $this->assertStringNotContainsString('Excluded category alert', $content);
+        $this->assertStringNotContainsString('Excluded date alert', $content);
+        $this->assertStringNotContainsString('Excluded future date alert', $content);
         $this->assertStringNotContainsString('Excluded foreign alert', $content);
         $rows = $this->csvRows($content);
         $this->assertSame([
@@ -239,10 +308,13 @@ class FailureNotificationTest extends TestCase
             );
         }
 
+        $today = now()->toDateString();
         $response = $this->actingAs($owner)->get(route('notifications.index', [
             'search' => 'Searchable',
             'category' => 'deployment',
             'state' => 'unread',
+            'date_from' => $today,
+            'date_to' => $today,
         ]))->assertSuccessful()
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 25 && $notifications->lastPage() === 2);
 
@@ -250,6 +322,8 @@ class FailureNotificationTest extends TestCase
         $this->assertStringContainsString('search=Searchable', $nextPageUrl);
         $this->assertStringContainsString('category=deployment', $nextPageUrl);
         $this->assertStringContainsString('state=unread', $nextPageUrl);
+        $this->assertStringContainsString("date_from={$today}", $nextPageUrl);
+        $this->assertStringContainsString("date_to={$today}", $nextPageUrl);
     }
 
     public function test_read_notifications_can_be_reopened_and_bulk_cleanup_keeps_unread_and_foreign_items(): void
@@ -329,6 +403,7 @@ class FailureNotificationTest extends TestCase
         string $title,
         string $message,
         bool $read = false,
+        mixed $createdAt = null,
     ): DatabaseNotification {
         $user->notify(new FailureNotification($category, 1, $title, $message));
         $notification = $user->notifications()
@@ -337,6 +412,13 @@ class FailureNotificationTest extends TestCase
 
         if ($read) {
             $notification->markAsRead();
+        }
+
+        if ($createdAt !== null) {
+            $notification->forceFill([
+                'created_at' => $createdAt,
+                'updated_at' => $createdAt,
+            ])->save();
         }
 
         return $notification->fresh();

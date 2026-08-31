@@ -120,7 +120,7 @@ class NotificationsController extends Controller
         return back()->with('success', __('Notification deleted.'));
     }
 
-    /** @return array{search: ?string, category: ?string, state: ?string} */
+    /** @return array{search: ?string, category: ?string, state: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
@@ -131,10 +131,12 @@ class NotificationsController extends Controller
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, FailureNotification::CATEGORIES, true) ? $category : null,
             'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
+            'date_from' => $this->date($request->string('date_from')->toString()),
+            'date_to' => $this->date($request->string('date_to')->toString()),
         ];
     }
 
-    /** @param array{search: ?string, category: ?string, state: ?string} $filters */
+    /** @param array{search: ?string, category: ?string, state: ?string, date_from: ?string, date_to: ?string} $filters */
     private function filteredNotifications(Request $request, array $filters): MorphMany
     {
         return $request->user()
@@ -149,7 +151,18 @@ class NotificationsController extends Controller
                         ->where('data->title', 'like', "%{$search}%")
                         ->orWhere('data->message', 'like', "%{$search}%");
                 });
-            });
+            })
+            ->when($filters['date_from'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '>=', $date))
+            ->when($filters['date_to'], fn ($query, string $date) => $query
+                ->whereDate('created_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     private function dataValue(DatabaseNotification $notification, string $key): string|int|null
