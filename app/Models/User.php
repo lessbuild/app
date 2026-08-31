@@ -15,6 +15,12 @@ class User extends Authenticatable implements MustVerifyEmailContract
 {
     use HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
 
+    public const SOCIAL_PROVIDER_COLUMNS = [
+        'github' => 'github_id',
+        'gitlab' => 'gitlab_id',
+        'bitbucket' => 'bitbucket_id',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -56,6 +62,16 @@ class User extends Authenticatable implements MustVerifyEmailContract
     public function hasLocalPassword(): bool
     {
         return $this->password_set_at !== null;
+    }
+
+    /** @return list<string> */
+    public function connectedSocialProviders(): array
+    {
+        return collect(self::SOCIAL_PROVIDER_COLUMNS)
+            ->filter(fn (string $column): bool => filled($this->{$column}))
+            ->keys()
+            ->values()
+            ->all();
     }
 
     public function websites(): HasMany

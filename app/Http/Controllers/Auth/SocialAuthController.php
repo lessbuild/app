@@ -14,18 +14,12 @@ use Throwable;
 
 class SocialAuthController extends Controller
 {
-    private const PROVIDER_COLUMNS = [
-        'github' => 'github_id',
-        'gitlab' => 'gitlab_id',
-        'bitbucket' => 'bitbucket_id',
-    ];
-
     /**
      * @return list<string>
      */
     public static function providers(): array
     {
-        return array_keys(self::PROVIDER_COLUMNS);
+        return array_keys(User::SOCIAL_PROVIDER_COLUMNS);
     }
 
     public function redirect(string $provider): RedirectResponse
@@ -66,7 +60,7 @@ class SocialAuthController extends Controller
             ]);
         }
 
-        $providerColumn = self::PROVIDER_COLUMNS[$provider];
+        $providerColumn = User::SOCIAL_PROVIDER_COLUMNS[$provider];
         $user = $registration->synchronized(function () use (
             $email,
             $provider,

@@ -20,6 +20,7 @@ use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Build;
 use App\Models\Server;
 use App\Models\ServerLogSnapshot;
+use App\Models\User;
 use App\Models\Website;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
@@ -48,6 +49,9 @@ Route::middleware('auth')->group(function () {
         ->name('account.profile.update');
     Route::patch('account/password', [UsersController::class, 'updatePassword'])
         ->name('account.password.update');
+    Route::delete('account/social/{provider}', [UsersController::class, 'disconnectSocial'])
+        ->whereIn('provider', array_keys(User::SOCIAL_PROVIDER_COLUMNS))
+        ->name('account.social.destroy');
 
     Route::middleware('verified')->group(function () {
         Route::get('home', DashboardController::class)->name('dashboard');

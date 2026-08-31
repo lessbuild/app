@@ -116,5 +116,51 @@
                 </x-slot:footer>
             </x-forms.section>
         </form>
+
+        <x-forms.section
+            :title="__('Connected accounts')"
+            :description="__('Review and disconnect social sign-in methods linked to your account.')"
+        >
+            <div class="divide-y divide-primary bg-primary">
+                @if (session('social_status'))
+                    <div class="m-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        {{ session('social_status') }}
+                    </div>
+                @endif
+                @if (session('social_error'))
+                    <div class="m-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                        {{ session('social_error') }}
+                    </div>
+                @endif
+
+                @foreach ($socialProviders as $provider)
+                    <div class="flex flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
+                        <div>
+                            <p class="font-medium text-primary">{{ $provider['name'] }}</p>
+                            <p class="mt-1 text-sm text-secondary">
+                                {{ $provider['connected'] ? __('Connected') : __('Not connected') }}
+                            </p>
+                        </div>
+                        @if ($provider['connected'] && $provider['can_disconnect'])
+                            <form method="POST" action="{{ route('account.social.destroy', $provider['key']) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button
+                                    type="submit"
+                                    class="button primary"
+                                    onclick="return confirm({{ Illuminate\Support\Js::from(__('Disconnect :provider?', ['provider' => $provider['name']])) }})"
+                                >
+                                    {{ __('Disconnect') }}
+                                </button>
+                            </form>
+                        @elseif ($provider['connected'])
+                            <p class="max-w-sm text-right text-xs text-secondary">
+                                {{ __('Set a local password before disconnecting your only sign-in method.') }}
+                            </p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </x-forms.section>
     </div>
 </x-layouts.app>

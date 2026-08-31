@@ -17,6 +17,7 @@ class AccountManagementTest extends TestCase
         $this->get(route('account.index'))->assertRedirect(route('login'));
         $this->patch(route('account.profile.update'))->assertRedirect(route('login'));
         $this->patch(route('account.password.update'))->assertRedirect(route('login'));
+        $this->delete(route('account.social.destroy', 'github'))->assertRedirect(route('login'));
     }
 
     public function test_account_page_shows_the_authenticated_users_forms(): void
@@ -164,5 +165,72 @@ class AccountManagementTest extends TestCase
         $this->assertTrue(Hash::check('reset-local-password', $user->password));
         $this->assertTrue($user->hasLocalPassword());
         $this->assertSame('gitlab', $user->auth_type);
+    }
+
+    public function test_local_user_can_disconnect_a_linked_social_account(): void
+    {
+        $user = User::factory()->create([
+            'github_id' => 'github-account-id',
+            'auth_type' => 'github',
+        ]);
+
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee('Connected accounts')
+            ->assertSee(route('account.social.destroy', 'github'));
+        $this->delete(route('account.social.destroy', 'github'))
+            ->assertSessionHas('social_status', 'GitHub disconnected.');
+
+        $user->refresh();
+        $this->assertNull($user->github_id);
+        $this->assertNull($user->auth_type);
+        $this->assertTrue($user->hasLocalPassword());
+    }
+
+    public function test_social_only_user_cannot_disconnect_their_last_sign_in_method(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'github_id' => 'only-github-account',
+            'auth_type' => 'github',
+        ]);
+
+        $this->actingAs($user)->get(route('account.index'))
+            ->assertSuccessful()
+            ->assertSee('Set a local password before disconnecting your only sign-in method.')
+            ->assertDontSee(route('account.social.destroy', 'github'));
+        $this->delete(route('account.social.destroy', 'github'))
+            ->assertSessionHas('social_error', 'Set a local password before disconnecting your only sign-in method.');
+
+        $this->assertSame('only-github-account', $user->fresh()->github_id);
+        $this->assertSame('github', $user->fresh()->auth_type);
+    }
+
+    public function test_social_only_user_can_disconnect_one_of_multiple_providers_with_a_fallback(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'github_id' => 'github-account',
+            'gitlab_id' => 'gitlab-account',
+            'auth_type' => 'github',
+        ]);
+
+        $this->actingAs($user)->delete(route('account.social.destroy', 'github'))
+            ->assertSessionHas('social_status', 'GitHub disconnected.');
+
+        $user->refresh();
+        $this->assertNull($user->github_id);
+        $this->assertSame('gitlab-account', $user->gitlab_id);
+        $this->assertSame('gitlab', $user->auth_type);
+        $this->assertFalse($user->hasLocalPassword());
+    }
+
+    public function test_disconnecting_an_unlinked_or_unknown_provider_is_safe(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->delete(route('account.social.destroy', 'github'))
+            ->assertSessionHas('social_status', 'That social account is not connected.');
+        $this->delete('/account/social/unknown')->assertNotFound();
     }
 }
