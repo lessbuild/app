@@ -249,6 +249,72 @@ class ServerCommandLifecycleTest extends TestCase
         ]))->assertForbidden();
     }
 
+    public function test_filtered_command_export_is_owner_scoped_spreadsheet_safe_and_excludes_output(): void
+    {
+        [$owner, $server] = $this->resources();
+        $source = $this->execution(
+            $server,
+            ServerCommandExecution::STATUS_FAILED,
+            '=HYPERLINK("https://example.test")',
+        );
+        $source->update([
+            'output' => 'sensitive-output-must-use-separate-download',
+            'exit_code' => 17,
+            'started_at' => now()->subMinutes(2),
+            'finished_at' => now()->subMinute(),
+        ]);
+        $rerun = $this->execution($server, ServerCommandExecution::STATUS_FAILED, $source->command);
+        $rerun->update(['rerun_from_execution_id' => $source->id]);
+        $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'filtered-out-command');
+        [$otherOwner, $otherServer] = $this->resources();
+        $this->execution($otherServer, ServerCommandExecution::STATUS_FAILED, 'foreign-private-command');
+
+        $response = $this->actingAs($owner)->get(route('servers.commands.export', [
+            $server,
+            'status' => ServerCommandExecution::STATUS_FAILED,
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
+            ->assertHeader('x-content-type-options', 'nosniff');
+        $this->assertStringContainsString(
+            "attachment; filename=lessbuild-server-{$server->id}-commands-",
+            (string) $response->headers->get('content-disposition'),
+        );
+        $content = $response->streamedContent();
+        $this->assertStringNotContainsString('sensitive-output-must-use-separate-download', $content);
+        $this->assertStringNotContainsString('filtered-out-command', $content);
+        $this->assertStringNotContainsString('foreign-private-command', $content);
+        $rows = $this->csvRows($content);
+        $this->assertSame([
+            'Execution ID',
+            'Command',
+            'Status',
+            'Rerun from execution ID',
+            'Exit code',
+            'Queued at',
+            'Started at',
+            'Finished at',
+            'Output available',
+        ], $rows[0]);
+        $this->assertCount(3, $rows);
+        $this->assertSame((string) $rerun->id, $rows[1][0]);
+        $this->assertSame("'=HYPERLINK(\"https://example.test\")", $rows[1][1]);
+        $this->assertSame((string) $source->id, $rows[1][3]);
+        $this->assertSame((string) $source->id, $rows[2][0]);
+        $this->assertSame('17', $rows[2][4]);
+        $this->assertSame('yes', $rows[2][8]);
+
+        $this->actingAs($otherOwner)
+            ->get(route('servers.commands.export', $server))
+            ->assertForbidden();
+        auth()->logout();
+        $this->get(route('servers.commands.export', $server))
+            ->assertRedirect(route('login'));
+    }
+
     public function test_nested_command_actions_reject_an_execution_from_another_server(): void
     {
         [$owner, $server] = $this->resources();
@@ -276,6 +342,23 @@ class ServerCommandLifecycleTest extends TestCase
             'server' => $server,
             'execution' => $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'hostname'),
         ]))->assertForbidden();
+    }
+
+    /** @return list<list<string|null>> */
+    private function csvRows(string $content): array
+    {
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+        $stream = fopen('php://temp', 'w+b');
+        $this->assertNotFalse($stream);
+        fwrite($stream, substr($content, 3));
+        rewind($stream);
+        $rows = [];
+        while (($row = fgetcsv($stream, null, ',', '"', '')) !== false) {
+            $rows[] = $row;
+        }
+        fclose($stream);
+
+        return $rows;
     }
 
     private function resources(): array

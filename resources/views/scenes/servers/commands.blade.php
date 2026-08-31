@@ -27,6 +27,7 @@
                 </select>
             </div>
             <button type="submit" class="button primary">{{ __('Apply filter') }}</button>
+            <a href="{{ route('servers.commands.export', [$server, 'status' => $status]) }}" class="button primary">{{ __('Export CSV') }}</a>
             @if ($status)
                 <a href="{{ route('servers.commands.index', $server) }}" class="button primary">{{ __('Clear filter') }}</a>
             @endif

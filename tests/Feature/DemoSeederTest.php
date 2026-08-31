@@ -75,7 +75,12 @@ class DemoSeederTest extends TestCase
             ServerCommandExecution::STATUS_SUCCEEDED,
             ServerCommandExecution::STATUS_FAILED,
             ServerCommandExecution::STATUS_CANCELED,
-        ], ServerCommandExecution::query()->where('user_id', $user->id)->pluck('status')->all());
+        ], ServerCommandExecution::query()->where('user_id', $user->id)->distinct()->pluck('status')->all());
+        $demoRerun = ServerCommandExecution::query()
+            ->where('user_id', $user->id)
+            ->whereNotNull('rerun_from_execution_id')
+            ->sole();
+        $this->assertSame($demoRerun->command, $demoRerun->rerunFrom->command);
         $this->assertEqualsCanonicalizing(
             ['deployment', 'website', 'server', 'command', 'provider', 'general'],
             $user->events()->pluck('category')->all(),
@@ -110,7 +115,11 @@ class DemoSeederTest extends TestCase
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $recipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Install image tools')->sole();
-        $execution = ServerCommandExecution::query()->where('user_id', $user->id)->where('status', ServerCommandExecution::STATUS_SUCCEEDED)->sole();
+        $execution = ServerCommandExecution::query()
+            ->where('user_id', $user->id)
+            ->where('status', ServerCommandExecution::STATUS_SUCCEEDED)
+            ->whereNull('rerun_from_execution_id')
+            ->sole();
 
         $this->assertNotSame($provider->token, DB::table('providers')->where('id', $provider->id)->value('token'));
         $this->assertNotSame($server->ssh_private_key, DB::table('servers')->where('id', $server->id)->value('ssh_private_key'));

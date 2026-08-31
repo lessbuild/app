@@ -250,6 +250,25 @@ class DemoOperationsSeeder extends Seeder
             $commands[$status] = $execution;
         }
 
+        $source = $commands[ServerCommandExecution::STATUS_SUCCEEDED];
+        $rerun = $server->commandExecutions()
+            ->where('rerun_from_execution_id', $source->id)
+            ->first() ?? new ServerCommandExecution;
+        $rerun->forceFill([
+            'server_id' => $server->id,
+            'user_id' => $user->id,
+            'command' => $source->command,
+            'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+            'rerun_from_execution_id' => $source->id,
+            'output' => "PHP 8.3.24 (cli)\nDemo command rerun completed.",
+            'exit_code' => 0,
+            'started_at' => now()->subHour(),
+            'finished_at' => now()->subHour()->addMinute(),
+            'created_at' => now()->subHour()->subMinute(),
+            'updated_at' => now()->subHour()->addMinute(),
+        ])->save();
+        $commands['rerun'] = $rerun;
+
         return $commands;
     }
 

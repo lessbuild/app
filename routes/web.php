@@ -86,6 +86,8 @@ Route::middleware('auth')->group(function () {
         ->name('servers.logs.download');
     Route::get('servers/{server}/commands', [ServerCommandsController::class, 'index'])
         ->name('servers.commands.index');
+    Route::get('servers/{server}/commands/export', [ServerCommandsController::class, 'export'])
+        ->name('servers.commands.export');
     Route::post('servers/{server}/commands/{execution}/cancel', [ServerCommandsController::class, 'cancel'])
         ->whereNumber('execution')
         ->name('servers.commands.cancel');

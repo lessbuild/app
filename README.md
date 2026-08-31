@@ -190,7 +190,9 @@ owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead
 of claiming to stop an in-flight remote process. Completed, failed, and canceled
 commands can be queued again from history while retaining explicit lineage to
-the original encrypted execution.
+the original encrypted execution. Filtered command history can be exported as
+a spreadsheet-safe CSV with lineage and timing metadata; retained output remains
+available only through its separate owner-authorized download.
 
 The daemon installer also runs a deployment watchdog every minute. Remote log,
 progress, and revision callbacks refresh a build heartbeat. If a deployment
