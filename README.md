@@ -188,6 +188,9 @@ for audits and incident handoff.
 The notification inbox can likewise export its filtered, owner-scoped alert
 metadata as a spreadsheet-safe CSV without exposing raw notification payloads
 or framework ownership fields.
+Read notifications are retained for 90 days after review by default and pruned
+only after the daily database backup is verified. Unread notifications are
+always preserved. Set `NOTIFICATION_RETENTION_DAYS` to adjust the window.
 Each server retains an encrypted command history with status filtering and
 owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead
