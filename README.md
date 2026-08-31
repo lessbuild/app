@@ -104,6 +104,8 @@ exported as a streamed, spreadsheet-safe CSV file.
 The repository inventory can be searched and filtered by source provider,
 deployment website, and latest deployment state. It also shows each target,
 provider, and latest deployment without loading the entire inventory at once.
+The current filtered inventory can be exported as a streamed,
+spreadsheet-safe CSV without credentials or deployment commands.
 Deployment output, website provisioning output, and allowlisted server log
 snapshots can be downloaded as owner-authorized plain-text files for incident
 review and support handoff.

@@ -72,6 +72,9 @@
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            <a href="{{ route('repositories.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+                {{ __('Export CSV') }}
+            </a>
             @if (array_filter($filters, fn ($value) => $value !== null))
                 <a href="{{ route('repositories.index') }}" class="button primary">{{ __('Clear filters') }}</a>
             @endif

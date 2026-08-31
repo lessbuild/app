@@ -101,6 +101,8 @@ Route::middleware('auth')->group(function () {
         ->name('builds.cancel');
     Route::post('builds/{build}/redeploy', [BuildsController::class, 'redeploy'])
         ->name('builds.redeploy');
+    Route::get('repositories/export', [RepositoriesController::class, 'export'])
+        ->name('repositories.export');
     Route::resource('repositories', RepositoriesController::class);
     Route::resource('recipes', RecipesController::class)->except('show');
     Route::resource('providers', ProviderController::class);

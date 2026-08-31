@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RepositoriesController extends Controller
 {
@@ -39,6 +40,67 @@ class RepositoriesController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'statuses' => $this->repositoryStatuses(),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $filters = $this->indexFilters($request);
+        $filename = 'lessbuild-repositories-'.now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($request, $filters): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Repository ID',
+                'Name',
+                'URL',
+                'Branch',
+                'Description',
+                'Provider',
+                'Provider type',
+                'Website',
+                'Website domain',
+                'Server',
+                'Latest deployment status',
+                'Latest revision',
+                'Latest deployment at',
+                'Webhook enabled',
+                'Created at',
+            ], ',', '"', '');
+
+            $this->filteredRepositories($request, $filters)
+                ->with(['provider', 'website.server', 'latestBuild'])
+                ->latest('repositories.id')
+                ->lazy(250)
+                ->each(function (Repository $repository) use ($output): void {
+                    fputcsv($output, [
+                        $repository->id,
+                        $this->csvCell($repository->name),
+                        $this->csvCell($repository->url),
+                        $this->csvCell($repository->branch),
+                        $this->csvCell($repository->description),
+                        $this->csvCell($repository->provider?->name),
+                        $this->csvCell($repository->provider?->provider),
+                        $this->csvCell($repository->website?->name),
+                        $this->csvCell($repository->website?->url),
+                        $this->csvCell($repository->website?->server?->name),
+                        $this->csvCell($repository->latestBuild?->status),
+                        $this->csvCell($repository->latestBuild?->revision),
+                        $repository->latestBuild?->created_at?->toIso8601String(),
+                        $repository->webhook_enabled ? 'yes' : 'no',
+                        $repository->created_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 
@@ -97,6 +159,17 @@ class RepositoriesController extends Controller
             'none',
             ...array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES))),
         ];
+    }
+
+    private function csvCell(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $value = str_replace("\0", '', $value);
+
+        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
     }
 
     /**
