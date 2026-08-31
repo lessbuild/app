@@ -11,6 +11,10 @@ class Recipe extends Model
 {
     use HasFactory;
 
+    protected $hidden = ['script'];
+
+    protected $casts = ['script' => 'encrypted'];
+
     protected $fillable = [
         'name',
         'description',

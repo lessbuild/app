@@ -22,6 +22,10 @@ Provider inventory can be searched and filtered by provider type or whether
 resources are attached. Resource counts are visible in the list, and pagination
 controls keep every provider, attached repository, and attached server reachable.
 
+Reusable provisioning recipe scripts are encrypted at rest and omitted from
+serialized recipe data. They are decrypted only when editing a recipe or
+rendering an authorized server provisioning plan.
+
 ## Source control providers
 
 Repositories can be deployed from GitHub, GitLab, and Bitbucket Cloud over

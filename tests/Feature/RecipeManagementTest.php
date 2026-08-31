@@ -30,6 +30,20 @@ class RecipeManagementTest extends TestCase
 
         $recipe = Recipe::query()->sole();
         $this->assertTrue($recipe->user->is($user));
+        $this->assertSame('apt-get install -y fail2ban', $recipe->script);
+        $this->assertNotSame(
+            'apt-get install -y fail2ban',
+            Recipe::query()->toBase()->find($recipe->id)->script,
+        );
+        $this->assertStringNotContainsString(
+            'apt-get install -y fail2ban',
+            Recipe::query()->toBase()->find($recipe->id)->script,
+        );
+        $this->assertArrayNotHasKey('script', $recipe->toArray());
+
+        $this->actingAs($user)->get(route('recipes.edit', $recipe))
+            ->assertSuccessful()
+            ->assertSee('apt-get install -y fail2ban');
 
         $this->actingAs($user)->patch(route('recipes.update', $recipe), [
             'name' => 'Install and enable fail2ban',
@@ -38,6 +52,14 @@ class RecipeManagementTest extends TestCase
         ])->assertRedirect(route('recipes.index'));
 
         $this->assertSame('Install and enable fail2ban', $recipe->fresh()->name);
+        $this->assertSame(
+            "apt-get install -y fail2ban\nsystemctl enable fail2ban",
+            $recipe->fresh()->script,
+        );
+        $this->assertStringNotContainsString(
+            'systemctl enable fail2ban',
+            Recipe::query()->toBase()->find($recipe->id)->script,
+        );
 
         $this->actingAs($user)->delete(route('recipes.destroy', $recipe))
             ->assertRedirect(route('recipes.index'));
