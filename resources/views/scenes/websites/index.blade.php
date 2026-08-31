@@ -22,13 +22,64 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <form method="GET" action="{{ route('websites.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div>
+                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <input
+                    id="search"
+                    name="search"
+                    type="search"
+                    maxlength="100"
+                    value="{{ $filters['search'] }}"
+                    placeholder="{{ __('Name, domain, or description') }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All statuses') }}</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status }}" @selected($filters['status'] === $status)>
+                            {{ str($status)->replace('_', ' ')->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="health" class="block text-xs font-semibold uppercase text-secondary">{{ __('Health') }}</label>
+                <select id="health" name="health" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All health states') }}</option>
+                    @foreach ($healthStatuses as $health)
+                        <option value="{{ $health }}" @selected($filters['health'] === $health)>
+                            {{ str($health)->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex items-end">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="attention" value="1" @checked($filters['attention'])>
+                    {{ __('Needs attention only') }}
+                </label>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            @if (array_filter($filters, fn ($value) => $value !== null))
+                <a href="{{ route('websites.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
     <!--
      ! ------------------------------------------------------------
      ! List Websites
      ! ------------------------------------------------------------
      !-->
     @if(!$websites->isEmpty())
-        <div class="overflow-x-auto">
+        <div class="mt-6 overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -110,19 +161,26 @@
                 </tbody>
             </table>
         </div>
+        <div class="py-4">
+            {{ $websites->links() }}
+        </div>
     @else
         <div class="max-w-3xl mx-auto">
             <x-lists.empty
-                title="{{ __('You have no websites') }}"
-                description="{{ __('You have no websites. Click the button below to add one.') }}"
+                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No websites match these filters') : __('You have no websites')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('You have no websites. Click the button below to add one.')"
             >
                 <x-slot:button>
-                    <a href="{{ route('websites.create') }}" class="button secondary">
-                        <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                            <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
-                        </svg>
-                        {{ __('Add Website') }}
-                    </a>
+                    @if (array_filter($filters, fn ($value) => $value !== null))
+                        <a href="{{ route('websites.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                    @else
+                        <a href="{{ route('websites.create') }}" class="button secondary">
+                            <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                                <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
+                            </svg>
+                            {{ __('Add Website') }}
+                        </a>
+                    @endif
                 </x-slot:button>
             </x-lists.empty>
         </div>

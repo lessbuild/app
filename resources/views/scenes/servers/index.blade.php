@@ -22,13 +22,47 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <form method="GET" action="{{ route('servers.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <input
+                    id="search"
+                    name="search"
+                    type="search"
+                    maxlength="100"
+                    value="{{ $filters['search'] }}"
+                    placeholder="{{ __('Name, identifier, or IP address') }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All statuses') }}</option>
+                    @foreach ($statuses as $status)
+                        <option value="{{ $status }}" @selected($filters['status'] === $status)>
+                            {{ str($status)->replace('_', ' ')->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            @if (array_filter($filters, fn ($value) => $value !== null))
+                <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
     <!--
      ! ------------------------------------------------------------
      ! List Servers
      ! ------------------------------------------------------------
      !-->
     @if(!$servers->isEmpty())
-        <div class="overflow-x-auto">
+        <div class="mt-6 overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -103,16 +137,23 @@
                 </tbody>
             </table>
         </div>
+        <div class="py-4">
+            {{ $servers->links() }}
+        </div>
     @else
         <div class="max-w-3xl mx-auto">
             <x-lists.empty
-                title="{{ __('You have no servers') }}"
-                description="{{ __('You have no servers. Click the button below to add one.') }}"
+                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No servers match these filters') : __('You have no servers')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('You have no servers. Click the button below to add one.')"
             >
                 <x-slot:button>
-                    <a href="{{ route('servers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded text-sm shadow">
-                        {{ __('Add Server') }}
-                    </a>
+                    @if (array_filter($filters, fn ($value) => $value !== null))
+                        <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                    @else
+                        <a href="{{ route('servers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded text-sm shadow">
+                            {{ __('Add Server') }}
+                        </a>
+                    @endif
                 </x-slot:button>
             </x-lists.empty>
         </div>

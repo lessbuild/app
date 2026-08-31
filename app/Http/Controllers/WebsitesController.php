@@ -23,10 +23,49 @@ class WebsitesController extends Controller
      */
     public function index(Request $request): View
     {
-        $websites = $request->user()->websites()->with('server')->latest()->paginate();
+        $filters = $this->indexFilters($request);
+        $websites = $request->user()->websites()
+            ->with('server')
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('url', 'like', "%{$value}%")
+                        ->orWhere('description', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('provisioning_status', $value))
+            ->when($filters['health'], function ($query, string $value): void {
+                if ($value === 'disabled') {
+                    $query->where('health_check_enabled', false);
+
+                    return;
+                }
+
+                $query
+                    ->where('health_check_enabled', true)
+                    ->where('health_status', $value);
+            })
+            ->when($filters['attention'], fn ($query) => $query
+                ->where(function ($query): void {
+                    $query
+                        ->where('provisioning_status', Website::STATUS_FAILED)
+                        ->orWhere(function ($query): void {
+                            $query
+                                ->where('health_check_enabled', true)
+                                ->where('health_status', Website::HEALTH_UNHEALTHY);
+                        });
+                }))
+            ->latest()
+            ->paginate()
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
 
         return view('scenes.websites.index', [
             'websites' => $websites,
+            'filters' => $filters,
+            'statuses' => $this->websiteStatuses(),
+            'healthStatuses' => ['disabled', Website::HEALTH_UNKNOWN, Website::HEALTH_HEALTHY, Website::HEALTH_UNHEALTHY],
         ]);
     }
 
@@ -240,5 +279,32 @@ class WebsitesController extends Controller
         return redirect()
             ->route('websites.index')
             ->with('success', __('Website deletion queued.'));
+    }
+
+    /** @return array{search: ?string, status: ?string, health: ?string, attention: ?string} */
+    private function indexFilters(Request $request): array
+    {
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $status = $request->string('status')->toString();
+        $health = $request->string('health')->toString();
+        $healthStatuses = ['disabled', Website::HEALTH_UNKNOWN, Website::HEALTH_HEALTHY, Website::HEALTH_UNHEALTHY];
+
+        return [
+            'search' => $search !== '' ? $search : null,
+            'status' => in_array($status, $this->websiteStatuses(), true) ? $status : null,
+            'health' => in_array($health, $healthStatuses, true) ? $health : null,
+            'attention' => $request->boolean('attention') ? '1' : null,
+        ];
+    }
+
+    /** @return list<string> */
+    private function websiteStatuses(): array
+    {
+        return [
+            Website::STATUS_QUEUED,
+            Website::STATUS_PROVISIONING,
+            Website::STATUS_ACTIVE,
+            Website::STATUS_FAILED,
+        ];
     }
 }

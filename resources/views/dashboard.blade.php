@@ -81,7 +81,7 @@
                             <p class="text-sm text-red-700">{{ __('No website failures.') }}</p>
                         @endforelse
                         @if ($attentionCounts['websites'] > $attentionWebsites->count())
-                            <a href="{{ route('websites.index') }}" class="block text-sm font-medium text-red-700 underline">
+                            <a href="{{ route('websites.index', ['attention' => 1]) }}" class="block text-sm font-medium text-red-700 underline">
                                 {{ trans_choice(':count more website|:count more websites', $attentionCounts['websites'] - $attentionWebsites->count(), ['count' => $attentionCounts['websites'] - $attentionWebsites->count()]) }}
                             </a>
                         @endif
@@ -102,7 +102,7 @@
                             <p class="text-sm text-red-700">{{ __('No server failures.') }}</p>
                         @endforelse
                         @if ($attentionCounts['servers'] > $attentionServers->count())
-                            <a href="{{ route('servers.index') }}" class="block text-sm font-medium text-red-700 underline">
+                            <a href="{{ route('servers.index', ['status' => \App\Models\Server::STATUS_FAILED]) }}" class="block text-sm font-medium text-red-700 underline">
                                 {{ trans_choice(':count more server|:count more servers', $attentionCounts['servers'] - $attentionServers->count(), ['count' => $attentionCounts['servers'] - $attentionServers->count()]) }}
                             </a>
                         @endif

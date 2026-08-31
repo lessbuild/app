@@ -27,10 +27,27 @@ class ServersController extends Controller
      */
     public function index(Request $request): View
     {
-        $servers = $request->user()->servers()->paginate();
+        $filters = $this->indexFilters($request);
+        $servers = $request->user()->servers()
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('identifier', 'like', "%{$value}%")
+                        ->orWhere('public_ip', 'like', "%{$value}%")
+                        ->orWhere('private_ip', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['status'], fn ($query, string $value) => $query
+                ->where('provisioning_status', $value))
+            ->latest()
+            ->paginate()
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
 
         return view('scenes.servers.index', [
             'servers' => $servers,
+            'filters' => $filters,
+            'statuses' => $this->serverStatuses(),
         ]);
     }
 
@@ -195,5 +212,29 @@ class ServersController extends Controller
         }
 
         return back()->with('success', __('Remote server provisioning retry queued.'));
+    }
+
+    /** @return array{search: ?string, status: ?string} */
+    private function indexFilters(Request $request): array
+    {
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $status = $request->string('status')->toString();
+
+        return [
+            'search' => $search !== '' ? $search : null,
+            'status' => in_array($status, $this->serverStatuses(), true) ? $status : null,
+        ];
+    }
+
+    /** @return list<string> */
+    private function serverStatuses(): array
+    {
+        return [
+            Server::STATUS_QUEUED,
+            Server::STATUS_WAITING_FOR_IP,
+            Server::STATUS_PROVISIONING,
+            Server::STATUS_ACTIVE,
+            Server::STATUS_FAILED,
+        ];
     }
 }
