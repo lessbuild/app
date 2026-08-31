@@ -76,7 +76,7 @@ User=root
 Group=root
 WorkingDirectory=${APP_DIR}
 ExecStart=${PHP_BIN} artisan serve --host=0.0.0.0 --port=8003 --no-reload
-ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/ 15 1
+ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/api/health 15 1
 Restart=always
 RestartSec=3
 TimeoutStartSec=50

@@ -32,8 +32,10 @@ The included systemd installer configures the app to listen on every network
 interface on port `8003`, process provisioning jobs in a separate queue worker,
 restart both processes after failures, and start them automatically after a
 reboot. Service installation and restarts wait for a successful loopback HTTP
-response before reporting the web process ready. On a new host it also creates
-a local SQLite database and a persistent
+response from `/api/health` before reporting the web process ready. This
+machine-readable endpoint returns ready only when the database is reachable and
+all application migrations have run. On a new host it also creates a local
+SQLite database and a persistent
 systemd timer that takes a consistent database snapshot every day. Automatic
 backups are stored in `storage/app/backups` and retained for seven days by
 default. A `sync` queue configuration is automatically upgraded to the database
@@ -57,6 +59,7 @@ Check the web and worker processes with:
 ```bash
 systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
 journalctl -u lessbuild-app -u lessbuild-worker --since today
+curl --fail http://127.0.0.1:8003/api/health
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup
 php artisan lessbuild:backups:verify --all
