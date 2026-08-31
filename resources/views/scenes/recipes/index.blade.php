@@ -19,19 +19,57 @@
         </div>
     @endif
 
+    <form method="GET" action="{{ route('recipes.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <input
+                    id="search"
+                    name="search"
+                    type="search"
+                    maxlength="100"
+                    value="{{ $filters['search'] }}"
+                    placeholder="{{ __('Name or description') }}"
+                    class="input secondary mt-1 w-full rounded"
+                >
+            </div>
+            <div>
+                <label for="usage" class="block text-xs font-semibold uppercase text-secondary">{{ __('Usage') }}</label>
+                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All usage states') }}</option>
+                    @foreach ($usages as $usage)
+                        <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>
+                            {{ str($usage)->replace('_', ' ')->title() }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            @if (array_filter($filters, fn ($value) => $value !== null))
+                <a href="{{ route('recipes.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
     @if ($recipes->isEmpty())
         <div class="mx-auto max-w-3xl">
             <x-lists.empty
-                :title="__('You have no recipes')"
-                :description="__('Create a recipe to automate custom setup on new servers.')"
+                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No recipes match these filters') : __('You have no recipes')"
+                :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('Create a recipe to automate custom setup on new servers.')"
             >
                 <x-slot:button>
-                    <a href="{{ route('recipes.create') }}" class="button secondary">{{ __('Add Recipe') }}</a>
+                    @if (array_filter($filters, fn ($value) => $value !== null))
+                        <a href="{{ route('recipes.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                    @else
+                        <a href="{{ route('recipes.create') }}" class="button secondary">{{ __('Add Recipe') }}</a>
+                    @endif
                 </x-slot:button>
             </x-lists.empty>
         </div>
     @else
-        <div class="overflow-x-auto">
+        <div class="mt-6 overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-y border-primary">
                 <thead class="bg-primary border-x border-primary">
                     <tr>

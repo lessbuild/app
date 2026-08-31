@@ -28,6 +28,9 @@ rendering an authorized server provisioning plan.
 Each server also stores an encrypted snapshot of the ordered recipes selected
 at creation. Provisioning retries and server history use that immutable snapshot,
 so later recipe edits or deletion cannot silently change an existing server plan.
+The recipe inventory can be searched by name or description and filtered by
+whether a recipe is assigned to servers. Encrypted script bodies are deliberately
+excluded from search results and list output.
 
 ## Source control providers
 

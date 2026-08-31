@@ -12,8 +12,28 @@ class RecipesController extends Controller
 {
     public function index(Request $request): View
     {
+        $filters = $this->indexFilters($request);
+        $recipes = $request->user()->recipes()
+            ->when($filters['search'], function ($query, string $value): void {
+                $query->where(function ($query) use ($value): void {
+                    $query
+                        ->where('name', 'like', "%{$value}%")
+                        ->orWhere('description', 'like', "%{$value}%");
+                });
+            })
+            ->when($filters['usage'] === 'in_use', fn ($query) => $query
+                ->whereHas('servers'))
+            ->when($filters['usage'] === 'unused', fn ($query) => $query
+                ->whereDoesntHave('servers'))
+            ->withCount('servers')
+            ->latest()
+            ->paginate()
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
+
         return view('scenes.recipes.index', [
-            'recipes' => $request->user()->recipes()->withCount('servers')->latest()->paginate(),
+            'recipes' => $recipes,
+            'filters' => $filters,
+            'usages' => ['in_use', 'unused'],
         ]);
     }
 
@@ -50,5 +70,17 @@ class RecipesController extends Controller
         $recipe->delete();
 
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
+    }
+
+    /** @return array{search: ?string, usage: ?string} */
+    private function indexFilters(Request $request): array
+    {
+        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
+        $usage = $request->string('usage')->toString();
+
+        return [
+            'search' => $search !== '' ? $search : null,
+            'usage' => in_array($usage, ['in_use', 'unused'], true) ? $usage : null,
+        ];
     }
 }
