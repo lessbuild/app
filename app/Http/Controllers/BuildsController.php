@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Repository\CancelDeploymentAction;
+use App\Actions\Repository\CancelQueuedDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
 use App\Data\BuildRedeploymentResult;
 use App\Models\Build;
@@ -41,12 +42,21 @@ class BuildsController extends Controller
         ]);
     }
 
-    public function cancel(Build $build, Runner $runner): RedirectResponse
-    {
+    public function cancel(
+        Build $build,
+        Runner $runner,
+        CancelQueuedDeploymentAction $cancelQueued,
+    ): RedirectResponse {
         $this->authorize('cancel', $build);
 
+        if ($build->status === Build::STATUS_QUEUED) {
+            return $cancelQueued->handle($build)
+                ? back()->with('success', __('Queued deployment canceled.'))
+                : back()->with('info', __('This deployment is no longer cancellable.'));
+        }
+
         if ($build->status !== Build::STATUS_RUNNING || ! $build->remote_process_id || ! $build->remote_process_path) {
-            return back()->with('info', __('This deployment is no longer running.'));
+            return back()->with('info', __('This deployment is no longer cancellable.'));
         }
 
         try {

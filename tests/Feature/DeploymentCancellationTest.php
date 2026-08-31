@@ -6,12 +6,15 @@ use App\Actions\Repository\CancelDeploymentAction;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\Repository;
+use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\ManagedSsh;
 use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Mockery;
 use RuntimeException;
@@ -81,6 +84,75 @@ class DeploymentCancellationTest extends TestCase
         $this->assertNull($build->finished_at);
     }
 
+    public function test_owner_can_cancel_a_queued_deployment_before_remote_work_starts(): void
+    {
+        Queue::fake();
+        [$owner, $build] = $this->build();
+        $build->update([
+            'status' => Build::STATUS_QUEUED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
+            'started_at' => null,
+        ]);
+
+        $this->actingAs($owner)->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertSee('Cancel queued deployment')
+            ->assertSee('Remove this deployment from the queue?')
+            ->assertDontSee('Stop this deployment on the remote server?');
+
+        $this->actingAs($owner)->post(route('builds.cancel', $build))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Queued deployment canceled.');
+
+        $build->refresh();
+        $this->assertSame(Build::STATUS_CANCELED, $build->status);
+        $this->assertNotNull($build->finished_at);
+        $this->assertNull($build->started_at);
+        $this->assertNull($build->remote_process_id);
+        $this->assertNull($build->remote_process_path);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_canceling_a_queued_deployment_hands_the_website_to_its_oldest_pending_push(): void
+    {
+        Queue::fake();
+        [$owner, $build] = $this->build();
+        $build->update([
+            'status' => Build::STATUS_QUEUED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
+            'started_at' => null,
+        ]);
+        $pending = $this->pendingRepository($build->repository);
+        $revision = str_repeat('e', 40);
+        $pending->update([
+            'webhook_enabled' => true,
+            'webhook_pending' => true,
+            'webhook_pending_revision' => $revision,
+            'webhook_pending_commit_message' => 'Ship queued cancellation',
+            'webhook_last_received_at' => now(),
+        ]);
+        $pending->webhookDeliveries()->create([
+            'delivery_id' => 'pending-after-cancel',
+            'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($owner)->post(route('builds.cancel', $build))
+            ->assertSessionHas('success', 'Queued deployment canceled.');
+
+        $next = $pending->builds()->sole();
+        $this->assertSame(Build::STATUS_QUEUED, $next->status);
+        $this->assertSame($revision, $next->revision);
+        $this->assertFalse($pending->fresh()->webhook_pending);
+        $this->assertDatabaseHas('repository_webhook_deliveries', [
+            'repository_id' => $pending->id,
+            'delivery_id' => 'pending-after-cancel',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+        ]);
+        Queue::assertPushed(PublishRepositoryJob::class, fn (PublishRepositoryJob $job): bool => $job->build->is($next));
+    }
+
     public function test_cancellation_can_recover_the_process_id_from_its_restricted_pid_file(): void
     {
         [, $build] = $this->build();
@@ -112,7 +184,7 @@ class DeploymentCancellationTest extends TestCase
             'finished_at' => now(),
         ]);
         $this->actingAs($owner)->post(route('builds.cancel', $build))
-            ->assertSessionHas('info', 'This deployment is no longer running.');
+            ->assertSessionHas('info', 'This deployment is no longer cancellable.');
     }
 
     public function test_late_callbacks_and_worker_failures_cannot_regress_a_canceled_build(): void
@@ -274,5 +346,17 @@ class DeploymentCancellationTest extends TestCase
         ]);
 
         return [$user, $build];
+    }
+
+    private function pendingRepository(Repository $repository): Repository
+    {
+        return $repository->user->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $repository->website_id,
+            'name' => 'Pending repository',
+            'url' => 'github.com/example/pending.git',
+            'branch' => 'main',
+            'description' => 'Pending source',
+        ]);
     }
 }

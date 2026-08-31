@@ -69,6 +69,8 @@ Deployment serialization follows the website rather than the repository. When
 multiple repositories target one website, only one may write its release path
 at a time. Pending webhook pushes from sibling repositories are handed off in
 arrival order, while repositories on different websites remain independent.
+Queued deployments can be canceled before a worker starts them, immediately
+releasing the website for its next pending push.
 
 Completed, failed, and canceled builds can be redeployed from their build page.
 Each checkout reports its actual commit through a short-lived signed callback.

@@ -57,15 +57,17 @@
         </div>
     @endif
 
-    @if ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path)
+    @if ($build->status === \App\Models\Build::STATUS_QUEUED || ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path))
         <form method="POST" action="{{ route('builds.cancel', $build) }}" class="mt-4">
             @csrf
             <button
                 type="submit"
                 class="button primary"
-                onclick="return confirm({{ Illuminate\Support\Js::from(__('Stop this deployment on the remote server?')) }})"
+                onclick="return confirm({{ Illuminate\Support\Js::from($build->status === \App\Models\Build::STATUS_QUEUED
+                    ? __('Remove this deployment from the queue?')
+                    : __('Stop this deployment on the remote server?')) }})"
             >
-                {{ __('Cancel deployment') }}
+                {{ $build->status === \App\Models\Build::STATUS_QUEUED ? __('Cancel queued deployment') : __('Cancel deployment') }}
             </button>
         </form>
     @endif
