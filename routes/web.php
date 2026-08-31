@@ -12,6 +12,7 @@ use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\RepositoryWebhookSettingsController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServerCommandsController;
 use App\Http\Controllers\ServersController;
 use App\Http\Controllers\UsersController;
@@ -64,6 +65,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('verified')->group(function () {
         Route::get('home', DashboardController::class)->name('dashboard');
+        Route::get('search', SearchController::class)->name('search.index');
         Route::get('activity/export', [ActivityController::class, 'export'])
             ->name('activity.export');
         Route::get('activity', ActivityController::class)->name('activity.index');

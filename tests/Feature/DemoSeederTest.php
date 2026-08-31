@@ -187,6 +187,12 @@ class DemoSeederTest extends TestCase
             ->assertSee('wire:poll.5s', false)
             ->assertSee('Refreshing this log snapshot')
             ->assertSee('Demo provisioning is still running');
+        $this->actingAs($user)->get(route('search.index', ['q' => 'Demo']))
+            ->assertSuccessful()
+            ->assertSee(DemoSeeder::PREFIX.'Storefront')
+            ->assertSee(DemoSeeder::PREFIX.'Production application')
+            ->assertSee(DemoSeeder::PREFIX.'GitHub')
+            ->assertSee(DemoSeeder::PREFIX.'Install image tools');
 
         foreach ([
             route('dashboard'),

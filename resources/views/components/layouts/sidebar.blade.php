@@ -7,6 +7,19 @@
             {{ config('app.name') }}
         </p>
     </div>
+    <form method="GET" action="{{ route('search.index') }}" class="mb-4 flex gap-2 px-4">
+        <label for="global-search" class="sr-only">{{ __('Search account') }}</label>
+        <input
+            id="global-search"
+            name="q"
+            type="search"
+            maxlength="100"
+            value="{{ request()->routeIs('search.index') ? request()->string('q') : '' }}"
+            placeholder="{{ __('Search account') }}"
+            class="input secondary min-w-0 flex-1 rounded"
+        >
+        <button type="submit" class="button primary">{{ __('Go') }}</button>
+    </form>
     <div class="mb-4 px-4 space-y-1">
         <p class="pl-4 text-xs font-light mb-1 uppercase text-secondary">
             {{ __('System') }}
