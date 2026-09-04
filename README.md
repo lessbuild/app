@@ -148,6 +148,11 @@ update-available, and contributor ownership states without loading private scrip
 Operators can also save published recipes without installing executable copies.
 Saved recipes are private to each account, available as a gallery collection filter,
 and can be added or removed from both gallery cards and recipe detail pages.
+Users can privately report security, broken, outdated, misleading, or other issues
+and revisit them through a personal gallery filter. Contributors receive structured
+counts and recent report details without reporter identities, while audit entries
+record report actions without copying the submitted details. Free-text details are
+encrypted at rest and loaded only for the contributor feedback view.
 Recipe creation, publication changes, gallery installs and refreshes, and rating
 changes are recorded in the owner-scoped activity history without script contents.
 

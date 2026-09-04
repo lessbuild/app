@@ -92,6 +92,13 @@ class DemoGallerySeeder extends Seeder
         $demoOwner->recipeFavorites()->firstOrCreate([
             'recipe_id' => $galleryRecipes['Install Node.js LTS']->id,
         ]);
+        $demoOwner->recipeReports()->updateOrCreate(
+            ['recipe_id' => $galleryRecipes['Install unattended upgrades']->id],
+            [
+                'reason' => 'outdated',
+                'details' => 'Demo feedback: confirm the unattended-upgrades defaults for the current distribution release.',
+            ],
+        );
 
         $demoOwner->recipes()
             ->where('source_recipe_id', $source->id)

@@ -12,6 +12,7 @@ use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipeFavoritesController;
 use App\Http\Controllers\RecipeGalleryController;
 use App\Http\Controllers\RecipeRatingsController;
+use App\Http\Controllers\RecipeReportsController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\RepositoryWebhookSettingsController;
@@ -192,6 +193,14 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('recipe')
             ->middleware('throttle:30,1')
             ->name('gallery.favorite.destroy');
+        Route::post('gallery/{recipe}/report', [RecipeReportsController::class, 'store'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:10,1')
+            ->name('gallery.report.store');
+        Route::delete('gallery/{recipe}/report', [RecipeReportsController::class, 'destroy'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:10,1')
+            ->name('gallery.report.destroy');
         Route::post('gallery/{recipe}/rating', [RecipeRatingsController::class, 'store'])
             ->whereNumber('recipe')
             ->middleware('throttle:30,1')

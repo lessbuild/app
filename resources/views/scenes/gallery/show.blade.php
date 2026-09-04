@@ -119,6 +119,77 @@
         @endif
     </section>
 
+    <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-report-heading">
+        @if ((int) $recipe->user_id === (int) auth()->id())
+            @php($reportTotal = $reportCounts->sum())
+            <h2 id="gallery-report-heading" class="text-lg font-bold text-primary">{{ __('Community reports') }}</h2>
+            <p class="mt-1 text-sm text-secondary">
+                {{ __('Reporter identities are private. Use this anonymous feedback to investigate and improve your published recipe.') }}
+            </p>
+
+            @if ($reportTotal > 0)
+                <div class="mt-4 flex flex-wrap gap-2">
+                    @foreach (\App\Models\RecipeReport::REASONS as $reason)
+                        @if ($reportCounts->has($reason))
+                            <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                {{ str($reason)->headline() }}: {{ $reportCounts->get($reason) }}
+                            </span>
+                        @endif
+                    @endforeach
+                </div>
+                <div class="mt-4 space-y-3">
+                    @foreach ($recentReports as $report)
+                        <article class="rounded border border-primary bg-secondary p-4">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-primary">{{ str($report->reason)->headline() }}</span>
+                                <span class="text-xs text-secondary">{{ $report->created_at->diffForHumans() }}</span>
+                            </div>
+                            <p class="mt-2 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+                        </article>
+                    @endforeach
+                </div>
+            @else
+                <p class="mt-4 text-sm text-secondary">{{ __('No community reports have been submitted for this recipe.') }}</p>
+            @endif
+        @else
+            <h2 id="gallery-report-heading" class="text-lg font-bold text-primary">{{ __('Report a recipe issue') }}</h2>
+            <p class="mt-1 text-sm text-secondary">
+                {{ __('Tell the contributor about unsafe, broken, outdated, or misleading content. Your identity is not shown to them.') }}
+            </p>
+            @if ($currentReport)
+                <p class="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {{ __('You reported this recipe as :reason. You can update or withdraw your report.', ['reason' => str($currentReport->reason)->headline()]) }}
+                </p>
+            @endif
+            <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="mt-4 space-y-4">
+                @csrf
+                <div>
+                    <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
+                    <select id="reason" name="reason" class="input secondary mt-1 w-full rounded sm:max-w-xs" required>
+                        <option value="">{{ __('Choose an issue') }}</option>
+                        @foreach (\App\Models\RecipeReport::REASONS as $reason)
+                            <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
+                        @endforeach
+                    </select>
+                    <x-forms.errors name="reason" />
+                </div>
+                <div>
+                    <label for="details" class="block text-xs font-semibold uppercase text-secondary">{{ __('Details (optional)') }}</label>
+                    <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
+                    <x-forms.errors name="details" />
+                </div>
+                <button type="submit" class="button primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</button>
+            </form>
+            @if ($currentReport)
+                <form method="POST" action="{{ route('gallery.report.destroy', $recipe) }}" class="mt-3">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="button secondary">{{ __('Withdraw Report') }}</button>
+                </form>
+            @endif
+        @endif
+    </section>
+
     <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-script-heading">
         <div class="rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
             {{ __('This community script runs as root. Read every command and verify package sources, downloads, and destructive operations before using it.') }}

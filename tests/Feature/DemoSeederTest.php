@@ -121,6 +121,17 @@ class DemoSeederTest extends TestCase
             'Install Node.js LTS',
             $user->recipeFavorites()->with('recipe')->sole()->recipe->name,
         );
+        $this->assertSame(1, $user->recipeReports()->count());
+        $this->assertSame('outdated', $user->recipeReports()->sole()->reason);
+        $this->assertSame(
+            'Install unattended upgrades',
+            $user->recipeReports()->with('recipe')->sole()->recipe->name,
+        );
+        $demoReport = $user->recipeReports()->sole();
+        $this->assertNotSame(
+            $demoReport->details,
+            DB::table('recipe_reports')->where('id', $demoReport->id)->value('details'),
+        );
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -322,6 +333,7 @@ class DemoSeederTest extends TestCase
         $importedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')->sole();
         $gallerySource = Recipe::query()->where('name', 'Harden SSH defaults')->sole();
         $communityRecipe = Recipe::query()->where('name', 'Install Node.js LTS')->sole();
+        $reportedRecipe = Recipe::query()->where('name', 'Install unattended upgrades')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
         $this->actingAs($user)->get(route('dashboard'))
@@ -462,6 +474,17 @@ class DemoSeederTest extends TestCase
             ])
             ->assertSee('Saved')
             ->assertSee('Remove saved');
+        $this->actingAs($user)->get(route('gallery.index', ['scope' => 'reported']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $reportedRecipe->id)
+            ->assertViewHas('metrics', [
+                'published' => 1,
+                'installs' => 24,
+                'authors' => 1,
+                'ratings' => 0,
+            ])
+            ->assertSee('Reported by you');
         $this->actingAs($user)->get(route('gallery.index', ['scope' => 'mine']))
             ->assertSuccessful()
             ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
@@ -477,6 +500,12 @@ class DemoSeederTest extends TestCase
             ->assertSuccessful()
             ->assertSee('curl -fsSL https://deb.nodesource.com/setup_lts.x')
             ->assertSee('Add to My Recipes');
+        $this->actingAs($user)->get(route('gallery.show', $reportedRecipe))
+            ->assertSuccessful()
+            ->assertSee('You reported this recipe as Outdated')
+            ->assertSee('Demo feedback: confirm the unattended-upgrades defaults')
+            ->assertSee('Update Report')
+            ->assertSee('Withdraw Report');
         $this->actingAs($user)->get(route('gallery.show', $gallerySource))
             ->assertSuccessful()
             ->assertSee('A newer gallery version is available')
@@ -1043,6 +1072,7 @@ class DemoSeederTest extends TestCase
             'recipes' => $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'gallery_ratings' => $user->recipeRatings()->count(),
             'gallery_favorites' => $user->recipeFavorites()->count(),
+            'gallery_reports' => $user->recipeReports()->count(),
             'servers' => $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'websites' => $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'health_checks' => WebsiteHealthCheck::query()

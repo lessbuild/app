@@ -37,6 +37,7 @@
                 <select id="scope" name="scope" class="input secondary mt-1 w-full rounded">
                     <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
                     <option value="favorites" @selected($filters['scope'] === 'favorites')>{{ __('Saved by me') }}</option>
+                    <option value="reported" @selected($filters['scope'] === 'reported')>{{ __('Reported by me') }}</option>
                     <option value="installed" @selected($filters['scope'] === 'installed')>{{ __('Installed by me') }}</option>
                     <option value="updates" @selected($filters['scope'] === 'updates')>{{ __('Updates available') }}</option>
                     <option value="mine" @selected($filters['scope'] === 'mine')>{{ __('Published by me') }}</option>
@@ -91,6 +92,7 @@
                 @php
                     $installedRecipe = $recipe->installs->first();
                     $favorite = $recipe->favorites->first();
+                    $report = $recipe->reports->first();
                     $updateAvailable = $installedRecipe?->hasGalleryUpdate($recipe) ?? false;
                 @endphp
                 <article class="rounded-lg border border-primary bg-primary p-5">
@@ -102,6 +104,9 @@
                             @endif
                             @if ($favorite)
                                 <span class="ml-1 rounded-full bg-pink-100 px-2 py-1 text-xs font-semibold text-pink-700">{{ __('Saved') }}</span>
+                            @endif
+                            @if ($report)
+                                <span class="ml-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">{{ __('Reported by you') }}</span>
                             @endif
                             @if ($updateAvailable)
                                 <span class="ml-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">{{ __('Update available') }}</span>
