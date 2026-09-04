@@ -192,6 +192,33 @@
                 </form>
             </div>
 
+            <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['total'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Queued deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['queued'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Pending deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['pending'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unavailable deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['unavailable'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Superseded deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['superseded'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Received deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['received'] }}</dd>
+                </div>
+            </dl>
+
             <div id="webhook-deliveries" class="mt-4">
                 @if ($webhookDeliveries->isEmpty())
                     <p class="rounded border border-primary p-4 text-sm text-secondary">

@@ -361,6 +361,9 @@ Filter-aware repository cards summarize matching and never-deployed repositories
 active, successful, and failed latest deployments, and enabled push webhooks.
 Latest-status filtering and metrics share model scopes so older failed builds do
 not misclassify a repository whose newest deployment recovered.
+Repository detail also summarizes matching webhook deliveries across queued,
+pending, unavailable, superseded, and received states. These filtered counts use
+one owner-authorized grouped query without loading revision or commit metadata.
 The current filtered inventory can be exported as a streamed,
 spreadsheet-safe CSV without credentials or deployment commands.
 The filtered server inventory can also be streamed as a spreadsheet-safe CSV

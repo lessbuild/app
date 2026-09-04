@@ -478,10 +478,32 @@ class DemoSeederTest extends TestCase
                 'median_duration_seconds' => 180,
                 'duration_sample_size' => 3,
             ])
+            ->assertViewHas('deliveryMetrics', [
+                'total' => 2,
+                'queued' => 1,
+                'pending' => 0,
+                'unavailable' => 0,
+                'superseded' => 1,
+                'received' => 0,
+            ])
             ->assertSee('Deployment insights')
+            ->assertSee('Matching deliveries')
             ->assertSee('67%')
             ->assertSee('3m')
             ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
+        $this->actingAs($user)->get(route('repositories.show', [
+            $repository,
+            'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('deliveryMetrics', [
+                'total' => 1,
+                'queued' => 1,
+                'pending' => 0,
+                'unavailable' => 0,
+                'superseded' => 0,
+                'received' => 0,
+            ]);
         $this->actingAs($user)->get(route('repositories.index'))
             ->assertSuccessful()
             ->assertViewHas('metrics', [

@@ -71,6 +71,14 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
 
         $response
             ->assertSuccessful()
+            ->assertViewHas('deliveryMetrics', [
+                'total' => 1,
+                'queued' => 1,
+                'pending' => 0,
+                'unavailable' => 0,
+                'superseded' => 0,
+                'received' => 0,
+            ])
             ->assertSee('Webhook delivery history')
             ->assertSee('visible-queued-delivery')
             ->assertSee(substr($revision, 0, 12))
@@ -84,6 +92,53 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertDontSee('foreign-private-delivery')
             ->assertDontSee('provider-secret')
             ->assertDontSee('webhook-secret');
+    }
+
+    public function test_owner_sees_all_delivery_state_counts_and_explicit_empty_metrics(): void
+    {
+        [$owner, $repository] = $this->repository();
+        foreach (RepositoryWebhookDelivery::STATUSES as $index => $status) {
+            $repository->webhookDeliveries()->create([
+                'delivery_id' => "delivery-{$status}",
+                'status' => $status,
+                'created_at' => "2026-08-20 12:0{$index}:00",
+                'updated_at' => "2026-08-20 12:0{$index}:00",
+            ]);
+        }
+
+        $this->actingAs($owner)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertViewHas('deliveryMetrics', [
+                'total' => 5,
+                'queued' => 1,
+                'pending' => 1,
+                'unavailable' => 1,
+                'superseded' => 1,
+                'received' => 1,
+            ])
+            ->assertSee('Matching deliveries')
+            ->assertSee('Queued deliveries')
+            ->assertSee('Pending deliveries')
+            ->assertSee('Unavailable deliveries')
+            ->assertSee('Superseded deliveries')
+            ->assertSee('Received deliveries')
+            ->assertDontSee('provider-secret')
+            ->assertDontSee('webhook-secret');
+
+        $this->actingAs($owner)->get(route('repositories.show', [
+            $repository,
+            'delivery_date_from' => '2026-08-21',
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('deliveryMetrics', [
+                'total' => 0,
+                'queued' => 0,
+                'pending' => 0,
+                'unavailable' => 0,
+                'superseded' => 0,
+                'received' => 0,
+            ])
+            ->assertSee('No webhook deliveries match these filters.');
     }
 
     public function test_delivery_history_is_paginated_and_preserves_a_valid_filter(): void
