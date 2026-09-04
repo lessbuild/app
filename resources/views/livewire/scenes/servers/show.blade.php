@@ -40,6 +40,10 @@
     >
         <x-slot:buttons>
 
+            <a href="{{ route('builds.index', ['server_id' => $server->id]) }}" class="button secondary">
+                {{ __('Deployment History') }}
+            </a>
+
             <a href="{{ route('servers.edit', $server) }}" class="button primary">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>

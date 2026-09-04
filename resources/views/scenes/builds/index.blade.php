@@ -48,6 +48,17 @@
                 </select>
             </div>
             <div>
+                <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
+                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All servers') }}</option>
+                    @foreach ($servers as $server)
+                        <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>
+                            {{ $server->label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
                 <select id="status" name="status" class="input secondary mt-1 w-full rounded">
                     <option value="">{{ __('All statuses') }}</option>

@@ -362,6 +362,9 @@ filtered view can be exported as a streamed, spreadsheet-safe CSV file.
 History can also be scoped to a website across every repository targeting it,
 with a direct link from website detail. Website filters remain owner-scoped and
 apply consistently to the list, insight cards, pagination, and CSV export.
+The same history can be scoped to a server across all websites and repositories
+hosted there, with a direct server-detail link and the server display label in
+the filter selector. Server filters retain the same ownership and export guarantees.
 Filter-aware history cards summarize matching and active deployments, successful
 and failed outcomes, an observed completed-run success rate that excludes active
 and canceled runs, and the latest matching deployment. Empty or canceled-only

@@ -155,6 +155,58 @@ class BuildHistoryExportTest extends TestCase
         $this->assertNotContains('Other website repository', array_column($rows, 1));
     }
 
+    public function test_server_filter_exports_builds_across_its_owned_websites(): void
+    {
+        [$owner, $repository] = $this->repository('Primary repository');
+        $siblingWebsite = $owner->websites()->create([
+            'server_id' => $repository->website->server_id,
+            'name' => 'Sibling website',
+            'description' => 'Sibling website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'sibling-website.example.com',
+        ]);
+        $sibling = $owner->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $siblingWebsite->id,
+            'name' => 'Sibling website repository',
+            'url' => 'github.com/example/sibling-website.git',
+            'branch' => 'main',
+            'description' => 'Sibling website source',
+        ]);
+        $otherServer = $owner->servers()->create(['name' => 'Other server']);
+        $otherWebsite = $owner->websites()->create([
+            'server_id' => $otherServer->id,
+            'name' => 'Other server website',
+            'description' => 'Other server website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'other-server.example.com',
+        ]);
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $otherWebsite->id,
+            'name' => 'Other server repository',
+            'url' => 'github.com/example/other-server.git',
+            'branch' => 'main',
+            'description' => 'Other server source',
+        ]);
+        $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $sibling->builds()->create(['status' => Build::STATUS_FAILED]);
+        $otherRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $response = $this->actingAs($owner)->get(route('builds.export', [
+            'server_id' => $repository->website->server_id,
+        ]));
+
+        $response->assertSuccessful();
+        $rows = $this->csvRows($response);
+        $this->assertCount(3, $rows);
+        $this->assertEqualsCanonicalizing(
+            ['Primary repository', 'Sibling website repository'],
+            array_column(array_slice($rows, 1), 1),
+        );
+        $this->assertNotContains('Other server repository', array_column($rows, 1));
+    }
+
     public function test_latest_filter_excludes_failures_superseded_by_a_successful_build(): void
     {
         [$owner, $repository] = $this->repository('Recovered repository');

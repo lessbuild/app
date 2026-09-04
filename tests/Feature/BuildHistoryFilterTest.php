@@ -196,6 +196,90 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee('Foreign website');
     }
 
+    public function test_server_filter_combines_history_across_owned_websites_and_repositories(): void
+    {
+        [$owner, $first, $second] = $this->repositories('Owner');
+        $server = $first->website->server;
+        $server->update(['display_name' => 'Owner fleet server']);
+        $firstBuild = $first->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $secondBuild = $second->builds()->create(['status' => Build::STATUS_FAILED]);
+        $siblingWebsite = $owner->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'Owner sibling website',
+            'description' => 'Sibling website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'owner-sibling.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $siblingRepository = $owner->repositories()->create([
+            'provider_id' => $first->provider_id,
+            'website_id' => $siblingWebsite->id,
+            'name' => 'Owner sibling repository',
+            'url' => 'github.com/example/sibling.git',
+            'branch' => 'main',
+            'description' => 'Sibling source',
+        ]);
+        $siblingBuild = $siblingRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $otherServer = $owner->servers()->create([
+            'name' => 'Owner other server',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $otherWebsite = $owner->websites()->create([
+            'server_id' => $otherServer->id,
+            'name' => 'Owner isolated website',
+            'description' => 'Isolated website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'owner-isolated.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $first->provider_id,
+            'website_id' => $otherWebsite->id,
+            'name' => 'Owner isolated repository',
+            'url' => 'github.com/example/isolated.git',
+            'branch' => 'main',
+            'description' => 'Isolated source',
+        ]);
+        $otherBuild = $otherRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        [, $foreignRepository] = $this->repositories('Foreign');
+        $foreignBuild = $foreignRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $filters = ['server_id' => $server->id];
+        $this->actingAs($owner)->get(route('builds.index', $filters))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 3,
+                'active' => 0,
+                'succeeded' => 2,
+                'failed' => 1,
+                'success_rate' => 67,
+                'latest_at' => $siblingBuild->created_at,
+            ])
+            ->assertSee('value="'.$server->id.'" selected', false)
+            ->assertSee('Owner fleet server')
+            ->assertSee(route('builds.export', $filters))
+            ->assertSee(route('builds.show', $firstBuild))
+            ->assertSee(route('builds.show', $secondBuild))
+            ->assertSee(route('builds.show', $siblingBuild))
+            ->assertDontSee(route('builds.show', $otherBuild))
+            ->assertDontSee(route('builds.show', $foreignBuild));
+
+        $this->actingAs($owner)->get(route('builds.index', [
+            'server_id' => $foreignRepository->website->server_id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'active' => 0,
+                'succeeded' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'latest_at' => null,
+            ])
+            ->assertSee('No builds match these filters')
+            ->assertDontSee('Foreign server');
+    }
+
     public function test_latest_filter_returns_only_each_owned_repository_current_build(): void
     {
         [$owner, $first, $second] = $this->repositories('Owner');
@@ -236,6 +320,7 @@ class BuildHistoryFilterTest extends TestCase
         $response = $this->actingAs($owner)->get(route('builds.index', [
             'repository_id' => $repository->id,
             'website_id' => $repository->website_id,
+            'server_id' => $repository->website->server_id,
             'status' => Build::STATUS_FAILED,
             'trigger' => Build::TRIGGER_MANUAL,
             'search' => 'Release',
@@ -247,6 +332,7 @@ class BuildHistoryFilterTest extends TestCase
             ->assertSuccessful()
             ->assertSee('repository_id='.$repository->id, false)
             ->assertSee('website_id='.$repository->website_id, false)
+            ->assertSee('server_id='.$repository->website->server_id, false)
             ->assertSee('status=failed', false)
             ->assertSee('trigger=manual', false)
             ->assertSee('search=Release', false)
@@ -259,6 +345,7 @@ class BuildHistoryFilterTest extends TestCase
             'trigger' => 'not-a-trigger',
             'repository_id' => 'not-an-id',
             'website_id' => '-5',
+            'server_id' => '0',
             'latest' => 'sometimes',
             'date_from' => '2026-02-31',
             'date_to' => '../../etc/passwd',
@@ -267,6 +354,7 @@ class BuildHistoryFilterTest extends TestCase
             ->assertViewHas('filters', [
                 'repository_id' => null,
                 'website_id' => null,
+                'server_id' => null,
                 'status' => null,
                 'trigger' => null,
                 'search' => null,

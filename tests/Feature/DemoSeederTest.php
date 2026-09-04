@@ -503,6 +503,7 @@ class DemoSeederTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Log snapshot overview')
             ->assertSee('Ready snapshots')
+            ->assertSee(route('builds.index', ['server_id' => $server->id]))
             ->assertSee('Latest refresh');
         $this->actingAs($user)->get(route('servers.show', $queuedServer))
             ->assertSuccessful()
@@ -607,6 +608,16 @@ class DemoSeederTest extends TestCase
                 && $metrics['latest_at'] !== null)
             ->assertSee('value="'.$website->id.'" selected', false)
             ->assertSee(route('builds.export', ['website_id' => $website->id]));
+        $this->actingAs($user)->get(route('builds.index', ['server_id' => $server->id]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 6
+                && $metrics['active'] === 0
+                && $metrics['succeeded'] === 3
+                && $metrics['failed'] === 2
+                && $metrics['success_rate'] === 60
+                && $metrics['latest_at'] !== null)
+            ->assertSee('value="'.$server->id.'" selected', false)
+            ->assertSee(route('builds.export', ['server_id' => $server->id]));
         $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_RUNNING]))
             ->assertSuccessful()
             ->assertViewHas('metrics', [
