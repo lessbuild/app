@@ -20,6 +20,12 @@
         :description="$provider->description"
     >
         <x-slot:buttons>
+            @if ($provider->isSourceControl())
+                <a href="{{ route('builds.index', ['provider_id' => $provider->id]) }}" class="button secondary">
+                    {{ __('Deployment history') }}
+                </a>
+            @endif
+
             <form method="POST" action="{{ route('providers.connection.test', $provider) }}">
                 @csrf
                 <button type="submit" class="button secondary">

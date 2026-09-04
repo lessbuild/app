@@ -59,6 +59,17 @@
                 </select>
             </div>
             <div>
+                <label for="provider_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Source provider') }}</label>
+                <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All source providers') }}</option>
+                    @foreach ($providers as $provider)
+                        <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
+                            {{ $provider->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
                 <select id="status" name="status" class="input secondary mt-1 w-full rounded">
                     <option value="">{{ __('All statuses') }}</option>

@@ -207,6 +207,49 @@ class BuildHistoryExportTest extends TestCase
         $this->assertNotContains('Other server repository', array_column($rows, 1));
     }
 
+    public function test_source_provider_filter_exports_builds_across_owned_repositories(): void
+    {
+        [$owner, $repository] = $this->repository('Primary repository');
+        $sibling = $owner->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $repository->website_id,
+            'name' => 'Sibling provider repository',
+            'url' => 'github.com/example/sibling-provider.git',
+            'branch' => 'main',
+            'description' => 'Sibling provider source',
+        ]);
+        $otherProvider = $owner->providers()->create([
+            'name' => 'GitLab',
+            'provider' => Provider::TYPE_GITLAB,
+            'token' => 'other-source-secret',
+            'description' => 'Other source provider',
+        ]);
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $otherProvider->id,
+            'website_id' => $repository->website_id,
+            'name' => 'Other provider repository',
+            'url' => 'gitlab.com/example/other-provider.git',
+            'branch' => 'main',
+            'description' => 'Other provider source',
+        ]);
+        $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $sibling->builds()->create(['status' => Build::STATUS_FAILED]);
+        $otherRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $response = $this->actingAs($owner)->get(route('builds.export', [
+            'provider_id' => $repository->provider_id,
+        ]));
+
+        $response->assertSuccessful();
+        $rows = $this->csvRows($response);
+        $this->assertCount(3, $rows);
+        $this->assertEqualsCanonicalizing(
+            ['Primary repository', 'Sibling provider repository'],
+            array_column(array_slice($rows, 1), 1),
+        );
+        $this->assertNotContains('Other provider repository', array_column($rows, 1));
+    }
+
     public function test_latest_filter_excludes_failures_superseded_by_a_successful_build(): void
     {
         [$owner, $repository] = $this->repository('Recovered repository');

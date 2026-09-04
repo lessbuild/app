@@ -41,13 +41,14 @@ class BuildsController extends Controller
             'repositories' => $request->user()->repositories()->orderBy('name')->get(['id', 'name']),
             'websites' => $request->user()->websites()->orderBy('name')->get(['id', 'name']),
             'servers' => $request->user()->servers()->orderBy('name')->get(['id', 'name', 'display_name']),
+            'providers' => $request->user()->providers()->forRepositories()->orderBy('name')->get(['id', 'name']),
             'statuses' => $this->statuses(),
             'triggers' => $this->triggers(),
         ]);
     }
 
     /**
-     * @param  array{repository_id: ?int, website_id: ?int, server_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @param  array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
      * @return array{total: int, active: int, succeeded: int, failed: int, success_rate: ?int, latest_at: CarbonInterface|null}
      */
     private function metrics(Request $request, array $filters): array
@@ -284,7 +285,7 @@ class BuildsController extends Controller
             : __('Deployment note saved.'));
     }
 
-    /** @return array{repository_id: ?int, website_id: ?int, server_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
+    /** @return array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
@@ -299,11 +300,15 @@ class BuildsController extends Controller
         $serverId = filter_var($request->query('server_id'), FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1],
         ]);
+        $providerId = filter_var($request->query('provider_id'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
 
         return [
             'repository_id' => $repositoryId ?: null,
             'website_id' => $websiteId ?: null,
             'server_id' => $serverId ?: null,
+            'provider_id' => $providerId ?: null,
             'status' => in_array($status, $this->statuses(), true) ? $status : null,
             'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
             'search' => $search !== '' ? $search : null,
@@ -313,7 +318,7 @@ class BuildsController extends Controller
         ];
     }
 
-    /** @param array{repository_id: ?int, website_id: ?int, server_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
+    /** @param array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
     private function filteredBuilds(Request $request, array $filters): HasManyThrough
     {
         return $request->user()->builds()
@@ -324,6 +329,8 @@ class BuildsController extends Controller
                 ->whereHas('repository', fn ($query) => $query->where('website_id', $id)))
             ->when($filters['server_id'], fn ($query, int $id) => $query
                 ->whereHas('repository.website', fn ($query) => $query->where('server_id', $id)))
+            ->when($filters['provider_id'], fn ($query, int $id) => $query
+                ->whereHas('repository', fn ($query) => $query->where('provider_id', $id)))
             ->when($filters['status'], fn ($query, string $value) => $query
                 ->where('builds.status', $value))
             ->when($filters['trigger'], fn ($query, string $value) => $query

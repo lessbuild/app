@@ -365,6 +365,9 @@ apply consistently to the list, insight cards, pagination, and CSV export.
 The same history can be scoped to a server across all websites and repositories
 hosted there, with a direct server-detail link and the server display label in
 the filter selector. Server filters retain the same ownership and export guarantees.
+Source-provider filtering combines deployment history across every repository
+using one GitHub, GitLab, or Bitbucket credential. Source-provider detail links
+open the filtered view directly; infrastructure-only providers are excluded.
 Filter-aware history cards summarize matching and active deployments, successful
 and failed outcomes, an observed completed-run success rate that excludes active
 and canceled runs, and the latest matching deployment. Empty or canceled-only

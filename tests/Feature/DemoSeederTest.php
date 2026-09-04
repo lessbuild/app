@@ -413,7 +413,11 @@ class DemoSeederTest extends TestCase
             ->assertSee('85 ms')
             ->assertSee('Demo GitHub credential was rejected before recovery.')
             ->assertSee(route('providers.connection-checks.index', $provider))
+            ->assertSee(route('builds.index', ['provider_id' => $provider->id]))
             ->assertSee(route('providers.connection-checks.export', $provider));
+        $this->actingAs($user)->get(route('providers.show', $server->provider))
+            ->assertSuccessful()
+            ->assertDontSee(route('builds.index', ['provider_id' => $server->provider_id]));
         $this->actingAs($user)->get(route('providers.show', $failedProvider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [
@@ -618,6 +622,16 @@ class DemoSeederTest extends TestCase
                 && $metrics['latest_at'] !== null)
             ->assertSee('value="'.$server->id.'" selected', false)
             ->assertSee(route('builds.export', ['server_id' => $server->id]));
+        $this->actingAs($user)->get(route('builds.index', ['provider_id' => $provider->id]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+                && $metrics['active'] === 0
+                && $metrics['succeeded'] === 2
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 67
+                && $metrics['latest_at'] !== null)
+            ->assertSee('value="'.$provider->id.'" selected', false)
+            ->assertSee(route('builds.export', ['provider_id' => $provider->id]));
         $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_RUNNING]))
             ->assertSuccessful()
             ->assertViewHas('metrics', [

@@ -280,6 +280,64 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee('Foreign server');
     }
 
+    public function test_source_provider_filter_combines_owned_repository_history_and_metrics(): void
+    {
+        [$owner, $first, $second] = $this->repositories('Owner');
+        $firstBuild = $first->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $secondBuild = $second->builds()->create(['status' => Build::STATUS_FAILED]);
+        $otherProvider = $owner->providers()->create([
+            'name' => 'Owner GitLab',
+            'provider' => Provider::TYPE_GITLAB,
+            'token' => 'other-source-secret',
+            'description' => 'Other source provider',
+        ]);
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $otherProvider->id,
+            'website_id' => $first->website_id,
+            'name' => 'Owner GitLab repository',
+            'url' => 'gitlab.com/example/other.git',
+            'branch' => 'main',
+            'description' => 'Other provider source',
+        ]);
+        $otherBuild = $otherRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        [, $foreignRepository] = $this->repositories('Foreign');
+        $foreignBuild = $foreignRepository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $filters = ['provider_id' => $first->provider_id];
+        $this->actingAs($owner)->get(route('builds.index', $filters))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 2,
+                'active' => 0,
+                'succeeded' => 1,
+                'failed' => 1,
+                'success_rate' => 50,
+                'latest_at' => $secondBuild->created_at,
+            ])
+            ->assertSee('value="'.$first->provider_id.'" selected', false)
+            ->assertSee('Owner GitHub')
+            ->assertSee(route('builds.export', $filters))
+            ->assertSee(route('builds.show', $firstBuild))
+            ->assertSee(route('builds.show', $secondBuild))
+            ->assertDontSee(route('builds.show', $otherBuild))
+            ->assertDontSee(route('builds.show', $foreignBuild));
+
+        $this->actingAs($owner)->get(route('builds.index', [
+            'provider_id' => $foreignRepository->provider_id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'active' => 0,
+                'succeeded' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'latest_at' => null,
+            ])
+            ->assertSee('No builds match these filters')
+            ->assertDontSee('Foreign GitHub');
+    }
+
     public function test_latest_filter_returns_only_each_owned_repository_current_build(): void
     {
         [$owner, $first, $second] = $this->repositories('Owner');
@@ -321,6 +379,7 @@ class BuildHistoryFilterTest extends TestCase
             'repository_id' => $repository->id,
             'website_id' => $repository->website_id,
             'server_id' => $repository->website->server_id,
+            'provider_id' => $repository->provider_id,
             'status' => Build::STATUS_FAILED,
             'trigger' => Build::TRIGGER_MANUAL,
             'search' => 'Release',
@@ -333,6 +392,7 @@ class BuildHistoryFilterTest extends TestCase
             ->assertSee('repository_id='.$repository->id, false)
             ->assertSee('website_id='.$repository->website_id, false)
             ->assertSee('server_id='.$repository->website->server_id, false)
+            ->assertSee('provider_id='.$repository->provider_id, false)
             ->assertSee('status=failed', false)
             ->assertSee('trigger=manual', false)
             ->assertSee('search=Release', false)
@@ -346,6 +406,7 @@ class BuildHistoryFilterTest extends TestCase
             'repository_id' => 'not-an-id',
             'website_id' => '-5',
             'server_id' => '0',
+            'provider_id' => 'not-a-provider-id',
             'latest' => 'sometimes',
             'date_from' => '2026-02-31',
             'date_to' => '../../etc/passwd',
@@ -355,6 +416,7 @@ class BuildHistoryFilterTest extends TestCase
                 'repository_id' => null,
                 'website_id' => null,
                 'server_id' => null,
+                'provider_id' => null,
                 'status' => null,
                 'trigger' => null,
                 'search' => null,
@@ -366,6 +428,7 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee('not-a-status', false)
             ->assertDontSee('not-a-trigger', false)
             ->assertDontSee('not-an-id', false)
+            ->assertDontSee('not-a-provider-id', false)
             ->assertDontSee('name="latest" value="1" checked', false);
     }
 
