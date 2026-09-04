@@ -163,6 +163,12 @@
                     ({{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }})
                 </span>
             </div>
+            <div class="flex items-center mr-6">
+                <span class="mr-1 text-primary">{{ __('Outage confirmation') }}</span>
+                <span class="text-secondary">
+                    {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $website->health_failure_threshold, ['count' => $website->health_failure_threshold]) }}
+                </span>
+            </div>
         @endif
         <div class="flex items-center mr-6">
             <span class="mr-1 text-primary">{{ __('Retained releases') }}</span>

@@ -42,6 +42,11 @@ class WebsiteRequest extends FormRequest
                 'integer',
                 Rule::in(Website::HEALTH_CHECK_INTERVALS),
             ],
+            'health_failure_threshold' => [
+                'required',
+                'integer',
+                Rule::in(Website::HEALTH_FAILURE_THRESHOLDS),
+            ],
             'health_check_path' => [
                 'required',
                 'string',
@@ -80,6 +85,11 @@ class WebsiteRequest extends FormRequest
                 'health_check_interval_minutes',
                 $this->route('website')?->health_check_interval_minutes
                     ?? Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES,
+            ),
+            'health_failure_threshold' => $this->input(
+                'health_failure_threshold',
+                $this->route('website')?->health_failure_threshold
+                    ?? Website::defaultHealthFailureThreshold(),
             ),
             'health_check_path' => $path,
             'release_retention' => $this->input(

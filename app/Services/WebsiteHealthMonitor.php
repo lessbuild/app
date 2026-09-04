@@ -154,7 +154,9 @@ class WebsiteHealthMonitor
             }
 
             $failureCount = min(65535, $locked->health_failure_count + 1);
-            $threshold = max(1, (int) config('lessbuild.health_monitor_failure_threshold'));
+            $threshold = in_array($locked->health_failure_threshold, Website::HEALTH_FAILURE_THRESHOLDS, true)
+                ? $locked->health_failure_threshold
+                : Website::DEFAULT_HEALTH_FAILURE_THRESHOLD;
             $nextStatus = $failureCount >= $threshold ? Website::HEALTH_UNHEALTHY : $previousStatus;
             $locked->update([
                 'health_status' => $nextStatus,

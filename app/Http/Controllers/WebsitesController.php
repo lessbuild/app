@@ -66,6 +66,7 @@ class WebsitesController extends Controller
                 'Health check',
                 'Automatic monitoring',
                 'Automatic check interval minutes',
+                'Outage confirmation failures',
                 'Health status',
                 'Health failure count',
                 'Last health check at',
@@ -93,6 +94,7 @@ class WebsitesController extends Controller
                             ? ($website->health_monitoring_enabled ? 'enabled' : 'paused')
                             : 'disabled',
                         $website->health_check_interval_minutes,
+                        $website->health_failure_threshold,
                         $this->csvCell($website->health_check_enabled ? $website->health_status : 'disabled'),
                         $website->health_failure_count,
                         $website->health_last_checked_at?->toIso8601String(),

@@ -183,6 +183,30 @@
             </p>
             <x-forms.errors name="health_check_interval_minutes"></x-forms.errors>
         </div>
+
+        <div class="mt-4 border-t border-primary pt-4">
+            <label for="health_failure_threshold" class="block text-sm font-medium text-primary">
+                {{ __('Outage confirmation') }}
+            </label>
+            <select
+                id="health_failure_threshold"
+                name="health_failure_threshold"
+                class="input secondary mt-1 rounded"
+            >
+                @foreach (\App\Models\Website::HEALTH_FAILURE_THRESHOLDS as $failures)
+                    <option
+                        value="{{ $failures }}"
+                        @selected((int) old('health_failure_threshold', $website->health_failure_threshold ?? \App\Models\Website::defaultHealthFailureThreshold()) === $failures)
+                    >
+                        {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $failures, ['count' => $failures]) }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="mt-2 text-sm text-secondary">
+                {{ __('A successful check resets the count. An alert is created only when this threshold is first reached.') }}
+            </p>
+            <x-forms.errors name="health_failure_threshold"></x-forms.errors>
+        </div>
     </div>
 
     <div>

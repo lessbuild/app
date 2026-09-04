@@ -367,8 +367,9 @@ follows redirects and retries transient failures before marking the build
 failed. When an earlier release exists, a failed check atomically restores its
 symlink; application database migrations are intentionally not reversed.
 The daemon also checks enabled sites from their managed servers every five
-minutes. Three consecutive failures mark a site unhealthy and create one unread
-notification; a successful check records recovery and resets the failure count.
+minutes. Each website can require 1, 2, 3, 5, or 10 consecutive failures before
+it is marked unhealthy and one unread notification is created; a successful
+check records recovery and resets the failure count.
 Recovery also acknowledges unread failure alerts for that website and adds a green
 recovery alert, preserving both sides of the incident in the inbox.
 Website owners can also queue an immediate, deduplicated check from the website
@@ -376,8 +377,9 @@ page without waiting for the next timer run.
 Scheduled website monitoring can be paused independently of deployment-time and
 manual health checks. This preserves the last known state while stopping outbound
 scheduled checks and alerts until monitoring is resumed.
-Set `HEALTH_MONITOR_BATCH_SIZE` or `HEALTH_MONITOR_FAILURE_THRESHOLD` to tune
-the number of sites checked per run or the number of failures required.
+Set `HEALTH_MONITOR_BATCH_SIZE` to tune the number of sites checked per run.
+`HEALTH_MONITOR_FAILURE_THRESHOLD` selects the default for newly created sites;
+each site's saved outage-confirmation setting governs subsequent checks.
 Each website can retain between two and twenty releases on its server; five are
 kept by default for rollback and recovery.
 

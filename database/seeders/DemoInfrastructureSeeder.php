@@ -237,6 +237,7 @@ class DemoInfrastructureSeeder extends Seeder
             'provisioned_at' => now()->subDays(20),
             'release_retention' => 7,
             'health_check_interval_minutes' => 30,
+            'health_failure_threshold' => 1,
         ];
         $healthy = Website::withTrashed()->updateOrCreate(
             ['user_id' => $user->id, 'deployment_slug' => 'demo-storefront'],
@@ -248,6 +249,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'health_check_enabled' => true,
                 'health_monitoring_enabled' => false,
                 'health_check_interval_minutes' => 5,
+                'health_failure_threshold' => 3,
                 'health_check_path' => '/up',
                 'health_status' => Website::HEALTH_HEALTHY,
                 'health_failure_count' => 0,
@@ -268,6 +270,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'health_check_enabled' => true,
                 'health_monitoring_enabled' => false,
                 'health_check_interval_minutes' => 15,
+                'health_failure_threshold' => 2,
                 'health_check_path' => '/health',
                 'health_status' => Website::HEALTH_UNHEALTHY,
                 'health_failure_count' => 3,
@@ -311,6 +314,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'status' => Website::STATUS_QUEUED,
                 'setup_stage' => 0,
                 'health_check_interval_minutes' => 10,
+                'health_failure_threshold' => 5,
             ],
             'provisioning' => [
                 'slug' => 'demo-provisioning-site',
@@ -320,6 +324,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'status' => Website::STATUS_PROVISIONING,
                 'setup_stage' => 2,
                 'health_check_interval_minutes' => 60,
+                'health_failure_threshold' => 10,
             ],
         ];
         $websites = ['healthy' => $healthy, 'unhealthy' => $unhealthy, 'failed' => $failed];
@@ -338,6 +343,7 @@ class DemoInfrastructureSeeder extends Seeder
                     'health_check_enabled' => false,
                     'health_monitoring_enabled' => false,
                     'health_check_interval_minutes' => $definition['health_check_interval_minutes'],
+                    'health_failure_threshold' => $definition['health_failure_threshold'],
                     'health_check_path' => '/',
                     'health_status' => Website::HEALTH_UNKNOWN,
                     'health_failure_count' => 0,

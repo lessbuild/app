@@ -44,6 +44,10 @@ class Website extends Model
 
     public const HEALTH_CHECK_INTERVALS = [5, 10, 15, 30, 60];
 
+    public const DEFAULT_HEALTH_FAILURE_THRESHOLD = 3;
+
+    public const HEALTH_FAILURE_THRESHOLDS = [1, 2, 3, 5, 10];
+
     public const PROVISIONING_LOG_TYPE = 'provisioning';
 
     /**
@@ -68,6 +72,7 @@ class Website extends Model
         'health_check_enabled' => 'boolean',
         'health_monitoring_enabled' => 'boolean',
         'health_check_interval_minutes' => 'integer',
+        'health_failure_threshold' => 'integer',
         'health_failure_count' => 'integer',
         'health_last_checked_at' => 'datetime',
         'previous_server_id' => 'integer',
@@ -150,6 +155,15 @@ class Website extends Model
     public function healthChecks(): HasMany
     {
         return $this->hasMany(WebsiteHealthCheck::class);
+    }
+
+    public static function defaultHealthFailureThreshold(): int
+    {
+        $configured = (int) config('lessbuild.health_monitor_failure_threshold');
+
+        return in_array($configured, self::HEALTH_FAILURE_THRESHOLDS, true)
+            ? $configured
+            : self::DEFAULT_HEALTH_FAILURE_THRESHOLD;
     }
 
     public function scopeReadyForDeployments(Builder $query): Builder

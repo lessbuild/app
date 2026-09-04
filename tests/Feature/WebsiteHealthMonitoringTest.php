@@ -25,7 +25,6 @@ class WebsiteHealthMonitoringTest extends TestCase
 
     public function test_three_consecutive_failures_create_one_outage_and_recovery_resets_it(): void
     {
-        config(['lessbuild.health_monitor_failure_threshold' => 3]);
         [$owner, , $website] = $this->infrastructure();
         $command = null;
 
@@ -174,19 +173,25 @@ class WebsiteHealthMonitoringTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Automatic check interval')
             ->assertSee('Every 5 minutes')
-            ->assertSee('Every 60 minutes');
+            ->assertSee('Every 60 minutes')
+            ->assertSee('Outage confirmation')
+            ->assertSee('After 1 consecutive failure')
+            ->assertSee('After 10 consecutive failures');
         $this->actingAs($owner)->patch(route('websites.update', $website), [
             ...$this->payload($server),
             'health_check_interval_minutes' => '30',
+            'health_failure_threshold' => '5',
         ])->assertRedirect(route('websites.show', $website));
 
         $website->refresh();
         $this->assertSame(30, $website->health_check_interval_minutes);
+        $this->assertSame(5, $website->health_failure_threshold);
         $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
         $this->assertNotNull($website->health_last_checked_at);
         $this->actingAs($owner)->get(route('websites.show', $website))
             ->assertSuccessful()
-            ->assertSee('every 30 minutes');
+            ->assertSee('every 30 minutes')
+            ->assertSee('After 5 consecutive failures');
         $this->actingAs($owner)->get(route('websites.index'))
             ->assertSuccessful()
             ->assertSee('Every 30 minutes');
@@ -204,6 +209,69 @@ class WebsiteHealthMonitoringTest extends TestCase
         }
 
         $this->assertSame(Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES, $website->fresh()->health_check_interval_minutes);
+    }
+
+    public function test_outage_confirmation_threshold_is_restricted_to_supported_values(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure();
+
+        foreach ([0, 4, 6, 11, 'two failures'] as $threshold) {
+            $this->actingAs($owner)->patch(route('websites.update', $website), [
+                ...$this->payload($server),
+                'health_failure_threshold' => $threshold,
+            ])->assertSessionHasErrors('health_failure_threshold');
+        }
+
+        $this->assertSame(Website::DEFAULT_HEALTH_FAILURE_THRESHOLD, $website->fresh()->health_failure_threshold);
+    }
+
+    public function test_operator_configuration_selects_the_default_for_new_websites(): void
+    {
+        Queue::fake();
+        config(['lessbuild.health_monitor_failure_threshold' => 5]);
+        [$owner, $server] = $this->infrastructure();
+
+        $this->actingAs($owner)->post(route('websites.store'), [
+            ...$this->payload($server),
+            'name' => 'Default threshold',
+            'url' => 'default-threshold.example.com',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('websites', [
+            'user_id' => $owner->id,
+            'url' => 'default-threshold.example.com',
+            'health_failure_threshold' => 5,
+        ]);
+    }
+
+    public function test_a_websites_threshold_controls_when_one_outage_is_created(): void
+    {
+        [$owner, , $website] = $this->infrastructure();
+        $website->update(['health_failure_threshold' => 5]);
+        $command = null;
+
+        foreach (range(1, 4) as $failureCount) {
+            $this->app->instance(Runner::class, $this->runner(false, "Failure {$failureCount}", $command));
+            Artisan::call('lessbuild:websites:health', ['--website' => [$website->id]]);
+
+            $this->assertSame(Website::HEALTH_UNKNOWN, $website->fresh()->health_status);
+            $this->assertSame(0, $owner->notifications()->count());
+        }
+
+        $this->app->instance(Runner::class, $this->runner(false, 'Failure 5', $command));
+        Artisan::call('lessbuild:websites:health', ['--website' => [$website->id]]);
+        $this->assertSame(Website::HEALTH_UNHEALTHY, $website->fresh()->health_status);
+        $this->assertSame(5, $website->fresh()->health_failure_count);
+        $this->assertSame(1, $owner->notifications()->count());
+
+        $this->app->instance(Runner::class, $this->runner(false, 'Failure 6', $command));
+        Artisan::call('lessbuild:websites:health', ['--website' => [$website->id]]);
+        $this->assertSame(1, $owner->notifications()->count());
+
+        $this->app->instance(Runner::class, $this->runner(true, '', $command));
+        Artisan::call('lessbuild:websites:health', ['--website' => [$website->id]]);
+        $this->assertSame(Website::HEALTH_HEALTHY, $website->fresh()->health_status);
+        $this->assertSame(0, $website->fresh()->health_failure_count);
     }
 
     public function test_result_started_before_a_health_setting_change_is_discarded(): void
