@@ -65,7 +65,15 @@ class DemoSeederTest extends TestCase
             Provider::CONNECTION_CHECK_INTERVALS,
             $user->providers()->pluck('connection_check_interval_minutes')->all(),
         );
-        $this->assertSame(4, ProviderConnectionCheck::query()
+        $this->assertEqualsCanonicalizing(
+            Provider::CONNECTION_FAILURE_THRESHOLDS,
+            $user->providers()->pluck('connection_failure_threshold')->all(),
+        );
+        $this->assertEqualsCanonicalizing(
+            [0, 3],
+            $user->providers()->distinct()->pluck('connection_failure_count')->all(),
+        );
+        $this->assertSame(6, ProviderConnectionCheck::query()
             ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
             ->count());
         $this->assertEqualsCanonicalizing(
@@ -284,6 +292,7 @@ class DemoSeederTest extends TestCase
             ])
             ->assertSee('Recent connection checks')
             ->assertSee('every 6 hours')
+            ->assertSee('after 2 consecutive failures')
             ->assertSee('Observed connection success')
             ->assertSee('50%')
             ->assertSee('Median successful response')
@@ -297,15 +306,17 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('providers.show', $failedProvider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [
-                'total' => 1,
+                'total' => 3,
                 'successful' => 0,
                 'success_rate' => 0,
                 'median_successful_duration_ms' => null,
-                'failure_streak' => 1,
+                'failure_streak' => 3,
             ])
             ->assertSee('0%')
             ->assertSee('Not recorded')
-            ->assertSee('1 consecutive failed check');
+            ->assertSee('after 3 consecutive failures')
+            ->assertSee('3 failures recorded')
+            ->assertSee('3 consecutive failed checks');
         $this->actingAs($user)->get(route('providers.show', $emptyHistoryProvider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [

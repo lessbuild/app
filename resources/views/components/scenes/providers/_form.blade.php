@@ -173,5 +173,29 @@
             </p>
             <x-forms.errors name="connection_check_interval_minutes"></x-forms.errors>
         </div>
+
+        <div class="mt-4 border-t border-primary pt-4">
+            <label for="connection_failure_threshold" class="block text-sm font-medium text-primary">
+                {{ __('Failure confirmation') }}
+            </label>
+            <select
+                id="connection_failure_threshold"
+                name="connection_failure_threshold"
+                class="input secondary mt-1 rounded"
+            >
+                @foreach (\App\Models\Provider::CONNECTION_FAILURE_THRESHOLDS as $failures)
+                    <option
+                        value="{{ $failures }}"
+                        @selected((int) old('connection_failure_threshold', $provider->connection_failure_threshold ?? \App\Models\Provider::defaultConnectionFailureThreshold()) === $failures)
+                    >
+                        {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $failures, ['count' => $failures]) }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="mt-2 text-sm text-secondary">
+                {{ __('A successful check resets the count. One failure incident is created when this threshold is first reached.') }}
+            </p>
+            <x-forms.errors name="connection_failure_threshold"></x-forms.errors>
+        </div>
     </div>
 </div>

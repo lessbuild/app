@@ -150,6 +150,52 @@ class ProviderHealthMonitoringTest extends TestCase
             ->assertRedirect(route('providers.show', $provider));
     }
 
+    public function test_a_providers_threshold_controls_when_one_incident_is_created(): void
+    {
+        Http::preventStrayRequests();
+        Http::fakeSequence()
+            ->push(['message' => 'failure one'], 401)
+            ->push(['message' => 'failure two'], 401)
+            ->push(['message' => 'failure three'], 401)
+            ->push(['message' => 'failure four'], 401)
+            ->push(['login' => 'owner'], 200);
+        $owner = User::factory()->create();
+        $provider = $this->provider($owner, 'Threshold GitHub');
+        $provider->update(['connection_failure_threshold' => 3]);
+        $arguments = ['--provider' => [$provider->id]];
+
+        foreach ([1, 2] as $failureCount) {
+            Artisan::call('lessbuild:providers:health', $arguments);
+            $provider->refresh();
+            $this->assertNull($provider->connection_status);
+            $this->assertSame($failureCount, $provider->connection_failure_count);
+            $this->assertSame(0, $owner->notifications()->count());
+            $this->assertSame($failureCount, $provider->connectionChecks()->count());
+        }
+
+        Artisan::call('lessbuild:providers:health', $arguments);
+        $provider->refresh();
+        $this->assertSame(Provider::CONNECTION_FAILED, $provider->connection_status);
+        $this->assertSame(3, $provider->connection_failure_count);
+        $this->assertSame(1, $owner->notifications()->count());
+        $this->assertSame(1, $provider->events()->count());
+
+        Artisan::call('lessbuild:providers:health', $arguments);
+        $provider->refresh();
+        $this->assertSame(Provider::CONNECTION_FAILED, $provider->connection_status);
+        $this->assertSame(4, $provider->connection_failure_count);
+        $this->assertSame(1, $owner->notifications()->count());
+        $this->assertSame(1, $provider->events()->count());
+
+        Artisan::call('lessbuild:providers:health', $arguments);
+        $provider->refresh();
+        $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->connection_status);
+        $this->assertSame(0, $provider->connection_failure_count);
+        $this->assertSame(2, $owner->notifications()->count());
+        $this->assertSame(2, $provider->events()->count());
+        $this->assertSame(5, $provider->connectionChecks()->count());
+    }
+
     public function test_explicit_ids_are_sanitized_and_missing_providers_are_ignored(): void
     {
         Http::preventStrayRequests();

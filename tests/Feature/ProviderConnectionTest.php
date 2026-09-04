@@ -160,7 +160,7 @@ class ProviderConnectionTest extends TestCase
             ->assertSuccessful()
             ->assertSee(route('providers.connection.test', $provider))
             ->assertSee('Test connection')
-            ->assertSee('Latest connection check:')
+            ->assertSee('Confirmed connection status:')
             ->assertSee('Unchecked')
             ->assertSee('Run a connection check to verify this credential.')
             ->assertSee('name="_token"', false);
@@ -194,6 +194,7 @@ class ProviderConnectionTest extends TestCase
         $provider->forceFill([
             'connection_status' => Provider::CONNECTION_HEALTHY,
             'connection_checked_at' => now()->subMinute(),
+            'connection_failure_count' => 2,
         ])->save();
 
         $this->actingAs($owner)->patch(route('providers.update', $provider), [
@@ -204,6 +205,7 @@ class ProviderConnectionTest extends TestCase
         ])->assertRedirect(route('providers.show', $provider));
         $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->fresh()->connection_status);
         $this->assertNotNull($provider->fresh()->connection_checked_at);
+        $this->assertSame(2, $provider->fresh()->connection_failure_count);
 
         $this->actingAs($owner)->patch(route('providers.update', $provider), [
             'name' => 'Renamed GitHub',
@@ -213,10 +215,12 @@ class ProviderConnectionTest extends TestCase
         ])->assertRedirect(route('providers.show', $provider));
         $this->assertNull($provider->fresh()->connection_status);
         $this->assertNull($provider->fresh()->connection_checked_at);
+        $this->assertSame(0, $provider->fresh()->connection_failure_count);
 
         $provider->forceFill([
             'connection_status' => Provider::CONNECTION_HEALTHY,
             'connection_checked_at' => now(),
+            'connection_failure_count' => 2,
         ])->save();
         $this->actingAs($owner)->patch(route('providers.update', $provider), [
             'name' => 'Cloud Provider',
@@ -226,6 +230,7 @@ class ProviderConnectionTest extends TestCase
         ])->assertRedirect(route('providers.show', $provider));
         $this->assertNull($provider->fresh()->connection_status);
         $this->assertNull($provider->fresh()->connection_checked_at);
+        $this->assertSame(0, $provider->fresh()->connection_failure_count);
     }
 
     public function test_recording_health_does_not_reclassify_the_provider_as_recently_edited(): void

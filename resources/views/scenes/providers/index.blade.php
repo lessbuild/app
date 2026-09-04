@@ -161,6 +161,12 @@
                                 <div class="text-xs text-secondary">
                                     {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
                                 </div>
+                                <div class="text-xs text-secondary">
+                                    {{ trans_choice('Alert after :count failure|Alert after :count failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
+                                    @if ($provider->connection_failure_count > 0)
+                                        &middot; {{ __(':count recorded', ['count' => $provider->connection_failure_count]) }}
+                                    @endif
+                                </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">

@@ -63,7 +63,7 @@
     @endif
 
     <div class="my-4 flex flex-wrap items-center gap-2 rounded border border-primary bg-primary p-3 text-sm">
-        <span class="font-medium text-primary">{{ __('Latest connection check:') }}</span>
+        <span class="font-medium text-primary">{{ __('Confirmed connection status:') }}</span>
         <span @class([
             'font-medium',
             'text-green-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY,
@@ -88,6 +88,16 @@
         <span class="text-secondary">
             ({{ trans_choice('every :count hour|every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }})
         </span>
+        <span class="text-secondary">&middot;</span>
+        <span class="text-primary">{{ __('Failure confirmation') }}</span>
+        <span class="text-secondary">
+            {{ trans_choice('after :count consecutive failure|after :count consecutive failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
+        </span>
+        @if ($provider->connection_failure_count > 0)
+            <span class="text-secondary">
+                ({{ trans_choice(':count failure recorded|:count failures recorded', $provider->connection_failure_count, ['count' => $provider->connection_failure_count]) }})
+            </span>
+        @endif
     </div>
 
     @if ($errors->has('provider'))

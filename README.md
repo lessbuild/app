@@ -68,6 +68,11 @@ discarded if automatic monitoring is paused before it records a result.
 `PROVIDER_HEALTH_INTERVAL_MINUTES` selects the supported default interval for new
 providers; existing providers keep their chosen cadence. Demo providers cover every
 supported interval while automatic monitoring remains paused to prevent network traffic.
+Each provider can require 1, 2, 3, or 5 consecutive failures before its status changes
+to failed and one incident is created. Every accepted failure still appears immediately
+in retained history, and a successful check resets the counter and recovers an active
+incident. `PROVIDER_HEALTH_FAILURE_THRESHOLD` selects the supported default for new
+providers. Demo providers cover every threshold, including a three-failure GitLab state.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
 Authenticated visits to the public root and the sidebar Dashboard link both enter

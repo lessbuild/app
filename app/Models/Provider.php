@@ -19,11 +19,17 @@ class Provider extends Model
     protected $attributes = [
         'connection_monitoring_enabled' => true,
         'connection_check_interval_minutes' => self::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES,
+        'connection_failure_threshold' => self::DEFAULT_CONNECTION_FAILURE_THRESHOLD,
+        'connection_failure_count' => 0,
     ];
 
     public const DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES = 1440;
 
     public const CONNECTION_CHECK_INTERVALS = [60, 360, 720, 1440];
+
+    public const DEFAULT_CONNECTION_FAILURE_THRESHOLD = 1;
+
+    public const CONNECTION_FAILURE_THRESHOLDS = [1, 2, 3, 5];
 
     public const TYPE_DIGITALOCEAN = 'digitalocean';
 
@@ -69,6 +75,8 @@ class Provider extends Model
         'connection_checked_at',
         'connection_monitoring_enabled',
         'connection_check_interval_minutes',
+        'connection_failure_threshold',
+        'connection_failure_count',
     ];
 
     protected $hidden = ['token'];
@@ -78,6 +86,8 @@ class Provider extends Model
         'connection_checked_at' => 'datetime',
         'connection_monitoring_enabled' => 'boolean',
         'connection_check_interval_minutes' => 'integer',
+        'connection_failure_threshold' => 'integer',
+        'connection_failure_count' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -166,11 +176,22 @@ class Provider extends Model
             : self::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES;
     }
 
+    public static function defaultConnectionFailureThreshold(): int
+    {
+        $configured = (int) config('lessbuild.provider_health_failure_threshold');
+
+        return in_array($configured, self::CONNECTION_FAILURE_THRESHOLDS, true)
+            ? $configured
+            : self::DEFAULT_CONNECTION_FAILURE_THRESHOLD;
+    }
+
     public function recordConnectionResult(
         bool $successful,
         string $providerType,
         string $encryptedToken,
         ?string $previousCheckedAt,
+        int $previousFailureCount,
+        int $failureThreshold,
         bool $automatic = false,
     ): bool {
         $checkedAt = now();
@@ -178,8 +199,17 @@ class Provider extends Model
             $checkedAt = Carbon::parse($previousCheckedAt)->addSecond();
         }
 
+        $effectiveThreshold = in_array($failureThreshold, self::CONNECTION_FAILURE_THRESHOLDS, true)
+            ? $failureThreshold
+            : self::DEFAULT_CONNECTION_FAILURE_THRESHOLD;
+        $failureCount = $successful ? 0 : min(65535, $previousFailureCount + 1);
         $attributes = [
-            'connection_status' => $successful ? self::CONNECTION_HEALTHY : self::CONNECTION_FAILED,
+            'connection_status' => match (true) {
+                $successful => self::CONNECTION_HEALTHY,
+                $failureCount >= $effectiveThreshold => self::CONNECTION_FAILED,
+                default => $this->connection_status,
+            },
+            'connection_failure_count' => $failureCount,
             'connection_checked_at' => $checkedAt,
         ];
 
@@ -189,11 +219,15 @@ class Provider extends Model
             $previousCheckedAt,
             $attributes,
             $automatic,
+            $previousFailureCount,
+            $failureThreshold,
         ): bool {
             $query = static::query()
                 ->whereKey($this->getKey())
                 ->where('provider', $providerType)
-                ->where('token', $encryptedToken);
+                ->where('token', $encryptedToken)
+                ->where('connection_failure_count', $previousFailureCount)
+                ->where('connection_failure_threshold', $failureThreshold);
 
             if ($automatic) {
                 $query->where('connection_monitoring_enabled', true);
@@ -219,6 +253,7 @@ class Provider extends Model
             $this->forceFill([
                 'connection_status' => null,
                 'connection_checked_at' => null,
+                'connection_failure_count' => 0,
             ])->save();
         });
     }

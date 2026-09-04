@@ -17,6 +17,7 @@ return [
     'health_monitor_failure_threshold' => (int) env('HEALTH_MONITOR_FAILURE_THRESHOLD', 3),
     'provider_health_batch_size' => (int) env('PROVIDER_HEALTH_BATCH_SIZE', 20),
     'provider_health_interval_minutes' => (int) env('PROVIDER_HEALTH_INTERVAL_MINUTES', 1440),
+    'provider_health_failure_threshold' => (int) env('PROVIDER_HEALTH_FAILURE_THRESHOLD', 1),
     'website_log_max_characters' => (int) env('WEBSITE_LOG_MAX_CHARACTERS', 262144),
     'server_log_max_characters' => (int) env('SERVER_LOG_MAX_CHARACTERS', 262144),
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),

@@ -49,14 +49,14 @@ class DemoInfrastructureSeeder extends Seeder
     private function providers(User $user): array
     {
         $definitions = [
-            Provider::TYPE_DIGITALOCEAN => ['DigitalOcean', Provider::CONNECTION_HEALTHY, 60],
-            Provider::TYPE_GITHUB => ['GitHub', Provider::CONNECTION_HEALTHY, 360],
-            Provider::TYPE_GITLAB => ['GitLab', Provider::CONNECTION_FAILED, 720],
-            Provider::TYPE_BITBUCKET => ['Bitbucket', null, 1440],
+            Provider::TYPE_DIGITALOCEAN => ['DigitalOcean', Provider::CONNECTION_HEALTHY, 60, 1, 0],
+            Provider::TYPE_GITHUB => ['GitHub', Provider::CONNECTION_HEALTHY, 360, 2, 0],
+            Provider::TYPE_GITLAB => ['GitLab', Provider::CONNECTION_FAILED, 720, 3, 3],
+            Provider::TYPE_BITBUCKET => ['Bitbucket', null, 1440, 5, 0],
         ];
         $providers = [];
 
-        foreach ($definitions as $type => [$label, $status, $interval]) {
+        foreach ($definitions as $type => [$label, $status, $interval, $threshold, $failureCount]) {
             $provider = Provider::withTrashed()->firstOrNew([
                 'user_id' => $user->id,
                 'name' => DemoSeeder::PREFIX.$label,
@@ -69,6 +69,8 @@ class DemoInfrastructureSeeder extends Seeder
                 'connection_checked_at' => $status === null ? null : now()->subMinutes(15),
                 'connection_monitoring_enabled' => false,
                 'connection_check_interval_minutes' => $interval,
+                'connection_failure_threshold' => $threshold,
+                'connection_failure_count' => $failureCount,
             ]);
             $provider->deleted_at = null;
             $provider->save();
@@ -85,6 +87,8 @@ class DemoInfrastructureSeeder extends Seeder
             [$providers[Provider::TYPE_DIGITALOCEAN], ProviderConnectionCheck::SOURCE_AUTOMATIC, true, 200, 130, null, 15],
             [$providers[Provider::TYPE_GITHUB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 180, 'Demo GitHub credential was rejected before recovery.', 30],
             [$providers[Provider::TYPE_GITHUB], ProviderConnectionCheck::SOURCE_MANUAL, true, 200, 85, null, 15],
+            [$providers[Provider::TYPE_GITLAB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 190, 'Demo GitLab credential rejection 1 of 3.', 45],
+            [$providers[Provider::TYPE_GITLAB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 182, 'Demo GitLab credential rejection 2 of 3.', 30],
             [$providers[Provider::TYPE_GITLAB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 175, 'Demo GitLab credential is expired.', 15],
         ];
 

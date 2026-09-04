@@ -41,6 +41,11 @@ class ProviderRequest extends FormRequest
                 'integer',
                 Rule::in(Provider::CONNECTION_CHECK_INTERVALS),
             ],
+            'connection_failure_threshold' => [
+                'required',
+                'integer',
+                Rule::in(Provider::CONNECTION_FAILURE_THRESHOLDS),
+            ],
         ];
     }
 
@@ -54,6 +59,11 @@ class ProviderRequest extends FormRequest
                 'connection_check_interval_minutes',
                 $this->route('provider')?->connection_check_interval_minutes
                     ?? Provider::defaultConnectionCheckInterval(),
+            ),
+            'connection_failure_threshold' => $this->input(
+                'connection_failure_threshold',
+                $this->route('provider')?->connection_failure_threshold
+                    ?? Provider::defaultConnectionFailureThreshold(),
             ),
         ]);
     }

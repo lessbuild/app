@@ -74,6 +74,8 @@ class ProviderInventoryExportTest extends TestCase
             'Connection status',
             'Automatic monitoring',
             'Automatic interval minutes',
+            'Failure threshold',
+            'Consecutive failures',
             'Connection checked at',
             'Created at',
             'Updated at',
@@ -90,9 +92,11 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertSame(Provider::CONNECTION_HEALTHY, $rows[1][8]);
         $this->assertSame('paused', $rows[1][9]);
         $this->assertSame((string) Provider::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES, $rows[1][10]);
-        $this->assertSame($matching->connection_checked_at->toIso8601String(), $rows[1][11]);
-        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][12]);
-        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][13]);
+        $this->assertSame((string) Provider::DEFAULT_CONNECTION_FAILURE_THRESHOLD, $rows[1][11]);
+        $this->assertSame('0', $rows[1][12]);
+        $this->assertSame($matching->connection_checked_at->toIso8601String(), $rows[1][13]);
+        $this->assertSame($matching->created_at->toIso8601String(), $rows[1][14]);
+        $this->assertSame($matching->updated_at->toIso8601String(), $rows[1][15]);
 
         $this->actingAs($owner)->get(route('providers.index', $filters))
             ->assertSuccessful()
@@ -118,7 +122,9 @@ class ProviderInventoryExportTest extends TestCase
         $this->assertSame(Provider::CONNECTION_UNCHECKED, $rows[1][8]);
         $this->assertSame('enabled', $rows[1][9]);
         $this->assertSame((string) Provider::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES, $rows[1][10]);
-        $this->assertSame('', $rows[1][11]);
+        $this->assertSame((string) Provider::DEFAULT_CONNECTION_FAILURE_THRESHOLD, $rows[1][11]);
+        $this->assertSame('0', $rows[1][12]);
+        $this->assertSame('', $rows[1][13]);
     }
 
     public function test_export_requires_authentication(): void

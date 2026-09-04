@@ -30,6 +30,8 @@ class ProviderHealthMonitor
         $encryptedToken = (string) $provider->getRawOriginal('token');
         $previousCheckedAt = $provider->getRawOriginal('connection_checked_at');
         $previousStatus = $provider->connection_status;
+        $previousFailureCount = $provider->connection_failure_count;
+        $failureThreshold = $provider->connection_failure_threshold;
         $endpoint = $this->tester->endpoint($providerType);
         $startedAt = hrtime(true);
         $result = $this->tester->test($provider);
@@ -45,12 +47,16 @@ class ProviderHealthMonitor
             $automatic,
             $endpoint,
             $durationMs,
+            $previousFailureCount,
+            $failureThreshold,
         ): bool {
             if (! $provider->recordConnectionResult(
                 $result['successful'],
                 $providerType,
                 $encryptedToken,
                 $previousCheckedAt,
+                $previousFailureCount,
+                $failureThreshold,
                 $automatic,
             )) {
                 return false;
