@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Provider;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ProviderRequest extends FormRequest
 {
@@ -35,6 +36,11 @@ class ProviderRequest extends FormRequest
             ]),
             'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],
             'connection_monitoring_enabled' => ['required', 'boolean'],
+            'connection_check_interval_minutes' => [
+                'required',
+                'integer',
+                Rule::in(Provider::CONNECTION_CHECK_INTERVALS),
+            ],
         ];
     }
 
@@ -44,6 +50,11 @@ class ProviderRequest extends FormRequest
             'connection_monitoring_enabled' => $this->has('connection_monitoring_enabled')
                 ? $this->boolean('connection_monitoring_enabled')
                 : ($this->route('provider')?->connection_monitoring_enabled ?? true),
+            'connection_check_interval_minutes' => $this->input(
+                'connection_check_interval_minutes',
+                $this->route('provider')?->connection_check_interval_minutes
+                    ?? Provider::defaultConnectionCheckInterval(),
+            ),
         ]);
     }
 }

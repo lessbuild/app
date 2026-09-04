@@ -29,11 +29,17 @@ class MonitorProviderHealthCommand extends Command
         if ($ids->isNotEmpty()) {
             $query->whereKey($ids);
         } else {
-            $interval = max(5, (int) config('lessbuild.provider_health_interval_minutes'));
-            $query->where(function ($query) use ($interval): void {
-                $query
-                    ->whereNull('connection_checked_at')
-                    ->orWhere('connection_checked_at', '<=', now()->subMinutes($interval));
+            $query->where(function ($query): void {
+                $query->whereNull('connection_checked_at');
+                foreach (Provider::CONNECTION_CHECK_INTERVALS as $minutes) {
+                    $query->orWhere(function ($query) use ($minutes): void {
+                        $query
+                            ->where('connection_check_interval_minutes', $minutes)
+                            // The timer runs every five minutes. This allowance
+                            // prevents execution time from missing its next window.
+                            ->where('connection_checked_at', '<=', now()->subMinutes($minutes - 1));
+                    });
+                }
             });
         }
 

@@ -158,6 +158,9 @@
                                 @unless ($provider->connection_monitoring_enabled)
                                     <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
                                 @endunless
+                                <div class="text-xs text-secondary">
+                                    {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
+                                </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 <div class="text-primary">

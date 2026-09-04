@@ -18,7 +18,12 @@ class Provider extends Model
 
     protected $attributes = [
         'connection_monitoring_enabled' => true,
+        'connection_check_interval_minutes' => self::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES,
     ];
+
+    public const DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES = 1440;
+
+    public const CONNECTION_CHECK_INTERVALS = [60, 360, 720, 1440];
 
     public const TYPE_DIGITALOCEAN = 'digitalocean';
 
@@ -63,6 +68,7 @@ class Provider extends Model
         'connection_status',
         'connection_checked_at',
         'connection_monitoring_enabled',
+        'connection_check_interval_minutes',
     ];
 
     protected $hidden = ['token'];
@@ -71,6 +77,7 @@ class Provider extends Model
         'token' => 'encrypted',
         'connection_checked_at' => 'datetime',
         'connection_monitoring_enabled' => 'boolean',
+        'connection_check_interval_minutes' => 'integer',
     ];
 
     public function user(): BelongsTo
@@ -148,6 +155,15 @@ class Provider extends Model
     public function connectionHealth(): string
     {
         return $this->connection_status ?? self::CONNECTION_UNCHECKED;
+    }
+
+    public static function defaultConnectionCheckInterval(): int
+    {
+        $configured = (int) config('lessbuild.provider_health_interval_minutes');
+
+        return in_array($configured, self::CONNECTION_CHECK_INTERVALS, true)
+            ? $configured
+            : self::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES;
     }
 
     public function recordConnectionResult(

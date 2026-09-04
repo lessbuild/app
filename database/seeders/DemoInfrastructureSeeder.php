@@ -49,14 +49,14 @@ class DemoInfrastructureSeeder extends Seeder
     private function providers(User $user): array
     {
         $definitions = [
-            Provider::TYPE_DIGITALOCEAN => ['DigitalOcean', Provider::CONNECTION_HEALTHY],
-            Provider::TYPE_GITHUB => ['GitHub', Provider::CONNECTION_HEALTHY],
-            Provider::TYPE_GITLAB => ['GitLab', Provider::CONNECTION_FAILED],
-            Provider::TYPE_BITBUCKET => ['Bitbucket', null],
+            Provider::TYPE_DIGITALOCEAN => ['DigitalOcean', Provider::CONNECTION_HEALTHY, 60],
+            Provider::TYPE_GITHUB => ['GitHub', Provider::CONNECTION_HEALTHY, 360],
+            Provider::TYPE_GITLAB => ['GitLab', Provider::CONNECTION_FAILED, 720],
+            Provider::TYPE_BITBUCKET => ['Bitbucket', null, 1440],
         ];
         $providers = [];
 
-        foreach ($definitions as $type => [$label, $status]) {
+        foreach ($definitions as $type => [$label, $status, $interval]) {
             $provider = Provider::withTrashed()->firstOrNew([
                 'user_id' => $user->id,
                 'name' => DemoSeeder::PREFIX.$label,
@@ -68,6 +68,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'connection_status' => $status,
                 'connection_checked_at' => $status === null ? null : now()->subMinutes(15),
                 'connection_monitoring_enabled' => false,
+                'connection_check_interval_minutes' => $interval,
             ]);
             $provider->deleted_at = null;
             $provider->save();

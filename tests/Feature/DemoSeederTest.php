@@ -61,6 +61,10 @@ class DemoSeederTest extends TestCase
             null,
         ], $user->providers()->distinct()->pluck('connection_status')->all());
         $this->assertSame(0, $user->providers()->where('connection_monitoring_enabled', true)->count());
+        $this->assertEqualsCanonicalizing(
+            Provider::CONNECTION_CHECK_INTERVALS,
+            $user->providers()->pluck('connection_check_interval_minutes')->all(),
+        );
         $this->assertSame(4, ProviderConnectionCheck::query()
             ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
             ->count());
@@ -279,6 +283,7 @@ class DemoSeederTest extends TestCase
                 'failure_streak' => 0,
             ])
             ->assertSee('Recent connection checks')
+            ->assertSee('every 6 hours')
             ->assertSee('Observed connection success')
             ->assertSee('50%')
             ->assertSee('Median successful response')

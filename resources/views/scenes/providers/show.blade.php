@@ -85,6 +85,9 @@
         ])>
             {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
         </span>
+        <span class="text-secondary">
+            ({{ trans_choice('every :count hour|every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }})
+        </span>
     </div>
 
     @if ($errors->has('provider'))

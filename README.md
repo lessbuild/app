@@ -43,8 +43,9 @@ credentials or upstream response bodies.
 The latest safe health state and check time remain visible in provider detail,
 inventory filters, and exports. Replacing a credential or changing provider type
 resets the state to unchecked so stale success cannot be mistaken for current health.
-The existing health timer also checks unchecked or day-stale providers in bounded
-batches. Connection failures and recoveries create linked activity and inbox alerts,
+The existing health timer checks unchecked providers and then applies each provider's
+selected 1, 6, 12, or 24 hour cadence in bounded batches. Connection failures and
+recoveries create linked activity and inbox alerts,
 while repeated states and concurrent stale results do not create duplicate alerts.
 Recovery automatically acknowledges unread failure alerts for that provider while
 retaining them as read incident history.
@@ -64,6 +65,9 @@ an SLA or a guarantee of current credential validity.
 Automatic provider credential monitoring can be paused per provider without
 disabling owner-authorized manual connection tests. A check already in flight is
 discarded if automatic monitoring is paused before it records a result.
+`PROVIDER_HEALTH_INTERVAL_MINUTES` selects the supported default interval for new
+providers; existing providers keep their chosen cadence. Demo providers cover every
+supported interval while automatic monitoring remains paused to prevent network traffic.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
 Authenticated visits to the public root and the sidebar Dashboard link both enter

@@ -148,5 +148,30 @@
             </div>
         </div>
         <x-forms.errors name="connection_monitoring_enabled"></x-forms.errors>
+
+        <div class="mt-4 border-t border-primary pt-4">
+            <label for="connection_check_interval_minutes" class="block text-sm font-medium text-primary">
+                {{ __('Automatic check interval') }}
+            </label>
+            <select
+                id="connection_check_interval_minutes"
+                name="connection_check_interval_minutes"
+                class="input secondary mt-1 rounded"
+            >
+                @foreach (\App\Models\Provider::CONNECTION_CHECK_INTERVALS as $minutes)
+                    @php($hours = intdiv($minutes, 60))
+                    <option
+                        value="{{ $minutes }}"
+                        @selected((int) old('connection_check_interval_minutes', $provider->connection_check_interval_minutes ?? \App\Models\Provider::defaultConnectionCheckInterval()) === $minutes)
+                    >
+                        {{ trans_choice('Every :count hour|Every :count hours', $hours, ['count' => $hours]) }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="mt-2 text-sm text-secondary">
+                {{ __('Applies to scheduled monitoring only. Manual connection tests can still run immediately.') }}
+            </p>
+            <x-forms.errors name="connection_check_interval_minutes"></x-forms.errors>
+        </div>
     </div>
 </div>

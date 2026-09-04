@@ -19,7 +19,6 @@ class ProviderHealthMonitoringTest extends TestCase
     {
         config([
             'lessbuild.provider_health_batch_size' => 2,
-            'lessbuild.provider_health_interval_minutes' => 60,
         ]);
         Http::preventStrayRequests();
         Http::fakeSequence()
@@ -27,9 +26,9 @@ class ProviderHealthMonitoringTest extends TestCase
             ->push(['message' => 'expired'], 401);
         $owner = User::factory()->create();
         $unchecked = $this->provider($owner, 'Unchecked');
-        $stale = $this->provider($owner, 'Stale', Provider::CONNECTION_HEALTHY, now()->subHours(2));
+        $stale = $this->provider($owner, 'Stale', Provider::CONNECTION_HEALTHY, now()->subHours(2), 60);
         $recentCheckedAt = now()->subMinutes(10);
-        $recent = $this->provider($owner, 'Recent', Provider::CONNECTION_FAILED, $recentCheckedAt);
+        $recent = $this->provider($owner, 'Recent', Provider::CONNECTION_FAILED, $recentCheckedAt, 60);
 
         $this->assertSame(0, Artisan::call('lessbuild:providers:health'));
         $this->assertStringContainsString(
@@ -51,6 +50,43 @@ class ProviderHealthMonitoringTest extends TestCase
         Artisan::call('lessbuild:providers:health');
         $this->assertStringContainsString('Checked 0 provider(s)', Artisan::output());
         Http::assertSentCount(2);
+    }
+
+    public function test_automatic_checks_apply_each_providers_monitoring_interval(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['https://api.github.com/user' => Http::response(['login' => 'owner'])]);
+        $owner = User::factory()->create();
+        $recentProviders = collect();
+
+        foreach (Provider::CONNECTION_CHECK_INTERVALS as $interval) {
+            $this->provider(
+                $owner,
+                "Due {$interval}",
+                Provider::CONNECTION_HEALTHY,
+                now()->subMinutes($interval),
+                $interval,
+            );
+            $recentCheckedAt = now()->subMinutes($interval - 2);
+            $recentProviders->push($this->provider(
+                $owner,
+                "Recent {$interval}",
+                Provider::CONNECTION_HEALTHY,
+                $recentCheckedAt,
+                $interval,
+            ));
+        }
+
+        Artisan::call('lessbuild:providers:health');
+
+        $this->assertStringContainsString('Checked 4 provider(s)', Artisan::output());
+        Http::assertSentCount(count(Provider::CONNECTION_CHECK_INTERVALS));
+        foreach ($recentProviders as $provider) {
+            $this->assertSame(
+                $provider->connection_checked_at->timestamp,
+                $provider->fresh()->connection_checked_at->timestamp,
+            );
+        }
     }
 
     public function test_failure_and_recovery_transitions_create_linked_alerts_without_duplicates(): void
@@ -178,6 +214,7 @@ class ProviderHealthMonitoringTest extends TestCase
         string $name,
         ?string $status = null,
         mixed $checkedAt = null,
+        ?int $interval = null,
     ): Provider {
         return $user->providers()->create([
             'name' => $name,
@@ -186,6 +223,7 @@ class ProviderHealthMonitoringTest extends TestCase
             'description' => 'Provider health monitoring',
             'connection_status' => $status,
             'connection_checked_at' => $checkedAt,
+            'connection_check_interval_minutes' => $interval ?? Provider::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES,
         ]);
     }
 }
