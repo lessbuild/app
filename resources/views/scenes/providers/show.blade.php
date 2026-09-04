@@ -109,6 +109,40 @@
             </div>
         </div>
 
+        <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Retained checks') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">{{ $connectionMetrics['total'] }}</dd>
+                <dd class="mt-1 text-xs text-secondary">{{ __('Newest :limit maximum', ['limit' => \App\Models\ProviderConnectionCheck::MAX_PER_PROVIDER]) }}</dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed connection success') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $connectionMetrics['success_rate'] !== null ? $connectionMetrics['success_rate'].'%' : __('Not available') }}
+                </dd>
+                <dd class="mt-1 text-xs text-secondary">
+                    {{ trans_choice(':count successful check|:count successful checks', $connectionMetrics['successful'], ['count' => $connectionMetrics['successful']]) }}
+                </dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Median successful response') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $connectionMetrics['median_successful_duration_ms'] !== null ? $connectionMetrics['median_successful_duration_ms'].' ms' : __('Not recorded') }}
+                </dd>
+                <dd class="mt-1 text-xs text-secondary">{{ __('Failed timings are excluded.') }}</dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Current failure streak') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">{{ $connectionMetrics['failure_streak'] }}</dd>
+                <dd class="mt-1 text-xs text-secondary">
+                    {{ trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']]) }}
+                </dd>
+            </div>
+        </dl>
+        <p class="mt-3 text-xs text-secondary">
+            {{ __('These figures summarize retained observations and are not an SLA or a guarantee that the credential is currently valid.') }}
+        </p>
+
         @if ($connectionChecks->isEmpty())
             <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
                 {{ __('No connection checks have been recorded yet.') }}

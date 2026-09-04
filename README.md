@@ -56,6 +56,11 @@ response bodies are never stored in this history. The full retained history can 
 filtered by result, source, and checked-date range with pagination that preserves
 those filters. CSV exports apply the same normalized filters. Demo providers include
 healthy, failed, recovery, manual, automatic, and empty-history examples.
+Provider details summarize the retained sample with observed connection success,
+median successful-response time, and the newest consecutive-failure streak. Empty
+or entirely failed samples show explicit unavailable values rather than invented
+performance figures, and the UI labels these metrics as observations rather than
+an SLA or a guarantee of current credential validity.
 Automatic provider credential monitoring can be paused per provider without
 disabling owner-authorized manual connection tests. A check already in flight is
 discarded if automatic monitoring is paused before it records a result.

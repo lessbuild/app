@@ -250,6 +250,7 @@ class DemoSeederTest extends TestCase
         Artisan::call('db:seed', ['--class' => DemoSeeder::class, '--force' => true]);
         $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
         $provider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitHub')->sole();
+        $failedProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitLab')->sole();
         $emptyHistoryProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'Bitbucket')->sole();
         $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->sole();
         $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->sole();
@@ -270,7 +271,17 @@ class DemoSeederTest extends TestCase
             ->assertSee('Running');
         $this->actingAs($user)->get(route('providers.show', $provider))
             ->assertSuccessful()
+            ->assertViewHas('connectionMetrics', [
+                'total' => 2,
+                'successful' => 1,
+                'success_rate' => 50,
+                'median_successful_duration_ms' => 85,
+                'failure_streak' => 0,
+            ])
             ->assertSee('Recent connection checks')
+            ->assertSee('Observed connection success')
+            ->assertSee('50%')
+            ->assertSee('Median successful response')
             ->assertSee('Manual')
             ->assertSee('Automatic')
             ->assertSee('HTTP 401')
@@ -278,8 +289,28 @@ class DemoSeederTest extends TestCase
             ->assertSee('Demo GitHub credential was rejected before recovery.')
             ->assertSee(route('providers.connection-checks.index', $provider))
             ->assertSee(route('providers.connection-checks.export', $provider));
+        $this->actingAs($user)->get(route('providers.show', $failedProvider))
+            ->assertSuccessful()
+            ->assertViewHas('connectionMetrics', [
+                'total' => 1,
+                'successful' => 0,
+                'success_rate' => 0,
+                'median_successful_duration_ms' => null,
+                'failure_streak' => 1,
+            ])
+            ->assertSee('0%')
+            ->assertSee('Not recorded')
+            ->assertSee('1 consecutive failed check');
         $this->actingAs($user)->get(route('providers.show', $emptyHistoryProvider))
             ->assertSuccessful()
+            ->assertViewHas('connectionMetrics', [
+                'total' => 0,
+                'successful' => 0,
+                'success_rate' => null,
+                'median_successful_duration_ms' => null,
+                'failure_streak' => 0,
+            ])
+            ->assertSee('Not available')
             ->assertSee('No connection checks have been recorded yet.');
         $this->actingAs($user)->get(route('providers.connection-checks.index', $emptyHistoryProvider))
             ->assertSuccessful()

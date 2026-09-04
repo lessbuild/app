@@ -6,6 +6,7 @@ use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -113,17 +114,57 @@ class ProviderController extends Controller
         $servers = $provider->servers()
             ->latest()
             ->paginate(pageName: 'servers_page');
+        $retainedConnectionChecks = $provider->connectionChecks()
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->limit(ProviderConnectionCheck::MAX_PER_PROVIDER)
+            ->get();
 
         return view('scenes.providers.show', [
             'provider' => $provider,
             'repositories' => $repositories,
             'servers' => $servers,
-            'connectionChecks' => $provider->connectionChecks()
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->limit(20)
-                ->get(),
+            'connectionChecks' => $retainedConnectionChecks->take(20),
+            'connectionMetrics' => $this->connectionMetrics($retainedConnectionChecks),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, ProviderConnectionCheck>  $checks
+     * @return array{total: int, successful: int, success_rate: ?int, median_successful_duration_ms: ?int, failure_streak: int}
+     */
+    private function connectionMetrics(Collection $checks): array
+    {
+        $total = $checks->count();
+        $successful = $checks->where('successful', true)->count();
+        $durations = $checks
+            ->where('successful', true)
+            ->pluck('duration_ms')
+            ->sort()
+            ->values();
+        $durationCount = $durations->count();
+        $middle = intdiv($durationCount, 2);
+        $medianDuration = match (true) {
+            $durationCount === 0 => null,
+            $durationCount % 2 === 1 => $durations[$middle],
+            default => (int) round(($durations[$middle - 1] + $durations[$middle]) / 2),
+        };
+        $failureStreak = 0;
+        foreach ($checks as $check) {
+            if ($check->successful) {
+                break;
+            }
+
+            $failureStreak++;
+        }
+
+        return [
+            'total' => $total,
+            'successful' => $successful,
+            'success_rate' => $total > 0 ? (int) round(($successful / $total) * 100) : null,
+            'median_successful_duration_ms' => $medianDuration,
+            'failure_streak' => $failureStreak,
+        ];
     }
 
     public function connectionChecks(Request $request, Provider $provider): View
