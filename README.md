@@ -366,6 +366,10 @@ review and support handoff.
 The activity timeline can be searched and filtered by category or date range;
 the same owner-scoped view can be exported as a streamed, spreadsheet-safe CSV
 for audits and incident handoff.
+Filter-aware activity cards summarize matching deployment, infrastructure,
+server-command, and account-security events plus the latest matching event.
+General or legacy events remain in the total without being misclassified, and
+empty filtered views report an explicit unavailable latest event.
 The notification inbox can filter alerts by search text, category, failure/recovery/
 information status, read state, and created-date range, then export that same
 owner-scoped view as a spreadsheet-safe CSV without exposing raw notification

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\Request;
@@ -21,8 +22,39 @@ class ActivityController extends Controller
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
+            'metrics' => $this->metrics($request, $filters),
             'categories' => Event::CATEGORIES,
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, category: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, deployments: int, infrastructure: int, commands: int, account: int, latest_at: CarbonInterface|null}
+     */
+    private function metrics(Request $request, array $filters): array
+    {
+        $latest = $this->filteredEvents($request, $filters)
+            ->select(['id', 'created_at'])
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+
+        return [
+            'total' => $this->filteredEvents($request, $filters)->count(),
+            'deployments' => $this->filteredEvents($request, $filters)
+                ->where('category', 'deployment')
+                ->count(),
+            'infrastructure' => $this->filteredEvents($request, $filters)
+                ->whereIn('category', ['website', 'server', 'provider'])
+                ->count(),
+            'commands' => $this->filteredEvents($request, $filters)
+                ->where('category', 'command')
+                ->count(),
+            'account' => $this->filteredEvents($request, $filters)
+                ->where('category', 'account')
+                ->count(),
+            'latest_at' => $latest?->created_at,
+        ];
     }
 
     public function export(Request $request): StreamedResponse

@@ -564,6 +564,29 @@ class DemoSeederTest extends TestCase
         $notificationContent = $notificationExport->streamedContent();
         $this->assertStringContainsString('Demo provider connection recovered', $notificationContent);
         $this->assertStringNotContainsString('Demo provider connection failed', $notificationContent);
+        $this->actingAs($user)->get(route('activity.index', ['search' => 'Demo:']))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 7
+                && $metrics['deployments'] === 1
+                && $metrics['infrastructure'] === 3
+                && $metrics['commands'] === 1
+                && $metrics['account'] === 1
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching events')
+            ->assertSee('Infrastructure')
+            ->assertSee('Demo: account security settings were reviewed.');
+        $this->actingAs($user)->get(route('activity.index', ['search' => 'Demo: no matching activity']))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'deployments' => 0,
+                'infrastructure' => 0,
+                'commands' => 0,
+                'account' => 0,
+                'latest_at' => null,
+            ])
+            ->assertSee('No matching event recorded.')
+            ->assertSee('No activity matches these filters');
 
         foreach ([
             route('dashboard'),

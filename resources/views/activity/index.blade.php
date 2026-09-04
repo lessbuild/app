@@ -49,6 +49,41 @@
         </div>
     </form>
 
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching events') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Audit events in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Deployments') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['deployments'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching deployment events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Infrastructure') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['infrastructure'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Website, server, and provider events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Server commands') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['commands'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching command lifecycle events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Account security') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['account'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching account security events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching event') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.') }}
+            </dd>
+        </div>
+    </dl>
+
     <x-activity-feed
         :events="$events"
         :empty-title="array_filter($filters, fn ($value) => $value !== null) ? __('No activity matches these filters') : __('No activity yet')"
