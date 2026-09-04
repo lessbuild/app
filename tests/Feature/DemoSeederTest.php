@@ -6,6 +6,7 @@ use App\Models\Build;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Models\Recipe;
+use App\Models\RecipeRating;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -113,6 +114,8 @@ class DemoSeederTest extends TestCase
         $this->assertNotNull($importedRecipe->source);
         $this->assertTrue($importedRecipe->hasGalleryUpdate());
         $this->assertFalse($importedRecipe->is_published);
+        $this->assertSame(1, RecipeRating::query()->count());
+        $this->assertSame(4, $user->recipeRatings()->where('recipe_id', $importedRecipe->source_recipe_id)->value('rating'));
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -419,6 +422,7 @@ class DemoSeederTest extends TestCase
                 'published' => 4,
                 'installs' => 80,
                 'authors' => 2,
+                'ratings' => 1,
             ])
             ->assertSeeInOrder(['Install Node.js LTS', 'Install unattended upgrades', 'Harden SSH defaults'])
             ->assertSee('Lessbuild Community')
@@ -431,6 +435,9 @@ class DemoSeederTest extends TestCase
             ->assertSuccessful()
             ->assertSee('A newer gallery version is available')
             ->assertSee('Update My Copy')
+            ->assertSee('4.0 / 5 from 1 rating')
+            ->assertSee('Update Rating')
+            ->assertSee('Remove Rating')
             ->assertDontSee('Add to My Recipes');
         $this->actingAs($user)->get(route('servers.commands.index', $server))
             ->assertSuccessful()
@@ -984,6 +991,7 @@ class DemoSeederTest extends TestCase
                 ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
                 ->count(),
             'recipes' => $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
+            'gallery_ratings' => $user->recipeRatings()->count(),
             'servers' => $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'websites' => $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'health_checks' => WebsiteHealthCheck::query()

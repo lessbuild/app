@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Recipe;
+use App\Models\RecipeRating;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,10 +20,14 @@ class RecipeGalleryController extends Controller
         return view('scenes.gallery.index', [
             'recipes' => (clone $query)
                 ->with('user:id,name')
+                ->withCount('ratings')
+                ->withAvg('ratings', 'rating')
                 ->when(
                     $filters['sort'] === 'popular',
                     fn (Builder $query) => $query->orderByDesc('install_count')->latest('published_at'),
-                    fn (Builder $query) => $query->latest('published_at'),
+                    fn (Builder $query) => $filters['sort'] === 'top_rated'
+                        ? $query->orderByDesc('ratings_avg_rating')->orderByDesc('ratings_count')->latest('published_at')
+                        : $query->latest('published_at'),
                 )
                 ->paginate()
                 ->withQueryString(),
@@ -32,6 +37,9 @@ class RecipeGalleryController extends Controller
                 'published' => (clone $query)->count(),
                 'installs' => (int) (clone $query)->sum('install_count'),
                 'authors' => (clone $query)->distinct()->count('user_id'),
+                'ratings' => RecipeRating::query()
+                    ->whereIn('recipe_id', (clone $query)->select('recipes.id'))
+                    ->count(),
             ],
         ]);
     }
@@ -40,6 +48,7 @@ class RecipeGalleryController extends Controller
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
         $recipe->load('user:id,name');
+        $recipe->loadCount('ratings')->loadAvg('ratings', 'rating');
         $installedRecipe = $request->user()->recipes()
             ->where('source_recipe_id', $recipe->id)
             ->latest('id')
@@ -49,6 +58,11 @@ class RecipeGalleryController extends Controller
         return view('scenes.gallery.show', [
             'recipe' => $recipe,
             'installedRecipe' => $installedRecipe,
+            'currentRating' => $request->user()->recipeRatings()
+                ->where('recipe_id', $recipe->id)
+                ->first(),
+            'canRate' => $installedRecipe !== null
+                && (int) $recipe->user_id !== (int) $request->user()->id,
         ]);
     }
 
@@ -161,7 +175,7 @@ class RecipeGalleryController extends Controller
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, Recipe::CATEGORIES, true) ? $category : null,
-            'sort' => in_array($sort, ['recent', 'popular'], true) ? $sort : 'recent',
+            'sort' => in_array($sort, ['recent', 'popular', 'top_rated'], true) ? $sort : 'recent',
         ];
     }
 

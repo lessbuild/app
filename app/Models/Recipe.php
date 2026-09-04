@@ -68,6 +68,11 @@ class Recipe extends Model
         return $this->hasMany(self::class, 'source_recipe_id');
     }
 
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(RecipeRating::class);
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true)->whereNotNull('published_at');

@@ -24,7 +24,11 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+    @if (session('status'))
+        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+    @endif
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</dt>
             <dd class="mt-1 font-semibold text-primary">{{ str($recipe->category)->title() }}</dd>
@@ -36,6 +40,14 @@
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Installs') }}</dt>
             <dd class="mt-1 font-semibold text-primary">{{ $recipe->install_count }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Verified rating') }}</dt>
+            <dd class="mt-1 font-semibold text-primary">
+                {{ $recipe->ratings_count
+                    ? __(':score / 5 from :count', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => trans_choice(':count rating|:count ratings', $recipe->ratings_count, ['count' => $recipe->ratings_count])])
+                    : __('Not rated yet') }}
+            </dd>
         </div>
     </dl>
 
@@ -58,6 +70,42 @@
             @endif
         </div>
     @endif
+
+    <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-rating-heading">
+        <h2 id="gallery-rating-heading" class="text-lg font-bold text-primary">{{ __('Rate this recipe') }}</h2>
+        @if ($canRate)
+            <p class="mt-1 text-sm text-secondary">{{ __('Ratings are limited to people who installed the recipe. You can change or remove yours at any time.') }}</p>
+            <div class="mt-4 flex flex-wrap items-end gap-3">
+                <form method="POST" action="{{ route('gallery.rating.store', $recipe) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    <div>
+                        <label for="rating" class="block text-xs font-semibold uppercase text-secondary">{{ __('Your rating') }}</label>
+                        <select id="rating" name="rating" class="input secondary mt-1 rounded" required>
+                            <option value="">{{ __('Choose a score') }}</option>
+                            @foreach ([5, 4, 3, 2, 1] as $score)
+                                <option value="{{ $score }}" @selected((int) old('rating', $currentRating?->rating) === $score)>
+                                    {{ trans_choice(':count star|:count stars', $score, ['count' => $score]) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-forms.errors name="rating" />
+                    </div>
+                    <button type="submit" class="button primary">{{ $currentRating ? __('Update Rating') : __('Save Rating') }}</button>
+                </form>
+                @if ($currentRating)
+                    <form method="POST" action="{{ route('gallery.rating.destroy', $recipe) }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="button secondary">{{ __('Remove Rating') }}</button>
+                    </form>
+                @endif
+            </div>
+        @elseif ((int) $recipe->user_id === (int) auth()->id())
+            <p class="mt-1 text-sm text-secondary">{{ __('Contributors cannot rate their own recipes.') }}</p>
+        @else
+            <p class="mt-1 text-sm text-secondary">{{ __('Add this recipe to your account before rating it.') }}</p>
+        @endif
+    </section>
 
     <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-script-heading">
         <div class="rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">

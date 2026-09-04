@@ -29,7 +29,7 @@ class RecipeGalleryTest extends TestCase
             'sort' => 'popular',
         ]))
             ->assertSuccessful()
-            ->assertViewHas('metrics', ['published' => 2, 'installs' => 23, 'authors' => 2])
+            ->assertViewHas('metrics', ['published' => 2, 'installs' => 23, 'authors' => 2, 'ratings' => 0])
             ->assertSeeInOrder([$popular->name, $recent->name])
             ->assertSee($firstAuthor->name)
             ->assertSee($secondAuthor->name)

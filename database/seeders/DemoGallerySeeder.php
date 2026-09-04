@@ -85,6 +85,11 @@ class DemoGallerySeeder extends Seeder
             'install_count' => 0,
         ])->save();
 
+        $demoOwner->recipeRatings()->updateOrCreate(
+            ['recipe_id' => $source->id],
+            ['rating' => 4],
+        );
+
         $demoOwner->recipes()
             ->where('source_recipe_id', $source->id)
             ->whereKeyNot($importedRecipe->id)

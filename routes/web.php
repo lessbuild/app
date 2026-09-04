@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ProviderConnectionController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RecipeGalleryController;
+use App\Http\Controllers\RecipeRatingsController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\RepositoryWebhookSettingsController;
@@ -182,6 +183,13 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('recipe')
             ->middleware('throttle:20,1')
             ->name('gallery.install');
+        Route::post('gallery/{recipe}/rating', [RecipeRatingsController::class, 'store'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:30,1')
+            ->name('gallery.rating.store');
+        Route::delete('gallery/{recipe}/rating', [RecipeRatingsController::class, 'destroy'])
+            ->whereNumber('recipe')
+            ->name('gallery.rating.destroy');
         Route::post('recipes/{recipe}/refresh-from-gallery', [RecipeGalleryController::class, 'refresh'])
             ->whereNumber('recipe')
             ->name('recipes.gallery.refresh');

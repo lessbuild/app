@@ -37,6 +37,7 @@
                 <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
                     <option value="recent" @selected($filters['sort'] === 'recent')>{{ __('Recently published') }}</option>
                     <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Most installed') }}</option>
+                    <option value="top_rated" @selected($filters['sort'] === 'top_rated')>{{ __('Top rated') }}</option>
                 </select>
             </div>
         </div>
@@ -48,7 +49,7 @@
         </div>
     </form>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Published recipes') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['published'] }}</dd>
@@ -60,6 +61,10 @@
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Contributors') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['authors'] }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Verified ratings') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['ratings'] }}</dd>
         </div>
     </dl>
 
@@ -81,7 +86,14 @@
                                 <a href="{{ route('gallery.show', $recipe) }}" class="text-ternary">{{ $recipe->name }}</a>
                             </h2>
                         </div>
-                        <span class="whitespace-nowrap text-xs text-secondary">{{ trans_choice(':count install|:count installs', $recipe->install_count, ['count' => $recipe->install_count]) }}</span>
+                        <div class="text-right text-xs text-secondary">
+                            <span class="block">{{ trans_choice(':count install|:count installs', $recipe->install_count, ['count' => $recipe->install_count]) }}</span>
+                            <span class="mt-1 block">
+                                {{ $recipe->ratings_count
+                                    ? __(':score / 5 (:count)', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => $recipe->ratings_count])
+                                    : __('Not rated') }}
+                            </span>
+                        </div>
                     </div>
                     <p class="mt-2 text-sm text-secondary">{{ $recipe->description }}</p>
                     <div class="mt-4 flex items-center justify-between text-xs text-secondary">

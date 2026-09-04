@@ -136,6 +136,9 @@ The app highlights newer upstream revisions, prevents accidental duplicate insta
 and refreshes only private copies after the user reviews the changed script.
 An owner-scoped comparison page places the encrypted installed snapshot beside the
 current gallery script and metadata before any refresh action is confirmed.
+Installed users can leave one editable 1–5 rating per gallery recipe. Aggregate
+scores and rating counts appear in the gallery, with a top-rated sort; contributors
+cannot rate their own recipes and uninstalled users cannot submit ratings.
 
 ## Source control providers
 
