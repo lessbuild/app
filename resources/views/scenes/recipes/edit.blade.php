@@ -19,7 +19,7 @@
             @if ($recipe->hasGalleryUpdate())
                 <p class="mt-1">{{ __('A newer gallery revision is available. Inspect it before replacing your private snapshot.') }}</p>
                 <div class="mt-3 flex flex-wrap gap-3">
-                    <a href="{{ route('gallery.show', $recipe->source) }}" class="button secondary">{{ __('Review Update') }}</a>
+                    <a href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" class="button secondary">{{ __('Review Changes') }}</a>
                     @if (! $recipe->is_published)
                         <form method="POST" action="{{ route('recipes.gallery.refresh', $recipe) }}" onsubmit="return confirm('{{ __('Replace your private copy with the reviewed gallery version?') }}')">
                             @csrf

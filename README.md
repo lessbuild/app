@@ -134,6 +134,8 @@ Install counts track reuse without linking the imported copy to future source ed
 Imported copies retain contributor provenance and their installed gallery revision.
 The app highlights newer upstream revisions, prevents accidental duplicate installs,
 and refreshes only private copies after the user reviews the changed script.
+An owner-scoped comparison page places the encrypted installed snapshot beside the
+current gallery script and metadata before any refresh action is confirmed.
 
 ## Source control providers
 

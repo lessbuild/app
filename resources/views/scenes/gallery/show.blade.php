@@ -8,6 +8,7 @@
         <x-slot:buttons>
             @if ($installedRecipe)
                 <a href="{{ route('recipes.edit', $installedRecipe) }}" class="button secondary">{{ __('View My Copy') }}</a>
+                <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="button secondary">{{ __('Compare Scripts') }}</a>
                 @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
                     <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm('{{ __('Replace your private copy with this reviewed gallery version?') }}')">
                         @csrf
@@ -49,7 +50,7 @@
                 <p class="mt-1">
                     {{ $installedRecipe->is_published
                         ? __('Your copy is published. Unpublish it before refreshing so upstream changes cannot be redistributed automatically.')
-                        : __('Review the script below, then update your private copy when you are ready.') }}
+                        : __('Compare the scripts below, then update your private copy when you are ready.') }}
                 </p>
             @else
                 <p class="font-semibold">{{ __('Installed in your recipes') }}</p>

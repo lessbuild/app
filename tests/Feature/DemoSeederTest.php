@@ -398,7 +398,20 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('recipes.edit', $importedRecipe))
             ->assertSuccessful()
             ->assertSee('Imported from Harden SSH defaults')
-            ->assertSee('Review Update')
+            ->assertSee('Review Changes')
+            ->assertSee('Update Private Copy');
+        $this->actingAs($user)->get(route('gallery.compare', [
+            'recipe' => $gallerySource,
+            'copy' => $importedRecipe,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('comparison', fn (array $comparison): bool => $comparison['script_changed']
+                && $comparison['name_changed']
+                && $comparison['description_changed']
+                && $comparison['current_lines'] === 1
+                && $comparison['gallery_lines'] === 4)
+            ->assertSee("echo 'Review SSH access before applying the current hardening recipe'")
+            ->assertSee("sed -i 's/^#PasswordAuthentication yes/PasswordAuthentication no/'")
             ->assertSee('Update Private Copy');
         $this->actingAs($user)->get(route('gallery.index', ['sort' => 'popular']))
             ->assertSuccessful()

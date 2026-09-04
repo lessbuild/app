@@ -52,6 +52,32 @@ class RecipeGalleryController extends Controller
         ]);
     }
 
+    public function compare(Recipe $recipe, Recipe $copy): View
+    {
+        $this->authorize('update', $copy);
+        abort_unless(
+            $recipe->is_published
+                && $recipe->published_at !== null
+                && (int) $copy->source_recipe_id === (int) $recipe->id,
+            404,
+        );
+
+        $recipe->load('user:id,name');
+        $copy->setRelation('source', $recipe);
+
+        return view('scenes.gallery.compare', [
+            'recipe' => $recipe,
+            'copy' => $copy,
+            'comparison' => [
+                'script_changed' => $copy->script !== $recipe->script,
+                'name_changed' => $copy->name !== $recipe->name,
+                'description_changed' => $copy->description !== $recipe->description,
+                'current_lines' => $this->lineCount($copy->script),
+                'gallery_lines' => $this->lineCount($recipe->script),
+            ],
+        ]);
+    }
+
     public function install(Request $request, Recipe $recipe): RedirectResponse
     {
         $copy = DB::transaction(function () use ($request, $recipe): Recipe {
@@ -151,5 +177,10 @@ class RecipeGalleryController extends Controller
                 });
             })
             ->when($filters['category'], fn (Builder $query, string $category) => $query->where('category', $category));
+    }
+
+    private function lineCount(string $script): int
+    {
+        return $script === '' ? 0 : substr_count($script, "\n") + 1;
     }
 }

@@ -172,6 +172,9 @@ Route::middleware('auth')->group(function () {
             ->name('recipes.export');
         Route::get('gallery', [RecipeGalleryController::class, 'index'])
             ->name('gallery.index');
+        Route::get('gallery/{recipe}/compare/{copy}', [RecipeGalleryController::class, 'compare'])
+            ->whereNumber(['recipe', 'copy'])
+            ->name('gallery.compare');
         Route::get('gallery/{recipe}', [RecipeGalleryController::class, 'show'])
             ->whereNumber('recipe')
             ->name('gallery.show');

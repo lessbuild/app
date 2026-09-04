@@ -100,7 +100,7 @@ class RecipeGalleryTest extends TestCase
         $this->actingAs($author)->patch(route('recipes.update', $source), [
             'name' => 'Install monitoring agent',
             'description' => 'Updated monitoring setup.',
-            'script' => 'echo gallery-script-v2',
+            'script' => "echo gallery-script-v2\necho verified",
             'is_published' => '1',
             'category' => 'monitoring',
         ])->assertRedirect(route('recipes.index'));
@@ -115,12 +115,26 @@ class RecipeGalleryTest extends TestCase
         $this->actingAs($visitor)->get(route('recipes.edit', $copy))
             ->assertSuccessful()
             ->assertSee('Imported from Install monitoring agent')
-            ->assertSee('Review Update')
+            ->assertSee('Review Changes')
+            ->assertSee(route('gallery.compare', ['recipe' => $source, 'copy' => $copy]))
             ->assertSee('Update Private Copy');
         $this->actingAs($visitor)->get(route('recipes.index'))
             ->assertSuccessful()
             ->assertSee('Gallery update available')
             ->assertSee(route('gallery.show', $source));
+        $this->actingAs($visitor)->get(route('gallery.compare', ['recipe' => $source, 'copy' => $copy]))
+            ->assertSuccessful()
+            ->assertViewHas('comparison', [
+                'script_changed' => true,
+                'name_changed' => true,
+                'description_changed' => true,
+                'current_lines' => 1,
+                'gallery_lines' => 2,
+            ])
+            ->assertSee('Review every changed command')
+            ->assertSee('echo gallery-script')
+            ->assertSee('echo gallery-script-v2')
+            ->assertSee('Update Private Copy');
 
         $this->actingAs($visitor)->post(route('recipes.gallery.refresh', $copy))
             ->assertRedirect(route('recipes.edit', $copy))
@@ -129,7 +143,7 @@ class RecipeGalleryTest extends TestCase
         $copy->refresh();
         $this->assertSame('Install monitoring agent', $copy->name);
         $this->assertSame('Updated monitoring setup.', $copy->description);
-        $this->assertSame('echo gallery-script-v2', $copy->script);
+        $this->assertSame("echo gallery-script-v2\necho verified", $copy->script);
         $this->assertFalse($copy->is_published);
         $this->assertTrue($source->gallery_revision_at->equalTo($copy->source_revision_at));
         $this->actingAs($visitor)->get(route('gallery.show', $source))
@@ -138,6 +152,31 @@ class RecipeGalleryTest extends TestCase
         $this->actingAs($visitor)->get(route('recipes.index'))
             ->assertSee('Gallery copy current')
             ->assertDontSee('Gallery update available');
+    }
+
+    public function test_recipe_comparison_is_owner_scoped_and_requires_the_matching_published_source(): void
+    {
+        [$owner, $intruder, $author] = User::factory()->count(3)->create();
+        $source = $this->publishedRecipe($author, 'Source recipe', 'utilities');
+        $unrelated = $this->publishedRecipe($author, 'Unrelated recipe', 'utilities');
+        $copy = $owner->recipes()->create([
+            'name' => $source->name,
+            'description' => $source->description,
+            'script' => $source->script,
+            'source_recipe_id' => $source->id,
+            'source_revision_at' => $source->gallery_revision_at,
+        ]);
+        $comparisonUrl = route('gallery.compare', ['recipe' => $source, 'copy' => $copy]);
+
+        $this->get($comparisonUrl)->assertRedirect(route('login'));
+        $this->actingAs($intruder)->get($comparisonUrl)->assertForbidden();
+        $this->actingAs($owner)->get(route('gallery.compare', [
+            'recipe' => $unrelated,
+            'copy' => $copy,
+        ]))->assertNotFound();
+
+        $source->update(['is_published' => false, 'published_at' => null]);
+        $this->actingAs($owner)->get($comparisonUrl)->assertNotFound();
     }
 
     public function test_published_copy_must_be_unpublished_before_refresh_and_other_users_are_forbidden(): void
