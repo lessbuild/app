@@ -124,6 +124,45 @@ class ProviderConnectionHistoryTest extends TestCase
         $this->assertDatabaseCount('provider_connection_checks', 0);
     }
 
+    public function test_connection_history_summarizes_the_filtered_retained_sample(): void
+    {
+        [$owner, $provider] = $this->provider('Insights');
+        foreach ([
+            [true, ProviderConnectionCheck::SOURCE_AUTOMATIC, 80, '2026-09-03 10:00:00'],
+            [false, ProviderConnectionCheck::SOURCE_AUTOMATIC, 240, '2026-09-03 11:00:00'],
+            [true, ProviderConnectionCheck::SOURCE_MANUAL, 120, '2026-09-03 12:00:00'],
+            [false, ProviderConnectionCheck::SOURCE_MANUAL, 260, '2026-09-03 13:00:00'],
+        ] as [$successful, $source, $duration, $checkedAt]) {
+            $provider->connectionChecks()->create([
+                'successful' => $successful,
+                'source' => $source,
+                'provider_type' => Provider::TYPE_GITHUB,
+                'http_status' => $successful ? 200 : 401,
+                'duration_ms' => $duration,
+                'endpoint' => 'https://api.github.com/user',
+                'checked_at' => $checkedAt,
+            ]);
+        }
+
+        $this->actingAs($owner)->get(route('providers.connection-checks.index', $provider))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 4
+                && $metrics['healthy'] === 2
+                && $metrics['failed'] === 2
+                && $metrics['success_rate'] === 50
+                && $metrics['median_successful_duration_ms'] === 100
+                && $metrics['latest_at']?->toDateTimeString() === '2026-09-03 13:00:00')
+            ->assertSee('Matching checks')
+            ->assertSee('Healthy checks')
+            ->assertSee('Failed checks')
+            ->assertSee('Observed success')
+            ->assertSee('50%')
+            ->assertSee('Median successful response')
+            ->assertSee('100 ms')
+            ->assertSee('Latest matching check')
+            ->assertDontSee('provider-secret');
+    }
+
     public function test_full_history_combines_filters_and_preserves_them_across_pagination(): void
     {
         [$owner, $provider] = $this->provider('Filtered');
@@ -187,6 +226,12 @@ class ProviderConnectionHistoryTest extends TestCase
             ->assertSuccessful()
             ->assertViewHas('filters', $filters)
             ->assertViewHas('connectionChecks', fn ($checks): bool => $checks->total() === 21 && $checks->count() === 20)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 21
+                && $metrics['healthy'] === 0
+                && $metrics['failed'] === 21
+                && $metrics['success_rate'] === 0
+                && $metrics['median_successful_duration_ms'] === null
+                && $metrics['latest_at'] !== null)
             ->assertSee('21 matching retained checks')
             ->assertSee('match-21')
             ->assertDontSee('match-1</td>', false)
@@ -237,6 +282,15 @@ class ProviderConnectionHistoryTest extends TestCase
 
         $this->get(route('providers.connection-checks.index', [$provider, 'result' => 'failed']))
             ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'healthy' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'median_successful_duration_ms' => null,
+                'latest_at' => null,
+            ])
+            ->assertSee('Not available')
             ->assertSee('No connection checks match these filters.');
     }
 

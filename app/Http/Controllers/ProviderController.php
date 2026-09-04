@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -209,8 +210,32 @@ class ProviderController extends Controller
                 ->paginate(20)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
+            'metrics' => $this->connectionHistoryMetrics($provider, $filters),
             'sources' => [ProviderConnectionCheck::SOURCE_MANUAL, ProviderConnectionCheck::SOURCE_AUTOMATIC],
         ]);
+    }
+
+    /**
+     * @param  array{result: ?string, source: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, healthy: int, failed: int, success_rate: ?int, median_successful_duration_ms: ?int, latest_at: CarbonInterface|null}
+     */
+    private function connectionHistoryMetrics(Provider $provider, array $filters): array
+    {
+        $checks = $this->filteredConnectionChecks($provider, $filters)
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->limit(ProviderConnectionCheck::MAX_PER_PROVIDER)
+            ->get(['id', 'successful', 'duration_ms', 'checked_at']);
+        $summary = $this->connectionMetrics($checks);
+
+        return [
+            'total' => $summary['total'],
+            'healthy' => $summary['successful'],
+            'failed' => $summary['total'] - $summary['successful'],
+            'success_rate' => $summary['success_rate'],
+            'median_successful_duration_ms' => $summary['median_successful_duration_ms'],
+            'latest_at' => $checks->first()?->checked_at,
+        ];
     }
 
     public function exportConnectionChecks(Request $request, Provider $provider): StreamedResponse

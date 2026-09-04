@@ -420,8 +420,27 @@ class DemoSeederTest extends TestCase
             ->assertSee('No connection checks have been recorded yet.');
         $this->actingAs($user)->get(route('providers.connection-checks.index', $emptyHistoryProvider))
             ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'healthy' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'median_successful_duration_ms' => null,
+                'latest_at' => null,
+            ])
             ->assertSee('0 matching retained checks')
             ->assertSee('No connection checks have been recorded yet.');
+        $this->actingAs($user)->get(route('providers.connection-checks.index', $provider))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 2
+                && $metrics['healthy'] === 1
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 50
+                && $metrics['median_successful_duration_ms'] === 85
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching checks')
+            ->assertSee('50%')
+            ->assertSee('85 ms');
         $providerHistoryExport = $this->actingAs($user)
             ->get(route('providers.connection-checks.export', $provider));
         $providerHistoryExport->assertSuccessful();
@@ -436,6 +455,12 @@ class DemoSeederTest extends TestCase
         ]))
             ->assertSuccessful()
             ->assertViewHas('connectionChecks', fn ($checks): bool => $checks->total() === 1)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+                && $metrics['healthy'] === 0
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 0
+                && $metrics['median_successful_duration_ms'] === null
+                && $metrics['latest_at'] !== null)
             ->assertSee('1 matching retained check')
             ->assertSee('Demo GitHub credential was rejected before recovery.')
             ->assertSee(route('providers.connection-checks.export', [

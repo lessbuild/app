@@ -48,6 +48,45 @@
         </div>
     </form>
 
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching checks') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Checks in this filtered retained sample.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Healthy checks') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['healthy'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching successful credential checks.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed checks') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching unsuccessful credential checks.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed success') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">
+                {{ $metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Recorded rate, not current credential validity.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Median successful response') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">
+                {{ $metrics['median_successful_duration_ms'] !== null ? $metrics['median_successful_duration_ms'].' ms' : __('Not recorded') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Median of matching successful checks.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching check') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">
+                {{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Newest check in the filtered sample.') }}</dd>
+        </div>
+    </dl>
+
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-secondary">
             {{ trans_choice(':count matching retained check|:count matching retained checks', $connectionChecks->total(), ['count' => $connectionChecks->total()]) }}

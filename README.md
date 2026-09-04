@@ -66,6 +66,9 @@ response bodies are never stored in this history. The full retained history can 
 filtered by result, source, and checked-date range with pagination that preserves
 those filters. CSV exports apply the same normalized filters. Demo providers include
 healthy, failed, recovery, manual, automatic, and empty-history examples.
+The full history also has filter-aware cards for healthy and failed counts,
+observed success, median successful response, and the latest matching check. These
+calculations use only safe metric fields from the bounded retained sample.
 Provider details summarize the retained sample with observed connection success,
 median successful-response time, and the newest consecutive-failure streak. Empty
 or entirely failed samples show explicit unavailable values rather than invented
