@@ -359,6 +359,9 @@ retry the configured branch.
 Build history can be filtered by repository, status, trigger, and created-date
 range, or searched by repository name, commit message, and revision. The current
 filtered view can be exported as a streamed, spreadsheet-safe CSV file.
+History can also be scoped to a website across every repository targeting it,
+with a direct link from website detail. Website filters remain owner-scoped and
+apply consistently to the list, insight cards, pagination, and CSV export.
 Filter-aware history cards summarize matching and active deployments, successful
 and failed outcomes, an observed completed-run success rate that excludes active
 and canceled runs, and the latest matching deployment. Empty or canceled-only

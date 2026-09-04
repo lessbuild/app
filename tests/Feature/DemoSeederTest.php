@@ -597,6 +597,16 @@ class DemoSeederTest extends TestCase
             ->assertSee('Matching deployments')
             ->assertSee('Observed success')
             ->assertSee('100%');
+        $this->actingAs($user)->get(route('builds.index', ['website_id' => $website->id]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+                && $metrics['active'] === 0
+                && $metrics['succeeded'] === 2
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 67
+                && $metrics['latest_at'] !== null)
+            ->assertSee('value="'.$website->id.'" selected', false)
+            ->assertSee(route('builds.export', ['website_id' => $website->id]));
         $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_RUNNING]))
             ->assertSuccessful()
             ->assertViewHas('metrics', [
@@ -619,6 +629,7 @@ class DemoSeederTest extends TestCase
                 'failure_streak' => 0,
             ])
             ->assertSee('Recent health checks')
+            ->assertSee(route('builds.index', ['website_id' => $website->id]))
             ->assertSee('every 5 minutes')
             ->assertSee('After 3 consecutive failures')
             ->assertSee('Observed check success')

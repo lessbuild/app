@@ -40,6 +40,10 @@
         :description="$website->description"
     >
         <x-slot:buttons>
+            <a href="{{ route('builds.index', ['website_id' => $website->id]) }}" class="button secondary">
+                {{ __('Deployment history') }}
+            </a>
+
             @if ($website->health_check_enabled
                 && $website->provisioning_status === \App\Models\Website::STATUS_ACTIVE
                 && $website->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
