@@ -139,6 +139,9 @@ current gallery script and metadata before any refresh action is confirmed.
 Installed users can leave one editable 1–5 rating per gallery recipe. Aggregate
 scores and rating counts appear in the gallery, with a top-rated sort; contributors
 cannot rate their own recipes and uninstalled users cannot submit ratings.
+Personal gallery filters show recipes installed by the current account, imports with
+new upstream revisions, and recipes published by that account. Cards expose installed,
+update-available, and contributor ownership states without loading private scripts.
 
 ## Source control providers
 

@@ -427,6 +427,28 @@ class DemoSeederTest extends TestCase
             ->assertSeeInOrder(['Install Node.js LTS', 'Install unattended upgrades', 'Harden SSH defaults'])
             ->assertSee('Lessbuild Community')
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('gallery.index', ['scope' => 'updates']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $gallerySource->id)
+            ->assertViewHas('metrics', [
+                'published' => 1,
+                'installs' => 18,
+                'authors' => 1,
+                'ratings' => 1,
+            ])
+            ->assertSee('Update available');
+        $this->actingAs($user)->get(route('gallery.index', ['scope' => 'mine']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $assignedRecipe->id)
+            ->assertViewHas('metrics', [
+                'published' => 1,
+                'installs' => 7,
+                'authors' => 1,
+                'ratings' => 0,
+            ])
+            ->assertSee('Published by you');
         $this->actingAs($user)->get(route('gallery.show', $communityRecipe))
             ->assertSuccessful()
             ->assertSee('curl -fsSL https://deb.nodesource.com/setup_lts.x')

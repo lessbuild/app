@@ -15,22 +15,29 @@ class RecipeGalleryController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->filters($request);
-        $query = $this->galleryQuery($filters);
+        $query = $this->galleryQuery($filters, $request->user()->id);
+        $recipes = (clone $query)
+            ->with([
+                'user:id,name',
+                'installs' => fn ($query) => $query
+                    ->where('user_id', $request->user()->id)
+                    ->select(['id', 'user_id', 'source_recipe_id', 'source_revision_at', 'is_published'])
+                    ->latest('id'),
+            ])
+            ->withCount('ratings')
+            ->withAvg('ratings', 'rating')
+            ->when(
+                $filters['sort'] === 'popular',
+                fn (Builder $query) => $query->orderByDesc('install_count')->latest('published_at'),
+                fn (Builder $query) => $filters['sort'] === 'top_rated'
+                    ? $query->orderByDesc('ratings_avg_rating')->orderByDesc('ratings_count')->latest('published_at')
+                    : $query->latest('published_at'),
+            )
+            ->paginate()
+            ->withQueryString();
 
         return view('scenes.gallery.index', [
-            'recipes' => (clone $query)
-                ->with('user:id,name')
-                ->withCount('ratings')
-                ->withAvg('ratings', 'rating')
-                ->when(
-                    $filters['sort'] === 'popular',
-                    fn (Builder $query) => $query->orderByDesc('install_count')->latest('published_at'),
-                    fn (Builder $query) => $filters['sort'] === 'top_rated'
-                        ? $query->orderByDesc('ratings_avg_rating')->orderByDesc('ratings_count')->latest('published_at')
-                        : $query->latest('published_at'),
-                )
-                ->paginate()
-                ->withQueryString(),
+            'recipes' => $recipes,
             'filters' => $filters,
             'categories' => Recipe::CATEGORIES,
             'metrics' => [
@@ -165,22 +172,24 @@ class RecipeGalleryController extends Controller
             ->with('status', __('Your private copy was refreshed from the reviewed gallery version.'));
     }
 
-    /** @return array{search: ?string, category: ?string, sort: string} */
+    /** @return array{search: ?string, category: ?string, scope: string, sort: string} */
     private function filters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
         $category = $request->string('category')->toString();
+        $scope = $request->string('scope')->toString();
         $sort = $request->string('sort')->toString();
 
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, Recipe::CATEGORIES, true) ? $category : null,
+            'scope' => in_array($scope, ['all', 'installed', 'updates', 'mine'], true) ? $scope : 'all',
             'sort' => in_array($sort, ['recent', 'popular', 'top_rated'], true) ? $sort : 'recent',
         ];
     }
 
-    /** @param array{search: ?string, category: ?string, sort: string} $filters */
-    private function galleryQuery(array $filters): Builder
+    /** @param array{search: ?string, category: ?string, scope: string, sort: string} $filters */
+    private function galleryQuery(array $filters, int $userId): Builder
     {
         return Recipe::query()
             ->published()
@@ -190,7 +199,24 @@ class RecipeGalleryController extends Controller
                         ->orWhere('description', 'like', "%{$search}%");
                 });
             })
-            ->when($filters['category'], fn (Builder $query, string $category) => $query->where('category', $category));
+            ->when($filters['category'], fn (Builder $query, string $category) => $query->where('category', $category))
+            ->when($filters['scope'] === 'mine', fn (Builder $query) => $query->where('user_id', $userId))
+            ->when(in_array($filters['scope'], ['installed', 'updates'], true), function (Builder $query) use ($filters, $userId): void {
+                $query->whereExists(function ($installed) use ($filters, $userId): void {
+                    $installed
+                        ->selectRaw('1')
+                        ->from('recipes as gallery_installs')
+                        ->whereColumn('gallery_installs.source_recipe_id', 'recipes.id')
+                        ->where('gallery_installs.user_id', $userId)
+                        ->when($filters['scope'] === 'updates', function ($installed): void {
+                            $installed->where(function ($revision): void {
+                                $revision
+                                    ->whereNull('gallery_installs.source_revision_at')
+                                    ->orWhereColumn('gallery_installs.source_revision_at', '<', 'recipes.gallery_revision_at');
+                            });
+                        });
+                });
+            });
     }
 
     private function lineCount(string $script): int

@@ -18,7 +18,7 @@
     </div>
 
     <form method="GET" action="{{ route('gallery.index') }}" class="mt-6 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-1 w-full rounded">
@@ -33,6 +33,15 @@
                 </select>
             </div>
             <div>
+                <label for="scope" class="block text-xs font-semibold uppercase text-secondary">{{ __('Collection') }}</label>
+                <select id="scope" name="scope" class="input secondary mt-1 w-full rounded">
+                    <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
+                    <option value="installed" @selected($filters['scope'] === 'installed')>{{ __('Installed by me') }}</option>
+                    <option value="updates" @selected($filters['scope'] === 'updates')>{{ __('Updates available') }}</option>
+                    <option value="mine" @selected($filters['scope'] === 'mine')>{{ __('Published by me') }}</option>
+                </select>
+            </div>
+            <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
                 <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
                     <option value="recent" @selected($filters['sort'] === 'recent')>{{ __('Recently published') }}</option>
@@ -43,7 +52,7 @@
         </div>
         <div class="mt-4 flex gap-3">
             <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            @if ($filters['search'] || $filters['category'] || $filters['sort'] !== 'recent')
+            @if ($filters['search'] || $filters['category'] || $filters['scope'] !== 'all' || $filters['sort'] !== 'recent')
                 <a href="{{ route('gallery.index') }}" class="button secondary">{{ __('Clear filters') }}</a>
             @endif
         </div>
@@ -78,10 +87,22 @@
     @else
         <div class="mt-6 grid gap-4 lg:grid-cols-2">
             @foreach ($recipes as $recipe)
+                @php
+                    $installedRecipe = $recipe->installs->first();
+                    $updateAvailable = $installedRecipe?->hasGalleryUpdate($recipe) ?? false;
+                @endphp
                 <article class="rounded-lg border border-primary bg-primary p-5">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{{ str($recipe->category)->title() }}</span>
+                            @if ((int) $recipe->user_id === (int) auth()->id())
+                                <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700">{{ __('Published by you') }}</span>
+                            @endif
+                            @if ($updateAvailable)
+                                <span class="ml-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">{{ __('Update available') }}</span>
+                            @elseif ($installedRecipe)
+                                <span class="ml-1 rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-700">{{ __('Installed') }}</span>
+                            @endif
                             <h2 class="mt-3 text-lg font-bold text-primary">
                                 <a href="{{ route('gallery.show', $recipe) }}" class="text-ternary">{{ $recipe->name }}</a>
                             </h2>

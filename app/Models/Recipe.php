@@ -88,11 +88,13 @@ class Recipe extends Model
         return $query->whereDoesntHave('servers');
     }
 
-    public function hasGalleryUpdate(): bool
+    public function hasGalleryUpdate(?self $source = null): bool
     {
-        return $this->source !== null
-            && $this->source->gallery_revision_at !== null
+        $source ??= $this->source;
+
+        return $source !== null
+            && $source->gallery_revision_at !== null
             && ($this->source_revision_at === null
-                || $this->source->gallery_revision_at->isAfter($this->source_revision_at));
+                || $source->gallery_revision_at->isAfter($this->source_revision_at));
     }
 }

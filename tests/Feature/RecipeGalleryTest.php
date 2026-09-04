@@ -38,6 +38,55 @@ class RecipeGalleryTest extends TestCase
             ->assertDontSee('private-gallery-secret');
     }
 
+    public function test_personal_collection_filters_show_owned_installed_and_outdated_recipes(): void
+    {
+        [$visitor, $author, $otherUser] = User::factory()->count(3)->create();
+        $current = $this->publishedRecipe($author, 'Current install', 'utilities', 2);
+        $outdated = $this->publishedRecipe($author, 'Outdated install', 'security', 4);
+        $notInstalled = $this->publishedRecipe($author, 'Not installed', 'runtime', 6);
+        $owned = $this->publishedRecipe($visitor, 'Published by visitor', 'deployment', 1);
+        $this->install($visitor, $current);
+        $staleCopy = $this->install($visitor, $outdated);
+        $staleCopy->update(['source_revision_at' => $outdated->gallery_revision_at->copy()->subDay()]);
+        $this->install($otherUser, $notInstalled);
+
+        $this->actingAs($visitor)->get(route('gallery.index', ['scope' => 'installed']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 2
+                && $recipes->contains('id', $current->id)
+                && $recipes->contains('id', $outdated->id)
+                && $recipes->every(fn (Recipe $recipe): bool => $recipe->installs->count() === 1))
+            ->assertSee('Installed')
+            ->assertSee('Update available')
+            ->assertDontSee($notInstalled->name)
+            ->assertDontSee($owned->name);
+
+        $this->actingAs($visitor)->get(route('gallery.index', ['scope' => 'updates']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $outdated->id)
+            ->assertViewHas('metrics', [
+                'published' => 1,
+                'installs' => 4,
+                'authors' => 1,
+                'ratings' => 0,
+            ])
+            ->assertSee('Update available')
+            ->assertDontSee($current->name);
+
+        $this->actingAs($visitor)->get(route('gallery.index', ['scope' => 'mine']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $owned->id)
+            ->assertSee('Published by you')
+            ->assertDontSee($outdated->name);
+
+        $this->actingAs($visitor)->get(route('gallery.index', ['scope' => 'invalid']))
+            ->assertSuccessful()
+            ->assertViewHas('filters', fn (array $filters): bool => $filters['scope'] === 'all')
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 4);
+    }
+
     public function test_gallery_detail_exposes_only_an_explicitly_published_script(): void
     {
         [$visitor, $author] = User::factory()->count(2)->create();
@@ -291,6 +340,17 @@ class RecipeGalleryTest extends TestCase
             'published_at' => $publishedAt ?? now(),
             'gallery_revision_at' => $publishedAt ?? now(),
             'install_count' => $installs,
+        ]);
+    }
+
+    private function install(User $user, Recipe $recipe): Recipe
+    {
+        return $user->recipes()->create([
+            'name' => $recipe->name,
+            'description' => $recipe->description,
+            'script' => $recipe->script,
+            'source_recipe_id' => $recipe->id,
+            'source_revision_at' => $recipe->gallery_revision_at,
         ]);
     }
 }
