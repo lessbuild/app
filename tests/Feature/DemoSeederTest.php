@@ -214,7 +214,7 @@ class DemoSeederTest extends TestCase
             ->sole();
         $this->assertSame($demoRerun->command, $demoRerun->rerunFrom->command);
         $this->assertEqualsCanonicalizing(
-            ['deployment', 'website', 'server', 'command', 'provider', 'account', 'general'],
+            ['deployment', 'website', 'server', 'command', 'provider', 'recipe', 'account', 'general'],
             $user->events()->pluck('category')->all(),
         );
         $this->assertSame(6, $user->notifications()->count());
@@ -909,14 +909,17 @@ class DemoSeederTest extends TestCase
         $this->assertStringNotContainsString('Demo provider connection failed', $notificationContent);
         $this->actingAs($user)->get(route('activity.index', ['search' => 'Demo:']))
             ->assertSuccessful()
-            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 7
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 8
                 && $metrics['deployments'] === 1
                 && $metrics['infrastructure'] === 3
                 && $metrics['commands'] === 1
+                && $metrics['recipes'] === 1
                 && $metrics['account'] === 1
                 && $metrics['latest_at'] !== null)
             ->assertSee('Matching events')
             ->assertSee('Infrastructure')
+            ->assertSee('Demo: gallery recipe update is ready to review.')
+            ->assertSee(route('recipes.show', $importedRecipe))
             ->assertSee('Demo: account security settings were reviewed.');
         $this->actingAs($user)->get(route('activity.index', ['search' => 'Demo: no matching activity']))
             ->assertSuccessful()
@@ -925,6 +928,7 @@ class DemoSeederTest extends TestCase
                 'deployments' => 0,
                 'infrastructure' => 0,
                 'commands' => 0,
+                'recipes' => 0,
                 'account' => 0,
                 'latest_at' => null,
             ])

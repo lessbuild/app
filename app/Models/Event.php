@@ -17,6 +17,7 @@ class Event extends Model
         'server',
         'command',
         'provider',
+        'recipe',
         'account',
         'general',
     ];
@@ -50,6 +51,8 @@ class Event extends Model
             $this->parentable instanceof Build => route('builds.show', $this->parentable),
             $this->parentable instanceof ServerCommandExecution && $this->parentable->server => route('servers.show', $this->parentable->server),
             $this->parentable instanceof Provider => route('providers.show', $this->parentable),
+            $this->parentable instanceof Recipe && (int) $this->parentable->user_id === (int) $this->user_id => route('recipes.show', $this->parentable),
+            $this->parentable instanceof Recipe && $this->parentable->is_published => route('gallery.show', $this->parentable),
             default => null,
         };
     }

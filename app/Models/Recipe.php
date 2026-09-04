@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Recipe extends Model
 {
@@ -71,6 +72,11 @@ class Recipe extends Model
     public function ratings(): HasMany
     {
         return $this->hasMany(RecipeRating::class);
+    }
+
+    public function events(): MorphMany
+    {
+        return $this->morphMany(Event::class, 'parentable');
     }
 
     public function scopePublished(Builder $query): Builder

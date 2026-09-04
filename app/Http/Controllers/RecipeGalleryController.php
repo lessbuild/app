@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Recipe;
 use App\Models\RecipeRating;
+use App\Services\ActivityRecorder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -99,7 +100,7 @@ class RecipeGalleryController extends Controller
         ]);
     }
 
-    public function install(Request $request, Recipe $recipe): RedirectResponse
+    public function install(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $copy = DB::transaction(function () use ($request, $recipe): Recipe {
             $source = Recipe::query()
@@ -129,6 +130,15 @@ class RecipeGalleryController extends Controller
             return $copy;
         });
 
+        if ($copy->wasRecentlyCreated) {
+            $activity->record(
+                $copy,
+                $request->user()->id,
+                'recipe',
+                "Gallery recipe \"{$copy->name}\" was installed as a private copy.",
+            );
+        }
+
         return redirect()
             ->route('recipes.edit', $copy)
             ->with('status', $copy->wasRecentlyCreated
@@ -136,7 +146,7 @@ class RecipeGalleryController extends Controller
                 : __('This gallery recipe is already in your account.'));
     }
 
-    public function refresh(Recipe $recipe): RedirectResponse
+    public function refresh(Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
 
@@ -166,6 +176,14 @@ class RecipeGalleryController extends Controller
                 ->route('recipes.edit', $recipe)
                 ->with('status', __('Unpublish your copy before refreshing it from the gallery.'));
         }
+
+        $recipe->refresh();
+        $activity->record(
+            $recipe,
+            $recipe->user_id,
+            'recipe',
+            "Private gallery recipe \"{$recipe->name}\" was refreshed.",
+        );
 
         return redirect()
             ->route('recipes.edit', $recipe)

@@ -21,6 +21,7 @@ class ActivityInsightsTest extends TestCase
         $this->event($owner, 'server', 'Owner server event', now()->subDays(6));
         $this->event($owner, 'provider', 'Owner provider event', now()->subDays(5));
         $this->event($owner, 'command', 'Owner command event', now()->subDays(4));
+        $this->event($owner, 'recipe', 'Owner recipe event', now()->subDays(4)->addHour());
         $this->event($owner, 'account', 'Owner account event', now()->subDays(3));
         $this->event($owner, 'general', 'Owner general event', now()->subDays(2));
         $this->event($owner, 'legacy', 'Owner legacy event', $latestAt);
@@ -28,16 +29,18 @@ class ActivityInsightsTest extends TestCase
 
         $this->actingAs($owner)->get(route('activity.index'))
             ->assertSuccessful()
-            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 8
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 9
                 && $metrics['deployments'] === 1
                 && $metrics['infrastructure'] === 3
                 && $metrics['commands'] === 1
+                && $metrics['recipes'] === 1
                 && $metrics['account'] === 1
                 && $metrics['latest_at']->timestamp === $latestAt->timestamp)
             ->assertSee('Matching events')
             ->assertSee('Deployments')
             ->assertSee('Infrastructure')
             ->assertSee('Server commands')
+            ->assertSee('Recipes')
             ->assertSee('Account security')
             ->assertSee('Latest matching event')
             ->assertDontSee('Foreign private deployment event');
@@ -65,6 +68,7 @@ class ActivityInsightsTest extends TestCase
                 && $metrics['deployments'] === 1
                 && $metrics['infrastructure'] === 0
                 && $metrics['commands'] === 0
+                && $metrics['recipes'] === 0
                 && $metrics['account'] === 0
                 && $metrics['latest_at']->timestamp === $matchingAt->timestamp);
     }
@@ -81,6 +85,7 @@ class ActivityInsightsTest extends TestCase
                 'deployments' => 0,
                 'infrastructure' => 0,
                 'commands' => 0,
+                'recipes' => 0,
                 'account' => 0,
                 'latest_at' => null,
             ])

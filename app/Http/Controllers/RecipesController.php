@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
 use App\Models\Server;
+use App\Services\ActivityRecorder;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -152,10 +153,18 @@ class RecipesController extends Controller
         ]);
     }
 
-    public function store(RecipeRequest $request): RedirectResponse
+    public function store(RecipeRequest $request, ActivityRecorder $activity): RedirectResponse
     {
         $data = $this->recipeData($request);
-        $request->user()->recipes()->create($data);
+        $recipe = $request->user()->recipes()->create($data);
+        $activity->record(
+            $recipe,
+            $request->user()->id,
+            'recipe',
+            $recipe->is_published
+                ? "Recipe \"{$recipe->name}\" was created and published."
+                : "Recipe \"{$recipe->name}\" was created.",
+        );
 
         return redirect()->route('recipes.index')->with('status', __('Recipe created.'));
     }
@@ -170,23 +179,31 @@ class RecipesController extends Controller
         return view('scenes.recipes.edit', ['recipe' => $recipe]);
     }
 
-    public function update(RecipeRequest $request, Recipe $recipe): RedirectResponse
+    public function update(RecipeRequest $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
+        $wasPublished = $recipe->is_published;
         $recipe->update($this->recipeData($request, $recipe));
+        $message = match (true) {
+            ! $wasPublished && $recipe->is_published => "Recipe \"{$recipe->name}\" was published.",
+            $wasPublished && ! $recipe->is_published => "Recipe \"{$recipe->name}\" was unpublished.",
+            default => "Recipe \"{$recipe->name}\" was updated.",
+        };
+        $activity->record($recipe, $request->user()->id, 'recipe', $message);
 
         return redirect()->route('recipes.index')->with('status', __('Recipe updated.'));
     }
 
-    public function destroy(Recipe $recipe): RedirectResponse
+    public function destroy(Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('delete', $recipe);
         $recipe->delete();
+        $activity->record($recipe, $recipe->user_id, 'recipe', "Recipe \"{$recipe->name}\" was deleted.");
 
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
     }
 
-    public function duplicate(Request $request, Recipe $recipe): RedirectResponse
+    public function duplicate(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
 
@@ -195,6 +212,12 @@ class RecipesController extends Controller
             'description' => $recipe->description,
             'script' => $recipe->script,
         ]);
+        $activity->record(
+            $copy,
+            $request->user()->id,
+            'recipe',
+            "Recipe \"{$recipe->name}\" was duplicated as \"{$copy->name}\".",
+        );
 
         return redirect()
             ->route('recipes.edit', $copy)

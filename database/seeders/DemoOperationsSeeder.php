@@ -317,6 +317,7 @@ class DemoOperationsSeeder extends Seeder
             [$failedServer, 'server', 'Demo: worker server provisioning failed.'],
             [$commands[ServerCommandExecution::STATUS_SUCCEEDED], 'command', 'Demo: server command succeeded.'],
             [$user->providers()->where('name', DemoSeeder::PREFIX.'GitLab')->firstOrFail(), 'provider', 'Demo: GitLab credential check failed.'],
+            [$user->recipes()->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')->firstOrFail(), 'recipe', 'Demo: gallery recipe update is ready to review.'],
             [$server, 'general', 'Demo: fixture data was refreshed.'],
         ];
 

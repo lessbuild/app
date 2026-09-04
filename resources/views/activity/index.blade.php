@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.heading
         :title="__('Activity')"
-        :description="__('A chronological history of account security, infrastructure, deployments, and server commands.')"
+        :description="__('A chronological history of account security, infrastructure, deployments, recipes, and server commands.')"
     />
 
     <form method="GET" action="{{ route('activity.index') }}" class="mb-6 mt-8 rounded-lg border border-primary bg-primary p-4">
@@ -49,7 +49,7 @@
         </div>
     </form>
 
-    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching events') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
@@ -69,6 +69,11 @@
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Server commands') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['commands'] }}</dd>
             <dd class="mt-1 text-xs text-secondary">{{ __('Matching command lifecycle events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Recipes') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['recipes'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching recipe and gallery events.') }}</dd>
         </div>
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Account security') }}</dt>

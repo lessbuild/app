@@ -29,7 +29,7 @@ class ActivityController extends Controller
 
     /**
      * @param  array{search: ?string, category: ?string, date_from: ?string, date_to: ?string}  $filters
-     * @return array{total: int, deployments: int, infrastructure: int, commands: int, account: int, latest_at: CarbonInterface|null}
+     * @return array{total: int, deployments: int, infrastructure: int, commands: int, recipes: int, account: int, latest_at: CarbonInterface|null}
      */
     private function metrics(Request $request, array $filters): array
     {
@@ -49,6 +49,9 @@ class ActivityController extends Controller
                 ->count(),
             'commands' => $this->filteredEvents($request, $filters)
                 ->where('category', 'command')
+                ->count(),
+            'recipes' => $this->filteredEvents($request, $filters)
+                ->where('category', 'recipe')
                 ->count(),
             'account' => $this->filteredEvents($request, $filters)
                 ->where('category', 'account')
