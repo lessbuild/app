@@ -10,6 +10,7 @@ use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
 use App\Services\ActivityRecorder;
 use App\Services\Runner;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Http\RedirectResponse;
@@ -36,10 +37,43 @@ class BuildsController extends Controller
         return view('scenes.builds.index', [
             'builds' => $builds,
             'filters' => $filters,
+            'metrics' => $this->metrics($request, $filters),
             'repositories' => $request->user()->repositories()->orderBy('name')->get(['id', 'name']),
             'statuses' => $this->statuses(),
             'triggers' => $this->triggers(),
         ]);
+    }
+
+    /**
+     * @param  array{repository_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, active: int, succeeded: int, failed: int, success_rate: ?int, latest_at: CarbonInterface|null}
+     */
+    private function metrics(Request $request, array $filters): array
+    {
+        $succeeded = $this->filteredBuilds($request, $filters)
+            ->where('builds.status', Build::STATUS_SUCCEEDED)
+            ->count();
+        $failed = $this->filteredBuilds($request, $filters)
+            ->where('builds.status', Build::STATUS_FAILED)
+            ->count();
+        $completed = $succeeded + $failed;
+        $latest = $this->filteredBuilds($request, $filters)
+            ->withoutEagerLoads()
+            ->select(['builds.id', 'builds.created_at'])
+            ->latest('builds.created_at')
+            ->latest('builds.id')
+            ->first();
+
+        return [
+            'total' => $this->filteredBuilds($request, $filters)->count(),
+            'active' => $this->filteredBuilds($request, $filters)
+                ->whereIn('builds.status', Build::ACTIVE_STATUSES)
+                ->count(),
+            'succeeded' => $succeeded,
+            'failed' => $failed,
+            'success_rate' => $completed > 0 ? (int) round(($succeeded / $completed) * 100) : null,
+            'latest_at' => $latest?->created_at,
+        ];
     }
 
     public function export(Request $request): StreamedResponse

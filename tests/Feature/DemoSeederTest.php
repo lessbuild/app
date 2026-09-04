@@ -392,6 +392,29 @@ class DemoSeederTest extends TestCase
             ->assertSee('67%')
             ->assertSee('3m')
             ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
+        $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_SUCCEEDED]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+                && $metrics['active'] === 0
+                && $metrics['succeeded'] === 3
+                && $metrics['failed'] === 0
+                && $metrics['success_rate'] === 100
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching deployments')
+            ->assertSee('Observed success')
+            ->assertSee('100%');
+        $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_RUNNING]))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'active' => 0,
+                'succeeded' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'latest_at' => null,
+            ])
+            ->assertSee('No matching deployment recorded.')
+            ->assertSee('No builds match these filters');
         $this->actingAs($user)->get(route('websites.show', $website))
             ->assertSuccessful()
             ->assertViewHas('healthMetrics', [

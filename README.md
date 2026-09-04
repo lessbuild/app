@@ -340,6 +340,10 @@ retry the configured branch.
 Build history can be filtered by repository, status, trigger, and created-date
 range, or searched by repository name, commit message, and revision. The current
 filtered view can be exported as a streamed, spreadsheet-safe CSV file.
+Filter-aware history cards summarize matching and active deployments, successful
+and failed outcomes, an observed completed-run success rate that excludes active
+and canceled runs, and the latest matching deployment. Empty or canceled-only
+views report an explicit unavailable rate instead of inventing a percentage.
 Owners can attach a 2,000-character operational note to any deployment for
 incident IDs, rollback reasons, approvals, and handoff context. Notes are escaped,
 searchable in build history, and spreadsheet-safe in exports. Note changes create

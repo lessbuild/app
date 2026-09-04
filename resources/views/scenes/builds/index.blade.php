@@ -6,8 +6,8 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
-        :title="__('View Builds')"
-        :description="__('Easily view your recent builds')"
+        :title="__('Deployment history')"
+        :description="__('Review filtered deployment outcomes, activity, and retained release details.')"
     >
     </x-layouts.partials.heading>
 
@@ -95,6 +95,45 @@
             @endif
         </div>
     </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching deployments') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Deployments in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active deployments') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Queued, deploying, running, or timing out.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Succeeded') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['succeeded'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching successful deployments.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching failed deployments.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed success') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">
+                {{ $metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['success_rate'] !== null ? __('Succeeded versus failed outcomes; active and canceled runs excluded.') : __('No matching success or failure outcome.') }}
+            </dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching deployment') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching deployment recorded.') }}
+            </dd>
+        </div>
+    </dl>
 
     <!--
      ! ------------------------------------------------------------
