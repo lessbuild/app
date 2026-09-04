@@ -135,6 +135,13 @@ class DemoInfrastructureSeeder extends Seeder
                     'script' => "systemctl daemon-reload\nsystemctl enable demo-worker.service",
                 ],
             ),
+            'unused' => $user->recipes()->updateOrCreate(
+                ['name' => DemoSeeder::PREFIX.'Optimize PHP runtime'],
+                [
+                    'description' => 'Unassigned recipe fixture ready to add to a future server plan.',
+                    'script' => "php -v\necho 'Demo PHP runtime recipe'",
+                ],
+            ),
         ];
     }
 

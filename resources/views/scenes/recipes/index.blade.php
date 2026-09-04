@@ -56,6 +56,41 @@
         </div>
     </form>
 
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching recipes') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Recipes in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('In use') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['in_use'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching recipes assigned to servers.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unused') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unused'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching recipes without assignments.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Server assignments') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['assignments'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('All matching recipe-to-server links.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Covered servers') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['servers'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Distinct servers using matching recipes.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest update') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">
+                {{ $metrics['latest_at']?->diffForHumans() ?? __('No matching recipe') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Most recently updated matching recipe.') }}</dd>
+        </div>
+    </dl>
+
     @if ($recipes->isEmpty())
         <div class="mx-auto max-w-3xl">
             <x-lists.empty

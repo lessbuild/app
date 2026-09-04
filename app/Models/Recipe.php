@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,5 +32,15 @@ class Recipe extends Model
         return $this->belongsToMany(Server::class)
             ->withPivot('position')
             ->orderByPivot('position');
+    }
+
+    public function scopeInUse(Builder $query): Builder
+    {
+        return $query->whereHas('servers');
+    }
+
+    public function scopeUnused(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('servers');
     }
 }

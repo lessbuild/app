@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -25,8 +27,35 @@ class RecipesController extends Controller
         return view('scenes.recipes.index', [
             'recipes' => $recipes,
             'filters' => $filters,
+            'metrics' => $this->indexMetrics($request, $filters),
             'usages' => ['in_use', 'unused'],
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, usage: ?string}  $filters
+     * @return array{total: int, in_use: int, unused: int, assignments: int, servers: int, latest_at: CarbonInterface|null}
+     */
+    private function indexMetrics(Request $request, array $filters): array
+    {
+        $latest = $this->filteredRecipes($request, $filters)
+            ->select(['id', 'updated_at'])
+            ->latest('updated_at')
+            ->latest('id')
+            ->first();
+        $assignments = DB::table('recipe_server')->whereIn(
+            'recipe_id',
+            $this->filteredRecipes($request, $filters)->select('recipes.id'),
+        );
+
+        return [
+            'total' => $this->filteredRecipes($request, $filters)->count(),
+            'in_use' => $this->filteredRecipes($request, $filters)->inUse()->count(),
+            'unused' => $this->filteredRecipes($request, $filters)->unused()->count(),
+            'assignments' => (clone $assignments)->count(),
+            'servers' => $assignments->distinct()->count('server_id'),
+            'latest_at' => $latest?->updated_at,
+        ];
     }
 
     public function export(Request $request): StreamedResponse
@@ -148,10 +177,8 @@ class RecipesController extends Controller
                         ->orWhere('description', 'like', "%{$value}%");
                 });
             })
-            ->when($filters['usage'] === 'in_use', fn ($query) => $query
-                ->whereHas('servers'))
-            ->when($filters['usage'] === 'unused', fn ($query) => $query
-                ->whereDoesntHave('servers'));
+            ->when($filters['usage'] === 'in_use', fn ($query) => $query->inUse())
+            ->when($filters['usage'] === 'unused', fn ($query) => $query->unused());
     }
 
     private function csvCell(?string $value): ?string

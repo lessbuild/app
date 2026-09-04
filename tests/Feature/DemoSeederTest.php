@@ -96,7 +96,9 @@ class DemoSeederTest extends TestCase
                 ->map(fn ($value): bool => (bool) $value)
                 ->all(),
         );
-        $this->assertSame(2, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(3, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
+        $this->assertFalse($unusedRecipe->servers()->exists());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -245,6 +247,7 @@ class DemoSeederTest extends TestCase
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $recipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Install image tools')->sole();
+        $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
         $execution = ServerCommandExecution::query()
             ->where('user_id', $user->id)
             ->where('status', ServerCommandExecution::STATUS_SUCCEEDED)
@@ -256,6 +259,7 @@ class DemoSeederTest extends TestCase
         $this->assertNotSame($website->environment, DB::table('websites')->where('id', $website->id)->value('environment'));
         $this->assertNotSame($repository->webhook_secret, DB::table('repositories')->where('id', $repository->id)->value('webhook_secret'));
         $this->assertNotSame($recipe->script, DB::table('recipes')->where('id', $recipe->id)->value('script'));
+        $this->assertNotSame($unusedRecipe->script, DB::table('recipes')->where('id', $unusedRecipe->id)->value('script'));
         $this->assertNotSame($execution->command, DB::table('server_command_executions')->where('id', $execution->id)->value('command'));
 
         $this->post(route('login'), [
@@ -280,6 +284,7 @@ class DemoSeederTest extends TestCase
         $unhealthyWebsite = $user->websites()->where('deployment_slug', 'demo-status')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $neverDeployedRepository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Documentation repository')->sole();
+        $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
         $this->actingAs($user)->get(route('dashboard'))
@@ -317,6 +322,28 @@ class DemoSeederTest extends TestCase
             ])
             ->assertSee(DemoSeeder::PREFIX.'Spare GitHub')
             ->assertDontSee(route('providers.show', $provider));
+        $this->actingAs($user)->get(route('recipes.index'))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+                && $metrics['in_use'] === 2
+                && $metrics['unused'] === 1
+                && $metrics['assignments'] === 2
+                && $metrics['servers'] === 1
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching recipes')
+            ->assertSee('Covered servers');
+        $this->actingAs($user)->get(route('recipes.index', ['usage' => 'unused']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $unusedRecipe->id)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+                && $metrics['in_use'] === 0
+                && $metrics['unused'] === 1
+                && $metrics['assignments'] === 0
+                && $metrics['servers'] === 0
+                && $metrics['latest_at'] !== null)
+            ->assertSee(DemoSeeder::PREFIX.'Optimize PHP runtime')
+            ->assertDontSee(DemoSeeder::PREFIX.'Install image tools');
         $this->actingAs($user)->get(route('providers.show', $provider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [
