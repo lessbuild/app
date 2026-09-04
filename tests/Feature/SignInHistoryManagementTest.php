@@ -15,6 +15,7 @@ class SignInHistoryManagementTest extends TestCase
 
     public function test_sign_in_history_actions_require_authentication(): void
     {
+        $this->get(route('account.sign-ins.index'))->assertRedirect(route('login'));
         $this->get(route('account.sign-ins.export'))->assertRedirect(route('login'));
         $this->delete(route('account.sign-ins.destroy'))->assertRedirect(route('login'));
     }
@@ -104,6 +105,7 @@ class SignInHistoryManagementTest extends TestCase
 
         $this->actingAs($local)->get(route('account.index'))
             ->assertSuccessful()
+            ->assertSee(route('account.sign-ins.index'))
             ->assertSee(route('account.sign-ins.export'))
             ->assertSee('method="POST" action="'.route('account.sign-ins.destroy').'"', false)
             ->assertSee('Clear history');
@@ -116,6 +118,7 @@ class SignInHistoryManagementTest extends TestCase
         $this->signIn($social, ['method' => 'github']);
         $this->actingAs($social)->get(route('account.index'))
             ->assertSuccessful()
+            ->assertSee(route('account.sign-ins.index'))
             ->assertSee(route('account.sign-ins.export'))
             ->assertDontSee('method="POST" action="'.route('account.sign-ins.destroy').'"', false)
             ->assertSee('Set a local password before clearing sign-in history.');

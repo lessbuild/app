@@ -65,6 +65,8 @@ Route::middleware('auth')->group(function () {
         ->where('session', '[A-Za-z0-9]{1,255}')
         ->middleware('throttle:sensitive-account')
         ->name('account.sessions.destroy');
+    Route::get('account/sign-ins', [SignInHistoryController::class, 'index'])
+        ->name('account.sign-ins.index');
     Route::get('account/sign-ins/export', [SignInHistoryController::class, 'export'])
         ->name('account.sign-ins.export');
     Route::delete('account/sign-ins', [SignInHistoryController::class, 'destroy'])

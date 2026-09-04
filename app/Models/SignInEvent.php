@@ -39,7 +39,12 @@ class SignInEvent extends Model
 
     public function methodName(): string
     {
-        return match ($this->method) {
+        return static::methodLabel($this->method);
+    }
+
+    public static function methodLabel(string $method): string
+    {
+        return match ($method) {
             self::METHOD_PASSWORD => __('Password'),
             'github' => 'GitHub',
             'gitlab' => 'GitLab',

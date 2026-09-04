@@ -21,6 +21,9 @@ Owners can export all retained history as a spreadsheet-safe CSV containing only
 derived browser/device labels, validated IPs, methods, and timestamps; raw user
 agents are never exported. Local-password owners can also clear their history
 after current-password validation through the shared sensitive-action limiter.
+The full owner-scoped history is paginated and can be filtered by sign-in method
+and date range. Its spreadsheet-safe CSV applies the same normalized filters, so
+the exported evidence matches the records under review without exposing raw agents.
 
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current

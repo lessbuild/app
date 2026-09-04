@@ -458,6 +458,7 @@ class DemoSeederTest extends TestCase
             ->assertSee('Safari on iPhone')
             ->assertSee('Firefox on Windows')
             ->assertSee('192.0.2.11')
+            ->assertSee(route('account.sign-ins.index'))
             ->assertSee(route('account.sign-ins.export'))
             ->assertSee(route('account.sign-ins.destroy'))
             ->assertSee('Clear history')
@@ -472,6 +473,24 @@ class DemoSeederTest extends TestCase
             ->assertSee('name="social_provider" value="github"', false)
             ->assertSee('name="current_password"', false)
             ->assertSee(route('account.social.destroy', 'github'));
+        $this->actingAs($user)->get(route('account.sign-ins.index', ['method' => 'github']))
+            ->assertSuccessful()
+            ->assertViewHas('signIns', fn ($signIns): bool => $signIns->total() === 1)
+            ->assertSee('1 matching sign-in')
+            ->assertSee('Safari on iPhone')
+            ->assertSee('198.51.100.21')
+            ->assertDontSee('Chrome on macOS')
+            ->assertSee(route('account.sign-ins.export', ['method' => 'github']));
+        $this->actingAs($user)->get(route('account.sign-ins.index', ['method' => 'bitbucket']))
+            ->assertSuccessful()
+            ->assertSee('0 matching sign-ins')
+            ->assertSee('No sign-ins match these filters.');
+        $filteredSignInExport = $this->actingAs($user)
+            ->get(route('account.sign-ins.export', ['method' => 'github']));
+        $filteredSignInExport->assertSuccessful();
+        $filteredSignInContent = $filteredSignInExport->streamedContent();
+        $this->assertSame(1, substr_count($filteredSignInContent, 'Safari on iPhone'));
+        $this->assertStringNotContainsString('Chrome on macOS', $filteredSignInContent);
         $this->actingAs($user)->get(route('builds.show', $build))
             ->assertSuccessful()
             ->assertSee('[Demo] Approved rollback for incident DEMO-1042 after the checkout failure.')

@@ -200,9 +200,14 @@
 
             <x-slot:footer>
                 <div class="flex flex-wrap items-end justify-between gap-4 bg-tertiary px-4 py-3 sm:px-6">
-                    <a href="{{ route('account.sign-ins.export') }}" class="button primary">
-                        {{ __('Export CSV') }}
-                    </a>
+                    <div class="flex flex-wrap gap-3">
+                        <a href="{{ route('account.sign-ins.index') }}" class="button primary">
+                            {{ __('View full history') }}
+                        </a>
+                        <a href="{{ route('account.sign-ins.export') }}" class="button primary">
+                            {{ __('Export CSV') }}
+                        </a>
+                    </div>
 
                     @if ($recentSignIns->isNotEmpty() && auth()->user()->hasLocalPassword())
                         <form method="POST" action="{{ route('account.sign-ins.destroy') }}" class="flex flex-wrap items-end justify-end gap-3">
