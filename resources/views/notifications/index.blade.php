@@ -99,6 +99,41 @@
         </div>
     </form>
 
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching alerts') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Alerts in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unread alerts') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unread'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching alerts still awaiting review.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failures') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching failed incidents.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Recoveries') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['healthy'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching recovery notices.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Information') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['info'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching informational notices.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching alert') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching alert recorded.') }}
+            </dd>
+        </div>
+    </dl>
+
     <div class="space-y-3">
         @forelse ($notifications as $notification)
             @php($destination = \App\Notifications\NotificationInbox::destination($notification->data))

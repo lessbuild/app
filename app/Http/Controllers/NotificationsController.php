@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Notifications\NotificationInbox;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\RedirectResponse;
@@ -23,10 +24,39 @@ class NotificationsController extends Controller
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
+            'metrics' => $this->metrics($request, $filters),
             'categories' => NotificationInbox::CATEGORIES,
             'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
             'hasReadNotifications' => $user->readNotifications()->exists(),
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, unread: int, failed: int, healthy: int, info: int, latest_at: CarbonInterface|null}
+     */
+    private function metrics(Request $request, array $filters): array
+    {
+        $latest = $this->filteredNotifications($request, $filters)
+            ->select(['id', 'created_at'])
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+
+        return [
+            'total' => $this->filteredNotifications($request, $filters)->count(),
+            'unread' => $this->filteredNotifications($request, $filters)->whereNull('read_at')->count(),
+            'failed' => $this->filteredNotifications($request, $filters)
+                ->where('data->status', NotificationInbox::STATUS_FAILED)
+                ->count(),
+            'healthy' => $this->filteredNotifications($request, $filters)
+                ->where('data->status', NotificationInbox::STATUS_HEALTHY)
+                ->count(),
+            'info' => $this->filteredNotifications($request, $filters)
+                ->where('data->status', NotificationInbox::STATUS_INFO)
+                ->count(),
+            'latest_at' => $latest?->created_at,
+        ];
     }
 
     public function export(Request $request): StreamedResponse

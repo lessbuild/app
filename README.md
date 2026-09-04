@@ -366,6 +366,9 @@ The notification inbox can filter alerts by search text, category, failure/recov
 information status, read state, and created-date range, then export that same
 owner-scoped view as a spreadsheet-safe CSV without exposing raw notification
 payloads or framework ownership fields.
+Filter-aware inbox cards summarize matching alerts, unread work, recognized failure,
+recovery, and information states, and the latest matching alert. Empty filtered
+views report zero values and an explicit unavailable latest event.
 Individual alerts can be deleted without clearing other read or unread
 notifications.
 Read notifications are retained for 90 days after review by default and pruned

@@ -520,7 +520,15 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('notifications.index', ['status' => 'healthy']))
             ->assertSuccessful()
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 1)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+                && $metrics['unread'] === 1
+                && $metrics['failed'] === 0
+                && $metrics['healthy'] === 1
+                && $metrics['info'] === 0
+                && $metrics['latest_at'] !== null)
             ->assertSee('Demo provider connection recovered')
+            ->assertSee('Matching alerts')
+            ->assertSee('Recoveries')
             ->assertDontSee('Demo provider connection failed')
             ->assertSee(route('notifications.export', ['status' => 'healthy']));
         $this->actingAs($user)->get(route('notifications.index', ['status' => 'info']))
