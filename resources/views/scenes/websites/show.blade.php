@@ -186,6 +186,40 @@
             @endif
         </div>
 
+        <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Retained checks') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">{{ $healthMetrics['total'] }}</dd>
+                <dd class="mt-1 text-xs text-secondary">{{ __('Newest :limit maximum', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE]) }}</dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed check success') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $healthMetrics['success_rate'] !== null ? $healthMetrics['success_rate'].'%' : __('Not available') }}
+                </dd>
+                <dd class="mt-1 text-xs text-secondary">
+                    {{ trans_choice(':count successful check|:count successful checks', $healthMetrics['successful'], ['count' => $healthMetrics['successful']]) }}
+                </dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Median healthy response') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $healthMetrics['median_healthy_duration_ms'] !== null ? $healthMetrics['median_healthy_duration_ms'].' ms' : __('Not recorded') }}
+                </dd>
+                <dd class="mt-1 text-xs text-secondary">{{ __('Failed and unreported timings are excluded.') }}</dd>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Current failure streak') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">{{ $healthMetrics['failure_streak'] }}</dd>
+                <dd class="mt-1 text-xs text-secondary">
+                    {{ trans_choice(':count consecutive failed check|:count consecutive failed checks', $healthMetrics['failure_streak'], ['count' => $healthMetrics['failure_streak']]) }}
+                </dd>
+            </div>
+        </dl>
+        <p class="mt-3 text-xs text-secondary">
+            {{ __('These figures summarize retained observations and are not an SLA uptime calculation.') }}
+        </p>
+
         @if ($healthChecks->isEmpty())
             <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
                 {{ __('No health checks have been recorded yet.') }}

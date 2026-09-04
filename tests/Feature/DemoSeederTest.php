@@ -225,6 +225,7 @@ class DemoSeederTest extends TestCase
         $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->sole();
         $provisioningServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Provisioning worker')->sole();
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
+        $unhealthyWebsite = $user->websites()->where('deployment_slug', 'demo-status')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
@@ -268,13 +269,37 @@ class DemoSeederTest extends TestCase
             ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
         $this->actingAs($user)->get(route('websites.show', $website))
             ->assertSuccessful()
+            ->assertViewHas('healthMetrics', [
+                'total' => 3,
+                'successful' => 2,
+                'success_rate' => 67,
+                'median_healthy_duration_ms' => 108,
+                'failure_streak' => 0,
+            ])
             ->assertSee('Recent health checks')
+            ->assertSee('Observed check success')
+            ->assertSee('67%')
+            ->assertSee('108 ms')
+            ->assertSee('0 consecutive failed checks')
+            ->assertSee('not an SLA uptime calculation.')
             ->assertSee('Manual')
             ->assertSee('Automatic')
             ->assertSee('HTTP 200')
             ->assertSee('95 ms')
             ->assertSee('Demo transient HTTP 503 before recovery.')
             ->assertSee(route('websites.health-checks.export', $website));
+        $this->actingAs($user)->get(route('websites.show', $unhealthyWebsite))
+            ->assertSuccessful()
+            ->assertViewHas('healthMetrics', [
+                'total' => 3,
+                'successful' => 0,
+                'success_rate' => 0,
+                'median_healthy_duration_ms' => null,
+                'failure_streak' => 3,
+            ])
+            ->assertSee('0%')
+            ->assertSee('Not recorded')
+            ->assertSee('3 consecutive failed checks');
         $healthExport = $this->actingAs($user)->get(route('websites.health-checks.export', $website));
         $healthExport->assertSuccessful();
         $this->assertStringContainsString('Demo transient HTTP 503 before recovery.', $healthExport->streamedContent());

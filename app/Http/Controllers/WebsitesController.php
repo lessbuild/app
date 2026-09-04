@@ -12,6 +12,7 @@ use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -115,16 +116,56 @@ class WebsitesController extends Controller
         $this->authorize('view', $website);
 
         $repositories = $website->repositories()->with('latestBuild')->latest()->paginate();
+        $retainedHealthChecks = $website->healthChecks()
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
+            ->get();
 
         return view('scenes.websites.show', [
             'website' => $website,
             'repositories' => $repositories,
-            'healthChecks' => $website->healthChecks()
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->limit(20)
-                ->get(),
+            'healthChecks' => $retainedHealthChecks->take(20),
+            'healthMetrics' => $this->healthMetrics($retainedHealthChecks),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, WebsiteHealthCheck>  $checks
+     * @return array{total: int, successful: int, success_rate: ?int, median_healthy_duration_ms: ?int, failure_streak: int}
+     */
+    private function healthMetrics(Collection $checks): array
+    {
+        $total = $checks->count();
+        $successful = $checks->where('successful', true)->count();
+        $durations = $checks
+            ->filter(fn (WebsiteHealthCheck $check): bool => $check->successful && $check->duration_ms !== null)
+            ->pluck('duration_ms')
+            ->sort()
+            ->values();
+        $durationCount = $durations->count();
+        $middle = intdiv($durationCount, 2);
+        $medianDuration = match (true) {
+            $durationCount === 0 => null,
+            $durationCount % 2 === 1 => $durations[$middle],
+            default => (int) round(($durations[$middle - 1] + $durations[$middle]) / 2),
+        };
+        $failureStreak = 0;
+        foreach ($checks as $check) {
+            if ($check->successful) {
+                break;
+            }
+
+            $failureStreak++;
+        }
+
+        return [
+            'total' => $total,
+            'successful' => $successful,
+            'success_rate' => $total > 0 ? (int) round(($successful / $total) * 100) : null,
+            'median_healthy_duration_ms' => $medianDuration,
+            'failure_streak' => $failureStreak,
+        ];
     }
 
     public function exportHealthChecks(Website $website): StreamedResponse

@@ -240,6 +240,10 @@ endpoint, HTTP status, curl duration, bounded safe error, and check time. Websit
 details show the newest 20 results and offer a spreadsheet-safe export; each
 website retains only its newest 100 results. Demo websites include idempotent
 healthy, failing, manual, and automatic history without contacting their hosts.
+Website detail also summarizes the retained sample with an observed check success
+rate, median successful-response time, and newest consecutive-failure streak.
+These figures are explicitly labeled as recorded observations rather than SLA
+uptime, and empty or unreported samples never produce invented percentages.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
 Deployment detail pages show a validated elapsed duration and stable previous/next
