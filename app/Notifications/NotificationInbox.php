@@ -10,6 +10,12 @@ final class NotificationInbox
 
     public const STATUS_INFO = 'info';
 
+    public const STATUSES = [
+        self::STATUS_FAILED,
+        self::STATUS_HEALTHY,
+        self::STATUS_INFO,
+    ];
+
     public const CATEGORIES = [
         'deployment',
         'website',

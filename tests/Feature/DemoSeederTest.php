@@ -517,6 +517,22 @@ class DemoSeederTest extends TestCase
             ->assertSee('2m slower')
             ->assertSee('Demo storefront checkout failure')
             ->assertSee('[Demo] Approved rollback for incident DEMO-1042 after the checkout failure.');
+        $this->actingAs($user)->get(route('notifications.index', ['status' => 'healthy']))
+            ->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 1)
+            ->assertSee('Demo provider connection recovered')
+            ->assertDontSee('Demo provider connection failed')
+            ->assertSee(route('notifications.export', ['status' => 'healthy']));
+        $this->actingAs($user)->get(route('notifications.index', ['status' => 'info']))
+            ->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 1)
+            ->assertSee('Demo account security changed');
+        $notificationExport = $this->actingAs($user)
+            ->get(route('notifications.export', ['status' => 'healthy']));
+        $notificationExport->assertSuccessful();
+        $notificationContent = $notificationExport->streamedContent();
+        $this->assertStringContainsString('Demo provider connection recovered', $notificationContent);
+        $this->assertStringNotContainsString('Demo provider connection failed', $notificationContent);
 
         foreach ([
             route('dashboard'),

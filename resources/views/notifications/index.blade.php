@@ -28,7 +28,7 @@
     </x-layouts.partials.heading>
 
     <form method="GET" action="{{ route('notifications.index') }}" class="mb-6 mt-8 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input
@@ -48,6 +48,15 @@
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All statuses') }}</option>
+                    <option value="failed" @selected($filters['status'] === 'failed')>{{ __('Failed') }}</option>
+                    <option value="healthy" @selected($filters['status'] === 'healthy')>{{ __('Recovered') }}</option>
+                    <option value="info" @selected($filters['status'] === 'info')>{{ __('Information') }}</option>
                 </select>
             </div>
             <div>

@@ -9,6 +9,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Notifications\FailureNotification;
+use App\Notifications\NotificationInbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;
@@ -158,7 +159,7 @@ class FailureNotificationTest extends TestCase
         $this->assertNull($otherNotification->fresh()->read_at);
     }
 
-    public function test_notification_inbox_filters_title_message_category_state_and_created_dates(): void
+    public function test_notification_inbox_filters_title_message_category_status_state_and_created_dates(): void
     {
         $owner = User::factory()->create();
         $matching = $this->notification(
@@ -167,6 +168,14 @@ class FailureNotificationTest extends TestCase
             'Website health failed',
             'Caddy returned an unavailable response',
             createdAt: '2026-08-20 12:00:00',
+        );
+        $recovered = $this->notification(
+            $owner,
+            'website',
+            'Website health recovered',
+            'Caddy returned a healthy response',
+            createdAt: '2026-08-20 12:30:00',
+            status: NotificationInbox::STATUS_HEALTHY,
         );
         $read = $this->notification(
             $owner,
@@ -208,6 +217,7 @@ class FailureNotificationTest extends TestCase
         $filters = [
             'search' => 'Caddy',
             'category' => 'website',
+            'status' => NotificationInbox::STATUS_FAILED,
             'state' => 'unread',
             'date_from' => '2026-08-20',
             'date_to' => '2026-08-20',
@@ -219,6 +229,7 @@ class FailureNotificationTest extends TestCase
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1 && $notifications->sole()->id === $matching->id)
             ->assertSee(route('notifications.export', $filters))
             ->assertSee('Caddy returned an unavailable response')
+            ->assertDontSee($recovered->data['message'])
             ->assertDontSee($read->data['message'])
             ->assertDontSee($server->data['message'])
             ->assertDontSee($beforeRange->data['message'])
@@ -228,6 +239,7 @@ class FailureNotificationTest extends TestCase
         $this->actingAs($owner)->get(route('notifications.index', [
             'search' => '   ',
             'category' => 'credentials',
+            'status' => 'warning',
             'state' => 'deleted',
             'date_from' => '2026-02-31',
             'date_to' => '../../etc/passwd',
@@ -236,11 +248,22 @@ class FailureNotificationTest extends TestCase
             ->assertViewHas('filters', [
                 'search' => null,
                 'category' => null,
+                'status' => null,
                 'state' => null,
                 'date_from' => null,
                 'date_to' => null,
             ])
-            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 5);
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->total() === 6);
+
+        $this->actingAs($owner)->get(route('notifications.index', [
+            ...$filters,
+            'status' => NotificationInbox::STATUS_HEALTHY,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1
+                && $notifications->sole()->id === $recovered->id)
+            ->assertSee('Caddy returned a healthy response')
+            ->assertDontSee($matching->data['message']);
     }
 
     public function test_filtered_notification_export_is_owner_scoped_spreadsheet_safe_and_payload_free(): void
@@ -256,6 +279,14 @@ class FailureNotificationTest extends TestCase
         $matching->update([
             'data' => [...$matching->data, 'internal_context' => 'do-not-export-this-payload'],
         ]);
+        $this->notification(
+            $owner,
+            'website',
+            'Recovered Spreadsheet alert',
+            'Excluded recovered alert',
+            createdAt: '2026-08-20 12:30:00',
+            status: NotificationInbox::STATUS_HEALTHY,
+        );
         $this->notification(
             $owner,
             'website',
@@ -296,6 +327,7 @@ class FailureNotificationTest extends TestCase
         $filters = [
             'search' => 'Spreadsheet',
             'category' => 'website',
+            'status' => NotificationInbox::STATUS_FAILED,
             'state' => 'unread',
             'date_from' => '2026-08-20',
             'date_to' => '2026-08-20',
@@ -312,6 +344,7 @@ class FailureNotificationTest extends TestCase
         $content = $response->streamedContent();
         $this->assertStringNotContainsString('do-not-export-this-payload', $content);
         $this->assertStringNotContainsString('internal_context', $content);
+        $this->assertStringNotContainsString('Excluded recovered alert', $content);
         $this->assertStringNotContainsString('Excluded read alert', $content);
         $this->assertStringNotContainsString('Excluded category alert', $content);
         $this->assertStringNotContainsString('Excluded date alert', $content);
@@ -356,6 +389,7 @@ class FailureNotificationTest extends TestCase
         $response = $this->actingAs($owner)->get(route('notifications.index', [
             'search' => 'Searchable',
             'category' => 'deployment',
+            'status' => NotificationInbox::STATUS_FAILED,
             'state' => 'unread',
             'date_from' => $today,
             'date_to' => $today,
@@ -365,6 +399,7 @@ class FailureNotificationTest extends TestCase
         $nextPageUrl = $response->viewData('notifications')->nextPageUrl();
         $this->assertStringContainsString('search=Searchable', $nextPageUrl);
         $this->assertStringContainsString('category=deployment', $nextPageUrl);
+        $this->assertStringContainsString('status=failed', $nextPageUrl);
         $this->assertStringContainsString('state=unread', $nextPageUrl);
         $this->assertStringContainsString("date_from={$today}", $nextPageUrl);
         $this->assertStringContainsString("date_to={$today}", $nextPageUrl);
@@ -448,11 +483,18 @@ class FailureNotificationTest extends TestCase
         string $message,
         bool $read = false,
         mixed $createdAt = null,
+        string $status = NotificationInbox::STATUS_FAILED,
     ): DatabaseNotification {
         $user->notify(new FailureNotification($category, 1, $title, $message));
         $notification = $user->notifications()
             ->where('data->title', $title)
             ->sole();
+
+        if ($status !== NotificationInbox::STATUS_FAILED) {
+            $notification->forceFill([
+                'data' => [...$notification->data, 'status' => $status],
+            ])->save();
+        }
 
         if ($read) {
             $notification->markAsRead();

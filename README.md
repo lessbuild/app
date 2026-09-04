@@ -362,9 +362,10 @@ review and support handoff.
 The activity timeline can be searched and filtered by category or date range;
 the same owner-scoped view can be exported as a streamed, spreadsheet-safe CSV
 for audits and incident handoff.
-The notification inbox can filter alerts by search text, category, state, and
-created-date range, then export that same owner-scoped view as a spreadsheet-safe
-CSV without exposing raw notification payloads or framework ownership fields.
+The notification inbox can filter alerts by search text, category, failure/recovery/
+information status, read state, and created-date range, then export that same
+owner-scoped view as a spreadsheet-safe CSV without exposing raw notification
+payloads or framework ownership fields.
 Individual alerts can be deleted without clearing other read or unread
 notifications.
 Read notifications are retained for 90 days after review by default and pruned

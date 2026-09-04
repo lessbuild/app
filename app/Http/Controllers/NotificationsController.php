@@ -120,23 +120,25 @@ class NotificationsController extends Controller
         return back()->with('success', __('Notification deleted.'));
     }
 
-    /** @return array{search: ?string, category: ?string, state: ?string, date_from: ?string, date_to: ?string} */
+    /** @return array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
         $category = $request->string('category')->toString();
+        $status = $request->string('status')->toString();
         $state = $request->string('state')->toString();
 
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, NotificationInbox::CATEGORIES, true) ? $category : null,
+            'status' => in_array($status, NotificationInbox::STATUSES, true) ? $status : null,
             'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
             'date_from' => $this->date($request->string('date_from')->toString()),
             'date_to' => $this->date($request->string('date_to')->toString()),
         ];
     }
 
-    /** @param array{search: ?string, category: ?string, state: ?string, date_from: ?string, date_to: ?string} $filters */
+    /** @param array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string} $filters */
     private function filteredNotifications(Request $request, array $filters): MorphMany
     {
         return $request->user()
@@ -145,6 +147,8 @@ class NotificationsController extends Controller
             ->when($filters['state'] === 'read', fn ($query) => $query->whereNotNull('read_at'))
             ->when($filters['category'], fn ($query, string $category) => $query
                 ->where('data->category', $category))
+            ->when($filters['status'], fn ($query, string $status) => $query
+                ->where('data->status', $status))
             ->when($filters['search'], function ($query, string $search): void {
                 $query->where(function ($query) use ($search): void {
                     $query
