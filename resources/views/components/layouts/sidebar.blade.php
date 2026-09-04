@@ -124,6 +124,16 @@
             </svg>
             <span class="text-primary text-sm font-medium">{{ __('Recipes') }}</span>
         </a>
+        <a href="{{ route('gallery.index') }}" @class([
+            'w-full flex items-center text-ternary py-3 pl-4 hover:bg-secondary rounded-lg cursor-pointer',
+            'bg-primary' => ! request()->routeIs('gallery.*'),
+            'bg-secondary' => request()->routeIs('gallery.*'),
+        ])>
+            <svg class="w-5 h-5 mr-2 stroke-2">
+                <use xlink:href="/assets/images/icons.svg#view-grid"></use>
+            </svg>
+            <span class="text-primary text-sm font-medium">{{ __('Gallery') }}</span>
+        </a>
     </div>
 
     <div class="mb-4 px-4">

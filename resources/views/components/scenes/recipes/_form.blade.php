@@ -41,4 +41,37 @@
         >{{ old('script', $recipe->script ?? '') }}</textarea>
         <x-forms.errors name="script" />
     </div>
+
+    <div class="rounded-lg border border-primary bg-secondary p-4">
+        <div class="flex items-start gap-3">
+            <input type="hidden" name="is_published" value="0">
+            <input
+                id="is_published"
+                name="is_published"
+                type="checkbox"
+                value="1"
+                class="mt-1 rounded"
+                @checked(old('is_published', $recipe->is_published ?? false))
+            >
+            <div>
+                <label for="is_published" class="block text-sm font-medium text-primary">{{ __('Publish to the community gallery') }}</label>
+                <p class="mt-1 text-xs text-secondary">
+                    {{ __('Everyone with an account can inspect and copy this script. Never publish passwords, tokens, private keys, or customer data.') }}
+                </p>
+            </div>
+        </div>
+        <div class="mt-4">
+            <label for="category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
+            <select id="category" name="category" class="input secondary mt-1 w-full rounded sm:max-w-xs">
+                <option value="">{{ __('Select a category') }}</option>
+                @foreach (\App\Models\Recipe::CATEGORIES as $category)
+                    <option value="{{ $category }}" @selected(old('category', $recipe->category ?? '') === $category)>
+                        {{ str($category)->title() }}
+                    </option>
+                @endforeach
+            </select>
+            <x-forms.errors name="category" />
+            <x-forms.errors name="is_published" />
+        </div>
+    </div>
 </div>

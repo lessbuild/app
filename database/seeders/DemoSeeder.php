@@ -15,6 +15,7 @@ class DemoSeeder extends Seeder
         $this->call([
             DemoAccountSeeder::class,
             DemoInfrastructureSeeder::class,
+            DemoGallerySeeder::class,
             DemoOperationsSeeder::class,
         ]);
     }

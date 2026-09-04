@@ -4,6 +4,9 @@
         :description="__('Create reusable Bash scripts for new servers.')"
     >
         <x-slot:buttons>
+            <a href="{{ route('gallery.index') }}" class="button secondary">
+                {{ __('Browse Gallery') }}
+            </a>
             <a href="{{ route('recipes.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button secondary">
                 {{ __('Export CSV') }}
             </a>
@@ -123,6 +126,11 @@
                             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
                                 <a class="font-medium text-ternary" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
                                 <p class="mt-1 max-w-xl text-secondary">{{ $recipe->description ?: __('No description') }}</p>
+                                @if ($recipe->is_published)
+                                    <a href="{{ route('gallery.show', $recipe) }}" class="mt-2 inline-block rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                                        {{ __('Published') }}
+                                    </a>
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 {{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}

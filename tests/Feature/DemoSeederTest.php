@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Build;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
+use App\Models\Recipe;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
 use Database\Seeders\DemoAccountSeeder;
+use Database\Seeders\DemoGallerySeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -97,6 +99,13 @@ class DemoSeederTest extends TestCase
                 ->all(),
         );
         $this->assertSame(3, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(1, $user->recipes()->published()->count());
+        $this->assertSame(4, Recipe::query()->published()->count());
+        $this->assertSame(80, Recipe::query()->published()->sum('install_count'));
+        $this->assertDatabaseHas('users', [
+            'email' => DemoGallerySeeder::AUTHOR_EMAIL,
+            'name' => 'Lessbuild Community',
+        ]);
         $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
         $this->assertFalse($unusedRecipe->servers()->exists());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
@@ -286,6 +295,7 @@ class DemoSeederTest extends TestCase
         $neverDeployedRepository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Documentation repository')->sole();
         $assignedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Install image tools')->sole();
         $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
+        $communityRecipe = Recipe::query()->where('name', 'Install Node.js LTS')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
         $this->actingAs($user)->get(route('dashboard'))
@@ -365,6 +375,20 @@ class DemoSeederTest extends TestCase
                 && $metrics['latest_at'] !== null)
             ->assertSee(DemoSeeder::PREFIX.'Optimize PHP runtime')
             ->assertDontSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('gallery.index', ['sort' => 'popular']))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'published' => 4,
+                'installs' => 80,
+                'authors' => 2,
+            ])
+            ->assertSeeInOrder(['Install Node.js LTS', 'Install unattended upgrades', 'Harden SSH defaults'])
+            ->assertSee('Lessbuild Community')
+            ->assertSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('gallery.show', $communityRecipe))
+            ->assertSuccessful()
+            ->assertSee('curl -fsSL https://deb.nodesource.com/setup_lts.x')
+            ->assertSee('Add to My Recipes');
         $this->actingAs($user)->get(route('servers.commands.index', $server))
             ->assertSuccessful()
             ->assertViewHas('metrics', [
@@ -885,6 +909,7 @@ class DemoSeederTest extends TestCase
             route('providers.index'),
             route('providers.show', $provider),
             route('recipes.index'),
+            route('gallery.index'),
             route('servers.index'),
             route('servers.show', $server),
             route('servers.edit', $server),

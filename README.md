@@ -127,6 +127,10 @@ Recipe detail pages show owner-scoped server assignments in their per-server
 execution position, with ready, provisioning, and failed status totals. The usage
 view selects only server metadata and never decrypts or renders the recipe script.
 It also explains that existing servers retain their immutable encrypted plan snapshot.
+Recipes can be explicitly published to the authenticated community gallery with a
+category and contributor attribution. Gallery visitors can search, sort, inspect the
+complete Bash script, and add a private encrypted snapshot to their own account.
+Install counts track reuse without linking the imported copy to future source edits.
 
 ## Source control providers
 

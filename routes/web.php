@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ProviderConnectionController;
 use App\Http\Controllers\ProviderController;
+use App\Http\Controllers\RecipeGalleryController;
 use App\Http\Controllers\RecipesController;
 use App\Http\Controllers\RepositoriesController;
 use App\Http\Controllers\RepositoryWebhookSettingsController;
@@ -169,6 +170,15 @@ Route::middleware('auth')->group(function () {
         Route::resource('repositories', RepositoriesController::class);
         Route::get('recipes/export', [RecipesController::class, 'export'])
             ->name('recipes.export');
+        Route::get('gallery', [RecipeGalleryController::class, 'index'])
+            ->name('gallery.index');
+        Route::get('gallery/{recipe}', [RecipeGalleryController::class, 'show'])
+            ->whereNumber('recipe')
+            ->name('gallery.show');
+        Route::post('gallery/{recipe}/install', [RecipeGalleryController::class, 'install'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:20,1')
+            ->name('gallery.install');
         Route::resource('recipes', RecipesController::class);
         Route::post('recipes/{recipe}/duplicate', [RecipesController::class, 'duplicate'])
             ->name('recipes.duplicate');

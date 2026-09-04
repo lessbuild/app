@@ -114,7 +114,7 @@ class RecipesController extends Controller
     {
         $this->authorize('view', $recipe);
         $recipe = $request->user()->recipes()
-            ->select(['id', 'user_id', 'name', 'description', 'created_at', 'updated_at'])
+            ->select(['id', 'user_id', 'name', 'description', 'is_published', 'created_at', 'updated_at'])
             ->findOrFail($recipe->id);
         $assignedServers = $recipe->servers()
             ->where('servers.user_id', $request->user()->id);
@@ -151,7 +151,8 @@ class RecipesController extends Controller
 
     public function store(RecipeRequest $request): RedirectResponse
     {
-        $request->user()->recipes()->create($request->validated());
+        $data = $this->recipeData($request);
+        $request->user()->recipes()->create($data);
 
         return redirect()->route('recipes.index')->with('status', __('Recipe created.'));
     }
@@ -166,7 +167,7 @@ class RecipesController extends Controller
     public function update(RecipeRequest $request, Recipe $recipe): RedirectResponse
     {
         $this->authorize('update', $recipe);
-        $recipe->update($request->validated());
+        $recipe->update($this->recipeData($request, $recipe));
 
         return redirect()->route('recipes.index')->with('status', __('Recipe updated.'));
     }
@@ -230,5 +231,18 @@ class RecipesController extends Controller
         $value = str_replace("\0", '', $value);
 
         return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+    }
+
+    /** @return array<string, mixed> */
+    private function recipeData(RecipeRequest $request, ?Recipe $recipe = null): array
+    {
+        $data = $request->validated();
+        $published = (bool) $data['is_published'];
+        $data['category'] = $published ? ($data['category'] ?? null) : null;
+        $data['published_at'] = $published
+            ? ($recipe?->published_at ?? now())
+            : null;
+
+        return $data;
     }
 }

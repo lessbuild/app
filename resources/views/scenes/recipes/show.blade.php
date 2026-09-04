@@ -6,6 +6,9 @@
         :description="$recipe->description ?: __('No description')"
     >
         <x-slot:buttons>
+            @if ($recipe->is_published)
+                <a href="{{ route('gallery.show', $recipe) }}" class="button secondary">{{ __('View in Gallery') }}</a>
+            @endif
             <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
                 @csrf
                 <button type="submit" class="button secondary">{{ __('Duplicate') }}</button>

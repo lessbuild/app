@@ -1,0 +1,96 @@
+<x-layouts.app>
+    <x-layouts.partials.heading
+        :title="__('Community Recipe Gallery')"
+        :description="__('Discover reusable provisioning scripts shared by other operators.')"
+    >
+        <x-slot:buttons>
+            <a href="{{ route('recipes.create') }}" class="button primary">{{ __('Publish a Recipe') }}</a>
+        </x-slot:buttons>
+    </x-layouts.partials.heading>
+
+    @if (session('status'))
+        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+    @endif
+
+    <div class="mt-6 rounded border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+        <p class="font-semibold">{{ __('Review community scripts before using them') }}</p>
+        <p class="mt-1">{{ __('Recipes run as root during provisioning. Inspect the full script and adapt it to your environment before assigning it to a server.') }}</p>
+    </div>
+
+    <form method="GET" action="{{ route('gallery.index') }}" class="mt-6 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 md:grid-cols-3">
+            <div>
+                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-1 w-full rounded">
+            </div>
+            <div>
+                <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
+                <select id="category" name="category" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All categories') }}</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
+                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
+                    <option value="recent" @selected($filters['sort'] === 'recent')>{{ __('Recently published') }}</option>
+                    <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Most installed') }}</option>
+                </select>
+            </div>
+        </div>
+        <div class="mt-4 flex gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            @if ($filters['search'] || $filters['category'] || $filters['sort'] !== 'recent')
+                <a href="{{ route('gallery.index') }}" class="button secondary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-3">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Published recipes') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['published'] }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Community installs') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['installs'] }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Contributors') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['authors'] }}</dd>
+        </div>
+    </dl>
+
+    @if ($recipes->isEmpty())
+        <div class="mx-auto mt-6 max-w-3xl">
+            <x-lists.empty
+                :title="__('No published recipes match these filters')"
+                :description="__('Try another search or publish the first recipe in this category.')"
+            />
+        </div>
+    @else
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            @foreach ($recipes as $recipe)
+                <article class="rounded-lg border border-primary bg-primary p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{{ str($recipe->category)->title() }}</span>
+                            <h2 class="mt-3 text-lg font-bold text-primary">
+                                <a href="{{ route('gallery.show', $recipe) }}" class="text-ternary">{{ $recipe->name }}</a>
+                            </h2>
+                        </div>
+                        <span class="whitespace-nowrap text-xs text-secondary">{{ trans_choice(':count install|:count installs', $recipe->install_count, ['count' => $recipe->install_count]) }}</span>
+                    </div>
+                    <p class="mt-2 text-sm text-secondary">{{ $recipe->description }}</p>
+                    <div class="mt-4 flex items-center justify-between text-xs text-secondary">
+                        <span>{{ __('By :author', ['author' => $recipe->user->name]) }}</span>
+                        <a href="{{ route('gallery.show', $recipe) }}" class="button tertiary">{{ __('Inspect script') }}</a>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+        <div class="mt-6">{{ $recipes->links() }}</div>
+    @endif
+</x-layouts.app>

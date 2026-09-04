@@ -126,6 +126,10 @@ class DemoInfrastructureSeeder extends Seeder
                 [
                     'description' => 'Installs image-processing packages during server provisioning.',
                     'script' => "apt-get update\napt-get install -y imagemagick webp",
+                    'category' => 'utilities',
+                    'is_published' => true,
+                    'published_at' => now()->subDays(5),
+                    'install_count' => 7,
                 ],
             ),
             'worker' => $user->recipes()->updateOrCreate(
@@ -133,6 +137,9 @@ class DemoInfrastructureSeeder extends Seeder
                 [
                     'description' => 'Creates a sample systemd worker definition for deployment testing.',
                     'script' => "systemctl daemon-reload\nsystemctl enable demo-worker.service",
+                    'category' => null,
+                    'is_published' => false,
+                    'published_at' => null,
                 ],
             ),
             'unused' => $user->recipes()->updateOrCreate(
@@ -140,6 +147,9 @@ class DemoInfrastructureSeeder extends Seeder
                 [
                     'description' => 'Unassigned recipe fixture ready to add to a future server plan.',
                     'script' => "php -v\necho 'Demo PHP runtime recipe'",
+                    'category' => null,
+                    'is_published' => false,
+                    'published_at' => null,
                 ],
             ),
         ];
