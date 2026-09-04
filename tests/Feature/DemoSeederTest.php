@@ -587,6 +587,28 @@ class DemoSeederTest extends TestCase
             ])
             ->assertSee('No matching event recorded.')
             ->assertSee('No activity matches these filters');
+        $this->actingAs($user)->get(route('servers.index'))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 5
+                && $metrics['ready'] === 1
+                && $metrics['provisioning'] === 3
+                && $metrics['failed'] === 1
+                && $metrics['websites'] === 5
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching servers')
+            ->assertSee('Hosted websites');
+        $this->actingAs($user)->get(route('servers.index', ['search' => 'Demo missing server']))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'ready' => 0,
+                'provisioning' => 0,
+                'failed' => 0,
+                'websites' => 0,
+                'latest_at' => null,
+            ])
+            ->assertSee('No matching server recorded.')
+            ->assertSee('No servers match these filters');
 
         foreach ([
             route('dashboard'),

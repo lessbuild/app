@@ -6,8 +6,8 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
-        :title="__('Manage Servers')"
-        :description="__('Easily manage your servers')"
+        :title="__('Servers')"
+        :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
         <x-slot:buttons>
             <a
@@ -58,6 +58,41 @@
             @endif
         </div>
     </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching servers') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Servers in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Ready servers') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['ready'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Active servers ready for workloads.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Provisioning') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['provisioning'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Queued, awaiting an IP, or provisioning.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed servers') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioning failures.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Hosted websites') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['websites'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Websites attached to matching servers.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching server') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching server recorded.') }}
+            </dd>
+        </div>
+    </dl>
 
     <!--
      ! ------------------------------------------------------------

@@ -18,6 +18,7 @@ use App\Models\Size;
 use App\Services\ActivityRecorder;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -43,8 +44,38 @@ class ServersController extends Controller
         return view('scenes.servers.index', [
             'servers' => $servers,
             'filters' => $filters,
+            'metrics' => $this->indexMetrics($request, $filters),
             'statuses' => $this->serverStatuses(),
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, status: ?string}  $filters
+     * @return array{total: int, ready: int, provisioning: int, failed: int, websites: int, latest_at: CarbonInterface|null}
+     */
+    private function indexMetrics(Request $request, array $filters): array
+    {
+        $latest = $this->filteredServers($request, $filters)
+            ->select(['id', 'created_at'])
+            ->latest('created_at')
+            ->latest('id')
+            ->first();
+        $serverIds = $this->filteredServers($request, $filters)->select('servers.id');
+
+        return [
+            'total' => $this->filteredServers($request, $filters)->count(),
+            'ready' => $this->filteredServers($request, $filters)
+                ->where('provisioning_status', Server::STATUS_ACTIVE)
+                ->count(),
+            'provisioning' => $this->filteredServers($request, $filters)
+                ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES)
+                ->count(),
+            'failed' => $this->filteredServers($request, $filters)
+                ->where('provisioning_status', Server::STATUS_FAILED)
+                ->count(),
+            'websites' => $request->user()->websites()->whereIn('server_id', $serverIds)->count(),
+            'latest_at' => $latest?->created_at,
+        ];
     }
 
     public function export(Request $request): StreamedResponse

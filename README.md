@@ -357,6 +357,10 @@ The filtered server inventory can also be streamed as a spreadsheet-safe CSV
 with display label, cloud hostname, platform, address, provider, status, and
 website-count fields while
 excluding server credentials and operational logs.
+Filter-aware server cards summarize matching, ready, provisioning, and failed
+servers, the number of attached websites, and the latest matching record. The
+counts use metadata-only owner-scoped queries, and empty views explicitly report
+that no matching server timestamp is available.
 Website inventory exports preserve provisioning, health, and attention filters
 and include target, health, retention, and repository-count fields without
 environment values, database credentials, tokens, or raw health errors.
