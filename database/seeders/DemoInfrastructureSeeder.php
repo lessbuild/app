@@ -460,6 +460,15 @@ class DemoInfrastructureSeeder extends Seeder
                 'branch' => 'release',
                 'pending' => false,
             ],
+            'github-empty' => [
+                'provider' => $providers[Provider::TYPE_GITHUB],
+                'website' => $websites['healthy'],
+                'name' => 'Documentation repository',
+                'url' => 'github.com/lessbuild/demo-documentation.git',
+                'branch' => 'main',
+                'pending' => false,
+                'webhook' => false,
+            ],
         ];
 
         foreach ($definitions as $key => $definition) {
@@ -478,15 +487,17 @@ class DemoInfrastructureSeeder extends Seeder
                     },
                     'url' => $definition['url'],
                     'branch' => $definition['branch'],
-                    'description' => "Demo {$key} repository with deployment history and safe fixture credentials.",
+                    'description' => $key === 'github-empty'
+                        ? 'Demo GitHub repository ready for its first deployment.'
+                        : "Demo {$key} repository with deployment history and safe fixture credentials.",
                     'build_commands' => "npm ci\nnpm run build",
                     'post_deployment_commands' => "php artisan migrate --force\nphp artisan cache:clear",
                     'webhook_secret' => "demo-{$key}-webhook-secret",
-                    'webhook_enabled' => true,
+                    'webhook_enabled' => $definition['webhook'] ?? true,
                     'webhook_pending' => $definition['pending'],
                     'webhook_pending_revision' => $definition['pending'] ? str_repeat('e', 40) : null,
                     'webhook_pending_commit_message' => $definition['pending'] ? 'Demo pending status-page release' : null,
-                    'webhook_last_received_at' => now()->subHours(2),
+                    'webhook_last_received_at' => ($definition['webhook'] ?? true) ? now()->subHours(2) : null,
                     'deleted_at' => null,
                 ],
             );

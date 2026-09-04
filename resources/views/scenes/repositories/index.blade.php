@@ -6,8 +6,8 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
-        :title="__('Manage Repositories')"
-        :description="__('Easily manage your repositories')"
+        :title="__('Repositories')"
+        :description="__('Manage source targets and review their latest filtered deployment state.')"
     >
         <x-slot:buttons>
             <a
@@ -80,6 +80,39 @@
             @endif
         </div>
     </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching repositories') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Repositories in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Never deployed') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['never_deployed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching repositories without a build.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active deployments') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment is still active.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest succeeded') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['succeeded'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment completed successfully.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest failed') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment failed.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Push webhooks') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['webhooks'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching repositories with webhooks enabled.') }}</dd>
+        </div>
+    </dl>
 
     <!--
      ! ------------------------------------------------------------

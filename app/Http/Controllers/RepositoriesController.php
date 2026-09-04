@@ -33,6 +33,7 @@ class RepositoriesController extends Controller
         return view('scenes.repositories.index', [
             'repositories' => $repositories,
             'filters' => $filters,
+            'metrics' => $this->indexMetrics($request, $filters),
             'providers' => $request->user()->providers()
                 ->forRepositories()
                 ->orderBy('name')
@@ -42,6 +43,30 @@ class RepositoriesController extends Controller
                 ->get(['id', 'name']),
             'statuses' => $this->repositoryStatuses(),
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string}  $filters
+     * @return array{total: int, never_deployed: int, active: int, succeeded: int, failed: int, webhooks: int}
+     */
+    private function indexMetrics(Request $request, array $filters): array
+    {
+        return [
+            'total' => $this->filteredRepositories($request, $filters)->count(),
+            'never_deployed' => $this->filteredRepositories($request, $filters)->neverDeployed()->count(),
+            'active' => $this->filteredRepositories($request, $filters)
+                ->latestBuildStatus(Build::ACTIVE_STATUSES)
+                ->count(),
+            'succeeded' => $this->filteredRepositories($request, $filters)
+                ->latestBuildStatus(Build::STATUS_SUCCEEDED)
+                ->count(),
+            'failed' => $this->filteredRepositories($request, $filters)
+                ->latestBuildStatus(Build::STATUS_FAILED)
+                ->count(),
+            'webhooks' => $this->filteredRepositories($request, $filters)
+                ->where('webhook_enabled', true)
+                ->count(),
+        ];
     }
 
     public function export(Request $request): StreamedResponse
@@ -137,11 +162,9 @@ class RepositoriesController extends Controller
                 ->where('provider_id', $id))
             ->when($filters['website_id'], fn ($query, int $id) => $query
                 ->where('website_id', $id))
-            ->when($filters['status'] === 'none', fn ($query) => $query
-                ->whereDoesntHave('builds'))
+            ->when($filters['status'] === 'none', fn ($query) => $query->neverDeployed())
             ->when($filters['status'] && $filters['status'] !== 'none', fn ($query) => $query
-                ->whereHas('latestBuild', fn ($query) => $query
-                    ->where('status', $filters['status'])));
+                ->latestBuildStatus($filters['status']));
     }
 
     private function positiveInteger(mixed $value): ?int

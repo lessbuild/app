@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,6 +56,18 @@ class Repository extends Model
     public function latestBuild(): HasOne
     {
         return $this->hasOne(Build::class)->latestOfMany();
+    }
+
+    public function scopeNeverDeployed(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('builds');
+    }
+
+    /** @param string|list<string> $statuses */
+    public function scopeLatestBuildStatus(Builder $query, string|array $statuses): Builder
+    {
+        return $query->whereHas('latestBuild', fn (Builder $query) => $query
+            ->whereIn('status', is_array($statuses) ? $statuses : [$statuses]));
     }
 
     public function webhookDeliveries(): HasMany

@@ -149,7 +149,12 @@ class DemoSeederTest extends TestCase
             Website::HEALTH_FAILURE_THRESHOLDS,
             $user->websites()->pluck('health_failure_threshold')->all(),
         );
-        $this->assertSame(3, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(4, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $neverDeployedRepository = $user->repositories()
+            ->where('name', DemoSeeder::PREFIX.'Documentation repository')
+            ->sole();
+        $this->assertFalse($neverDeployedRepository->webhook_enabled);
+        $this->assertFalse($neverDeployedRepository->builds()->exists());
         $this->assertSame(6, $user->builds()->count());
         $this->assertSame(2, $user->builds()->whereNotNull('operator_note')->count());
         $this->assertEqualsCanonicalizing(Build::TERMINAL_STATUSES, $user->builds()->distinct()->pluck('status')->all());
@@ -270,6 +275,7 @@ class DemoSeederTest extends TestCase
         $website = $user->websites()->where('deployment_slug', 'demo-storefront')->sole();
         $unhealthyWebsite = $user->websites()->where('deployment_slug', 'demo-status')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
+        $neverDeployedRepository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Documentation repository')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
         $this->actingAs($user)->get(route('dashboard'))
@@ -392,6 +398,32 @@ class DemoSeederTest extends TestCase
             ->assertSee('67%')
             ->assertSee('3m')
             ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
+        $this->actingAs($user)->get(route('repositories.index'))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 4,
+                'never_deployed' => 1,
+                'active' => 0,
+                'succeeded' => 1,
+                'failed' => 1,
+                'webhooks' => 3,
+            ])
+            ->assertSee('Matching repositories')
+            ->assertSee('Push webhooks');
+        $this->actingAs($user)->get(route('repositories.index', ['status' => 'none']))
+            ->assertSuccessful()
+            ->assertViewHas('repositories', fn ($repositories): bool => $repositories->count() === 1
+                && $repositories->sole()->id === $neverDeployedRepository->id)
+            ->assertViewHas('metrics', [
+                'total' => 1,
+                'never_deployed' => 1,
+                'active' => 0,
+                'succeeded' => 0,
+                'failed' => 0,
+                'webhooks' => 0,
+            ])
+            ->assertSee(DemoSeeder::PREFIX.'Documentation repository')
+            ->assertSee('Never deployed');
         $this->actingAs($user)->get(route('builds.index', ['status' => Build::STATUS_SUCCEEDED]))
             ->assertSuccessful()
             ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3

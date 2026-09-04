@@ -351,6 +351,10 @@ metadata-only deployment activity without copying note contents into the audit.
 The repository inventory can be searched and filtered by source provider,
 deployment website, and latest deployment state. It also shows each target,
 provider, and latest deployment without loading the entire inventory at once.
+Filter-aware repository cards summarize matching and never-deployed repositories,
+active, successful, and failed latest deployments, and enabled push webhooks.
+Latest-status filtering and metrics share model scopes so older failed builds do
+not misclassify a repository whose newest deployment recovered.
 The current filtered inventory can be exported as a streamed,
 spreadsheet-safe CSV without credentials or deployment commands.
 The filtered server inventory can also be streamed as a spreadsheet-safe CSV
