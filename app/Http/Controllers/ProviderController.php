@@ -29,10 +29,33 @@ class ProviderController extends Controller
         return view('scenes.providers.index', [
             'providers' => $providers,
             'filters' => $filters,
+            'metrics' => $this->indexMetrics($request, $filters),
             'types' => $this->providerTypes(),
             'usages' => ['in_use', 'unused'],
             'connectionStatuses' => Provider::CONNECTION_STATUSES,
         ]);
+    }
+
+    /**
+     * @param  array{search: ?string, type: ?string, usage: ?string, connection: ?string}  $filters
+     * @return array{total: int, in_use: int, unused: int, healthy: int, failed: int, unchecked: int}
+     */
+    private function indexMetrics(Request $request, array $filters): array
+    {
+        return [
+            'total' => $this->filteredProviders($request, $filters)->count(),
+            'in_use' => $this->filteredProviders($request, $filters)->inUse()->count(),
+            'unused' => $this->filteredProviders($request, $filters)->unused()->count(),
+            'healthy' => $this->filteredProviders($request, $filters)
+                ->connectionState(Provider::CONNECTION_HEALTHY)
+                ->count(),
+            'failed' => $this->filteredProviders($request, $filters)
+                ->connectionState(Provider::CONNECTION_FAILED)
+                ->count(),
+            'unchecked' => $this->filteredProviders($request, $filters)
+                ->connectionState(Provider::CONNECTION_UNCHECKED)
+                ->count(),
+        ];
     }
 
     public function export(Request $request): StreamedResponse
@@ -391,17 +414,9 @@ class ProviderController extends Controller
             })
             ->when($filters['type'], fn ($query, string $value) => $query
                 ->where('provider', $value))
-            ->when($filters['usage'] === 'in_use', fn ($query) => $query
-                ->where(function ($query): void {
-                    $query->whereHas('servers')->orWhereHas('repositories');
-                }))
-            ->when($filters['usage'] === 'unused', fn ($query) => $query
-                ->whereDoesntHave('servers')
-                ->whereDoesntHave('repositories'))
-            ->when($filters['connection'] === Provider::CONNECTION_UNCHECKED, fn ($query) => $query
-                ->whereNull('connection_status'))
-            ->when($filters['connection'] && $filters['connection'] !== Provider::CONNECTION_UNCHECKED, fn ($query) => $query
-                ->where('connection_status', $filters['connection']));
+            ->when($filters['usage'] === 'in_use', fn ($query) => $query->inUse())
+            ->when($filters['usage'] === 'unused', fn ($query) => $query->unused())
+            ->when($filters['connection'], fn ($query, string $status) => $query->connectionState($status));
     }
 
     /** @return list<string> */

@@ -49,14 +49,15 @@ class DemoInfrastructureSeeder extends Seeder
     private function providers(User $user): array
     {
         $definitions = [
-            Provider::TYPE_DIGITALOCEAN => ['DigitalOcean', Provider::CONNECTION_HEALTHY, 60, 1, 0],
-            Provider::TYPE_GITHUB => ['GitHub', Provider::CONNECTION_HEALTHY, 360, 2, 0],
-            Provider::TYPE_GITLAB => ['GitLab', Provider::CONNECTION_FAILED, 720, 3, 3],
-            Provider::TYPE_BITBUCKET => ['Bitbucket', null, 1440, 5, 0],
+            Provider::TYPE_DIGITALOCEAN => [Provider::TYPE_DIGITALOCEAN, 'DigitalOcean', Provider::CONNECTION_HEALTHY, 60, 1, 0],
+            Provider::TYPE_GITHUB => [Provider::TYPE_GITHUB, 'GitHub', Provider::CONNECTION_HEALTHY, 360, 2, 0],
+            Provider::TYPE_GITLAB => [Provider::TYPE_GITLAB, 'GitLab', Provider::CONNECTION_FAILED, 720, 3, 3],
+            Provider::TYPE_BITBUCKET => [Provider::TYPE_BITBUCKET, 'Bitbucket', null, 1440, 5, 0],
+            'spare-github' => [Provider::TYPE_GITHUB, 'Spare GitHub', null, 1440, 5, 0],
         ];
         $providers = [];
 
-        foreach ($definitions as $type => [$label, $status, $interval, $threshold, $failureCount]) {
+        foreach ($definitions as $key => [$type, $label, $status, $interval, $threshold, $failureCount]) {
             $provider = Provider::withTrashed()->firstOrNew([
                 'user_id' => $user->id,
                 'name' => DemoSeeder::PREFIX.$label,
@@ -74,7 +75,7 @@ class DemoInfrastructureSeeder extends Seeder
             ]);
             $provider->deleted_at = null;
             $provider->save();
-            $providers[$type] = $provider;
+            $providers[$key] = $provider;
         }
 
         return $providers;

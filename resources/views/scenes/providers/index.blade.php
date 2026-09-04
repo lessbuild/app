@@ -6,8 +6,8 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
-        :title="__('Manage Providers')"
-        :description="__('Easily manage your providers')"
+        :title="__('Providers')"
+        :description="__('Manage infrastructure integrations and review their filtered connection state.')"
     >
         <x-slot:buttons>
             <a
@@ -83,6 +83,39 @@
             @endif
         </div>
     </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching providers') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Providers in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('In use') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['in_use'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching providers with attached resources.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unused') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unused'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching providers ready for a resource.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Healthy connections') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['healthy'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Latest credential check succeeded.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed connections') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Latest credential check failed.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unchecked connections') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unchecked'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('No credential result is recorded yet.') }}</dd>
+        </div>
+    </dl>
 
     <!--
      ! ------------------------------------------------------------

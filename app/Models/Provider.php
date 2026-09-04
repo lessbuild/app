@@ -125,6 +125,25 @@ class Provider extends Model
         return $query->whereIn('provider', self::SOURCE_CONTROL_TYPES);
     }
 
+    public function scopeInUse(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query->whereHas('servers')->orWhereHas('repositories');
+        });
+    }
+
+    public function scopeUnused(Builder $query): Builder
+    {
+        return $query->whereDoesntHave('servers')->whereDoesntHave('repositories');
+    }
+
+    public function scopeConnectionState(Builder $query, string $status): Builder
+    {
+        return $status === self::CONNECTION_UNCHECKED
+            ? $query->whereNull('connection_status')
+            : $query->where('connection_status', $status);
+    }
+
     public function isSourceControl(): bool
     {
         return in_array($this->provider, self::SOURCE_CONTROL_TYPES, true);

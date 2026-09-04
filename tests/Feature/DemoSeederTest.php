@@ -48,26 +48,29 @@ class DemoSeederTest extends TestCase
             'user_id' => $user->id,
             'ip_address' => '192.0.2.10',
         ]);
-        $this->assertSame(4, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(5, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
             Provider::TYPE_DIGITALOCEAN,
             Provider::TYPE_GITHUB,
             Provider::TYPE_GITLAB,
             Provider::TYPE_BITBUCKET,
-        ], $user->providers()->pluck('provider')->all());
+        ], $user->providers()->distinct()->pluck('provider')->all());
         $this->assertEqualsCanonicalizing([
             Provider::CONNECTION_HEALTHY,
             Provider::CONNECTION_FAILED,
             null,
         ], $user->providers()->distinct()->pluck('connection_status')->all());
         $this->assertSame(0, $user->providers()->where('connection_monitoring_enabled', true)->count());
+        $spareProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'Spare GitHub')->sole();
+        $this->assertSame(Provider::CONNECTION_UNCHECKED, $spareProvider->connectionHealth());
+        $this->assertFalse($spareProvider->hasAttachedResources());
         $this->assertEqualsCanonicalizing(
             Provider::CONNECTION_CHECK_INTERVALS,
-            $user->providers()->pluck('connection_check_interval_minutes')->all(),
+            $user->providers()->distinct()->pluck('connection_check_interval_minutes')->all(),
         );
         $this->assertEqualsCanonicalizing(
             Provider::CONNECTION_FAILURE_THRESHOLDS,
-            $user->providers()->pluck('connection_failure_threshold')->all(),
+            $user->providers()->distinct()->pluck('connection_failure_threshold')->all(),
         );
         $this->assertEqualsCanonicalizing(
             [0, 3],
@@ -269,6 +272,7 @@ class DemoSeederTest extends TestCase
         $provider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitHub')->sole();
         $failedProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitLab')->sole();
         $emptyHistoryProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'Bitbucket')->sole();
+        $spareProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'Spare GitHub')->sole();
         $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->sole();
         $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->sole();
         $provisioningServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Provisioning worker')->sole();
@@ -287,6 +291,32 @@ class DemoSeederTest extends TestCase
             ->assertSee('Active server commands')
             ->assertSee('2 commands are active')
             ->assertSee('Running');
+        $this->actingAs($user)->get(route('providers.index'))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 5,
+                'in_use' => 4,
+                'unused' => 1,
+                'healthy' => 2,
+                'failed' => 1,
+                'unchecked' => 2,
+            ])
+            ->assertSee('Matching providers')
+            ->assertSee('Unchecked connections');
+        $this->actingAs($user)->get(route('providers.index', ['usage' => 'unused']))
+            ->assertSuccessful()
+            ->assertViewHas('providers', fn ($providers): bool => $providers->count() === 1
+                && $providers->sole()->id === $spareProvider->id)
+            ->assertViewHas('metrics', [
+                'total' => 1,
+                'in_use' => 0,
+                'unused' => 1,
+                'healthy' => 0,
+                'failed' => 0,
+                'unchecked' => 1,
+            ])
+            ->assertSee(DemoSeeder::PREFIX.'Spare GitHub')
+            ->assertDontSee(route('providers.show', $provider));
         $this->actingAs($user)->get(route('providers.show', $provider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [

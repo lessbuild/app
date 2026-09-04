@@ -41,6 +41,9 @@ hosts.
 Provider inventory can be searched and filtered by provider type or whether
 resources are attached. Resource counts are visible in the list, and pagination
 controls keep every provider, attached repository, and attached server reachable.
+Filter-aware inventory cards summarize matching, in-use, and unused providers as
+well as healthy, failed, and unchecked connection states. Usage and connection
+filters share model scopes with those metrics so the list and summary stay aligned.
 The filtered provider inventory can be streamed as a spreadsheet-safe CSV with
 attached resource metadata. Encrypted provider tokens are never exported.
 Each provider can be checked on demand against its provider's fixed HTTPS account
