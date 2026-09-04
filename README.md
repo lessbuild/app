@@ -24,6 +24,9 @@ after current-password validation through the shared sensitive-action limiter.
 The full owner-scoped history is paginated and can be filtered by sign-in method
 and date range. Its spreadsheet-safe CSV applies the same normalized filters, so
 the exported evidence matches the records under review without exposing raw agents.
+Filter-aware cards summarize matching events, local-password and recognized social
+usage, distinct validated IP addresses, and the latest matching sign-in. Invalid or
+missing addresses never inflate the known-IP count, and an empty result is explicit.
 
 Social-only accounts may establish a local password once without an existing
 password. After that first setup, every password change requires the current

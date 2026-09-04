@@ -476,7 +476,14 @@ class DemoSeederTest extends TestCase
         $this->actingAs($user)->get(route('account.sign-ins.index', ['method' => 'github']))
             ->assertSuccessful()
             ->assertViewHas('signIns', fn ($signIns): bool => $signIns->total() === 1)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+                && $metrics['password'] === 0
+                && $metrics['social'] === 1
+                && $metrics['known_ips'] === 1
+                && $metrics['latest_at'] !== null)
             ->assertSee('1 matching sign-in')
+            ->assertSee('Matching sign-ins')
+            ->assertSee('Known IP addresses')
             ->assertSee('Safari on iPhone')
             ->assertSee('198.51.100.21')
             ->assertDontSee('Chrome on macOS')

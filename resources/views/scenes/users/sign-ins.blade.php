@@ -47,6 +47,38 @@
         <p class="text-xs text-secondary">{{ __('Only successful sign-ins are recorded. Raw browser user agents are never displayed or exported.') }}</p>
     </div>
 
+    <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching sign-ins') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Successful events in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Password sign-ins') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['password'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Authenticated with the local password.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Social sign-ins') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['social'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Recognized GitHub, GitLab, or Bitbucket events.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Known IP addresses') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['known_ips'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Distinct validated addresses in this view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching sign-in') }}</dt>
+            <dd class="mt-1 text-lg font-bold text-primary">
+                {{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}
+            </dd>
+            <dd class="mt-1 text-xs text-secondary">
+                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.') }}
+            </dd>
+        </div>
+    </dl>
+
     @if ($signIns->isEmpty())
         <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
             {{ array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.') }}

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SignInEvent;
 use App\Services\ActivityRecorder;
 use App\Services\ClientMetadata;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -35,9 +36,45 @@ class SignInHistoryController extends Controller
         return view('scenes.users.sign-ins', [
             'signIns' => $signIns,
             'filters' => $filters,
+            'metrics' => $this->metrics($request, $filters, $clients),
             'methods' => collect(SignInEvent::METHODS)
                 ->mapWithKeys(fn (string $method): array => [$method => SignInEvent::methodLabel($method)]),
         ]);
+    }
+
+    /**
+     * @param  array{method: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, password: int, social: int, known_ips: int, latest_at: CarbonInterface|null}
+     */
+    private function metrics(Request $request, array $filters, ClientMetadata $clients): array
+    {
+        $socialMethods = array_values(array_diff(SignInEvent::METHODS, [SignInEvent::METHOD_PASSWORD]));
+        $latest = $this->filteredSignIns($request, $filters)
+            ->select(['id', 'signed_in_at'])
+            ->orderByDesc('signed_in_at')
+            ->orderByDesc('id')
+            ->first();
+        $knownIps = $this->filteredSignIns($request, $filters)
+            ->select('ip_address')
+            ->whereNotNull('ip_address')
+            ->distinct()
+            ->pluck('ip_address')
+            ->map(fn (string $ip): ?string => $clients->normalizedIp($ip))
+            ->filter()
+            ->unique()
+            ->count();
+
+        return [
+            'total' => $this->filteredSignIns($request, $filters)->count(),
+            'password' => $this->filteredSignIns($request, $filters)
+                ->where('method', SignInEvent::METHOD_PASSWORD)
+                ->count(),
+            'social' => $this->filteredSignIns($request, $filters)
+                ->whereIn('method', $socialMethods)
+                ->count(),
+            'known_ips' => $knownIps,
+            'latest_at' => $latest?->signed_in_at,
+        ];
     }
 
     public function export(Request $request, ClientMetadata $clients): StreamedResponse
