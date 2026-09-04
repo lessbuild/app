@@ -310,8 +310,52 @@
         <livewire:repository-setup :model="$repository"></livewire:repository-setup>
     </div>
 
+    <section class="mt-10" aria-labelledby="deployment-insights-heading">
+        <div>
+            <h2 id="deployment-insights-heading" class="text-2xl font-bold text-primary">{{ __('Deployment insights') }}</h2>
+            <p class="mt-1 text-sm text-secondary">
+                {{ __('Outcome totals cover all recorded deployments. Median duration uses up to the 20 most recent deployments with valid start and finish times.') }}
+            </p>
+        </div>
+        <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Total deployments') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">{{ $deploymentMetrics['total'] }}</dd>
+            </a>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_SUCCEEDED]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Succeeded') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-green-600">{{ $deploymentMetrics['succeeded'] }}</dd>
+            </a>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_FAILED]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-red-600">{{ $deploymentMetrics['failed'] }}</dd>
+            </a>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Completed-run success rate') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $deploymentMetrics['success_rate'] !== null ? $deploymentMetrics['success_rate'].'%' : __('Not available') }}
+                </dd>
+                <p class="mt-1 text-xs text-secondary">{{ __('Canceled and active runs are excluded.') }}</p>
+            </div>
+            <div class="rounded-lg border border-primary bg-primary p-4">
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Recent median duration') }}</dt>
+                <dd class="mt-1 text-2xl font-bold text-primary">
+                    {{ $deploymentMetrics['median_duration_seconds'] !== null ? \App\Models\Build::formatDuration($deploymentMetrics['median_duration_seconds']) : __('Not recorded') }}
+                </dd>
+                <p class="mt-1 text-xs text-secondary">
+                    {{ trans_choice(':count timed deployment|:count timed deployments', $deploymentMetrics['duration_sample_size'], ['count' => $deploymentMetrics['duration_sample_size']]) }}
+                </p>
+            </div>
+        </dl>
+    </section>
+
     <section class="mt-10">
-        <h2 class="mb-4 text-2xl font-bold text-primary">{{ __('Deployment history') }}</h2>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 class="text-2xl font-bold text-primary">{{ __('Deployment history') }}</h2>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="button primary">
+                {{ __('View all deployments') }}
+            </a>
+        </div>
         @forelse ($builds as $build)
             <div class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
                 <div>

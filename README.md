@@ -245,6 +245,10 @@ Adjacent deployments can be compared side by side without contacting a source
 provider. The comparison is owner-scoped and limited to distinct builds from the
 same repository, with escaped revision, outcome, timing, commit, failure, and
 operator-note metadata plus an explicit faster/slower duration delta.
+Repository pages summarize all-time deployment totals, succeeded and failed runs,
+and a completed-run success rate that explicitly excludes canceled and active
+runs. They also show a median duration calculated from at most the 20 newest valid
+timings and link directly into the repository-filtered full deployment history.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
 and result views remain testable without opening SSH connections or dispatching
 log-refresh jobs.

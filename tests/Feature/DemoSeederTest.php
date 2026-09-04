@@ -231,6 +231,20 @@ class DemoSeederTest extends TestCase
             ->assertSee(DemoSeeder::PREFIX.'Primary production')
             ->assertSee(DemoSeeder::PREFIX.'GitHub')
             ->assertSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertViewHas('deploymentMetrics', [
+                'total' => 3,
+                'succeeded' => 2,
+                'failed' => 1,
+                'success_rate' => 67,
+                'median_duration_seconds' => 180,
+                'duration_sample_size' => 3,
+            ])
+            ->assertSee('Deployment insights')
+            ->assertSee('67%')
+            ->assertSee('3m')
+            ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
         config([
             'session.driver' => 'database',
             'session.encrypt' => true,
