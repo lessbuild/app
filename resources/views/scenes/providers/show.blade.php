@@ -101,9 +101,12 @@
                     {{ __('Accepted manual and automatic results are retained for the latest 100 checks. This page shows the newest 20 without credentials or response bodies.') }}
                 </p>
             </div>
-            @if ($connectionChecks->isNotEmpty())
-                <a href="{{ route('providers.connection-checks.export', $provider) }}" class="button primary">{{ __('Export connection history') }}</a>
-            @endif
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('providers.connection-checks.index', $provider) }}" class="button primary">{{ __('View all connection checks') }}</a>
+                @if ($connectionChecks->isNotEmpty())
+                    <a href="{{ route('providers.connection-checks.export', $provider) }}" class="button primary">{{ __('Export connection history') }}</a>
+                @endif
+            </div>
         </div>
 
         @if ($connectionChecks->isEmpty())

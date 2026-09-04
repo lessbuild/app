@@ -52,8 +52,10 @@ Every accepted provider credential check retains its manual or automatic source,
 fixed public endpoint, provider type, HTTP status, measured duration, safe failure
 message, and timestamp. Provider details show the newest 20 checks and offer an
 owner-scoped, spreadsheet-safe export of the newest 100; credentials and upstream
-response bodies are never stored in this history. Demo providers include healthy,
-failed, recovery, manual, automatic, and empty-history examples.
+response bodies are never stored in this history. The full retained history can be
+filtered by result, source, and checked-date range with pagination that preserves
+those filters. CSV exports apply the same normalized filters. Demo providers include
+healthy, failed, recovery, manual, automatic, and empty-history examples.
 Automatic provider credential monitoring can be paused per provider without
 disabling owner-authorized manual connection tests. A check already in flight is
 discarded if automatic monitoring is paused before it records a result.

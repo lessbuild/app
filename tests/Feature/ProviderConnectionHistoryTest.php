@@ -55,6 +55,7 @@ class ProviderConnectionHistoryTest extends TestCase
             ->assertDontSee('<script>latest failure</script>', false)
             ->assertDontSee('Old check hidden from the page')
             ->assertDontSee('Private provider result')
+            ->assertSee(route('providers.connection-checks.index', $provider))
             ->assertSee(route('providers.connection-checks.export', $provider));
         $this->assertSame(20, substr_count($page->getContent(), '<tr class="align-top">'));
 
@@ -91,7 +92,7 @@ class ProviderConnectionHistoryTest extends TestCase
         $this->assertStringNotContainsString('Private provider result', $content);
     }
 
-    public function test_history_export_requires_owner_and_history_cascades_on_force_delete(): void
+    public function test_history_routes_require_owner_and_history_cascades_on_force_delete(): void
     {
         [$owner, $provider] = $this->provider('Authorized');
         $provider->connectionChecks()->create([
@@ -104,16 +105,189 @@ class ProviderConnectionHistoryTest extends TestCase
             'checked_at' => now(),
         ]);
 
+        $this->get(route('providers.connection-checks.index', $provider))->assertRedirect(route('login'));
         $this->get(route('providers.connection-checks.export', $provider))->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())
+            ->get(route('providers.connection-checks.index', $provider))
+            ->assertForbidden();
         $this->actingAs(User::factory()->create())
             ->get(route('providers.connection-checks.export', $provider))
             ->assertForbidden();
+        $this->actingAs($owner)
+            ->get(route('providers.connection-checks.index', $provider))
+            ->assertSuccessful();
         $this->actingAs($owner)
             ->get(route('providers.connection-checks.export', $provider))
             ->assertSuccessful();
 
         $provider->forceDelete();
         $this->assertDatabaseCount('provider_connection_checks', 0);
+    }
+
+    public function test_full_history_combines_filters_and_preserves_them_across_pagination(): void
+    {
+        [$owner, $provider] = $this->provider('Filtered');
+        [, $foreignProvider] = $this->provider('Foreign filtered');
+        foreach (range(1, 21) as $position) {
+            $provider->connectionChecks()->create([
+                'successful' => false,
+                'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+                'provider_type' => Provider::TYPE_GITHUB,
+                'http_status' => 401,
+                'duration_ms' => 100 + $position,
+                'endpoint' => "https://api.github.com/match-{$position}",
+                'checked_at' => "2026-09-03 12:{$position}:00",
+            ]);
+        }
+        $provider->connectionChecks()->create([
+            'successful' => true,
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 200,
+            'duration_ms' => 90,
+            'endpoint' => 'https://api.github.com/healthy-excluded',
+            'checked_at' => '2026-09-03 13:00:00',
+        ]);
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 91,
+            'endpoint' => 'https://api.github.com/manual-excluded',
+            'checked_at' => '2026-09-03 13:01:00',
+        ]);
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 92,
+            'endpoint' => 'https://api.github.com/date-excluded',
+            'checked_at' => '2026-09-01 13:02:00',
+        ]);
+        $foreignProvider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 93,
+            'endpoint' => 'https://api.github.com/private-check',
+            'checked_at' => '2026-09-03 13:03:00',
+        ]);
+        $filters = [
+            'result' => 'failed',
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'date_from' => '2026-09-02',
+            'date_to' => '2026-09-04',
+        ];
+
+        $page = $this->actingAs($owner)->get(route('providers.connection-checks.index', [$provider, ...$filters]));
+        $page
+            ->assertSuccessful()
+            ->assertViewHas('filters', $filters)
+            ->assertViewHas('connectionChecks', fn ($checks): bool => $checks->total() === 21 && $checks->count() === 20)
+            ->assertSee('21 matching retained checks')
+            ->assertSee('match-21')
+            ->assertDontSee('match-1</td>', false)
+            ->assertDontSee('healthy-excluded')
+            ->assertDontSee('manual-excluded')
+            ->assertDontSee('date-excluded')
+            ->assertDontSee('private-check')
+            ->assertSee('result=failed', false)
+            ->assertSee('source=automatic', false)
+            ->assertSee('date_from=2026-09-02', false)
+            ->assertSee('date_to=2026-09-04', false);
+
+        $this->get(route('providers.connection-checks.index', [$provider, ...$filters, 'page' => 2]))
+            ->assertSuccessful()
+            ->assertViewHas('connectionChecks', fn ($checks): bool => $checks->currentPage() === 2 && $checks->count() === 1)
+            ->assertSee('match-1')
+            ->assertDontSee('match-21');
+    }
+
+    public function test_invalid_history_filters_are_normalized_and_filtered_empty_state_is_explicit(): void
+    {
+        [$owner, $provider] = $this->provider('Normalized');
+        $provider->connectionChecks()->create([
+            'successful' => true,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 200,
+            'duration_ms' => 100,
+            'endpoint' => 'https://api.github.com/normalized-check',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+
+        $this->actingAs($owner)->get(route('providers.connection-checks.index', [
+            $provider,
+            'result' => 'unknown',
+            'source' => 'scheduler',
+            'date_from' => '2026-02-30',
+            'date_to' => 'not-a-date',
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'result' => null,
+                'source' => null,
+                'date_from' => null,
+                'date_to' => null,
+            ])
+            ->assertSee('normalized-check');
+
+        $this->get(route('providers.connection-checks.index', [$provider, 'result' => 'failed']))
+            ->assertSuccessful()
+            ->assertSee('No connection checks match these filters.');
+    }
+
+    public function test_filtered_export_matches_the_view_and_is_spreadsheet_safe(): void
+    {
+        [$owner, $provider] = $this->provider('Export filtered');
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 503,
+            'duration_ms' => 321,
+            'endpoint' => '=DANGEROUS()',
+            'error' => '+another formula',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+        $provider->connectionChecks()->create([
+            'successful' => true,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 200,
+            'duration_ms' => 100,
+            'endpoint' => 'https://api.github.com/healthy',
+            'checked_at' => '2026-09-03 11:00:00',
+        ]);
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 100,
+            'endpoint' => 'https://api.github.com/automatic',
+            'checked_at' => '2026-09-03 12:00:00',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('providers.connection-checks.export', [
+            $provider,
+            'result' => 'failed',
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'date_from' => '2026-09-03',
+            'date_to' => '2026-09-03',
+        ]));
+        $response
+            ->assertSuccessful()
+            ->assertHeader('cache-control', 'no-store, private');
+        $rows = $this->csvRows($response->streamedContent());
+        $this->assertCount(2, $rows);
+        $this->assertSame('failed', $rows[1][1]);
+        $this->assertSame('manual', $rows[1][2]);
+        $this->assertSame("'=DANGEROUS()", $rows[1][6]);
+        $this->assertSame("'+another formula", $rows[1][7]);
     }
 
     /** @return array{User, Provider} */

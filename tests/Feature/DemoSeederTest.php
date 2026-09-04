@@ -276,9 +276,14 @@ class DemoSeederTest extends TestCase
             ->assertSee('HTTP 401')
             ->assertSee('85 ms')
             ->assertSee('Demo GitHub credential was rejected before recovery.')
+            ->assertSee(route('providers.connection-checks.index', $provider))
             ->assertSee(route('providers.connection-checks.export', $provider));
         $this->actingAs($user)->get(route('providers.show', $emptyHistoryProvider))
             ->assertSuccessful()
+            ->assertSee('No connection checks have been recorded yet.');
+        $this->actingAs($user)->get(route('providers.connection-checks.index', $emptyHistoryProvider))
+            ->assertSuccessful()
+            ->assertSee('0 matching retained checks')
             ->assertSee('No connection checks have been recorded yet.');
         $providerHistoryExport = $this->actingAs($user)
             ->get(route('providers.connection-checks.export', $provider));
@@ -287,6 +292,30 @@ class DemoSeederTest extends TestCase
             'Demo GitHub credential was rejected before recovery.',
             $providerHistoryExport->streamedContent(),
         );
+        $this->actingAs($user)->get(route('providers.connection-checks.index', [
+            $provider,
+            'result' => 'failed',
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('connectionChecks', fn ($checks): bool => $checks->total() === 1)
+            ->assertSee('1 matching retained check')
+            ->assertSee('Demo GitHub credential was rejected before recovery.')
+            ->assertSee(route('providers.connection-checks.export', [
+                $provider,
+                'result' => 'failed',
+                'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            ]));
+        $filteredProviderHistoryExport = $this->actingAs($user)->get(route('providers.connection-checks.export', [
+            $provider,
+            'result' => 'failed',
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+        ]));
+        $filteredProviderHistoryExport->assertSuccessful();
+        $this->assertSame(1, substr_count(
+            $filteredProviderHistoryExport->streamedContent(),
+            'https://api.github.com/user',
+        ));
         $this->actingAs($user)->get(route('servers.show', $queuedServer))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)

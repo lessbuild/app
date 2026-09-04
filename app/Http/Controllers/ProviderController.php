@@ -126,12 +126,30 @@ class ProviderController extends Controller
         ]);
     }
 
-    public function exportConnectionChecks(Provider $provider): StreamedResponse
+    public function connectionChecks(Request $request, Provider $provider): View
     {
         $this->authorize('view', $provider);
+        $filters = $this->connectionCheckFilters($request);
+
+        return view('scenes.providers.connection-checks', [
+            'provider' => $provider,
+            'connectionChecks' => $this->filteredConnectionChecks($provider, $filters)
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->paginate(20)
+                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'filters' => $filters,
+            'sources' => [ProviderConnectionCheck::SOURCE_MANUAL, ProviderConnectionCheck::SOURCE_AUTOMATIC],
+        ]);
+    }
+
+    public function exportConnectionChecks(Request $request, Provider $provider): StreamedResponse
+    {
+        $this->authorize('view', $provider);
+        $filters = $this->connectionCheckFilters($request);
         $filename = "lessbuild-provider-{$provider->id}-connection-checks-".now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($provider): void {
+        return response()->streamDownload(function () use ($provider, $filters): void {
             $output = fopen('php://output', 'wb');
             if ($output === false) {
                 throw new \RuntimeException('Unable to open the CSV output stream.');
@@ -150,7 +168,7 @@ class ProviderController extends Controller
                 'Checked at',
             ], ',', '"', '');
 
-            $provider->connectionChecks()
+            $this->filteredConnectionChecks($provider, $filters)
                 ->orderByDesc('checked_at')
                 ->orderByDesc('id')
                 ->limit(ProviderConnectionCheck::MAX_PER_PROVIDER)
@@ -175,6 +193,44 @@ class ProviderController extends Controller
             'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    /** @return array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} */
+    private function connectionCheckFilters(Request $request): array
+    {
+        $result = $request->string('result')->toString();
+        $source = $request->string('source')->toString();
+
+        return [
+            'result' => in_array($result, ['healthy', 'failed'], true) ? $result : null,
+            'source' => in_array($source, [
+                ProviderConnectionCheck::SOURCE_MANUAL,
+                ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            ], true) ? $source : null,
+            'date_from' => $this->date($request->string('date_from')->toString()),
+            'date_to' => $this->date($request->string('date_to')->toString()),
+        ];
+    }
+
+    /** @param array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} $filters */
+    private function filteredConnectionChecks(Provider $provider, array $filters): HasMany
+    {
+        return $provider->connectionChecks()
+            ->when($filters['result'] !== null, fn ($query) => $query
+                ->where('successful', $filters['result'] === 'healthy'))
+            ->when($filters['source'], fn ($query, string $source) => $query
+                ->where('source', $source))
+            ->when($filters['date_from'], fn ($query, string $date) => $query
+                ->whereDate('checked_at', '>=', $date))
+            ->when($filters['date_to'], fn ($query, string $date) => $query
+                ->whereDate('checked_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /**
