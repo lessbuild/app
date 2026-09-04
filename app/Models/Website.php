@@ -40,6 +40,10 @@ class Website extends Model
 
     public const HEALTH_UNHEALTHY = 'unhealthy';
 
+    public const DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES = 5;
+
+    public const HEALTH_CHECK_INTERVALS = [5, 10, 15, 30, 60];
+
     public const PROVISIONING_LOG_TYPE = 'provisioning';
 
     /**
@@ -63,6 +67,7 @@ class Website extends Model
         'environment' => 'encrypted',
         'health_check_enabled' => 'boolean',
         'health_monitoring_enabled' => 'boolean',
+        'health_check_interval_minutes' => 'integer',
         'health_failure_count' => 'integer',
         'health_last_checked_at' => 'datetime',
         'previous_server_id' => 'integer',

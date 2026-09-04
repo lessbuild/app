@@ -159,6 +159,9 @@
                 ])>
                     {{ $website->health_monitoring_enabled ? __('Enabled') : __('Paused') }}
                 </span>
+                <span class="ml-1 text-secondary">
+                    ({{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }})
+                </span>
             </div>
         @endif
         <div class="flex items-center mr-6">

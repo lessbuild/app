@@ -23,6 +23,7 @@ class WebsiteInventoryExportTest extends TestCase
             'provisioning_status' => Website::STATUS_FAILED,
             'health_check_enabled' => true,
             'health_monitoring_enabled' => false,
+            'health_check_interval_minutes' => 15,
             'health_status' => Website::HEALTH_UNHEALTHY,
             'health_failure_count' => 4,
             'health_last_checked_at' => '2026-08-30 12:00:00',
@@ -85,6 +86,7 @@ class WebsiteInventoryExportTest extends TestCase
             'Provisioning status',
             'Health check',
             'Automatic monitoring',
+            'Automatic check interval minutes',
             'Health status',
             'Health failure count',
             'Last health check at',
@@ -102,12 +104,13 @@ class WebsiteInventoryExportTest extends TestCase
         $this->assertSame(Website::STATUS_FAILED, $rows[1][5]);
         $this->assertSame('enabled', $rows[1][6]);
         $this->assertSame('paused', $rows[1][7]);
-        $this->assertSame(Website::HEALTH_UNHEALTHY, $rows[1][8]);
-        $this->assertSame('4', $rows[1][9]);
-        $this->assertSame($matching->health_last_checked_at->toIso8601String(), $rows[1][10]);
-        $this->assertSame('7', $rows[1][11]);
-        $this->assertSame('2', $rows[1][12]);
-        $this->assertSame($matching->provisioned_at->toIso8601String(), $rows[1][13]);
+        $this->assertSame('15', $rows[1][8]);
+        $this->assertSame(Website::HEALTH_UNHEALTHY, $rows[1][9]);
+        $this->assertSame('4', $rows[1][10]);
+        $this->assertSame($matching->health_last_checked_at->toIso8601String(), $rows[1][11]);
+        $this->assertSame('7', $rows[1][12]);
+        $this->assertSame('2', $rows[1][13]);
+        $this->assertSame($matching->provisioned_at->toIso8601String(), $rows[1][14]);
 
         $this->actingAs($owner)->get(route('websites.index', $filters))
             ->assertSuccessful()
@@ -132,7 +135,8 @@ class WebsiteInventoryExportTest extends TestCase
         $this->assertCount(2, $rows);
         $this->assertSame('disabled', $rows[1][6]);
         $this->assertSame('disabled', $rows[1][7]);
-        $this->assertSame('disabled', $rows[1][8]);
+        $this->assertSame('5', $rows[1][8]);
+        $this->assertSame('disabled', $rows[1][9]);
     }
 
     public function test_export_requires_authentication(): void

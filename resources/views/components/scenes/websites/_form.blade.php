@@ -159,6 +159,30 @@
             </div>
         </div>
         <x-forms.errors name="health_monitoring_enabled"></x-forms.errors>
+
+        <div class="mt-4 border-t border-primary pt-4">
+            <label for="health_check_interval_minutes" class="block text-sm font-medium text-primary">
+                {{ __('Automatic check interval') }}
+            </label>
+            <select
+                id="health_check_interval_minutes"
+                name="health_check_interval_minutes"
+                class="input secondary mt-1 rounded"
+            >
+                @foreach (\App\Models\Website::HEALTH_CHECK_INTERVALS as $minutes)
+                    <option
+                        value="{{ $minutes }}"
+                        @selected((int) old('health_check_interval_minutes', $website->health_check_interval_minutes ?? \App\Models\Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES) === $minutes)
+                    >
+                        {{ trans_choice('Every :count minute|Every :count minutes', $minutes, ['count' => $minutes]) }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="mt-2 text-sm text-secondary">
+                {{ __('Applies to scheduled monitoring only. Manual and post-deployment checks can still run immediately.') }}
+            </p>
+            <x-forms.errors name="health_check_interval_minutes"></x-forms.errors>
+        </div>
     </div>
 
     <div>

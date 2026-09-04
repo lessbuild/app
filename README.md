@@ -235,6 +235,10 @@ is testable. Successful password, GitHub, and GitLab sign-in fixtures cover desk
 and mobile history rendering without creating functional external identities.
 Automatic provider and website monitoring is paused for all demo fixtures, so
 scheduled timers never contact their deliberately non-functional endpoints.
+Each website can choose a 5, 10, 15, 30, or 60 minute automatic health-check
+interval. The due-site query applies the stored cadence independently while
+manual and post-deployment checks remain immediate. Demo websites permanently
+cover every supported interval without enabling network traffic.
 Every accepted website health check records its manual or automatic source,
 endpoint, HTTP status, curl duration, bounded safe error, and check time. Website
 details show the newest 20 results and offer a spreadsheet-safe export; each

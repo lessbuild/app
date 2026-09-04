@@ -147,6 +147,10 @@
                                     ])>{{ $website->health_status }}</span>
                                     @unless ($website->health_monitoring_enabled)
                                         <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
+                                    @else
+                                        <div class="text-xs text-secondary">
+                                            {{ trans_choice('Every :count minute|Every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}
+                                        </div>
                                     @endunless
                                 @endif
                             </td>

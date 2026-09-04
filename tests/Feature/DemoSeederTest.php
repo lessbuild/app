@@ -108,6 +108,10 @@ class DemoSeederTest extends TestCase
             Website::HEALTH_UNKNOWN,
         ], $user->websites()->distinct()->pluck('health_status')->all());
         $this->assertSame(0, $user->websites()->where('health_monitoring_enabled', true)->count());
+        $this->assertEqualsCanonicalizing(
+            Website::HEALTH_CHECK_INTERVALS,
+            $user->websites()->pluck('health_check_interval_minutes')->all(),
+        );
         $this->assertSame(3, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(6, $user->builds()->count());
         $this->assertSame(2, $user->builds()->whereNotNull('operator_note')->count());
@@ -277,6 +281,7 @@ class DemoSeederTest extends TestCase
                 'failure_streak' => 0,
             ])
             ->assertSee('Recent health checks')
+            ->assertSee('every 5 minutes')
             ->assertSee('Observed check success')
             ->assertSee('67%')
             ->assertSee('108 ms')

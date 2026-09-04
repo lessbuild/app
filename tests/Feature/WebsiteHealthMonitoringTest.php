@@ -136,10 +136,11 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertDatabaseCount('website_health_checks', 0);
     }
 
-    public function test_recent_websites_are_skipped_until_the_next_monitoring_window(): void
+    public function test_automatic_checks_wait_for_the_websites_monitoring_interval(): void
     {
         [, , $website] = $this->infrastructure();
         $website->update([
+            'health_check_interval_minutes' => 15,
             'health_status' => Website::HEALTH_HEALTHY,
             'health_last_checked_at' => now(),
         ]);
@@ -151,10 +152,58 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertStringContainsString('Checked 0 website(s)', Artisan::output());
 
         $this->travel(5)->minutes();
+        Artisan::call('lessbuild:websites:health');
+        $this->assertStringContainsString('Checked 0 website(s)', Artisan::output());
+
+        $this->travel(9)->minutes();
         $command = null;
         $this->app->instance(Runner::class, $this->runner(true, '', $command));
         Artisan::call('lessbuild:websites:health');
         $this->assertStringContainsString('Checked 1 website(s)', Artisan::output());
+    }
+
+    public function test_owner_can_choose_a_supported_interval_without_resetting_health(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure();
+        $website->update([
+            'health_status' => Website::HEALTH_HEALTHY,
+            'health_last_checked_at' => now(),
+        ]);
+
+        $this->actingAs($owner)->get(route('websites.edit', $website))
+            ->assertSuccessful()
+            ->assertSee('Automatic check interval')
+            ->assertSee('Every 5 minutes')
+            ->assertSee('Every 60 minutes');
+        $this->actingAs($owner)->patch(route('websites.update', $website), [
+            ...$this->payload($server),
+            'health_check_interval_minutes' => '30',
+        ])->assertRedirect(route('websites.show', $website));
+
+        $website->refresh();
+        $this->assertSame(30, $website->health_check_interval_minutes);
+        $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
+        $this->assertNotNull($website->health_last_checked_at);
+        $this->actingAs($owner)->get(route('websites.show', $website))
+            ->assertSuccessful()
+            ->assertSee('every 30 minutes');
+        $this->actingAs($owner)->get(route('websites.index'))
+            ->assertSuccessful()
+            ->assertSee('Every 30 minutes');
+    }
+
+    public function test_health_monitoring_interval_is_restricted_to_supported_values(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure();
+
+        foreach ([1, 7, 61, 'ten minutes'] as $interval) {
+            $this->actingAs($owner)->patch(route('websites.update', $website), [
+                ...$this->payload($server),
+                'health_check_interval_minutes' => $interval,
+            ])->assertSessionHasErrors('health_check_interval_minutes');
+        }
+
+        $this->assertSame(Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES, $website->fresh()->health_check_interval_minutes);
     }
 
     public function test_result_started_before_a_health_setting_change_is_discarded(): void

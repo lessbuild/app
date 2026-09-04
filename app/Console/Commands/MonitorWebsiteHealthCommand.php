@@ -35,9 +35,17 @@ class MonitorWebsiteHealthCommand extends Command
             $query->whereKey($ids);
         } else {
             $query->where(function ($query): void {
-                $query
-                    ->whereNull('health_last_checked_at')
-                    ->orWhere('health_last_checked_at', '<=', now()->subMinutes(4));
+                $query->whereNull('health_last_checked_at');
+                foreach (Website::HEALTH_CHECK_INTERVALS as $minutes) {
+                    $query->orWhere(function ($query) use ($minutes): void {
+                        $query
+                            ->where('health_check_interval_minutes', $minutes)
+                            // The system timer runs every five minutes. A one-minute
+                            // allowance prevents execution time from pushing a site
+                            // into the following timer window.
+                            ->where('health_last_checked_at', '<=', now()->subMinutes(max(1, $minutes - 1)));
+                    });
+                }
             });
         }
 
