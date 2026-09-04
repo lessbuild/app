@@ -56,6 +56,39 @@
         </div>
     </form>
 
+    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching commands') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Commands in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active commands') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Queued or running commands.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Succeeded') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['succeeded'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching successful commands.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching failed commands.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Canceled') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['canceled'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching canceled commands.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Output retained') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['output'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching commands with downloadable output.') }}</dd>
+        </div>
+    </dl>
+
     <div class="overflow-x-auto rounded-lg border border-primary bg-primary">
         <table class="min-w-full divide-y divide-primary">
             <thead class="bg-secondary">

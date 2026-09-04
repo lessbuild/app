@@ -410,6 +410,9 @@ a spreadsheet-safe CSV with lineage and timing metadata; retained output remains
 available only through its separate owner-authorized download. Terminal command
 records and their encrypted output can also be deleted individually; active
 commands remain protected.
+Filter-aware history cards summarize matching, active, successful, failed, and
+canceled commands plus records with downloadable output. Counts remain scoped to
+the authorized server and never require decrypting command text or retained output.
 Terminal command records and encrypted output are retained for 180 days by
 default, then pruned only after the daily database backup is verified. Queued
 and running commands are preserved regardless of age. Set

@@ -344,6 +344,33 @@ class DemoSeederTest extends TestCase
                 && $metrics['latest_at'] !== null)
             ->assertSee(DemoSeeder::PREFIX.'Optimize PHP runtime')
             ->assertDontSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('servers.commands.index', $server))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 6,
+                'active' => 2,
+                'succeeded' => 2,
+                'failed' => 1,
+                'canceled' => 1,
+                'output' => 4,
+            ])
+            ->assertSee('Matching commands')
+            ->assertSee('Output retained');
+        $this->actingAs($user)->get(route('servers.commands.index', [
+            $server,
+            'status' => ServerCommandExecution::STATUS_FAILED,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('executions', fn ($executions): bool => $executions->count() === 1
+                && $executions->sole()->status === ServerCommandExecution::STATUS_FAILED)
+            ->assertViewHas('metrics', [
+                'total' => 1,
+                'active' => 0,
+                'succeeded' => 0,
+                'failed' => 1,
+                'canceled' => 0,
+                'output' => 1,
+            ]);
         $this->actingAs($user)->get(route('providers.show', $provider))
             ->assertSuccessful()
             ->assertViewHas('connectionMetrics', [

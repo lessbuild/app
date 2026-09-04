@@ -29,8 +29,31 @@ class ServerCommandsController extends Controller
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
+            'metrics' => $this->metrics($server, $filters),
             'statuses' => ServerCommandExecution::STATUSES,
         ]);
+    }
+
+    /**
+     * @param  array{status: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, active: int, succeeded: int, failed: int, canceled: int, output: int}
+     */
+    private function metrics(Server $server, array $filters): array
+    {
+        return [
+            'total' => $this->filteredExecutions($server, $filters)->count(),
+            'active' => $this->filteredExecutions($server, $filters)->active()->count(),
+            'succeeded' => $this->filteredExecutions($server, $filters)
+                ->where('status', ServerCommandExecution::STATUS_SUCCEEDED)
+                ->count(),
+            'failed' => $this->filteredExecutions($server, $filters)
+                ->where('status', ServerCommandExecution::STATUS_FAILED)
+                ->count(),
+            'canceled' => $this->filteredExecutions($server, $filters)
+                ->where('status', ServerCommandExecution::STATUS_CANCELED)
+                ->count(),
+            'output' => $this->filteredExecutions($server, $filters)->whereNotNull('output')->count(),
+        ];
     }
 
     public function export(Request $request, Server $server): StreamedResponse
