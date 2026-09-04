@@ -286,6 +286,9 @@ The full retained website health history has an owner-scoped paginated view with
 result, source, and checked-date filters. Its spreadsheet-safe CSV export applies
 the same normalized filters, so an operator can download exactly the evidence
 currently under review without exposing another account's checks.
+Filter-aware history cards summarize healthy and failed checks, observed success,
+median healthy response time, and the latest matching check. Calculations inspect
+only safe metric fields from the bounded retained sample and never imply SLA uptime.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
 Deployment detail pages show a validated elapsed duration and stable previous/next

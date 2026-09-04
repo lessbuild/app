@@ -589,6 +589,16 @@ class DemoSeederTest extends TestCase
             ->assertSee('0%')
             ->assertSee('Not recorded')
             ->assertSee('3 consecutive failed checks');
+        $this->actingAs($user)->get(route('websites.health-checks.index', $website))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+                && $metrics['healthy'] === 2
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 67
+                && $metrics['median_healthy_duration_ms'] === 108
+                && $metrics['latest_at'] !== null)
+            ->assertSee('67%')
+            ->assertSee('108 ms');
         $this->actingAs($user)->get(route('websites.health-checks.index', [
             $website,
             'result' => 'failed',
@@ -596,6 +606,13 @@ class DemoSeederTest extends TestCase
         ]))
             ->assertSuccessful()
             ->assertViewHas('healthChecks', fn ($checks): bool => $checks->total() === 1)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+                && $metrics['healthy'] === 0
+                && $metrics['failed'] === 1
+                && $metrics['success_rate'] === 0
+                && $metrics['median_healthy_duration_ms'] === null
+                && $metrics['latest_at'] !== null)
+            ->assertSee('Matching checks')
             ->assertSee('1 matching retained check')
             ->assertSee('Demo transient HTTP 503 before recovery.')
             ->assertSee(route('websites.health-checks.export', [

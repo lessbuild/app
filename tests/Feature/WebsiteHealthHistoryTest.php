@@ -108,6 +108,43 @@ class WebsiteHealthHistoryTest extends TestCase
         $this->actingAs($owner)->get(route('websites.health-checks.export', $website))->assertSuccessful();
     }
 
+    public function test_health_history_summarizes_the_filtered_retained_sample(): void
+    {
+        [$owner, $website] = $this->infrastructure('Insights');
+        foreach ([
+            [true, WebsiteHealthCheck::SOURCE_AUTOMATIC, 100, '2026-09-03 10:00:00'],
+            [false, WebsiteHealthCheck::SOURCE_AUTOMATIC, 250, '2026-09-03 11:00:00'],
+            [true, WebsiteHealthCheck::SOURCE_MANUAL, 200, '2026-09-03 12:00:00'],
+            [false, WebsiteHealthCheck::SOURCE_MANUAL, null, '2026-09-03 13:00:00'],
+        ] as [$successful, $source, $duration, $checkedAt]) {
+            $website->healthChecks()->create([
+                'successful' => $successful,
+                'source' => $source,
+                'http_status' => $successful ? 200 : 503,
+                'duration_ms' => $duration,
+                'endpoint' => 'http://insights.example.com/health',
+                'checked_at' => $checkedAt,
+            ]);
+        }
+
+        $this->actingAs($owner)->get(route('websites.health-checks.index', $website))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 4
+                && $metrics['healthy'] === 2
+                && $metrics['failed'] === 2
+                && $metrics['success_rate'] === 50
+                && $metrics['median_healthy_duration_ms'] === 150
+                && $metrics['latest_at']?->toDateTimeString() === '2026-09-03 13:00:00')
+            ->assertSee('Matching checks')
+            ->assertSee('Healthy checks')
+            ->assertSee('Failed checks')
+            ->assertSee('Observed success')
+            ->assertSee('50%')
+            ->assertSee('Median healthy response')
+            ->assertSee('150 ms')
+            ->assertSee('Latest matching check');
+    }
+
     public function test_full_history_combines_filters_and_preserves_them_across_pagination(): void
     {
         [$owner, $website] = $this->infrastructure('Filtered');
@@ -161,6 +198,12 @@ class WebsiteHealthHistoryTest extends TestCase
             ->assertSuccessful()
             ->assertViewHas('filters', $filters)
             ->assertViewHas('healthChecks', fn ($checks): bool => $checks->total() === 21 && $checks->count() === 20)
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 21
+                && $metrics['healthy'] === 0
+                && $metrics['failed'] === 21
+                && $metrics['success_rate'] === 0
+                && $metrics['median_healthy_duration_ms'] === null
+                && $metrics['latest_at'] !== null)
             ->assertSee('21 matching retained checks')
             ->assertSee('match-21')
             ->assertDontSee('match-1</td>', false)
@@ -208,6 +251,15 @@ class WebsiteHealthHistoryTest extends TestCase
 
         $this->get(route('websites.health-checks.index', [$website, 'result' => 'failed']))
             ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'healthy' => 0,
+                'failed' => 0,
+                'success_rate' => null,
+                'median_healthy_duration_ms' => null,
+                'latest_at' => null,
+            ])
+            ->assertSee('Not available')
             ->assertSee('No health checks match these filters.');
     }
 

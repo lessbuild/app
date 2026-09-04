@@ -11,6 +11,7 @@ use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -211,8 +212,32 @@ class WebsitesController extends Controller
                 ->paginate(20)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
+            'metrics' => $this->healthHistoryMetrics($website, $filters),
             'sources' => [WebsiteHealthCheck::SOURCE_MANUAL, WebsiteHealthCheck::SOURCE_AUTOMATIC],
         ]);
+    }
+
+    /**
+     * @param  array{result: ?string, source: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @return array{total: int, healthy: int, failed: int, success_rate: ?int, median_healthy_duration_ms: ?int, latest_at: CarbonInterface|null}
+     */
+    private function healthHistoryMetrics(Website $website, array $filters): array
+    {
+        $checks = $this->filteredHealthChecks($website, $filters)
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
+            ->get(['id', 'successful', 'duration_ms', 'checked_at']);
+        $summary = $this->healthMetrics($checks);
+
+        return [
+            'total' => $summary['total'],
+            'healthy' => $summary['successful'],
+            'failed' => $summary['total'] - $summary['successful'],
+            'success_rate' => $summary['success_rate'],
+            'median_healthy_duration_ms' => $summary['median_healthy_duration_ms'],
+            'latest_at' => $checks->first()?->checked_at,
+        ];
     }
 
     public function exportHealthChecks(Request $request, Website $website): StreamedResponse
