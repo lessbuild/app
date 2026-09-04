@@ -241,6 +241,10 @@ Deployment detail pages show a validated elapsed duration and stable previous/ne
 navigation within the same repository. The permanent build fixtures include timed
 history for trying both controls; unfinished or inconsistent timestamps are shown
 as not recorded instead of producing misleading durations.
+Adjacent deployments can be compared side by side without contacting a source
+provider. The comparison is owner-scoped and limited to distinct builds from the
+same repository, with escaped revision, outcome, timing, commit, failure, and
+operator-note metadata plus an explicit faster/slower duration delta.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
 and result views remain testable without opening SSH connections or dispatching
 log-refresh jobs.

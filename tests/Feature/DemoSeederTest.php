@@ -266,8 +266,17 @@ class DemoSeederTest extends TestCase
             ->assertSee('3m')
             ->assertSee('Previous deployment')
             ->assertSee(route('builds.show', $build->previousInRepository()))
+            ->assertSee(route('builds.compare', ['build' => $build, 'baseline' => $build->previousInRepository()]))
             ->assertSee('This is the latest recorded deployment for this repository.')
             ->assertSee('Save note');
+        $this->actingAs($user)->get(route('builds.compare', [
+            'build' => $build,
+            'baseline' => $build->previousInRepository(),
+        ]))
+            ->assertSuccessful()
+            ->assertSee('2m slower')
+            ->assertSee('Demo storefront checkout failure')
+            ->assertSee('[Demo] Approved rollback for incident DEMO-1042 after the checkout failure.');
 
         foreach ([
             route('dashboard'),

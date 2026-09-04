@@ -80,6 +80,14 @@
         @endif
     </nav>
 
+    @if ($previousBuild)
+        <div class="mt-3 flex justify-end">
+            <a href="{{ route('builds.compare', ['build' => $build, 'baseline' => $previousBuild]) }}" class="button primary">
+                {{ __('Compare with previous') }}
+            </a>
+        </div>
+    @endif
+
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
         <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
             <p>{{ __('This deployment stopped reporting progress. Lessbuild is safely stopping its remote process before allowing another deployment.') }}</p>

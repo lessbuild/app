@@ -104,6 +104,15 @@ class Build extends Model
             return null;
         }
 
+        return self::formatDuration($seconds);
+    }
+
+    public static function formatDuration(int $seconds): string
+    {
+        if ($seconds < 0) {
+            throw new \InvalidArgumentException('A duration cannot be negative.');
+        }
+
         $hours = intdiv($seconds, 3600);
         $minutes = intdiv($seconds % 3600, 60);
         $remainingSeconds = $seconds % 60;

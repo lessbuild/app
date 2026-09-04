@@ -110,6 +110,26 @@ class BuildsController extends Controller
         ]);
     }
 
+    public function compare(Build $build, Build $baseline): View
+    {
+        $this->authorize('view', $build);
+        $this->authorize('view', $baseline);
+        abort_unless($build->id !== $baseline->id && $build->repository_id === $baseline->repository_id, 404);
+
+        $build->load('repository.website.server');
+        $baseline->load('repository.website.server');
+        $buildDuration = $build->durationSeconds();
+        $baselineDuration = $baseline->durationSeconds();
+
+        return view('scenes.builds.compare', [
+            'build' => $build,
+            'baseline' => $baseline,
+            'durationDelta' => $buildDuration !== null && $baselineDuration !== null
+                ? $buildDuration - $baselineDuration
+                : null,
+        ]);
+    }
+
     public function downloadLog(Build $build, PlainTextLogDownload $download): Response
     {
         $this->authorize('view', $build);

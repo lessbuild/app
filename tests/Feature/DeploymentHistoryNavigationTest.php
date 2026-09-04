@@ -93,6 +93,13 @@ class DeploymentHistoryNavigationTest extends TestCase
             ->assertSee('Duration: Not recorded');
     }
 
+    public function test_duration_formatter_rejects_negative_values(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        Build::formatDuration(-1);
+    }
+
     /** @return array{User, Repository, Repository} */
     private function repositories(): array
     {

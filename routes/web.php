@@ -146,6 +146,9 @@ Route::middleware('auth')->group(function () {
             ->name('builds.export');
         Route::get('builds/{build}/log', [BuildsController::class, 'downloadLog'])
             ->name('builds.log.download');
+        Route::get('builds/{build}/compare/{baseline}', [BuildsController::class, 'compare'])
+            ->whereNumber(['build', 'baseline'])
+            ->name('builds.compare');
         Route::resource('builds', BuildsController::class)->only(['index', 'show']);
         Route::post('builds/{build}/cancel', [BuildsController::class, 'cancel'])
             ->name('builds.cancel');
