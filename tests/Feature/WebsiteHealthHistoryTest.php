@@ -96,11 +96,163 @@ class WebsiteHealthHistoryTest extends TestCase
     {
         [$owner, $website] = $this->infrastructure('Owner');
 
+        $this->get(route('websites.health-checks.index', $website))->assertRedirect(route('login'));
         $this->get(route('websites.health-checks.export', $website))->assertRedirect(route('login'));
+        $this->actingAs(User::factory()->create())
+            ->get(route('websites.health-checks.index', $website))
+            ->assertForbidden();
         $this->actingAs(User::factory()->create())
             ->get(route('websites.health-checks.export', $website))
             ->assertForbidden();
+        $this->actingAs($owner)->get(route('websites.health-checks.index', $website))->assertSuccessful();
         $this->actingAs($owner)->get(route('websites.health-checks.export', $website))->assertSuccessful();
+    }
+
+    public function test_full_history_combines_filters_and_preserves_them_across_pagination(): void
+    {
+        [$owner, $website] = $this->infrastructure('Filtered');
+        [, $foreignWebsite] = $this->infrastructure('Foreign filtered');
+
+        foreach (range(1, 21) as $position) {
+            $website->healthChecks()->create([
+                'successful' => false,
+                'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+                'http_status' => 503,
+                'duration_ms' => 200 + $position,
+                'endpoint' => "http://filtered.example.com/match-{$position}",
+                'error' => "Matching failure {$position}",
+                'checked_at' => "2026-09-03 12:{$position}:00",
+            ]);
+        }
+        $website->healthChecks()->create([
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'http_status' => 200,
+            'endpoint' => 'http://filtered.example.com/healthy-excluded',
+            'checked_at' => '2026-09-03 13:00:00',
+        ]);
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'endpoint' => 'http://filtered.example.com/manual-excluded',
+            'checked_at' => '2026-09-03 13:01:00',
+        ]);
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'endpoint' => 'http://filtered.example.com/date-excluded',
+            'checked_at' => '2026-09-01 13:02:00',
+        ]);
+        $foreignWebsite->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'endpoint' => 'http://foreign.example.com/private-check',
+            'checked_at' => '2026-09-03 13:03:00',
+        ]);
+        $filters = [
+            'result' => 'failed',
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'date_from' => '2026-09-02',
+            'date_to' => '2026-09-04',
+        ];
+
+        $page = $this->actingAs($owner)->get(route('websites.health-checks.index', [$website, ...$filters]));
+        $page
+            ->assertSuccessful()
+            ->assertViewHas('filters', $filters)
+            ->assertViewHas('healthChecks', fn ($checks): bool => $checks->total() === 21 && $checks->count() === 20)
+            ->assertSee('21 matching retained checks')
+            ->assertSee('match-21')
+            ->assertDontSee('match-1</td>', false)
+            ->assertDontSee('healthy-excluded')
+            ->assertDontSee('manual-excluded')
+            ->assertDontSee('date-excluded')
+            ->assertDontSee('private-check')
+            ->assertSee('result=failed', false)
+            ->assertSee('source=automatic', false)
+            ->assertSee('date_from=2026-09-02', false)
+            ->assertSee('date_to=2026-09-04', false);
+
+        $this->get(route('websites.health-checks.index', [$website, ...$filters, 'page' => 2]))
+            ->assertSuccessful()
+            ->assertViewHas('healthChecks', fn ($checks): bool => $checks->currentPage() === 2 && $checks->count() === 1)
+            ->assertSee('match-1')
+            ->assertDontSee('match-21');
+    }
+
+    public function test_invalid_history_filters_are_normalized_and_filtered_empty_state_is_explicit(): void
+    {
+        [$owner, $website] = $this->infrastructure('Normalized');
+        $website->healthChecks()->create([
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'endpoint' => 'http://normalized.example.com/health',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+
+        $this->actingAs($owner)->get(route('websites.health-checks.index', [
+            $website,
+            'result' => 'unknown',
+            'source' => 'scheduler',
+            'date_from' => '2026-02-30',
+            'date_to' => 'not-a-date',
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'result' => null,
+                'source' => null,
+                'date_from' => null,
+                'date_to' => null,
+            ])
+            ->assertSee('normalized.example.com/health');
+
+        $this->get(route('websites.health-checks.index', [$website, 'result' => 'failed']))
+            ->assertSuccessful()
+            ->assertSee('No health checks match these filters.');
+    }
+
+    public function test_filtered_export_matches_the_view_and_is_spreadsheet_safe(): void
+    {
+        [$owner, $website] = $this->infrastructure('Export filtered');
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 503,
+            'duration_ms' => 321,
+            'endpoint' => '=DANGEROUS()',
+            'error' => '+another formula',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+        $website->healthChecks()->create([
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 200,
+            'endpoint' => 'http://export.example.com/healthy',
+            'checked_at' => '2026-09-03 11:00:00',
+        ]);
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'endpoint' => 'http://export.example.com/automatic',
+            'checked_at' => '2026-09-03 12:00:00',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('websites.health-checks.export', [
+            $website,
+            'result' => 'failed',
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'date_from' => '2026-09-03',
+            'date_to' => '2026-09-03',
+        ]));
+        $response
+            ->assertSuccessful()
+            ->assertHeader('cache-control', 'no-store, private');
+        $rows = $this->csvRows($response->streamedContent());
+        $this->assertCount(2, $rows);
+        $this->assertSame('failed', $rows[1][1]);
+        $this->assertSame('manual', $rows[1][2]);
+        $this->assertSame("'=DANGEROUS()", $rows[1][5]);
+        $this->assertSame("'+another formula", $rows[1][6]);
     }
 
     public function test_accepted_check_parses_metrics_and_retains_only_the_newest_hundred_results(): void

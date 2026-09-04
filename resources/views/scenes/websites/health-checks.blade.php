@@ -1,0 +1,109 @@
+<x-layouts.app>
+    <x-layouts.partials.breadcrumbs
+        :title="__('Back to :website', ['website' => $website->name])"
+        :route="route('websites.show', $website)"
+    ></x-layouts.partials.breadcrumbs>
+
+    <x-layouts.partials.heading
+        :title="__('Health check history')"
+        :description="__('Review the retained health evidence for :website.', ['website' => $website->name])"
+    ></x-layouts.partials.heading>
+
+    <form method="GET" action="{{ route('websites.health-checks.index', $website) }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div>
+                <label for="result" class="block text-xs font-semibold uppercase text-secondary">{{ __('Result') }}</label>
+                <select id="result" name="result" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All results') }}</option>
+                    <option value="healthy" @selected($filters['result'] === 'healthy')>{{ __('Healthy') }}</option>
+                    <option value="failed" @selected($filters['result'] === 'failed')>{{ __('Failed') }}</option>
+                </select>
+            </div>
+            <div>
+                <label for="source" class="block text-xs font-semibold uppercase text-secondary">{{ __('Source') }}</label>
+                <select id="source" name="source" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('All sources') }}</option>
+                    @foreach ($sources as $source)
+                        <option value="{{ $source }}" @selected($filters['source'] === $source)>{{ str($source)->title() }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Checked from') }}</label>
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+            </div>
+            <div>
+                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Checked through') }}</label>
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+            </div>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            <a href="{{ route('websites.health-checks.export', [$website, ...array_filter($filters, fn ($value) => $value !== null)]) }}" class="button primary">
+                {{ __('Export CSV') }}
+            </a>
+            @if (array_filter($filters, fn ($value) => $value !== null))
+                <a href="{{ route('websites.health-checks.index', $website) }}" class="button primary">{{ __('Clear filters') }}</a>
+            @endif
+        </div>
+    </form>
+
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-secondary">
+            {{ trans_choice(':count matching retained check|:count matching retained checks', $healthChecks->total(), ['count' => $healthChecks->total()]) }}
+        </p>
+        <p class="text-xs text-secondary">{{ __('History is limited to the newest :limit retained checks per website.', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE]) }}</p>
+    </div>
+
+    @if ($healthChecks->isEmpty())
+        <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
+            {{ array_filter($filters, fn ($value) => $value !== null) ? __('No health checks match these filters.') : __('No health checks have been recorded yet.') }}
+        </div>
+    @else
+        <div class="mt-4 overflow-x-auto rounded-lg border border-primary">
+            <table class="min-w-full divide-y divide-primary bg-primary text-sm">
+                <thead>
+                    <tr>
+                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Result') }}</th>
+                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Source') }}</th>
+                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Response') }}</th>
+                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Endpoint') }}</th>
+                        <th scope="col" class="px-4 py-3 text-right font-semibold text-secondary">{{ __('Checked') }}</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-primary">
+                    @foreach ($healthChecks as $check)
+                        <tr class="align-top">
+                            <td class="px-4 py-3">
+                                <span @class([
+                                    'rounded-full px-2 py-1 text-xs font-semibold uppercase',
+                                    'bg-green-100 text-green-700' => $check->successful,
+                                    'bg-red-100 text-red-700' => ! $check->successful,
+                                ])>{{ $check->successful ? __('Healthy') : __('Failed') }}</span>
+                                @if ($check->error)
+                                    <p class="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-red-700">{{ $check->error }}</p>
+                                @endif
+                            </td>
+                            <td class="whitespace-nowrap px-4 py-3 text-primary">{{ str($check->source)->title() }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-primary">
+                                @if ($check->http_status)
+                                    {{ __('HTTP :status', ['status' => $check->http_status]) }}
+                                @else
+                                    {{ __('No status') }}
+                                @endif
+                                <span class="block text-xs text-secondary">
+                                    {{ $check->duration_ms !== null ? __(':duration ms', ['duration' => $check->duration_ms]) : __('Duration unavailable') }}
+                                </span>
+                            </td>
+                            <td class="max-w-md break-all px-4 py-3 font-mono text-xs text-primary">{{ $check->endpoint }}</td>
+                            <td class="whitespace-nowrap px-4 py-3 text-right text-secondary" title="{{ $check->checked_at }}">
+                                {{ $check->checked_at->diffForHumans() }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+        <div class="py-4">{{ $healthChecks->links() }}</div>
+    @endif
+</x-layouts.app>

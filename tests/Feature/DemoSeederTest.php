@@ -282,6 +282,7 @@ class DemoSeederTest extends TestCase
             ->assertSee('108 ms')
             ->assertSee('0 consecutive failed checks')
             ->assertSee('not an SLA uptime calculation.')
+            ->assertSee(route('websites.health-checks.index', $website))
             ->assertSee('Manual')
             ->assertSee('Automatic')
             ->assertSee('HTTP 200')
@@ -300,6 +301,20 @@ class DemoSeederTest extends TestCase
             ->assertSee('0%')
             ->assertSee('Not recorded')
             ->assertSee('3 consecutive failed checks');
+        $this->actingAs($user)->get(route('websites.health-checks.index', [
+            $website,
+            'result' => 'failed',
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('healthChecks', fn ($checks): bool => $checks->total() === 1)
+            ->assertSee('1 matching retained check')
+            ->assertSee('Demo transient HTTP 503 before recovery.')
+            ->assertSee(route('websites.health-checks.export', [
+                $website,
+                'result' => 'failed',
+                'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            ]));
         $healthExport = $this->actingAs($user)->get(route('websites.health-checks.export', $website));
         $healthExport->assertSuccessful();
         $this->assertStringContainsString('Demo transient HTTP 503 before recovery.', $healthExport->streamedContent());

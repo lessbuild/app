@@ -181,9 +181,12 @@
                     {{ __('Accepted manual and automatic results are retained for the latest 100 checks. This page shows the newest 20.') }}
                 </p>
             </div>
-            @if ($healthChecks->isNotEmpty())
-                <a href="{{ route('websites.health-checks.export', $website) }}" class="button primary">{{ __('Export health history') }}</a>
-            @endif
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('websites.health-checks.index', $website) }}" class="button primary">{{ __('View all health checks') }}</a>
+                @if ($healthChecks->isNotEmpty())
+                    <a href="{{ route('websites.health-checks.export', $website) }}" class="button primary">{{ __('Export health history') }}</a>
+                @endif
+            </div>
         </div>
 
         <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

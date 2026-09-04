@@ -168,12 +168,30 @@ class WebsitesController extends Controller
         ];
     }
 
-    public function exportHealthChecks(Website $website): StreamedResponse
+    public function healthChecks(Request $request, Website $website): View
     {
         $this->authorize('view', $website);
+        $filters = $this->healthCheckFilters($request);
+
+        return view('scenes.websites.health-checks', [
+            'website' => $website,
+            'healthChecks' => $this->filteredHealthChecks($website, $filters)
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->paginate(20)
+                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'filters' => $filters,
+            'sources' => [WebsiteHealthCheck::SOURCE_MANUAL, WebsiteHealthCheck::SOURCE_AUTOMATIC],
+        ]);
+    }
+
+    public function exportHealthChecks(Request $request, Website $website): StreamedResponse
+    {
+        $this->authorize('view', $website);
+        $filters = $this->healthCheckFilters($request);
         $filename = "lessbuild-website-{$website->id}-health-checks-".now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($website): void {
+        return response()->streamDownload(function () use ($website, $filters): void {
             $output = fopen('php://output', 'wb');
             if ($output === false) {
                 throw new \RuntimeException('Unable to open the CSV output stream.');
@@ -191,7 +209,7 @@ class WebsitesController extends Controller
                 'Checked at',
             ], ',', '"', '');
 
-            $website->healthChecks()
+            $this->filteredHealthChecks($website, $filters)
                 ->orderByDesc('checked_at')
                 ->orderByDesc('id')
                 ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
@@ -212,8 +230,47 @@ class WebsitesController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    /** @return array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} */
+    private function healthCheckFilters(Request $request): array
+    {
+        $result = $request->string('result')->toString();
+        $source = $request->string('source')->toString();
+
+        return [
+            'result' => in_array($result, ['healthy', 'failed'], true) ? $result : null,
+            'source' => in_array($source, [
+                WebsiteHealthCheck::SOURCE_MANUAL,
+                WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            ], true) ? $source : null,
+            'date_from' => $this->date($request->string('date_from')->toString()),
+            'date_to' => $this->date($request->string('date_to')->toString()),
+        ];
+    }
+
+    /** @param array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} $filters */
+    private function filteredHealthChecks(Website $website, array $filters): HasMany
+    {
+        return $website->healthChecks()
+            ->when($filters['result'] !== null, fn ($query) => $query
+                ->where('successful', $filters['result'] === 'healthy'))
+            ->when($filters['source'], fn ($query, string $source) => $query
+                ->where('source', $source))
+            ->when($filters['date_from'], fn ($query, string $date) => $query
+                ->whereDate('checked_at', '>=', $date))
+            ->when($filters['date_to'], fn ($query, string $date) => $query
+                ->whereDate('checked_at', '<=', $date));
+    }
+
+    private function date(string $value): ?string
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+
+        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /**

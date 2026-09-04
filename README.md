@@ -244,6 +244,10 @@ Website detail also summarizes the retained sample with an observed check succes
 rate, median successful-response time, and newest consecutive-failure streak.
 These figures are explicitly labeled as recorded observations rather than SLA
 uptime, and empty or unreported samples never produce invented percentages.
+The full retained website health history has an owner-scoped paginated view with
+result, source, and checked-date filters. Its spreadsheet-safe CSV export applies
+the same normalized filters, so an operator can download exactly the evidence
+currently under review without exposing another account's checks.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
 Deployment detail pages show a validated elapsed duration and stable previous/next
