@@ -11,6 +11,7 @@ use App\Models\ServerLogSnapshot;
 use App\Models\SignInEvent;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use Database\Seeders\DemoAccountSeeder;
 use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,6 +75,26 @@ class DemoSeederTest extends TestCase
         ], $user->servers()->pluck('provisioning_status')->all());
         $this->assertSame(3, $user->servers()->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES)->count());
         $this->assertSame(5, $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(6, WebsiteHealthCheck::query()
+            ->whereHas('website', fn ($query) => $query->where('user_id', $user->id))
+            ->count());
+        $this->assertEqualsCanonicalizing(
+            [WebsiteHealthCheck::SOURCE_AUTOMATIC, WebsiteHealthCheck::SOURCE_MANUAL],
+            WebsiteHealthCheck::query()
+                ->whereHas('website', fn ($query) => $query->where('user_id', $user->id))
+                ->distinct()
+                ->pluck('source')
+                ->all(),
+        );
+        $this->assertEqualsCanonicalizing(
+            [false, true],
+            WebsiteHealthCheck::query()
+                ->whereHas('website', fn ($query) => $query->where('user_id', $user->id))
+                ->distinct()
+                ->pluck('successful')
+                ->map(fn ($value): bool => (bool) $value)
+                ->all(),
+        );
         $this->assertEqualsCanonicalizing([
             Website::STATUS_QUEUED,
             Website::STATUS_PROVISIONING,
@@ -245,6 +266,18 @@ class DemoSeederTest extends TestCase
             ->assertSee('67%')
             ->assertSee('3m')
             ->assertSee(route('builds.index', ['repository_id' => $repository->id]));
+        $this->actingAs($user)->get(route('websites.show', $website))
+            ->assertSuccessful()
+            ->assertSee('Recent health checks')
+            ->assertSee('Manual')
+            ->assertSee('Automatic')
+            ->assertSee('HTTP 200')
+            ->assertSee('95 ms')
+            ->assertSee('Demo transient HTTP 503 before recovery.')
+            ->assertSee(route('websites.health-checks.export', $website));
+        $healthExport = $this->actingAs($user)->get(route('websites.health-checks.export', $website));
+        $healthExport->assertSuccessful();
+        $this->assertStringContainsString('Demo transient HTTP 503 before recovery.', $healthExport->streamedContent());
         config([
             'session.driver' => 'database',
             'session.encrypt' => true,
@@ -327,6 +360,9 @@ class DemoSeederTest extends TestCase
             'recipes' => $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'servers' => $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'websites' => $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
+            'health_checks' => WebsiteHealthCheck::query()
+                ->whereHas('website', fn ($query) => $query->where('user_id', $user->id))
+                ->count(),
             'repositories' => $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'builds' => $user->builds()->count(),
             'deliveries' => RepositoryWebhookDelivery::query()

@@ -7,6 +7,7 @@ use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use App\Services\ManagedSsh;
 use App\Services\Runner;
 use App\Services\WebsiteHealthMonitor;
@@ -39,7 +40,15 @@ class WebsiteHealthMonitoringTest extends TestCase
             );
             $this->assertSame('HTTP 503', $website->health_last_error);
             $this->assertNotNull($website->health_last_checked_at);
+            $this->assertSame($failureCount, $website->healthChecks()->count());
         }
+
+        $this->assertTrue($website->healthChecks()->get()->every(
+            fn (WebsiteHealthCheck $check): bool => ! $check->successful
+                && $check->source === WebsiteHealthCheck::SOURCE_AUTOMATIC
+                && $check->http_status === 503
+                && $check->duration_ms === 250,
+        ));
 
         $this->assertSame(1, $owner->unreadNotifications()->count());
         $notification = $owner->unreadNotifications()->sole();
@@ -63,6 +72,16 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
         $this->assertSame(0, $website->health_failure_count);
         $this->assertNull($website->health_last_error);
+        $this->assertSame(5, $website->healthChecks()->count());
+        $this->assertDatabaseHas('website_health_checks', [
+            'website_id' => $website->id,
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'http_status' => 200,
+            'duration_ms' => 125,
+            'endpoint' => 'http://app.example.com/health/ready',
+            'error' => null,
+        ]);
         $this->assertSame(2, $owner->notifications()->count());
         $this->assertNotNull($notification->fresh()->read_at);
         $this->assertSame(1, $owner->unreadNotifications()->count());
@@ -86,6 +105,7 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertStringContainsString('--connect-timeout 5 --max-time 15', $command);
         $this->assertStringContainsString('--retry 1 --retry-delay 1 --retry-all-errors', $command);
         $this->assertStringContainsString('lessbuild-health-monitor', $command);
+        $this->assertStringContainsString("--write-out '%{http_code} %{time_total}\\n'", $command);
     }
 
     public function test_disabled_and_inactive_websites_are_not_contacted(): void
@@ -113,6 +133,7 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertStringContainsString('Checked 0 website(s)', Artisan::output());
         $this->assertNull($enabled->fresh()->health_last_checked_at);
         $this->assertNull($inactive->fresh()->health_last_checked_at);
+        $this->assertDatabaseCount('website_health_checks', 0);
     }
 
     public function test_recent_websites_are_skipped_until_the_next_monitoring_window(): void
@@ -160,6 +181,7 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertSame(Website::HEALTH_UNKNOWN, $website->health_status);
         $this->assertSame(0, $website->health_failure_count);
         $this->assertNull($website->health_last_checked_at);
+        $this->assertSame(0, $website->healthChecks()->count());
     }
 
     public function test_changing_or_disabling_health_settings_resets_monitoring_state(): void
@@ -277,12 +299,20 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->assertSame(0, $website->health_failure_count);
         $this->assertNotNull($website->health_last_checked_at);
         $this->assertStringContainsString("'http://app.example.com/health/ready'", $command);
+        $this->assertDatabaseHas('website_health_checks', [
+            'website_id' => $website->id,
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 200,
+            'duration_ms' => 125,
+        ]);
     }
 
     private function runner(bool $successful, string $error, ?string &$command): Runner
     {
         $process = Mockery::mock(Process::class);
         $process->shouldReceive('isSuccessful')->once()->andReturn($successful);
+        $process->shouldReceive('getOutput')->once()->andReturn($successful ? '200 0.125000' : '503 0.250000');
         if (! $successful) {
             $process->shouldReceive('getErrorOutput')->once()->andReturn($error);
         }
@@ -307,6 +337,7 @@ class WebsiteHealthMonitoringTest extends TestCase
     {
         $process = Mockery::mock(Process::class);
         $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
+        $process->shouldReceive('getOutput')->once()->andReturn('200 0.125000');
         $ssh = Mockery::mock(ManagedSsh::class);
         $ssh->shouldReceive('execute')->once()->andReturnUsing(function () use ($callback, $process) {
             $callback();

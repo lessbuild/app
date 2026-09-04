@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Server;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -31,12 +32,12 @@ class WebsiteHealthMonitor
             return null;
         }
 
-        [$successful, $error] = $this->execute($website);
+        [$successful, $error, $httpStatus, $durationMs] = $this->execute($website);
 
-        return $this->recordResult($website, $successful, $error, $automatic);
+        return $this->recordResult($website, $successful, $error, $httpStatus, $durationMs, $automatic);
     }
 
-    /** @return array{bool, ?string} */
+    /** @return array{bool, ?string, ?int, ?int} */
     private function execute(Website $website): array
     {
         $url = escapeshellarg("http://{$website->url}{$website->health_check_path}");
@@ -45,7 +46,7 @@ class WebsiteHealthMonitor
             --connect-timeout 5 --max-time 15 \
             --retry 1 --retry-delay 1 --retry-all-errors \
             --user-agent "lessbuild-health-monitor" \
-            --output /dev/null {$url}
+            --output /dev/null --write-out '%{http_code} %{time_total}\\n' {$url}
         BASH;
 
         try {
@@ -53,21 +54,51 @@ class WebsiteHealthMonitor
         } catch (Throwable $exception) {
             report($exception);
 
-            return [false, str($exception->getMessage())->limit(500)->toString() ?: 'Unable to reach the managed server.'];
+            return [false, str($exception->getMessage())->limit(500)->toString() ?: 'Unable to reach the managed server.', null, null];
         }
+
+        $output = trim($process->getOutput());
+        [$httpStatus, $durationMs] = $this->parseMetrics($output);
 
         if ($process->isSuccessful()) {
-            return [true, null];
+            return [true, null, $httpStatus, $durationMs];
         }
 
-        $error = trim($process->getErrorOutput() ?: $process->getOutput());
+        $error = trim($process->getErrorOutput());
 
-        return [false, str($error ?: 'The website did not return a successful response.')->limit(500)->toString()];
+        return [
+            false,
+            str($error ?: 'The website did not return a successful response.')->limit(500)->toString(),
+            $httpStatus,
+            $durationMs,
+        ];
     }
 
-    private function recordResult(Website $website, bool $successful, ?string $error, bool $automatic): bool
+    /** @return array{?int, ?int} */
+    private function parseMetrics(string $output): array
     {
-        return DB::transaction(function () use ($website, $successful, $error, $automatic): bool {
+        if (! preg_match('/(?<!\d)(\d{3}) ([0-9]+(?:\.[0-9]+)?)\s*\z/', $output, $matches)) {
+            return [null, null];
+        }
+
+        $httpStatus = (int) $matches[1];
+        $durationMs = (int) round((float) $matches[2] * 1000);
+
+        return [
+            $httpStatus > 0 ? $httpStatus : null,
+            max(0, min($durationMs, 4_294_967_295)),
+        ];
+    }
+
+    private function recordResult(
+        Website $website,
+        bool $successful,
+        ?string $error,
+        ?int $httpStatus,
+        ?int $durationMs,
+        bool $automatic,
+    ): bool {
+        return DB::transaction(function () use ($website, $successful, $error, $httpStatus, $durationMs, $automatic): bool {
             $locked = Website::query()->lockForUpdate()->find($website->id);
             if (! $locked
                 || ! $locked->health_check_enabled
@@ -81,12 +112,29 @@ class WebsiteHealthMonitor
                 return false;
             }
 
+            $checkedAt = now();
+            $locked->healthChecks()->create([
+                'successful' => $successful,
+                'source' => $automatic ? WebsiteHealthCheck::SOURCE_AUTOMATIC : WebsiteHealthCheck::SOURCE_MANUAL,
+                'http_status' => $httpStatus,
+                'duration_ms' => $durationMs,
+                'endpoint' => str("http://{$locked->url}{$locked->health_check_path}")->limit(512, '')->toString(),
+                'error' => $error === null ? null : str($error)->limit(500, '')->toString(),
+                'checked_at' => $checkedAt,
+            ]);
+            $retainedIds = $locked->healthChecks()
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
+                ->pluck('id');
+            $locked->healthChecks()->whereNotIn('id', $retainedIds)->delete();
+
             $previousStatus = $locked->health_status;
             if ($successful) {
                 $locked->update([
                     'health_status' => Website::HEALTH_HEALTHY,
                     'health_failure_count' => 0,
-                    'health_last_checked_at' => now(),
+                    'health_last_checked_at' => $checkedAt,
                     'health_last_error' => null,
                 ]);
                 if ($previousStatus === Website::HEALTH_UNHEALTHY) {
@@ -111,7 +159,7 @@ class WebsiteHealthMonitor
             $locked->update([
                 'health_status' => $nextStatus,
                 'health_failure_count' => $failureCount,
-                'health_last_checked_at' => now(),
+                'health_last_checked_at' => $checkedAt,
                 'health_last_error' => $error,
             ]);
             if ($nextStatus !== Website::HEALTH_UNHEALTHY || $previousStatus === Website::HEALTH_UNHEALTHY) {

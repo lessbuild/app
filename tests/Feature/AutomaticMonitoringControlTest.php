@@ -8,6 +8,7 @@ use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use App\Services\ManagedSsh;
 use App\Services\ProviderHealthMonitor;
 use App\Services\Runner;
@@ -98,6 +99,13 @@ class AutomaticMonitoringControlTest extends TestCase
         $this->assertFalse($website->health_monitoring_enabled);
         $this->assertSame(Website::HEALTH_HEALTHY, $website->health_status);
         $this->assertNotNull($website->health_last_checked_at);
+        $this->assertDatabaseHas('website_health_checks', [
+            'website_id' => $website->id,
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 200,
+            'duration_ms' => 100,
+        ]);
 
         $this->actingAs($owner)->get(route('websites.show', $website))
             ->assertSuccessful()
@@ -144,6 +152,7 @@ class AutomaticMonitoringControlTest extends TestCase
     private function successfulRunner(): Runner
     {
         $process = Mockery::mock(Process::class);
+        $process->shouldReceive('getOutput')->once()->andReturn('200 0.100000');
         $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
         $ssh = Mockery::mock(ManagedSsh::class);
         $ssh->shouldReceive('execute')->once()->andReturn($process);

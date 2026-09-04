@@ -11,6 +11,7 @@ use App\Models\Server;
 use App\Models\Size;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use App\Services\ServerProvisioningPlan;
 use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,7 @@ class DemoInfrastructureSeeder extends Seeder
                 $servers['active']->captureProvisioningRecipes();
 
                 $websites = $this->websites($user, $servers);
+                $this->healthChecks($websites);
                 $this->repositories($user, $providers, $websites);
                 $this->cloudCatalog();
             });
@@ -343,6 +345,35 @@ class DemoInfrastructureSeeder extends Seeder
         }
 
         return $websites;
+    }
+
+    /** @param array<string, Website> $websites */
+    private function healthChecks(array $websites): void
+    {
+        $definitions = [
+            [$websites['healthy'], WebsiteHealthCheck::SOURCE_AUTOMATIC, false, 503, 210, 'Demo transient HTTP 503 before recovery.', 15],
+            [$websites['healthy'], WebsiteHealthCheck::SOURCE_AUTOMATIC, true, 200, 120, null, 10],
+            [$websites['healthy'], WebsiteHealthCheck::SOURCE_MANUAL, true, 200, 95, null, 1],
+            [$websites['unhealthy'], WebsiteHealthCheck::SOURCE_AUTOMATIC, false, 503, 240, 'Demo health endpoint returned HTTP 503 (attempt 1).', 12],
+            [$websites['unhealthy'], WebsiteHealthCheck::SOURCE_AUTOMATIC, false, 503, 260, 'Demo health endpoint returned HTTP 503 (attempt 2).', 7],
+            [$websites['unhealthy'], WebsiteHealthCheck::SOURCE_MANUAL, false, 503, 280, 'Demo health endpoint returned HTTP 503 (attempt 3).', 2],
+        ];
+
+        foreach ($definitions as [$website, $source, $successful, $status, $duration, $error, $minutesAgo]) {
+            $website->healthChecks()->updateOrCreate(
+                [
+                    'source' => $source,
+                    'duration_ms' => $duration,
+                    'endpoint' => "http://{$website->url}{$website->health_check_path}",
+                ],
+                [
+                    'successful' => $successful,
+                    'http_status' => $status,
+                    'error' => $error,
+                    'checked_at' => now()->subMinutes($minutesAgo),
+                ],
+            );
+        }
     }
 
     /**

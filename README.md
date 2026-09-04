@@ -235,6 +235,11 @@ is testable. Successful password, GitHub, and GitLab sign-in fixtures cover desk
 and mobile history rendering without creating functional external identities.
 Automatic provider and website monitoring is paused for all demo fixtures, so
 scheduled timers never contact their deliberately non-functional endpoints.
+Every accepted website health check records its manual or automatic source,
+endpoint, HTTP status, curl duration, bounded safe error, and check time. Website
+details show the newest 20 results and offer a spreadsheet-safe export; each
+website retains only its newest 100 results. Demo websites include idempotent
+healthy, failing, manual, and automatic history without contacting their hosts.
 Server-command fixtures likewise cover queued, running, succeeded, failed, and
 canceled states without dispatching remote command jobs.
 Deployment detail pages show a validated elapsed duration and stable previous/next

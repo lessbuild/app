@@ -142,6 +142,11 @@ class Website extends Model
         return $this->morphMany(Event::class, 'parentable');
     }
 
+    public function healthChecks(): HasMany
+    {
+        return $this->hasMany(WebsiteHealthCheck::class);
+    }
+
     public function scopeReadyForDeployments(Builder $query): Builder
     {
         return $query

@@ -10,6 +10,7 @@ use App\Jobs\Web\CheckWebsiteHealthJob;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Server;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -118,6 +119,59 @@ class WebsitesController extends Controller
         return view('scenes.websites.show', [
             'website' => $website,
             'repositories' => $repositories,
+            'healthChecks' => $website->healthChecks()
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->limit(20)
+                ->get(),
+        ]);
+    }
+
+    public function exportHealthChecks(Website $website): StreamedResponse
+    {
+        $this->authorize('view', $website);
+        $filename = "lessbuild-website-{$website->id}-health-checks-".now()->utc()->format('Ymd-His').'.csv';
+
+        return response()->streamDownload(function () use ($website): void {
+            $output = fopen('php://output', 'wb');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
+
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, [
+                'Check ID',
+                'Result',
+                'Source',
+                'HTTP status',
+                'Duration ms',
+                'Endpoint',
+                'Error',
+                'Checked at',
+            ], ',', '"', '');
+
+            $website->healthChecks()
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
+                ->get()
+                ->each(function (WebsiteHealthCheck $check) use ($output): void {
+                    fputcsv($output, [
+                        $check->id,
+                        $check->successful ? 'healthy' : 'failed',
+                        $check->source,
+                        $check->http_status,
+                        $check->duration_ms,
+                        $this->csvCell($check->endpoint),
+                        $this->csvCell($check->error),
+                        $check->checked_at?->toIso8601String(),
+                    ], ',', '"', '');
+                });
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'X-Content-Type-Options' => 'nosniff',
         ]);
     }
 

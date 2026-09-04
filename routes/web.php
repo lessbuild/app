@@ -102,6 +102,8 @@ Route::middleware('auth')->group(function () {
 
         Route::get('websites/export', [WebsitesController::class, 'export'])
             ->name('websites.export');
+        Route::get('websites/{website}/health-checks/export', [WebsitesController::class, 'exportHealthChecks'])
+            ->name('websites.health-checks.export');
         Route::resource('websites', WebsitesController::class);
         Route::post('websites/{website}/placement/cleanup', [WebsitesController::class, 'retryPlacementCleanup'])
             ->name('websites.placement.cleanup');
