@@ -284,6 +284,7 @@ class DemoSeederTest extends TestCase
         $unhealthyWebsite = $user->websites()->where('deployment_slug', 'demo-status')->sole();
         $repository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Storefront repository')->sole();
         $neverDeployedRepository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Documentation repository')->sole();
+        $assignedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Install image tools')->sole();
         $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
@@ -332,6 +333,26 @@ class DemoSeederTest extends TestCase
                 && $metrics['latest_at'] !== null)
             ->assertSee('Matching recipes')
             ->assertSee('Covered servers');
+        $this->actingAs($user)->get(route('recipes.show', $assignedRecipe))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 1,
+                'ready' => 1,
+                'provisioning' => 0,
+                'failed' => 0,
+            ])
+            ->assertSee('Server assignments')
+            ->assertSee(DemoSeeder::PREFIX.'Primary production')
+            ->assertDontSee('apt-get install -y imagemagick webp');
+        $this->actingAs($user)->get(route('recipes.show', $unusedRecipe))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'ready' => 0,
+                'provisioning' => 0,
+                'failed' => 0,
+            ])
+            ->assertSee('No servers use this recipe');
         $this->actingAs($user)->get(route('recipes.index', ['usage' => 'unused']))
             ->assertSuccessful()
             ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1

@@ -54,7 +54,7 @@ class GlobalSearchTest extends TestCase
             ->assertSee(route('servers.show', $resources['server']))
             ->assertSee(route('repositories.show', $resources['repository']))
             ->assertSee(route('providers.show', $resources['provider']))
-            ->assertSee(route('recipes.edit', $resources['recipe']))
+            ->assertSee(route('recipes.show', $resources['recipe']))
             ->assertSee(route('builds.show', $resources['build']))
             ->assertDontSee('foreign', false)
             ->assertDontSee('owner-provider-token', false)

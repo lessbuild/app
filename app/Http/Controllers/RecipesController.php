@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
+use App\Models\Server;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -107,6 +108,45 @@ class RecipesController extends Controller
     public function create(): View
     {
         return view('scenes.recipes.create');
+    }
+
+    public function show(Request $request, Recipe $recipe): View
+    {
+        $this->authorize('view', $recipe);
+        $recipe = $request->user()->recipes()
+            ->select(['id', 'user_id', 'name', 'description', 'created_at', 'updated_at'])
+            ->findOrFail($recipe->id);
+        $assignedServers = $recipe->servers()
+            ->where('servers.user_id', $request->user()->id);
+        $statusCounts = (clone $assignedServers)
+            ->reorder()
+            ->select('servers.provisioning_status', DB::raw('COUNT(*) as total'))
+            ->groupBy('servers.provisioning_status')
+            ->pluck('total', 'servers.provisioning_status');
+
+        return view('scenes.recipes.show', [
+            'recipe' => $recipe,
+            'servers' => (clone $assignedServers)
+                ->select([
+                    'servers.id',
+                    'servers.user_id',
+                    'servers.name',
+                    'servers.display_name',
+                    'servers.type',
+                    'servers.public_ip',
+                    'servers.provisioning_status',
+                    'servers.created_at',
+                ])
+                ->paginate()
+                ->withQueryString(),
+            'metrics' => [
+                'total' => $statusCounts->sum(),
+                'ready' => (int) $statusCounts->get(Server::STATUS_ACTIVE, 0),
+                'provisioning' => collect(Server::ACTIVE_PROVISIONING_STATUSES)
+                    ->sum(fn (string $status): int => (int) $statusCounts->get($status, 0)),
+                'failed' => (int) $statusCounts->get(Server::STATUS_FAILED, 0),
+            ],
+        ]);
     }
 
     public function store(RecipeRequest $request): RedirectResponse

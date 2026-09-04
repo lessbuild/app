@@ -121,7 +121,7 @@
                     @foreach ($recipes as $recipe)
                         <tr class="border-x border-primary">
                             <td class="py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                <a class="font-medium text-ternary" href="{{ route('recipes.edit', $recipe) }}">{{ $recipe->name }}</a>
+                                <a class="font-medium text-ternary" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
                                 <p class="mt-1 max-w-xl text-secondary">{{ $recipe->description ?: __('No description') }}</p>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
@@ -130,6 +130,7 @@
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">{{ $recipe->updated_at->diffForHumans() }}</td>
                             <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-6">
                                 <div class="flex justify-end gap-2">
+                                    <a href="{{ route('recipes.show', $recipe) }}" class="button tertiary">{{ __('View') }}</a>
                                     <a href="{{ route('recipes.edit', $recipe) }}" class="button tertiary">{{ __('Edit') }}</a>
                                     <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
                                         @csrf

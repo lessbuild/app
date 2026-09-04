@@ -123,6 +123,10 @@ for review and renaming, while the source recipe and all server assignments rema
 unchanged.
 The current filtered recipe inventory can be exported as a spreadsheet-safe CSV
 with assignment metadata. Encrypted script bodies are never included.
+Recipe detail pages show owner-scoped server assignments in their per-server
+execution position, with ready, provisioning, and failed status totals. The usage
+view selects only server metadata and never decrypts or renders the recipe script.
+It also explains that existing servers retain their immutable encrypted plan snapshot.
 
 ## Source control providers
 

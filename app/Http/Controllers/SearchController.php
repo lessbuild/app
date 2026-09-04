@@ -115,7 +115,7 @@ class SearchController extends Controller
             ->map(fn (Recipe $recipe): array => [
                 'title' => $recipe->name,
                 'subtitle' => $recipe->description,
-                'url' => route('recipes.edit', $recipe),
+                'url' => route('recipes.show', $recipe),
             ]);
 
         $builds = $user->builds()
