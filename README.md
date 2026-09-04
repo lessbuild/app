@@ -364,6 +364,10 @@ that no matching server timestamp is available.
 Website inventory exports preserve provisioning, health, and attention filters
 and include target, health, retention, and repository-count fields without
 environment values, database credentials, tokens, or raw health errors.
+Filter-aware website cards summarize matching, active, provisioning, failed,
+unhealthy, and attention-required sites. The attention filter and metric share
+one model scope, so a provisioning failure or an enabled unhealthy check is
+classified consistently without loading encrypted environment data.
 Deployment output, website provisioning output, and allowlisted server log
 snapshots can be downloaded as owner-authorized plain-text files for incident
 review and support handoff.

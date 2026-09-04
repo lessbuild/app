@@ -609,6 +609,29 @@ class DemoSeederTest extends TestCase
             ])
             ->assertSee('No matching server recorded.')
             ->assertSee('No servers match these filters');
+        $this->actingAs($user)->get(route('websites.index'))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 5,
+                'active' => 2,
+                'provisioning' => 2,
+                'failed' => 1,
+                'unhealthy' => 1,
+                'attention' => 2,
+            ])
+            ->assertSee('Matching websites')
+            ->assertSee('Needs attention');
+        $this->actingAs($user)->get(route('websites.index', ['search' => 'Demo missing website']))
+            ->assertSuccessful()
+            ->assertViewHas('metrics', [
+                'total' => 0,
+                'active' => 0,
+                'provisioning' => 0,
+                'failed' => 0,
+                'unhealthy' => 0,
+                'attention' => 0,
+            ])
+            ->assertSee('No websites match these filters');
 
         foreach ([
             route('dashboard'),

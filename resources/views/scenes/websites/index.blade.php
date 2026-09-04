@@ -6,8 +6,8 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
-        :title="__('Manage Websites')"
-        :description="__('Easily manage your websites')"
+        :title="__('Websites')"
+        :description="__('Manage deployment targets and review filtered provisioning and health state.')"
     >
         <x-slot:buttons>
             <a
@@ -75,6 +75,39 @@
             @endif
         </div>
     </form>
+
+    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching websites') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Websites in this filtered view.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active websites') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioned websites.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Provisioning') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['provisioning'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Queued or provisioning websites.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed websites') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioning failures.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unhealthy websites') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unhealthy'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Enabled health checks reporting unhealthy.') }}</dd>
+        </div>
+        <div class="rounded-lg border border-primary bg-primary p-4">
+            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Needs attention') }}</dt>
+            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['attention'] }}</dd>
+            <dd class="mt-1 text-xs text-secondary">{{ __('Provisioning failures or enabled unhealthy checks.') }}</dd>
+        </div>
+    </dl>
 
     <!--
      ! ------------------------------------------------------------

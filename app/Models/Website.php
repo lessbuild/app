@@ -173,4 +173,17 @@ class Website extends Model
             ->whereHas('server', fn (Builder $query) => $query
                 ->where('provisioning_status', Server::STATUS_ACTIVE));
     }
+
+    public function scopeNeedsAttention(Builder $query): Builder
+    {
+        return $query->where(function (Builder $query): void {
+            $query
+                ->where('provisioning_status', self::STATUS_FAILED)
+                ->orWhere(function (Builder $query): void {
+                    $query
+                        ->where('health_check_enabled', true)
+                        ->where('health_status', self::HEALTH_UNHEALTHY);
+                });
+        });
+    }
 }
