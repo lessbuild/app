@@ -60,6 +60,14 @@ class ServerShow extends Component
         $websites = $this->server->websites()->get();
         $recipes = $this->server->provisioningRecipes();
         $logSnapshot = $this->server->logSnapshots()->where('type', $this->log)->first();
+        $logSnapshots = $this->server->logSnapshots()
+            ->whereIn('type', CollectServerLogAction::TYPES)
+            ->get(['id', 'server_id', 'type', 'status', 'refreshed_at']);
+        $logStatusCounts = $logSnapshots->countBy('status');
+        $latestLogSnapshot = $logSnapshots
+            ->whereNotNull('refreshed_at')
+            ->sortByDesc('refreshed_at')
+            ->first();
         $logs = $logSnapshot?->log === null ? [] : explode(PHP_EOL, $logSnapshot->log);
         $shouldPoll = ! in_array($this->server->provisioning_status, [Server::STATUS_ACTIVE, Server::STATUS_FAILED], true)
             || in_array($logSnapshot?->status, [ServerLogSnapshot::STATUS_QUEUED, ServerLogSnapshot::STATUS_REFRESHING], true);
@@ -69,6 +77,14 @@ class ServerShow extends Component
             'recipes' => $recipes,
             'logs' => $logs,
             'logSnapshot' => $logSnapshot,
+            'logMetrics' => [
+                'ready' => $logStatusCounts->get(ServerLogSnapshot::STATUS_READY, 0),
+                'queued' => $logStatusCounts->get(ServerLogSnapshot::STATUS_QUEUED, 0),
+                'refreshing' => $logStatusCounts->get(ServerLogSnapshot::STATUS_REFRESHING, 0),
+                'failed' => $logStatusCounts->get(ServerLogSnapshot::STATUS_FAILED, 0),
+                'missing' => count(CollectServerLogAction::TYPES) - $logSnapshots->count(),
+                'latest_at' => $latestLogSnapshot?->refreshed_at,
+            ],
             'shouldPoll' => $shouldPoll,
         ])->layout('components.layouts.app');
     }

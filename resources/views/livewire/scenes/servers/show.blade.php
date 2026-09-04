@@ -258,6 +258,41 @@
             </div>
         @endif
 
+        <div class="col-span-2">
+            <div class="mb-3">
+                <h3 class="text-lg font-bold leading-none text-primary">{{ __('Log snapshot overview') }}</h3>
+                <p class="mt-1 text-sm text-secondary">{{ __('Current state across the five supported server log types.') }}</p>
+            </div>
+            <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Ready snapshots') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $logMetrics['ready'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Queued snapshots') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $logMetrics['queued'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Refreshing snapshots') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $logMetrics['refreshing'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed snapshots') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $logMetrics['failed'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Not collected') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $logMetrics['missing'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest refresh') }}</dt>
+                    <dd class="mt-1 text-lg font-bold text-primary">
+                        {{ $logMetrics['latest_at']?->diffForHumans() ?? __('Not available') }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
         <!--
          ! ------------------------------------------------------------
          ! Server logs

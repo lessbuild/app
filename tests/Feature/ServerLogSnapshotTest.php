@@ -145,6 +145,54 @@ class ServerLogSnapshotTest extends TestCase
             ->assertDontSee('wire:poll.5s', false);
     }
 
+    public function test_server_page_summarizes_allowlisted_snapshots_without_exposing_other_log_bodies(): void
+    {
+        [$user, $server] = $this->server();
+        $server->logSnapshots()->create([
+            'type' => 'apt',
+            'status' => ServerLogSnapshot::STATUS_READY,
+            'log' => 'Selected apt output',
+            'refreshed_at' => '2026-09-03 10:00:00',
+        ]);
+        $server->logSnapshots()->create([
+            'type' => 'caddy',
+            'status' => ServerLogSnapshot::STATUS_QUEUED,
+        ]);
+        $server->logSnapshots()->create([
+            'type' => 'mysql',
+            'status' => ServerLogSnapshot::STATUS_REFRESHING,
+        ]);
+        $server->logSnapshots()->create([
+            'type' => 'php',
+            'status' => ServerLogSnapshot::STATUS_FAILED,
+            'log' => 'non-selected-log-secret',
+            'error' => 'non-selected-error-secret',
+            'refreshed_at' => '2026-09-03 13:00:00',
+        ]);
+
+        $component = Livewire::actingAs($user)
+            ->test(ServerShow::class, ['server' => $server])
+            ->assertSee('Log snapshot overview')
+            ->assertSee('Ready snapshots')
+            ->assertSee('Queued snapshots')
+            ->assertSee('Refreshing snapshots')
+            ->assertSee('Failed snapshots')
+            ->assertSee('Not collected')
+            ->assertSee('Latest refresh')
+            ->assertSee('Selected apt output')
+            ->assertDontSee('non-selected-log-secret')
+            ->assertDontSee('non-selected-error-secret');
+
+        $metrics = $component->viewData('logMetrics');
+
+        $this->assertSame(1, $metrics['ready']);
+        $this->assertSame(1, $metrics['queued']);
+        $this->assertSame(1, $metrics['refreshing']);
+        $this->assertSame(1, $metrics['failed']);
+        $this->assertSame(1, $metrics['missing']);
+        $this->assertSame('2026-09-03 13:00:00', $metrics['latest_at']->format('Y-m-d H:i:s'));
+    }
+
     public function test_snapshot_is_deleted_with_its_server(): void
     {
         [, $server] = $this->server();

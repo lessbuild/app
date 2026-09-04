@@ -478,13 +478,23 @@ class DemoSeederTest extends TestCase
             $filteredProviderHistoryExport->streamedContent(),
             'https://api.github.com/user',
         ));
+        $this->actingAs($user)->get(route('servers.show', $server))
+            ->assertSuccessful()
+            ->assertSee('Log snapshot overview')
+            ->assertSee('Ready snapshots')
+            ->assertSee('Latest refresh');
         $this->actingAs($user)->get(route('servers.show', $queuedServer))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)
+            ->assertSee('Log snapshot overview')
+            ->assertSee('Queued snapshots')
+            ->assertSee('Not collected')
             ->assertSee('Log refresh queued.');
         $this->actingAs($user)->get(route('servers.show', $provisioningServer))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)
+            ->assertSee('Log snapshot overview')
+            ->assertSee('Refreshing snapshots')
             ->assertSee('Refreshing this log snapshot')
             ->assertSee('Demo provisioning is still running');
         $this->actingAs($user)->get(route('search.index', ['q' => 'Demo']))

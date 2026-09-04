@@ -309,6 +309,9 @@ timings and link directly into the repository-filtered full deployment history.
 Server log snapshots cover queued, refreshing, ready, and failed states so polling
 and result views remain testable without opening SSH connections or dispatching
 log-refresh jobs.
+Server detail includes a metadata-only overview across the five allowlisted log
+types, with ready, queued, refreshing, failed, and not-collected counts plus the
+latest refresh time. Non-selected log and error bodies are not loaded for it.
 Servers can also have an optional 80-character control-panel display name. The
 label is used consistently in inventories, search, dashboards, related-resource
 views, and exports while the original provider hostname remains unchanged and
