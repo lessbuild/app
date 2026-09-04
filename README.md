@@ -108,6 +108,9 @@ timestamps, leaving credentials and environment configuration outside dashboard 
 Installed gallery recipes with newer published revisions appear in an owner-scoped
 dashboard panel with direct comparison and private-copy links. The summary selects
 only recipe metadata, so encrypted scripts are not loaded into the dashboard request.
+Reports against the account's published recipes appear in a separate contributor
+feedback panel with affected-recipe and report totals. It links to anonymous detail
+without selecting encrypted feedback or script bodies into the dashboard request.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

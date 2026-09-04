@@ -88,6 +88,9 @@ class DashboardController extends Controller
                             ->orWhereColumn('gallery_installs.source_revision_at', '<', 'recipes.gallery_revision_at');
                     });
             });
+        $reportedGalleryRecipes = $user->recipes()
+            ->published()
+            ->whereHas('reports');
 
         return view('dashboard', [
             'stats' => [
@@ -157,6 +160,17 @@ class DashboardController extends Controller
                         ->oldest('source_revision_at'),
                 ])
                 ->latest('gallery_revision_at')
+                ->limit(5)
+                ->get(),
+            'communityReportCount' => DB::table('recipe_reports')
+                ->whereIn('recipe_id', (clone $reportedGalleryRecipes)->select('recipes.id'))
+                ->count(),
+            'reportedGalleryRecipeCount' => (clone $reportedGalleryRecipes)->count(),
+            'reportedGalleryRecipes' => $reportedGalleryRecipes
+                ->select(['recipes.id', 'recipes.user_id', 'recipes.name', 'recipes.category'])
+                ->withCount('reports')
+                ->orderByDesc('reports_count')
+                ->latest('recipes.id')
                 ->limit(5)
                 ->get(),
             'attentionWebsites' => $attentionWebsites

@@ -7,6 +7,7 @@ use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Models\Recipe;
 use App\Models\RecipeRating;
+use App\Models\RecipeReport;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -132,6 +133,8 @@ class DemoSeederTest extends TestCase
             $demoReport->details,
             DB::table('recipe_reports')->where('id', $demoReport->id)->value('details'),
         );
+        $this->assertSame(2, RecipeReport::query()->count());
+        $this->assertSame(1, $user->recipes()->published()->sole()->reports()->count());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -348,6 +351,10 @@ class DemoSeederTest extends TestCase
             ->assertViewHas('recipeUpdateCount', 1)
             ->assertSee('Recipe updates')
             ->assertSee('Harden SSH defaults')
+            ->assertViewHas('communityReportCount', 1)
+            ->assertViewHas('reportedGalleryRecipeCount', 1)
+            ->assertSee('Community recipe feedback')
+            ->assertSee(DemoSeeder::PREFIX.'Install image tools')
             ->assertSee(route('gallery.compare', [
                 'recipe' => $gallerySource,
                 'copy' => $importedRecipe,
@@ -506,6 +513,13 @@ class DemoSeederTest extends TestCase
             ->assertSee('Demo feedback: confirm the unattended-upgrades defaults')
             ->assertSee('Update Report')
             ->assertSee('Withdraw Report');
+        $this->actingAs($user)->get(route('gallery.show', $assignedRecipe))
+            ->assertSuccessful()
+            ->assertViewHas('reportCounts', fn ($counts): bool => (int) $counts->get('other') === 1)
+            ->assertSee('Community reports')
+            ->assertSee('Other: 1')
+            ->assertSee('Demo contributor feedback: document which operating-system releases this recipe supports.')
+            ->assertDontSee(DemoGallerySeeder::AUTHOR_EMAIL);
         $this->actingAs($user)->get(route('gallery.show', $gallerySource))
             ->assertSuccessful()
             ->assertSee('A newer gallery version is available')

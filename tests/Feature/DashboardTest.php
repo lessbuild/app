@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\Recipe;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -78,6 +79,7 @@ class DashboardTest extends TestCase
             ->assertDontSee('Active server commands')
             ->assertDontSee('Webhook deliveries')
             ->assertDontSee('Infrastructure provisioning')
+            ->assertDontSee('Community recipe feedback')
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
 
@@ -163,6 +165,89 @@ class DashboardTest extends TestCase
             ->assertDontSee('Current recipe')
             ->assertDontSee('Foreign stale copy')
             ->assertDontSee('dashboard-secret', false);
+    }
+
+    public function test_dashboard_surfaces_only_reports_on_the_owners_published_recipes_without_loading_feedback(): void
+    {
+        [$owner, $firstReporter, $secondReporter, $otherAuthor] = User::factory()->count(4)->create();
+        $owned = $owner->recipes()->create([
+            'name' => 'Published image helper',
+            'description' => 'Install image tools.',
+            'script' => 'published-dashboard-report-secret',
+            'category' => 'utilities',
+            'is_published' => true,
+            'published_at' => now(),
+            'gallery_revision_at' => now(),
+        ]);
+        foreach ([
+            [$firstReporter, 'broken', 'first-private-feedback'],
+            [$secondReporter, 'security', 'second-private-feedback'],
+        ] as [$reporter, $reason, $details]) {
+            $reporter->recipeReports()->create([
+                'recipe_id' => $owned->id,
+                'reason' => $reason,
+                'details' => $details,
+            ]);
+        }
+
+        $private = $owner->recipes()->create([
+            'name' => 'Private reported draft',
+            'description' => 'Not published.',
+            'script' => 'private-dashboard-report-secret',
+        ]);
+        $firstReporter->recipeReports()->create([
+            'recipe_id' => $private->id,
+            'reason' => 'other',
+            'details' => 'private-draft-feedback',
+        ]);
+        $foreign = $otherAuthor->recipes()->create([
+            'name' => 'Foreign reported recipe',
+            'description' => 'Another contributor owns this.',
+            'script' => 'foreign-dashboard-report-secret',
+            'category' => 'security',
+            'is_published' => true,
+            'published_at' => now(),
+            'gallery_revision_at' => now(),
+        ]);
+        $firstReporter->recipeReports()->create([
+            'recipe_id' => $foreign->id,
+            'reason' => 'outdated',
+            'details' => 'foreign-feedback',
+        ]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('communityReportCount', 2)
+            ->assertViewHas('reportedGalleryRecipeCount', 1)
+            ->assertViewHas('reportedGalleryRecipes', function ($recipes) use ($owned): bool {
+                if ($recipes->count() !== 1) {
+                    return false;
+                }
+
+                /** @var Recipe $recipe */
+                $recipe = $recipes->sole();
+
+                return $recipe->id === $owned->id
+                    && $recipe->reports_count === 2
+                    && array_diff(array_keys($recipe->getAttributes()), [
+                        'id',
+                        'user_id',
+                        'name',
+                        'category',
+                        'reports_count',
+                    ]) === [];
+            })
+            ->assertSee('Community recipe feedback')
+            ->assertSee('2 community reports need review')
+            ->assertSee('1 published recipe affected')
+            ->assertSee('Published image helper')
+            ->assertSee(route('gallery.show', $owned))
+            ->assertSee(route('gallery.index', ['scope' => 'mine']))
+            ->assertDontSee('Private reported draft')
+            ->assertDontSee('Foreign reported recipe')
+            ->assertDontSee('private-feedback', false)
+            ->assertDontSee('dashboard-report-secret', false)
+            ->assertDontSee($firstReporter->email);
     }
 
     public function test_dashboard_surfaces_only_the_owners_current_failures(): void

@@ -99,6 +99,17 @@ class DemoGallerySeeder extends Seeder
                 'details' => 'Demo feedback: confirm the unattended-upgrades defaults for the current distribution release.',
             ],
         );
+        $demoPublishedRecipe = $demoOwner->recipes()
+            ->published()
+            ->where('name', DemoSeeder::PREFIX.'Install image tools')
+            ->sole();
+        $author->recipeReports()->updateOrCreate(
+            ['recipe_id' => $demoPublishedRecipe->id],
+            [
+                'reason' => 'other',
+                'details' => 'Demo contributor feedback: document which operating-system releases this recipe supports.',
+            ],
+        );
 
         $demoOwner->recipes()
             ->where('source_recipe_id', $source->id)

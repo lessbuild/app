@@ -260,6 +260,44 @@
         </section>
     @endif
 
+    @if ($communityReportCount > 0)
+        <section class="mb-12 rounded-lg border border-rose-300 bg-rose-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-rose-900">{{ __('Community recipe feedback') }}</h2>
+                    <p class="mt-1 text-sm text-rose-800">
+                        {{ trans_choice(':count community report needs review|:count community reports need review', $communityReportCount, ['count' => $communityReportCount]) }}
+                        &middot;
+                        {{ trans_choice(':count published recipe affected|:count published recipes affected', $reportedGalleryRecipeCount, ['count' => $reportedGalleryRecipeCount]) }}
+                    </p>
+                </div>
+                <a href="{{ route('gallery.index', ['scope' => 'mine']) }}" class="text-sm font-medium text-rose-800 underline">
+                    {{ __('View my published recipes') }}
+                </a>
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($reportedGalleryRecipes as $recipe)
+                    <a href="{{ route('gallery.show', $recipe) }}" class="flex items-center justify-between gap-4 rounded border border-rose-200 bg-white p-4">
+                        <div>
+                            <span class="block font-medium text-primary">{{ $recipe->name }}</span>
+                            <span class="mt-1 block text-sm text-secondary">{{ str($recipe->category)->headline() }}</span>
+                        </div>
+                        <span class="text-sm font-semibold text-rose-800">
+                            {{ trans_choice(':count report|:count reports', $recipe->reports_count, ['count' => $recipe->reports_count]) }}
+                        </span>
+                    </a>
+                @endforeach
+            </div>
+
+            @if ($reportedGalleryRecipeCount > $reportedGalleryRecipes->count())
+                <a href="{{ route('gallery.index', ['scope' => 'mine']) }}" class="mt-4 inline-block text-sm font-medium text-rose-800 underline">
+                    {{ trans_choice(':count more reported recipe|:count more reported recipes', $reportedGalleryRecipeCount - $reportedGalleryRecipes->count(), ['count' => $reportedGalleryRecipeCount - $reportedGalleryRecipes->count()]) }}
+                </a>
+            @endif
+        </section>
+    @endif
+
     @if ($recipeUpdateCount > 0)
         <section class="mb-12 rounded-lg border border-orange-300 bg-orange-50 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
