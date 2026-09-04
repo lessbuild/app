@@ -50,8 +50,9 @@ class DemoGallerySeeder extends Seeder
             ],
         ];
 
+        $galleryRecipes = [];
         foreach ($definitions as $definition) {
-            $author->recipes()->updateOrCreate(
+            $galleryRecipes[$definition['name']] = $author->recipes()->updateOrCreate(
                 ['name' => $definition['name']],
                 [
                     'description' => $definition['description'],
@@ -59,9 +60,35 @@ class DemoGallerySeeder extends Seeder
                     'category' => $definition['category'],
                     'is_published' => true,
                     'published_at' => now()->subDays($definition['days_ago']),
+                    'gallery_revision_at' => now()->subDays($definition['days_ago']),
                     'install_count' => $definition['install_count'],
                 ],
             );
         }
+
+        $source = $galleryRecipes['Harden SSH defaults'];
+        $demoOwner = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
+        $importedRecipe = $demoOwner->recipes()
+            ->where('source_recipe_id', $source->id)
+            ->oldest('id')
+            ->firstOrNew();
+        $importedRecipe->fill([
+            'name' => DemoSeeder::PREFIX.'Imported SSH hardening',
+            'description' => 'An older private gallery snapshot with an update ready to review.',
+            'script' => "echo 'Review SSH access before applying the current hardening recipe'",
+            'source_recipe_id' => $source->id,
+            'source_revision_at' => $source->gallery_revision_at?->copy()->subDay(),
+            'category' => null,
+            'is_published' => false,
+            'published_at' => null,
+            'gallery_revision_at' => null,
+            'install_count' => 0,
+        ])->save();
+
+        $demoOwner->recipes()
+            ->where('source_recipe_id', $source->id)
+            ->whereKeyNot($importedRecipe->id)
+            ->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')
+            ->delete();
     }
 }

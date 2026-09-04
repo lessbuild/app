@@ -131,6 +131,9 @@ Recipes can be explicitly published to the authenticated community gallery with 
 category and contributor attribution. Gallery visitors can search, sort, inspect the
 complete Bash script, and add a private encrypted snapshot to their own account.
 Install counts track reuse without linking the imported copy to future source edits.
+Imported copies retain contributor provenance and their installed gallery revision.
+The app highlights newer upstream revisions, prevents accidental duplicate installs,
+and refreshes only private copies after the user reviews the changed script.
 
 ## Source control providers
 

@@ -131,6 +131,15 @@
                                         {{ __('Published') }}
                                     </a>
                                 @endif
+                                @if ($recipe->source_recipe_id)
+                                    @if ($recipe->source && $recipe->hasGalleryUpdate())
+                                        <a href="{{ route('gallery.show', $recipe->source) }}" class="mt-2 inline-block rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">{{ __('Gallery update available') }}</a>
+                                    @elseif ($recipe->source)
+                                        <a href="{{ route('gallery.show', $recipe->source) }}" class="mt-2 inline-block rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">{{ __('Gallery copy current') }}</a>
+                                    @else
+                                        <span class="mt-2 inline-block rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">{{ __('Gallery source unavailable') }}</span>
+                                    @endif
+                                @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 {{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}

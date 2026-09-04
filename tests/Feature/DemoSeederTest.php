@@ -98,7 +98,7 @@ class DemoSeederTest extends TestCase
                 ->map(fn ($value): bool => (bool) $value)
                 ->all(),
         );
-        $this->assertSame(3, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $this->assertSame(4, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(1, $user->recipes()->published()->count());
         $this->assertSame(4, Recipe::query()->published()->count());
         $this->assertSame(80, Recipe::query()->published()->sum('install_count'));
@@ -108,6 +108,11 @@ class DemoSeederTest extends TestCase
         ]);
         $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
         $this->assertFalse($unusedRecipe->servers()->exists());
+        $importedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')->sole();
+        $importedRecipe->load('source');
+        $this->assertNotNull($importedRecipe->source);
+        $this->assertTrue($importedRecipe->hasGalleryUpdate());
+        $this->assertFalse($importedRecipe->is_published);
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -232,6 +237,13 @@ class DemoSeederTest extends TestCase
         $this->assertDatabaseCount('jobs', 0);
 
         $counts = $this->demoCounts($user);
+        $importedRecipeId = $importedRecipe->id;
+        $importedRecipe->update([
+            'name' => 'Harden SSH defaults',
+            'description' => 'Refreshed during a demo workflow.',
+            'script' => 'echo refreshed-demo-copy',
+            'source_revision_at' => $importedRecipe->source->gallery_revision_at,
+        ]);
         $user->providers()->create([
             'name' => 'Personal provider',
             'provider' => Provider::TYPE_GITHUB,
@@ -244,6 +256,10 @@ class DemoSeederTest extends TestCase
         ]), Artisan::output());
         $user->refresh();
         $this->assertSame($counts, $this->demoCounts($user));
+        $restoredImport = $user->recipes()->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')->sole();
+        $this->assertSame($importedRecipeId, $restoredImport->id);
+        $restoredImport->load('source');
+        $this->assertTrue($restoredImport->hasGalleryUpdate());
         $this->assertSame(1, $user->providers()->where('name', 'Personal provider')->count());
     }
 
@@ -295,6 +311,8 @@ class DemoSeederTest extends TestCase
         $neverDeployedRepository = $user->repositories()->where('name', DemoSeeder::PREFIX.'Documentation repository')->sole();
         $assignedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Install image tools')->sole();
         $unusedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Optimize PHP runtime')->sole();
+        $importedRecipe = $user->recipes()->where('name', DemoSeeder::PREFIX.'Imported SSH hardening')->sole();
+        $gallerySource = Recipe::query()->where('name', 'Harden SSH defaults')->sole();
         $communityRecipe = Recipe::query()->where('name', 'Install Node.js LTS')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
 
@@ -335,14 +353,15 @@ class DemoSeederTest extends TestCase
             ->assertDontSee(route('providers.show', $provider));
         $this->actingAs($user)->get(route('recipes.index'))
             ->assertSuccessful()
-            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 3
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 4
                 && $metrics['in_use'] === 2
-                && $metrics['unused'] === 1
+                && $metrics['unused'] === 2
                 && $metrics['assignments'] === 2
                 && $metrics['servers'] === 1
                 && $metrics['latest_at'] !== null)
             ->assertSee('Matching recipes')
-            ->assertSee('Covered servers');
+            ->assertSee('Covered servers')
+            ->assertSee('Gallery update available');
         $this->actingAs($user)->get(route('recipes.show', $assignedRecipe))
             ->assertSuccessful()
             ->assertViewHas('metrics', [
@@ -365,16 +384,22 @@ class DemoSeederTest extends TestCase
             ->assertSee('No servers use this recipe');
         $this->actingAs($user)->get(route('recipes.index', ['usage' => 'unused']))
             ->assertSuccessful()
-            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
-                && $recipes->sole()->id === $unusedRecipe->id)
-            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 1
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 2
+                && $recipes->contains('id', $unusedRecipe->id)
+                && $recipes->contains('id', $importedRecipe->id))
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 2
                 && $metrics['in_use'] === 0
-                && $metrics['unused'] === 1
+                && $metrics['unused'] === 2
                 && $metrics['assignments'] === 0
                 && $metrics['servers'] === 0
                 && $metrics['latest_at'] !== null)
             ->assertSee(DemoSeeder::PREFIX.'Optimize PHP runtime')
             ->assertDontSee(DemoSeeder::PREFIX.'Install image tools');
+        $this->actingAs($user)->get(route('recipes.edit', $importedRecipe))
+            ->assertSuccessful()
+            ->assertSee('Imported from Harden SSH defaults')
+            ->assertSee('Review Update')
+            ->assertSee('Update Private Copy');
         $this->actingAs($user)->get(route('gallery.index', ['sort' => 'popular']))
             ->assertSuccessful()
             ->assertViewHas('metrics', [
@@ -389,6 +414,11 @@ class DemoSeederTest extends TestCase
             ->assertSuccessful()
             ->assertSee('curl -fsSL https://deb.nodesource.com/setup_lts.x')
             ->assertSee('Add to My Recipes');
+        $this->actingAs($user)->get(route('gallery.show', $gallerySource))
+            ->assertSuccessful()
+            ->assertSee('A newer gallery version is available')
+            ->assertSee('Update My Copy')
+            ->assertDontSee('Add to My Recipes');
         $this->actingAs($user)->get(route('servers.commands.index', $server))
             ->assertSuccessful()
             ->assertViewHas('metrics', [

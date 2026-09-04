@@ -6,10 +6,20 @@
         :description="$recipe->description"
     >
         <x-slot:buttons>
-            <form method="POST" action="{{ route('gallery.install', $recipe) }}">
-                @csrf
-                <button type="submit" class="button primary">{{ __('Add to My Recipes') }}</button>
-            </form>
+            @if ($installedRecipe)
+                <a href="{{ route('recipes.edit', $installedRecipe) }}" class="button secondary">{{ __('View My Copy') }}</a>
+                @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
+                    <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm('{{ __('Replace your private copy with this reviewed gallery version?') }}')">
+                        @csrf
+                        <button type="submit" class="button primary">{{ __('Update My Copy') }}</button>
+                    </form>
+                @endif
+            @else
+                <form method="POST" action="{{ route('gallery.install', $recipe) }}">
+                    @csrf
+                    <button type="submit" class="button primary">{{ __('Add to My Recipes') }}</button>
+                </form>
+            @endif
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
@@ -27,6 +37,26 @@
             <dd class="mt-1 font-semibold text-primary">{{ $recipe->install_count }}</dd>
         </div>
     </dl>
+
+    @if ($installedRecipe)
+        <div @class([
+            'mt-6 rounded border p-4 text-sm',
+            'border-yellow-300 bg-yellow-50 text-yellow-800' => $installedRecipe->hasGalleryUpdate(),
+            'border-green-300 bg-green-50 text-green-800' => ! $installedRecipe->hasGalleryUpdate(),
+        ])>
+            @if ($installedRecipe->hasGalleryUpdate())
+                <p class="font-semibold">{{ __('A newer gallery version is available') }}</p>
+                <p class="mt-1">
+                    {{ $installedRecipe->is_published
+                        ? __('Your copy is published. Unpublish it before refreshing so upstream changes cannot be redistributed automatically.')
+                        : __('Review the script below, then update your private copy when you are ready.') }}
+                </p>
+            @else
+                <p class="font-semibold">{{ __('Installed in your recipes') }}</p>
+                <p class="mt-1">{{ __('Your private snapshot matches the current gallery revision.') }}</p>
+            @endif
+        </div>
+    @endif
 
     <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-script-heading">
         <div class="rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">

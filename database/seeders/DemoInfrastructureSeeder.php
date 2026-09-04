@@ -129,6 +129,7 @@ class DemoInfrastructureSeeder extends Seeder
                     'category' => 'utilities',
                     'is_published' => true,
                     'published_at' => now()->subDays(5),
+                    'gallery_revision_at' => now()->subDays(5),
                     'install_count' => 7,
                 ],
             ),
@@ -140,6 +141,7 @@ class DemoInfrastructureSeeder extends Seeder
                     'category' => null,
                     'is_published' => false,
                     'published_at' => null,
+                    'gallery_revision_at' => null,
                 ],
             ),
             'unused' => $user->recipes()->updateOrCreate(
@@ -150,6 +152,7 @@ class DemoInfrastructureSeeder extends Seeder
                     'category' => null,
                     'is_published' => false,
                     'published_at' => null,
+                    'gallery_revision_at' => null,
                 ],
             ),
         ];

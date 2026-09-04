@@ -70,6 +70,7 @@ class RecipeGalleryTest extends TestCase
         $this->assertSame($source->description, $copy->description);
         $this->assertSame($source->script, $copy->script);
         $this->assertSame($source->id, $copy->source_recipe_id);
+        $this->assertTrue($source->gallery_revision_at->equalTo($copy->source_revision_at));
         $this->assertFalse($copy->is_published);
         $this->assertNull($copy->published_at);
         $this->assertSame(5, $source->fresh()->install_count);
@@ -80,6 +81,109 @@ class RecipeGalleryTest extends TestCase
             'echo gallery-script',
             Recipe::query()->toBase()->find($copy->id)->script,
         );
+    }
+
+    public function test_duplicate_install_is_prevented_and_new_revision_can_refresh_private_copy(): void
+    {
+        [$visitor, $author] = User::factory()->count(2)->create();
+        $source = $this->publishedRecipe($author, 'Install monitoring', 'monitoring', 4);
+
+        $this->actingAs($visitor)->post(route('gallery.install', $source));
+        $copy = $visitor->recipes()->sole();
+        $this->actingAs($visitor)->post(route('gallery.install', $source))
+            ->assertRedirect(route('recipes.edit', $copy))
+            ->assertSessionHas('status', 'This gallery recipe is already in your account.');
+        $this->assertSame(1, $visitor->recipes()->count());
+        $this->assertSame(5, $source->fresh()->install_count);
+
+        $this->travel(1)->minute();
+        $this->actingAs($author)->patch(route('recipes.update', $source), [
+            'name' => 'Install monitoring agent',
+            'description' => 'Updated monitoring setup.',
+            'script' => 'echo gallery-script-v2',
+            'is_published' => '1',
+            'category' => 'monitoring',
+        ])->assertRedirect(route('recipes.index'));
+        $source->refresh();
+
+        $this->assertTrue($source->gallery_revision_at->isAfter($copy->source_revision_at));
+        $this->actingAs($visitor)->get(route('gallery.show', $source))
+            ->assertSuccessful()
+            ->assertSee('A newer gallery version is available')
+            ->assertSee('Update My Copy')
+            ->assertDontSee('Add to My Recipes');
+        $this->actingAs($visitor)->get(route('recipes.edit', $copy))
+            ->assertSuccessful()
+            ->assertSee('Imported from Install monitoring agent')
+            ->assertSee('Review Update')
+            ->assertSee('Update Private Copy');
+        $this->actingAs($visitor)->get(route('recipes.index'))
+            ->assertSuccessful()
+            ->assertSee('Gallery update available')
+            ->assertSee(route('gallery.show', $source));
+
+        $this->actingAs($visitor)->post(route('recipes.gallery.refresh', $copy))
+            ->assertRedirect(route('recipes.edit', $copy))
+            ->assertSessionHas('status', 'Your private copy was refreshed from the reviewed gallery version.');
+
+        $copy->refresh();
+        $this->assertSame('Install monitoring agent', $copy->name);
+        $this->assertSame('Updated monitoring setup.', $copy->description);
+        $this->assertSame('echo gallery-script-v2', $copy->script);
+        $this->assertFalse($copy->is_published);
+        $this->assertTrue($source->gallery_revision_at->equalTo($copy->source_revision_at));
+        $this->actingAs($visitor)->get(route('gallery.show', $source))
+            ->assertSee('Your private snapshot matches the current gallery revision.')
+            ->assertDontSee('Update My Copy');
+        $this->actingAs($visitor)->get(route('recipes.index'))
+            ->assertSee('Gallery copy current')
+            ->assertDontSee('Gallery update available');
+    }
+
+    public function test_published_copy_must_be_unpublished_before_refresh_and_other_users_are_forbidden(): void
+    {
+        [$owner, $intruder, $author] = User::factory()->count(3)->create();
+        $source = $this->publishedRecipe($author, 'Security helper', 'security');
+        $this->actingAs($owner)->post(route('gallery.install', $source));
+        $copy = $owner->recipes()->sole();
+        $copy->update([
+            'is_published' => true,
+            'category' => 'security',
+            'published_at' => now(),
+            'gallery_revision_at' => now(),
+        ]);
+        $source->update([
+            'script' => 'echo gallery-script-v2',
+            'gallery_revision_at' => now()->addMinute(),
+        ]);
+
+        $this->actingAs($owner)->post(route('recipes.gallery.refresh', $copy))
+            ->assertRedirect(route('recipes.edit', $copy))
+            ->assertSessionHas('status', 'Unpublish your copy before refreshing it from the gallery.');
+        $this->assertSame('echo gallery-script', $copy->fresh()->script);
+
+        $this->actingAs($intruder)->post(route('recipes.gallery.refresh', $copy))->assertForbidden();
+        $this->assertSame('echo gallery-script', $copy->fresh()->script);
+    }
+
+    public function test_private_or_deleted_gallery_source_leaves_imported_snapshot_available(): void
+    {
+        [$visitor, $author] = User::factory()->count(2)->create();
+        $source = $this->publishedRecipe($author, 'Temporary helper', 'utilities');
+        $this->actingAs($visitor)->post(route('gallery.install', $source));
+        $copy = $visitor->recipes()->sole();
+        $source->update(['is_published' => false, 'published_at' => null, 'gallery_revision_at' => null]);
+
+        $this->actingAs($visitor)->get(route('recipes.edit', $copy))
+            ->assertSuccessful()
+            ->assertSee('Gallery source unavailable')
+            ->assertSee('Your encrypted private snapshot is unchanged');
+        $this->actingAs($visitor)->post(route('recipes.gallery.refresh', $copy))->assertNotFound();
+        $this->assertSame('echo gallery-script', $copy->fresh()->script);
+
+        $source->delete();
+        $this->assertNull($copy->fresh()->source_recipe_id);
+        $this->assertSame('echo gallery-script', $copy->fresh()->script);
     }
 
     public function test_owner_can_publish_and_unpublish_a_recipe_with_validation(): void
@@ -146,6 +250,7 @@ class RecipeGalleryTest extends TestCase
             'category' => $category,
             'is_published' => true,
             'published_at' => $publishedAt ?? now(),
+            'gallery_revision_at' => $publishedAt ?? now(),
             'install_count' => $installs,
         ]);
     }

@@ -20,6 +20,9 @@ class RecipesController extends Controller
     {
         $filters = $this->indexFilters($request);
         $recipes = $this->filteredRecipes($request, $filters)
+            ->with([
+                'source' => fn ($query) => $query->published()->select(['id', 'gallery_revision_at']),
+            ])
             ->withCount('servers')
             ->latest()
             ->paginate()
@@ -160,6 +163,9 @@ class RecipesController extends Controller
     public function edit(Recipe $recipe): View
     {
         $this->authorize('update', $recipe);
+        $recipe->load([
+            'source' => fn ($query) => $query->published()->with('user:id,name'),
+        ]);
 
         return view('scenes.recipes.edit', ['recipe' => $recipe]);
     }
@@ -239,9 +245,24 @@ class RecipesController extends Controller
         $data = $request->validated();
         $published = (bool) $data['is_published'];
         $data['category'] = $published ? ($data['category'] ?? null) : null;
-        $data['published_at'] = $published
-            ? ($recipe?->published_at ?? now())
-            : null;
+        if (! $published) {
+            $data['published_at'] = null;
+            $data['gallery_revision_at'] = null;
+
+            return $data;
+        }
+
+        $newPublication = ! $recipe?->is_published || $recipe->published_at === null;
+        $contentChanged = $recipe === null
+            || $recipe->name !== $data['name']
+            || $recipe->description !== ($data['description'] ?? null)
+            || $recipe->script !== $data['script']
+            || $recipe->category !== $data['category'];
+
+        $data['published_at'] = $newPublication ? now() : $recipe->published_at;
+        $data['gallery_revision_at'] = $newPublication || $contentChanged
+            ? now()
+            : ($recipe->gallery_revision_at ?? $recipe->published_at ?? now());
 
         return $data;
     }

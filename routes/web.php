@@ -179,6 +179,9 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('recipe')
             ->middleware('throttle:20,1')
             ->name('gallery.install');
+        Route::post('recipes/{recipe}/refresh-from-gallery', [RecipeGalleryController::class, 'refresh'])
+            ->whereNumber('recipe')
+            ->name('recipes.gallery.refresh');
         Route::resource('recipes', RecipesController::class);
         Route::post('recipes/{recipe}/duplicate', [RecipesController::class, 'duplicate'])
             ->name('recipes.duplicate');

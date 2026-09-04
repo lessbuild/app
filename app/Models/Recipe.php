@@ -28,6 +28,8 @@ class Recipe extends Model
         'script' => 'encrypted',
         'is_published' => 'boolean',
         'published_at' => 'datetime',
+        'gallery_revision_at' => 'datetime',
+        'source_revision_at' => 'datetime',
         'install_count' => 'integer',
     ];
 
@@ -38,6 +40,8 @@ class Recipe extends Model
         'is_published',
         'category',
         'published_at',
+        'gallery_revision_at',
+        'source_revision_at',
         'install_count',
         'source_recipe_id',
     ];
@@ -77,5 +81,13 @@ class Recipe extends Model
     public function scopeUnused(Builder $query): Builder
     {
         return $query->whereDoesntHave('servers');
+    }
+
+    public function hasGalleryUpdate(): bool
+    {
+        return $this->source !== null
+            && $this->source->gallery_revision_at !== null
+            && ($this->source_revision_at === null
+                || $this->source->gallery_revision_at->isAfter($this->source_revision_at));
     }
 }
