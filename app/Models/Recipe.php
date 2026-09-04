@@ -74,6 +74,11 @@ class Recipe extends Model
         return $this->hasMany(RecipeRating::class);
     }
 
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(RecipeFavorite::class);
+    }
+
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');

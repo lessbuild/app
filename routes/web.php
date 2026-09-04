@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ProviderConnectionController;
 use App\Http\Controllers\ProviderController;
+use App\Http\Controllers\RecipeFavoritesController;
 use App\Http\Controllers\RecipeGalleryController;
 use App\Http\Controllers\RecipeRatingsController;
 use App\Http\Controllers\RecipesController;
@@ -183,6 +184,14 @@ Route::middleware('auth')->group(function () {
             ->whereNumber('recipe')
             ->middleware('throttle:20,1')
             ->name('gallery.install');
+        Route::post('gallery/{recipe}/favorite', [RecipeFavoritesController::class, 'store'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:30,1')
+            ->name('gallery.favorite.store');
+        Route::delete('gallery/{recipe}/favorite', [RecipeFavoritesController::class, 'destroy'])
+            ->whereNumber('recipe')
+            ->middleware('throttle:30,1')
+            ->name('gallery.favorite.destroy');
         Route::post('gallery/{recipe}/rating', [RecipeRatingsController::class, 'store'])
             ->whereNumber('recipe')
             ->middleware('throttle:30,1')

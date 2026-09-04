@@ -115,6 +115,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->hasMany(RecipeRating::class);
     }
 
+    public function recipeFavorites(): HasMany
+    {
+        return $this->hasMany(RecipeFavorite::class);
+    }
+
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);

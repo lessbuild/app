@@ -18,12 +18,25 @@ class RecipeGalleryController extends Controller
         $filters = $this->filters($request);
         $query = $this->galleryQuery($filters, $request->user()->id);
         $recipes = (clone $query)
+            ->select([
+                'recipes.id',
+                'recipes.user_id',
+                'recipes.name',
+                'recipes.description',
+                'recipes.category',
+                'recipes.published_at',
+                'recipes.gallery_revision_at',
+                'recipes.install_count',
+            ])
             ->with([
                 'user:id,name',
                 'installs' => fn ($query) => $query
                     ->where('user_id', $request->user()->id)
                     ->select(['id', 'user_id', 'source_recipe_id', 'source_revision_at', 'is_published'])
                     ->latest('id'),
+                'favorites' => fn ($query) => $query
+                    ->where('user_id', $request->user()->id)
+                    ->select(['id', 'user_id', 'recipe_id']),
             ])
             ->withCount('ratings')
             ->withAvg('ratings', 'rating')
@@ -67,6 +80,9 @@ class RecipeGalleryController extends Controller
             'recipe' => $recipe,
             'installedRecipe' => $installedRecipe,
             'currentRating' => $request->user()->recipeRatings()
+                ->where('recipe_id', $recipe->id)
+                ->first(),
+            'currentFavorite' => $request->user()->recipeFavorites()
                 ->where('recipe_id', $recipe->id)
                 ->first(),
             'canRate' => $installedRecipe !== null
@@ -201,7 +217,7 @@ class RecipeGalleryController extends Controller
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, Recipe::CATEGORIES, true) ? $category : null,
-            'scope' => in_array($scope, ['all', 'installed', 'updates', 'mine'], true) ? $scope : 'all',
+            'scope' => in_array($scope, ['all', 'favorites', 'installed', 'updates', 'mine'], true) ? $scope : 'all',
             'sort' => in_array($sort, ['recent', 'popular', 'top_rated'], true) ? $sort : 'recent',
         ];
     }
@@ -219,6 +235,15 @@ class RecipeGalleryController extends Controller
             })
             ->when($filters['category'], fn (Builder $query, string $category) => $query->where('category', $category))
             ->when($filters['scope'] === 'mine', fn (Builder $query) => $query->where('user_id', $userId))
+            ->when($filters['scope'] === 'favorites', function (Builder $query) use ($userId): void {
+                $query->whereExists(function ($favorites) use ($userId): void {
+                    $favorites
+                        ->selectRaw('1')
+                        ->from('recipe_favorites as gallery_favorites')
+                        ->whereColumn('gallery_favorites.recipe_id', 'recipes.id')
+                        ->where('gallery_favorites.user_id', $userId);
+                });
+            })
             ->when(in_array($filters['scope'], ['installed', 'updates'], true), function (Builder $query) use ($filters, $userId): void {
                 $query->whereExists(function ($installed) use ($filters, $userId): void {
                     $installed

@@ -36,6 +36,7 @@
                 <label for="scope" class="block text-xs font-semibold uppercase text-secondary">{{ __('Collection') }}</label>
                 <select id="scope" name="scope" class="input secondary mt-1 w-full rounded">
                     <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
+                    <option value="favorites" @selected($filters['scope'] === 'favorites')>{{ __('Saved by me') }}</option>
                     <option value="installed" @selected($filters['scope'] === 'installed')>{{ __('Installed by me') }}</option>
                     <option value="updates" @selected($filters['scope'] === 'updates')>{{ __('Updates available') }}</option>
                     <option value="mine" @selected($filters['scope'] === 'mine')>{{ __('Published by me') }}</option>
@@ -89,6 +90,7 @@
             @foreach ($recipes as $recipe)
                 @php
                     $installedRecipe = $recipe->installs->first();
+                    $favorite = $recipe->favorites->first();
                     $updateAvailable = $installedRecipe?->hasGalleryUpdate($recipe) ?? false;
                 @endphp
                 <article class="rounded-lg border border-primary bg-primary p-5">
@@ -97,6 +99,9 @@
                             <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{{ str($recipe->category)->title() }}</span>
                             @if ((int) $recipe->user_id === (int) auth()->id())
                                 <span class="ml-1 rounded-full bg-purple-100 px-2 py-1 text-xs font-semibold text-purple-700">{{ __('Published by you') }}</span>
+                            @endif
+                            @if ($favorite)
+                                <span class="ml-1 rounded-full bg-pink-100 px-2 py-1 text-xs font-semibold text-pink-700">{{ __('Saved') }}</span>
                             @endif
                             @if ($updateAvailable)
                                 <span class="ml-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">{{ __('Update available') }}</span>
@@ -117,9 +122,23 @@
                         </div>
                     </div>
                     <p class="mt-2 text-sm text-secondary">{{ $recipe->description }}</p>
-                    <div class="mt-4 flex items-center justify-between text-xs text-secondary">
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-secondary">
                         <span>{{ __('By :author', ['author' => $recipe->user->name]) }}</span>
-                        <a href="{{ route('gallery.show', $recipe) }}" class="button tertiary">{{ __('Inspect script') }}</a>
+                        <div class="flex items-center gap-2">
+                            @if ($favorite)
+                                <form method="POST" action="{{ route('gallery.favorite.destroy', $recipe) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="button secondary">{{ __('Remove saved') }}</button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('gallery.favorite.store', $recipe) }}">
+                                    @csrf
+                                    <button type="submit" class="button secondary">{{ __('Save recipe') }}</button>
+                                </form>
+                            @endif
+                            <a href="{{ route('gallery.show', $recipe) }}" class="button tertiary">{{ __('Inspect script') }}</a>
+                        </div>
                     </div>
                 </article>
             @endforeach

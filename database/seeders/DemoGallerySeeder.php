@@ -89,6 +89,9 @@ class DemoGallerySeeder extends Seeder
             ['recipe_id' => $source->id],
             ['rating' => 4],
         );
+        $demoOwner->recipeFavorites()->firstOrCreate([
+            'recipe_id' => $galleryRecipes['Install Node.js LTS']->id,
+        ]);
 
         $demoOwner->recipes()
             ->where('source_recipe_id', $source->id)

@@ -116,6 +116,11 @@ class DemoSeederTest extends TestCase
         $this->assertFalse($importedRecipe->is_published);
         $this->assertSame(1, RecipeRating::query()->count());
         $this->assertSame(4, $user->recipeRatings()->where('recipe_id', $importedRecipe->source_recipe_id)->value('rating'));
+        $this->assertSame(1, $user->recipeFavorites()->count());
+        $this->assertSame(
+            'Install Node.js LTS',
+            $user->recipeFavorites()->with('recipe')->sole()->recipe->name,
+        );
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
             DemoSeeder::PREFIX.'Primary production',
@@ -445,6 +450,18 @@ class DemoSeederTest extends TestCase
                 'ratings' => 1,
             ])
             ->assertSee('Update available');
+        $this->actingAs($user)->get(route('gallery.index', ['scope' => 'favorites']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $communityRecipe->id)
+            ->assertViewHas('metrics', [
+                'published' => 1,
+                'installs' => 31,
+                'authors' => 1,
+                'ratings' => 0,
+            ])
+            ->assertSee('Saved')
+            ->assertSee('Remove saved');
         $this->actingAs($user)->get(route('gallery.index', ['scope' => 'mine']))
             ->assertSuccessful()
             ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
@@ -1025,6 +1042,7 @@ class DemoSeederTest extends TestCase
                 ->count(),
             'recipes' => $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'gallery_ratings' => $user->recipeRatings()->count(),
+            'gallery_favorites' => $user->recipeFavorites()->count(),
             'servers' => $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'websites' => $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'health_checks' => WebsiteHealthCheck::query()

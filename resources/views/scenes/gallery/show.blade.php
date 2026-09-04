@@ -6,6 +6,18 @@
         :description="$recipe->description"
     >
         <x-slot:buttons>
+            @if ($currentFavorite)
+                <form method="POST" action="{{ route('gallery.favorite.destroy', $recipe) }}">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="button secondary">{{ __('Remove Saved') }}</button>
+                </form>
+            @else
+                <form method="POST" action="{{ route('gallery.favorite.store', $recipe) }}">
+                    @csrf
+                    <button type="submit" class="button secondary">{{ __('Save Recipe') }}</button>
+                </form>
+            @endif
             @if ($installedRecipe)
                 <a href="{{ route('recipes.edit', $installedRecipe) }}" class="button secondary">{{ __('View My Copy') }}</a>
                 <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="button secondary">{{ __('Compare Scripts') }}</a>
