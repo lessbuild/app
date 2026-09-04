@@ -105,6 +105,9 @@ delivery IDs, revisions, and commit messages remain outside dashboard data.
 Queued and provisioning servers and websites are combined into a safe infrastructure
 progress panel. It loads only resource IDs, owner IDs, names, statuses, and creation
 timestamps, leaving credentials and environment configuration outside dashboard data.
+Installed gallery recipes with newer published revisions appear in an owner-scoped
+dashboard panel with direct comparison and private-copy links. The summary selects
+only recipe metadata, so encrypted scripts are not loaded into the dashboard request.
 
 Reusable provisioning recipe scripts are encrypted at rest and omitted from
 serialized recipe data. They are decrypted only when editing a recipe or

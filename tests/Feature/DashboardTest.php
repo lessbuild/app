@@ -87,6 +87,84 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_dashboard_surfaces_only_the_owners_gallery_updates_without_loading_scripts(): void
+    {
+        $owner = User::factory()->create();
+        $author = User::factory()->create(['name' => 'Recipe Author']);
+        $other = User::factory()->create();
+        $publishedAt = now()->subDay();
+
+        $source = $author->recipes()->create([
+            'name' => 'Secure web server',
+            'description' => 'Harden a web server.',
+            'script' => 'source-dashboard-secret',
+            'category' => 'security',
+            'is_published' => true,
+            'published_at' => $publishedAt,
+            'gallery_revision_at' => now(),
+        ]);
+        $copy = $owner->recipes()->create([
+            'name' => 'My secure web server',
+            'description' => 'Private copy.',
+            'script' => 'copy-dashboard-secret',
+            'source_recipe_id' => $source->id,
+            'source_revision_at' => $publishedAt,
+        ]);
+
+        $currentSource = $author->recipes()->create([
+            'name' => 'Current recipe',
+            'description' => 'Already current.',
+            'script' => 'current-source-secret',
+            'category' => 'runtime',
+            'is_published' => true,
+            'published_at' => $publishedAt,
+            'gallery_revision_at' => now(),
+        ]);
+        $owner->recipes()->create([
+            'name' => 'Current private copy',
+            'description' => 'Already current.',
+            'script' => 'current-copy-secret',
+            'source_recipe_id' => $currentSource->id,
+            'source_revision_at' => $currentSource->gallery_revision_at,
+        ]);
+        $other->recipes()->create([
+            'name' => 'Foreign stale copy',
+            'description' => 'Belongs to someone else.',
+            'script' => 'foreign-copy-secret',
+            'source_recipe_id' => $source->id,
+            'source_revision_at' => $publishedAt,
+        ]);
+
+        $this->actingAs($owner)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('recipeUpdateCount', 1)
+            ->assertViewHas('recipeUpdates', function ($recipes) use ($source, $copy): bool {
+                if ($recipes->count() !== 1 || $recipes->sole()->id !== $source->id) {
+                    return false;
+                }
+
+                $recipe = $recipes->sole();
+                $installed = $recipe->installs->sole();
+
+                return $installed->id === $copy->id
+                    && ! array_key_exists('script', $recipe->getAttributes())
+                    && ! array_key_exists('description', $recipe->getAttributes())
+                    && ! array_key_exists('script', $installed->getAttributes())
+                    && ! array_key_exists('description', $installed->getAttributes());
+            })
+            ->assertSee('Recipe updates')
+            ->assertSee('1 installed recipe has a gallery update')
+            ->assertSee('Secure web server')
+            ->assertSee('My secure web server')
+            ->assertSee('Recipe Author')
+            ->assertSee(route('gallery.index', ['scope' => 'updates']))
+            ->assertSee(route('gallery.compare', ['recipe' => $source, 'copy' => $copy]))
+            ->assertSee(route('recipes.edit', $copy))
+            ->assertDontSee('Current recipe')
+            ->assertDontSee('Foreign stale copy')
+            ->assertDontSee('dashboard-secret', false);
+    }
+
     public function test_dashboard_surfaces_only_the_owners_current_failures(): void
     {
         Queue::fake();

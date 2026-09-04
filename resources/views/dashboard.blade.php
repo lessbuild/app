@@ -260,6 +260,57 @@
         </section>
     @endif
 
+    @if ($recipeUpdateCount > 0)
+        <section class="mb-12 rounded-lg border border-orange-300 bg-orange-50 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-orange-900">{{ __('Recipe updates') }}</h2>
+                    <p class="mt-1 text-sm text-orange-800">
+                        {{ trans_choice(':count installed recipe has a gallery update|:count installed recipes have gallery updates', $recipeUpdateCount, ['count' => $recipeUpdateCount]) }}
+                    </p>
+                </div>
+                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="text-sm font-medium text-orange-800 underline">
+                    {{ __('View all updates') }}
+                </a>
+            </div>
+
+            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+                @foreach ($recipeUpdates as $recipe)
+                    @php($installedRecipe = $recipe->installs->first(fn ($copy) => $copy->hasGalleryUpdate($recipe)))
+                    @continue($installedRecipe === null)
+                    <div class="rounded border border-orange-200 bg-white p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <span class="block font-medium text-primary">{{ $recipe->name }}</span>
+                                <span class="mt-1 block text-sm text-secondary">
+                                    {{ str($recipe->category)->headline() }} &middot; {{ __('by :author', ['author' => $recipe->user->name]) }}
+                                </span>
+                                <span class="mt-1 block text-xs text-orange-800">
+                                    {{ __('Installed as :name', ['name' => $installedRecipe->name]) }}
+                                    &middot; {{ __('updated :time', ['time' => $recipe->gallery_revision_at->diffForHumans()]) }}
+                                </span>
+                            </div>
+                            <div class="flex gap-3 text-sm font-medium">
+                                <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="text-orange-800 underline">
+                                    {{ __('Review changes') }}
+                                </a>
+                                <a href="{{ route('recipes.edit', $installedRecipe) }}" class="text-ternary underline">
+                                    {{ __('Edit copy') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            @if ($recipeUpdateCount > $recipeUpdates->count())
+                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="mt-4 inline-block text-sm font-medium text-orange-800 underline">
+                    {{ trans_choice(':count more recipe update|:count more recipe updates', $recipeUpdateCount - $recipeUpdates->count(), ['count' => $recipeUpdateCount - $recipeUpdates->count()]) }}
+                </a>
+            @endif
+        </section>
+    @endif
+
     @php($attentionTotal = array_sum($attentionCounts))
     <section @class([
         'mb-12 rounded-lg border p-5',

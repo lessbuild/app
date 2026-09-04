@@ -327,7 +327,14 @@ class DemoSeederTest extends TestCase
             ->assertSee(DemoSeeder::PREFIX.'Provisioning website')
             ->assertSee('Active server commands')
             ->assertSee('2 commands are active')
-            ->assertSee('Running');
+            ->assertSee('Running')
+            ->assertViewHas('recipeUpdateCount', 1)
+            ->assertSee('Recipe updates')
+            ->assertSee('Harden SSH defaults')
+            ->assertSee(route('gallery.compare', [
+                'recipe' => $gallerySource,
+                'copy' => $importedRecipe,
+            ]));
         $this->actingAs($user)->get(route('providers.index'))
             ->assertSuccessful()
             ->assertViewHas('metrics', [

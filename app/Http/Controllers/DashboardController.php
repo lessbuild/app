@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\Recipe;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -72,6 +73,21 @@ class DashboardController extends Controller
             ->sortByDesc('created_at')
             ->take(5)
             ->values();
+        $recipeUpdates = Recipe::query()
+            ->published()
+            ->whereNotNull('gallery_revision_at')
+            ->whereExists(function ($installed) use ($user): void {
+                $installed
+                    ->selectRaw('1')
+                    ->from('recipes as gallery_installs')
+                    ->whereColumn('gallery_installs.source_recipe_id', 'recipes.id')
+                    ->where('gallery_installs.user_id', $user->id)
+                    ->where(function ($revision): void {
+                        $revision
+                            ->whereNull('gallery_installs.source_revision_at')
+                            ->orWhereColumn('gallery_installs.source_revision_at', '<', 'recipes.gallery_revision_at');
+                    });
+            });
 
         return view('dashboard', [
             'stats' => [
@@ -130,6 +146,19 @@ class DashboardController extends Controller
                 ->get(),
             'provisioningCounts' => $provisioningCounts,
             'provisioningResources' => $provisioningResources,
+            'recipeUpdateCount' => (clone $recipeUpdates)->count(),
+            'recipeUpdates' => $recipeUpdates
+                ->select(['id', 'user_id', 'name', 'category', 'gallery_revision_at'])
+                ->with([
+                    'user:id,name',
+                    'installs' => fn ($query) => $query
+                        ->where('user_id', $user->id)
+                        ->select(['id', 'user_id', 'source_recipe_id', 'name', 'source_revision_at'])
+                        ->oldest('source_revision_at'),
+                ])
+                ->latest('gallery_revision_at')
+                ->limit(5)
+                ->get(),
             'attentionWebsites' => $attentionWebsites
                 ->with('server')
                 ->latest()
