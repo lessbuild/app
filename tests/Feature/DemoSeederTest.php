@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Build;
 use App\Models\Provider;
+use App\Models\ProviderConnectionCheck;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -60,6 +61,26 @@ class DemoSeederTest extends TestCase
             null,
         ], $user->providers()->distinct()->pluck('connection_status')->all());
         $this->assertSame(0, $user->providers()->where('connection_monitoring_enabled', true)->count());
+        $this->assertSame(4, ProviderConnectionCheck::query()
+            ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
+            ->count());
+        $this->assertEqualsCanonicalizing(
+            [ProviderConnectionCheck::SOURCE_AUTOMATIC, ProviderConnectionCheck::SOURCE_MANUAL],
+            ProviderConnectionCheck::query()
+                ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
+                ->distinct()
+                ->pluck('source')
+                ->all(),
+        );
+        $this->assertEqualsCanonicalizing(
+            [false, true],
+            ProviderConnectionCheck::query()
+                ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
+                ->distinct()
+                ->pluck('successful')
+                ->map(fn ($value): bool => (bool) $value)
+                ->all(),
+        );
         $this->assertSame(2, $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(5, $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertSame(
@@ -229,6 +250,7 @@ class DemoSeederTest extends TestCase
         Artisan::call('db:seed', ['--class' => DemoSeeder::class, '--force' => true]);
         $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
         $provider = $user->providers()->where('name', DemoSeeder::PREFIX.'GitHub')->sole();
+        $emptyHistoryProvider = $user->providers()->where('name', DemoSeeder::PREFIX.'Bitbucket')->sole();
         $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->sole();
         $queuedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Queued application')->sole();
         $provisioningServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Provisioning worker')->sole();
@@ -246,6 +268,25 @@ class DemoSeederTest extends TestCase
             ->assertSee('Active server commands')
             ->assertSee('2 commands are active')
             ->assertSee('Running');
+        $this->actingAs($user)->get(route('providers.show', $provider))
+            ->assertSuccessful()
+            ->assertSee('Recent connection checks')
+            ->assertSee('Manual')
+            ->assertSee('Automatic')
+            ->assertSee('HTTP 401')
+            ->assertSee('85 ms')
+            ->assertSee('Demo GitHub credential was rejected before recovery.')
+            ->assertSee(route('providers.connection-checks.export', $provider));
+        $this->actingAs($user)->get(route('providers.show', $emptyHistoryProvider))
+            ->assertSuccessful()
+            ->assertSee('No connection checks have been recorded yet.');
+        $providerHistoryExport = $this->actingAs($user)
+            ->get(route('providers.connection-checks.export', $provider));
+        $providerHistoryExport->assertSuccessful();
+        $this->assertStringContainsString(
+            'Demo GitHub credential was rejected before recovery.',
+            $providerHistoryExport->streamedContent(),
+        );
         $this->actingAs($user)->get(route('servers.show', $queuedServer))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)
@@ -407,6 +448,9 @@ class DemoSeederTest extends TestCase
     {
         return [
             'providers' => $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
+            'provider_checks' => ProviderConnectionCheck::query()
+                ->whereHas('provider', fn ($query) => $query->where('user_id', $user->id))
+                ->count(),
             'recipes' => $user->recipes()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'servers' => $user->servers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
             'websites' => $user->websites()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
+use App\Models\ProviderConnectionCheck;
 use App\Models\Recipe;
 use App\Models\Region;
 use App\Models\Repository;
@@ -26,6 +27,7 @@ class DemoInfrastructureSeeder extends Seeder
             DB::transaction(function (): void {
                 $user = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
                 $providers = $this->providers($user);
+                $this->providerConnectionChecks($providers);
                 $recipes = $this->recipes($user);
                 $servers = $this->servers($user, $providers[Provider::TYPE_DIGITALOCEAN]);
 
@@ -73,6 +75,40 @@ class DemoInfrastructureSeeder extends Seeder
         }
 
         return $providers;
+    }
+
+    /** @param array<string, Provider> $providers */
+    private function providerConnectionChecks(array $providers): void
+    {
+        $definitions = [
+            [$providers[Provider::TYPE_DIGITALOCEAN], ProviderConnectionCheck::SOURCE_AUTOMATIC, true, 200, 130, null, 15],
+            [$providers[Provider::TYPE_GITHUB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 180, 'Demo GitHub credential was rejected before recovery.', 30],
+            [$providers[Provider::TYPE_GITHUB], ProviderConnectionCheck::SOURCE_MANUAL, true, 200, 85, null, 15],
+            [$providers[Provider::TYPE_GITLAB], ProviderConnectionCheck::SOURCE_AUTOMATIC, false, 401, 175, 'Demo GitLab credential is expired.', 15],
+        ];
+
+        foreach ($definitions as [$provider, $source, $successful, $status, $duration, $error, $minutesAgo]) {
+            $endpoint = match ($provider->provider) {
+                Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+                Provider::TYPE_GITHUB => 'https://api.github.com/user',
+                Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
+                default => null,
+            };
+            $provider->connectionChecks()->updateOrCreate(
+                [
+                    'source' => $source,
+                    'duration_ms' => $duration,
+                    'endpoint' => $endpoint,
+                ],
+                [
+                    'successful' => $successful,
+                    'provider_type' => $provider->provider,
+                    'http_status' => $status,
+                    'error' => $error,
+                    'checked_at' => now()->subMinutes($minutesAgo),
+                ],
+            );
+        }
     }
 
     /** @return array<string, Recipe> */

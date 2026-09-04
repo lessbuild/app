@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Provider;
+use App\Models\ProviderConnectionCheck;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -43,6 +44,13 @@ class ProviderConnectionTest extends TestCase
             $provider->refresh();
             $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->connection_status);
             $this->assertNotNull($provider->connection_checked_at);
+            $check = $provider->connectionChecks()->sole();
+            $this->assertTrue($check->successful);
+            $this->assertSame(ProviderConnectionCheck::SOURCE_MANUAL, $check->source);
+            $this->assertSame($type, $check->provider_type);
+            $this->assertSame(200, $check->http_status);
+            $this->assertSame($url, $check->endpoint);
+            $this->assertNull($check->error);
 
             Http::assertSent(function (Request $request) use ($type, $url): bool {
                 $authorization = $request->header('Authorization')[0] ?? null;
@@ -86,12 +94,20 @@ class ProviderConnectionTest extends TestCase
         ]);
         $this->assertSame(Provider::CONNECTION_FAILED, $provider->fresh()->connection_status);
         $this->assertNotNull($provider->fresh()->connection_checked_at);
+        $checks = $provider->connectionChecks()->latest('id')->get();
+        $this->assertCount(2, $checks);
+        $this->assertFalse($checks->first()->successful);
+        $this->assertSame(401, $checks->first()->http_status);
+        $this->assertStringContainsString('GitHub returned HTTP 401', $checks->first()->error);
+        $this->assertStringNotContainsString('credential-never-render', $checks->first()->error);
+        $this->assertStringNotContainsString('upstream-body-never-render', $checks->first()->error);
 
         $page = $this->actingAs($owner)
             ->withSession(['provider_connection' => $response->getSession()->get('provider_connection')])
             ->get(route('providers.show', $provider));
         $page
             ->assertSuccessful()
+            ->assertSee('Recent connection checks')
             ->assertSee('Connection failed. GitHub returned HTTP 401.')
             ->assertDontSee('credential-never-render')
             ->assertDontSee('upstream-body-never-render');
@@ -112,6 +128,10 @@ class ProviderConnectionTest extends TestCase
             ]);
         $this->assertSame(Provider::CONNECTION_FAILED, $provider->fresh()->connection_status);
         $this->assertNotNull($provider->fresh()->connection_checked_at);
+        $check = $provider->connectionChecks()->sole();
+        $this->assertNull($check->http_status);
+        $this->assertSame('https://api.digitalocean.com/v2/account', $check->endpoint);
+        $this->assertSame('Could not reach DigitalOcean. Try again later.', $check->error);
     }
 
     public function test_other_users_and_guests_cannot_test_a_provider_credential(): void
@@ -251,6 +271,7 @@ class ProviderConnectionTest extends TestCase
         $this->assertNull($provider->connection_status);
         $this->assertNull($provider->connection_checked_at);
         $this->assertSame('replacement-secret', $provider->token);
+        $this->assertSame(0, $provider->connectionChecks()->count());
     }
 
     private function provider(User $user, string $type, string $token): Provider

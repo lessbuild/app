@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 
 class ProviderConnectionTester
 {
-    /** @return array{successful: bool, message: string} */
+    /** @return array{successful: bool, message: string, http_status: ?int} */
     public function test(Provider $provider): array
     {
         $label = $this->label($provider);
@@ -18,6 +18,7 @@ class ProviderConnectionTester
             return [
                 'successful' => false,
                 'message' => __('Connection failed. This provider has no credential.'),
+                'http_status' => null,
             ];
         }
 
@@ -27,6 +28,7 @@ class ProviderConnectionTester
             return [
                 'successful' => false,
                 'message' => __('Could not reach :provider. Try again later.', ['provider' => $label]),
+                'http_status' => null,
             ];
         }
 
@@ -34,6 +36,7 @@ class ProviderConnectionTester
             return [
                 'successful' => false,
                 'message' => __('Connection checks are not supported for this provider type.'),
+                'http_status' => null,
             ];
         }
 
@@ -41,6 +44,7 @@ class ProviderConnectionTester
             return [
                 'successful' => true,
                 'message' => __('Connection successful. :provider accepted this credential.', ['provider' => $label]),
+                'http_status' => $response->status(),
             ];
         }
 
@@ -50,7 +54,19 @@ class ProviderConnectionTester
                 'provider' => $label,
                 'status' => $response->status(),
             ]),
+            'http_status' => $response->status(),
         ];
+    }
+
+    public function endpoint(string $providerType): ?string
+    {
+        return match ($providerType) {
+            Provider::TYPE_GITHUB => 'https://api.github.com/user',
+            Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
+            Provider::TYPE_BITBUCKET => 'https://api.bitbucket.org/2.0/user',
+            Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+            default => null,
+        };
     }
 
     private function request(Provider $provider): ?Response

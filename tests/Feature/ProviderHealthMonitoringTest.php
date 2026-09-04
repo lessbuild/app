@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Provider;
+use App\Models\ProviderConnectionCheck;
 use App\Models\User;
 use App\Notifications\FailureNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,6 +40,12 @@ class ProviderHealthMonitoringTest extends TestCase
         $this->assertSame(Provider::CONNECTION_FAILED, $stale->fresh()->connection_status);
         $this->assertSame(Provider::CONNECTION_FAILED, $recent->fresh()->connection_status);
         $this->assertSame($recentCheckedAt->timestamp, $recent->fresh()->connection_checked_at->timestamp);
+        $this->assertSame(1, $unchecked->connectionChecks()->count());
+        $this->assertSame(1, $stale->connectionChecks()->count());
+        $this->assertSame(0, $recent->connectionChecks()->count());
+        $this->assertTrue($unchecked->connectionChecks()->sole()->successful);
+        $this->assertSame(ProviderConnectionCheck::SOURCE_AUTOMATIC, $unchecked->connectionChecks()->sole()->source);
+        $this->assertFalse($stale->connectionChecks()->sole()->successful);
         Http::assertSentCount(2);
 
         Artisan::call('lessbuild:providers:health');
@@ -88,6 +95,10 @@ class ProviderHealthMonitoringTest extends TestCase
         $this->assertSame('Provider "Production GitHub" connection recovered', $recovery->data['title']);
         $this->assertNull($recovery->read_at);
         $this->assertSame(route('providers.show', $provider), FailureNotification::destination($recovery->data));
+        $checks = $provider->connectionChecks()->oldest('id')->get();
+        $this->assertCount(3, $checks);
+        $this->assertEqualsCanonicalizing([false, false, true], $checks->pluck('successful')->all());
+        $this->assertTrue($checks->every(fn (ProviderConnectionCheck $check): bool => $check->source === ProviderConnectionCheck::SOURCE_AUTOMATIC));
 
         $this->actingAs($owner)->get(route('notifications.index', ['category' => 'provider']))
             ->assertSuccessful()
@@ -116,6 +127,41 @@ class ProviderHealthMonitoringTest extends TestCase
 
         $this->assertStringContainsString('Checked 1 provider(s)', Artisan::output());
         Http::assertSentCount(1);
+    }
+
+    public function test_accepted_check_retains_only_the_newest_hundred_results(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['https://api.github.com/user' => Http::response(['login' => 'owner'])]);
+        $owner = User::factory()->create();
+        $provider = $this->provider($owner, 'Bounded history');
+        foreach (range(1, ProviderConnectionCheck::MAX_PER_PROVIDER) as $position) {
+            $provider->connectionChecks()->create([
+                'successful' => false,
+                'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+                'provider_type' => Provider::TYPE_GITHUB,
+                'http_status' => 401,
+                'duration_ms' => 100,
+                'endpoint' => 'https://api.github.com/user',
+                'error' => 'Historical failure',
+                'checked_at' => now()->subMinutes(101 - $position),
+            ]);
+        }
+        $oldestId = $provider->connectionChecks()->oldest('checked_at')->value('id');
+
+        Artisan::call('lessbuild:providers:health', ['--provider' => [$provider->id]]);
+
+        $this->assertSame(ProviderConnectionCheck::MAX_PER_PROVIDER, $provider->connectionChecks()->count());
+        $this->assertDatabaseMissing('provider_connection_checks', ['id' => $oldestId]);
+        $this->assertDatabaseHas('provider_connection_checks', [
+            'provider_id' => $provider->id,
+            'successful' => true,
+            'source' => ProviderConnectionCheck::SOURCE_AUTOMATIC,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 200,
+            'endpoint' => 'https://api.github.com/user',
+            'error' => null,
+        ]);
     }
 
     public function test_daemon_installer_runs_provider_checks_in_the_existing_health_timer(): void

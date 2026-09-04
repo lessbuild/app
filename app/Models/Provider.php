@@ -88,6 +88,11 @@ class Provider extends Model
         return $this->hasMany(Repository::class);
     }
 
+    public function connectionChecks(): HasMany
+    {
+        return $this->hasMany(ProviderConnectionCheck::class);
+    }
+
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');

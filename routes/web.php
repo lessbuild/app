@@ -172,6 +172,8 @@ Route::middleware('auth')->group(function () {
             ->name('recipes.duplicate');
         Route::get('providers/export', [ProviderController::class, 'export'])
             ->name('providers.export');
+        Route::get('providers/{provider}/connection-checks/export', [ProviderController::class, 'exportConnectionChecks'])
+            ->name('providers.connection-checks.export');
         Route::resource('providers', ProviderController::class);
         Route::post('providers/{provider}/connection/test', ProviderConnectionController::class)
             ->middleware('throttle:6,1')

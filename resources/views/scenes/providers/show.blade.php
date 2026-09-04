@@ -93,6 +93,67 @@
         </div>
     @endif
 
+    <section class="mt-8" aria-labelledby="connection-history-heading">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h2 id="connection-history-heading" class="text-2xl font-bold text-primary">{{ __('Recent connection checks') }}</h2>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Accepted manual and automatic results are retained for the latest 100 checks. This page shows the newest 20 without credentials or response bodies.') }}
+                </p>
+            </div>
+            @if ($connectionChecks->isNotEmpty())
+                <a href="{{ route('providers.connection-checks.export', $provider) }}" class="button primary">{{ __('Export connection history') }}</a>
+            @endif
+        </div>
+
+        @if ($connectionChecks->isEmpty())
+            <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
+                {{ __('No connection checks have been recorded yet.') }}
+            </div>
+        @else
+            <div class="mt-4 overflow-x-auto rounded-lg border border-primary">
+                <table class="min-w-full divide-y divide-primary bg-primary text-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Result') }}</th>
+                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Source') }}</th>
+                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Provider type') }}</th>
+                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Response') }}</th>
+                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Endpoint') }}</th>
+                            <th scope="col" class="px-4 py-3 text-right font-semibold text-secondary">{{ __('Checked') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-primary">
+                        @foreach ($connectionChecks as $check)
+                            <tr class="align-top">
+                                <td class="px-4 py-3">
+                                    <span @class([
+                                        'rounded-full px-2 py-1 text-xs font-semibold uppercase',
+                                        'bg-green-100 text-green-700' => $check->successful,
+                                        'bg-red-100 text-red-700' => ! $check->successful,
+                                    ])>{{ $check->successful ? __('Healthy') : __('Failed') }}</span>
+                                    @if ($check->error)
+                                        <p class="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-red-700">{{ $check->error }}</p>
+                                    @endif
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3 text-primary">{{ str($check->source)->title() }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-primary">{{ str($check->provider_type)->headline() }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-primary">
+                                    {{ $check->http_status ? __('HTTP :status', ['status' => $check->http_status]) : __('No status') }}
+                                    <span class="block text-xs text-secondary">{{ __(':duration ms', ['duration' => $check->duration_ms]) }}</span>
+                                </td>
+                                <td class="max-w-md break-all px-4 py-3 font-mono text-xs text-primary">{{ $check->endpoint ?? __('Unavailable') }}</td>
+                                <td class="whitespace-nowrap px-4 py-3 text-right text-secondary" title="{{ $check->checked_at }}">
+                                    {{ $check->checked_at->diffForHumans() }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </section>
+
     <!--
      ! ------------------------------------------------------------
      ! List attached servers or repos for this token
