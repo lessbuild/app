@@ -73,6 +73,7 @@ class CreateWebsiteBackupJob implements ShouldQueue
         preg_match('/"total_bytes_processed"\s*:\s*(\d+)/', $output, $bytes);
         $backup->update([
             'status' => WebsiteBackup::STATUS_SUCCEEDED,
+            'https_verified_at' => parse_url($backup->destination->endpoint, PHP_URL_SCHEME) === 'https' ? now() : null,
             'snapshot_id' => strtolower($snapshot[1]),
             'size_bytes' => isset($bytes[1]) ? (int) $bytes[1] : null,
             'completed_at' => now(),

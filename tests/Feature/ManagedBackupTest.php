@@ -69,6 +69,7 @@ class ManagedBackupTest extends TestCase
         $backup->refresh();
         $this->assertSame(WebsiteBackup::STATUS_SUCCEEDED, $backup->status);
         $this->assertSame('abcdef1234567890', $backup->snapshot_id);
+        $this->assertNotNull($backup->https_verified_at);
         $this->assertSame(4096, $backup->size_bytes);
         $this->assertStringContainsString('mysqldump --single-transaction', $command);
         $this->assertStringContainsString('restic backup --json', $command);

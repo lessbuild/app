@@ -22,6 +22,7 @@ class WebsiteBackup extends Model
         'size_bytes' => 'integer',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
+        'https_verified_at' => 'datetime',
     ];
 
     public function website(): BelongsTo

@@ -20,6 +20,11 @@ class ReleaseAcceptance
         $project->loadMissing(['environments.server.provider', 'environments.website']);
         $candidates = $project->environments
             ->filter(fn ($environment): bool => $environment->server?->provider
+                && $environment->website !== null
+                && (int) $environment->website->server_id === (int) $environment->server_id
+                && (int) $environment->server->organization_id === (int) $project->organization_id
+                && (int) $environment->website->organization_id === (int) $project->organization_id
+                && (int) $environment->server->provider->organization_id === (int) $project->organization_id
                 && in_array($environment->server->provider->provider, Provider::SERVER_TYPES, true)
                 && ($provider === null || $environment->server->provider->provider === $provider));
 
@@ -32,9 +37,24 @@ class ReleaseAcceptance
     /** @return list<array{name: string, passed: bool, detail: string}> */
     private function auditEnvironment(Environment $environment, ?Carbon $since): array
     {
+        $best = $this->missingChecks();
+        foreach ($this->releaseChains($environment, $since) as $chain) {
+            $checks = $this->auditChain($environment, $since, $chain);
+            if (collect($checks)->every('passed')) {
+                return $checks;
+            }
+            if (collect($checks)->where('passed', true)->count() > collect($best)->where('passed', true)->count()) {
+                $best = $checks;
+            }
+        }
+
+        return $best;
+    }
+
+    private function auditChain(Environment $environment, ?Carbon $since, array $chain): array
+    {
         $server = $environment->server;
         $website = $environment->website;
-        $chain = $this->releaseChain($environment, $since);
         $initial = $chain['initial'];
         $second = $chain['second'];
         $rollback = $chain['rollback'];
@@ -45,8 +65,9 @@ class ReleaseAcceptance
         $websiteReady = $website?->provisioning_status === Website::STATUS_ACTIVE
             && $this->between($website?->provisioned_at, $since, $initial?->finished_at);
 
-        $backup = WebsiteBackup::query()
+        $backups = WebsiteBackup::query()
             ->with('destination')
+            ->when($rollback === null, fn ($query) => $query->whereRaw('1 = 0'))
             ->where('website_id', $website?->id)
             ->where('status', WebsiteBackup::STATUS_SUCCEEDED)
             ->whereNotNull('snapshot_id')
@@ -55,18 +76,26 @@ class ReleaseAcceptance
             ->when($since, fn ($query) => $query->where('completed_at', '>=', $since))
             ->oldest('completed_at')
             ->get()
-            ->first(fn (WebsiteBackup $candidate): bool => preg_match('/\A[a-f0-9]{8,64}\z/D', (string) $candidate->snapshot_id) === 1
+            ->filter(fn (WebsiteBackup $candidate): bool => preg_match('/\A[a-f0-9]{8,64}\z/D', (string) $candidate->snapshot_id) === 1
                 && $candidate->destination !== null
-                && str_starts_with(strtolower((string) $candidate->destination->endpoint), 'https://')
-                && $this->between($candidate->destination->last_verified_at, $since, $candidate->completed_at));
+                && (int) $candidate->destination->organization_id === (int) $website->organization_id
+                && $this->between($candidate->https_verified_at, $since, $candidate->completed_at));
 
-        $restore = $backup ? BackupRestore::query()
-            ->where('website_backup_id', $backup->id)
-            ->where('status', BackupRestore::STATUS_SUCCEEDED)
-            ->whereNotNull('completed_at')
-            ->where('completed_at', '>=', $backup->completed_at)
-            ->oldest('completed_at')
-            ->first() : null;
+        $backup = $backups->first();
+        $restore = null;
+        foreach ($backups as $candidate) {
+            $candidateRestore = BackupRestore::query()
+                ->where('website_backup_id', $candidate->id)
+                ->where('status', BackupRestore::STATUS_SUCCEEDED)
+                ->whereNotNull('completed_at')
+                ->where('completed_at', '>=', $candidate->completed_at)
+                ->oldest('completed_at')
+                ->first();
+            if ($candidateRestore !== null && ($restore === null || $candidateRestore->completed_at->lessThan($restore->completed_at))) {
+                $backup = $candidate;
+                $restore = $candidateRestore;
+            }
+        }
 
         $healthy = $website?->health_check_enabled === true
             && $website->health_status === Website::HEALTH_HEALTHY
@@ -87,8 +116,8 @@ class ReleaseAcceptance
         ];
     }
 
-    /** @return array{initial: ?Build, second: ?Build, rollback: ?Build} */
-    private function releaseChain(Environment $environment, ?Carbon $since): array
+    /** @return iterable<array{initial: ?Build, second: ?Build, rollback: ?Build}> */
+    private function releaseChains(Environment $environment, ?Carbon $since): iterable
     {
         $rollbacks = Build::query()
             ->with('rolledBackFrom')
@@ -116,19 +145,25 @@ class ReleaseAcceptance
                 ->where('finished_at', '<=', $rollback->finished_at)
                 ->where('revision', '!=', $initial->revision)
                 ->oldest('finished_at')
-                ->first();
+                ->get()->first(fn (Build $build): bool => $this->validRevision($build->revision));
 
             if ($second !== null && $this->validRevision($second->revision)) {
-                return compact('initial', 'second', 'rollback');
+                yield compact('initial', 'second', 'rollback');
             }
         }
 
-        return ['initial' => null, 'second' => null, 'rollback' => null];
+        yield ['initial' => null, 'second' => null, 'rollback' => null];
     }
 
     private function validInitialBuild(?Build $initial, Environment $environment, ?Carbon $since, Build $rollback): bool
     {
         return $initial !== null
+            && $initial->repository !== null
+            && (int) $initial->repository->organization_id === (int) $environment->website->organization_id
+            && (int) $initial->repository->website_id === (int) $environment->website_id
+            && (int) $initial->repository_id === (int) $rollback->repository_id
+            && $initial->release_name === $rollback->release_name
+            && $initial->release_path === $rollback->release_path
             && (int) $initial->environment_id === (int) $environment->id
             && $initial->status === Build::STATUS_SUCCEEDED
             && $initial->trigger_source !== Build::TRIGGER_ROLLBACK

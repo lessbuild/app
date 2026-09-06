@@ -95,6 +95,7 @@ class ReleaseAcceptanceTest extends TestCase
             'backup_destination_id' => $destination->id,
             'status' => WebsiteBackup::STATUS_SUCCEEDED,
             'snapshot_id' => str_repeat('c', 40),
+            'https_verified_at' => now()->subMinutes(15),
             'completed_at' => now()->subMinutes(15),
         ]);
         $restore = BackupRestore::query()->create([
@@ -115,7 +116,69 @@ class ReleaseAcceptanceTest extends TestCase
             '--provider' => Provider::TYPE_HETZNER,
             '--since' => now()->subHour()->toIso8601String(),
             '--json' => true,
+        ])->expectsOutputToContain('"scope": "recorded_lifecycle_evidence"')
+            ->assertSuccessful();
+
+        $laterRollback = $rollback->replicate();
+        $laterRollback->finished_at = now()->subMinute();
+        $laterRollback->save();
+        $this->artisan('buildpusher:acceptance:audit', [
+            'project' => $project->id,
+            '--provider' => Provider::TYPE_HETZNER,
+            '--since' => now()->subHour()->toIso8601String(),
+            '--json' => true,
         ])->expectsOutputToContain('"status": "passed"')->assertSuccessful();
+        $laterRollback->delete();
+
+        $unusedBackup = $website->backups()->create([
+            'backup_destination_id' => $destination->id,
+            'status' => WebsiteBackup::STATUS_SUCCEEDED,
+            'snapshot_id' => str_repeat('d', 40),
+            'https_verified_at' => now()->subMinutes(16),
+            'completed_at' => now()->subMinutes(16),
+        ]);
+        $this->artisan('buildpusher:acceptance:audit', [
+            'project' => $project->id,
+            '--provider' => Provider::TYPE_HETZNER,
+            '--since' => now()->subHour()->toIso8601String(),
+            '--json' => true,
+        ])->expectsOutputToContain('"status": "passed"')->assertSuccessful();
+        $unusedBackup->delete();
+
+        $foreignOwner = User::factory()->create();
+        foreach ([$repository, $destination, $website, $website->server, $website->server->provider] as $resource) {
+            $organizationId = $resource->organization_id;
+            $resource->forceFill(['organization_id' => $foreignOwner->current_organization_id])->save();
+            $this->artisan('buildpusher:acceptance:audit', [
+                'project' => $project->id,
+                '--provider' => Provider::TYPE_HETZNER,
+                '--since' => now()->subHour()->toIso8601String(),
+                '--json' => true,
+            ])->expectsOutputToContain('"status": "incomplete"')->assertFailed();
+            $resource->forceFill(['organization_id' => $organizationId])->save();
+        }
+
+        $originalServer = $environment->server_id;
+        $environment->update(['server_id' => null]);
+        $this->artisan('buildpusher:acceptance:audit', [
+            'project' => $project->id,
+            '--provider' => Provider::TYPE_HETZNER,
+            '--since' => now()->subHour()->toIso8601String(),
+            '--json' => true,
+        ])->expectsOutputToContain('"status": "incomplete"')->assertFailed();
+        $environment->update(['server_id' => $originalServer]);
+
+        foreach (['release_name' => 'different-release', 'release_path' => '/different/artifact'] as $field => $value) {
+            $original = $rollback->{$field};
+            $rollback->update([$field => $value]);
+            $this->artisan('buildpusher:acceptance:audit', [
+                'project' => $project->id,
+                '--provider' => Provider::TYPE_HETZNER,
+                '--since' => now()->subHour()->toIso8601String(),
+                '--json' => true,
+            ])->expectsOutputToContain('"status": "incomplete"')->assertFailed();
+            $rollback->update([$field => $original]);
+        }
 
         $health->update(['checked_at' => now()->subMinutes(11)]);
         $this->artisan('buildpusher:acceptance:audit', [
@@ -135,14 +198,21 @@ class ReleaseAcceptanceTest extends TestCase
         ])->expectsOutputToContain('"status": "incomplete"')->assertFailed();
         $restore->update(['completed_at' => now()->subMinutes(10)]);
 
-        $destination->update(['last_verified_at' => now()->subMinutes(14)]);
+        $backup->update(['https_verified_at' => null]);
         $this->artisan('buildpusher:acceptance:audit', [
             'project' => $project->id,
             '--provider' => Provider::TYPE_HETZNER,
             '--since' => now()->subHour()->toIso8601String(),
             '--json' => true,
         ])->expectsOutputToContain('"status": "incomplete"')->assertFailed();
-        $destination->update(['last_verified_at' => now()->subMinutes(16)]);
+        $backup->update(['https_verified_at' => now()->subMinutes(15)]);
+        $destination->update(['last_verified_at' => now()]);
+        $this->artisan('buildpusher:acceptance:audit', [
+            'project' => $project->id,
+            '--provider' => Provider::TYPE_HETZNER,
+            '--since' => now()->subHour()->toIso8601String(),
+            '--json' => true,
+        ])->expectsOutputToContain('"status": "passed"')->assertSuccessful();
 
         $this->artisan('buildpusher:acceptance:audit', [
             'project' => $project->id,
@@ -179,6 +249,8 @@ class ReleaseAcceptanceTest extends TestCase
             'status' => Build::STATUS_SUCCEEDED,
             'trigger_source' => Build::TRIGGER_MANUAL,
             'revision' => str_repeat('a', 40),
+            'release_name' => 'release-a',
+            'release_path' => '/var/www/acceptance/releases/release-a',
             'finished_at' => now()->subMinutes(40),
         ]);
         $repository->builds()->create([
@@ -244,6 +316,18 @@ class ReleaseAcceptanceTest extends TestCase
             '--provider' => Provider::TYPE_HETZNER,
             '--since' => now()->toIso8601String(),
         ])->expectsOutputToContain('Project must identify an existing project')->assertExitCode(2);
+    }
+
+    public function test_invalid_calendar_dates_cannot_be_normalized_into_acceptance_cutoffs(): void
+    {
+        [$project] = $this->acceptanceInfrastructure();
+        foreach (['2026-02-30T12:00:00Z', '2026-09-06T24:00:00Z', '2026-09-06T12:00:60Z'] as $since) {
+            $this->artisan('buildpusher:acceptance:audit', [
+                'project' => $project->id,
+                '--provider' => Provider::TYPE_HETZNER,
+                '--since' => $since,
+            ])->expectsOutputToContain('Since must be a valid ISO-8601')->assertExitCode(2);
+        }
     }
 
     /** @return array{Project, Website, Environment} */

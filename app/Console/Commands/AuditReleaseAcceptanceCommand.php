@@ -42,6 +42,10 @@ class AuditReleaseAcceptanceCommand extends Command
                 throw new \InvalidArgumentException;
             }
             $since = Carbon::parse((string) $sinceValue)->utc();
+            $parts = date_parse((string) $sinceValue);
+            if ($parts['warning_count'] > 0 || $parts['error_count'] > 0) {
+                throw new \InvalidArgumentException;
+            }
         } catch (Throwable) {
             $this->error('Since must be a valid ISO-8601 date and time.');
 
@@ -50,6 +54,11 @@ class AuditReleaseAcceptanceCommand extends Command
 
         $checks = $acceptance->audit($project, $since, $provider);
         $passed = collect($checks)->every('passed');
+        $externalChecks = [
+            'Verify restored application data against the pre-backup fixture.',
+            'Confirm disposable resources were removed in the cloud provider account.',
+            'Confirm evidence came from a real drill; database records alone do not establish this.',
+        ];
 
         if ($this->option('json')) {
             $this->line((string) json_encode([
@@ -58,11 +67,17 @@ class AuditReleaseAcceptanceCommand extends Command
                 'provider' => $provider,
                 'since' => $since?->toIso8601String(),
                 'checks' => $checks,
+                'scope' => 'recorded_lifecycle_evidence',
+                'external_verification_required' => $externalChecks,
             ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
         } else {
             $this->table(['Stage', 'Status', 'Evidence'], array_map(fn (array $check): array => [
                 $check['name'], $check['passed'] ? 'PASS' : 'MISSING', $check['detail'],
             ], $checks));
+            $this->line('This result covers recorded lifecycle evidence only.');
+            foreach ($externalChecks as $check) {
+                $this->line($check);
+            }
         }
 
         return $passed ? self::SUCCESS : self::FAILURE;
