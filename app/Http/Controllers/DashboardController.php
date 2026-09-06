@@ -9,16 +9,36 @@ use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
+use App\Services\PlanLimits;
+use App\Services\PublicPlatformStatus;
+use App\Services\SystemHealth;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
 {
-    public function __invoke(Request $request): View
-    {
+    public const WIDGETS = ['stats', 'setup', 'status', 'providers'];
+
+    public function __invoke(
+        Request $request,
+        SystemHealth $systemHealth,
+        PublicPlatformStatus $platformStatus,
+        PlanLimits $limits,
+    ): View {
         $user = $request->user();
-        $attentionWebsites = $user->websites()->where(function ($query): void {
+        $organization = $user->currentOrganization;
+        $workspaceBuilds = Build::query()
+            ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
+        $workspaceCommands = ServerCommandExecution::query()
+            ->whereHas('server', fn ($query) => $query->where('organization_id', $organization->id));
+        $workspaceWebhookDeliveries = RepositoryWebhookDelivery::query()
+            ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
+        $canManageSystemHealth = $user->currentOrganization?->permits($user, 'manage') ?? false;
+        $attentionWebsites = $user->workspaceWebsites()->where(function ($query): void {
             $query
                 ->where('provisioning_status', Website::STATUS_FAILED)
                 ->orWhere(function ($query): void {
@@ -27,34 +47,34 @@ class DashboardController extends Controller
                         ->where('health_status', Website::HEALTH_UNHEALTHY);
                 });
         });
-        $attentionServers = $user->servers()
+        $attentionServers = $user->workspaceServers()
             ->where('provisioning_status', Server::STATUS_FAILED);
-        $attentionRepositories = $user->repositories()
+        $attentionRepositories = $user->workspaceRepositories()
             ->whereHas('latestBuild', fn ($query) => $query->where('status', Build::STATUS_FAILED));
-        $providers = $user->providers();
+        $providers = $user->workspaceProviders();
         $attentionProviders = (clone $providers)
             ->where('connection_status', Provider::CONNECTION_FAILED);
-        $activeDeployments = $user->builds()
+        $activeDeployments = (clone $workspaceBuilds)
             ->whereIn('builds.status', Build::ACTIVE_STATUSES);
         $activeDeploymentCounts = (clone $activeDeployments)
             ->select('builds.status', DB::raw('COUNT(*) as total'))
             ->groupBy('builds.status')
             ->pluck('total', 'builds.status');
-        $activeCommands = $user->commandExecutions()
+        $activeCommands = (clone $workspaceCommands)
             ->whereIn('status', ServerCommandExecution::ACTIVE_STATUSES);
         $activeCommandCounts = (clone $activeCommands)
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status');
-        $recentWebhookDeliveries = $user->webhookDeliveries()
+        $recentWebhookDeliveries = (clone $workspaceWebhookDeliveries)
             ->where('repository_webhook_deliveries.created_at', '>=', now()->subDay());
         $webhookDeliveryCounts = (clone $recentWebhookDeliveries)
             ->select('repository_webhook_deliveries.status', DB::raw('COUNT(*) as total'))
             ->groupBy('repository_webhook_deliveries.status')
             ->pluck('total', 'repository_webhook_deliveries.status');
-        $provisioningServers = $user->servers()
+        $provisioningServers = $user->workspaceServers()
             ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES);
-        $provisioningWebsites = $user->websites()
+        $provisioningWebsites = $user->workspaceWebsites()
             ->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES);
         $provisioningCounts = [
             'servers' => (clone $provisioningServers)->count(),
@@ -88,16 +108,81 @@ class DashboardController extends Controller
                             ->orWhereColumn('gallery_installs.source_revision_at', '<', 'recipes.gallery_revision_at');
                     });
             });
-        $reportedGalleryRecipes = $user->recipes()
+        $reportedGalleryRecipes = $user->workspaceRecipes()
             ->published()
-            ->whereHas('reports');
+            ->whereHas('reports', fn ($query) => $query->whereNull('resolved_at'));
+        $communityReports = DB::table('recipe_reports')
+            ->whereIn('recipe_id', (clone $reportedGalleryRecipes)->select('recipes.id'))
+            ->whereNull('resolved_at');
+        $onboarding = [
+            'provider' => (clone $providers)->exists(),
+            'server' => $user->workspaceServers()->exists(),
+            'website' => $user->workspaceWebsites()->exists(),
+            'repository' => $user->workspaceRepositories()->exists(),
+            'deployment' => (clone $workspaceBuilds)->where('builds.status', Build::STATUS_SUCCEEDED)->exists(),
+        ];
+        $trendStart = now()->startOfDay()->subDays(13);
+        $trendBuilds = (clone $workspaceBuilds)
+            ->where('builds.created_at', '>=', $trendStart)
+            ->get(['builds.id', 'builds.status', 'builds.created_at', 'builds.started_at', 'builds.finished_at']);
+        $trendHealthChecks = WebsiteHealthCheck::query()
+            ->whereHas('website', fn ($query) => $query->where('organization_id', $organization->id))
+            ->where('checked_at', '>=', $trendStart)
+            ->get(['successful', 'duration_ms', 'checked_at']);
+        $days = collect(range(0, 13))->map(fn (int $offset) => $trendStart->copy()->addDays($offset));
+        $deploymentTrend = $days->map(function ($day) use ($trendBuilds): array {
+            $builds = $trendBuilds->filter(fn (Build $build) => $build->created_at->isSameDay($day));
+
+            return [
+                'date' => $day->toDateString(),
+                'label' => $day->format('D'),
+                'total' => $builds->count(),
+                'succeeded' => $builds->where('status', Build::STATUS_SUCCEEDED)->count(),
+                'failed' => $builds->where('status', Build::STATUS_FAILED)->count(),
+            ];
+        });
+        $healthTrend = $days->map(function ($day) use ($trendHealthChecks): array {
+            $checks = $trendHealthChecks->filter(fn (WebsiteHealthCheck $check) => $check->checked_at->isSameDay($day));
+            $successful = $checks->where('successful', true)->count();
+
+            return [
+                'date' => $day->toDateString(),
+                'label' => $day->format('D'),
+                'total' => $checks->count(),
+                'rate' => $checks->isEmpty() ? null : (int) round(($successful / $checks->count()) * 100),
+            ];
+        });
+        $terminalTrendBuilds = $trendBuilds->whereIn('status', Build::TERMINAL_STATUSES);
+        $durations = $terminalTrendBuilds->map->durationSeconds()->filter(fn ($seconds) => $seconds !== null)->sort()->values();
 
         return view('dashboard', [
+            'canManageSystemHealth' => $canManageSystemHealth,
+            'systemHealth' => $canManageSystemHealth ? $systemHealth->summary() : null,
+            'platformStatus' => $canManageSystemHealth ? null : $platformStatus->snapshot(),
+            'onboarding' => $onboarding,
+            'dashboardWidgets' => $user->preferences['dashboard_widgets'] ?? self::WIDGETS,
             'stats' => [
-                'websites' => $user->websites()->count(),
-                'servers' => $user->servers()->count(),
-                'builds' => $user->builds()->count(),
-                'repositories' => $user->repositories()->count(),
+                'websites' => $user->workspaceWebsites()->count(),
+                'servers' => $user->workspaceServers()->count(),
+                'builds' => (clone $workspaceBuilds)->count(),
+                'repositories' => $user->workspaceRepositories()->count(),
+            ],
+            'deploymentTrend' => $deploymentTrend,
+            'deploymentTrendMaximum' => max(1, (int) $deploymentTrend->max('total')),
+            'healthTrend' => $healthTrend,
+            'trendSummary' => [
+                'deployments' => $trendBuilds->count(),
+                'success_rate' => $terminalTrendBuilds->isEmpty() ? null : (int) round(($terminalTrendBuilds->where('status', Build::STATUS_SUCCEEDED)->count() / $terminalTrendBuilds->count()) * 100),
+                'median_duration' => $durations->isEmpty() ? null : Build::formatDuration((int) $durations->median()),
+                'health_checks' => $trendHealthChecks->count(),
+                'health_rate' => $trendHealthChecks->isEmpty() ? null : (int) round(($trendHealthChecks->where('successful', true)->count() / $trendHealthChecks->count()) * 100),
+            ],
+            'billingPlan' => [
+                'key' => $organization->owner->billingPlan(),
+                'name' => config('billing.plans.'.$organization->owner->billingPlan().'.name'),
+                'usage' => collect(['servers', 'websites', 'members'])
+                    ->mapWithKeys(fn (string $resource): array => [$resource => $limits->usageForOrganization($organization, $resource)])
+                    ->all(),
             ],
             'attentionCounts' => [
                 'websites' => (clone $attentionWebsites)->count(),
@@ -162,13 +247,15 @@ class DashboardController extends Controller
                 ->latest('gallery_revision_at')
                 ->limit(5)
                 ->get(),
-            'communityReportCount' => DB::table('recipe_reports')
-                ->whereIn('recipe_id', (clone $reportedGalleryRecipes)->select('recipes.id'))
-                ->count(),
+            'communityReportCount' => (clone $communityReports)->count(),
+            'communityReportAttention' => [
+                'security' => (clone $communityReports)->where('reason', 'security')->count(),
+                'stale' => (clone $communityReports)->where('created_at', '<=', now()->subDays(7))->count(),
+            ],
             'reportedGalleryRecipeCount' => (clone $reportedGalleryRecipes)->count(),
             'reportedGalleryRecipes' => $reportedGalleryRecipes
                 ->select(['recipes.id', 'recipes.user_id', 'recipes.name', 'recipes.category'])
-                ->withCount('reports')
+                ->withCount(['reports' => fn ($query) => $query->whereNull('resolved_at')])
                 ->orderByDesc('reports_count')
                 ->latest('recipes.id')
                 ->limit(5)
@@ -191,12 +278,12 @@ class DashboardController extends Controller
                 ->latest('connection_checked_at')
                 ->limit(5)
                 ->get(),
-            'recentWebsites' => $user->websites()
+            'recentWebsites' => $user->workspaceWebsites()
                 ->with('server')
                 ->latest()
                 ->limit(5)
                 ->get(),
-            'recentBuilds' => $user->builds()
+            'recentBuilds' => (clone $workspaceBuilds)
                 ->with('repository.website.server')
                 ->latest('builds.created_at')
                 ->limit(5)
@@ -207,5 +294,18 @@ class DashboardController extends Controller
                 ->limit(8)
                 ->get(),
         ]);
+    }
+
+    public function updatePreferences(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'widgets' => ['nullable', 'array'],
+            'widgets.*' => ['required', Rule::in(self::WIDGETS), 'distinct'],
+        ]);
+        $preferences = $request->user()->preferences ?? [];
+        $preferences['dashboard_widgets'] = array_values($data['widgets'] ?? []);
+        $request->user()->update(['preferences' => $preferences]);
+
+        return back()->with('success', __('Dashboard layout saved.'));
     }
 }

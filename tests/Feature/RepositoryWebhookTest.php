@@ -46,7 +46,9 @@ class RepositoryWebhookTest extends TestCase
             ->assertSuccessful()
             ->assertSee(route('webhooks.repositories.receive', $repository))
             ->assertSee($secret)
-            ->assertSee('Copy this webhook secret now');
+            ->assertSee('Copy this webhook secret now')
+            ->assertSee('Rotate the webhook secret for Application repository? The current secret will stop working immediately.')
+            ->assertSee('Disable webhook deployments for Application repository?');
         $this->actingAs($owner)->get(route('repositories.show', $repository))
             ->assertSuccessful()
             ->assertDontSee($secret);

@@ -10,11 +10,17 @@
         :description="__('Review commands queued for :server and download their retained output.', ['server' => $server->label])"
     />
 
+    @if ($filters['execution'])
+        <p class="mb-4 rounded border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+            {{ __('Focused on execution #:id.', ['id' => $filters['execution']]) }}
+        </p>
+    @endif
+
     <form method="GET" action="{{ route('servers.commands.index', $server) }}" class="mb-6 rounded-lg border border-primary bg-primary p-4">
         @error('command')
             <p class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
         @enderror
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div class="min-w-64 flex-1">
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
                 <select id="status" name="status" class="input secondary mt-1 w-full rounded">
@@ -24,6 +30,14 @@
                             {{ str($option)->title() }}
                         </option>
                     @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="output" class="block text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</label>
+                <select id="output" name="output" class="input secondary mt-1 w-full rounded">
+                    <option value="">{{ __('Any output state') }}</option>
+                    <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
+                    <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
                 </select>
             </div>
             <div>
@@ -49,11 +63,25 @@
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filter') }}</button>
+            @if ($metrics['active'] > 0)
+                <a
+                    href="{{ route('servers.commands.index', ['server' => $server, ...array_filter($filters, fn ($value) => $value !== null), 'page' => $executions->currentPage()]) }}"
+                    class="button primary"
+                    aria-describedby="server-command-refresh-help"
+                >
+                    {{ __('Refresh status') }}
+                </a>
+            @endif
             <a href="{{ route('servers.commands.export', [$server, ...array_filter($filters, fn ($value) => $value !== null)]) }}" class="button primary">{{ __('Export CSV') }}</a>
             @if (array_filter($filters, fn ($value) => $value !== null))
                 <a href="{{ route('servers.commands.index', $server) }}" class="button primary">{{ __('Clear filter') }}</a>
             @endif
         </div>
+        @if ($metrics['active'] > 0)
+            <p id="server-command-refresh-help" class="mt-3 text-xs text-secondary">
+                {{ __('Queued or running commands may change. Refresh to load their latest state.') }}
+            </p>
+        @endif
     </form>
 
     <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -122,6 +150,7 @@
                             @if ($execution->finished_at)
                                 <span class="mt-1 block">{{ __('Finished :time', ['time' => $execution->finished_at->diffForHumans()]) }}</span>
                             @endif
+                            <span class="mt-1 block">{{ __('Duration: :duration', ['duration' => $execution->durationLabel() ?? __('Not recorded')]) }}</span>
                         </td>
                         <td class="whitespace-nowrap px-4 py-4 text-right align-top text-sm">
                             <div class="flex justify-end gap-2">

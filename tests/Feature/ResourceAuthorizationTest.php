@@ -75,6 +75,8 @@ class ResourceAuthorizationTest extends TestCase
             'public_ip' => '192.0.2.10',
             'ssh_public_key' => 'ssh-rsa public-key',
             'ssh_private_key' => 'private-key-contents',
+            'ssh_host_key' => '[192.0.2.10]:22 ssh-ed25519 AAAATESTHOSTKEY',
+            'ssh_host_fingerprint' => 'SHA256:test-host',
         ]);
 
         $this->assertSame('private-key-contents', $server->fresh()->ssh_private_key);
@@ -83,6 +85,7 @@ class ResourceAuthorizationTest extends TestCase
             Server::query()->toBase()->find($server->id)->ssh_private_key,
         );
         $this->assertArrayNotHasKey('ssh_private_key', $server->toArray());
+        $this->assertArrayNotHasKey('ssh_host_key', $server->toArray());
         $this->assertArrayNotHasKey('provisioning_token', $server->toArray());
         $this->assertArrayNotHasKey('initialization_token', $server->toArray());
 
@@ -91,13 +94,21 @@ class ResourceAuthorizationTest extends TestCase
 
         preg_match('/-i ([^ ]+)/', $command, $matches);
         $temporaryKey = $matches[1] ?? null;
+        preg_match('/UserKnownHostsFile=\x27([^\x27]+)\x27/', $command, $hostMatches);
+        $temporaryHosts = $hostMatches[1] ?? null;
 
         $this->assertNotNull($temporaryKey);
         $this->assertSame('private-key-contents', file_get_contents($temporaryKey));
         $this->assertSame('0600', substr(sprintf('%o', fileperms($temporaryKey)), -4));
+        $this->assertStringContainsString('StrictHostKeyChecking=yes', $command);
+        $this->assertStringNotContainsString('StrictHostKeyChecking=no', $command);
+        $this->assertNotNull($temporaryHosts);
+        $this->assertSame("[192.0.2.10]:22 ssh-ed25519 AAAATESTHOSTKEY\n", file_get_contents($temporaryHosts));
+        $this->assertSame('0600', substr(sprintf('%o', fileperms($temporaryHosts)), -4));
 
         $connection->close();
         $this->assertFileDoesNotExist($temporaryKey);
+        $this->assertFileDoesNotExist($temporaryHosts);
     }
 
     public function test_provisioning_callbacks_require_a_valid_signature(): void

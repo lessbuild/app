@@ -40,9 +40,13 @@
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
             <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('activity.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
-                {{ __('Export CSV') }}
-            </a>
+            @if ($auditAvailable)
+                <a href="{{ route('activity.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+                    {{ __('Export CSV') }}
+                </a>
+            @else
+                <a href="{{ route('billing.index') }}" class="button primary">{{ __('Unlock CSV export') }}</a>
+            @endif
             @if (array_filter($filters, fn ($value) => $value !== null))
                 <a href="{{ route('activity.index') }}" class="button primary">{{ __('Clear filters') }}</a>
             @endif

@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Models\Provider;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class ProviderConnectionTester
 {
+    public function __construct(private readonly GitHubApp $github) {}
+
     /** @return array{successful: bool, message: string, http_status: ?int} */
     public function test(Provider $provider): array
     {
@@ -24,7 +26,7 @@ class ProviderConnectionTester
 
         try {
             $response = $this->request($provider);
-        } catch (ConnectionException) {
+        } catch (Throwable) {
             return [
                 'successful' => false,
                 'message' => __('Could not reach :provider. Try again later.', ['provider' => $label]),
@@ -65,6 +67,9 @@ class ProviderConnectionTester
             Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
             Provider::TYPE_BITBUCKET => 'https://api.bitbucket.org/2.0/user',
             Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+            Provider::TYPE_HETZNER => 'https://api.hetzner.cloud/v1/servers?per_page=1',
+            Provider::TYPE_VULTR => 'https://api.vultr.com/v2/account',
+            Provider::TYPE_CLOUDFLARE => rtrim((string) config('domains.cloudflare_api_url'), '/').'/user/tokens/verify',
             default => null,
         };
     }
@@ -78,9 +83,9 @@ class ProviderConnectionTester
 
         return match ($provider->provider) {
             Provider::TYPE_GITHUB => $request
-                ->withToken($provider->token)
+                ->withToken($provider->isGitHubApp() ? $this->github->installationToken($provider->external_id) : $provider->token)
                 ->withHeader('X-GitHub-Api-Version', '2026-03-10')
-                ->get('https://api.github.com/user'),
+                ->get($provider->isGitHubApp() ? 'https://api.github.com/installation/repositories' : 'https://api.github.com/user'),
             Provider::TYPE_GITLAB => $request
                 ->withHeader('PRIVATE-TOKEN', $provider->token)
                 ->get('https://gitlab.com/api/v4/user'),
@@ -90,6 +95,15 @@ class ProviderConnectionTester
             Provider::TYPE_DIGITALOCEAN => $request
                 ->withToken($provider->token)
                 ->get('https://api.digitalocean.com/v2/account'),
+            Provider::TYPE_HETZNER => $request
+                ->withToken($provider->token)
+                ->get('https://api.hetzner.cloud/v1/servers', ['per_page' => 1]),
+            Provider::TYPE_VULTR => $request
+                ->withToken($provider->token)
+                ->get('https://api.vultr.com/v2/account'),
+            Provider::TYPE_CLOUDFLARE => $request
+                ->withToken($provider->token)
+                ->get(rtrim((string) config('domains.cloudflare_api_url'), '/').'/user/tokens/verify'),
             default => null,
         };
     }
@@ -101,6 +115,9 @@ class ProviderConnectionTester
             Provider::TYPE_GITLAB => 'GitLab',
             Provider::TYPE_BITBUCKET => 'Bitbucket',
             Provider::TYPE_DIGITALOCEAN => 'DigitalOcean',
+            Provider::TYPE_HETZNER => 'Hetzner Cloud',
+            Provider::TYPE_VULTR => 'Vultr',
+            Provider::TYPE_CLOUDFLARE => 'Cloudflare',
             default => str($provider->provider)->headline()->toString(),
         };
     }

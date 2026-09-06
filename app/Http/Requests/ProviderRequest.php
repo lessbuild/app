@@ -15,7 +15,7 @@ class ProviderRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**
@@ -33,6 +33,9 @@ class ProviderRequest extends FormRequest
                 Provider::TYPE_GITLAB,
                 Provider::TYPE_BITBUCKET,
                 Provider::TYPE_DIGITALOCEAN,
+                Provider::TYPE_HETZNER,
+                Provider::TYPE_VULTR,
+                Provider::TYPE_CLOUDFLARE,
             ]),
             'token' => [$this->isMethod('post') ? 'required' : 'nullable', 'string'],
             'connection_monitoring_enabled' => ['required', 'boolean'],

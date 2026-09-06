@@ -92,6 +92,19 @@ class NotificationInboxInsightsTest extends TestCase
             ->assertSee('No notifications match these filters');
     }
 
+    public function test_notification_search_treats_sql_wildcards_as_literal_text(): void
+    {
+        $owner = User::factory()->create();
+        $matching = $this->notification($owner, 'CPU at 100%', NotificationInbox::STATUS_FAILED);
+        $this->notification($owner, 'Ordinary alert', NotificationInbox::STATUS_INFO);
+
+        $this->actingAs($owner)->get(route('notifications.index', ['search' => '%']))
+            ->assertSuccessful()
+            ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1
+                && $notifications->sole()->id === $matching->id)
+            ->assertDontSee('Ordinary alert');
+    }
+
     private function notification(
         User $user,
         string $title,

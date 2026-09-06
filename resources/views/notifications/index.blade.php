@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.heading
         :title="__('Notifications')"
-        :description="__('Review account security, deployment, and infrastructure alerts.')"
+        :description="__('Review account security, deployment, infrastructure, and community feedback alerts.')"
     >
         @if ($hasUnreadNotifications || $hasReadNotifications)
             <x-slot:buttons>
@@ -99,6 +99,20 @@
         </div>
     </form>
 
+    <section class="mb-6 rounded-lg border border-primary bg-primary p-4" aria-labelledby="saved-notification-filters">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div><h2 id="saved-notification-filters" class="font-bold text-primary">{{ __('Saved filters') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Reuse a notification view without rebuilding every filter.') }}</p></div>
+            <form method="POST" action="{{ route('notifications.saved-filters.store', array_filter($filters, fn ($value) => $value !== null)) }}" class="flex gap-2">@csrf<input name="name" maxlength="40" required class="input secondary min-w-0 rounded" placeholder="{{ __('Filter name') }}"><button type="submit" class="button primary">{{ __('Save current') }}</button></form>
+        </div>
+        @if($savedFilters)
+            <div class="mt-4 flex flex-wrap gap-2">
+                @foreach($savedFilters as $saved)
+                    <div class="flex items-center rounded-lg border border-primary bg-secondary"><a href="{{ route('notifications.index', $saved['filters']) }}" class="px-3 py-2 text-sm font-bold text-primary">{{ $saved['name'] }}</a><form method="POST" action="{{ route('notifications.saved-filters.destroy', $saved['id']) }}">@csrf @method('DELETE')<button type="submit" class="px-2 py-2 text-secondary" aria-label="{{ __('Remove saved filter :name', ['name' => $saved['name']]) }}">×</button></form></div>
+                @endforeach
+            </div>
+        @endif
+    </section>
+
     <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <div class="rounded-lg border border-primary bg-primary p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching alerts') }}</dt>
@@ -134,7 +148,38 @@
         </div>
     </dl>
 
-    <div class="space-y-3">
+    <div
+        class="space-y-3"
+        x-data="{
+            selected: [],
+            pageIds: {{ Illuminate\Support\Js::from($notifications->pluck('id')->values()) }},
+        }"
+    >
+        @if ($notifications->isNotEmpty())
+            <form id="notification-bulk-form" method="POST" action="{{ route('notifications.bulk') }}" class="sticky top-3 z-10 mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary bg-primary p-3 shadow-sm">
+                @csrf
+                @method('PATCH')
+                <button type="button" class="button tertiary" x-on:click="selected = selected.length === pageIds.length ? [] : [...pageIds]">
+                    <span x-show="selected.length !== pageIds.length">{{ __('Select page') }}</span>
+                    <span x-show="selected.length === pageIds.length" style="display: none">{{ __('Clear selection') }}</span>
+                </button>
+                <span class="mr-auto text-xs font-semibold text-secondary" aria-live="polite"><span x-text="selected.length">0</span> {{ __('selected') }}</span>
+                <button type="submit" name="action" value="read" class="button secondary disabled:cursor-not-allowed disabled:opacity-50" x-bind:disabled="selected.length === 0">{{ __('Mark read') }}</button>
+                <button type="submit" name="action" value="unread" class="button secondary disabled:cursor-not-allowed disabled:opacity-50" x-bind:disabled="selected.length === 0">{{ __('Mark unread') }}</button>
+                <button
+                    type="submit"
+                    name="action"
+                    value="delete"
+                    class="button secondary disabled:cursor-not-allowed disabled:opacity-50"
+                    x-bind:disabled="selected.length === 0"
+                    onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete the selected notifications? This cannot be undone.')) }})"
+                >{{ __('Delete selected') }}</button>
+            </form>
+            <x-forms.errors name="notifications" />
+            <x-forms.errors name="notifications.*" />
+            <x-forms.errors name="action" />
+        @endif
+
         @forelse ($notifications as $notification)
             @php($destination = \App\Notifications\NotificationInbox::destination($notification->data))
             @php($notificationStatus = $notification->data['status'] ?? \App\Notifications\NotificationInbox::STATUS_FAILED)
@@ -148,6 +193,15 @@
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
+                            <input
+                                type="checkbox"
+                                name="notifications[]"
+                                value="{{ $notification->id }}"
+                                form="notification-bulk-form"
+                                x-model="selected"
+                                class="h-4 w-4 rounded border-primary text-blue-600 focus:ring-blue-500"
+                                aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}"
+                            >
                             <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Notification') }}</h2>
                             @if ($notification->read_at === null)
                                 <span @class([

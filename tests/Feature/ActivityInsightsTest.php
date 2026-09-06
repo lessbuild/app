@@ -94,6 +94,47 @@ class ActivityInsightsTest extends TestCase
             ->assertSee('No activity matches these filters');
     }
 
+    public function test_activity_search_treats_sql_wildcards_as_literal_text(): void
+    {
+        $owner = User::factory()->create();
+        $matching = $this->event($owner, 'general', 'Deployment reached 100%', now());
+        $this->event($owner, 'general', 'Ordinary deployment event', now()->subMinute());
+
+        $this->actingAs($owner)->get(route('activity.index', ['search' => '%']))
+            ->assertSuccessful()
+            ->assertViewHas('events', fn ($events): bool => $events->count() === 1
+                && $events->sole()->id === $matching->id)
+            ->assertDontSee('Ordinary deployment event');
+    }
+
+    public function test_reversed_date_range_is_normalized_for_view_and_export(): void
+    {
+        $owner = User::factory()->create();
+        $matching = $this->event($owner, 'general', 'Inside normalized range', now()->setDate(2026, 5, 5));
+        $this->event($owner, 'general', 'Outside normalized range', now()->setDate(2026, 6, 1));
+        $filters = ['date_from' => '2026-05-10', 'date_to' => '2026-05-01'];
+
+        $this->actingAs($owner)->get(route('activity.index', $filters))
+            ->assertSuccessful()
+            ->assertViewHas('filters', [
+                'search' => null,
+                'category' => null,
+                'date_from' => '2026-05-01',
+                'date_to' => '2026-05-10',
+            ])
+            ->assertViewHas('events', fn ($events): bool => $events->count() === 1
+                && $events->sole()->id === $matching->id)
+            ->assertSee('Inside normalized range')
+            ->assertDontSee('Outside normalized range');
+
+        $export = $this->actingAs($owner)->get(route('activity.export', $filters))
+            ->assertSuccessful()
+            ->assertDownload();
+
+        $this->assertStringContainsString('Inside normalized range', $export->streamedContent());
+        $this->assertStringNotContainsString('Outside normalized range', $export->streamedContent());
+    }
+
     private function event(User $user, string $category, string $message, mixed $createdAt): Event
     {
         $event = $user->accountEvents()->create([

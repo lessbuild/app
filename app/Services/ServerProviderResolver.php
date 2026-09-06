@@ -17,6 +17,8 @@ class ServerProviderResolver
     {
         return match ($type) {
             Provider::TYPE_DIGITALOCEAN => new DigitalOcean($token),
+            Provider::TYPE_HETZNER => new HetznerCloud($token),
+            Provider::TYPE_VULTR => new Vultr($token),
             default => throw new RuntimeException("Unsupported server provider: {$type}."),
         };
     }

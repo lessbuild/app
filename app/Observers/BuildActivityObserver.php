@@ -4,19 +4,22 @@ namespace App\Observers;
 
 use App\Actions\Repository\QueuePendingWebhookDeploymentAction;
 use App\Models\Build;
-use App\Notifications\FailureNotification;
 use App\Services\ActivityRecorder;
+use App\Services\IncidentNotifier;
 
 class BuildActivityObserver
 {
     public function __construct(
         private readonly ActivityRecorder $activity,
         private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
+        private readonly IncidentNotifier $incidents,
     ) {}
 
     public function created(Build $build): void
     {
-        $this->record($build, 'Deployment was queued.');
+        $this->record($build, $build->trigger_source === Build::TRIGGER_PROMOTION
+            ? "Release promotion was requested from build #{$build->promoted_from_build_id}."
+            : 'Deployment was queued.');
     }
 
     public function updated(Build $build): void
@@ -30,13 +33,14 @@ class BuildActivityObserver
 
             $build->loadMissing('repository');
             if ($build->repository) {
-                if ($build->status === Build::STATUS_FAILED) {
-                    $build->repository->user?->notify(new FailureNotification(
+                if ($build->status === Build::STATUS_FAILED && $build->repository->user) {
+                    $this->incidents->fail(
+                        $build->repository->user,
                         'deployment',
                         $build->id,
                         "Deployment #{$build->id} failed",
                         $build->failure_message ?: 'The deployment failed before it completed.',
-                    ));
+                    );
                 }
 
                 $this->queuePendingDeployment->handle($build->repository);
@@ -49,7 +53,7 @@ class BuildActivityObserver
         $build->loadMissing('repository');
 
         if ($build->repository?->user_id) {
-            $this->activity->record($build, $build->repository->user_id, 'deployment', $message);
+            $this->activity->record($build, $build->requested_by ?: $build->repository->user_id, 'deployment', $message);
         }
     }
 }

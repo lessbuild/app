@@ -20,7 +20,7 @@ class CancelQueuedDeploymentAction
 
             $locked = Build::query()
                 ->whereKey($build->id)
-                ->where('status', Build::STATUS_QUEUED)
+                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_AWAITING_APPROVAL])
                 ->lockForUpdate()
                 ->first();
             if (! $locked) {

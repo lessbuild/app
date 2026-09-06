@@ -13,7 +13,7 @@ class WebsiteRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**
@@ -21,18 +21,25 @@ class WebsiteRequest extends FormRequest
      */
     public function rules(): array
     {
+        $website = $this->route('website');
+        $primaryDomainId = $website?->domains()->where('type', 'primary')->value('id');
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'server_id' => [
                 'required',
                 'integer',
                 Rule::exists('servers', 'id')->where(fn ($query) => $query
-                    ->where('user_id', $this->user()->id)
+                    ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Server::STATUS_ACTIVE)
                     ->whereIn('type', ServerTypeEnum::websiteHostingValues())
                     ->whereNotNull('mysql_root_password')),
             ],
-            'url' => ['required', 'string', 'max:255', new Hostname],
+            'url' => [
+                'required', 'string', 'max:255', new Hostname,
+                Rule::unique('websites', 'url')->ignore($this->route('website')?->id),
+                Rule::unique('website_domains', 'hostname')->ignore($primaryDomainId),
+            ],
             'description' => ['required', 'string'],
             'environment' => [$this->isMethod('post') ? 'required' : 'present', 'string'],
             'health_check_enabled' => ['required', 'boolean'],

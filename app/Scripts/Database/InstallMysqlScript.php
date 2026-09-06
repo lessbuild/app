@@ -28,7 +28,6 @@ class InstallMysqlScript implements ServerScript
      */
     public function script(int $step, Server $server): string
     {
-        $ip = escapeshellarg((string) $server->public_ip);
         $password = $server->mysql_root_password
             ?? throw new RuntimeException('MySQL provisioning credentials have not been prepared.');
         $shellPassword = escapeshellarg($password);
@@ -36,7 +35,6 @@ class InstallMysqlScript implements ServerScript
         return <<<SCRIPT
         provisionPing {$server->id} {$step}
 
-        SERVER_IP={$ip}
         MYSQL_ROOT_PASSWORD={$shellPassword}
 
         debconf-set-selections <<< "mysql-community-server mysql-community-server/data-dir select ''"
@@ -45,9 +43,10 @@ class InstallMysqlScript implements ServerScript
 
         # Install MySQL
         apt_wait
-        yes | sudo apt install mysql-server
+        sudo apt-get install -y mysql-server
 
         # Configure MySQL through an application-owned, rerunnable config file
+        backupManagedFile /etc/mysql/mysql.conf.d/99-lessbuild.cnf
         RAM=$(awk '/^MemTotal:/{printf "%3.0f", $2 / (1024 * 1024)}' /proc/meminfo)
         MAX_CONNECTIONS=$(( 70 * \$RAM ))
         REAL_MAX_CONNECTIONS=$(( MAX_CONNECTIONS>70 ? MAX_CONNECTIONS : 100 ))
@@ -57,13 +56,16 @@ class InstallMysqlScript implements ServerScript
         default_authentication_plugin=mysql_native_password
         skip-log-bin
         max_connections=\${REAL_MAX_CONNECTIONS}
-        bind-address = *
+        bind-address = 127.0.0.1
+        mysqlx-bind-address = 127.0.0.1
         MYSQL_CONFIG
 
-        # Configure access permissions without failing when this step is resumed
-        mysql --user="root" --password="\$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '\$MYSQL_ROOT_PASSWORD'; ALTER USER 'root'@'%' IDENTIFIED BY '\$MYSQL_ROOT_PASSWORD'; GRANT ALL PRIVILEGES ON *.* TO root@'%' WITH GRANT OPTION;"
-        if [ -n "\$SERVER_IP" ]; then
-            mysql --user="root" --password="\$MYSQL_ROOT_PASSWORD" -e "CREATE USER IF NOT EXISTS 'root'@'\$SERVER_IP' IDENTIFIED BY '\$MYSQL_ROOT_PASSWORD'; ALTER USER 'root'@'\$SERVER_IP' IDENTIFIED BY '\$MYSQL_ROOT_PASSWORD'; GRANT ALL PRIVILEGES ON *.* TO root@'\$SERVER_IP' WITH GRANT OPTION;"
+        # Accept either Ubuntu's fresh socket-auth state or the password from
+        # an earlier partial run so this step is safe to resume.
+        if mysql --user=root -e "SELECT 1" >/dev/null 2>&1; then
+            mysql --user=root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '\$MYSQL_ROOT_PASSWORD';"
+        else
+            mysql --user="root" --password="\$MYSQL_ROOT_PASSWORD" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '\$MYSQL_ROOT_PASSWORD';"
         fi
         mysql --user="root" --password="\$MYSQL_ROOT_PASSWORD" -e "FLUSH PRIVILEGES;"
 

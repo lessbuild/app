@@ -1,11 +1,33 @@
 <?php
 
 return [
+    'platform_admin_emails' => array_values(array_filter(array_map(
+        fn (string $email): string => strtolower(trim($email)),
+        explode(',', (string) env('PLATFORM_ADMIN_EMAILS', '')),
+    ))),
+    'trusted_hosts' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('TRUSTED_HOSTS', '')),
+    ))),
+    'diagnostics' => [
+        'queue_backlog_limit' => (int) env('DIAGNOSTIC_QUEUE_BACKLOG_LIMIT', 100),
+        'queue_oldest_minutes' => (int) env('DIAGNOSTIC_QUEUE_OLDEST_MINUTES', 15),
+        'systemd_timers' => (bool) env('DIAGNOSTIC_SYSTEMD_TIMERS', false),
+        'systemd_services' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('DIAGNOSTIC_SYSTEMD_SERVICES', 'lessbuild-app.service,lessbuild-worker.service')),
+        ))),
+        'dashboard_cache_seconds' => (int) env('DIAGNOSTIC_DASHBOARD_CACHE_SECONDS', 60),
+    ],
     'registration' => [
         'enabled' => (bool) env('REGISTRATION_ENABLED', false),
         'allow_first_user' => (bool) env('REGISTRATION_ALLOW_FIRST_USER', true),
+        'invitation_days' => max(1, (int) env('REGISTRATION_INVITATION_DAYS', 7)),
     ],
     'ssh_connect_timeout' => (int) env('SSH_CONNECT_TIMEOUT', 10),
+    'supported_ubuntu_versions' => array_values(array_filter(array_map('trim', explode(',', (string) env('SUPPORTED_UBUNTU_VERSIONS', '22.04,24.04,26.04'))))),
+    'default_php_version' => env('DEFAULT_PHP_VERSION', '8.4'),
+    'allow_private_server_ips' => (bool) env('ALLOW_PRIVATE_SERVER_IPS', false),
     'ssh_upload_attempts' => (int) env('SSH_UPLOAD_ATTEMPTS', 3),
     'ssh_retry_delay_ms' => (int) env('SSH_RETRY_DELAY_MS', 1000),
     'ssh_command_timeout' => (int) env('SSH_COMMAND_TIMEOUT', 60),
@@ -24,8 +46,10 @@ return [
     'server_command_retention_days' => (int) env('SERVER_COMMAND_RETENTION_DAYS', 180),
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 90),
     'sign_in_retention_days' => (int) env('SIGN_IN_RETENTION_DAYS', 90),
+    'access_request_retention_days' => max(30, (int) env('ACCESS_REQUEST_RETENTION_DAYS', 365)),
     'database_backup_directory' => env('DATABASE_BACKUP_DIRECTORY') ?: storage_path('app/backups'),
     'database_backup_retention_days' => (int) env('DATABASE_BACKUP_RETENTION_DAYS', 7),
+    'incident_log_directory' => env('INCIDENT_LOG_DIRECTORY') ?: storage_path('logs'),
     'repository_checkout_directory' => env('REPOSITORY_CHECKOUT_DIRECTORY') ?: storage_path('repositories'),
     'prohibit_destructive_database_commands' => (bool) env(
         'DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS',

@@ -173,6 +173,7 @@ class ActivityFeedTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString('attachment; filename=lessbuild-activity-', (string) $response->headers->get('content-disposition'));
         $rows = $this->csvRows($response);

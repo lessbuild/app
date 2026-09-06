@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SignInEvent;
 use App\Services\ActivityRecorder;
 use App\Services\ClientMetadata;
+use App\Support\DateRange;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -124,11 +125,15 @@ class SignInHistoryController extends Controller
     private function filters(Request $request): array
     {
         $method = $request->string('method')->toString();
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'method' => in_array($method, SignInEvent::METHODS, true) ? $method : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 

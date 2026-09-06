@@ -88,7 +88,8 @@ class ProvisioningCredentialTest extends TestCase
         $caddy = (new InstallCaddyScript)->script(7, $server);
 
         $this->assertStringContainsString('if [ ! -f "/home/$SERVER_NAME/.ssh/id_rsa" ]', $configure);
-        $this->assertStringContainsString('CREATE USER IF NOT EXISTS', $mysql);
+        $this->assertStringContainsString('if mysql --user=root -e "SELECT 1"', $mysql);
+        $this->assertStringContainsString("ALTER USER 'root'@'localhost'", $mysql);
         $this->assertStringContainsString('cat > /etc/mysql/mysql.conf.d/99-lessbuild.cnf', $mysql);
         $this->assertStringNotContainsString('>> /etc/mysql/my.cnf', $mysql);
         $this->assertStringContainsString('gpg --batch --yes --dearmor', $caddy);

@@ -32,19 +32,16 @@ class InstallMemcachedScript implements ServerScript
 
         # Install Memcached
         apt_wait
-        yes | sudo apt install memcached
-        sed -i 's/-l 127.0.0.1/-l 0.0.0.0/' /etc/memcached.conf
+        yes | sudo apt install memcached supervisor
+        backupManagedFile /etc/memcached.conf
+        sed -i -E 's/^-l .*/-l 127.0.0.1/' /etc/memcached.conf
         service memcached restart
 
         # Configure Supervisor Autostart
         systemctl enable supervisor.service
         service supervisor start
 
-        # Disable protected_regular
-        sudo sed -i "s/fs.protected_regular = .*/fs.protected_regular = 0/" /usr/lib/sysctl.d/protect-links.conf
-
-        # Run service
-        sysctl --system
+        # Keep kernel link protections at the operating-system default.
         SCRIPT;
     }
 }

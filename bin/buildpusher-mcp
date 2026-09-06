@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Dependency-free stdio MCP server for the BuildPusher control-plane API."""
+import json, os, sys, urllib.error, urllib.parse, urllib.request
+
+BASE = os.environ.get("BUILDPUSHER_URL", "https://buildpusher.com").rstrip("/") + "/api/v1/"
+TOKEN = os.environ.get("BUILDPUSHER_TOKEN", "")
+
+TOOLS = [
+    {"name":"list_projects","description":"List BuildPusher projects and environments","inputSchema":{"type":"object","properties":{}}},
+    {"name":"list_deployments","description":"List the latest deployments","inputSchema":{"type":"object","properties":{}}},
+    {"name":"get_deployment","description":"Get a deployment by ID","inputSchema":{"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]}},
+    {"name":"get_deployment_log","description":"Read a deployment log","inputSchema":{"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]}},
+    {"name":"deploy_environment","description":"Queue an environment deployment","inputSchema":{"type":"object","properties":{"environment_id":{"type":"integer"}},"required":["environment_id"]}},
+    {"name":"rollback_deployment","description":"Rollback to a deployment release","inputSchema":{"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]}},
+    {"name":"scale_environment","description":"Set desired replicas","inputSchema":{"type":"object","properties":{"environment_id":{"type":"integer"},"replicas":{"type":"integer","minimum":1}},"required":["environment_id","replicas"]}},
+    {"name":"set_runtime_state","description":"Hibernate or resume an environment","inputSchema":{"type":"object","properties":{"environment_id":{"type":"integer"},"state":{"type":"string","enum":["running","hibernated"]}},"required":["environment_id","state"]}},
+]
+
+def api(method, path, data=None):
+    if not TOKEN: raise RuntimeError("BUILDPUSHER_TOKEN is required")
+    body = json.dumps(data).encode() if data is not None else None
+    request = urllib.request.Request(BASE + path, data=body, method=method, headers={"Accept":"application/json","Content-Type":"application/json","Authorization":"Bearer " + TOKEN})
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response: return json.loads(response.read())
+    except urllib.error.HTTPError as error:
+        raise RuntimeError("BuildPusher API returned %s: %s" % (error.code, error.read().decode(errors="replace")[:1000]))
+
+def call(name, args):
+    if name == "list_projects": return api("GET", "projects")
+    if name == "list_deployments": return api("GET", "deployments")
+    if name == "get_deployment": return api("GET", "deployments/%d" % int(args["id"]))
+    if name == "get_deployment_log": return api("GET", "deployments/%d/log" % int(args["id"]))
+    if name == "deploy_environment": return api("POST", "environments/%d/deploy" % int(args["environment_id"]), {})
+    if name == "rollback_deployment": return api("POST", "deployments/%d/rollback" % int(args["id"]), {})
+    if name == "scale_environment": return api("PATCH", "environments/%d/scale" % int(args["environment_id"]), {"replicas":int(args["replicas"])})
+    if name == "set_runtime_state": return api("PATCH", "environments/%d/runtime" % int(args["environment_id"]), {"state":args["state"]})
+    raise RuntimeError("Unknown tool: " + name)
+
+def receive():
+    line = sys.stdin.buffer.readline()
+    if not line: return None
+    if line.lower().startswith(b"content-length:"):
+        length = int(line.split(b":",1)[1].strip())
+        while sys.stdin.buffer.readline().strip(): pass
+        return json.loads(sys.stdin.buffer.read(length))
+    return json.loads(line)
+
+def send(message):
+    payload = json.dumps(message, separators=(",",":"), ensure_ascii=False).encode()
+    sys.stdout.buffer.write(b"Content-Length: %d\r\n\r\n" % len(payload) + payload); sys.stdout.buffer.flush()
+
+while True:
+    message = receive()
+    if message is None: break
+    if "id" not in message: continue
+    try:
+        method = message.get("method")
+        if method == "initialize": result = {"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"buildpusher","version":"1.0.0"}}
+        elif method == "ping": result = {}
+        elif method == "tools/list": result = {"tools":TOOLS}
+        elif method == "tools/call":
+            value = call(message["params"]["name"], message["params"].get("arguments", {}))
+            result = {"content":[{"type":"text","text":json.dumps(value, indent=2)}],"structuredContent":value}
+        else: raise RuntimeError("Method not found: " + str(method))
+        send({"jsonrpc":"2.0","id":message["id"],"result":result})
+    except Exception as error:
+        send({"jsonrpc":"2.0","id":message["id"],"error":{"code":-32000,"message":str(error)}})

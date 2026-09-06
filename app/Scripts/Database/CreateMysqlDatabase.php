@@ -31,16 +31,12 @@ class CreateMysqlDatabase extends WebsiteProvisioningScript
         $rootPassword = escapeshellarg((string) $website->server->mysql_root_password);
         $databasePassword = str_replace(['\\', "'"], ['\\\\', "\\'"], $website->database_password);
         $databaseUser = str_replace("'", "\\'", $database);
-        $serverIp = str_replace("'", "\\'", (string) $website->server->public_ip);
         $progress = $this->progress($step, $website);
         $queries = [
             "CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
-            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'{$serverIp}' IDENTIFIED BY '{$databasePassword}';",
-            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'%' IDENTIFIED BY '{$databasePassword}';",
-            "ALTER USER '{$databaseUser}'@'{$serverIp}' IDENTIFIED BY '{$databasePassword}';",
-            "ALTER USER '{$databaseUser}'@'%' IDENTIFIED BY '{$databasePassword}';",
-            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'{$serverIp}';",
-            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'%';",
+            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'localhost' IDENTIFIED BY '{$databasePassword}';",
+            "ALTER USER '{$databaseUser}'@'localhost' IDENTIFIED BY '{$databasePassword}';",
+            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'localhost';",
             'FLUSH PRIVILEGES;',
         ];
         $commands = collect($queries)

@@ -47,7 +47,7 @@
                 :description="__('Are you sure you want to delete this provider?')"
             ></x-dialogs.delete>
 
-            <button type="submit" class="button primary" onclick="document.getElementById('delete-provider').showModal()">
+            <button type="button" class="button primary" onclick="document.getElementById('delete-provider').showModal()">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>

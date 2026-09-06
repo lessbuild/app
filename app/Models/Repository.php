@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Repository extends Model
 {
+    use BelongsToOrganization;
     use HasFactory;
     use SoftDeletes;
 
@@ -56,6 +58,11 @@ class Repository extends Model
     public function latestBuild(): HasOne
     {
         return $this->hasOne(Build::class)->latestOfMany();
+    }
+
+    public function latestSuccessfulBuild(): HasOne
+    {
+        return $this->hasOne(Build::class)->where('status', Build::STATUS_SUCCEEDED)->latestOfMany();
     }
 
     public function scopeNeverDeployed(Builder $query): Builder

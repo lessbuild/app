@@ -50,6 +50,11 @@ class DigitalOcean implements ServerProvider
         return $this->getSizes();
     }
 
+    public function images(): array
+    {
+        return $this->getImages();
+    }
+
     public function createSshKey(string $name, string $publicKey): CloudSshKeyData
     {
         $sshKey = $this->createSSH([
@@ -82,14 +87,14 @@ class DigitalOcean implements ServerProvider
         return $this->serverData($response['droplet'] ?? null);
     }
 
-    public function server(int $identifier): CloudServerData
+    public function server(int|string $identifier): CloudServerData
     {
-        return $this->serverData($this->getDroplet($identifier));
+        return $this->serverData($this->getDroplet((int) $identifier));
     }
 
-    public function deleteServer(int $identifier): bool
+    public function deleteServer(int|string $identifier): bool
     {
-        return $this->destroyDroplet($identifier);
+        return $this->destroyDroplet((int) $identifier);
     }
 
     /**

@@ -1,5 +1,22 @@
 # Deployer
 
+## Production domain
+
+The production application URL is `https://buildpusher.com`. Caddy terminates TLS,
+redirects `www.buildpusher.com` to the apex domain, compresses responses, and proxies
+to the supervised Laravel listener on `127.0.0.1:8003`. The checked-in reference
+configuration is [`deploy/Caddyfile`](deploy/Caddyfile); install it at
+`/etc/caddy/Caddyfile`, validate with `caddy validate --config /etc/caddy/Caddyfile`,
+and reload Caddy. Laravel trusts only the loopback reverse proxy and the exact apex
+and `www` hostnames. Production sessions are encrypted, domain-scoped, and Secure.
+Production diagnostics include `caddy.service` in the required systemd service set,
+so the control panel reports a failed public edge alongside application or worker failures.
+
+DNS must contain an `A` record for `@` pointing to `174.138.39.41` and a `CNAME`
+for `www` pointing to `buildpusher.com`. Remove Namecheap parking or URL-forward
+records for both names. Caddy obtains and renews the public certificate automatically
+as soon as those records resolve to this server.
+
 ## Account registration
 
 Fresh installations allow one bootstrap owner account and then close public
@@ -7,6 +24,24 @@ registration automatically. Existing password and linked social accounts can
 continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
 or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
 account will be inserted by another provisioning process.
+When registration is closed, public calls to action use `/request-access` instead
+of sending prospective customers into the sign-in screen. Requests are rate
+limited, honeypot protected, deduplicated by a normalized email hash, and store
+contact details and use-case text encrypted at rest. Platform administrators can
+review and classify them at `/admin/access-requests`; ordinary workspace users
+cannot list or update leads. Administrators can issue a rotating, single-use
+invitation whose plaintext token is sent only by queued email and expires after
+`REGISTRATION_INVITATION_DAYS`. Accepted and declined requests are pruned after
+`ACCESS_REQUEST_RETENTION_DAYS`; pending requests are retained for follow-up.
+
+## Platform administration
+
+Set `PLATFORM_ADMIN_EMAILS` to a comma-separated allowlist of verified operator
+accounts. Only those accounts can open `/admin/analytics` or production Telescope.
+The analytics page contains platform-wide signup, active-user, deployment, plan,
+conversion, estimated MRR, churn, and monetization-denial trends. Responses are
+private and non-cacheable, and denial telemetry records aggregate counters only—no
+email address, resource identifier, requested value, or credential is retained.
 
 Password and social sign-in return the user to the protected page they originally
 requested, including its filters and query string. Direct visits to the login page
@@ -37,6 +72,16 @@ the browser performing an in-account change remains signed in.
 The control-panel UI uses local initials avatars, system fonts, and bundled
 scripts/icons, so page rendering does not depend on third-party visual-asset
 hosts.
+Every HTTP response disables MIME sniffing, permits framing only from the same
+origin, limits cross-origin referrer detail, and denies camera, microphone, and
+geolocation access through browser policy headers. A restrictive content security
+policy is intentionally deferred until the remaining Alpine, Livewire, and inline
+interaction handlers can be nonce- or hash-backed without breaking the interface.
+Requests must target the host in `APP_URL`, a local readiness-probe host, or an
+exact comma-separated hostname in `TRUSTED_HOSTS`; arbitrary Host headers are
+rejected before they can influence generated URLs. Secure responses additionally
+send a one-year HSTS policy, while HTTP development and direct-IP deployments do
+not incorrectly advertise HTTPS availability.
 
 Provider inventory can be searched and filtered by provider type or whether
 resources are attached. Resource counts are visible in the list, and pagination
@@ -89,6 +134,35 @@ The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
 Authenticated visits to the public root and the sidebar Dashboard link both enter
 the verified dashboard flow; signed-out visitors continue to see the landing page.
+The public landing page presents the full provision, release, observability, and
+recovery workflow with responsive navigation, descriptive page metadata,
+registration-aware calls to action, and a keyboard-visible content skip link.
+It publishes canonical Open Graph and summary-card metadata with a local SVG icon,
+retains section navigation without JavaScript, and enables smooth anchor scrolling
+only when the visitor has not requested reduced motion. Authenticated and auth-flow
+pages default to `noindex, nofollow` and do not emit public sharing metadata.
+The landing page omits the unused Livewire runtime, `robots.txt` directs crawlers away
+from private application routes, and legacy favicon requests permanently redirect to
+the local SVG. The systemd web service runs Laravel's static-aware router directly with
+PHP version advertising disabled instead of launching a second unsupervised child process.
+It names the currently supported cloud/source providers, explains recovery and concrete
+operational guardrails, and uses native disclosure controls for concise answers about
+hosting, release reuse, and credentials. A compact tabbed product stage covers overview,
+provisioning, deployments, website monitoring, server operations, and reusable recipes
+without stacking a separate full-height preview for every feature. These previews use
+illustrative data and responsive HTML/CSS instead of raster screenshots. The landing
+page uses the shared primary, secondary, tertiary, and accent theme tokens throughout
+and does not advertise subscription prices or resource tiers the application does not
+implement.
+On mobile, the authenticated navigation opens above the app header, locks background
+scroll, uses the dynamic viewport and safe-area padding, and keeps every destination
+reachable in its own scrollable drawer. Opening and closing the drawer transfers
+focus predictably, Escape restores the navigation toggle, and pre-JavaScript markup
+stays cloaked to avoid a drawer flash. The drawer also includes the signed-in
+identity and a CSRF-protected mobile logout action, so session controls remain
+available without first dismissing the navigation.
+While open, Alpine's focus integration traps keyboard navigation inside the drawer,
+makes the covered page inert, and restores normal page interaction after dismissal.
 The sidebar also provides account-wide search across websites, servers,
 repositories, providers, recipes, and deployment revisions or commit messages.
 Each group is owner-scoped, capped at five results, and queried with explicit
@@ -97,7 +171,16 @@ It also separates active deployments from recent history, with owner-scoped
 Queued, Deploying, Running, and Timing out counts plus direct build links.
 Queued and running server commands receive a separate cross-server summary with
 safe server/history links; its active-command query omits encrypted command text
-and output.
+and output. The account-wide Command Center expands that summary into an
+owner-scoped, paginated view with server, status, retained-output, active-only, and
+normalized queued-date filters. It loads metadata only and links to the authorized per-server
+history focused on the selected execution for command text, retained output, and
+lifecycle actions. The filtered account-wide metadata can also be exported as a
+private, spreadsheet-safe CSV without command text or output content.
+History rows and exports include elapsed runtime when both trustworthy start and
+finish timestamps are available.
+When filtered results contain a queued or running command, the Command Center
+offers a status refresh that preserves the current filters and page.
 Webhook deliveries from the last 24 hours are summarized across the account by
 status with direct, filtered repository-history links. The dashboard query loads
 only internal record IDs, repository IDs, statuses, and timestamps; provider
@@ -156,6 +239,83 @@ and revisit them through a personal gallery filter. Contributors receive structu
 counts and recent report details without reporter identities, while audit entries
 record report actions without copying the submitted details. Free-text details are
 encrypted at rest and loaded only for the contributor feedback view.
+Contributors can resolve reviewed reports to clear dashboard attention without
+deleting the anonymous feedback. A reporter update reopens the report so changed or
+recurring issues return to the contributor's review queue.
+An account-wide feedback inbox keeps every report reachable with anonymous details,
+recipe search, status, reason, and reported-date filters, filter-aware totals, and
+pagination. Minimum-age filters isolate feedback older than 24 hours, 7 days, or 30
+days and carry through to pagination and CSV exports. Newest, oldest, and
+recently-updated ordering supports both incoming and
+stale-feedback triage. Priority ordering ranks security, broken, misleading, outdated,
+and other issues deterministically within each review state, and the CSV export uses
+the same order. Resolved reports can be reopened when further review is needed.
+Contributors can resolve up to one page of selected reports at once. The action
+validates ownership for the complete selection before changing anything and records
+anonymous per-recipe audit summaries.
+Resolved reports can also be selected and reopened in batches of up to 20. Bulk
+reopening clears stale resolution notes and restores contributor and reporter
+notifications while preserving anonymous per-recipe audit summaries.
+Each batch action has independent select-all-visible controls, a live selection
+count, and action-specific validation feedback in mixed-status inbox views.
+Single-report resolution can include an optional encrypted note explaining what was
+addressed. Only the contributor and original reporter can view it; reopening or
+updating the report clears the stale note before another review cycle.
+While a report remains resolved, its contributor can correct or clear that note
+without reopening the issue. Actual changes create a metadata-only audit event and
+replace the reporter's unread resolution notice; unchanged submissions are no-ops.
+The filtered inbox can be streamed as a spreadsheet-safe CSV for offline review;
+the export remains owner-scoped and contains no reporter identity.
+New feedback creates one anonymous contributor notification per open report. Report
+updates do not duplicate an unread alert, while reopening creates a new alert after
+the previous one was acknowledged. Resolution marks matching alerts read while
+retaining history; withdrawal removes notifications whose report no longer exists.
+Opening a contributor feedback notification uses an owner-scoped focused inbox view
+and anchors the exact report card, including when notification history is revisited
+after the report was resolved.
+Reporter lifecycle notifications open a private status page rather than depending on
+the public gallery route. The page remains usable after unpublishing, reveals no
+recipe script, and allows the original reporter to withdraw their report.
+Resolution and reopen notifications continue after unpublishing because their
+destination no longer depends on public gallery availability.
+Withdrawing a report or deleting its recipe removes only the corresponding contributor
+and reporter notifications before the report row disappears, preventing dead links
+without disturbing unrelated notification history. Notification cleanup, row deletion,
+and the matching audit entry commit atomically, so a failed audit write restores the
+report or recipe and its notification history instead of leaving partial state.
+Submission, resolution, resolution-note changes, and single or bulk reopening use the
+same guarantee: report state, contributor acknowledgement, reporter notification, and
+anonymous audit history either all commit or all roll back.
+Single-report decisions lock the recipe and report rows in a consistent order, so
+overlapping submissions, reviews, withdrawals, and recipe deletion cannot act on a
+stale state or duplicate lifecycle notifications and audits.
+SQLite deployments reserve the writer before reading that state and use a bounded
+busy timeout with WAL journaling, allowing competing writers to wait while readers
+remain available.
+A private My Reports history lists every report owned by the reporter, including
+unpublished recipes, with recipe search, lifecycle and availability filters,
+unread/reviewed contributor-update and issue-type filters,
+newest/oldest/recently-updated ordering, filter-aware metrics,
+pagination, and links to the durable status page. List queries
+omit encrypted report text and recipe scripts.
+Unread contributor changes are highlighted only on the reporter's current history
+page and private status view. Reporters explicitly review them through the existing
+CSRF-protected notification action; simply opening a status page does not mutate state.
+My Reports also shows a filter-independent unread-update total and can review every
+report update at once without changing unrelated or other users' notifications.
+Reporters can stream the filtered history as a private spreadsheet-safe CSV containing
+their own details and contributor resolution notes, without reporter account identity
+or recipe scripts.
+The dashboard summarizes open feedback without loading encrypted text and links
+directly to all open reports, security reports, and reports at least seven days old.
+Each affected-recipe card opens an owner-scoped inbox focus containing the complete
+matching report set rather than only the recent subset on the gallery detail page.
+Reporters receive private informational notifications when contributors resolve or
+reopen their feedback. These contain only the recipe name and note availability,
+replace contradictory unread lifecycle notices, and link back to the gallery recipe.
+The reporter's gallery collections can separate all reported recipes into feedback
+still needing contributor review and resolved feedback. Cards show only the safe
+issue type and review state; encrypted report and resolution text stays unloaded.
 Recipe creation, publication changes, gallery installs and refreshes, and rating
 changes are recorded in the owner-scoped activity history without script contents.
 
@@ -203,6 +363,51 @@ backups are stored in `storage/app/backups` and retained for seven days by
 default. A `sync` queue configuration is automatically upgraded to the database
 queue so job retries and backoff work outside web requests.
 
+Unexpected production failures return a self-contained recovery page, or a compact
+JSON error for API clients, with a UUID reference and no exception details. The same
+reference is attached to the structured exception log so an operator can correlate a
+user report without asking for sensitive request data. It is also returned in the
+`X-Incident-ID` response header for proxies and API tooling. Error responses are
+private and non-cacheable; expected HTTP errors such as 404 retain their normal status
+pages. Locate the newest matching entry across retained and rotated Laravel logs
+without printing exception details or stack traces:
+
+```bash
+php artisan lessbuild:incident 123e4567-e89b-42d3-a456-426614174000
+```
+
+Run a read-only operational check after installation, configuration changes, or
+an incident:
+
+```bash
+php artisan lessbuild:diagnose
+php artisan lessbuild:diagnose --json
+```
+
+The command checks key presence, URL validity, database connectivity, migrations,
+writable runtime directories, production debug mode, queue configuration, pending
+database-queue depth/age, failed jobs, and (for systemd installations) the required
+web, worker, watchdog, health-monitor, and SQLite backup units. `DIAGNOSTIC_QUEUE_BACKLOG_LIMIT` and
+`DIAGNOSTIC_QUEUE_OLDEST_MINUTES` set the pending-work limits (100 jobs and 15
+minutes by default). The daemon installer enables timer inspection automatically;
+custom deployments can opt in with `DIAGNOSTIC_SYSTEMD_TIMERS=true`. External queue backends are identified as requiring their own
+inspection rather than being reported as locally verified. It
+returns a failing exit code when any check fails and never prints keys, credentials,
+connection names, job payloads, or exception details.
+Verified users can review the same fresh, read-only snapshot from **System health**
+in the primary navigation. The page is private and non-cacheable, reports an explicit
+overall state, and preserves the command's summarized output boundaries. Its download
+action produces a timestamped JSON incident artifact with the same sanitized checks,
+summary counts, and no credentials, queue payloads, or exception details.
+The dashboard caches only the overall counts and up to three failing check names for
+60 seconds, making degraded platform state visible without running system commands on
+every page view. Set `DIAGNOSTIC_DASHBOARD_CACHE_SECONDS` to tune this short summary TTL.
+
+The production stack writes dated Laravel logs and retains 14 days by default instead
+of growing one file indefinitely. Set `LOG_STACK` to a comma-separated channel list
+or `LOG_DAILY_DAYS` to adjust the bounded retention policy; the daemon installer
+enforces the daily production defaults.
+
 ```bash
 sudo ./scripts/install-daemon.sh
 ```
@@ -213,15 +418,27 @@ Pass a public IP explicitly when automatic detection is not appropriate:
 sudo ./scripts/install-daemon.sh 203.0.113.10
 ```
 
-The app will be available at `http://PUBLIC_IP:8003`. Ensure that TCP port 8003
-is allowed by the host firewall and cloud-provider firewall.
+The daemon installer provides a simple private-IP runtime at
+`http://PUBLIC_IP:8003`. Do not expose that development server as the public
+production runtime.
+
+For the BuildPusher domain, Caddy serves `public/` directly and forwards PHP
+requests to the PHP 8.3 FPM Unix socket using [deploy/Caddyfile](deploy/Caddyfile).
+The FPM pool uses `ondemand` process management with four children on the
+current small host. The `www-data` account needs read access to the application
+and write access only to `database/`, `storage/`, and `bootstrap/cache/`.
+Production diagnostics should set:
+
+```dotenv
+DIAGNOSTIC_SYSTEMD_SERVICES=php8.3-fpm.service,lessbuild-worker.service,caddy.service
+```
 
 Check the web and worker processes with:
 
 ```bash
-systemctl status lessbuild-app lessbuild-worker lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
-journalctl -u lessbuild-app -u lessbuild-worker --since today
-curl --fail http://127.0.0.1:8003/api/health
+systemctl status php8.3-fpm lessbuild-worker caddy lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
+journalctl -u php8.3-fpm -u lessbuild-worker -u caddy --since today
+curl --fail https://buildpusher.com/api/health
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup
 php artisan lessbuild:backups:verify --all
@@ -456,8 +673,8 @@ notifications.
 Read notifications are retained for 90 days after review by default and pruned
 only after the daily database backup is verified. Unread notifications are
 always preserved. Set `NOTIFICATION_RETENTION_DAYS` to adjust the window.
-Each server retains an encrypted command history with status and queued-date
-filtering plus owner-authorized output downloads. Queued commands can be canceled atomically;
+Each server retains an encrypted command history with status, retained-output, and
+queued-date filtering plus owner-authorized output downloads. Queued commands can be canceled atomically;
 if a worker has already started one, cancellation safely loses the race instead
 of claiming to stop an in-flight remote process. Completed, failed, and canceled
 commands can be queued again from history while retaining explicit lineage to
@@ -466,6 +683,8 @@ a spreadsheet-safe CSV with lineage and timing metadata; retained output remains
 available only through its separate owner-authorized download. Terminal command
 records and their encrypted output can also be deleted individually; active
 commands remain protected.
+Server command history likewise offers a filter-preserving status refresh while
+matching commands remain queued or running.
 Filter-aware history cards summarize matching, active, successful, failed, and
 canceled commands plus records with downloadable output. Counts remain scoped to
 the authorized server and never require decrypting command text or retained output.
@@ -505,6 +724,17 @@ activation and post-deployment commands that run before the health check. Hooks
 execute in isolated Bash processes, and a failed post-deployment hook restores
 the previous release through the normal deployment failure path.
 
+Successful releases can be promoted forward from preview or development through
+staging to production. Promotion pins the exact verified commit, snapshots the
+target environment's runtime, variables, processes, and resources, and retains
+source-build lineage plus an encrypted change note. It intentionally rebuilds
+that revision for the target rather than claiming a portable binary artifact.
+Target readiness, source identity, active-deployment serialization, deployment
+locks, maintenance windows, and approval requirements are all enforced. Locks
+and windows are checked again when an administrator approves a waiting release.
+The workflow is available in the application view, deployment evidence, CSV
+history, and the scoped control-plane API.
+
 Deployment, website, and server failures create unread in-app notifications.
 When failed server or website provisioning later reaches active state, Lessbuild
 acknowledges its open failure and adds a green recovery alert. Intermediate retry
@@ -525,3 +755,39 @@ notifications while always retaining unread failures.
 - [x] Persist server log snapshots and display them without render-time SSH commands
 - [x] Use a type-specific provisioning plan when creating servers
 - [x] Safely reuse existing DigitalOcean SSH keys without deleting user-managed keys
+### GitHub App
+
+For repository discovery and automatic push webhooks, create a GitHub App with
+repository Contents read permission, Metadata read permission, and Push and Pull
+request event subscriptions. Set its setup URL to
+`https://buildpusher.com/github-app/callback` and webhook URL to
+`https://buildpusher.com/api/github-app/webhook`, then configure:
+
+```dotenv
+GITHUB_APP_ID=123456
+GITHUB_APP_SLUG=buildpusher
+GITHUB_APP_PRIVATE_KEY=/absolute/path/to/buildpusher.private-key.pem
+GITHUB_APP_WEBHOOK_SECRET=a-long-random-secret
+```
+
+The install option remains hidden until all four values exist. Installation
+tokens are minted only when needed and are not persisted. Keep the PEM outside
+the repository, readable only by the application service account, then clear
+the configuration cache and restart the application and worker services.
+
+### Stripe subscriptions
+
+BuildPusher uses Laravel Cashier with Stripe Checkout and the Stripe customer portal. Create recurring monthly prices for **Starter ($9)**, **Pro ($19)**, **Team ($49)**, **Business ($99)**, and **Unlimited ($199)** in Stripe, then configure:
+
+```dotenv
+STRIPE_KEY=pk_live_...
+STRIPE_SECRET=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_STARTER_PRICE_ID=price_...
+STRIPE_PRO_PRICE_ID=price_...
+STRIPE_TEAM_PRICE_ID=price_...
+STRIPE_BUSINESS_PRICE_ID=price_...
+STRIPE_UNLIMITED_PRICE_ID=price_...
+```
+
+Register `https://buildpusher.com/stripe/webhook` as the Stripe webhook endpoint and enable Cashier's required customer, subscription, invoice, and payment-method events. After changing the environment, run `php artisan optimize:clear` and restart the application and worker services.

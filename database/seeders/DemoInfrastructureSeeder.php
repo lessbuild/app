@@ -40,6 +40,12 @@ class DemoInfrastructureSeeder extends Seeder
                 $websites = $this->websites($user, $servers);
                 $this->healthChecks($websites);
                 $this->repositories($user, $providers, $websites);
+                foreach (['providers', 'servers', 'websites', 'repositories', 'recipes'] as $table) {
+                    DB::table($table)
+                        ->where('user_id', $user->id)
+                        ->whereNull('organization_id')
+                        ->update(['organization_id' => $user->current_organization_id]);
+                }
                 $this->cloudCatalog();
             });
         });

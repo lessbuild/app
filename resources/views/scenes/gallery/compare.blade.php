@@ -11,7 +11,7 @@
         <x-slot:buttons>
             <a href="{{ route('recipes.edit', $copy) }}" class="button secondary">{{ __('Edit My Copy') }}</a>
             @if ($copy->hasGalleryUpdate() && ! $copy->is_published)
-                <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm('{{ __('Replace your private copy with this reviewed gallery version?') }}')">
+                <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $copy->name])) }})">
                     @csrf
                     <button type="submit" class="button primary">{{ __('Update Private Copy') }}</button>
                 </form>

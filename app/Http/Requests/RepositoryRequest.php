@@ -14,7 +14,7 @@ class RepositoryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**
@@ -22,7 +22,7 @@ class RepositoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        $provider = $this->user()->providers()
+        $provider = $this->user()->workspaceProviders()
             ->whereKey($this->input('provider_id'))
             ->whereNull('deleted_at')
             ->first();
@@ -32,7 +32,7 @@ class RepositoryRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('providers', 'id')->where(fn ($query) => $query
-                    ->where('user_id', $this->user()->id)
+                    ->where('organization_id', $this->user()->current_organization_id)
                     ->whereIn('provider', Provider::SOURCE_CONTROL_TYPES)
                     ->whereNull('deleted_at')),
             ],
@@ -40,7 +40,7 @@ class RepositoryRequest extends FormRequest
                 'required',
                 'integer',
                 Rule::exists('websites', 'id')->where(fn ($query) => $query
-                    ->where('user_id', $this->user()->id)
+                    ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Website::STATUS_ACTIVE)
                     ->whereExists(fn ($servers) => $servers
                         ->selectRaw('1')

@@ -25,6 +25,11 @@
         </div>
     @endif
 
+    @if(!$planUsage['allowed'])
+        <div class="my-4"><x-alerts.info :title="__('Your plan’s website limit has been reached')" :link="route('billing.index')" :anchor="__('Upgrade plan')"></x-alerts.info></div>
+    @endif
+    @error('plan')<div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-800">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></div>@enderror
+
     <!--
      ! ------------------------------------------------------------
      ! Content
@@ -40,7 +45,7 @@
 
             <x-slot:footer>
                 <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary" type="submit" @disabled($servers->isEmpty())>
+                    <button class="cursor-pointer button primary disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled($servers->isEmpty() || !$planUsage['allowed'])>
                         <span class="flex items-center justify-between">
                             {{ __('Create Website') }}
                         </span>

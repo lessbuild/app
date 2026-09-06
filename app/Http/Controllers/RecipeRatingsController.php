@@ -13,7 +13,7 @@ class RecipeRatingsController extends Controller
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
         abort_if((int) $recipe->user_id === (int) $request->user()->id, 403);
-        abort_unless($request->user()->recipes()->where('source_recipe_id', $recipe->id)->exists(), 403);
+        abort_unless($request->user()->workspaceRecipes()->where('source_recipe_id', $recipe->id)->exists(), 403);
 
         $data = $request->validate([
             'rating' => ['required', 'integer', 'between:1,5'],

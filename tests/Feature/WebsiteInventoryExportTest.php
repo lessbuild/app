@@ -65,6 +65,7 @@ class WebsiteInventoryExportTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString(
             'attachment; filename=lessbuild-websites-',

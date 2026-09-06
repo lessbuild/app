@@ -5,12 +5,12 @@
     $provisioningFinished = in_array($provisioningStatus, ['active', 'failed', 'canceled'], true);
 @endphp
 
-<div @if (! $provisioningFinished) wire:poll.5s @endif>
+<div @if (! $provisioningFinished && ($poll ?? true)) wire:poll.5s @endif>
     <div>
         <div class="items-start mb-6">
             <div class="mt-4 flex items-center justify-between">
                 <h2 class="text-2xl font-bold text-primary uppercase underline">
-                    {{ __('Setup Information') }}
+                    {{ $heading ?? __('Setup Information') }}
                 </h2>
                 @if ($provisioningStatus)
                     <span @class([

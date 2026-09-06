@@ -38,6 +38,7 @@ class ServerLogSnapshotTest extends TestCase
         $this->actingAs($user)->get(route('servers.show', $server))
             ->assertSuccessful()
             ->assertSeeText('Package installed')
+            ->assertSee('server-show', false)
             ->assertDontSee("<script>alert('xss')</script>", false)
             ->assertDontSee('wire:poll.5s', false);
     }

@@ -15,7 +15,7 @@ class CollectServerLogAction
         'apt' => 'tail -n 200 -- /var/log/apt/history.log',
         'caddy' => 'journalctl -u caddy --no-pager -n 200',
         'mysql' => 'tail -n 200 -- /var/log/mysql/error.log',
-        'php' => 'journalctl -u php8.1-fpm --no-pager -n 200',
+        'php' => 'journalctl -u php8.4-fpm --no-pager -n 200',
         'provisioning' => 'tail -n 200 -- /var/log/cloud-init-output.log',
     ];
 

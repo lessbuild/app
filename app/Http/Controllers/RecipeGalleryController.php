@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Recipe;
 use App\Models\RecipeRating;
 use App\Services\ActivityRecorder;
+use App\Support\SqlLike;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class RecipeGalleryController extends Controller
                     ->select(['id', 'user_id', 'recipe_id']),
                 'reports' => fn ($query) => $query
                     ->where('user_id', $request->user()->id)
-                    ->select(['id', 'user_id', 'recipe_id']),
+                    ->select(['id', 'user_id', 'recipe_id', 'reason', 'resolved_at']),
             ])
             ->withCount('ratings')
             ->withAvg('ratings', 'rating')
@@ -73,7 +74,7 @@ class RecipeGalleryController extends Controller
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
         $recipe->load('user:id,name');
         $recipe->loadCount('ratings')->loadAvg('ratings', 'rating');
-        $installedRecipe = $request->user()->recipes()
+        $installedRecipe = $request->user()->workspaceRecipes()
             ->where('source_recipe_id', $recipe->id)
             ->latest('id')
             ->first();
@@ -93,13 +94,15 @@ class RecipeGalleryController extends Controller
                 ->first(),
             'reportCounts' => (int) $recipe->user_id === (int) $request->user()->id
                 ? $recipe->reports()
+                    ->whereNull('resolved_at')
                     ->select('reason', DB::raw('COUNT(*) as total'))
                     ->groupBy('reason')
                     ->pluck('total', 'reason')
                 : collect(),
             'recentReports' => (int) $recipe->user_id === (int) $request->user()->id
                 ? $recipe->reports()
-                    ->select(['id', 'recipe_id', 'reason', 'details', 'created_at'])
+                    ->select(['id', 'recipe_id', 'reason', 'details', 'resolved_at', 'resolution_note', 'created_at'])
+                    ->orderByRaw('resolved_at IS NULL DESC')
                     ->latest('id')
                     ->limit(20)
                     ->get()
@@ -143,7 +146,7 @@ class RecipeGalleryController extends Controller
                 ->lockForUpdate()
                 ->findOrFail($recipe->id);
 
-            $existing = $request->user()->recipes()
+            $existing = $request->user()->workspaceRecipes()
                 ->where('source_recipe_id', $source->id)
                 ->latest('id')
                 ->first();
@@ -151,7 +154,7 @@ class RecipeGalleryController extends Controller
                 return $existing;
             }
 
-            $copy = $request->user()->recipes()->create([
+            $copy = $request->user()->workspaceRecipes()->create([
                 'name' => $source->name,
                 'description' => $source->description,
                 'script' => $source->script,
@@ -236,7 +239,7 @@ class RecipeGalleryController extends Controller
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, Recipe::CATEGORIES, true) ? $category : null,
-            'scope' => in_array($scope, ['all', 'favorites', 'reported', 'installed', 'updates', 'mine'], true) ? $scope : 'all',
+            'scope' => in_array($scope, ['all', 'favorites', 'reported', 'reports_open', 'reports_resolved', 'installed', 'updates', 'mine'], true) ? $scope : 'all',
             'sort' => in_array($sort, ['recent', 'popular', 'top_rated'], true) ? $sort : 'recent',
         ];
     }
@@ -247,9 +250,10 @@ class RecipeGalleryController extends Controller
         return Recipe::query()
             ->published()
             ->when($filters['search'], function (Builder $query, string $search): void {
-                $query->where(function (Builder $query) use ($search): void {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
+                $pattern = SqlLike::contains($search);
+                $query->where(function (Builder $query) use ($pattern): void {
+                    $query->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['category'], fn (Builder $query, string $category) => $query->where('category', $category))
@@ -263,13 +267,15 @@ class RecipeGalleryController extends Controller
                         ->where('gallery_favorites.user_id', $userId);
                 });
             })
-            ->when($filters['scope'] === 'reported', function (Builder $query) use ($userId): void {
-                $query->whereExists(function ($reports) use ($userId): void {
+            ->when(in_array($filters['scope'], ['reported', 'reports_open', 'reports_resolved'], true), function (Builder $query) use ($filters, $userId): void {
+                $query->whereExists(function ($reports) use ($filters, $userId): void {
                     $reports
                         ->selectRaw('1')
                         ->from('recipe_reports as gallery_reports')
                         ->whereColumn('gallery_reports.recipe_id', 'recipes.id')
-                        ->where('gallery_reports.user_id', $userId);
+                        ->where('gallery_reports.user_id', $userId)
+                        ->when($filters['scope'] === 'reports_open', fn ($reports) => $reports->whereNull('gallery_reports.resolved_at'))
+                        ->when($filters['scope'] === 'reports_resolved', fn ($reports) => $reports->whereNotNull('gallery_reports.resolved_at'));
                 });
             })
             ->when(in_array($filters['scope'], ['installed', 'updates'], true), function (Builder $query) use ($filters, $userId): void {

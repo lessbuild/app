@@ -10,7 +10,7 @@ class RecipeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**

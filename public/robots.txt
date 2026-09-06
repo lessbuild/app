@@ -1,2 +1,24 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /account
+Disallow: /activity
+Disallow: /api
+Disallow: /builds
+Disallow: /commands
+Disallow: /confirm-password
+Disallow: /forgot-password
+Disallow: /gallery
+Disallow: /home
+Disallow: /login
+Disallow: /notifications
+Disallow: /providers
+Disallow: /recipes
+Disallow: /register
+Disallow: /request-access
+Disallow: /repositories
+Disallow: /reset-password
+Disallow: /search
+Disallow: /servers
+Disallow: /system-health
+Disallow: /verify-email
+Disallow: /websites

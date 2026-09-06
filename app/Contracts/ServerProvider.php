@@ -15,11 +15,13 @@ interface ServerProvider
 
     public function createServer(array $parameters): CloudServerData;
 
-    public function server(int $identifier): CloudServerData;
+    public function server(int|string $identifier): CloudServerData;
 
-    public function deleteServer(int $identifier): bool;
+    public function deleteServer(int|string $identifier): bool;
 
     public function regions(): array;
 
     public function sizes(): array;
+
+    public function images(): array;
 }

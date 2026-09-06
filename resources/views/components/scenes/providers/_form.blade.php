@@ -1,5 +1,9 @@
 <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
 
+    @if(!isset($provider) && app(\App\Services\GitHubApp::class)->configured())
+        <div class="rounded-xl border border-primary bg-secondary p-4"><p class="font-bold text-primary">{{ __('Recommended for GitHub') }}</p><p class="mt-1 text-sm text-secondary">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p><a href="{{ route('github-app.connect') }}" class="button primary mt-3">{{ __('Install GitHub App') }}</a></div>
+    @endif
+
     <div class="col-span-3 sm:col-span-2">
         <label for="provider" class="block text-sm font-medium text-primary">
             {{ __('Provider') }}
@@ -69,6 +73,42 @@
                     <use xlink:href="/assets/images/icons.svg#bitbucket"></use>
                 </svg>
                 <span class="sr-only">{{ __('Bitbucket') }}</span>
+            </div>
+
+            <div
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                :class="{ 'bg-tertiary': provider == 'hetzner' }"
+                @click="provider = 'hetzner'"
+                @keydown.enter="provider = 'hetzner'"
+                @keydown.space.prevent="provider = 'hetzner'"
+                role="radio"
+                tabindex="0"
+                :aria-checked="provider == 'hetzner'">
+                <span class="text-sm font-semibold text-primary">{{ __('Hetzner Cloud') }}</span>
+            </div>
+
+            <div
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                :class="{ 'bg-tertiary': provider == 'vultr' }"
+                @click="provider = 'vultr'"
+                @keydown.enter="provider = 'vultr'"
+                @keydown.space.prevent="provider = 'vultr'"
+                role="radio"
+                tabindex="0"
+                :aria-checked="provider == 'vultr'">
+                <span class="text-sm font-semibold text-primary">{{ __('Vultr') }}</span>
+            </div>
+
+            <div
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                :class="{ 'bg-tertiary': provider == 'cloudflare' }"
+                @click="provider = 'cloudflare'"
+                @keydown.enter="provider = 'cloudflare'"
+                @keydown.space.prevent="provider = 'cloudflare'"
+                role="radio"
+                tabindex="0"
+                :aria-checked="provider == 'cloudflare'">
+                <span class="text-sm font-semibold text-primary">{{ __('Cloudflare DNS') }}</span>
             </div>
 
         </div>

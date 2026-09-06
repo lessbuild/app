@@ -28,12 +28,12 @@ class ArtisanCommandsScript extends BuildProvisioningScript
     public function script(int $step, Build $build): string
     {
         $repository = $build->repository;
-        $currentPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/current");
+        $candidatePath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
-        cd -- {$currentPath}
+        cd -- {$candidatePath}
 
         if [ -f artisan ]; then
             php artisan storage:link --force

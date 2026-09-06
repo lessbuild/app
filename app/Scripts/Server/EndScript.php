@@ -28,6 +28,11 @@ class EndScript implements ServerScript
         EOF
 
         provisionPing {$server->id} {$step}
+        install -d -m 755 /etc/buildpusher
+        printf '%s\n' {$server->id} > /etc/buildpusher/managed
+        printf 'server_id=%s\ncompleted_at=%s\nbackup_dir=%s\n' {$server->id} "$(date -u +%FT%TZ)" "\$BACKUP_DIR" > /etc/buildpusher/provisioning-manifest
+        chmod 644 /etc/buildpusher/managed
+        chmod 600 /etc/buildpusher/provisioning-manifest
         rm -f -- "\$LOG_FILE" "\$LOG_UPLOAD_FILE"
         SCRIPT;
     }

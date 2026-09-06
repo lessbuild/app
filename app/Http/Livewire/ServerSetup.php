@@ -5,6 +5,7 @@ namespace App\Http\Livewire;
 use App\Models\Server;
 use App\Services\ServerProvisioningPlan;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class ServerSetup extends Component
@@ -17,7 +18,7 @@ class ServerSetup extends Component
     public function render(ServerProvisioningPlan $plan): View
     {
         $this->model->refresh();
-        abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
+        Gate::authorize('view', $this->model);
 
         return view('livewire.setup', [
             'processes' => $plan->steps($this->model),

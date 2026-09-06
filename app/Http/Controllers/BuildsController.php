@@ -5,17 +5,24 @@ namespace App\Http\Controllers;
 use App\Actions\Repository\CancelDeploymentAction;
 use App\Actions\Repository\CancelQueuedDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
+use App\Actions\Repository\RollbackBuildAction;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
+use App\Notifications\NotificationInbox;
 use App\Services\ActivityRecorder;
+use App\Services\DeploymentGate;
+use App\Services\DeploymentRequest;
 use App\Services\Runner;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -38,17 +45,17 @@ class BuildsController extends Controller
             'builds' => $builds,
             'filters' => $filters,
             'metrics' => $this->metrics($request, $filters),
-            'repositories' => $request->user()->repositories()->orderBy('name')->get(['id', 'name']),
-            'websites' => $request->user()->websites()->orderBy('name')->get(['id', 'name']),
-            'servers' => $request->user()->servers()->orderBy('name')->get(['id', 'name', 'display_name']),
-            'providers' => $request->user()->providers()->forRepositories()->orderBy('name')->get(['id', 'name']),
+            'repositories' => $request->user()->workspaceRepositories()->orderBy('name')->get(['id', 'name']),
+            'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(['id', 'name']),
+            'servers' => $request->user()->workspaceServers()->orderBy('name')->get(['id', 'name', 'display_name']),
+            'providers' => $request->user()->workspaceProviders()->forRepositories()->orderBy('name')->get(['id', 'name']),
             'statuses' => $this->statuses(),
             'triggers' => $this->triggers(),
         ]);
     }
 
     /**
-     * @param  array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @param  array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
      * @return array{total: int, active: int, succeeded: int, failed: int, success_rate: ?int, latest_at: CarbonInterface|null}
      */
     private function metrics(Request $request, array $filters): array
@@ -101,6 +108,8 @@ class BuildsController extends Controller
                 'Revision',
                 'Commit message',
                 'Operator note',
+                'Promoted from build',
+                'Promotion note',
                 'Created at',
                 'Started at',
                 'Finished at',
@@ -123,6 +132,8 @@ class BuildsController extends Controller
                         $build->revision,
                         $this->csvCell($build->commit_message),
                         $this->csvCell($build->operator_note),
+                        $build->promoted_from_build_id,
+                        $this->csvCell($build->promotion_note),
                         $build->created_at?->toIso8601String(),
                         $build->started_at?->toIso8601String(),
                         $build->finished_at?->toIso8601String(),
@@ -133,6 +144,7 @@ class BuildsController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -186,7 +198,7 @@ class BuildsController extends Controller
     ): RedirectResponse {
         $this->authorize('cancel', $build);
 
-        if ($build->status === Build::STATUS_QUEUED) {
+        if (in_array($build->status, [Build::STATUS_QUEUED, Build::STATUS_AWAITING_APPROVAL], true)) {
             return $cancelQueued->handle($build)
                 ? back()->with('success', __('Queued deployment canceled.'))
                 : back()->with('info', __('This deployment is no longer cancellable.'));
@@ -244,7 +256,7 @@ class BuildsController extends Controller
     {
         $this->authorize('redeploy', $build);
 
-        $result = $redeploy->handle($build);
+        $result = $redeploy->handle($build, request()->user());
 
         return match ($result->status) {
             BuildRedeploymentResult::QUEUED => redirect()
@@ -257,6 +269,101 @@ class BuildsController extends Controller
             default => back()
                 ->with('info', __('Only completed, failed, or canceled deployments can be redeployed.')),
         };
+    }
+
+    public function approve(Request $request, Build $build, DeploymentRequest $deployments, DeploymentGate $gate, ActivityRecorder $activity): RedirectResponse
+    {
+        $this->authorize('approve', $build);
+        $validated = $request->validateWithBag('approval', [
+            'approval_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $approved = DB::transaction(function () use ($build, $request, $validated, $gate, $activity): ?Build {
+            $locked = Build::query()
+                ->whereKey($build->id)
+                ->where('status', Build::STATUS_AWAITING_APPROVAL)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $locked || ! $locked->repository->isDeploymentReady() || $gate->blockReason($locked->repository)) {
+                return null;
+            }
+
+            $locked->update([
+                'status' => Build::STATUS_QUEUED,
+                'approved_by' => $request->user()->id,
+                'approved_at' => now(),
+                'approval_note' => filled($validated['approval_note'] ?? null)
+                    ? trim($validated['approval_note'])
+                    : null,
+            ]);
+            $this->acknowledgeApprovalNotifications($locked);
+            $activity->record($locked, $request->user()->id, 'deployment', $locked->trigger_source === Build::TRIGGER_PROMOTION
+                ? 'Release promotion was approved.'
+                : 'Deployment was approved.');
+
+            return $locked;
+        });
+
+        if (! $approved) {
+            return back()->with('info', __('This deployment is no longer awaiting approval, its infrastructure is unavailable, or an environment policy blocks it.'));
+        }
+
+        $deployments->dispatch($approved);
+
+        return back()->with('success', __('Deployment approved and queued.'));
+    }
+
+    public function rollback(Request $request, Build $build, RollbackBuildAction $rollback): RedirectResponse
+    {
+        $this->authorize('rollback', $build);
+        $result = $rollback->handle($build, $request->user());
+
+        return match ($result->status) {
+            BuildRedeploymentResult::QUEUED => redirect()
+                ->route('builds.show', $result->build)
+                ->with('success', __('Instant rollback queued.')),
+            BuildRedeploymentResult::UNAVAILABLE => back()
+                ->with('error', __('The website and server must be active before rollback.')),
+            BuildRedeploymentResult::ACTIVE => back()
+                ->with('info', __('A deployment is already in progress.')),
+            default => back()
+                ->with('info', __('This release artifact is not available for instant rollback.')),
+        };
+    }
+
+    public function reject(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
+    {
+        $this->authorize('approve', $build);
+        $validated = $request->validateWithBag('approval', [
+            'approval_note' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $rejected = DB::transaction(function () use ($build, $request, $validated, $activity): bool {
+            $locked = Build::query()->whereKey($build->id)->where('status', Build::STATUS_AWAITING_APPROVAL)->lockForUpdate()->first();
+            if (! $locked) {
+                return false;
+            }
+            $locked->update([
+                'status' => Build::STATUS_REJECTED,
+                'rejected_by' => $request->user()->id,
+                'rejected_at' => now(),
+                'finished_at' => now(),
+                'approval_note' => filled($validated['approval_note'] ?? null)
+                    ? trim($validated['approval_note'])
+                    : null,
+            ]);
+            $this->acknowledgeApprovalNotifications($locked);
+            $activity->record($locked, $request->user()->id, 'deployment', $locked->trigger_source === Build::TRIGGER_PROMOTION
+                ? 'Release promotion was rejected.'
+                : 'Deployment was rejected.');
+
+            return true;
+        });
+
+        return $rejected
+            ? back()->with('success', __('Deployment rejected.'))
+            : back()->with('info', __('This deployment is no longer awaiting approval.'));
     }
 
     public function updateNote(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
@@ -285,7 +392,7 @@ class BuildsController extends Controller
             : __('Deployment note saved.'));
     }
 
-    /** @return array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
+    /** @return array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
@@ -303,6 +410,10 @@ class BuildsController extends Controller
         $providerId = filter_var($request->query('provider_id'), FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1],
         ]);
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'repository_id' => $repositoryId ?: null,
@@ -312,16 +423,18 @@ class BuildsController extends Controller
             'status' => in_array($status, $this->statuses(), true) ? $status : null,
             'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
             'search' => $search !== '' ? $search : null,
+            'active' => $request->boolean('active') ? '1' : null,
             'latest' => $request->boolean('latest') ? '1' : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 
-    /** @param array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
-    private function filteredBuilds(Request $request, array $filters): HasManyThrough
+    /** @param array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
+    private function filteredBuilds(Request $request, array $filters): Builder
     {
-        return $request->user()->builds()
+        return Build::query()
+            ->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
             ->with('repository.website.server')
             ->when($filters['repository_id'], fn ($query, int $id) => $query
                 ->where('builds.repository_id', $id))
@@ -335,18 +448,21 @@ class BuildsController extends Controller
                 ->where('builds.status', $value))
             ->when($filters['trigger'], fn ($query, string $value) => $query
                 ->where('builds.trigger_source', $value))
+            ->when($filters['active'], fn ($query) => $query
+                ->whereIn('builds.status', Build::ACTIVE_STATUSES))
             ->when($filters['latest'], fn ($query) => $query
                 ->whereIn('builds.id', Build::query()
                     ->selectRaw('MAX(id)')
                     ->groupBy('repository_id')))
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('builds.revision', 'like', "%{$value}%")
-                        ->orWhere('builds.commit_message', 'like', "%{$value}%")
-                        ->orWhere('builds.operator_note', 'like', "%{$value}%")
+                        ->whereRaw("builds.revision LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("builds.commit_message LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("builds.operator_note LIKE ? ESCAPE '!'", [$pattern])
                         ->orWhereHas('repository', fn ($query) => $query
-                            ->where('name', 'like', "%{$value}%"));
+                            ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]));
                 });
             })
             ->when($filters['date_from'], fn ($query, string $date) => $query
@@ -371,7 +487,17 @@ class BuildsController extends Controller
     /** @return list<string> */
     private function triggers(): array
     {
-        return [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY];
+        return [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY, Build::TRIGGER_ROLLBACK, Build::TRIGGER_SCHEDULED, Build::TRIGGER_API, Build::TRIGGER_PROMOTION];
+    }
+
+    private function acknowledgeApprovalNotifications(Build $build): void
+    {
+        DatabaseNotification::query()
+            ->whereNull('read_at')
+            ->where('data->category', 'deployment')
+            ->where('data->resource_id', $build->id)
+            ->where('data->status', NotificationInbox::STATUS_INFO)
+            ->update(['read_at' => now()]);
     }
 
     private function csvCell(?string $value): ?string

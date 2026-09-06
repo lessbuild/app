@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Services\Entitlements;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +14,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityController extends Controller
 {
+    public function __construct(private readonly Entitlements $entitlements) {}
+
     public function __invoke(Request $request): View
     {
         $filters = $this->filters($request);
@@ -24,6 +29,7 @@ class ActivityController extends Controller
             'filters' => $filters,
             'metrics' => $this->metrics($request, $filters),
             'categories' => Event::CATEGORIES,
+            'auditAvailable' => $this->entitlements->allows($request->user()->currentOrganization, 'audit'),
         ]);
     }
 
@@ -62,6 +68,7 @@ class ActivityController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
+        $this->entitlements->enforce($request->user()->currentOrganization, 'audit');
         $filters = $this->filters($request);
         $filename = 'lessbuild-activity-'.now()->utc()->format('Ymd-His').'.csv';
 
@@ -98,6 +105,7 @@ class ActivityController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -107,8 +115,10 @@ class ActivityController extends Controller
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
         $category = $request->string('category')->toString();
-        $dateFrom = $this->date($request->string('date_from')->toString());
-        $dateTo = $this->date($request->string('date_to')->toString());
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'search' => $search !== '' ? $search : null,
@@ -125,7 +135,7 @@ class ActivityController extends Controller
     {
         return $request->user()->events()
             ->when($filters['search'], fn ($query, string $value) => $query
-                ->where('event', 'like', "%{$value}%"))
+                ->whereRaw("event LIKE ? ESCAPE '!'", [SqlLike::contains($value)]))
             ->when($filters['category'], fn ($query, string $value) => $query
                 ->where('category', $value))
             ->when($filters['date_from'], fn ($query, string $value) => $query

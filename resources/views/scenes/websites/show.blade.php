@@ -69,7 +69,7 @@
                 :description="__('Are you sure you want to delete this website?')"
             ></x-dialogs.delete>
 
-            <button type="submit" class="button primary" onclick="document.getElementById('delete-website').showModal()">
+            <button type="button" class="button primary" onclick="document.getElementById('delete-website').showModal()">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -286,6 +286,20 @@
                 </table>
             </div>
         @endif
+    </section>
+
+    <section class="mt-6 rounded-2xl border border-primary bg-primary p-5" x-data="{ logType: 'application' }">
+        <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p><h2 class="mt-1 text-xl font-black text-primary">{{ __('Live log snapshots') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p></div><div class="flex gap-2">@foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)<button type="button" class="button secondary" @click="logType='{{ $type }}'">{{ ucfirst($type) }}</button>@endforeach</div></div>
+        @foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)
+            @php($snapshot = $runtimeLogs->get($type))
+            <div x-show="logType === '{{ $type }}'" class="mt-4" data-runtime-log-console data-refresh-url="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}" data-report-url="{{ route('websites.runtime-logs.show', [$website, $type]) }}">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p><form method="POST" action="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}">@csrf<button type="submit" class="button primary">{{ __('Refresh :type log', ['type' => $type]) }}</button></form></div>
+                <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]"><input type="search" data-log-search class="input secondary rounded" placeholder="{{ __('Search log lines') }}"><select data-log-level class="input secondary rounded"><option value="">{{ __('All levels') }}</option><option value="emergency">Emergency</option><option value="error">Error</option><option value="warning">Warning</option><option value="info">Info</option><option value="debug">Debug</option></select><label class="flex items-center gap-2 rounded border border-primary px-3 text-sm text-primary"><input type="checkbox" data-log-live> {{ __('Live') }}</label></div>
+                @if($snapshot?->error)<div class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">{{ $snapshot->error }}</div>@endif
+                <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
+            </div>
+        @endforeach
+        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">@csrf @method('PATCH')<label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span><select name="log_retention_lines" class="input secondary mt-1 rounded">@foreach([100, 500, 1000, 5000, 10000] as $lines)<option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>@endforeach</select></label><button class="button secondary" type="submit">{{ __('Save retention') }}</button></form>
     </section>
 
     <livewire:website-provisioning-log :website="$website" />

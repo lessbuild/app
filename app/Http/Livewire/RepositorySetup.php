@@ -6,6 +6,7 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Services\RepositoryDeploymentPlan;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class RepositorySetup extends Component
@@ -18,7 +19,7 @@ class RepositorySetup extends Component
     public function render(RepositoryDeploymentPlan $plan): View
     {
         $this->model->refresh();
-        abort_unless((int) auth()->id() === (int) $this->model->user_id, 403);
+        Gate::authorize('view', $this->model);
         $latestBuild = $this->model->builds()->latest()->first();
         $this->model->setAttribute('provisioning_status', match ($latestBuild?->status) {
             Build::STATUS_SUCCEEDED => 'active',

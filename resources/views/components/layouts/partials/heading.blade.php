@@ -6,7 +6,7 @@
                     <use xlink:href="/assets/images/icons.svg#{{ $icon ?? 'cog' }}"></use>
                 </svg>
                 <div class="flex flex-col justify-center">
-                    <h1 class="text-3xl text-primary font-bold inline-block mr-5 max-w-2xl truncate">
+                    <h1 class="max-w-2xl break-words text-2xl font-bold leading-tight text-primary sm:text-3xl lg:mr-5 lg:truncate">
                         {{ $title }}
                     </h1>
                     <p class="text-secondary">

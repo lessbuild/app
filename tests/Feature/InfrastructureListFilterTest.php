@@ -214,6 +214,46 @@ class InfrastructureListFilterTest extends TestCase
             ->assertSee(route('servers.index', ['status' => Server::STATUS_FAILED]));
     }
 
+    public function test_provisioning_drilldowns_are_scoped_and_preserved_in_pagination_and_exports(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        foreach (range(1, 16) as $index) {
+            $server = $this->server($owner, "Provisioning Server {$index}", Server::STATUS_QUEUED);
+            $this->website($owner, $server, "Provisioning Website {$index}", [
+                'provisioning_status' => Website::STATUS_PROVISIONING,
+            ]);
+        }
+        $ready = $this->server($owner, 'Ready Server Excluded', Server::STATUS_ACTIVE);
+        $this->website($owner, $ready, 'Ready Website Excluded');
+        $other = User::factory()->create();
+        $foreign = $this->server($other, 'Foreign Provisioning Server', Server::STATUS_QUEUED);
+        $this->website($other, $foreign, 'Foreign Provisioning Website', [
+            'provisioning_status' => Website::STATUS_PROVISIONING,
+        ]);
+
+        foreach ([
+            [route('servers.index', ['provisioning' => 1]), route('servers.export', ['provisioning' => 1]), 'Ready Server Excluded', 'Foreign Provisioning Server', 'Provisioning Server 1'],
+            [route('websites.index', ['provisioning' => 1]), route('websites.export', ['provisioning' => 1]), 'Ready Website Excluded', 'Foreign Provisioning Website', 'Provisioning Website 1'],
+        ] as [$indexUrl, $exportUrl, $excluded, $foreignName, $included]) {
+            $this->actingAs($owner)->get($indexUrl)
+                ->assertSuccessful()
+                ->assertSee('name="provisioning" value="1" checked', false)
+                ->assertSee('provisioning=1', false)
+                ->assertSee('page=2', false)
+                ->assertSee($exportUrl)
+                ->assertDontSee($excluded)
+                ->assertDontSee($foreignName);
+
+            $csv = $this->actingAs($owner)->get($exportUrl)
+                ->assertSuccessful()
+                ->streamedContent();
+            $this->assertStringContainsString($included, $csv);
+            $this->assertStringNotContainsString($excluded, $csv);
+            $this->assertStringNotContainsString($foreignName, $csv);
+        }
+    }
+
     /** @param array<string, mixed> $attributes */
     private function server(User $user, string $name, string $status, array $attributes = []): Server
     {

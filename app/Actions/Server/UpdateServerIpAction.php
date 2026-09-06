@@ -4,11 +4,15 @@ namespace App\Actions\Server;
 
 use App\Models\Server;
 use App\Services\ServerProviderResolver;
+use App\Services\SshHostIdentity;
 use RuntimeException;
 
 class UpdateServerIpAction
 {
-    public function __construct(private readonly ServerProviderResolver $providers) {}
+    public function __construct(
+        private readonly ServerProviderResolver $providers,
+        private readonly SshHostIdentity $hostIdentity,
+    ) {}
 
     /**
      * @throws \Exception
@@ -29,9 +33,13 @@ class UpdateServerIpAction
             throw new RuntimeException('The server public network is not ready yet.');
         }
 
+        $identity = $this->hostIdentity->scan($cloudServer->publicIp, $server->ssh_port ?: 22);
+
         $server->update([
             'public_ip' => $cloudServer->publicIp,
             'private_ip' => $cloudServer->privateIp,
+            'ssh_host_key' => $identity['known_host'],
+            'ssh_host_fingerprint' => $identity['fingerprint'],
         ]);
 
         return true;

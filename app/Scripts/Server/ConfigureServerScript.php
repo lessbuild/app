@@ -3,6 +3,7 @@
 namespace App\Scripts\Server;
 
 use App\Contracts\Scripts\ServerScript;
+use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use RuntimeException;
 
@@ -35,6 +36,9 @@ class ConfigureServerScript implements ServerScript
         $serverName = escapeshellarg($server->name);
         $name = escapeshellarg($server->user->name);
         $email = escapeshellarg($server->user->email);
+        $webFirewallRules = in_array($server->type, [ServerTypeEnum::app, ServerTypeEnum::web, ServerTypeEnum::loadbalancer], true)
+            ? "ufw allow 80/tcp\n        ufw allow 443/tcp"
+            : '';
 
         return <<<SCRIPT
         apt_wait
@@ -45,15 +49,20 @@ class ConfigureServerScript implements ServerScript
         ROOT_PASSWORD={$shellPassword}
         PUBLIC_KEY={$publicKey}
 
-        # Disable Password Authentication Over SSH
-        sed -i "/PasswordAuthentication yes/d" /etc/ssh/sshd_config
-        echo "" | sudo tee -a /etc/ssh/sshd_config
-        echo "" | sudo tee -a /etc/ssh/sshd_config
-        echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config
-
-        # Restart SSH
+        # Manage SSH through a dedicated drop-in and validate before reload.
+        backupManagedFile /etc/ssh/sshd_config.d/99-buildpusher.conf
+        backupManagedFile /etc/ufw/user.rules
+        backupManagedFile /etc/ufw/user6.rules
+        install -d -m 755 /etc/ssh/sshd_config.d
+        cat > /etc/ssh/sshd_config.d/99-buildpusher.conf <<'SSHD_CONFIG'
+        PasswordAuthentication no
+        KbdInteractiveAuthentication no
+        PubkeyAuthentication yes
+        PermitEmptyPasswords no
+        SSHD_CONFIG
         ssh-keygen -A
-        service ssh restart
+        sshd -t
+        systemctl reload ssh || systemctl reload sshd
 
         # Create The Root SSH Directory If Necessary
         if [ ! -d /root/.ssh ]
@@ -62,19 +71,31 @@ class ConfigureServerScript implements ServerScript
             touch /root/.ssh/authorized_keys
         fi
 
-        # Set root password and create the deploy user
-        echo "root:\$ROOT_PASSWORD" | chpasswd
+        # Create the deploy user without changing the existing root password.
         if ! id -u "\$SERVER_NAME" >/dev/null 2>&1; then
             useradd --create-home --shell /bin/bash "\$SERVER_NAME"
         fi
+        backupManagedFile "/etc/sudoers.d/90-buildpusher-\$SERVER_NAME"
+        backupManagedFile "/home/\$SERVER_NAME/.ssh/authorized_keys"
         echo "\$SERVER_NAME:\$ROOT_PASSWORD" | chpasswd
         usermod -aG sudo "\$SERVER_NAME"
+        printf '%s ALL=(ALL) NOPASSWD:ALL\n' "\$SERVER_NAME" > "/etc/sudoers.d/90-buildpusher-\$SERVER_NAME"
+        chmod 440 "/etc/sudoers.d/90-buildpusher-\$SERVER_NAME"
+        visudo -cf "/etc/sudoers.d/90-buildpusher-\$SERVER_NAME"
 
-        # Preserve the cloud key and make the generated server key authoritative
+        # Default-deny inbound traffic while keeping outbound package and API
+        # access. Databases and caches remain loopback-only by default.
+        ufw default deny incoming
+        ufw default allow outgoing
+        ufw allow "\${SSH_CONNECTION##* }/tcp" 2>/dev/null || ufw allow OpenSSH
+        {$webFirewallRules}
+        ufw --force enable
+
+        # Preserve root access but do not copy unrelated root keys to the deploy user.
         touch /root/.ssh/authorized_keys
         grep -qxF "\$PUBLIC_KEY" /root/.ssh/authorized_keys || printf '%s\\n' "\$PUBLIC_KEY" >> /root/.ssh/authorized_keys
         install -d -m 700 -o "\$SERVER_NAME" -g "\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh"
-        cp /root/.ssh/authorized_keys "/home/\$SERVER_NAME/.ssh/authorized_keys"
+        printf '%s\n' "\$PUBLIC_KEY" > "/home/\$SERVER_NAME/.ssh/authorized_keys"
         chown "\$SERVER_NAME:\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh/authorized_keys"
         chmod 600 "/home/\$SERVER_NAME/.ssh/authorized_keys"
 
@@ -83,9 +104,16 @@ class ConfigureServerScript implements ServerScript
             sudo -u "\$SERVER_NAME" ssh-keygen -f "/home/\$SERVER_NAME/.ssh/id_rsa" -t rsa -N ''
         fi
 
-        # Copy Source Control Public Keys Into Known Hosts File
-        ssh-keyscan -H github.com bitbucket.org gitlab.com 2>/dev/null | sort -u > "/home/\$SERVER_NAME/.ssh/known_hosts"
+        # Pin source-control host keys published by each provider. Runtime
+        # ssh-keyscan would trust whichever key the network returned first.
+        backupManagedFile "/home/\$SERVER_NAME/.ssh/known_hosts"
+        cat > "/home/\$SERVER_NAME/.ssh/known_hosts" <<'SOURCE_CONTROL_HOST_KEYS'
+        github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+        gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
+        bitbucket.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIazEu89wgQZ4bqs3d63QSMzYVa0MuJ2e2gKTKqu+UUO
+        SOURCE_CONTROL_HOST_KEYS
         chown "\$SERVER_NAME:\$SERVER_NAME" "/home/\$SERVER_NAME/.ssh/known_hosts"
+        chmod 600 "/home/\$SERVER_NAME/.ssh/known_hosts"
 
         # Configure Git Settings
         sudo -u "\$SERVER_NAME" git config --global user.name {$name}

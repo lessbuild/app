@@ -52,7 +52,26 @@ class RepositoryWebhookVerifier
             throw new InvalidRepositoryWebhook('The webhook commit revision is invalid.', 422);
         }
 
-        return new VerifiedRepositoryWebhook($deliveryId, $isPush, $matchesBranch, $revision, $commitMessage);
+        [$previewAction, $pullRequestNumber, $pullRequestTitle, $sourceBranch, $previewRevision] = match ($provider) {
+            Provider::TYPE_GITHUB => $this->githubPreviewEvent($request, $payload),
+            Provider::TYPE_GITLAB => $this->gitLabPreviewEvent($request, $payload),
+            Provider::TYPE_BITBUCKET => $this->bitbucketPreviewEvent($request, $payload),
+        };
+        if ($previewAction !== null && $previewAction !== 'closed' && $previewRevision === null) {
+            throw new InvalidRepositoryWebhook('The pull request revision is invalid.', 422);
+        }
+
+        return new VerifiedRepositoryWebhook(
+            $deliveryId,
+            $isPush,
+            $matchesBranch,
+            $revision ?? $previewRevision,
+            $commitMessage,
+            $previewAction,
+            $pullRequestNumber,
+            $pullRequestTitle,
+            $sourceBranch,
+        );
     }
 
     private function verifyGitHub(Request $request, string $raw, string $secret): string
@@ -176,6 +195,86 @@ class RepositoryWebhookVerifier
             $matches ? $this->revision($change['new']['target']['hash'] ?? null) : null,
             $matches ? $this->commitMessage($change['new']['target']['message'] ?? null) : null,
         ];
+    }
+
+    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    private function githubPreviewEvent(Request $request, array $payload): array
+    {
+        if ($request->header('X-GitHub-Event') !== 'pull_request') {
+            return [null, null, null, null, null];
+        }
+
+        $action = match ($payload['action'] ?? null) {
+            'opened', 'reopened', 'synchronize' => 'updated',
+            'closed' => 'closed',
+            default => null,
+        };
+
+        return $this->previewPayload(
+            $action,
+            $payload['number'] ?? null,
+            $payload['pull_request']['title'] ?? null,
+            $payload['pull_request']['head']['ref'] ?? null,
+            $payload['pull_request']['head']['sha'] ?? null,
+        );
+    }
+
+    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    private function gitLabPreviewEvent(Request $request, array $payload): array
+    {
+        if ($request->header('X-Gitlab-Event') !== 'Merge Request Hook') {
+            return [null, null, null, null, null];
+        }
+        $attributes = is_array($payload['object_attributes'] ?? null) ? $payload['object_attributes'] : [];
+        $action = match ($attributes['action'] ?? null) {
+            'open', 'reopen', 'update', 'approved', 'unapproved' => 'updated',
+            'close', 'merge' => 'closed',
+            default => null,
+        };
+
+        return $this->previewPayload(
+            $action,
+            $attributes['iid'] ?? null,
+            $attributes['title'] ?? null,
+            $attributes['source_branch'] ?? null,
+            $attributes['last_commit']['id'] ?? null,
+        );
+    }
+
+    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    private function bitbucketPreviewEvent(Request $request, array $payload): array
+    {
+        $event = $request->header('X-Event-Key');
+        $action = match ($event) {
+            'pullrequest:created', 'pullrequest:updated' => 'updated',
+            'pullrequest:fulfilled', 'pullrequest:rejected' => 'closed',
+            default => null,
+        };
+        $pullRequest = is_array($payload['pullrequest'] ?? null) ? $payload['pullrequest'] : [];
+
+        return $this->previewPayload(
+            $action,
+            $pullRequest['id'] ?? null,
+            $pullRequest['title'] ?? null,
+            $pullRequest['source']['branch']['name'] ?? null,
+            $pullRequest['source']['commit']['hash'] ?? null,
+        );
+    }
+
+    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    private function previewPayload(mixed $action, mixed $number, mixed $title, mixed $branch, mixed $revision): array
+    {
+        if (! is_string($action) || ! is_numeric($number) || (int) $number < 1) {
+            return [null, null, null, null, null];
+        }
+
+        $cleanTitle = is_string($title) ? mb_substr(trim($title), 0, 255) : null;
+        $cleanBranch = is_string($branch) ? mb_substr(trim($branch), 0, 255) : null;
+        if ($cleanBranch === null || $cleanBranch === '' || preg_match('/[\x00-\x1F\x7F]/', $cleanBranch)) {
+            return [null, null, null, null, null];
+        }
+
+        return [$action, (int) $number, $cleanTitle ?: null, $cleanBranch, $this->revision($revision)];
     }
 
     private function revision(mixed $revision): ?string

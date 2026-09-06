@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
+use App\Services\Entitlements;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -15,6 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProviderController extends Controller
 {
+    public function __construct(private readonly Entitlements $entitlements) {}
+
     /**
      * Display a listing of the resource.
      */
@@ -126,6 +131,7 @@ class ProviderController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -295,6 +301,10 @@ class ProviderController extends Controller
     {
         $result = $request->string('result')->toString();
         $source = $request->string('source')->toString();
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'result' => in_array($result, ['healthy', 'failed'], true) ? $result : null,
@@ -302,8 +312,8 @@ class ProviderController extends Controller
                 ProviderConnectionCheck::SOURCE_MANUAL,
                 ProviderConnectionCheck::SOURCE_AUTOMATIC,
             ], true) ? $source : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 
@@ -341,7 +351,11 @@ class ProviderController extends Controller
      */
     public function store(ProviderRequest $request): RedirectResponse
     {
-        $provider = $request->user()->providers()->create(array_merge($request->validated(), [
+        if ($request->boolean('connection_monitoring_enabled')) {
+            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
+        }
+
+        $provider = $request->user()->workspaceProviders()->create(array_merge($request->validated(), [
             'provider' => str($request->input('provider'))->lower(),
         ]));
 
@@ -366,6 +380,9 @@ class ProviderController extends Controller
     public function update(ProviderRequest $request, Provider $provider): RedirectResponse
     {
         $this->authorize('update', $provider);
+        if ($request->boolean('connection_monitoring_enabled')) {
+            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
+        }
 
         $validated = $request->safe()->except('token');
         $providerType = str($request->input('provider'))->lower()->toString();
@@ -429,12 +446,13 @@ class ProviderController extends Controller
     /** @param array{search: ?string, type: ?string, usage: ?string, connection: ?string} $filters */
     private function filteredProviders(Request $request, array $filters): HasMany
     {
-        return $request->user()->providers()
+        return $request->user()->workspaceProviders()
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['type'], fn ($query, string $value) => $query
@@ -450,6 +468,7 @@ class ProviderController extends Controller
         return array_values(array_unique([
             ...Provider::SERVER_TYPES,
             ...Provider::SOURCE_CONTROL_TYPES,
+            ...Provider::DNS_TYPES,
         ]));
     }
 

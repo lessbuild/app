@@ -49,7 +49,7 @@ class DigitalOceanSshKeyReuseTest extends TestCase
         $server = Server::query()->sole();
         $this->assertSame($this->fingerprint, $server->ssh_fingerprint);
         $this->assertFalse($server->ssh_key_owned);
-        $this->assertSame(9876, $server->identifier);
+        $this->assertSame('9876', $server->identifier);
         Queue::assertPushed(InitialiseServerJob::class);
         Http::assertSent(fn (Request $request): bool => $request->method() === 'GET'
             && $request->url() === 'https://api.digitalocean.com/v2/account/keys/'.$this->fingerprint);

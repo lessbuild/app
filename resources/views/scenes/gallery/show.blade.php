@@ -22,7 +22,7 @@
                 <a href="{{ route('recipes.edit', $installedRecipe) }}" class="button secondary">{{ __('View My Copy') }}</a>
                 <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="button secondary">{{ __('Compare Scripts') }}</a>
                 @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
-                    <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm('{{ __('Replace your private copy with this reviewed gallery version?') }}')">
+                    <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $installedRecipe->name])) }})">
                         @csrf
                         <button type="submit" class="button primary">{{ __('Update My Copy') }}</button>
                     </form>
@@ -126,25 +126,71 @@
             <p class="mt-1 text-sm text-secondary">
                 {{ __('Reporter identities are private. Use this anonymous feedback to investigate and improve your published recipe.') }}
             </p>
+            <a href="{{ route('gallery.reports.index') }}" class="mt-2 inline-block text-sm font-medium text-ternary underline">{{ __('Open all community feedback') }}</a>
 
-            @if ($reportTotal > 0)
-                <div class="mt-4 flex flex-wrap gap-2">
-                    @foreach (\App\Models\RecipeReport::REASONS as $reason)
-                        @if ($reportCounts->has($reason))
-                            <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
-                                {{ str($reason)->headline() }}: {{ $reportCounts->get($reason) }}
-                            </span>
-                        @endif
-                    @endforeach
-                </div>
+            @if ($recentReports->isNotEmpty())
+                @if ($reportTotal > 0)
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @foreach (\App\Models\RecipeReport::REASONS as $reason)
+                            @if ($reportCounts->has($reason))
+                                <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-semibold text-red-700">
+                                    {{ str($reason)->headline() }}: {{ $reportCounts->get($reason) }}
+                                </span>
+                            @endif
+                        @endforeach
+                    </div>
+                @else
+                    <p class="mt-4 text-sm text-green-700">{{ __('All recent community reports have been resolved.') }}</p>
+                @endif
                 <div class="mt-4 space-y-3">
                     @foreach ($recentReports as $report)
                         <article class="rounded border border-primary bg-secondary p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
-                                <span class="text-sm font-semibold text-primary">{{ str($report->reason)->headline() }}</span>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="text-sm font-semibold text-primary">{{ str($report->reason)->headline() }}</span>
+                                    <span @class([
+                                        'rounded-full px-2 py-0.5 text-xs font-semibold',
+                                        'bg-red-100 text-red-700' => $report->resolved_at === null,
+                                        'bg-green-100 text-green-700' => $report->resolved_at !== null,
+                                    ])>{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</span>
+                                </div>
                                 <span class="text-xs text-secondary">{{ $report->created_at->diffForHumans() }}</span>
                             </div>
                             <p class="mt-2 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+                            @if ($report->resolved_at && $report->resolution_note)
+                                <div class="mt-3 rounded border border-green-200 bg-green-50 p-3">
+                                    <p class="text-xs font-semibold uppercase text-green-700">{{ __('Resolution note') }}</p>
+                                    <p class="mt-1 whitespace-pre-line text-sm text-green-800">{{ $report->resolution_note }}</p>
+                                </div>
+                            @endif
+                            @if ($report->resolved_at === null)
+                                <form method="POST" action="{{ route('gallery.reports.resolve', [$recipe, $report]) }}" class="mt-3 space-y-3">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div>
+                                        <label for="resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note (optional)') }}</label>
+                                        <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
+                                    </div>
+                                    <button type="submit" class="button secondary">{{ __('Mark Resolved') }}</button>
+                                </form>
+                            @else
+                                <form method="POST" action="{{ route('gallery.reports.resolution-note.update', [$recipe, $report]) }}" class="mt-3 space-y-3">
+                                    @csrf
+                                    @method('PATCH')
+                                    <div>
+                                        <label for="edit_resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note') }}</label>
+                                        <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
+                                        <p class="mt-1 text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
+                                        <x-forms.errors name="resolution_note" />
+                                    </div>
+                                    <button type="submit" class="button secondary">{{ $report->resolution_note ? __('Update Resolution Note') : __('Add Resolution Note') }}</button>
+                                </form>
+                                <form method="POST" action="{{ route('gallery.reports.reopen', [$recipe, $report]) }}" class="mt-3">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="button secondary">{{ __('Reopen Report') }}</button>
+                                </form>
+                            @endif
                         </article>
                     @endforeach
                 </div>
@@ -157,9 +203,21 @@
                 {{ __('Tell the contributor about unsafe, broken, outdated, or misleading content. Your identity is not shown to them.') }}
             </p>
             @if ($currentReport)
-                <p class="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                    {{ __('You reported this recipe as :reason. You can update or withdraw your report.', ['reason' => str($currentReport->reason)->headline()]) }}
+                <p @class([
+                    'mt-3 rounded border p-3 text-sm',
+                    'border-red-200 bg-red-50 text-red-700' => $currentReport->resolved_at === null,
+                    'border-green-200 bg-green-50 text-green-700' => $currentReport->resolved_at !== null,
+                ])>
+                    {{ $currentReport->resolved_at === null
+                        ? __('You reported this recipe as :reason. You can update or withdraw your report.', ['reason' => str($currentReport->reason)->headline()])
+                        : __('The contributor marked your :reason report as resolved. Updating it will reopen it.', ['reason' => str($currentReport->reason)->headline()]) }}
                 </p>
+                @if ($currentReport->resolved_at && $currentReport->resolution_note)
+                    <div class="mt-3 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                        <p class="font-semibold">{{ __('Contributor resolution note') }}</p>
+                        <p class="mt-1 whitespace-pre-line">{{ $currentReport->resolution_note }}</p>
+                    </div>
+                @endif
             @endif
             <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="mt-4 space-y-4">
                 @csrf
@@ -181,7 +239,12 @@
                 <button type="submit" class="button primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</button>
             </form>
             @if ($currentReport)
-                <form method="POST" action="{{ route('gallery.report.destroy', $recipe) }}" class="mt-3">
+                <form
+                    method="POST"
+                    action="{{ route('gallery.report.destroy', $recipe) }}"
+                    class="mt-3"
+                    onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Withdraw your report for :recipe? This cannot be undone.', ['recipe' => $recipe->name])) }})"
+                >
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="button secondary">{{ __('Withdraw Report') }}</button>

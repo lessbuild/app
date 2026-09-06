@@ -22,9 +22,6 @@ class Region extends Model
         'slug',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
     public function sizes(): HasMany
     {
         return $this->hasMany(Size::class);

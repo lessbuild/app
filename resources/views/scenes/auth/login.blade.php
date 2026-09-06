@@ -80,6 +80,8 @@
                 >
                     {{ __('Need an account?') }}
                 </a>
+            @else
+                <a href="{{ route('access-request.create') }}" class="mr-4 underline tracking-tight text-sm text-secondary hover:text-primary">{{ __('Request an account') }}</a>
             @endif
             @if (Route::has('password.request'))
                 <a
@@ -90,7 +92,7 @@
                 </a>
             @endif
 
-            <button class="button tertiary rounded ml-3">
+            <button type="submit" class="button tertiary rounded ml-3">
                 {{ __('Login') }}
             </button>
         </div>

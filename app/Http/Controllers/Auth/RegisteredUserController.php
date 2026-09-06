@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\PersonalOrganization;
+use App\Services\AccessInvitation;
 use App\Services\RegistrationAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -20,13 +22,28 @@ class RegisteredUserController extends Controller
     /**
      * Display the registration view.
      */
-    public function create(RegistrationAccess $registration): View|RedirectResponse
+    public function create(Request $request, RegistrationAccess $registration, AccessInvitation $invitations): View|RedirectResponse
     {
-        if (! $registration->allowsNewUser()) {
+        $queryToken = (string) $request->query('invite');
+        if ($queryToken !== '') {
+            if (! $invitations->find($queryToken)) {
+                return $this->closedResponse();
+            }
+            $request->session()->put('access_invitation_token', $queryToken);
+
+            return redirect()->route('register');
+        }
+
+        $invitationToken = (string) $request->session()->get('access_invitation_token', '');
+        $invitation = $invitations->find($invitationToken);
+        if (! $invitation) {
+            $request->session()->forget('access_invitation_token');
+        }
+        if (! $registration->allowsNewUser() && ! $invitation) {
             return $this->closedResponse();
         }
 
-        return view('scenes.auth.register');
+        return view('scenes.auth.register', ['invitation' => $invitation, 'invitationToken' => $invitation ? $invitationToken : null]);
     }
 
     /**
@@ -35,9 +52,11 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request, RegistrationAccess $registration): RedirectResponse
+    public function store(Request $request, RegistrationAccess $registration, PersonalOrganization $organizations, AccessInvitation $invitations): RedirectResponse
     {
-        if (! $registration->allowsNewUser()) {
+        $invitationToken = (string) $request->input('invite');
+        $invitation = $invitations->find($invitationToken);
+        if (! $registration->allowsNewUser() && ! $invitation) {
             return $this->closedResponse();
         }
 
@@ -51,22 +70,30 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user = $registration->synchronized(function () use ($registration, $validated): ?User {
-            if (! $registration->allowsNewUser()) {
-                return null;
-            }
+        if ($invitation && ! hash_equals($invitation->email, $validated['email'])) {
+            throw ValidationException::withMessages(['email' => __('Use the email address that received this invitation.')]);
+        }
 
-            return User::create([
+        $createUser = fn (): User => User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'password_set_at' => now(),
             ]);
-        });
+
+        $user = $invitation
+            ? $invitations->consume($invitationToken, fn ($lockedInvitation) => hash_equals($lockedInvitation->email, $validated['email']) ? $createUser() : null)
+            : $registration->synchronized(function () use ($registration, $createUser): ?User {
+                return $registration->allowsNewUser() ? $createUser() : null;
+            });
 
         if (! $user) {
             return $this->closedResponse();
         }
+
+        $request->session()->forget('access_invitation_token');
+
+        $organizations->ensure($user);
 
         Auth::login($user);
 

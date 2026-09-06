@@ -67,6 +67,7 @@ class BuildHistoryExportTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString('attachment; filename=lessbuild-builds-', (string) $response->headers->get('content-disposition'));
         $rows = $this->csvRows($response);
@@ -80,6 +81,8 @@ class BuildHistoryExportTest extends TestCase
             'Revision',
             'Commit message',
             'Operator note',
+            'Promoted from build',
+            'Promotion note',
             'Created at',
             'Started at',
             'Finished at',
@@ -90,7 +93,7 @@ class BuildHistoryExportTest extends TestCase
         $this->assertSame("'=2+2", $rows[1][1]);
         $this->assertSame("' \t@SUM(1,1)\nShip searchable release", $rows[1][7]);
         $this->assertSame("' -1+1\nApproved incident handoff", $rows[1][8]);
-        $this->assertSame('90', $rows[1][12]);
+        $this->assertSame('90', $rows[1][14]);
         $this->actingAs($owner)->get(route('builds.index', $filters))
             ->assertSuccessful()
             ->assertSee(route('builds.export', $filters));

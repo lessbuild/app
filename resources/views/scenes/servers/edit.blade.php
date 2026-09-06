@@ -10,7 +10,7 @@
 
         <x-forms.section
             :title="__('Server display name')"
-            :description="__('Change the label shown in Lessbuild without renaming the cloud server or its hostname.')"
+            :description="__('Change the label shown in BuildPusher without renaming the cloud server or its hostname.')"
         >
             <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                 <label class="block" for="display_name">

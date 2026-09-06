@@ -4,17 +4,20 @@ namespace App\Actions\Repository;
 
 use App\Data\RepositoryWebhookResult;
 use App\Data\VerifiedRepositoryWebhook;
-use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
+use App\Services\DeploymentGate;
+use App\Services\DeploymentRequest;
 use Illuminate\Support\Facades\DB;
 
 class HandleRepositoryWebhookAction
 {
     public function __construct(
         private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
+        private readonly DeploymentRequest $deployments,
+        private readonly DeploymentGate $gate,
     ) {}
 
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): RepositoryWebhookResult
@@ -44,7 +47,9 @@ class HandleRepositoryWebhookAction
                 return new RepositoryWebhookResult(RepositoryWebhookResult::UNAVAILABLE);
             }
 
-            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
+            if ((int) $locked->website_id !== (int) $website->id
+                || $website->hasActiveDeployment()
+                || $this->gate->blockReason($locked)) {
                 $locked->update([
                     'webhook_pending' => true,
                     'webhook_pending_revision' => $webhook->revision,
@@ -57,10 +62,10 @@ class HandleRepositoryWebhookAction
 
             $locked->update(['setup_stage' => 0]);
             $build = $locked->builds()->create([
-                'status' => Build::STATUS_QUEUED,
                 'trigger_source' => Build::TRIGGER_WEBHOOK,
                 'revision' => $webhook->revision,
                 'commit_message' => $webhook->commitMessage,
+                ...$this->deployments->attributes($locked),
             ]);
             $delivery->update([
                 'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
@@ -71,7 +76,7 @@ class HandleRepositoryWebhookAction
         });
 
         if ($result->build) {
-            PublishRepositoryJob::dispatch($result->build);
+            $this->deployments->dispatch($result->build);
         } elseif ($result->status === RepositoryWebhookResult::PENDING) {
             $this->queuePendingDeployment->handle($repository->fresh());
         }

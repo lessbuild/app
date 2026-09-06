@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\ActivityRecorder;
+use App\Services\PersonalOrganization;
 use App\Services\RegistrationAccess;
 use App\Services\SignInRecorder;
 use Illuminate\Http\RedirectResponse;
@@ -63,7 +64,7 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
-    public function callback(string $provider, RegistrationAccess $registration): RedirectResponse
+    public function callback(string $provider, RegistrationAccess $registration, PersonalOrganization $organizations): RedirectResponse
     {
         $connecting = Auth::check()
             && request()->session()->pull('social_connect_provider') === $provider;
@@ -155,8 +156,19 @@ class SocialAuthController extends Controller
         }
 
         $user = $resolution['user'];
+        $organizations->ensure($user);
         Auth::login($user);
         request()->session()->regenerate();
+        if ($user->twoFactorEnabled()) {
+            request()->session()->put([
+                'two_factor_login_user_id' => $user->id,
+                'two_factor_login_remember' => false,
+                'two_factor_login_method' => $provider,
+            ]);
+            Auth::logout();
+
+            return redirect()->route('two-factor.login');
+        }
         $this->signIns->record($user, $provider, request());
 
         return redirect()->intended(route('dashboard'));

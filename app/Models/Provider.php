@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,6 +14,7 @@ use Illuminate\Support\Carbon;
 
 class Provider extends Model
 {
+    use BelongsToOrganization;
     use HasFactory;
     use SoftDeletes;
 
@@ -33,11 +35,17 @@ class Provider extends Model
 
     public const TYPE_DIGITALOCEAN = 'digitalocean';
 
+    public const TYPE_HETZNER = 'hetzner';
+
+    public const TYPE_VULTR = 'vultr';
+
     public const TYPE_GITHUB = 'github';
 
     public const TYPE_GITLAB = 'gitlab';
 
     public const TYPE_BITBUCKET = 'bitbucket';
+
+    public const TYPE_CLOUDFLARE = 'cloudflare';
 
     public const CONNECTION_UNCHECKED = 'unchecked';
 
@@ -59,7 +67,11 @@ class Provider extends Model
 
     public const SERVER_TYPES = [
         self::TYPE_DIGITALOCEAN,
+        self::TYPE_HETZNER,
+        self::TYPE_VULTR,
     ];
+
+    public const DNS_TYPES = [self::TYPE_CLOUDFLARE];
 
     /**
      * The attributes that are mass assignable.
@@ -70,6 +82,8 @@ class Provider extends Model
         'name',
         'description',
         'provider',
+        'credential_type',
+        'external_id',
         'token',
         'connection_status',
         'connection_checked_at',
@@ -105,6 +119,11 @@ class Provider extends Model
         return $this->hasMany(Repository::class);
     }
 
+    public function domains(): HasMany
+    {
+        return $this->hasMany(WebsiteDomain::class, 'dns_provider_id');
+    }
+
     public function connectionChecks(): HasMany
     {
         return $this->hasMany(ProviderConnectionCheck::class);
@@ -128,13 +147,13 @@ class Provider extends Model
     public function scopeInUse(Builder $query): Builder
     {
         return $query->where(function (Builder $query): void {
-            $query->whereHas('servers')->orWhereHas('repositories');
+            $query->whereHas('servers')->orWhereHas('repositories')->orWhereHas('domains');
         });
     }
 
     public function scopeUnused(Builder $query): Builder
     {
-        return $query->whereDoesntHave('servers')->whereDoesntHave('repositories');
+        return $query->whereDoesntHave('servers')->whereDoesntHave('repositories')->whereDoesntHave('domains');
     }
 
     public function scopeConnectionState(Builder $query, string $status): Builder
@@ -147,6 +166,11 @@ class Provider extends Model
     public function isSourceControl(): bool
     {
         return in_array($this->provider, self::SOURCE_CONTROL_TYPES, true);
+    }
+
+    public function isGitHubApp(): bool
+    {
+        return $this->provider === self::TYPE_GITHUB && $this->credential_type === 'app' && filled($this->external_id);
     }
 
     public function repositoryHost(): ?string
@@ -178,7 +202,7 @@ class Provider extends Model
 
     public function hasAttachedResources(): bool
     {
-        return $this->servers()->exists() || $this->repositories()->exists();
+        return $this->servers()->exists() || $this->repositories()->exists() || $this->domains()->exists();
     }
 
     public function connectionHealth(): string

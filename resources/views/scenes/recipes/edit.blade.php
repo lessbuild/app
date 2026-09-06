@@ -21,7 +21,7 @@
                 <div class="mt-3 flex flex-wrap gap-3">
                     <a href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" class="button secondary">{{ __('Review Changes') }}</a>
                     @if (! $recipe->is_published)
-                        <form method="POST" action="{{ route('recipes.gallery.refresh', $recipe) }}" onsubmit="return confirm('{{ __('Replace your private copy with the reviewed gallery version?') }}')">
+                        <form method="POST" action="{{ route('recipes.gallery.refresh', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with the reviewed gallery version?', ['recipe' => $recipe->name])) }})">
                             @csrf
                             <button type="submit" class="button primary">{{ __('Update Private Copy') }}</button>
                         </form>

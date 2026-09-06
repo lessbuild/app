@@ -5,7 +5,7 @@
             {{ __('Server') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="server_id" class="input secondary rounded">
+            <select id="server_id" name="server_id" class="input secondary rounded" required>
                 @foreach($servers as $server)
                     <option value="{{ $server->id }}"
                         @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)

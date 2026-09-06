@@ -6,5 +6,44 @@
 @tailwind components;
 @tailwind utilities;
 
+[x-cloak] {
+    display: none !important;
+}
+
 @include button.styles;
 @include input.styles;
+
+#main-content,
+#main-content .grid,
+#main-content .flex,
+#main-content .grid > *,
+#main-content .flex > * {
+    min-width: 0;
+}
+
+#main-content input,
+#main-content select,
+#main-content textarea,
+#main-content pre {
+    max-width: 100%;
+}
+
+// Status and notice panels use colour as an outline, not as a full surface.
+// Buttons, progress indicators, and compact badges keep their filled states.
+#main-content .border:is(
+    .bg-red-50,
+    .bg-orange-50,
+    .bg-amber-50,
+    .bg-yellow-50,
+    .bg-green-50,
+    .bg-emerald-50,
+    .bg-cyan-50,
+    .bg-sky-50,
+    .bg-blue-50,
+    .bg-indigo-50,
+    .bg-violet-50,
+    .bg-purple-50,
+    .bg-rose-50
+) {
+    background-color: var(--bg-primary);
+}

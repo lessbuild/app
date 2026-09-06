@@ -23,12 +23,15 @@ class DeleteCloudServerAction
 
         $provider = $this->providers->resolve($server->provider);
 
-        if ($hasOwnedSshKey && ! $provider->deleteSshKey($server->ssh_fingerprint)) {
-            throw new RuntimeException("{$provider->name()} could not delete the server SSH key.");
-        }
-
         if ($server->identifier && ! $provider->deleteServer($server->identifier)) {
             throw new RuntimeException("{$provider->name()} could not delete the cloud server.");
+        }
+
+        // Keep the login key usable until the instance is confirmed absent. If
+        // key cleanup fails after that, a retry is safe because provider delete
+        // operations treat an already-missing server as success.
+        if ($hasOwnedSshKey && ! $provider->deleteSshKey($server->ssh_fingerprint)) {
+            throw new RuntimeException("{$provider->name()} could not delete the server SSH key.");
         }
     }
 }

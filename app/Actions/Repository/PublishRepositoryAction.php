@@ -54,6 +54,7 @@ class PublishRepositoryAction extends Publishable
         $logFile = escapeshellarg("/tmp/lessbuild-deployment-{$this->build->id}.log");
         $logUploadFile = escapeshellarg("/tmp/lessbuild-deployment-{$this->build->id}.upload.log");
         $logLimit = max(1, (int) config('lessbuild.deployment_log_max_characters'));
+        $processUnitPrefix = escapeshellarg('buildpusher-'.$this->repository->website->deployment_slug.'-');
         $this->script = <<<SCRIPT
         #!/bin/bash
         set -Eeuo pipefail
@@ -99,6 +100,10 @@ class PublishRepositoryAction extends Publishable
             if ln -sfn -- "\$PREVIOUS_RELEASE_PATH" "\$rollback_link" \
                 && mv -Tf -- "\$rollback_link" "\$DEPLOY_ROOT/current"; then
                 echo "Restored previous release: \$PREVIOUS_RELEASE_PATH"
+                unit_prefix={$processUnitPrefix}
+                for unit_file in /etc/systemd/system/"\$unit_prefix"*.service; do
+                    [ -f "\$unit_file" ] && systemctl restart "$(basename "\$unit_file")" || true
+                done
             else
                 echo "Unable to restore previous release: \$PREVIOUS_RELEASE_PATH"
             fi

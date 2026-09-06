@@ -1,13 +1,15 @@
-<div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+<div class="px-4 py-5 bg-primary space-y-6 sm:p-6" data-server-catalog>
 
     <div class="col-span-3 sm:col-span-2">
         <label for="provider_id" class="block text-sm font-medium text-primary">
             {{ __('Providers') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="provider_id" class="input secondary rounded">
+            <select id="provider_id" name="provider_id" class="input secondary rounded" required>
                 @foreach($providers as $provider)
-                    <option value="{{ $provider->id }}"
+                    <option
+                        value="{{ $provider->id }}"
+                        data-catalog-url="{{ route('providers.server-catalog', $provider) }}"
                         @selected(old('provider_id') == $provider->id || ($server->provider_id ?? null) == $provider->id)
                     >
                         {{ $provider->name }}
@@ -16,6 +18,7 @@
             </select>
         </div>
         <x-forms.errors name="provider_id"></x-forms.errors>
+        <p class="mt-2 text-xs text-secondary" data-server-catalog-status aria-live="polite"></p>
     </div>
 
     <div class="col-span-3 sm:col-span-2">
@@ -23,7 +26,7 @@
             {{ __('Server Type') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="type" class="input secondary rounded">
+            <select id="type" name="type" class="input secondary rounded" required>
                 @foreach($types as $type)
                     <option value="{{ $type->value }}"
                         @selected(old('type') == $type->value || ($server->type ?? null) == $type->value)
@@ -37,7 +40,7 @@
     </div>
 
     <div class="col-span-3 sm:col-span-2">
-        <label for="region" class="block text-sm font-medium text-primary">
+        <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Cloud server name') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
@@ -46,6 +49,8 @@
                 type="text"
                 name="name"
                 id="name"
+                maxlength="255"
+                required
                 class="input secondary rounded"
                 placeholder="Example: Deployer">
         </div>
@@ -57,7 +62,7 @@
             {{ __('Image') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="image" class="input secondary rounded">
+            <select id="image" name="image" class="input secondary rounded" required data-selected="{{ old('image', $server->image ?? '') }}">
                 @foreach($images as $key => $value)
                     <option
                         value="{{ $key }}"
@@ -74,7 +79,7 @@
             {{ __('Region') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="region" class="input secondary rounded">
+            <select id="region" name="region" class="input secondary rounded" required data-selected="{{ old('region', $server->region ?? '') }}">
                 @foreach($regions as $region)
                     <option
                         value="{{ $region->slug }}"
@@ -91,7 +96,7 @@
             {{ __('Sizes') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="size" class="input secondary rounded">
+            <select id="size" name="size" class="input secondary rounded" required data-selected="{{ old('size', $server->size ?? '') }}">
                 @foreach($sizes as $size)
                     <option
                         value="{{ $size->slug }}"

@@ -66,5 +66,14 @@ class RouteServiceProvider extends ServiceProvider
                 Limit::perMinute(6)->by('credential:'.hash('sha256', "{$ip}|{$email}")),
             ];
         });
+
+        RateLimiter::for('access-requests', function (Request $request): array {
+            $email = Str::lower(trim((string) $request->input('email')));
+
+            return [
+                Limit::perHour(10)->by('access-ip:'.$request->ip()),
+                Limit::perDay(3)->by('access-email:'.hash('sha256', $email)),
+            ];
+        });
     }
 }

@@ -126,6 +126,7 @@ class CallbackIntegrityTest extends TestCase
         $build = $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
         $repositoryPlan = \Mockery::mock(RepositoryDeploymentPlan::class);
         $repositoryPlan->shouldReceive('finalStage')->once()->andReturn(8);
+        $repositoryPlan->shouldReceive('activationStage')->once()->andReturn(7);
         $this->app->instance(RepositoryDeploymentPlan::class, $repositoryPlan);
 
         $this->post(ProvisioningCallbackUrl::buildStatus($build), ['status' => 8])

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Server;
 use App\Models\Website;
+use App\Services\Entitlements;
 use App\Services\WebsiteHealthMonitor;
 use Illuminate\Console\Command;
 
@@ -13,7 +14,7 @@ class MonitorWebsiteHealthCommand extends Command
 
     protected $description = 'Check enabled websites from their managed servers and record health transitions';
 
-    public function handle(WebsiteHealthMonitor $monitor): int
+    public function handle(WebsiteHealthMonitor $monitor, Entitlements $entitlements): int
     {
         $ids = collect($this->option('website'))
             ->filter(fn ($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false)
@@ -25,6 +26,7 @@ class MonitorWebsiteHealthCommand extends Command
             ->where('health_check_enabled', true)
             ->where('health_monitoring_enabled', true)
             ->where('provisioning_status', Website::STATUS_ACTIVE)
+            ->whereDoesntHave('environments', fn ($query) => $query->whereNotNull('hibernated_at'))
             ->whereHas('server', fn ($query) => $query->where('provisioning_status', Server::STATUS_ACTIVE))
             ->with('server')
             ->orderByRaw('health_last_checked_at IS NOT NULL')
@@ -52,6 +54,9 @@ class MonitorWebsiteHealthCommand extends Command
         $checked = 0;
         $unhealthy = 0;
         foreach ($query->limit($batchSize)->get() as $website) {
+            if (! $website->organization || ! $entitlements->allows($website->organization, 'monitoring')) {
+                continue;
+            }
             $becameUnhealthy = $monitor->check($website, automatic: true);
             if ($becameUnhealthy === null) {
                 continue;

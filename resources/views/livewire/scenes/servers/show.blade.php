@@ -77,7 +77,7 @@
                 :description="__('Are you sure you want to delete this server?')"
             ></x-dialogs.delete>
 
-            <button type="submit" class="button primary" onclick="document.getElementById('delete-server').showModal()">
+            <button type="button" class="button primary" onclick="document.getElementById('delete-server').showModal()">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -200,11 +200,19 @@
         </div>
     </div>
 
-    <!--
-     ! ------------------------------------------------------------
-     ! Quick Actions
-     ! ------------------------------------------------------------
-     !-->
+    <section class="mt-8 rounded-2xl border border-primary bg-primary p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 24 hours') }}</p><h2 class="mt-1 text-xl font-black text-primary">{{ __('Server metrics') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p></div><button type="button" wire:click="refreshMetrics" class="button primary" @disabled($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)>{{ __('Collect now') }}</button></div>
+        <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            @foreach([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label,$value])<div class="rounded-xl border border-primary bg-secondary p-4"><dt class="text-xs font-bold uppercase text-secondary">{{ __($label) }}</dt><dd class="mt-1 text-2xl font-black text-primary">{{ $value ?? '—' }}</dd></div>@endforeach
+        </dl>
+        @if($metricHistory->isNotEmpty())
+            <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">@foreach($metricHistory as $metric)<span class="min-w-px rounded-t bg-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>@endforeach</div>
+        @else
+            <div class="mt-4 rounded-xl border border-dashed border-primary p-5 text-sm text-secondary">{{ __('No metric samples yet. Collection runs automatically every five minutes.') }}</div>
+        @endif
+    </section>
+
+    <!-- Quick Actions -->
     <div class="pt-10 grid grid-cols-2 gap-6">
 
         <!--

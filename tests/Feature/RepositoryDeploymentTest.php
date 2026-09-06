@@ -22,13 +22,34 @@ class RepositoryDeploymentTest extends TestCase
         Queue::fake();
         [$user, $repository] = $this->repository();
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->post(route('repositories.deploy', $repository))
             ->assertSessionHas('success', 'Deployment queued');
 
         $build = $repository->builds()->sole();
+        $response->assertRedirect(route('builds.show', $build));
         $this->assertSame(Build::STATUS_QUEUED, $build->status);
         Queue::assertPushed(PublishRepositoryJob::class, fn ($job) => $job->build->is($build));
+    }
+
+    public function test_first_deployment_shows_actionable_preflight_and_launches_into_live_progress(): void
+    {
+        [$user, $repository] = $this->repository();
+
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertSee('Review the launch checks')
+            ->assertSee('Source')
+            ->assertSee('Health verification')
+            ->assertSee('Release recovery')
+            ->assertSee('Push automation')
+            ->assertSee('Launch first deployment')
+            ->assertSee(route('websites.edit', $repository->website), false);
+
+        $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertDontSee('Review the launch checks');
     }
 
     public function test_a_repository_cannot_have_overlapping_deployments(): void
@@ -60,8 +81,63 @@ class RepositoryDeploymentTest extends TestCase
 
         $build->refresh();
         $this->assertSame(Build::STATUS_SUCCEEDED, $build->status);
+        $this->assertSame($finalStage, $build->setup_stage);
         $this->assertNotNull($build->built_at);
         $this->assertNotNull($build->finished_at);
+    }
+
+    public function test_build_detail_uses_its_own_progress_and_explains_the_failed_step(): void
+    {
+        [$user, $repository] = $this->repository();
+        $failed = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'setup_stage' => 4,
+            'failure_message' => 'npm build exited with code 1',
+            'finished_at' => now(),
+        ]);
+        $repository->update(['setup_stage' => app(RepositoryDeploymentPlan::class)->finalStage()]);
+        $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED, 'setup_stage' => 15]);
+
+        $this->actingAs($user)->get(route('builds.show', $failed))
+            ->assertSuccessful()
+            ->assertSee('Deployment progress')
+            ->assertSee('Check dependencies and runtime')
+            ->assertSee('Install Repository Dependencies')
+            ->assertSee('Run custom build commands')
+            ->assertSee('Inspect deployment log')
+            ->assertSee('Not completed');
+    }
+
+    public function test_failed_build_offers_last_known_good_release_and_success_shows_health_actions(): void
+    {
+        [$user, $repository] = $this->repository();
+        $repository->website->update(['health_check_enabled' => true, 'health_check_path' => '/up', 'health_status' => 'healthy']);
+        $knownGood = $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'release_name' => 'release-good',
+            'release_path' => '/var/www/app/releases/release-good',
+            'finished_at' => now()->subMinute(),
+            'created_at' => now()->subMinute(),
+        ]);
+        $failed = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'failure_message' => 'Health check failed',
+            'setup_stage' => 13,
+            'finished_at' => now(),
+        ]);
+
+        $this->actingAs($user)->get(route('builds.show', $failed))
+            ->assertSuccessful()
+            ->assertSee('Restore the last known-good release')
+            ->assertSee('Restore build #'.$knownGood->id)
+            ->assertSee(route('builds.rollback', $knownGood), false);
+
+        $this->actingAs($user)->get(route('builds.show', $knownGood))
+            ->assertSuccessful()
+            ->assertSee('Post-deployment verification')
+            ->assertSee('Current monitor state: Healthy.')
+            ->assertSee('Run health check now')
+            ->assertSee('https://'.$repository->website->url, false);
     }
 
     public function test_job_failure_is_recorded_on_the_build(): void

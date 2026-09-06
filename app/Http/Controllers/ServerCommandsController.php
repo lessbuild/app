@@ -7,6 +7,7 @@ use App\Actions\Server\QueueServerCommandAction;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
+use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -35,7 +36,7 @@ class ServerCommandsController extends Controller
     }
 
     /**
-     * @param  array{status: ?string, date_from: ?string, date_to: ?string}  $filters
+     * @param  array{execution: ?int, status: ?string, output: ?string, date_from: ?string, date_to: ?string}  $filters
      * @return array{total: int, active: int, succeeded: int, failed: int, canceled: int, output: int}
      */
     private function metrics(Server $server, array $filters): array
@@ -78,6 +79,7 @@ class ServerCommandsController extends Controller
                 'Queued at',
                 'Started at',
                 'Finished at',
+                'Duration seconds',
                 'Output available',
             ], ',', '"', '');
 
@@ -94,6 +96,7 @@ class ServerCommandsController extends Controller
                         $execution->created_at?->toIso8601String(),
                         $execution->started_at?->toIso8601String(),
                         $execution->finished_at?->toIso8601String(),
+                        $execution->durationSeconds(),
                         $execution->output === null ? 'no' : 'yes',
                     ], ',', '"', '');
                 });
@@ -112,7 +115,7 @@ class ServerCommandsController extends Controller
         int $execution,
         CancelServerCommandAction $cancel,
     ): RedirectResponse {
-        $this->authorize('view', $server);
+        $this->authorize('update', $server);
         $execution = $server->commandExecutions()->findOrFail($execution);
 
         return $cancel->handle($execution, $request->user())
@@ -126,7 +129,7 @@ class ServerCommandsController extends Controller
         int $execution,
         QueueServerCommandAction $queue,
     ): RedirectResponse {
-        $this->authorize('view', $server);
+        $this->authorize('update', $server);
         $source = $server->commandExecutions()->findOrFail($execution);
         $rerun = $queue->handle($server, $request->user(), $source->command, $source->id);
 
@@ -135,7 +138,7 @@ class ServerCommandsController extends Controller
 
     public function destroy(Server $server, int $execution): RedirectResponse
     {
-        $this->authorize('view', $server);
+        $this->authorize('delete', $server);
         $execution = $server->commandExecutions()->findOrFail($execution);
         $deleted = $server->commandExecutions()
             ->whereKey($execution->id)
@@ -163,24 +166,37 @@ class ServerCommandsController extends Controller
         );
     }
 
-    /** @return array{status: ?string, date_from: ?string, date_to: ?string} */
+    /** @return array{execution: ?int, status: ?string, output: ?string, date_from: ?string, date_to: ?string} */
     private function filters(Request $request): array
     {
         $status = $request->string('status')->toString();
+        $output = $request->string('output')->toString();
+        $execution = filter_var($request->query('execution'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
+            'execution' => $execution ?: null,
             'status' => in_array($status, ServerCommandExecution::STATUSES, true) ? $status : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'output' => in_array($output, ['available', 'missing'], true) ? $output : null,
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 
-    /** @param array{status: ?string, date_from: ?string, date_to: ?string} $filters */
+    /** @param array{execution: ?int, status: ?string, output: ?string, date_from: ?string, date_to: ?string} $filters */
     private function filteredExecutions(Server $server, array $filters): HasMany
     {
         return $server->commandExecutions()
+            ->when($filters['execution'], fn ($query, int $execution) => $query->whereKey($execution))
             ->when($filters['status'], fn ($query, string $status) => $query
                 ->where('status', $status))
+            ->when($filters['output'] === 'available', fn ($query) => $query->whereNotNull('output'))
+            ->when($filters['output'] === 'missing', fn ($query) => $query->whereNull('output'))
             ->when($filters['date_from'], fn ($query, string $date) => $query
                 ->whereDate('created_at', '>=', $date))
             ->when($filters['date_to'], fn ($query, string $date) => $query

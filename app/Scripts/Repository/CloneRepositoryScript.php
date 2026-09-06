@@ -4,6 +4,7 @@ namespace App\Scripts\Repository;
 
 use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
+use App\Services\GitHubApp;
 
 class CloneRepositoryScript extends BuildProvisioningScript
 {
@@ -33,8 +34,11 @@ class CloneRepositoryScript extends BuildProvisioningScript
         $username = $provider->repositoryCredentialUsername();
         $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
         $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
+        $token = $provider->isGitHubApp()
+            ? app(GitHubApp::class)->installationToken($provider->external_id)
+            : $provider->token;
         $credentialPayload = escapeshellarg(base64_encode(
-            "machine {$host}\nlogin {$username}\npassword {$provider->token}\n",
+            "machine {$host}\nlogin {$username}\npassword {$token}\n",
         ));
         $repositoryUrl = escapeshellarg("https://{$repository->url}");
         $progress = $this->progress($step, $build);

@@ -13,6 +13,7 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\ServerLogSnapshot;
 use App\Models\SignInEvent;
+use App\Models\StatusPage;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
@@ -191,12 +192,21 @@ class DemoSeederTest extends TestCase
             $user->websites()->pluck('health_failure_threshold')->all(),
         );
         $this->assertSame(4, $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
+        $projects = $user->currentOrganization->projects()->where('name', 'like', DemoSeeder::PREFIX.'%');
+        $this->assertSame(5, $projects->count());
+        $this->assertSame(9, $user->currentOrganization->projects()->where('name', 'like', DemoSeeder::PREFIX.'%')->withCount('environments')->get()->sum('environments_count'));
+        $this->assertSame(6, DB::table('environment_processes')->whereIn('environment_id', $projects->with('environments')->get()->flatMap->environments->pluck('id'))->count());
+        $this->assertSame(4, DB::table('environment_resources')->whereIn('environment_id', $projects->with('environments')->get()->flatMap->environments->pluck('id'))->count());
+        $this->assertSame(2, $projects->with('environments')->get()->flatMap->environments->whereNotNull('hibernated_at')->count());
+        $statusPage = StatusPage::query()->where('slug', 'demo-status')->sole();
+        $this->assertTrue($statusPage->is_published);
+        $this->assertSame(2, $statusPage->websites()->count());
         $neverDeployedRepository = $user->repositories()
             ->where('name', DemoSeeder::PREFIX.'Documentation repository')
             ->sole();
         $this->assertFalse($neverDeployedRepository->webhook_enabled);
         $this->assertFalse($neverDeployedRepository->builds()->exists());
-        $this->assertSame(6, $user->builds()->count());
+        $this->assertSame(7, $user->builds()->count());
         $this->assertSame(2, $user->builds()->whereNotNull('operator_note')->count());
         $this->assertEqualsCanonicalizing(Build::TERMINAL_STATUSES, $user->builds()->distinct()->pluck('status')->all());
         $this->assertEqualsCanonicalizing([
@@ -338,6 +348,17 @@ class DemoSeederTest extends TestCase
         $communityRecipe = Recipe::query()->where('name', 'Install Node.js LTS')->sole();
         $reportedRecipe = Recipe::query()->where('name', 'Install unattended upgrades')->sole();
         $build = $repository->builds()->latest()->firstOrFail();
+        $application = $user->currentOrganization->projects()->where('slug', 'demo-commerce')->sole();
+
+        $this->actingAs($user)->get(route('projects.index'))
+            ->assertSuccessful()
+            ->assertSee(DemoSeeder::PREFIX.'Commerce')
+            ->assertSee(DemoSeeder::PREFIX.'Analytics');
+        $this->actingAs($user)->get(route('projects.show', $application))
+            ->assertSuccessful()
+            ->assertSee('Deploy now')
+            ->assertSee('Staging')
+            ->assertSee('Workers and scheduler');
 
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSuccessful()
@@ -777,7 +798,7 @@ class DemoSeederTest extends TestCase
             ->assertSee(route('builds.export', ['website_id' => $website->id]));
         $this->actingAs($user)->get(route('builds.index', ['server_id' => $server->id]))
             ->assertSuccessful()
-            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 6
+            ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 7
                 && $metrics['active'] === 0
                 && $metrics['succeeded'] === 3
                 && $metrics['failed'] === 2
@@ -1093,6 +1114,8 @@ class DemoSeederTest extends TestCase
                 ->whereHas('website', fn ($query) => $query->where('user_id', $user->id))
                 ->count(),
             'repositories' => $user->repositories()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
+            'projects' => $user->currentOrganization->projects()->where('name', 'like', DemoSeeder::PREFIX.'%')->count(),
+            'environments' => $user->currentOrganization->projects()->where('name', 'like', DemoSeeder::PREFIX.'%')->withCount('environments')->get()->sum('environments_count'),
             'builds' => $user->builds()->count(),
             'deliveries' => RepositoryWebhookDelivery::query()
                 ->whereHas('repository', fn ($query) => $query->where('user_id', $user->id))

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Provider;
+use App\Services\Entitlements;
 use App\Services\ProviderHealthMonitor;
 use Illuminate\Console\Command;
 
@@ -12,7 +13,7 @@ class MonitorProviderHealthCommand extends Command
 
     protected $description = 'Check stale provider credentials and record connection health transitions';
 
-    public function handle(ProviderHealthMonitor $monitor): int
+    public function handle(ProviderHealthMonitor $monitor, Entitlements $entitlements): int
     {
         $ids = collect($this->option('provider'))
             ->filter(fn ($id) => filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false)
@@ -47,6 +48,11 @@ class MonitorProviderHealthCommand extends Command
         $failed = 0;
         $discarded = 0;
         foreach ($query->limit($batchSize)->get() as $provider) {
+            if (! $provider->organization || ! $entitlements->allows($provider->organization, 'monitoring')) {
+                $discarded++;
+
+                continue;
+            }
             $result = $monitor->check($provider, automatic: true);
             if (! $result['recorded']) {
                 $discarded++;

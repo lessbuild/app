@@ -38,6 +38,19 @@ class RecipeGalleryTest extends TestCase
             ->assertDontSee('private-gallery-secret');
     }
 
+    public function test_gallery_search_treats_sql_wildcards_as_literal_text(): void
+    {
+        [$visitor, $author] = User::factory()->count(2)->create();
+        $matching = $this->publishedRecipe($author, 'Install 100% safely', 'security', 1);
+        $this->publishedRecipe($author, 'Ordinary installer', 'utilities', 1);
+
+        $this->actingAs($visitor)->get(route('gallery.index', ['search' => '%']))
+            ->assertSuccessful()
+            ->assertViewHas('recipes', fn ($recipes): bool => $recipes->count() === 1
+                && $recipes->sole()->id === $matching->id)
+            ->assertDontSee('Ordinary installer');
+    }
+
     public function test_personal_collection_filters_show_owned_installed_and_outdated_recipes(): void
     {
         [$visitor, $author, $otherUser] = User::factory()->count(3)->create();

@@ -7,11 +7,16 @@
     <x-slot name="description">
         {{ __('Sign up for an account to easily manage your work life.') }}
 
-        <x-auth.social-providers action="up" />
+        @unless($invitation ?? null)
+            <x-auth.social-providers action="up" />
+        @else
+            {{ __('This invitation is bound to the verified email address below.') }}
+        @endunless
     </x-slot>
 
     <form method="POST" action="{{ route('register') }}">
         @csrf
+        @if($invitationToken ?? null)<input type="hidden" name="invite" value="{{ $invitationToken }}">@endif
 
         <div class="grid grid-cols-6 gap-6">
 
@@ -28,7 +33,7 @@
                     <input
                         type="text"
                         class="input secondary rounded"
-                        value="{{ old('name') }}"
+                        value="{{ old('name', $invitation?->name) }}"
                         name="name"
                         placeholder="{{ __('Ex: John Doe') }}">
                 </label>
@@ -48,8 +53,9 @@
                     <input
                         type="text"
                         class="input secondary rounded"
-                        value="{{ old('email') }}"
+                        value="{{ old('email', $invitation?->email) }}"
                         name="email"
+                        @readonly($invitation ?? false)
                         placeholder="{{ __('Ex: johndoe@mail.com') }}">
                 </label>
                 <x-forms.errors name="email"></x-forms.errors>
@@ -105,7 +111,7 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <button class="button tertiary rounded ml-3">
+            <button type="submit" class="button tertiary rounded ml-3">
                 {{ __('Register') }}
             </button>
         </div>

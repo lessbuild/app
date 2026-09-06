@@ -136,6 +136,39 @@ class ServerCommandLifecycleTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_server_history_offers_a_filter_preserving_refresh_only_for_active_matches(): void
+    {
+        [$owner, $server] = $this->resources();
+        $execution = $this->execution($server, ServerCommandExecution::STATUS_QUEUED, 'uptime');
+
+        $this->actingAs($owner)->get(route('servers.commands.index', [
+            'server' => $server,
+            'status' => ServerCommandExecution::STATUS_QUEUED,
+            'output' => 'missing',
+        ]))
+            ->assertSuccessful()
+            ->assertSee('Refresh status')
+            ->assertSee('Queued or running commands may change. Refresh to load their latest state.')
+            ->assertSee(route('servers.commands.index', [
+                'server' => $server,
+                'status' => ServerCommandExecution::STATUS_QUEUED,
+                'output' => 'missing',
+                'page' => 1,
+            ]));
+
+        $execution->update([
+            'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+            'finished_at' => now(),
+        ]);
+
+        $this->get(route('servers.commands.index', [
+            'server' => $server,
+            'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+        ]))
+            ->assertSuccessful()
+            ->assertDontSee('Refresh status');
+    }
+
     public function test_livewire_history_can_rerun_a_terminal_command(): void
     {
         Queue::fake();
@@ -198,6 +231,7 @@ class ServerCommandLifecycleTest extends TestCase
             ->get(route('servers.commands.index', [
                 'server' => $server,
                 'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+                'output' => 'missing',
                 'date_from' => '2026-08-20',
                 'date_to' => '2026-08-20',
             ]))
@@ -209,18 +243,22 @@ class ServerCommandLifecycleTest extends TestCase
             ->assertDontSee('after-window-command');
         $nextPageUrl = $response->viewData('executions')->nextPageUrl();
         $this->assertStringContainsString('status=succeeded', $nextPageUrl);
+        $this->assertStringContainsString('output=missing', $nextPageUrl);
         $this->assertStringContainsString('date_from=2026-08-20', $nextPageUrl);
         $this->assertStringContainsString('date_to=2026-08-20', $nextPageUrl);
 
         $this->get(route('servers.commands.index', [
             'server' => $server,
             'status' => 'unknown',
+            'output' => 'unknown',
             'date_from' => '2026-02-31',
             'date_to' => '../../etc/passwd',
         ]))
             ->assertSuccessful()
             ->assertViewHas('filters', [
+                'execution' => null,
                 'status' => null,
+                'output' => null,
                 'date_from' => null,
                 'date_to' => null,
             ]);
@@ -307,6 +345,7 @@ class ServerCommandLifecycleTest extends TestCase
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
             ->assertHeader('cache-control', 'no-store, private')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString(
             "attachment; filename=lessbuild-server-{$server->id}-commands-",
@@ -328,6 +367,7 @@ class ServerCommandLifecycleTest extends TestCase
             'Queued at',
             'Started at',
             'Finished at',
+            'Duration seconds',
             'Output available',
         ], $rows[0]);
         $this->assertCount(3, $rows);
@@ -336,7 +376,8 @@ class ServerCommandLifecycleTest extends TestCase
         $this->assertSame((string) $source->id, $rows[1][3]);
         $this->assertSame((string) $source->id, $rows[2][0]);
         $this->assertSame('17', $rows[2][4]);
-        $this->assertSame('yes', $rows[2][8]);
+        $this->assertSame('60', $rows[2][8]);
+        $this->assertSame('yes', $rows[2][9]);
 
         $this->actingAs($otherOwner)
             ->get(route('servers.commands.export', $server))

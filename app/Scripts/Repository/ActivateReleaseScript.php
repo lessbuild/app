@@ -4,7 +4,6 @@ namespace App\Scripts\Repository;
 
 use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
-use Illuminate\Support\Str;
 
 class ActivateReleaseScript extends BuildProvisioningScript
 {
@@ -30,7 +29,7 @@ class ActivateReleaseScript extends BuildProvisioningScript
     {
         $repository = $build->repository;
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
-        $release = escapeshellarg(now()->format('YmdHis').'-'.Str::lower(Str::random(6)));
+        $release = escapeshellarg($build->releaseIdentifier());
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
@@ -57,6 +56,7 @@ class ActivateReleaseScript extends BuildProvisioningScript
 
             ln -sfn -- "\$RELEASE_PATH" "\$NEXT_LINK"
             mv -Tf -- "\$NEXT_LINK" "\$CURRENT_PATH"
+            rm -f -- "\$DEPLOY_ROOT/.build.env"
 
             # Ping
             {$progress}

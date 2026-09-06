@@ -52,6 +52,17 @@ class BaseScript implements ServerScript
 
         export DEBIAN_FRONTEND=noninteractive
 
+        BACKUP_DIR=/etc/buildpusher/backups/before-first-provision
+        install -d -m 700 "\$BACKUP_DIR"
+        backupManagedFile() {
+          source_path="\$1"
+          backup_path="\$BACKUP_DIR\$source_path"
+          if [ -e "\$source_path" ] && [ ! -e "\$backup_path" ]; then
+            install -d -m 700 "$(dirname "\$backup_path")"
+            cp -a -- "\$source_path" "\$backup_path"
+          fi
+        }
+
         rm -f /etc/cron.d/setup-server
 
         provisionPing() {

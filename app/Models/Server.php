@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Enums\Server\ServerTypeEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 
 class Server extends Model
 {
-    use HasFactory;
+    use BelongsToOrganization, HasFactory;
 
     private ?string $provisioningRootPassword = null;
 
@@ -58,6 +59,7 @@ class Server extends Model
         'password',
         'mysql_root_password',
         'ssh_private_key',
+        'ssh_host_key',
         'provisioning_token',
         'initialization_token',
         'recipe_snapshot',
@@ -82,11 +84,13 @@ class Server extends Model
      */
     protected $casts = [
         'setup_stage' => 'integer',
+        'ssh_port' => 'integer',
         'provisioning_process_id' => 'integer',
         'type' => ServerTypeEnum::class,
         'password' => 'encrypted',
         'mysql_root_password' => 'encrypted',
         'ssh_private_key' => 'encrypted',
+        'ssh_host_key' => 'encrypted',
         'ssh_key_owned' => 'boolean',
         'recipe_snapshot' => 'encrypted:array',
         'provisioned_at' => 'datetime',
@@ -130,6 +134,11 @@ class Server extends Model
     public function logSnapshots(): HasMany
     {
         return $this->hasMany(ServerLogSnapshot::class);
+    }
+
+    public function metrics(): HasMany
+    {
+        return $this->hasMany(ServerMetric::class);
     }
 
     public function commandExecutions(): HasMany

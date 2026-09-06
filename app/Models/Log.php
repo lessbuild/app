@@ -20,9 +20,6 @@ class Log extends Model
         'type',
     ];
 
-    /**
-     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
-     */
     public function parentable(): MorphTo
     {
         return $this->morphTo();

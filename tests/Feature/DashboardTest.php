@@ -10,6 +10,8 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\PublicPlatformStatus;
+use App\Services\SystemHealth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -22,7 +24,9 @@ class DashboardTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('Easily deploy your web applications')
+            ->assertSee('Deploy with clarity. Recover with confidence.')
+            ->assertSee('The release lifecycle, without the tool sprawl.')
+            ->assertSee('Connect. Provision. Deploy.')
             ->assertSee(route('login'));
     }
 
@@ -72,21 +76,120 @@ class DashboardTest extends TestCase
 
         $response
             ->assertSuccessful()
+            ->assertSee('Operational overview')
+            ->assertSee('Deployment volume')
+            ->assertSee('Health reliability')
+            ->assertSee('Plan capacity')
             ->assertSee('No websites yet')
             ->assertSee('No builds yet')
             ->assertSee('No activity yet')
+            ->assertSee('Get to your first healthy deployment')
+            ->assertSee('0 of 5 complete')
+            ->assertSee('Connect a provider')
+            ->assertSee('Current step')
+            ->assertSee(route('providers.create'))
+            ->assertSee('Available after the previous step')
             ->assertDontSee('Active deployments')
             ->assertDontSee('Active server commands')
             ->assertDontSee('Webhook deliveries')
             ->assertDontSee('Infrastructure provisioning')
             ->assertDontSee('Community recipe feedback')
+            ->assertSee('System operational')
+            ->assertSee('View system health')
+            ->assertSee(route('system-health.index'))
             ->assertSee(route('servers.create'))
             ->assertSee(route('websites.create'));
 
         $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'" class="[^"]*bg-secondary[^"]*">\s*<svg[^>]*>.*?Dashboard/s',
+            '/<a href="'.preg_quote(route('dashboard'), '/').'" class="[^"]*bg-secondary[^"]*"[^>]*aria-current="page"[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
             $response->getContent(),
         );
+    }
+
+    public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $repository = $this->createResources($user, 'Onboarding Application');
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('onboarding', [
+                'provider' => true,
+                'server' => true,
+                'website' => true,
+                'repository' => true,
+                'deployment' => false,
+            ])
+            ->assertSee('4 of 5 complete')
+            ->assertSee('Deploy repository')
+            ->assertSee(route('repositories.index'));
+
+        $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'built_at' => now(),
+        ]);
+
+        $this->actingAs($user)->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertViewHas('onboarding', [
+                'provider' => true,
+                'server' => true,
+                'website' => true,
+                'repository' => true,
+                'deployment' => true,
+            ])
+            ->assertDontSee('Get to your first healthy deployment');
+    }
+
+    public function test_dashboard_surfaces_a_sanitized_degraded_system_summary(): void
+    {
+        $this->mock(SystemHealth::class)
+            ->shouldReceive('summary')
+            ->once()
+            ->andReturn([
+                'passed' => false,
+                'passed_count' => 10,
+                'total' => 12,
+                'failed_checks' => ['Failed queue jobs', 'Application services'],
+                'checked_at' => now()->toIso8601String(),
+            ]);
+
+        $this->actingAs(User::factory()->create())->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('System health needs attention')
+            ->assertSee('10 of 12 checks passed')
+            ->assertSee('Failing: Failed queue jobs, Application services')
+            ->assertSee(route('system-health.index'))
+            ->assertDontSee('queue-payload-secret');
+    }
+
+    public function test_non_admin_dashboard_uses_public_status_without_private_diagnostics(): void
+    {
+        $owner = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $viewer = User::factory()->create();
+        $organization->members()->syncWithoutDetaching([$viewer->id => ['role' => 'viewer']]);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->mock(SystemHealth::class)->shouldNotReceive('summary');
+        $this->mock(PublicPlatformStatus::class)
+            ->shouldReceive('snapshot')
+            ->once()
+            ->andReturn([
+                'status' => 'degraded',
+                'operational' => false,
+                'checked_at' => now()->toIso8601String(),
+                'components' => [],
+            ]);
+
+        $this->actingAs($viewer)->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Public service-level status without private infrastructure diagnostics.')
+            ->assertSee('View public status')
+            ->assertSee(route('platform-status.show'))
+            ->assertDontSee('View system health')
+            ->assertDontSee(route('system-health.index'));
     }
 
     public function test_dashboard_surfaces_only_the_owners_gallery_updates_without_loading_scripts(): void
@@ -189,6 +292,16 @@ class DashboardTest extends TestCase
                 'details' => $details,
             ]);
         }
+        $firstReporter->recipeReports()
+            ->where('recipe_id', $owned->id)
+            ->update(['created_at' => now()->subDays(8)]);
+        User::factory()->create()->recipeReports()->create([
+            'recipe_id' => $owned->id,
+            'reason' => 'security',
+            'details' => 'resolved-private-feedback',
+            'resolved_at' => now(),
+            'created_at' => now()->subDays(30),
+        ]);
 
         $private = $owner->recipes()->create([
             'name' => 'Private reported draft',
@@ -218,6 +331,10 @@ class DashboardTest extends TestCase
         $this->actingAs($owner)->get(route('dashboard'))
             ->assertSuccessful()
             ->assertViewHas('communityReportCount', 2)
+            ->assertViewHas('communityReportAttention', [
+                'security' => 1,
+                'stale' => 1,
+            ])
             ->assertViewHas('reportedGalleryRecipeCount', 1)
             ->assertViewHas('reportedGalleryRecipes', function ($recipes) use ($owned): bool {
                 if ($recipes->count() !== 1) {
@@ -240,12 +357,18 @@ class DashboardTest extends TestCase
             ->assertSee('Community recipe feedback')
             ->assertSee('2 community reports need review')
             ->assertSee('1 published recipe affected')
+            ->assertSee('All needing review')
+            ->assertSee('Security reports')
+            ->assertSee('Open at least 7 days')
             ->assertSee('Published image helper')
-            ->assertSee(route('gallery.show', $owned))
-            ->assertSee(route('gallery.index', ['scope' => 'mine']))
+            ->assertSee(route('gallery.reports.index', ['recipe' => $owned->id]))
+            ->assertSee(route('gallery.reports.index'))
+            ->assertSee(route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']))
+            ->assertSee(route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']))
             ->assertDontSee('Private reported draft')
             ->assertDontSee('Foreign reported recipe')
             ->assertDontSee('private-feedback', false)
+            ->assertDontSee('resolved-private-feedback', false)
             ->assertDontSee('dashboard-report-secret', false)
             ->assertDontSee($firstReporter->email);
     }
@@ -390,6 +513,7 @@ class DashboardTest extends TestCase
         $this->actingAs($owner)->get(route('dashboard'))
             ->assertSuccessful()
             ->assertViewHas('activeDeploymentCounts', [
+                Build::STATUS_AWAITING_APPROVAL => 0,
                 Build::STATUS_QUEUED => 1,
                 Build::STATUS_DEPLOYING => 0,
                 Build::STATUS_RUNNING => 1,
@@ -400,6 +524,8 @@ class DashboardTest extends TestCase
             ->assertSee('2 deployments are in progress')
             ->assertSee(route('builds.show', $queued))
             ->assertSee(route('builds.show', $running))
+            ->assertSee(route('builds.index', ['active' => 1]))
+            ->assertSee('View active deployments')
             ->assertDontSee(route('builds.show', $foreign))
             ->assertDontSee('Foreign Active Application');
     }
@@ -422,7 +548,7 @@ class DashboardTest extends TestCase
             ->assertViewHas('activeDeployments', fn ($builds): bool => $builds->count() === 5)
             ->assertSee('6 deployments are in progress')
             ->assertSee('1 more active deployment')
-            ->assertSee(route('builds.index'));
+            ->assertSee(route('builds.index', ['active' => 1]));
     }
 
     public function test_dashboard_summarizes_active_commands_without_loading_encrypted_content(): void
@@ -472,7 +598,8 @@ class DashboardTest extends TestCase
                 'server' => $server,
                 'status' => ServerCommandExecution::STATUS_RUNNING,
             ]))
-            ->assertSee(route('activity.index', ['category' => 'command']))
+            ->assertSee(route('commands.index', ['active' => 1]))
+            ->assertSee('Open Command Center')
             ->assertDontSee('dashboard-sensitive-command', false)
             ->assertDontSee('dashboard-sensitive-output', false)
             ->assertDontSee('foreign-dashboard-command', false)
@@ -619,8 +746,10 @@ class DashboardTest extends TestCase
             ->assertSee('Infrastructure provisioning')
             ->assertSee('6 resources are being prepared')
             ->assertSee('1 more resource is provisioning')
-            ->assertSee(route('servers.index'))
-            ->assertSee(route('websites.index'))
+            ->assertSee(route('servers.index', ['provisioning' => 1]))
+            ->assertSee(route('websites.index', ['provisioning' => 1]))
+            ->assertSee('View provisioning servers')
+            ->assertSee('View provisioning websites')
             ->assertSee(route('websites.show', $latestWebsite))
             ->assertSee('waiting for ip')
             ->assertDontSee('sensitive-server-password', false)
@@ -629,6 +758,18 @@ class DashboardTest extends TestCase
             ->assertDontSee('SENSITIVE_ENVIRONMENT', false)
             ->assertDontSee('sensitive-database-password', false)
             ->assertDontSee('Foreign Provisioning Resource');
+    }
+
+    public function test_user_can_customize_visible_dashboard_widgets(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->patch(route('dashboard.preferences.update'), [
+            'widgets' => ['stats', 'status'],
+        ])->assertRedirect()->assertSessionHas('success');
+
+        $this->assertSame(['stats', 'status'], $user->fresh()->preferences['dashboard_widgets']);
+        $this->get(route('dashboard'))->assertOk()->assertSee('Platform status')->assertDontSee('Provider credential health');
     }
 
     private function createResources(User $user, string $name)

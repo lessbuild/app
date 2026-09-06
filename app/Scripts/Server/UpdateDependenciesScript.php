@@ -36,7 +36,7 @@ class UpdateDependenciesScript implements ServerScript
         apt_wait
         sudo apt-get upgrade -y
         apt_wait
-        sudo apt-get install -y --force-yes software-properties-common
+        sudo apt-get install -y software-properties-common ca-certificates curl gnupg ufw
         sudo apt-add-repository ppa:ondrej/php -y
         SCRIPT;
     }

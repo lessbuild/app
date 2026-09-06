@@ -17,6 +17,12 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('--tries=3 --timeout=80 --max-time=3600', $installer);
         $this->assertStringContainsString('Environment=APP_DEBUG=false', $installer);
         $this->assertStringContainsString('set_env_value DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS true', $installer);
+        $this->assertStringContainsString('set_env_value LOG_CHANNEL stack', $installer);
+        $this->assertStringContainsString('set_env_value LOG_STACK daily', $installer);
+        $this->assertStringContainsString('set_env_value LOG_DAILY_DAYS 14', $installer);
+        $this->assertStringNotContainsString('set_env_value APP_URL "http://${PUBLIC_IP}:8003"', $installer);
+        $this->assertStringContainsString('WorkingDirectory=${APP_DIR}/public', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} -d expose_php=0 -S 127.0.0.1:8003 ${APP_DIR}/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php', $installer);
         $this->assertStringContainsString('ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/api/health 15 1', $installer);
         $this->assertStringContainsString('TimeoutStartSec=50', $installer);
         $this->assertStringContainsString('systemctl restart "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"', $installer);

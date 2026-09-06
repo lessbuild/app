@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\BrowserSessionManager;
 use App\Services\ClientMetadata;
+use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,6 +26,7 @@ class UsersController extends Controller
         Request $request,
         BrowserSessionManager $browserSessions,
         ClientMetadata $clients,
+        TwoFactorAuthentication $twoFactor,
     ): View {
         $connected = $request->user()->connectedSocialProviders();
 
@@ -64,6 +66,7 @@ class UsersController extends Controller
                     'can_disconnect' => $request->user()->hasLocalPassword() || count($connected) > 1,
                     'requires_password' => $request->user()->hasLocalPassword(),
                 ]),
+            'twoFactorProvisioningUri' => $twoFactor->provisioningUri($request->user()),
         ]);
     }
 

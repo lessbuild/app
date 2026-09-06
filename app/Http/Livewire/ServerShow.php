@@ -3,10 +3,12 @@
 namespace App\Http\Livewire;
 
 use App\Actions\Server\CollectServerLogAction;
+use App\Jobs\Server\CollectServerMetricsJob;
 use App\Jobs\Server\RefreshServerLogJob;
 use App\Models\Server;
 use App\Models\ServerLogSnapshot;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class ServerShow extends Component
@@ -31,7 +33,7 @@ class ServerShow extends Component
 
     public function refreshLogs(): void
     {
-        abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
+        Gate::authorize('update', $this->server);
         $this->server->refresh();
         $this->log = $this->selectedLogType();
 
@@ -52,10 +54,16 @@ class ServerShow extends Component
         RefreshServerLogJob::dispatch($this->server->id, $this->log);
     }
 
+    public function refreshMetrics(): void
+    {
+        Gate::authorize('update', $this->server);
+        CollectServerMetricsJob::dispatch($this->server->id);
+    }
+
     public function render(): View
     {
         $this->server->refresh();
-        abort_unless((int) auth()->id() === (int) $this->server->user_id, 403);
+        Gate::authorize('view', $this->server);
         $this->log = $this->selectedLogType();
         $websites = $this->server->websites()->get();
         $recipes = $this->server->provisioningRecipes();
@@ -86,6 +94,8 @@ class ServerShow extends Component
                 'latest_at' => $latestLogSnapshot?->refreshed_at,
             ],
             'shouldPoll' => $shouldPoll,
+            'metricHistory' => $this->server->metrics()->where('recorded_at', '>=', now()->subDay())->latest('recorded_at')->limit(288)->get()->reverse()->values(),
+            'latestMetric' => $this->server->metrics()->latest('recorded_at')->first(),
         ])->layout('components.layouts.app');
     }
 

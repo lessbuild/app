@@ -45,7 +45,7 @@
                 :description="__('Are you sure you want to delete this repository?')"
             ></x-dialogs.delete>
 
-            <button type="submit" class="button primary" onclick="document.getElementById('delete-repository').showModal()">
+            <button type="button" class="button primary" onclick="document.getElementById('delete-repository').showModal()">
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -59,6 +59,47 @@
         <div class="my-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
         </div>
+    @endif
+
+    @if ($isFirstDeployment)
+        <section class="my-6 rounded-2xl border border-primary bg-primary p-5" aria-labelledby="first-deployment-title">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('First deployment') }}</p>
+                    <h2 id="first-deployment-title" class="mt-1 text-xl font-black text-primary">{{ __('Review the launch checks') }}</h2>
+                    <p class="mt-1 max-w-2xl text-sm text-secondary">{{ __('Required checks must pass before launch. Recommended checks improve verification, recovery, and automatic delivery but can be completed later.') }}</p>
+                </div>
+                <span @class([
+                    'rounded-full px-3 py-1 text-sm font-black uppercase',
+                    'bg-green-100 text-green-700' => $deploymentPreflight['level'] === 'ready',
+                    'bg-amber-100 text-amber-800' => $deploymentPreflight['level'] === 'review',
+                    'bg-red-100 text-red-700' => $deploymentPreflight['level'] === 'blocked',
+                ])>{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</span>
+            </div>
+
+            <ul class="mt-5 grid gap-3 md:grid-cols-2">
+                @foreach ($deploymentPreflight['checks'] as $check)
+                    <li class="flex gap-3 rounded-xl border border-primary bg-secondary p-4">
+                        <span aria-hidden="true" @class([
+                            'font-black',
+                            'text-green-600' => $check['status'] === 'passed',
+                            'text-amber-600' => $check['status'] === 'warning',
+                            'text-red-600' => $check['status'] === 'failed',
+                        ])>{{ $check['status'] === 'passed' ? '✓' : '!' }}</span>
+                        <span><strong class="block text-primary">{{ $check['name'] }}</strong><span class="mt-1 block text-xs text-secondary">{{ $check['detail'] }}</span></span>
+                    </li>
+                @endforeach
+            </ul>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
+                    @csrf
+                    <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady)>{{ __('Launch first deployment') }}</button>
+                </form>
+                <a href="{{ route('repositories.edit', $repository) }}" class="button secondary">{{ __('Review source settings') }}</a>
+                <a href="{{ route('websites.edit', $repository->website) }}" class="button secondary">{{ __('Review website settings') }}</a>
+            </div>
+        </section>
     @endif
 
     @php($oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret"))
@@ -134,13 +175,23 @@
                         <x-forms.errors name="signing_token" />
                     </div>
                 @endif
-                <button type="submit" class="button primary">
+                <button
+                    type="submit"
+                    class="button primary"
+                    @if ($repository->webhook_enabled)
+                        onclick="return confirm({{ Illuminate\Support\Js::from(__('Rotate the webhook secret for :repository? The current secret will stop working immediately.', ['repository' => $repository->name])) }})"
+                    @endif
+                >
                     {{ $repository->webhook_enabled ? __('Rotate webhook secret') : __('Enable webhook') }}
                 </button>
             </form>
 
             @if ($repository->webhook_enabled)
-                <form method="POST" action="{{ route('repositories.webhook.destroy', $repository) }}">
+                <form
+                    method="POST"
+                    action="{{ route('repositories.webhook.destroy', $repository) }}"
+                    onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Disable webhook deployments for :repository?', ['repository' => $repository->name])) }})"
+                >
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="button primary">{{ __('Disable webhook') }}</button>

@@ -6,6 +6,7 @@ use App\Actions\Repository\HandleRepositoryWebhookAction;
 use App\Data\RepositoryWebhookResult;
 use App\Exceptions\InvalidRepositoryWebhook;
 use App\Models\Repository;
+use App\Services\PreviewDeploymentLifecycle;
 use App\Services\RepositoryWebhookVerifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class RepositoryWebhookController extends Controller
         Repository $repository,
         RepositoryWebhookVerifier $verifier,
         HandleRepositoryWebhookAction $handle,
+        PreviewDeploymentLifecycle $previews,
     ): JsonResponse {
         try {
             $webhook = $verifier->verify($repository, $request);
@@ -33,6 +35,12 @@ class RepositoryWebhookController extends Controller
                     default => 'unauthorized',
                 },
             ], $status);
+        }
+
+        if ($webhook->isPreviewEvent()) {
+            $status = $previews->handle($repository, $webhook);
+
+            return response()->json(['status' => $status], in_array($status, ['provisioning', 'deploying'], true) ? 202 : 200);
         }
 
         if (! $webhook->isPush) {

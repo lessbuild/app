@@ -10,16 +10,20 @@ class RecipeReport extends Model
     public const REASONS = [
         'security',
         'broken',
-        'outdated',
         'misleading',
+        'outdated',
         'other',
     ];
 
-    protected $fillable = ['recipe_id', 'reason', 'details'];
+    protected $fillable = ['recipe_id', 'reason', 'details', 'resolved_at', 'resolution_note'];
 
-    protected $hidden = ['details'];
+    protected $hidden = ['details', 'resolution_note'];
 
-    protected $casts = ['details' => 'encrypted'];
+    protected $casts = [
+        'details' => 'encrypted',
+        'resolution_note' => 'encrypted',
+        'resolved_at' => 'datetime',
+    ];
 
     public function recipe(): BelongsTo
     {

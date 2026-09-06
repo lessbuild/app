@@ -31,7 +31,7 @@ class Runner
      *
      * @throws \Exception
      */
-    public function create(): ManagedSsh
+    public function create(bool $logOutput = true): ManagedSsh
     {
         $user = 'root';
         $hostname = $this->server->public_ip;
@@ -45,17 +45,25 @@ class Runner
             throw new RuntimeException("Server {$this->server->id} does not have an SSH private key.");
         }
 
-        return ManagedSsh::create($user, $hostname)
-            ->usePort(22)
-            ->disableStrictHostKeyChecking()
+        $ssh = ManagedSsh::create($user, $hostname)
+            ->usePort($this->server->ssh_port ?: 22)
             ->disablePasswordAuthentication()
             ->usePrivateKeyContents($privateKey)
             ->addExtraOption('-o ConnectTimeout='.(int) config('lessbuild.ssh_connect_timeout', 10))
             ->configureProcess(static function (Process $process) {
                 $process->setTimeout(max(1, (int) config('lessbuild.ssh_command_timeout', 60)));
-            })
-            ->onOutput(static function ($type, $line) {
+            });
+        if ($this->server->ssh_host_key) {
+            $ssh->useKnownHost($this->server->ssh_host_key);
+        } else {
+            $ssh->disableStrictHostKeyChecking();
+        }
+        if ($logOutput) {
+            $ssh->onOutput(static function ($type, $line) {
                 info($line);
             });
+        }
+
+        return $ssh;
     }
 }

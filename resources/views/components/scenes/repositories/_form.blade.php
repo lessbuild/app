@@ -5,10 +5,10 @@
             {{ __('Website') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="website_id" class="input secondary rounded">
+            <select id="website_id" name="website_id" class="input secondary rounded" required>
                 @foreach($websites as $website)
                     <option value="{{ $website->id }}"
-                        @selected((string) old('website_id', $repository->website_id ?? '') === (string) $website->id)
+                        @selected((string) old('website_id', $repository->website_id ?? request()->query('website_id', '')) === (string) $website->id)
                     >
                         {{ $website->name }}
                     </option>
@@ -23,11 +23,11 @@
             {{ __('Provider') }}
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
-            <select name="provider_id" class="input secondary rounded">
+            <select id="provider_id" name="provider_id" class="input secondary rounded" required>
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
-                        @selected(old('provider_id') == $provider->id || ($repository->provider_id ?? null) == $provider->id)
+                        @selected(old('provider_id', request()->query('provider_id')) == $provider->id || ($repository->provider_id ?? null) == $provider->id)
                     >
                         {{ $provider->name }}
                     </option>
@@ -43,7 +43,7 @@
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
             <input
-                value="{{ old('name') ?? ($repository->name ?? null) }}"
+                value="{{ old('name', $repository->name ?? request()->query('name')) }}"
                 type="text"
                 name="name"
                 id="name"
@@ -62,7 +62,7 @@
                 https://
             </span>
             <input
-                value="{{ old('url') ?? ($repository->url ?? null) }}"
+                value="{{ old('url', $repository->url ?? request()->query('url')) }}"
                 type="text"
                 name="url"
                 id="url"
@@ -78,7 +78,7 @@
         </label>
         <div class="mt-1 flex rounded-md shadow-sm">
             <input
-                value="{{ old('branch', $repository->branch ?? 'main') }}"
+                value="{{ old('branch', $repository->branch ?? request()->query('branch', 'main')) }}"
                 type="text"
                 name="branch"
                 id="branch"

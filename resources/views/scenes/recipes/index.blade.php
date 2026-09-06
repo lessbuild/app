@@ -153,7 +153,7 @@
                                         @csrf
                                         <button type="submit" class="button tertiary">{{ __('Duplicate') }}</button>
                                     </form>
-                                    <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm('{{ __('Delete this recipe?') }}')">
+                                    <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Delete :recipe? This cannot be undone.', ['recipe' => $recipe->name])) }})">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="button tertiary">{{ __('Delete') }}</button>

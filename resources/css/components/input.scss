@@ -4,7 +4,10 @@
         @apply block;
         @apply w-full;
         @apply text-sm;
+        @apply leading-5;
         @apply border;
+        @apply px-3;
+        @apply py-2.5;
 
         &.primary {
             @apply bg-primary;

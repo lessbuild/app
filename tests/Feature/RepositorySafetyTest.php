@@ -78,6 +78,11 @@ class RepositorySafetyTest extends TestCase
             ->assertSee('Active Website')
             ->assertDontSee($inactiveWebsite->name);
 
+        $this->actingAs($user)->get(route('repositories.create', ['website_id' => $activeWebsite->id, 'branch' => 'staging']))
+            ->assertSuccessful()
+            ->assertSeeInOrder(['value="'.$activeWebsite->id.'"', 'selected'], false)
+            ->assertSee('value="staging"', false);
+
         $this->actingAs($user)->get(route('repositories.edit', $repository))
             ->assertSuccessful()
             ->assertSeeInOrder(['value="'.$activeWebsite->id.'"', 'selected'], false)

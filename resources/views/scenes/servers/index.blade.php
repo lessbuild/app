@@ -10,6 +10,9 @@
         :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
         <x-slot:buttons>
+            <a href="{{ route('servers.import.create') }}" class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary">
+                {{ __('Import existing') }}
+            </a>
             <a
                 href="{{ route('servers.create') }}"
                 class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary"
@@ -23,7 +26,7 @@
     </x-layouts.partials.heading>
 
     <form method="GET" action="{{ route('servers.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
-        <div class="grid gap-4 md:grid-cols-2">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
                 <input
@@ -46,6 +49,12 @@
                         </option>
                     @endforeach
                 </select>
+            </div>
+            <div class="flex items-end">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
+                    {{ __('Provisioning only') }}
+                </label>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

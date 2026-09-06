@@ -24,9 +24,10 @@ class WebsiteHealthMonitor
      */
     public function check(Website $website, bool $automatic = false): ?bool
     {
-        $website->loadMissing('server');
+        $website->loadMissing(['server', 'environments']);
         if (! $website->health_check_enabled
             || ($automatic && ! $website->health_monitoring_enabled)
+            || ($automatic && $website->environments->contains(fn ($environment) => $environment->hibernated_at !== null))
             || $website->provisioning_status !== Website::STATUS_ACTIVE
             || $website->server?->provisioning_status !== Server::STATUS_ACTIVE) {
             return null;

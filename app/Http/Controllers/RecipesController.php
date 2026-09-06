@@ -6,6 +6,8 @@ use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
 use App\Models\Server;
 use App\Services\ActivityRecorder;
+use App\Services\RecipeReportNotifier;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -105,6 +107,7 @@ class RecipesController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -117,7 +120,7 @@ class RecipesController extends Controller
     public function show(Request $request, Recipe $recipe): View
     {
         $this->authorize('view', $recipe);
-        $recipe = $request->user()->recipes()
+        $recipe = $request->user()->workspaceRecipes()
             ->select(['id', 'user_id', 'name', 'description', 'is_published', 'created_at', 'updated_at'])
             ->findOrFail($recipe->id);
         $assignedServers = $recipe->servers()
@@ -156,7 +159,7 @@ class RecipesController extends Controller
     public function store(RecipeRequest $request, ActivityRecorder $activity): RedirectResponse
     {
         $data = $this->recipeData($request);
-        $recipe = $request->user()->recipes()->create($data);
+        $recipe = $request->user()->workspaceRecipes()->create($data);
         $activity->record(
             $recipe,
             $request->user()->id,
@@ -194,11 +197,15 @@ class RecipesController extends Controller
         return redirect()->route('recipes.index')->with('status', __('Recipe updated.'));
     }
 
-    public function destroy(Recipe $recipe, ActivityRecorder $activity): RedirectResponse
+    public function destroy(Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorize('delete', $recipe);
-        $recipe->delete();
-        $activity->record($recipe, $recipe->user_id, 'recipe', "Recipe \"{$recipe->name}\" was deleted.");
+        DB::transaction(function () use ($activity, $notifications, $recipe): void {
+            $lockedRecipe = $this->lockedRecipe($recipe->id);
+            $notifications->forgetRecipe($lockedRecipe);
+            $lockedRecipe->delete();
+            $activity->record($lockedRecipe, $lockedRecipe->user_id, 'recipe', "Recipe \"{$lockedRecipe->name}\" was deleted.");
+        });
 
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
     }
@@ -207,7 +214,7 @@ class RecipesController extends Controller
     {
         $this->authorize('update', $recipe);
 
-        $copy = $request->user()->recipes()->create([
+        $copy = $request->user()->workspaceRecipes()->create([
             'name' => Str::of("Copy of {$recipe->name}")->limit(255, '')->toString(),
             'description' => $recipe->description,
             'script' => $recipe->script,
@@ -239,12 +246,13 @@ class RecipesController extends Controller
     /** @param array{search: ?string, usage: ?string} $filters */
     private function filteredRecipes(Request $request, array $filters): HasMany
     {
-        return $request->user()->recipes()
+        return $request->user()->workspaceRecipes()
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['usage'] === 'in_use', fn ($query) => $query->inUse())
@@ -288,5 +296,14 @@ class RecipesController extends Controller
             : ($recipe->gallery_revision_at ?? $recipe->published_at ?? now());
 
         return $data;
+    }
+
+    private function lockedRecipe(int $recipeId): Recipe
+    {
+        if (DB::connection()->getDriverName() === 'sqlite') {
+            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
+        }
+
+        return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
     }
 }

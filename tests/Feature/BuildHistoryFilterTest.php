@@ -420,6 +420,7 @@ class BuildHistoryFilterTest extends TestCase
                 'status' => null,
                 'trigger' => null,
                 'search' => null,
+                'active' => null,
                 'latest' => null,
                 'date_from' => null,
                 'date_to' => null,
@@ -430,6 +431,39 @@ class BuildHistoryFilterTest extends TestCase
             ->assertDontSee('not-an-id', false)
             ->assertDontSee('not-a-provider-id', false)
             ->assertDontSee('name="latest" value="1" checked', false);
+    }
+
+    public function test_active_filter_drills_into_in_progress_deployments_and_export(): void
+    {
+        [$owner, $repository] = $this->repositories('Owner');
+        $queued = $repository->builds()->create([
+            'status' => Build::STATUS_QUEUED,
+            'commit_message' => 'Queued active drilldown',
+        ]);
+        $running = $repository->builds()->create([
+            'status' => Build::STATUS_RUNNING,
+            'commit_message' => 'Running active drilldown',
+        ]);
+        $completed = $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'commit_message' => 'Completed deployment excluded',
+        ]);
+
+        $filters = ['active' => 1];
+        $this->actingAs($owner)->get(route('builds.index', $filters))
+            ->assertSuccessful()
+            ->assertViewHas('filters', fn (array $filters): bool => $filters['active'] === '1')
+            ->assertViewHas('builds', fn ($builds): bool => $builds->pluck('id')->sort()->values()->all() === collect([$queued->id, $running->id])->sort()->values()->all())
+            ->assertSee('name="active" value="1" checked', false)
+            ->assertSee(route('builds.export', $filters))
+            ->assertDontSee(route('builds.show', $completed));
+
+        $csv = $this->actingAs($owner)->get(route('builds.export', $filters))
+            ->assertSuccessful()
+            ->streamedContent();
+        $this->assertStringContainsString('Queued active drilldown', $csv);
+        $this->assertStringContainsString('Running active drilldown', $csv);
+        $this->assertStringNotContainsString('Completed deployment excluded', $csv);
     }
 
     public function test_latest_filter_is_preserved_across_repository_pagination(): void

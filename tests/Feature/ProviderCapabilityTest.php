@@ -31,6 +31,8 @@ class ProviderCapabilityTest extends TestCase
         $this->actingAs($user)->get(route('providers.create'))
             ->assertSuccessful()
             ->assertSee('digitalocean')
+            ->assertSee('hetzner')
+            ->assertSee('vultr')
             ->assertSee('github')
             ->assertSee('gitlab')
             ->assertSee('bitbucket')

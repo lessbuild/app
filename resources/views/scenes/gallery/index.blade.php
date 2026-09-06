@@ -4,6 +4,8 @@
         :description="__('Discover reusable provisioning scripts shared by other operators.')"
     >
         <x-slot:buttons>
+            <a href="{{ route('gallery.reports.mine') }}" class="button secondary">{{ __('My Reports') }}</a>
+            <a href="{{ route('gallery.reports.index') }}" class="button secondary">{{ __('Feedback Inbox') }}</a>
             <a href="{{ route('recipes.create') }}" class="button primary">{{ __('Publish a Recipe') }}</a>
         </x-slot:buttons>
     </x-layouts.partials.heading>
@@ -38,6 +40,8 @@
                     <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
                     <option value="favorites" @selected($filters['scope'] === 'favorites')>{{ __('Saved by me') }}</option>
                     <option value="reported" @selected($filters['scope'] === 'reported')>{{ __('Reported by me') }}</option>
+                    <option value="reports_open" @selected($filters['scope'] === 'reports_open')>{{ __('My reports needing review') }}</option>
+                    <option value="reports_resolved" @selected($filters['scope'] === 'reports_resolved')>{{ __('My resolved reports') }}</option>
                     <option value="installed" @selected($filters['scope'] === 'installed')>{{ __('Installed by me') }}</option>
                     <option value="updates" @selected($filters['scope'] === 'updates')>{{ __('Updates available') }}</option>
                     <option value="mine" @selected($filters['scope'] === 'mine')>{{ __('Published by me') }}</option>
@@ -106,7 +110,12 @@
                                 <span class="ml-1 rounded-full bg-pink-100 px-2 py-1 text-xs font-semibold text-pink-700">{{ __('Saved') }}</span>
                             @endif
                             @if ($report)
-                                <span class="ml-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">{{ __('Reported by you') }}</span>
+                                <span class="ml-1 rounded-full bg-red-100 px-2 py-1 text-xs font-semibold text-red-700">{{ __('Reported by you: :reason', ['reason' => str($report->reason)->headline()]) }}</span>
+                                <span @class([
+                                    'ml-1 rounded-full px-2 py-1 text-xs font-semibold',
+                                    'bg-orange-100 text-orange-800' => $report->resolved_at === null,
+                                    'bg-green-100 text-green-700' => $report->resolved_at !== null,
+                                ])>{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</span>
                             @endif
                             @if ($updateAvailable)
                                 <span class="ml-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-semibold text-yellow-800">{{ __('Update available') }}</span>

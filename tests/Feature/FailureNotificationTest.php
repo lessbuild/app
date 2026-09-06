@@ -87,6 +87,22 @@ class FailureNotificationTest extends TestCase
         $this->assertSame(0, $owner->notifications()->count());
     }
 
+    public function test_workspace_preferences_suppress_disabled_inbox_categories(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure('Preferences');
+        $owner->currentOrganization->update(['notification_preferences' => [
+            'categories' => ['server'],
+            'recoveries' => false,
+        ]]);
+
+        $website->update(['provisioning_status' => Website::STATUS_FAILED, 'provisioning_error' => 'Website failed']);
+        $server->update(['provisioning_status' => Server::STATUS_FAILED, 'provisioning_error' => 'Server failed']);
+        $this->assertSame(['server'], $owner->notifications()->get()->pluck('data.category')->all());
+
+        $server->update(['provisioning_status' => Server::STATUS_ACTIVE]);
+        $this->assertSame(1, $owner->notifications()->count());
+    }
+
     public function test_successful_provisioning_retries_resolve_open_server_and_website_incidents(): void
     {
         [$owner, $server, $website] = $this->infrastructure('Recovery');
@@ -338,6 +354,7 @@ class FailureNotificationTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString('attachment; filename=lessbuild-notifications-', (string) $response->headers->get('content-disposition'));

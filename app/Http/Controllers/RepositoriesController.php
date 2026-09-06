@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\RepositoryRequest;
-use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
+use App\Services\DeploymentGate;
+use App\Services\DeploymentPreflight;
+use App\Services\DeploymentRequest;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -34,11 +38,11 @@ class RepositoriesController extends Controller
             'repositories' => $repositories,
             'filters' => $filters,
             'metrics' => $this->indexMetrics($request, $filters),
-            'providers' => $request->user()->providers()
+            'providers' => $request->user()->workspaceProviders()
                 ->forRepositories()
                 ->orderBy('name')
                 ->get(['id', 'name']),
-            'websites' => $request->user()->websites()
+            'websites' => $request->user()->workspaceWebsites()
                 ->orderBy('name')
                 ->get(['id', 'name']),
             'statuses' => $this->repositoryStatuses(),
@@ -126,6 +130,7 @@ class RepositoriesController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -149,13 +154,14 @@ class RepositoriesController extends Controller
      */
     private function filteredRepositories(Request $request, array $filters): HasMany
     {
-        return $request->user()->repositories()
+        return $request->user()->workspaceRepositories()
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('url', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("url LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['provider_id'], fn ($query, int $id) => $query
@@ -199,7 +205,12 @@ class RepositoriesController extends Controller
     /**
      * Show the resource
      */
-    public function show(Request $request, Repository $repository): View
+    public function show(
+        Request $request,
+        Repository $repository,
+        DeploymentGate $gate,
+        DeploymentPreflight $preflight,
+    ): View
     {
         $this->authorize('view', $repository);
         $deliveryFilters = $this->deliveryFilters($request);
@@ -218,6 +229,8 @@ class RepositoriesController extends Controller
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
+            'deploymentPreflight' => $preflight->assess($repository, $gate->environment($repository)),
+            'isFirstDeployment' => ! $repository->builds()->exists(),
         ]);
     }
 
@@ -337,11 +350,15 @@ class RepositoriesController extends Controller
     private function deliveryFilters(Request $request): array
     {
         $status = $request->string('delivery_status')->toString();
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('delivery_date_from')->toString(),
+            $request->string('delivery_date_to')->toString(),
+        );
 
         return [
             'delivery_status' => in_array($status, RepositoryWebhookDelivery::STATUSES, true) ? $status : null,
-            'delivery_date_from' => $this->date($request->string('delivery_date_from')->toString()),
-            'delivery_date_to' => $this->date($request->string('delivery_date_to')->toString()),
+            'delivery_date_from' => $dateFrom,
+            'delivery_date_to' => $dateTo,
         ];
     }
 
@@ -369,8 +386,8 @@ class RepositoriesController extends Controller
      */
     public function create(Request $request): View
     {
-        $providers = $request->user()->providers()->forRepositories()->get();
-        $websites = $request->user()->websites()->readyForDeployments()->get();
+        $providers = $request->user()->workspaceProviders()->forRepositories()->get();
+        $websites = $request->user()->workspaceWebsites()->readyForDeployments()->get();
 
         return view('scenes.repositories.create', [
             'providers' => $providers,
@@ -385,7 +402,14 @@ class RepositoriesController extends Controller
      */
     public function store(RepositoryRequest $request)
     {
-        $repository = $request->user()->repositories()->create($request->validated());
+        $attributes = $request->validated();
+        $provider = $request->user()->workspaceProviders()->findOrFail($attributes['provider_id']);
+        if ($provider->isGitHubApp()) {
+            abort_unless(filled(config('github-app.webhook_secret')), 503, 'GitHub App webhook delivery is not configured.');
+            $attributes['webhook_enabled'] = true;
+            $attributes['webhook_secret'] = config('github-app.webhook_secret');
+        }
+        $repository = $request->user()->workspaceRepositories()->create($attributes);
 
         return redirect()->route('repositories.show', $repository);
     }
@@ -397,8 +421,8 @@ class RepositoriesController extends Controller
     {
         $this->authorize('update', $repository);
 
-        $providers = $request->user()->providers()->forRepositories()->get();
-        $websites = $request->user()->websites()->readyForDeployments()->get();
+        $providers = $request->user()->workspaceProviders()->forRepositories()->get();
+        $websites = $request->user()->workspaceWebsites()->readyForDeployments()->get();
 
         return view('scenes.repositories.edit', [
             'repository' => $repository,
@@ -417,6 +441,15 @@ class RepositoriesController extends Controller
         $this->authorize('update', $repository);
 
         $validated = $request->validated();
+        $provider = $request->user()->workspaceProviders()->findOrFail($validated['provider_id']);
+        if ($provider->isGitHubApp()) {
+            abort_unless(filled(config('github-app.webhook_secret')), 503, 'GitHub App webhook delivery is not configured.');
+            $validated['webhook_enabled'] = true;
+            $validated['webhook_secret'] = config('github-app.webhook_secret');
+        } elseif ($repository->provider?->isGitHubApp()) {
+            $validated['webhook_enabled'] = false;
+            $validated['webhook_secret'] = null;
+        }
         DB::transaction(function () use ($repository, $validated): void {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
@@ -461,15 +494,18 @@ class RepositoriesController extends Controller
     /**
      * Deploy a repo
      */
-    public function deploy(Repository $repository): RedirectResponse
+    public function deploy(Request $request, Repository $repository, DeploymentRequest $deployments, DeploymentGate $gate): RedirectResponse
     {
         $this->authorize('deploy', $repository);
 
         if (! $repository->isDeploymentReady()) {
             return back()->with('error', 'The website and server must be active before deployment.');
         }
+        if ($reason = $gate->blockReason($repository)) {
+            return back()->with('error', $reason);
+        }
 
-        $build = DB::transaction(function () use ($repository): ?Build {
+        $build = DB::transaction(function () use ($repository, $request, $deployments): ?Build {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             if ((int) $lockedRepository->website_id !== (int) $website->id) {
@@ -483,8 +519,8 @@ class RepositoriesController extends Controller
             $lockedRepository->update(['setup_stage' => 0]);
 
             return $lockedRepository->builds()->create([
-                'status' => Build::STATUS_QUEUED,
                 'trigger_source' => Build::TRIGGER_MANUAL,
+                ...$deployments->attributes($lockedRepository, $request->user()),
             ]);
         });
 
@@ -492,8 +528,10 @@ class RepositoriesController extends Controller
             return back()->with('info', 'A deployment is already in progress');
         }
 
-        PublishRepositoryJob::dispatch($build);
+        $deployments->dispatch($build);
 
-        return back()->with('success', 'Deployment queued');
+        return redirect()->route('builds.show', $build)->with('success', $build->status === Build::STATUS_AWAITING_APPROVAL
+            ? 'Deployment submitted for approval'
+            : 'Deployment queued');
     }
 }

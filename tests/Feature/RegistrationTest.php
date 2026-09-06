@@ -73,7 +73,9 @@ class RegistrationTest extends TestCase
             ->assertDontSee(route('register'));
         $this->get('/')
             ->assertSuccessful()
-            ->assertDontSee(route('register'));
+            ->assertDontSee(route('register'))
+            ->assertSee(route('login'))
+            ->assertSee('Sign in');
     }
 
     public function test_operator_can_explicitly_enable_additional_registration(): void

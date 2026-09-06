@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOrganization;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,10 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class Website extends Model
 {
+    use BelongsToOrganization;
     use HasFactory;
     use SoftDeletes;
 
@@ -78,6 +81,7 @@ class Website extends Model
         'previous_server_id' => 'integer',
         'provisioned_at' => 'datetime',
         'release_retention' => 'integer',
+        'log_retention_lines' => 'integer',
         'setup_stage' => 'integer',
     ];
 
@@ -104,6 +108,28 @@ class Website extends Model
             }
 
             $website->deployment_slug = $slug;
+        });
+
+        static::created(function (Website $website): void {
+            if (Schema::hasTable('website_domains') && ! WebsiteDomain::query()->where('hostname', $website->url)->exists()) {
+                $website->domains()->firstOrCreate(['hostname' => $website->url], [
+                    'created_by' => $website->user_id,
+                    'type' => 'primary',
+                    'dns_status' => 'active',
+                ]);
+            }
+        });
+
+        static::updated(function (Website $website): void {
+            if ($website->wasChanged('url') && Schema::hasTable('website_domains')) {
+                $website->domains()->where('type', 'primary')->update([
+                    'hostname' => $website->url,
+                    'dns_status' => 'pending',
+                    'ssl_status' => 'pending',
+                    'certificate_expires_at' => null,
+                    'last_checked_at' => null,
+                ]);
+            }
         });
     }
 
@@ -132,6 +158,11 @@ class Website extends Model
         return $this->hasMany(Repository::class);
     }
 
+    public function environments(): HasMany
+    {
+        return $this->hasMany(Environment::class);
+    }
+
     public function builds(): HasManyThrough
     {
         return $this->hasManyThrough(Build::class, Repository::class);
@@ -155,6 +186,26 @@ class Website extends Model
     public function healthChecks(): HasMany
     {
         return $this->hasMany(WebsiteHealthCheck::class);
+    }
+
+    public function runtimeLogs(): HasMany
+    {
+        return $this->hasMany(WebsiteLogSnapshot::class);
+    }
+
+    public function domains(): HasMany
+    {
+        return $this->hasMany(WebsiteDomain::class);
+    }
+
+    public function backupSchedules(): HasMany
+    {
+        return $this->hasMany(WebsiteBackupSchedule::class);
+    }
+
+    public function backups(): HasMany
+    {
+        return $this->hasMany(WebsiteBackup::class);
     }
 
     public static function defaultHealthFailureThreshold(): int

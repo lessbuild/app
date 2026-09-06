@@ -1,0 +1,34 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "BuildPusher Control Plane API", "version": "1.0.0", "description": "Automate BuildPusher projects, environments and deployments."},
+  "servers": [{"url": "https://buildpusher.com/api/v1"}],
+  "security": [{"bearerAuth": []}],
+  "paths": {
+    "/me": {"get": {"summary": "Get the current user and workspace", "x-required-scope": "read", "responses": {"200": {"description": "Current identity"}, "401": {"$ref": "#/components/responses/Unauthenticated"}, "403": {"$ref": "#/components/responses/Forbidden"}}}},
+    "/projects": {"get": {"summary": "List projects", "x-required-scope": "read", "responses": {"200": {"description": "Project collection"}}}},
+    "/projects/{project}": {"get": {"summary": "Get a project", "x-required-scope": "read", "parameters": [{"$ref": "#/components/parameters/Project"}], "responses": {"200": {"description": "Project"}, "404": {"description": "Not found"}}}},
+    "/projects/{project}/workflow": {"put": {"summary": "Validate and apply a workflow", "x-required-scope": "manage", "parameters": [{"$ref": "#/components/parameters/Project"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["workflow"], "properties": {"workflow": {"type": "string", "maxLength": 50000}}}}}}, "responses": {"200": {"description": "Workflow applied"}, "422": {"$ref": "#/components/responses/Validation"}}}},
+    "/deployments": {"get": {"summary": "List recent deployments", "x-required-scope": "read", "responses": {"200": {"description": "Deployment collection"}}}},
+    "/deployments/{build}": {"get": {"summary": "Get a deployment", "x-required-scope": "read", "parameters": [{"$ref": "#/components/parameters/Build"}], "responses": {"200": {"description": "Deployment"}, "404": {"description": "Not found"}}}},
+    "/deployments/{build}/log": {"get": {"summary": "Get a deployment log", "x-required-scope": "read", "parameters": [{"$ref": "#/components/parameters/Build"}], "responses": {"200": {"description": "Deployment log"}, "404": {"description": "Not found"}}}},
+    "/deployments/{build}/rollback": {"post": {"summary": "Queue an instant rollback", "x-required-scope": "deploy", "parameters": [{"$ref": "#/components/parameters/Build"}], "responses": {"202": {"description": "Rollback queued"}, "409": {"description": "Release unavailable or another deployment is active"}}}},
+    "/deployments/{build}/promote": {"post": {"summary": "Promote an exact successful revision", "description": "Rebuilds a successful revision using the target environment snapshot while preserving approval and maintenance policies.", "x-required-scope": "deploy", "parameters": [{"$ref": "#/components/parameters/Build"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["target_environment_id"], "properties": {"target_environment_id": {"type": "integer", "minimum": 1}, "promotion_note": {"type": "string", "maxLength": 2000}}}}}}, "responses": {"202": {"description": "Promotion requested"}, "409": {"description": "Promotion is ineligible, blocked, incompatible, or already active"}, "422": {"$ref": "#/components/responses/Validation"}}}},
+    "/environments/{environment}/deploy": {"post": {"summary": "Queue a deployment", "x-required-scope": "deploy", "parameters": [{"$ref": "#/components/parameters/Environment"}], "responses": {"202": {"description": "Deployment accepted"}, "409": {"description": "Locked, outside its window, unavailable, or already deploying"}}}},
+    "/environments/{environment}/scale": {"patch": {"summary": "Change desired replicas", "x-required-scope": "manage", "parameters": [{"$ref": "#/components/parameters/Environment"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["replicas"], "properties": {"replicas": {"type": "integer", "minimum": 1}}}}}}, "responses": {"202": {"description": "Scaling queued"}, "422": {"$ref": "#/components/responses/Validation"}}}},
+    "/environments/{environment}/runtime": {"patch": {"summary": "Hibernate or resume an environment", "x-required-scope": "manage", "parameters": [{"$ref": "#/components/parameters/Environment"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["state"], "properties": {"state": {"type": "string", "enum": ["running", "hibernated"]}}}}}}, "responses": {"202": {"description": "Runtime change queued"}, "422": {"$ref": "#/components/responses/Validation"}}}},
+    "/environments/{environment}/variables": {"put": {"summary": "Replace environment variables", "x-required-scope": "manage", "parameters": [{"$ref": "#/components/parameters/Environment"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["variables"], "properties": {"variables": {"type": "string"}}}}}}, "responses": {"200": {"description": "Variables replaced"}, "422": {"$ref": "#/components/responses/Validation"}}}}
+  },
+  "components": {
+    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer"}},
+    "parameters": {
+      "Project": {"name": "project", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "Build": {"name": "build", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}},
+      "Environment": {"name": "environment", "in": "path", "required": true, "schema": {"type": "integer", "minimum": 1}}
+    },
+    "responses": {
+      "Unauthenticated": {"description": "Missing or invalid token"},
+      "Forbidden": {"description": "Token lacks the required scope"},
+      "Validation": {"description": "Request validation failed"}
+    }
+  }
+}

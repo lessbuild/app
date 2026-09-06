@@ -15,7 +15,7 @@ class SymlinkScript extends BuildProvisioningScript
     /**
      * Description of the script
      */
-    public static string $description = 'Symlink the env file and storage folder';
+    public static string $description = 'Prepare environment and persistent storage before activation';
 
     /**
      * Identifier of the script
@@ -34,7 +34,7 @@ class SymlinkScript extends BuildProvisioningScript
         return <<<SCRIPT
 
             DEPLOY_ROOT={$root}
-            CURRENT_PATH="\$DEPLOY_ROOT/current"
+            CURRENT_PATH="\$DEPLOY_ROOT/setup"
             SHARED_STORAGE="\$DEPLOY_ROOT/shared/storage"
 
             # Seed persistent storage from the first release, then share it.

@@ -10,6 +10,7 @@
         :description="__('Manage deployment targets and review filtered provisioning and health state.')"
     >
         <x-slot:buttons>
+            <a href="{{ route('websites.import.create') }}" class="button secondary">{{ __('Import existing') }}</a>
             <a
                 href="{{ route('websites.create') }}"
                 class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary"
@@ -62,6 +63,12 @@
                 <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="attention" value="1" @checked($filters['attention'])>
                     {{ __('Needs attention only') }}
+                </label>
+            </div>
+            <div class="flex items-end">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
+                    {{ __('Provisioning only') }}
                 </label>
             </div>
         </div>

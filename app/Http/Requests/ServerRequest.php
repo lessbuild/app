@@ -17,7 +17,7 @@ class ServerRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**
@@ -36,7 +36,7 @@ class ServerRequest extends FormRequest
                 'integer',
                 Rule::exists('providers', 'id')->where(function ($query) {
                     return $query
-                        ->where('user_id', $this->user()->id)
+                        ->where('organization_id', $this->user()->current_organization_id)
                         ->whereIn('provider', Provider::SERVER_TYPES)
                         ->whereNull('deleted_at');
                 }),
@@ -54,7 +54,7 @@ class ServerRequest extends FormRequest
                 'integer',
                 'distinct',
                 Rule::exists('recipes', 'id')->where(function ($query) {
-                    return $query->where('user_id', $this->user()->id);
+                    return $query->where('organization_id', $this->user()->current_organization_id);
                 }),
             ],
         ];

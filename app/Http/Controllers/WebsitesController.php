@@ -8,23 +8,33 @@ use App\Http\Responses\PlainTextLogDownload;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\CheckWebsiteHealthJob;
 use App\Jobs\Web\CleanupWebsitePlacementJob;
+use App\Jobs\Web\RefreshWebsiteLogJob;
 use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
+use App\Models\WebsiteLogSnapshot;
+use App\Services\Entitlements;
+use App\Services\PlanLimits;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WebsitesController extends Controller
 {
+    public function __construct(private readonly Entitlements $entitlements) {}
+
     /**
      * List all created websites for the user
      */
@@ -47,7 +57,7 @@ class WebsitesController extends Controller
     }
 
     /**
-     * @param  array{search: ?string, status: ?string, health: ?string, attention: ?string}  $filters
+     * @param  array{search: ?string, status: ?string, health: ?string, attention: ?string, provisioning: ?string}  $filters
      * @return array{total: int, active: int, provisioning: int, failed: int, unhealthy: int, attention: int}
      */
     private function indexMetrics(Request $request, array $filters): array
@@ -135,6 +145,7 @@ class WebsitesController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -158,7 +169,49 @@ class WebsitesController extends Controller
             'repositories' => $repositories,
             'healthChecks' => $retainedHealthChecks->take(20),
             'healthMetrics' => $this->healthMetrics($retainedHealthChecks),
+            'runtimeLogs' => $website->runtimeLogs()->get()->keyBy('type'),
         ]);
+    }
+
+    public function refreshRuntimeLog(Website $website, string $type): RedirectResponse
+    {
+        $this->authorize('update', $website);
+        abort_unless(in_array($type, WebsiteLogSnapshot::TYPES, true), 404);
+        if ($website->provisioning_status !== Website::STATUS_ACTIVE) {
+            return back()->with('info', __('Runtime logs are available after website provisioning completes.'));
+        }
+        $website->runtimeLogs()->updateOrCreate(['type' => $type], [
+            'status' => WebsiteLogSnapshot::STATUS_QUEUED,
+            'error' => null,
+        ]);
+        RefreshWebsiteLogJob::dispatch($website->id, $type);
+
+        return back()->with('success', __('Runtime log refresh queued.'));
+    }
+
+    public function runtimeLog(Website $website, string $type): JsonResponse
+    {
+        $this->authorize('view', $website);
+        abort_unless(in_array($type, WebsiteLogSnapshot::TYPES, true), 404);
+        $snapshot = $website->runtimeLogs()->where('type', $type)->first();
+
+        return response()->json([
+            'status' => $snapshot?->status ?? 'idle',
+            'log' => $snapshot?->log ?? '',
+            'error' => $snapshot?->error,
+            'refreshed_at' => $snapshot?->refreshed_at?->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
+    public function updateLogRetention(Request $request, Website $website): RedirectResponse
+    {
+        $this->authorize('update', $website);
+        $data = $request->validate([
+            'log_retention_lines' => ['required', 'integer', Rule::in([100, 500, 1000, 5000, 10000])],
+        ]);
+        $website->update($data);
+
+        return back()->with('success', __('Log retention updated. Future snapshots will keep the selected number of lines.'));
     }
 
     /**
@@ -295,6 +348,10 @@ class WebsitesController extends Controller
     {
         $result = $request->string('result')->toString();
         $source = $request->string('source')->toString();
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'result' => in_array($result, ['healthy', 'failed'], true) ? $result : null,
@@ -302,8 +359,8 @@ class WebsitesController extends Controller
                 WebsiteHealthCheck::SOURCE_MANUAL,
                 WebsiteHealthCheck::SOURCE_AUTOMATIC,
             ], true) ? $source : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 
@@ -331,12 +388,13 @@ class WebsitesController extends Controller
     /**
      * Show the resource creation form
      */
-    public function create(Request $request): View
+    public function create(Request $request, PlanLimits $limits): View
     {
-        $servers = $request->user()->servers()->readyForWebsites()->get();
+        $servers = $request->user()->workspaceServers()->readyForWebsites()->get();
 
         return view('scenes.websites.create', [
             'servers' => $servers,
+            'planUsage' => $limits->usage($request->user(), 'websites'),
         ]);
     }
 
@@ -347,15 +405,23 @@ class WebsitesController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(WebsiteRequest $request): RedirectResponse
+    public function store(WebsiteRequest $request, PlanLimits $limits): RedirectResponse
     {
         $validated = $request->validated();
+        if ($validated['health_monitoring_enabled']) {
+            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
+        }
 
         $password = Str::random(32);
-        $website = $request->user()->websites()->create(array_merge($validated, [
-            'database_password' => $password,
-            'provisioning_status' => Website::STATUS_QUEUED,
-        ]));
+        $website = $limits->withinLimit(
+            $request->user(),
+            'websites',
+            fn ($organization) => $organization->websites()->create(array_merge($validated, [
+                'user_id' => $request->user()->id,
+                'database_password' => $password,
+                'provisioning_status' => Website::STATUS_QUEUED,
+            ])),
+        );
         session()->flash("website:{$website->id}:mysql_password", $password);
         AddWebsiteJob::dispatch($website);
 
@@ -369,7 +435,7 @@ class WebsitesController extends Controller
     {
         $this->authorize('update', $website);
 
-        $servers = $request->user()->servers()->readyForWebsites()->get();
+        $servers = $request->user()->workspaceServers()->readyForWebsites()->get();
 
         return view('scenes.websites.edit', [
             'servers' => $servers,
@@ -388,6 +454,9 @@ class WebsitesController extends Controller
     {
         $this->authorize('update', $website);
         $validated = $request->validated();
+        if ($validated['health_monitoring_enabled']) {
+            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
+        }
         DB::transaction(function () use ($validated, $website): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if ($locked->hasActiveDeployment()) {
@@ -541,7 +610,7 @@ class WebsitesController extends Controller
             ->with('success', __('Website deletion queued.'));
     }
 
-    /** @return array{search: ?string, status: ?string, health: ?string, attention: ?string} */
+    /** @return array{search: ?string, status: ?string, health: ?string, attention: ?string, provisioning: ?string} */
     private function indexFilters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
@@ -554,19 +623,21 @@ class WebsitesController extends Controller
             'status' => in_array($status, $this->websiteStatuses(), true) ? $status : null,
             'health' => in_array($health, $healthStatuses, true) ? $health : null,
             'attention' => $request->boolean('attention') ? '1' : null,
+            'provisioning' => $request->boolean('provisioning') ? '1' : null,
         ];
     }
 
-    /** @param array{search: ?string, status: ?string, health: ?string, attention: ?string} $filters */
+    /** @param array{search: ?string, status: ?string, health: ?string, attention: ?string, provisioning: ?string} $filters */
     private function filteredWebsites(Request $request, array $filters): HasMany
     {
-        return $request->user()->websites()
+        return $request->user()->workspaceWebsites()
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('name', 'like', "%{$value}%")
-                        ->orWhere('url', 'like', "%{$value}%")
-                        ->orWhere('description', 'like', "%{$value}%");
+                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("url LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['status'], fn ($query, string $value) => $query
@@ -582,7 +653,9 @@ class WebsitesController extends Controller
                     ->where('health_check_enabled', true)
                     ->where('health_status', $value);
             })
-            ->when($filters['attention'], fn ($query) => $query->needsAttention());
+            ->when($filters['attention'], fn ($query) => $query->needsAttention())
+            ->when($filters['provisioning'], fn ($query) => $query
+                ->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES));
     }
 
     /** @return list<string> */

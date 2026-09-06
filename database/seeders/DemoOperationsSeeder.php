@@ -89,6 +89,15 @@ class DemoOperationsSeeder extends Seeder
             'built_at' => now()->subDays(4)->addMinutes(3),
             'created_at' => now()->subDays(4),
         ]);
+        $gitlabRejected = $this->build($gitlab, str_repeat('9', 40), [
+            'status' => Build::STATUS_REJECTED,
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'commit_message' => 'Demo release rejected during approval',
+            'approval_note' => 'Demo rejection: maintenance window was not approved.',
+            'rejected_at' => now()->subDays(3)->subHours(3),
+            'finished_at' => now()->subDays(3)->subHours(3),
+            'created_at' => now()->subDays(3)->subHours(4),
+        ]);
         $gitlabFailed = $this->build($gitlab, str_repeat('d', 40), [
             'status' => Build::STATUS_FAILED,
             'trigger_source' => Build::TRIGGER_WEBHOOK,
@@ -115,6 +124,7 @@ class DemoOperationsSeeder extends Seeder
             'github_redeploy' => $githubRedeploy,
             'gitlab_success' => $gitlabSuccess,
             'gitlab_failed' => $gitlabFailed,
+            'gitlab_rejected' => $gitlabRejected,
             'bitbucket_canceled' => $bitbucketCanceled,
         ];
     }

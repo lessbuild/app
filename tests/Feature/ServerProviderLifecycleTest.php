@@ -13,6 +13,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
+use App\Services\SshHostIdentity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
@@ -65,7 +66,7 @@ class ServerProviderLifecycleTest extends TestCase
         ])->assertRedirect();
 
         $server = Server::query()->sole();
-        $this->assertSame(2468, $server->identifier);
+        $this->assertSame('2468', $server->identifier);
         $this->assertSame('portable-server', $server->name);
         $this->assertSame('New York 1', $server->region);
         $this->assertSame('portable-fingerprint', $server->ssh_fingerprint);
@@ -94,12 +95,23 @@ class ServerProviderLifecycleTest extends TestCase
                 privateIp: '10.0.0.10',
             ));
         $resolver = $this->providerResolver($providerModel, $provider);
+        $hostIdentity = Mockery::mock(SshHostIdentity::class);
+        $hostIdentity->shouldReceive('scan')
+            ->once()
+            ->with('203.0.113.10', 22)
+            ->andReturn([
+                'known_host' => '203.0.113.10 ssh-ed25519 AAAATEST',
+                'fingerprint' => 'SHA256:test-host-key',
+                'algorithm' => 'ssh-ed25519',
+            ]);
 
-        (new InitialiseServerJob($server))->handle(new UpdateServerIpAction($resolver));
+        (new InitialiseServerJob($server))->handle(new UpdateServerIpAction($resolver, $hostIdentity));
 
         $server->refresh();
         $this->assertSame('203.0.113.10', $server->public_ip);
         $this->assertSame('10.0.0.10', $server->private_ip);
+        $this->assertSame('203.0.113.10 ssh-ed25519 AAAATEST', $server->ssh_host_key);
+        $this->assertSame('SHA256:test-host-key', $server->ssh_host_fingerprint);
         $this->assertSame(Server::STATUS_PROVISIONING, $server->provisioning_status);
         $this->assertNull($server->initialization_token);
     }

@@ -137,6 +137,84 @@
         </form>
 
         <x-forms.section
+            :title="__('Two-factor authentication')"
+            :description="__('Require a rotating authenticator code after password or social sign-in.')"
+        >
+            <div class="space-y-5 bg-primary px-4 py-5 sm:p-6">
+                @if (session('two_factor_status'))
+                    <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('two_factor_status') }}</div>
+                @endif
+
+                @if (session('two_factor_recovery_codes'))
+                    <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                        <p class="font-bold">{{ __('Save these one-time recovery codes') }}</p>
+                        <p class="mt-1 text-sm">{{ __('They will not be shown again. Store them somewhere separate from your authenticator app.') }}</p>
+                        <div class="mt-4 grid gap-2 font-mono text-sm sm:grid-cols-2">
+                            @foreach (session('two_factor_recovery_codes') as $recoveryCode)
+                                <code class="rounded bg-white px-3 py-2">{{ $recoveryCode }}</code>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
+                @if (auth()->user()->twoFactorEnabled())
+                    <div class="rounded-xl border border-green-300 bg-green-50 p-4 text-green-800">
+                        <p class="font-bold">{{ __('Two-factor authentication is active') }}</p>
+                        <p class="mt-1 text-sm">{{ __('Every new sign-in requires your authenticator app or an unused recovery code.') }}</p>
+                    </div>
+                    <div class="grid gap-5 lg:grid-cols-2">
+                        <form method="POST" action="{{ route('account.two-factor.recovery-codes') }}" class="space-y-3 rounded-xl border border-primary p-4">
+                            @csrf
+                            <h3 class="font-bold text-primary">{{ __('Replace recovery codes') }}</h3>
+                            @if (auth()->user()->hasLocalPassword())
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" placeholder="{{ __('Current password') }}" required>
+                            @endif
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <button type="submit" class="button primary">{{ __('Generate new codes') }}</button>
+                        </form>
+                        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="space-y-3 rounded-xl border border-red-200 p-4">
+                            @csrf @method('DELETE')
+                            <h3 class="font-bold text-primary">{{ __('Disable two-factor authentication') }}</h3>
+                            @if (auth()->user()->hasLocalPassword())
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" placeholder="{{ __('Current password') }}" required>
+                            @endif
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <button type="submit" class="button secondary text-red-700">{{ __('Disable two-factor') }}</button>
+                        </form>
+                    </div>
+                @elseif (filled(auth()->user()->two_factor_secret))
+                    <div>
+                        <h3 class="font-bold text-primary">{{ __('Connect your authenticator app') }}</h3>
+                        <p class="mt-1 text-sm text-secondary">{{ __('Add this setup key manually, then enter the generated six-digit code.') }}</p>
+                        <code class="mt-3 block break-all rounded-lg bg-secondary p-3 font-mono text-primary">{{ auth()->user()->two_factor_secret }}</code>
+                        <details class="mt-3 text-sm text-secondary"><summary class="cursor-pointer font-semibold text-ternary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded bg-secondary p-3 text-xs">{{ $twoFactorProvisioningUri }}</code></details>
+                    </div>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <form method="POST" action="{{ route('account.two-factor.confirm') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+                            @csrf
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Six-digit code') }}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="input secondary w-full rounded font-mono" required></label>
+                            <button type="submit" class="button primary">{{ __('Confirm and enable') }}</button>
+                        </form>
+                        <form method="POST" action="{{ route('account.two-factor.cancel') }}">@csrf @method('DELETE')
+                            <button type="submit" class="button secondary">{{ __('Cancel setup') }}</button>
+                        </form>
+                    </div>
+                @else
+                    <p class="text-sm leading-6 text-secondary">{{ __('Use any TOTP-compatible authenticator. You will receive eight one-time recovery codes after confirmation.') }}</p>
+                    <form method="POST" action="{{ route('account.two-factor.enable') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        @csrf
+                        @if (auth()->user()->hasLocalPassword())
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" required></label>
+                        @endif
+                        <button type="submit" class="button primary">{{ __('Set up authenticator') }}</button>
+                    </form>
+                @endif
+                <x-forms.errors name="current_password" bag="twoFactor" />
+                <x-forms.errors name="code" bag="twoFactor" />
+            </div>
+        </x-forms.section>
+
+        <x-forms.section
             :title="__('Recent security activity')"
             :description="__('Review recent changes to your profile, credentials, sessions, and connected sign-in methods.')"
         >
@@ -419,6 +497,33 @@
                         @endif
                     </div>
                 @endforeach
+            </div>
+        </x-forms.section>
+
+        <x-forms.section
+            :title="__('Your data and account')"
+            :description="__('Export your information or permanently delete your BuildPusher account.')"
+        >
+            <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
+                <div class="flex flex-col gap-3 rounded-xl border border-primary p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div><h3 class="font-bold text-primary">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-secondary">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
+                    <a href="{{ route('account.export') }}" class="button primary shrink-0">{{ __('Download export') }}</a>
+                </div>
+                <form method="POST" action="{{ route('account.destroy') }}" class="space-y-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                    @csrf @method('DELETE')
+                    <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes BuildPusher control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.') }}</p></div>
+                    <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded" required></label>
+                    @if (auth()->user()->hasLocalPassword())
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" required></label>
+                    @endif
+                    @if (auth()->user()->twoFactorEnabled())
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Authenticator or recovery code') }}</span><input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" required></label>
+                    @endif
+                    <x-forms.errors name="confirmation" bag="deleteAccount" />
+                    <x-forms.errors name="current_password" bag="deleteAccount" />
+                    <x-forms.errors name="code" bag="deleteAccount" />
+                    <button type="submit" class="button secondary text-red-700" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</button>
+                </form>
             </div>
         </x-forms.section>
     </div>

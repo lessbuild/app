@@ -97,6 +97,12 @@
                     {{ __('Latest per repository only') }}
                 </label>
             </div>
+            <div class="flex items-end">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="active" value="1" @checked($filters['active'])>
+                    {{ __('Active deployments only') }}
+                </label>
+            </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Created from') }}</label>
                 <input
@@ -172,9 +178,45 @@
      ! ------------------------------------------------------------
      ! List Builds
      ! ------------------------------------------------------------
-     !-->
+    !-->
     @if(!$builds->isEmpty())
-        <table class="mt-6 min-w-full divide-y divide-primary border-t border-b border-primary">
+        <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 lg:hidden">
+            @foreach($builds as $build)
+                <a href="{{ route('builds.show', $build) }}" class="block min-w-0 w-full rounded-xl border border-primary bg-primary p-4 transition hover:border-secondary">
+                    <div class="flex min-w-0 items-start gap-3">
+                        <x-avatar :name="$build->repository->name" class="h-10 w-10 flex-none rounded-md text-sm" />
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
+                                    <p class="mt-0.5 truncate text-xs text-secondary">{{ $build->repository->website->server->label }}</p>
+                                </div>
+                                <span class="flex-none rounded-full border border-primary px-2 py-1 text-[11px] font-semibold uppercase text-secondary">
+                                    {{ str($build->status)->replace('_', ' ') }}
+                                </span>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-secondary">
+                                <span>{{ ucfirst($build->trigger_source) }}</span>
+                                @if ($build->revision)
+                                    <span class="font-mono">{{ $build->shortRevision() }}</span>
+                                @endif
+                                <span>{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</span>
+                                <span>{{ __('Duration: :duration', ['duration' => $build->durationLabel() ?? __('Not recorded')]) }}</span>
+                            </div>
+                            @if ($build->operator_note)
+                                <p class="mt-3 line-clamp-2 text-xs text-secondary">
+                                    {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
+                                </p>
+                            @endif
+                        </div>
+                        <svg class="mt-1 h-4 w-4 flex-none text-secondary stroke-2">
+                            <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
+                        </svg>
+                    </div>
+                </a>
+            @endforeach
+        </div>
+        <table class="mt-6 hidden min-w-full divide-y divide-primary border-t border-b border-primary lg:table">
             <thead class="bg-primary border-l border-r border-primary">
                 <tr>
                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">

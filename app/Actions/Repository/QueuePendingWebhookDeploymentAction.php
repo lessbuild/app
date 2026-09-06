@@ -2,15 +2,21 @@
 
 namespace App\Actions\Repository;
 
-use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
+use App\Services\DeploymentGate;
+use App\Services\DeploymentRequest;
 use Illuminate\Support\Facades\DB;
 
 class QueuePendingWebhookDeploymentAction
 {
+    public function __construct(
+        private readonly DeploymentRequest $deployments,
+        private readonly DeploymentGate $gate,
+    ) {}
+
     public function handle(Repository $repository): ?Build
     {
         $build = DB::transaction(function () use ($repository): ?Build {
@@ -29,6 +35,9 @@ class QueuePendingWebhookDeploymentAction
                 ->get();
 
             foreach ($pendingRepositories as $locked) {
+                if ($this->gate->blockReason($locked)) {
+                    continue;
+                }
                 $revision = $locked->webhook_pending_revision;
                 $commitMessage = $locked->webhook_pending_commit_message;
                 $locked->update([
@@ -51,10 +60,10 @@ class QueuePendingWebhookDeploymentAction
                     ->lockForUpdate()
                     ->get();
                 $build = $locked->builds()->create([
-                    'status' => Build::STATUS_QUEUED,
                     'trigger_source' => Build::TRIGGER_WEBHOOK,
                     'revision' => $revision,
                     'commit_message' => $commitMessage,
+                    ...$this->deployments->attributes($locked),
                 ]);
                 $latestDelivery = $pendingDeliveries->last();
                 if ($latestDelivery) {
@@ -75,7 +84,7 @@ class QueuePendingWebhookDeploymentAction
         });
 
         if ($build) {
-            DB::afterCommit(fn () => PublishRepositoryJob::dispatch($build));
+            DB::afterCommit(fn () => $this->deployments->dispatch($build));
         }
 
         return $build;

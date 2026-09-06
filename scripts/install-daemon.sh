@@ -54,9 +54,12 @@ fi
 
 set_env_value APP_ENV production
 set_env_value APP_DEBUG false
-set_env_value APP_URL "http://${PUBLIC_IP}:8003"
+set_env_value LOG_CHANNEL stack
+set_env_value LOG_STACK daily
+set_env_value LOG_DAILY_DAYS 14
 set_env_value LOG_LEVEL info
 set_env_value DATABASE_PROHIBIT_DESTRUCTIVE_COMMANDS true
+set_env_value DIAGNOSTIC_SYSTEMD_TIMERS true
 set_env_value SESSION_DRIVER database
 set_env_value SESSION_ENCRYPT true
 
@@ -77,8 +80,8 @@ Wants=network-online.target
 Type=simple
 User=root
 Group=root
-WorkingDirectory=${APP_DIR}
-ExecStart=${PHP_BIN} artisan serve --host=0.0.0.0 --port=8003 --no-reload
+WorkingDirectory=${APP_DIR}/public
+ExecStart=${PHP_BIN} -d expose_php=0 -S 127.0.0.1:8003 ${APP_DIR}/vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
 ExecStartPost=${APP_DIR}/scripts/wait-for-http.sh http://127.0.0.1:8003/api/health 15 1
 Restart=always
 RestartSec=3

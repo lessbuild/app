@@ -23,6 +23,8 @@ class ProviderConnectionTest extends TestCase
             'https://gitlab.com/api/v4/user' => Http::response(['username' => 'owner']),
             'https://api.bitbucket.org/2.0/user' => Http::response(['display_name' => 'Owner']),
             'https://api.digitalocean.com/v2/account' => Http::response(['account' => ['status' => 'active']]),
+            'https://api.hetzner.cloud/v1/servers*' => Http::response(['servers' => []]),
+            'https://api.vultr.com/v2/account' => Http::response(['account' => ['name' => 'owner']]),
         ]);
         $owner = User::factory()->create();
         $providers = [
@@ -30,6 +32,8 @@ class ProviderConnectionTest extends TestCase
             Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
             Provider::TYPE_BITBUCKET => 'https://api.bitbucket.org/2.0/user',
             Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+            Provider::TYPE_HETZNER => 'https://api.hetzner.cloud/v1/servers?per_page=1',
+            Provider::TYPE_VULTR => 'https://api.vultr.com/v2/account',
         ];
 
         foreach ($providers as $type => $url) {
@@ -64,7 +68,7 @@ class ProviderConnectionTest extends TestCase
             });
         }
 
-        Http::assertSentCount(4);
+        Http::assertSentCount(6);
     }
 
     public function test_success_and_failure_feedback_never_exposes_credentials_or_response_bodies(): void

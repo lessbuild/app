@@ -16,8 +16,10 @@ use App\Models\Region;
 use App\Models\Server;
 use App\Models\Size;
 use App\Services\ActivityRecorder;
+use App\Services\PlanLimits;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -50,7 +52,7 @@ class ServersController extends Controller
     }
 
     /**
-     * @param  array{search: ?string, status: ?string}  $filters
+     * @param  array{search: ?string, status: ?string, provisioning: ?string}  $filters
      * @return array{total: int, ready: int, provisioning: int, failed: int, websites: int, latest_at: CarbonInterface|null}
      */
     private function indexMetrics(Request $request, array $filters): array
@@ -73,7 +75,7 @@ class ServersController extends Controller
             'failed' => $this->filteredServers($request, $filters)
                 ->where('provisioning_status', Server::STATUS_FAILED)
                 ->count(),
-            'websites' => $request->user()->websites()->whereIn('server_id', $serverIds)->count(),
+            'websites' => $request->user()->workspaceWebsites()->whereIn('server_id', $serverIds)->count(),
             'latest_at' => $latest?->created_at,
         ];
     }
@@ -138,6 +140,7 @@ class ServersController extends Controller
             fclose($output);
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }
@@ -145,13 +148,13 @@ class ServersController extends Controller
     /**
      * Show the resource creation form
      */
-    public function create(Request $request): View
+    public function create(Request $request, PlanLimits $limits): View
     {
         $types = ServerTypeEnum::cases();
-        $providers = $request->user()->providers()->forServers()->get();
+        $providers = $request->user()->workspaceProviders()->forServers()->get();
         $regions = Region::all();
         $sizes = Size::all();
-        $recipes = $request->user()->recipes()->oldest()->get();
+        $recipes = $request->user()->workspaceRecipes()->oldest()->get();
         $images = [
             'ubuntu-22-04-x64' => 'Ubuntu 22.04 (LTS) x64',
             'ubuntu-20-04-x64' => 'Ubuntu 20.04 x86',
@@ -165,6 +168,7 @@ class ServersController extends Controller
             'sizes' => $sizes,
             'images' => $images,
             'recipes' => $recipes,
+            'planUsage' => $limits->usage($request->user(), 'servers'),
         ]);
     }
 
@@ -211,18 +215,20 @@ class ServersController extends Controller
         SshKeyPair $keypair,
         ServerProviderResolver $providers,
         CreateCloudServerAction $createCloudServer,
+        PlanLimits $limits,
     ): RedirectResponse {
-        $provider = $request->user()->providers()->forServers()->findOrFail($request->integer('provider_id'));
+        $provider = $request->user()->workspaceProviders()->forServers()->findOrFail($request->integer('provider_id'));
         $cloudProvider = $providers->resolve($provider);
 
-        $server = $request->user()->servers()->create([
+        $server = $limits->withinLimit($request->user(), 'servers', fn ($organization) => $organization->servers()->create([
+            'user_id' => $request->user()->id,
             'provider_id' => $provider->id,
             'type' => $request->enum('type', ServerTypeEnum::class),
             'name' => str($request->input('name'))->slug()->limit(31, ''),
             'provisioning_status' => Server::STATUS_QUEUED,
             'ssh_public_key' => $keypair->publicKey(),
             'ssh_private_key' => $keypair->privateKey(),
-        ]);
+        ]));
 
         $recipeAssignments = collect($request->input('recipes', []))
             ->values()
@@ -231,6 +237,8 @@ class ServersController extends Controller
             ]);
         $server->recipes()->sync($recipeAssignments);
         $server->captureProvisioningRecipes();
+
+        $cloudServer = null;
 
         try {
             $sshKey = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);
@@ -261,6 +269,14 @@ class ServersController extends Controller
             InitialiseServerJob::dispatch($server);
         } catch (Throwable $exception) {
             report($exception);
+
+            if ($cloudServer !== null) {
+                try {
+                    $cloudProvider->deleteServer($cloudServer->identifier);
+                } catch (Throwable $cleanupException) {
+                    report($cleanupException);
+                }
+            }
 
             $this->cleanUpSshKey($server, $cloudProvider);
 
@@ -360,7 +376,7 @@ class ServersController extends Controller
         );
     }
 
-    /** @return array{search: ?string, status: ?string} */
+    /** @return array{search: ?string, status: ?string, provisioning: ?string} */
     private function indexFilters(Request $request): array
     {
         $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
@@ -369,25 +385,29 @@ class ServersController extends Controller
         return [
             'search' => $search !== '' ? $search : null,
             'status' => in_array($status, $this->serverStatuses(), true) ? $status : null,
+            'provisioning' => $request->boolean('provisioning') ? '1' : null,
         ];
     }
 
-    /** @param array{search: ?string, status: ?string} $filters */
+    /** @param array{search: ?string, status: ?string, provisioning: ?string} $filters */
     private function filteredServers(Request $request, array $filters): HasMany
     {
-        return $request->user()->servers()
+        return $request->user()->workspaceServers()
             ->when($filters['search'], function ($query, string $value): void {
-                $query->where(function ($query) use ($value): void {
+                $pattern = SqlLike::contains($value);
+                $query->where(function ($query) use ($pattern): void {
                     $query
-                        ->where('display_name', 'like', "%{$value}%")
-                        ->orWhere('name', 'like', "%{$value}%")
-                        ->orWhere('identifier', 'like', "%{$value}%")
-                        ->orWhere('public_ip', 'like', "%{$value}%")
-                        ->orWhere('private_ip', 'like', "%{$value}%");
+                        ->whereRaw("display_name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("identifier LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("public_ip LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("private_ip LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('provisioning_status', $value));
+                ->where('provisioning_status', $value))
+            ->when($filters['provisioning'], fn ($query) => $query
+                ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES));
     }
 
     /** @return list<string> */

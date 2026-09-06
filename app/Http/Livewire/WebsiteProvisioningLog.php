@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use App\Models\Website;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
 class WebsiteProvisioningLog extends Component
@@ -13,7 +14,7 @@ class WebsiteProvisioningLog extends Component
     public function render(): View
     {
         $this->website->refresh();
-        abort_unless((int) auth()->id() === (int) $this->website->user_id, 403);
+        Gate::authorize('view', $this->website);
 
         $log = $this->website->logs()
             ->where('type', Website::PROVISIONING_LOG_TYPE)

@@ -27,25 +27,25 @@ class InstallRedisScript implements ServerScript
      */
     public function script(int $step, Server $server): string
     {
+        $phpVersion = (string) config('lessbuild.default_php_version', '8.4');
         return <<<SCRIPT
         provisionPing {$server->id} {$step}
 
         # Install Redis
         apt_wait
         yes | sudo apt install redis-server
-        yes '' | pecl install -f redis
 
         # Configure Redis
-        sed -i 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf
+        backupManagedFile /etc/redis/redis.conf
+        sed -i -E 's/^bind .*/bind 127.0.0.1 ::1/' /etc/redis/redis.conf
+        sed -i -E 's/^#? *protected-mode .*/protected-mode yes/' /etc/redis/redis.conf
         service redis-server restart
         systemctl enable redis-server
 
-        # Ensure PHPRedis extension is available
-        if pecl list | grep redis >/dev/null 2>&1; then
-            echo "Configuring PHPRedis"
-            echo "extension=redis.so" > /etc/php/8.1/mods-available/redis.ini
+        # Use the distribution package rather than compiling an unpinned PECL release.
+        if [ -d /etc/php/{$phpVersion} ]; then
             apt_wait
-            yes | sudo apt install php8.1-redis
+            yes | sudo apt install php{$phpVersion}-redis
         fi
         SCRIPT;
     }

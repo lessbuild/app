@@ -51,11 +51,16 @@ class InstallCaddyScript implements ServerScript
         # Enable Caddy Service
         sudo systemctl enable --now caddy
 
-        # Add Websites
-        echo "import /etc/caddy/websites/*" > /etc/caddy/Caddyfile
-
         # Make website directory
         mkdir -p /etc/caddy/websites
+
+        # Preserve existing operator configuration and add the managed import once.
+        backupManagedFile /etc/caddy/Caddyfile
+        if [ -s /etc/caddy/Caddyfile ] && [ ! -e /etc/caddy/Caddyfile.pre-buildpusher ]; then
+            cp -a /etc/caddy/Caddyfile /etc/caddy/Caddyfile.pre-buildpusher
+        fi
+        grep -qxF 'import /etc/caddy/websites/*' /etc/caddy/Caddyfile 2>/dev/null || printf '\nimport /etc/caddy/websites/*\n' >> /etc/caddy/Caddyfile
+        caddy validate --config /etc/caddy/Caddyfile
         SCRIPT;
     }
 }

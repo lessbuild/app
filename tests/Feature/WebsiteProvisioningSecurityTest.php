@@ -85,7 +85,7 @@ class WebsiteProvisioningSecurityTest extends TestCase
         $this->assertStringNotContainsString("--password='database-secret'", $databaseScript);
         $this->assertStringContainsString('`portal_touch_tmpname_pwned`', $databaseScript);
         $this->assertStringContainsString('CREATE DATABASE IF NOT EXISTS', $databaseScript);
-        $this->assertSame(2, substr_count($databaseScript, 'ALTER USER'));
+        $this->assertSame(1, substr_count($databaseScript, 'ALTER USER'));
 
         foreach ([$caddyScript, $databaseScript, $environmentScript] as $script) {
             $this->assertStringContainsString('curl --fail --silent --show-error --retry 2', $script);

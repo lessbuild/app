@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/buildpusher"
+config_file="$config_dir/config"
+if [ -f "$config_file" ]; then
+  while IFS='=' read -r key value; do
+    case "$key" in BUILDPUSHER_URL) saved_url="$value" ;; BUILDPUSHER_TOKEN) saved_token="$value" ;; esac
+  done < "$config_file"
+fi
+base_url="${BUILDPUSHER_URL:-${saved_url:-https://buildpusher.com}}"
+token="${BUILDPUSHER_TOKEN:-${saved_token:-}}"
+
+request() {
+  [ -n "$token" ] || { echo "Run: buildpusher login TOKEN [URL]" >&2; exit 1; }
+  method="$1"; path="$2"; shift 2
+  curl --fail-with-body --silent --show-error \
+    -X "$method" -H "Accept: application/json" \
+    -H "Authorization: Bearer $token" "$base_url/api/v1/$path" "$@"
+  printf '\n'
+}
+
+command="${1:-help}"
+case "$command" in
+  login)
+    [ "$#" -ge 2 ] || { echo "Usage: buildpusher login TOKEN [URL]" >&2; exit 2; }
+    mkdir -p "$config_dir"; chmod 700 "$config_dir"
+    { printf 'BUILDPUSHER_URL=%s\n' "${3:-https://buildpusher.com}"; printf 'BUILDPUSHER_TOKEN=%s\n' "$2"; } > "$config_file"
+    chmod 600 "$config_file"; token="$2"; base_url="${3:-https://buildpusher.com}"; request GET me
+    ;;
+  logout) [ ! -f "$config_file" ] || rm "$config_file"; echo "BuildPusher credentials removed." ;;
+  me) request GET me ;;
+  projects) request GET projects ;;
+  deployments) request GET deployments ;;
+  deployment) [ "$#" -eq 2 ] || { echo "Usage: buildpusher deployment ID" >&2; exit 2; }; request GET "deployments/$2" ;;
+  logs) [ "$#" -eq 2 ] || { echo "Usage: buildpusher logs DEPLOYMENT_ID" >&2; exit 2; }; request GET "deployments/$2/log" ;;
+  deploy) [ "$#" -eq 2 ] || { echo "Usage: buildpusher deploy ENVIRONMENT_ID" >&2; exit 2; }; request POST "environments/$2/deploy" ;;
+  rollback) [ "$#" -eq 2 ] || { echo "Usage: buildpusher rollback DEPLOYMENT_ID" >&2; exit 2; }; request POST "deployments/$2/rollback" ;;
+  scale) [ "$#" -eq 3 ] || { echo "Usage: buildpusher scale ENVIRONMENT_ID REPLICAS" >&2; exit 2; }; request PATCH "environments/$2/scale" --data-urlencode "replicas=$3" ;;
+  hibernate|resume) [ "$#" -eq 2 ] || { echo "Usage: buildpusher $command ENVIRONMENT_ID" >&2; exit 2; }; state=hibernated; [ "$command" = resume ] && state=running; request PATCH "environments/$2/runtime" --data-urlencode "state=$state" ;;
+  env-push) [ "$#" -eq 3 ] && [ -f "$3" ] || { echo "Usage: buildpusher env-push ENVIRONMENT_ID .env" >&2; exit 2; }; request PUT "environments/$2/variables" --data-urlencode "variables@$3" ;;
+  apply) [ "$#" -eq 3 ] && [ -f "$3" ] || { echo "Usage: buildpusher apply PROJECT_ID buildpusher.yaml" >&2; exit 2; }; request PUT "projects/$2/workflow" --data-urlencode "workflow@$3" ;;
+  *) echo "BuildPusher CLI: login | logout | me | projects | deployments | deployment ID | logs ID | deploy ENV | rollback ID | scale ENV N | hibernate ENV | resume ENV | env-push ENV FILE | apply PROJECT FILE" ;;
+esac

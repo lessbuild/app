@@ -237,6 +237,7 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertSuccessful()
             ->assertHeader('content-type', 'text/csv; charset=UTF-8')
             ->assertHeader('cache-control', 'no-store, private')
+            ->assertHeader('cache-control', 'no-store, private')
             ->assertHeader('x-content-type-options', 'nosniff');
         $this->assertStringContainsString(
             "attachment; filename=lessbuild-repository-{$repository->id}-webhook-deliveries-",

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Notifications\NotificationInbox;
+use App\Support\DateRange;
+use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -28,7 +30,36 @@ class NotificationsController extends Controller
             'categories' => NotificationInbox::CATEGORIES,
             'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
             'hasReadNotifications' => $user->readNotifications()->exists(),
+            'savedFilters' => $user->preferences['notification_saved_filters'] ?? [],
         ]);
+    }
+
+    public function saveFilter(Request $request): RedirectResponse
+    {
+        $data = $request->validate(['name' => ['required', 'string', 'max:40']]);
+        $filters = $this->filters($request);
+        $preferences = $request->user()->preferences ?? [];
+        $saved = collect($preferences['notification_saved_filters'] ?? [])
+            ->reject(fn (array $filter): bool => mb_strtolower($filter['name']) === mb_strtolower($data['name']))
+            ->take(9)
+            ->values();
+        $saved->prepend(['id' => (string) str()->uuid(), 'name' => $data['name'], 'filters' => array_filter($filters, fn ($value) => $value !== null)]);
+        $preferences['notification_saved_filters'] = $saved->all();
+        $request->user()->update(['preferences' => $preferences]);
+
+        return back()->with('success', __('Notification filter saved.'));
+    }
+
+    public function destroyFilter(Request $request, string $filter): RedirectResponse
+    {
+        $preferences = $request->user()->preferences ?? [];
+        $preferences['notification_saved_filters'] = collect($preferences['notification_saved_filters'] ?? [])
+            ->reject(fn (array $saved): bool => hash_equals((string) $saved['id'], $filter))
+            ->values()
+            ->all();
+        $request->user()->update(['preferences' => $preferences]);
+
+        return back()->with('success', __('Saved filter removed.'));
     }
 
     /**
@@ -142,6 +173,33 @@ class NotificationsController extends Controller
         ));
     }
 
+    public function bulk(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:read,unread,delete'],
+            'notifications' => ['required', 'array', 'min:1', 'max:25'],
+            'notifications.*' => ['required', 'string', 'uuid', 'distinct'],
+        ]);
+
+        $notifications = $request->user()
+            ->notifications()
+            ->whereKey($validated['notifications']);
+
+        $affected = match ($validated['action']) {
+            'read' => $notifications->update(['read_at' => now()]),
+            'unread' => $notifications->update(['read_at' => null]),
+            'delete' => $notifications->delete(),
+        };
+
+        $message = match ($validated['action']) {
+            'read' => trans_choice(':count notification marked as read.|:count notifications marked as read.', $affected, ['count' => $affected]),
+            'unread' => trans_choice(':count notification marked as unread.|:count notifications marked as unread.', $affected, ['count' => $affected]),
+            'delete' => trans_choice(':count notification deleted.|:count notifications deleted.', $affected, ['count' => $affected]),
+        };
+
+        return back()->with('success', $message);
+    }
+
     public function destroy(Request $request, string $notification): RedirectResponse
     {
         $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
@@ -157,14 +215,18 @@ class NotificationsController extends Controller
         $category = $request->string('category')->toString();
         $status = $request->string('status')->toString();
         $state = $request->string('state')->toString();
+        [$dateFrom, $dateTo] = DateRange::normalize(
+            $request->string('date_from')->toString(),
+            $request->string('date_to')->toString(),
+        );
 
         return [
             'search' => $search !== '' ? $search : null,
             'category' => in_array($category, NotificationInbox::CATEGORIES, true) ? $category : null,
             'status' => in_array($status, NotificationInbox::STATUSES, true) ? $status : null,
             'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
-            'date_from' => $this->date($request->string('date_from')->toString()),
-            'date_to' => $this->date($request->string('date_to')->toString()),
+            'date_from' => $dateFrom,
+            'date_to' => $dateTo,
         ];
     }
 
@@ -180,10 +242,15 @@ class NotificationsController extends Controller
             ->when($filters['status'], fn ($query, string $status) => $query
                 ->where('data->status', $status))
             ->when($filters['search'], function ($query, string $search): void {
-                $query->where(function ($query) use ($search): void {
+                $pattern = SqlLike::contains($search);
+                $grammar = $query->getQuery()->getGrammar();
+                $title = $grammar->wrap('data->title');
+                $message = $grammar->wrap('data->message');
+
+                $query->where(function ($query) use ($message, $pattern, $title): void {
                     $query
-                        ->where('data->title', 'like', "%{$search}%")
-                        ->orWhere('data->message', 'like', "%{$search}%");
+                        ->whereRaw("{$title} LIKE ? ESCAPE '!'", [$pattern])
+                        ->orWhereRaw("{$message} LIKE ? ESCAPE '!'", [$pattern]);
                 });
             })
             ->when($filters['date_from'], fn ($query, string $date) => $query

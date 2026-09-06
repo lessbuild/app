@@ -27,7 +27,10 @@ class InstallPHPScript implements ServerScript
      */
     public function script(int $step, Server $server): string
     {
-        $version = '8.1';
+        $version = (string) config('lessbuild.default_php_version', '8.4');
+        if (! preg_match('/\A8\.[2-5]\z/', $version)) {
+            throw new \RuntimeException('The configured PHP version is not supported.');
+        }
 
         return <<<SCRIPT
 

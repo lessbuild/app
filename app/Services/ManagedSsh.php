@@ -9,6 +9,8 @@ class ManagedSsh extends Ssh
 {
     private ?string $temporaryPrivateKey = null;
 
+    private ?string $temporaryKnownHosts = null;
+
     public function usePrivateKeyContents(string $privateKey): self
     {
         $this->close();
@@ -47,6 +49,27 @@ class ManagedSsh extends Ssh
             @unlink($this->temporaryPrivateKey);
             $this->temporaryPrivateKey = null;
         }
+        if ($this->temporaryKnownHosts !== null) {
+            @unlink($this->temporaryKnownHosts);
+            $this->temporaryKnownHosts = null;
+        }
+    }
+
+    public function useKnownHost(string $knownHost): self
+    {
+        $directory = storage_path('app/ssh');
+        if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
+            throw new RuntimeException('Unable to create the temporary SSH directory.');
+        }
+        $path = tempnam($directory, 'hosts-');
+        if ($path === false || file_put_contents($path, trim($knownHost)."\n", LOCK_EX) === false || ! chmod($path, 0600)) {
+            if (is_string($path)) @unlink($path);
+            throw new RuntimeException('Unable to secure the SSH known-hosts file.');
+        }
+        $this->temporaryKnownHosts = $path;
+        $this->addExtraOption('-o StrictHostKeyChecking=yes -o UserKnownHostsFile='.escapeshellarg($path));
+
+        return $this;
     }
 
     public function __destruct()

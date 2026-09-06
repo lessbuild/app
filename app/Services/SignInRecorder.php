@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SignInEvent;
 use App\Models\User;
+use App\Notifications\AccountSecurityNotification;
 use Illuminate\Http\Request;
 use Throwable;
 
@@ -18,12 +19,25 @@ class SignInRecorder
         }
 
         try {
-            return $user->signIns()->create([
+            $ip = $this->clients->normalizedIp($request->ip());
+            $agent = $this->clients->normalizedUserAgent($request->userAgent());
+            $hasHistory = $user->signIns()->exists();
+            $recognized = $hasHistory && $user->signIns()
+                ->where('signed_in_at', '>=', now()->subDays(90))
+                ->where('ip_address', $ip)
+                ->where('user_agent', $agent)
+                ->exists();
+            $event = $user->signIns()->create([
                 'method' => $method,
-                'ip_address' => $this->clients->normalizedIp($request->ip()),
-                'user_agent' => $this->clients->normalizedUserAgent($request->userAgent()),
+                'ip_address' => $ip,
+                'user_agent' => $agent,
                 'signed_in_at' => now(),
             ]);
+            if ($hasHistory && ! $recognized) {
+                $user->notify(new AccountSecurityNotification('A sign-in from a new device or network was recorded. Review sign-in history if this was not you.'));
+            }
+
+            return $event;
         } catch (Throwable $exception) {
             report($exception);
 
