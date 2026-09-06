@@ -21,9 +21,16 @@ class AuditReleaseAcceptanceCommand extends Command
 
     public function handle(ReleaseAcceptance $acceptance): int
     {
-        $project = Project::query()->findOrFail((int) $this->argument('project'));
+        $projectId = filter_var($this->argument('project'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $project = $projectId ? Project::query()->find($projectId) : null;
+        if (! $project) {
+            $this->error('Project must identify an existing project.');
+
+            return self::INVALID;
+        }
+
         $provider = $this->option('provider');
-        if (filled($provider) && ! in_array($provider, Provider::SERVER_TYPES, true)) {
+        if (! filled($provider) || ! in_array($provider, Provider::SERVER_TYPES, true)) {
             $this->error('Provider must be one of: '.implode(', ', Provider::SERVER_TYPES).'.');
 
             return self::INVALID;
@@ -31,24 +38,24 @@ class AuditReleaseAcceptanceCommand extends Command
 
         try {
             $sinceValue = $this->option('since');
-            if (filled($sinceValue) && preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/', (string) $sinceValue) !== 1) {
+            if (! filled($sinceValue) || preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/', (string) $sinceValue) !== 1) {
                 throw new \InvalidArgumentException;
             }
-            $since = filled($sinceValue) ? Carbon::parse((string) $sinceValue)->utc() : null;
+            $since = Carbon::parse((string) $sinceValue)->utc();
         } catch (Throwable) {
             $this->error('Since must be a valid ISO-8601 date and time.');
 
             return self::INVALID;
         }
 
-        $checks = $acceptance->audit($project, $since, $provider ?: null);
+        $checks = $acceptance->audit($project, $since, $provider);
         $passed = collect($checks)->every('passed');
 
         if ($this->option('json')) {
             $this->line((string) json_encode([
                 'status' => $passed ? 'passed' : 'incomplete',
                 'project_id' => $project->id,
-                'provider' => $provider ?: null,
+                'provider' => $provider,
                 'since' => $since?->toIso8601String(),
                 'checks' => $checks,
             ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));

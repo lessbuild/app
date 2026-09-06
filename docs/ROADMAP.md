@@ -2,14 +2,16 @@
 
 Billing activation is intentionally deferred until the product is ready to release.
 
+Independent monitoring configuration and the live paid-provider acceptance drill are deferred until release by user direction. They remain release requirements, but do not block pre-release product development. See [the next development sequence](NEXT_ROADMAP.md).
+
 ## Release foundations
 
 - [x] Responsive visual audit across mobile, tablet, and desktop
 - [x] Full automated feature and unit test baseline
 - [x] Public service-level status with private admin diagnostics
 - [x] Authenticator-app two-factor authentication and single-use recovery codes
-- [ ] Independent uptime monitoring and heartbeat configuration
-- [ ] Repeatable real-provider acceptance test for provision, deploy, rollback, backup, and restore
+- [ ] Independent uptime monitoring and heartbeat configuration — deferred until release
+- [ ] Repeatable real-provider acceptance test for provision, deploy, rollback, backup, and restore — live drill deferred until release
 - [x] Production email readiness diagnostics and operator documentation
 - [x] Privacy policy, terms, account data export, and safe account/workspace deletion
 

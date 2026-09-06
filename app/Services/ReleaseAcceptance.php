@@ -34,66 +34,136 @@ class ReleaseAcceptance
     {
         $server = $environment->server;
         $website = $environment->website;
+        $chain = $this->releaseChain($environment, $since);
+        $initial = $chain['initial'];
+        $second = $chain['second'];
+        $rollback = $chain['rollback'];
+
         $serverReady = $server->provisioning_status === Server::STATUS_ACTIVE
             && filled($server->identifier)
-            && $this->atOrAfter($server->provisioned_at, $since);
+            && $this->between($server->provisioned_at, $since, $initial?->finished_at);
         $websiteReady = $website?->provisioning_status === Website::STATUS_ACTIVE
-            && $this->atOrAfter($website?->provisioned_at, $since);
+            && $this->between($website?->provisioned_at, $since, $initial?->finished_at);
 
-        $builds = Build::query()
-            ->where('environment_id', $environment->id)
-            ->where('status', Build::STATUS_SUCCEEDED)
-            ->when($since, fn ($query) => $query->where('finished_at', '>=', $since));
-        $successfulDeployment = (clone $builds)->where('trigger_source', '!=', Build::TRIGGER_ROLLBACK)->exists();
-        $rollback = (clone $builds)->where('trigger_source', Build::TRIGGER_ROLLBACK)->latest('finished_at')->first();
-        $successfulRollback = $rollback !== null;
-
-        $healthAfter = collect([$since, $rollback?->finished_at])->filter()->sort()->last();
-        $healthy = $website?->health_check_enabled === true
-            && $website->health_status === Website::HEALTH_HEALTHY
-            && $website->healthChecks()
-                ->where('successful', true)
-                ->when($healthAfter, fn ($query) => $query->where('checked_at', '>=', $healthAfter))
-                ->exists();
-
-        $backups = WebsiteBackup::query()
+        $backup = WebsiteBackup::query()
+            ->with('destination')
             ->where('website_id', $website?->id)
             ->where('status', WebsiteBackup::STATUS_SUCCEEDED)
             ->whereNotNull('snapshot_id')
             ->whereNotNull('completed_at')
-            ->when($since, fn ($query) => $query->where('completed_at', '>=', $since));
-        $backupIds = (clone $backups)->pluck('id');
-        $backup = $backupIds->isNotEmpty();
-        $restore = BackupRestore::query()
-            ->whereIn('website_backup_id', $backupIds)
+            ->when($rollback?->finished_at, fn ($query, $finishedAt) => $query->where('completed_at', '>=', $finishedAt))
+            ->when($since, fn ($query) => $query->where('completed_at', '>=', $since))
+            ->oldest('completed_at')
+            ->get()
+            ->first(fn (WebsiteBackup $candidate): bool => preg_match('/\A[a-f0-9]{8,64}\z/D', (string) $candidate->snapshot_id) === 1
+                && $candidate->destination !== null
+                && str_starts_with(strtolower((string) $candidate->destination->endpoint), 'https://')
+                && $this->between($candidate->destination->last_verified_at, $since, $candidate->completed_at));
+
+        $restore = $backup ? BackupRestore::query()
+            ->where('website_backup_id', $backup->id)
             ->where('status', BackupRestore::STATUS_SUCCEEDED)
             ->whereNotNull('completed_at')
-            ->when($since, fn ($query) => $query->where('completed_at', '>=', $since))
-            ->exists();
+            ->where('completed_at', '>=', $backup->completed_at)
+            ->oldest('completed_at')
+            ->first() : null;
+
+        $healthy = $website?->health_check_enabled === true
+            && $website->health_status === Website::HEALTH_HEALTHY
+            && $restore !== null
+            && $website->healthChecks()
+                ->where('successful', true)
+                ->where('checked_at', '>=', $restore->completed_at)
+                ->exists();
 
         return [
             $this->result('Cloud provisioning', $serverReady, 'An active provider-created server has completed provisioning'),
             $this->result('Website provisioning', $websiteReady, 'An application website is active'),
-            $this->result('Deployment', $successfulDeployment, 'A non-rollback deployment completed successfully'),
-            $this->result('Health verification', $healthy, 'An enabled website health check completed successfully'),
-            $this->result('Rollback', $successfulRollback, 'A rollback deployment completed successfully'),
-            $this->result('Offsite backup', $backup, 'A managed website backup completed successfully'),
-            $this->result('Restore drill', $restore, 'A managed backup restore completed successfully'),
+            $this->result('Deployment', $initial !== null && $second !== null, 'Two distinct source revisions deployed successfully in order'),
+            $this->result('Rollback', $rollback !== null, 'The first revision was restored after the second deployment'),
+            $this->result('Offsite backup', $backup !== null, 'A verified HTTPS destination captured a later managed backup'),
+            $this->result('Restore drill', $restore !== null, 'That exact backup was restored after it completed'),
+            $this->result('Health verification', $healthy, 'An enabled website health check passed after the restore'),
         ];
+    }
+
+    /** @return array{initial: ?Build, second: ?Build, rollback: ?Build} */
+    private function releaseChain(Environment $environment, ?Carbon $since): array
+    {
+        $rollbacks = Build::query()
+            ->with('rolledBackFrom')
+            ->where('environment_id', $environment->id)
+            ->where('status', Build::STATUS_SUCCEEDED)
+            ->where('trigger_source', Build::TRIGGER_ROLLBACK)
+            ->whereNotNull('finished_at')
+            ->when($since, fn ($query) => $query->where('finished_at', '>=', $since))
+            ->latest('finished_at')
+            ->get();
+
+        foreach ($rollbacks as $rollback) {
+            $initial = $rollback->rolledBackFrom;
+            if (! $this->validInitialBuild($initial, $environment, $since, $rollback)) {
+                continue;
+            }
+
+            $second = Build::query()
+                ->where('environment_id', $environment->id)
+                ->where('repository_id', $initial->repository_id)
+                ->where('status', Build::STATUS_SUCCEEDED)
+                ->where('trigger_source', '!=', Build::TRIGGER_ROLLBACK)
+                ->whereNotNull('finished_at')
+                ->where('finished_at', '>', $initial->finished_at)
+                ->where('finished_at', '<=', $rollback->finished_at)
+                ->where('revision', '!=', $initial->revision)
+                ->oldest('finished_at')
+                ->first();
+
+            if ($second !== null && $this->validRevision($second->revision)) {
+                return compact('initial', 'second', 'rollback');
+            }
+        }
+
+        return ['initial' => null, 'second' => null, 'rollback' => null];
+    }
+
+    private function validInitialBuild(?Build $initial, Environment $environment, ?Carbon $since, Build $rollback): bool
+    {
+        return $initial !== null
+            && (int) $initial->environment_id === (int) $environment->id
+            && $initial->status === Build::STATUS_SUCCEEDED
+            && $initial->trigger_source !== Build::TRIGGER_ROLLBACK
+            && $this->validRevision($initial->revision)
+            && $initial->finished_at !== null
+            && $this->atOrAfter($initial->finished_at, $since)
+            && $initial->finished_at->lessThan($rollback->finished_at)
+            && hash_equals((string) $initial->revision, (string) $rollback->revision)
+            && filled($rollback->release_name)
+            && filled($rollback->release_path);
+    }
+
+    private function validRevision(?string $revision): bool
+    {
+        return preg_match('/\A[a-f0-9]{40,64}\z/Di', (string) $revision) === 1;
     }
 
     /** @return list<array{name: string, passed: bool, detail: string}> */
     private function missingChecks(): array
     {
         return collect([
-            'Cloud provisioning', 'Website provisioning', 'Deployment', 'Health verification',
-            'Rollback', 'Offsite backup', 'Restore drill',
+            'Cloud provisioning', 'Website provisioning', 'Deployment', 'Rollback',
+            'Offsite backup', 'Restore drill', 'Health verification',
         ])->map(fn (string $name): array => $this->result($name, false, ''))->all();
     }
 
     private function atOrAfter($recordedAt, ?Carbon $since): bool
     {
         return $recordedAt !== null && ($since === null || $recordedAt->greaterThanOrEqualTo($since));
+    }
+
+    private function between($recordedAt, ?Carbon $since, ?Carbon $before): bool
+    {
+        return $this->atOrAfter($recordedAt, $since)
+            && ($before === null || $recordedAt->lessThanOrEqualTo($before));
     }
 
     private function result(string $name, bool $passed, string $successDetail): array
