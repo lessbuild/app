@@ -3,6 +3,7 @@
 
     <div class="mt-6 flex flex-wrap items-start justify-between gap-4">
         <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')" />
+        @if($canManage)<a href="{{ route('projects.configuration.create', $project) }}" class="button secondary">{{ __('Configuration as code') }}</a>@endif
         @if($canManage)<form method="POST" action="{{ route('projects.destroy', $project) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete application') }}</button></form>@endif
     </div>
 

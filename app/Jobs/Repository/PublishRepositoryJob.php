@@ -4,6 +4,8 @@ namespace App\Jobs\Repository;
 
 use App\Actions\Repository\PublishRepositoryAction;
 use App\Models\Build;
+use App\Services\ApplicationConfigurationExecution;
+use App\Services\AutomaticDeploymentRollback;
 use App\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -41,21 +43,22 @@ class PublishRepositoryJob implements ShouldQueue
     public function handle(Runner $runner): void
     {
         $this->build->refresh();
-        $releaseName = $this->build->releaseIdentifier();
-        $releasePath = "/var/www/{$this->build->repository->website->deployment_slug}/releases/{$releaseName}";
-        $started = Build::query()
-            ->whereKey($this->build->id)
-            ->where('status', Build::STATUS_QUEUED)
-            ->update([
-                'status' => Build::STATUS_DEPLOYING,
-                'started_at' => now(),
-                'last_heartbeat_at' => now(),
-                'remote_process_path' => "/tmp/lessbuild-deployment-{$this->build->id}.sh",
-                'failure_message' => null,
-                'release_name' => $releaseName,
-                'release_path' => $releasePath,
-            ]);
-        if ($started === 0) {
+        $started = app(ApplicationConfigurationExecution::class)->claim($this->build);
+        if ($started === null) {
+            $releaseName = $this->build->releaseIdentifier();
+            $releasePath = "/var/www/{$this->build->repository->website->deployment_slug}/releases/{$releaseName}";
+            $started = Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)
+                ->update([
+                    'status' => Build::STATUS_DEPLOYING,
+                    'started_at' => now(),
+                    'last_heartbeat_at' => now(),
+                    'remote_process_path' => "/tmp/lessbuild-deployment-{$this->build->id}.sh",
+                    'failure_message' => null,
+                    'release_name' => $releaseName,
+                    'release_path' => $releasePath,
+                ]) === 1;
+        }
+        if (! $started) {
             return;
         }
 
@@ -99,6 +102,6 @@ class PublishRepositoryJob implements ShouldQueue
             ]);
         });
 
-        app(\App\Services\AutomaticDeploymentRollback::class)->attempt($this->build->fresh());
+        app(AutomaticDeploymentRollback::class)->attempt($this->build->fresh());
     }
 }

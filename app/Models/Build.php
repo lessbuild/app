@@ -70,6 +70,8 @@ class Build extends Model
      */
     protected $guarded = [];
 
+    protected $hidden = ['environment_payload'];
+
     protected $casts = [
         'setup_stage' => 'integer',
         'built_at' => 'datetime',

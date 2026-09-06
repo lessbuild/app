@@ -1,11 +1,9 @@
 <div
-    id="primary-navigation"
+    id="desktop-navigation"
     x-cloak
-    x-trap.inert.noscroll="menu"
     role="navigation"
     aria-label="{{ __('Primary navigation') }}"
-    class="fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-[calc(100vw-3rem)] max-w-xs flex-col overflow-y-auto overscroll-contain border-r border-primary bg-primary pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl lg:block lg:h-screen lg:w-64 lg:shadow-none"
-    :class="{ 'hidden' : menu === false }"
+    class="fixed inset-y-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto overscroll-contain border-r border-primary bg-primary pb-4 lg:block"
     @click="if ($event.target.closest('a')) menu = false"
 >
     <div class="sticky top-0 z-10 mb-4 flex h-14 w-full items-center justify-between border-b border-primary bg-primary px-4">
@@ -14,7 +12,7 @@
         </p>
         <button
             type="button"
-            x-ref="closeNavigation"
+            x-ref="desktopCloseNavigation"
             class="button tertiary lg:hidden"
             aria-label="{{ __('Close navigation') }}"
             @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())"

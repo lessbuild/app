@@ -36,6 +36,7 @@ class DeploymentRequest
             'requested_by' => $requester?->id,
             'risk_assessment' => $this->preflight->assess($repository, $environment),
             'environment_payload' => $environment ? [
+                'base_environment' => (string) $repository->website?->environment,
                 'runtime' => [
                     'minimum_replicas' => $environment->minimum_replicas,
                     'maximum_replicas' => $environment->maximum_replicas,
@@ -67,6 +68,7 @@ class DeploymentRequest
                 'resources' => $environment->resources->map(fn ($resource) => [
                     'name' => $resource->name,
                     'type' => $resource->type,
+                    'is_managed' => $resource->is_managed,
                     'configuration' => $resource->configuration,
                 ])->values()->all(),
             ] : null,

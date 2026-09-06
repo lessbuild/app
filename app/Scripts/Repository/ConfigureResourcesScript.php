@@ -15,7 +15,11 @@ class ConfigureResourcesScript extends BuildProvisioningScript
 
     public function script(int $step, Build $build): string
     {
-        $managedRedis = collect($build->environment_payload['resources'] ?? [])
+        // New snapshots explicitly record management intent. Historical snapshots
+        // retain their existing host/container-based provisioning behavior.
+        $managedResources = collect($build->environment_payload['resources'] ?? [])
+            ->filter(fn (array $resource): bool => ! array_key_exists('is_managed', $resource) || $resource['is_managed'] === true);
+        $managedRedis = $managedResources
             ->contains(fn (array $resource): bool => ($resource['type'] ?? null) === 'redis'
                 && ($resource['configuration']['variables']['REDIS_HOST'] ?? null) === '127.0.0.1');
         $sections = [];
@@ -29,7 +33,7 @@ class ConfigureResourcesScript extends BuildProvisioningScript
         BASH;
         }
 
-        foreach (collect($build->environment_payload['resources'] ?? [])->where('type', 'valkey') as $resource) {
+        foreach ($managedResources->where('type', 'valkey') as $resource) {
             $variables = $resource['configuration']['variables'] ?? [];
             $container = (string) ($resource['configuration']['container_name'] ?? '');
             $port = (int) ($variables['VALKEY_PORT'] ?? 0);
@@ -52,7 +56,7 @@ class ConfigureResourcesScript extends BuildProvisioningScript
             BASH;
         }
 
-        foreach (collect($build->environment_payload['resources'] ?? [])->where('type', 'postgresql') as $resource) {
+        foreach ($managedResources->where('type', 'postgresql') as $resource) {
             if (($resource['configuration']['variables']['DB_HOST'] ?? null) !== '127.0.0.1') {
                 continue;
             }

@@ -23,7 +23,12 @@ class SyncEnvironmentScript extends BuildProvisioningScript
                 $variables[$key] = $value;
             }
         }
-        $contents = app(EnvironmentFile::class)->merge((string) $build->repository->website->environment, $variables);
+        // An explicitly empty snapshot must not pick up later website secrets.
+        // Older builds without this key retain their historical fallback.
+        $base = array_key_exists('base_environment', $payload)
+            ? (string) $payload['base_environment']
+            : (string) $build->repository->website->environment;
+        $contents = app(EnvironmentFile::class)->merge($base, $variables);
         $encoded = escapeshellarg(base64_encode($contents));
         $environmentPath = escapeshellarg('/var/www/'.$build->repository->website->deployment_slug.'/.env');
         $buildVariables = is_array($payload['build_variables'] ?? null) ? $payload['build_variables'] : [];

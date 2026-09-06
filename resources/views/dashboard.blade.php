@@ -1,17 +1,19 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
-        :title="__('Dashboard')"
-        :description="__('A quick view of your infrastructure and latest deployments.')"
-    >
-        <x-slot:buttons>
-            <a href="{{ route('servers.create') }}" class="button primary">
+    <header class="mb-6 flex flex-col gap-5 rounded-xl border border-primary bg-primary px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title">
+        <div class="min-w-0">
+            <p class="text-sm text-secondary">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
+            <h1 id="dashboard-title" class="mt-1 break-words text-2xl font-bold text-primary">{{ auth()->user()->currentOrganization?->name ?: __('Dashboard') }}</h1>
+            <p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
+        </div>
+        <nav class="flex shrink-0 flex-wrap gap-2" aria-label="{{ __('Dashboard quick actions') }}">
+            <a href="{{ route('servers.create') }}" class="button secondary">
                 {{ __('Create server') }}
             </a>
             <a href="{{ route('websites.create') }}" class="button primary">
                 {{ __('Add website') }}
             </a>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </nav>
+    </header>
 
     <details class="mb-6 rounded-xl border border-primary bg-primary p-4">
         <summary class="cursor-pointer font-bold text-primary">{{ __('Customize dashboard') }}</summary>

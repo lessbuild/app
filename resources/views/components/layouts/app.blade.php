@@ -3,7 +3,7 @@
         {{ __('Skip to main content') }}
     </a>
     <div
-        class="flex flex-wrap overflow-x-hidden"
+        class="flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
         x-data="{ menu: false, palette: false, paletteQuery: '', paletteIndex: 0 }"
         @keydown.escape.window="if (palette) { palette = false; $nextTick(() => $refs.paletteToggle?.focus()) } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
         @keydown.window.prevent.cmd.k="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"
@@ -24,6 +24,7 @@
             @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())"
         ></button>
         <x-layouts.sidebar />
+        <x-layouts.mobile-navigation />
 
         <!--
          ! ------------------------------------------------------------
@@ -31,26 +32,15 @@
          ! ------------------------------------------------------------
          !-->
         <main id="main-content" tabindex="-1" class="min-w-0 w-full bg-secondary pl-0 lg:pl-64 min-h-screen">
-            <div class="sticky top-0 z-30 bg-primary">
-                <div class="w-full h-14 px-6 border-b border-primary flex items-center justify-between">
+            <div class="sticky top-0 z-30 bg-gray-800 text-gray-100">
+                <div class="flex h-16 items-center justify-between px-4 lg:hidden">
+                    <a href="{{ route('dashboard') }}" class="font-bold text-lg text-white">{{ config('app.name') }}</a>
+                    <button type="button" x-ref="navigationToggle" class="flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-600 bg-gray-700 px-3 text-sm font-semibold text-gray-100 shadow-sm hover:bg-gray-600" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
+                </div>
+                <div class="w-full h-14 px-6 border-b border-gray-700 hidden lg:flex items-center justify-between">
                     <div class="flex items-center gap-3">
-                        <div class="inline-block lg:hidden flex items-center mr-4">
-                            <button
-                                type="button"
-                                x-ref="navigationToggle"
-                                class="button tertiary"
-                                aria-controls="primary-navigation"
-                                :aria-expanded="menu.toString()"
-                                aria-label="{{ __('Toggle navigation') }}"
-                                @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"
-                            >
-                                <svg class="w-4 h-4 text-secondary stroke-2">
-                                    <use xlink:href="/assets/images/icons.svg#menu"></use>
-                                </svg>
-                            </button>
-                        </div>
                         <div class="hidden sm:block">
-                            <button type="button" x-ref="paletteToggle" class="button secondary" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded border border-primary px-1.5 py-0.5 text-[10px] text-secondary">⌘K</kbd></button>
+                            <button type="button" x-ref="paletteToggle" class="inline-flex items-center justify-center rounded border border-gray-600 bg-gray-700 px-3 py-2 text-xs font-medium text-gray-100 hover:bg-gray-600" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded border border-gray-500 px-1.5 py-0.5 text-[10px] text-gray-200">⌘K</kbd></button>
                         </div>
                     </div>
                     <div class="flex items-center relative">
@@ -72,7 +62,7 @@
             </div>
         </main>
 
-        <nav class="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 grid grid-cols-4 overflow-hidden rounded-2xl border border-primary bg-primary p-1 shadow-2xl lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
+        <nav class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
             <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
             <a href="{{ route('projects.create') }}" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('Create') }}</span></a>
             <button type="button" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>

@@ -46,6 +46,32 @@ class DashboardTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('login'));
     }
 
+    public function test_dashboard_has_a_separate_full_screen_mobile_navigation(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
+        $response->assertSuccessful()
+            ->assertSee('id="desktop-navigation"', false)
+            ->assertSee('id="primary-navigation"', false)
+            ->assertSee('x-trap.inert.noscroll="menu"', false)
+            ->assertSee('h-[100dvh]', false)
+            ->assertSee('grid grid-cols-2 gap-2', false)
+            ->assertSee('Search workspace')
+            ->assertSee('Current workspace')
+            ->assertSee('Settings and support');
+        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
+    }
+
+    public function test_navigation_has_a_charcoal_header_and_edge_to_edge_bottom_bar(): void
+    {
+        $this->actingAs(User::factory()->create())->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('sticky top-0 z-30 bg-gray-800 text-gray-100', false)
+            ->assertSee('fixed inset-x-0 bottom-0 z-30 grid grid-cols-4', false)
+            ->assertSee('pb-[calc(.25rem+env(safe-area-inset-bottom))]', false)
+            ->assertSee('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', false)
+            ->assertDontSee('fixed inset-x-3', false);
+    }
+
     public function test_dashboard_shows_only_the_authenticated_users_activity(): void
     {
         Queue::fake();

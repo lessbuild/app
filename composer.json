@@ -17,7 +17,8 @@
         "opcodesio/log-viewer": "^3.24",
         "phpseclib/phpseclib": "^3.0.55",
         "spatie/async": "^1.5",
-        "spatie/ssh": "^1.7"
+        "spatie/ssh": "^1.7",
+        "symfony/yaml": "^7.4.17"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",

@@ -25,6 +25,12 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function (): void {
     Route::get('projects', [ControlPlaneController::class, 'projects']);
     Route::get('projects/{project}', [ControlPlaneController::class, 'project']);
     Route::put('projects/{project}/workflow', [ControlPlaneController::class, 'workflow']);
+    Route::post('projects/{project}/configuration/plan', [ControlPlaneController::class, 'configurationPlan']);
+    Route::post('projects/{project}/configuration/reviews', [ControlPlaneController::class, 'configurationReview']);
+    Route::post('projects/{project}/configuration/reviews/{review}/apply', [ControlPlaneController::class, 'configurationApply']);
+    Route::get('projects/{project}/configuration/applications/{application}', [ControlPlaneController::class, 'configurationApplication']);
+    Route::post('projects/{project}/configuration/applications/{application}/operations/{operation}/cancel', [ControlPlaneController::class, 'configurationCancel']);
+    Route::post('projects/{project}/configuration/applications/{application}/operations/{operation}/retry', [ControlPlaneController::class, 'configurationRetry']);
     Route::get('deployments', [ControlPlaneController::class, 'deployments']);
     Route::get('deployments/{build}', [ControlPlaneController::class, 'deployment']);
     Route::get('deployments/{build}/log', [ControlPlaneController::class, 'deploymentLog']);

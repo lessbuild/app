@@ -1,16 +1,18 @@
 <?php
 
 use App\Actions\Server\CollectServerLogAction;
+use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\AccountDataController;
 use App\Http\Controllers\AccountDeletionController;
-use App\Http\Controllers\AccessRequestController;
 use App\Http\Controllers\ActivityController;
 use App\Http\Controllers\AdminAccessRequestController;
 use App\Http\Controllers\AdminAnalyticsController;
+use App\Http\Controllers\ApplicationConfigurationController;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\AutomationController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BillingController;
+use App\Http\Controllers\BuildPromotionController;
 use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
 use App\Http\Controllers\CommandsController;
@@ -26,6 +28,7 @@ use App\Http\Controllers\ImportWebsiteController;
 use App\Http\Controllers\LoadBalancerController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ObservabilityController;
+use App\Http\Controllers\OperationalIncidentController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\PlatformStatusController;
 use App\Http\Controllers\ProductFeedbackController;
@@ -61,6 +64,7 @@ use App\Models\Website;
 use App\Models\WebsiteLogSnapshot;
 use App\Services\AutomaticDeploymentRollback;
 use App\Services\PreviewDeploymentLifecycle;
+use App\Services\RegistrationAccess;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
 use App\Services\WebsiteProvisioningPlan;
@@ -83,7 +87,7 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 Route::permanentRedirect('favicon.ico', '/favicon.svg');
 Route::get('pricing', fn () => view('scenes.pricing', [
     'plans' => config('billing.plans'),
-    'registrationOpen' => app(\App\Services\RegistrationAccess::class)->allowsNewUser(),
+    'registrationOpen' => app(RegistrationAccess::class)->allowsNewUser(),
 ]))->name('pricing');
 Route::get('request-access', [AccessRequestController::class, 'create'])->name('access-request.create');
 Route::post('request-access', [AccessRequestController::class, 'store'])->middleware('throttle:access-requests')->name('access-request.store');
@@ -192,6 +196,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('verified')->group(function () {
         Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
+        Route::get('projects/{project}/configuration', [ApplicationConfigurationController::class, 'create'])->name('projects.configuration.create');
+        Route::post('projects/{project}/configuration', [ApplicationConfigurationController::class, 'store'])->name('projects.configuration.store');
+        Route::get('projects/{project}/configuration/{review}', [ApplicationConfigurationController::class, 'show'])->name('projects.configuration.review');
+        Route::post('projects/{project}/configuration/{review}/operations/{operation}/cancel', [ApplicationConfigurationController::class, 'cancel'])->name('projects.configuration.cancel');
+        Route::post('projects/{project}/configuration/{review}/operations/{operation}/retry', [ApplicationConfigurationController::class, 'retry'])->name('projects.configuration.retry');
+        Route::post('projects/{project}/configuration/{review}/apply', [ApplicationConfigurationController::class, 'apply'])->name('projects.configuration.apply');
         Route::patch('projects/{project}/previews', [ProjectController::class, 'updatePreviews'])
             ->name('projects.previews.update');
         Route::post('projects/{project}/environments', [EnvironmentController::class, 'store'])->name('environments.store');
@@ -215,7 +225,7 @@ Route::middleware('auth')->group(function () {
         Route::get('system-health/report', [SystemHealthController::class, 'report'])->name('system-health.report');
         Route::get('system-health', SystemHealthController::class)->name('system-health.index');
         Route::get('observability', [ObservabilityController::class, 'index'])->name('observability.index');
-        Route::get('observability/operational-incidents/export', [\App\Http\Controllers\OperationalIncidentController::class, 'export'])->name('observability.operational-incidents.export');
+        Route::get('observability/operational-incidents/export', [OperationalIncidentController::class, 'export'])->name('observability.operational-incidents.export');
         Route::get('domains', [DomainController::class, 'index'])->name('domains.index');
         Route::get('databases', [DatabaseController::class, 'index'])->name('databases.index');
         Route::get('costs', [CostController::class, 'index'])->name('costs.index');
@@ -270,10 +280,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('observability/status-pages/{statusPage}', [ObservabilityController::class, 'destroyStatusPage'])->name('observability.status-pages.destroy');
         Route::post('observability/incidents', [ObservabilityController::class, 'storeIncident'])->name('observability.incidents.store');
         Route::patch('observability/incidents/{incident}', [ObservabilityController::class, 'updateIncident'])->name('observability.incidents.update');
-        Route::post('observability/operational-incidents/{incident}/acknowledge', [\App\Http\Controllers\OperationalIncidentController::class, 'acknowledge'])->name('observability.operational-incidents.acknowledge');
-        Route::patch('observability/operational-incidents/{incident}/assign', [\App\Http\Controllers\OperationalIncidentController::class, 'assign'])->name('observability.operational-incidents.assign');
-        Route::post('observability/operational-incidents/{incident}/notes', [\App\Http\Controllers\OperationalIncidentController::class, 'note'])->name('observability.operational-incidents.notes.store');
-        Route::post('observability/operational-incidents/{incident}/resolve', [\App\Http\Controllers\OperationalIncidentController::class, 'resolve'])->name('observability.operational-incidents.resolve');
+        Route::post('observability/operational-incidents/{incident}/acknowledge', [OperationalIncidentController::class, 'acknowledge'])->name('observability.operational-incidents.acknowledge');
+        Route::patch('observability/operational-incidents/{incident}/assign', [OperationalIncidentController::class, 'assign'])->name('observability.operational-incidents.assign');
+        Route::post('observability/operational-incidents/{incident}/notes', [OperationalIncidentController::class, 'note'])->name('observability.operational-incidents.notes.store');
+        Route::post('observability/operational-incidents/{incident}/resolve', [OperationalIncidentController::class, 'resolve'])->name('observability.operational-incidents.resolve');
         Route::get('search', SearchController::class)->name('search.index');
         Route::get('activity/export', [ActivityController::class, 'export'])
             ->name('activity.export');
@@ -373,7 +383,7 @@ Route::middleware('auth')->group(function () {
             ->name('builds.redeploy');
         Route::post('builds/{build}/approve', [BuildsController::class, 'approve'])
             ->name('builds.approve');
-        Route::post('builds/{build}/promote', \App\Http\Controllers\BuildPromotionController::class)->name('builds.promote');
+        Route::post('builds/{build}/promote', BuildPromotionController::class)->name('builds.promote');
         Route::post('builds/{build}/reject', [BuildsController::class, 'reject'])
             ->name('builds.reject');
         Route::post('builds/{build}/rollback', [BuildsController::class, 'rollback'])

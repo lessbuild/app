@@ -326,7 +326,14 @@ class LocalUiAssetTest extends TestCase
                 $html,
                 "The {$routeName} sidebar link was not marked as the current page.",
             );
-            $this->assertSame(1, substr_count($html, 'aria-current="page"'));
+            $dom = new \DOMDocument;
+            @$dom->loadHTML($html);
+            $xpath = new \DOMXPath($dom);
+            foreach (['desktop-navigation', 'primary-navigation'] as $navigation) {
+                $current = $xpath->query('//*[@id="'.$navigation.'"]//a[@aria-current="page"]');
+                $this->assertCount(1, $current, "The {$navigation} menu must mark exactly one current destination.");
+                $this->assertSame($url, $current->item(0)->getAttribute('href'));
+            }
         }
     }
 

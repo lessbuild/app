@@ -10,8 +10,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnforceOrganizationSecurity;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Models\Build;
+use App\Models\ConfigurationApplication;
+use App\Models\ConfigurationOperation;
+use App\Models\ConfigurationReview;
 use App\Models\Environment;
 use App\Models\Project;
+use App\Services\ApplicationConfigurationCancellation;
+use App\Services\ApplicationConfigurationPlanner;
+use App\Services\ApplicationConfigurationReconciler;
+use App\Services\ApplicationConfigurationResults;
+use App\Services\ApplicationConfigurationRetries;
+use App\Services\ApplicationConfigurationReviews;
 use App\Services\DeploymentLauncher;
 use App\Services\Entitlements;
 use App\Services\WorkflowConfiguration;
@@ -147,6 +156,87 @@ class ControlPlaneController extends Controller
         $workflow->apply($project, $data['workflow'], $request->user()->id);
 
         return response()->json(['data' => ['status' => 'applied']]);
+    }
+
+    public function configurationPlan(Request $request, Project $project, ApplicationConfigurationPlanner $planner): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('update', $project);
+        $data = $request->validate(['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present', 'array:placements,secrets,repositories']]);
+
+        return response()->json(['data' => $planner->plan($project, $request->user(), $data['document'], $data['bindings'])]);
+    }
+
+    public function configurationReview(Request $request, Project $project, ApplicationConfigurationReviews $reviews): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('update', $project);
+        $data = $request->validate(['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present', 'array:placements,secrets,repositories']]);
+        $review = $reviews->create($project, $request->user(), $data['document'], $data['bindings']);
+
+        return response()->json(['data' => ['id' => $review->id, 'plan' => $review->summary, 'expires_at' => $review->expires_at->toIso8601String()]], 201);
+    }
+
+    public function configurationApply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('update', $project);
+        abort_unless((int) $review->project_id === (int) $project->id, 404);
+        if ($request->all() !== []) {
+            throw ValidationException::withMessages(['review' => 'Apply accepts only the saved review identity, with no replacement inputs.']);
+        }
+        $application = $reconciler->apply($review, $request->user());
+
+        return response()->json(['data' => $this->configurationApplicationData($application)]);
+    }
+
+    public function configurationApplication(Request $request, Project $project, ConfigurationApplication $application): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('view', $project);
+        abort_unless((int) $application->review->project_id === (int) $project->id, 404);
+        abort_unless($project->organization->permits($request->user(), 'manage'), 403);
+
+        return response()->json(['data' => $this->configurationApplicationData($application)]);
+    }
+
+    public function configurationCancel(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('view', $project);
+        abort_unless((int) $application->review->project_id === (int) $project->id, 404);
+        abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
+        if ($request->all() !== []) {
+            throw ValidationException::withMessages(['operation' => 'Cancel accepts only the operation identity.']);
+        }
+        $cancellation->cancel($operation, $request->user());
+
+        return response()->json(['data' => $this->configurationApplicationData($application)]);
+    }
+
+    public function configurationRetry(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): JsonResponse
+    {
+        $this->api($request, 'manage');
+        $this->authorize('view', $project);
+        abort_unless((int) $application->review->project_id === (int) $project->id, 404);
+        abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
+        if ($request->all() !== []) {
+            throw ValidationException::withMessages(['operation' => 'Retry accepts only the failed operation identity, with no replacement inputs.']);
+        }
+        $retry = $retries->retry($operation, $request->user());
+
+        return response()->json(['data' => $this->configurationApplicationData($application), 'retry_operation_id' => $retry->id]);
+    }
+
+    private function configurationApplicationData(ConfigurationApplication $application): array
+    {
+        $application = app(ApplicationConfigurationResults::class)->refresh($application);
+
+        return ['id' => $application->id, 'review_id' => $application->configuration_review_id,
+            'status' => $application->status, 'locally_applied_at' => $application->locally_applied_at?->toIso8601String(),
+            'operations' => $application->relatedOperations()->orderBy('id')->get()->map(fn ($operation) => $operation->only([
+                'id', 'environment_slug', 'kind', 'status', 'build_id', 'attempts', 'failure_code', 'completed_at', 'retry_of_operation_id', 'retry_sequence',
+            ]))->all()];
     }
 
     public function variables(Request $request, Environment $environment): JsonResponse
