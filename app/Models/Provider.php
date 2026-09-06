@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Scopes\ProviderScopes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +16,7 @@ class Provider extends Model
 {
     use BelongsToOrganization;
     use HasFactory;
+    use ProviderScopes;
     use SoftDeletes;
 
     protected $attributes = [
@@ -104,75 +105,67 @@ class Provider extends Model
         'connection_failure_count' => 'integer',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<Server, $this> */
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class);
     }
 
+    /** @return HasMany<Repository, $this> */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
+    /** @return HasMany<WebsiteDomain, $this> */
     public function domains(): HasMany
     {
         return $this->hasMany(WebsiteDomain::class, 'dns_provider_id');
     }
 
+    /** @return HasMany<ProviderConnectionCheck, $this> */
     public function connectionChecks(): HasMany
     {
         return $this->hasMany(ProviderConnectionCheck::class);
     }
 
+    /** @return MorphMany<Event, $this> */
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
-    public function scopeForServers(Builder $query): Builder
-    {
-        return $query->whereIn('provider', self::SERVER_TYPES);
-    }
-
-    public function scopeForRepositories(Builder $query): Builder
-    {
-        return $query->whereIn('provider', self::SOURCE_CONTROL_TYPES);
-    }
-
-    public function scopeInUse(Builder $query): Builder
-    {
-        return $query->where(function (Builder $query): void {
-            $query->whereHas('servers')->orWhereHas('repositories')->orWhereHas('domains');
-        });
-    }
-
-    public function scopeUnused(Builder $query): Builder
-    {
-        return $query->whereDoesntHave('servers')->whereDoesntHave('repositories')->whereDoesntHave('domains');
-    }
-
-    public function scopeConnectionState(Builder $query, string $status): Builder
-    {
-        return $status === self::CONNECTION_UNCHECKED
-            ? $query->whereNull('connection_status')
-            : $query->where('connection_status', $status);
-    }
-
+    /**
+     * Determine whether this provider supplies source control repositories.
+     *
+     * @return bool Whether the provider type supports repository access.
+     */
     public function isSourceControl(): bool
     {
         return in_array($this->provider, self::SOURCE_CONTROL_TYPES, true);
     }
 
+    /**
+     * Check that GitHub App authentication has a recorded installation identity.
+     *
+     * @return bool Whether the provider represents a configured GitHub App installation.
+     */
     public function isGitHubApp(): bool
     {
         return $this->provider === self::TYPE_GITHUB && $this->credential_type === 'app' && filled($this->external_id);
     }
 
+    /**
+     * Resolve the supported source control host for this provider type.
+     *
+     * @return ?string The canonical host, or null for non-source-control providers.
+     */
     public function repositoryHost(): ?string
     {
         return match ($this->provider) {
@@ -183,6 +176,11 @@ class Provider extends Model
         };
     }
 
+    /**
+     * Resolve the username required for token-based Git HTTPS authentication.
+     *
+     * @return ?string The token username, or null for non-source-control providers.
+     */
     public function repositoryCredentialUsername(): ?string
     {
         return match ($this->provider) {
@@ -193,6 +191,12 @@ class Provider extends Model
         };
     }
 
+    /**
+     * Check the normalized repository path against this provider's canonical host.
+     *
+     * @param  string  $url  The repository path in host/owner/repository format.
+     * @return bool Whether the path belongs to this source control provider.
+     */
     public function supportsRepositoryUrl(string $url): bool
     {
         $host = $this->repositoryHost();
@@ -200,16 +204,31 @@ class Provider extends Model
         return $host !== null && str_starts_with(strtolower($url), $host.'/');
     }
 
+    /**
+     * Check for attached infrastructure, source repositories, or DNS domains.
+     *
+     * @return bool Whether any supported resource is attached.
+     */
     public function hasAttachedResources(): bool
     {
         return $this->servers()->exists() || $this->repositories()->exists() || $this->domains()->exists();
     }
 
+    /**
+     * Resolve the last known connection state for historical unchecked records.
+     *
+     * @return string The recorded state, or unchecked when no result exists.
+     */
     public function connectionHealth(): string
     {
         return $this->connection_status ?? self::CONNECTION_UNCHECKED;
     }
 
+    /**
+     * Resolve the configured provider monitoring interval against supported values.
+     *
+     * @return int The configured interval in minutes, or the application default.
+     */
     public static function defaultConnectionCheckInterval(): int
     {
         $configured = (int) config('lessbuild.provider_health_interval_minutes');
@@ -219,6 +238,11 @@ class Provider extends Model
             : self::DEFAULT_CONNECTION_CHECK_INTERVAL_MINUTES;
     }
 
+    /**
+     * Resolve the configured failure threshold against supported monitoring values.
+     *
+     * @return int The configured threshold, or the application default.
+     */
     public static function defaultConnectionFailureThreshold(): int
     {
         $configured = (int) config('lessbuild.provider_health_failure_threshold');
@@ -228,6 +252,18 @@ class Provider extends Model
             : self::DEFAULT_CONNECTION_FAILURE_THRESHOLD;
     }
 
+    /**
+     * Persist a connection result only while the checked credentials and health state are current.
+     *
+     * @param  bool  $successful  Whether the connection check succeeded.
+     * @param  string  $providerType  The provider type observed before the check.
+     * @param  string  $encryptedToken  The stored ciphertext observed before the check.
+     * @param  ?string  $previousCheckedAt  The prior check timestamp, or null for an unchecked provider.
+     * @param  int  $previousFailureCount  The failure count observed before the check.
+     * @param  int  $failureThreshold  The configured failure threshold observed before the check.
+     * @param  bool  $automatic  Whether monitoring must still be enabled when the result is saved.
+     * @return bool Whether the unchanged provider accepted this result.
+     */
     public function recordConnectionResult(
         bool $successful,
         string $providerType,
@@ -290,6 +326,7 @@ class Provider extends Model
         return $recorded;
     }
 
+    /** Clear saved connection state after credentials change without updating modification time. */
     public function resetConnectionHealth(): void
     {
         static::withoutTimestamps(function (): void {

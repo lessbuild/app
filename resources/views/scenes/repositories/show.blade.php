@@ -56,7 +56,7 @@
     </x-layouts.partials.heading>
 
     @if (! $deploymentReady)
-        <div class="my-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="my-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
         </div>
     @endif
@@ -125,18 +125,18 @@
                 type="text"
                 readonly
                 value="{{ route('webhooks.repositories.receive', $repository) }}"
-                class="input secondary mt-1 w-full rounded font-mono text-sm"
+                class="input secondary mt-1 w-full rounded-sm font-mono text-sm"
             >
         </div>
 
         @if ($oneTimeWebhookSecret)
-            <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-900">
+            <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-900">
                 <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
                 <input
                     type="text"
                     readonly
                     value="{{ $oneTimeWebhookSecret }}"
-                    class="input secondary mt-2 w-full rounded font-mono text-sm"
+                    class="input secondary mt-2 w-full rounded-sm font-mono text-sm"
                 >
             </div>
         @endif
@@ -170,7 +170,7 @@
                             required
                             autocomplete="off"
                             placeholder="whsec_…"
-                            class="input secondary rounded"
+                            class="input secondary rounded-sm"
                         >
                         <x-forms.errors name="signing_token" />
                     </div>
@@ -208,7 +208,7 @@
                 <form method="GET" action="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="flex flex-wrap items-end gap-2">
                     <div>
                         <label for="delivery_status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                        <select id="delivery_status" name="delivery_status" class="input secondary mt-1 rounded">
+                        <select id="delivery_status" name="delivery_status" class="input secondary mt-1 rounded-sm">
                             <option value="">{{ __('All statuses') }}</option>
                             @foreach ($deliveryStatuses as $status)
                                 <option value="{{ $status }}" @selected($deliveryFilters['delivery_status'] === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
@@ -222,7 +222,7 @@
                             name="delivery_date_from"
                             type="date"
                             value="{{ $deliveryFilters['delivery_date_from'] }}"
-                            class="input secondary mt-1 rounded"
+                            class="input secondary mt-1 rounded-sm"
                         >
                     </div>
                     <div>
@@ -232,7 +232,7 @@
                             name="delivery_date_to"
                             type="date"
                             value="{{ $deliveryFilters['delivery_date_to'] }}"
-                            class="input secondary mt-1 rounded"
+                            class="input secondary mt-1 rounded-sm"
                         >
                     </div>
                     <button type="submit" class="button primary">{{ __('Apply') }}</button>
@@ -272,7 +272,7 @@
 
             <div id="webhook-deliveries" class="mt-4">
                 @if ($webhookDeliveries->isEmpty())
-                    <p class="rounded border border-primary p-4 text-sm text-secondary">
+                    <p class="rounded-sm border border-primary p-4 text-sm text-secondary">
                         {{ array_filter($deliveryFilters, fn ($value) => $value !== null) ? __('No webhook deliveries match these filters.') : __('No webhook deliveries have been accepted yet.') }}
                     </p>
                 @else
@@ -360,7 +360,7 @@
                 {{ __('URL') }}
             </span>
             <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-sm cursor-pointer">
+                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
                     {{ $repository->url }}
                 </div>
             </div>

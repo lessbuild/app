@@ -17,6 +17,13 @@ class ServerImportAssessment extends Model
         'consumed_at' => 'datetime',
     ];
 
+    /**
+     * Validate import assessment ownership, workspace, expiry, and secret token.
+     *
+     * @param  User  $user  The account attempting to consume the assessment.
+     * @param  string  $token  The plaintext token whose digest is compared in constant time.
+     * @return bool Whether the unconsumed assessment is usable by this account.
+     */
     public function isUsableBy(User $user, string $token): bool
     {
         return $this->user_id === $user->id

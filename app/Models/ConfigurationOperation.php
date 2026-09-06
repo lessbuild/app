@@ -21,21 +21,25 @@ class ConfigurationOperation extends Model
         'completed_at' => 'datetime',
     ];
 
+    /** @return HasOne<ConfigurationOperation, $this> */
     public function retry(): HasOne
     {
         return $this->hasOne(self::class, 'retry_of_operation_id');
     }
 
+    /** @return BelongsTo<ConfigurationApplication, $this> */
     public function application(): BelongsTo
     {
         return $this->belongsTo(ConfigurationApplication::class, 'configuration_application_id');
     }
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return BelongsTo<Build, $this> */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);

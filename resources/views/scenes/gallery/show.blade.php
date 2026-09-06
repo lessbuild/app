@@ -37,7 +37,7 @@
     </x-layouts.partials.heading>
 
     @if (session('status'))
-        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
     @endif
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -65,7 +65,7 @@
 
     @if ($installedRecipe)
         <div @class([
-            'mt-6 rounded border p-4 text-sm',
+            'mt-6 rounded-sm border p-4 text-sm',
             'border-yellow-300 bg-yellow-50 text-yellow-800' => $installedRecipe->hasGalleryUpdate(),
             'border-green-300 bg-green-50 text-green-800' => ! $installedRecipe->hasGalleryUpdate(),
         ])>
@@ -92,7 +92,7 @@
                     @csrf
                     <div>
                         <label for="rating" class="block text-xs font-semibold uppercase text-secondary">{{ __('Your rating') }}</label>
-                        <select id="rating" name="rating" class="input secondary mt-1 rounded" required>
+                        <select id="rating" name="rating" class="input secondary mt-1 rounded-sm" required>
                             <option value="">{{ __('Choose a score') }}</option>
                             @foreach ([5, 4, 3, 2, 1] as $score)
                                 <option value="{{ $score }}" @selected((int) old('rating', $currentRating?->rating) === $score)>
@@ -144,7 +144,7 @@
                 @endif
                 <div class="mt-4 space-y-3">
                     @foreach ($recentReports as $report)
-                        <article class="rounded border border-primary bg-secondary p-4">
+                        <article class="rounded-sm border border-primary bg-secondary p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-sm font-semibold text-primary">{{ str($report->reason)->headline() }}</span>
@@ -158,7 +158,7 @@
                             </div>
                             <p class="mt-2 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
                             @if ($report->resolved_at && $report->resolution_note)
-                                <div class="mt-3 rounded border border-green-200 bg-green-50 p-3">
+                                <div class="mt-3 rounded-sm border border-green-200 bg-green-50 p-3">
                                     <p class="text-xs font-semibold uppercase text-green-700">{{ __('Resolution note') }}</p>
                                     <p class="mt-1 whitespace-pre-line text-sm text-green-800">{{ $report->resolution_note }}</p>
                                 </div>
@@ -169,7 +169,7 @@
                                     @method('PATCH')
                                     <div>
                                         <label for="resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note (optional)') }}</label>
-                                        <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
+                                        <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
                                     </div>
                                     <button type="submit" class="button secondary">{{ __('Mark Resolved') }}</button>
                                 </form>
@@ -179,7 +179,7 @@
                                     @method('PATCH')
                                     <div>
                                         <label for="edit_resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note') }}</label>
-                                        <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
+                                        <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
                                         <p class="mt-1 text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
                                         <x-forms.errors name="resolution_note" />
                                     </div>
@@ -204,7 +204,7 @@
             </p>
             @if ($currentReport)
                 <p @class([
-                    'mt-3 rounded border p-3 text-sm',
+                    'mt-3 rounded-sm border p-3 text-sm',
                     'border-red-200 bg-red-50 text-red-700' => $currentReport->resolved_at === null,
                     'border-green-200 bg-green-50 text-green-700' => $currentReport->resolved_at !== null,
                 ])>
@@ -213,7 +213,7 @@
                         : __('The contributor marked your :reason report as resolved. Updating it will reopen it.', ['reason' => str($currentReport->reason)->headline()]) }}
                 </p>
                 @if ($currentReport->resolved_at && $currentReport->resolution_note)
-                    <div class="mt-3 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                    <div class="mt-3 rounded-sm border border-green-200 bg-green-50 p-3 text-sm text-green-800">
                         <p class="font-semibold">{{ __('Contributor resolution note') }}</p>
                         <p class="mt-1 whitespace-pre-line">{{ $currentReport->resolution_note }}</p>
                     </div>
@@ -223,7 +223,7 @@
                 @csrf
                 <div>
                     <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                    <select id="reason" name="reason" class="input secondary mt-1 w-full rounded sm:max-w-xs" required>
+                    <select id="reason" name="reason" class="input secondary mt-1 w-full rounded-sm sm:max-w-xs" required>
                         <option value="">{{ __('Choose an issue') }}</option>
                         @foreach (\App\Models\RecipeReport::REASONS as $reason)
                             <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
@@ -233,7 +233,7 @@
                 </div>
                 <div>
                     <label for="details" class="block text-xs font-semibold uppercase text-secondary">{{ __('Details (optional)') }}</label>
-                    <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
+                    <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
                     <x-forms.errors name="details" />
                 </div>
                 <button type="submit" class="button primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</button>
@@ -254,11 +254,11 @@
     </section>
 
     <section class="mt-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-script-heading">
-        <div class="rounded border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+        <div class="rounded-sm border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
             {{ __('This community script runs as root. Read every command and verify package sources, downloads, and destructive operations before using it.') }}
         </div>
         <h2 id="gallery-script-heading" class="mt-5 text-lg font-bold text-primary">{{ __('Bash script') }}</h2>
-        <pre class="mt-3 overflow-x-auto rounded bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
+        <pre class="mt-3 overflow-x-auto rounded-sm bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
     </section>
 
     <p class="mt-4 text-xs text-secondary">

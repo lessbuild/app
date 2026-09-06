@@ -17,6 +17,7 @@ class PruneAccessRequestsCommand extends Command
         $days = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 30]]);
         if ($days === false) {
             $this->error('Retention days must be an integer of at least 30.');
+
             return self::FAILURE;
         }
 

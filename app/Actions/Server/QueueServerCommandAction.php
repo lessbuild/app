@@ -41,7 +41,7 @@ class QueueServerCommandAction
                 $rerunFrom = $locked->commandExecutions()
                     ->lockForUpdate()
                     ->findOrFail($rerunFromExecutionId);
-                if (! in_array($rerunFrom->status, ServerCommandExecution::TERMINAL_STATUSES, true)) {
+                if ($rerunFrom->statusEnum()?->isTerminal() !== true) {
                     throw ValidationException::withMessages([
                         'command' => __('Only completed commands can be run again.'),
                     ]);

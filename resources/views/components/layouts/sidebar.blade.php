@@ -31,7 +31,7 @@
             maxlength="100"
             value="{{ request()->routeIs('search.index') ? request()->string('q') : '' }}"
             placeholder="{{ __('Search or jump to…') }}"
-            class="input secondary min-w-0 flex-1 rounded"
+            class="input secondary min-w-0 flex-1 rounded-sm"
         >
         <button type="submit" class="button primary">{{ __('Go') }}</button>
     </form>
@@ -244,7 +244,7 @@
 
     <div data-mobile-account class="mx-4 mt-4 border-t border-primary pt-4 lg:hidden">
         <div class="flex min-w-0 items-center gap-3 px-2">
-            <x-avatar :name="auth()->user()->name" class="h-9 w-9 rounded text-xs" />
+            <x-avatar :name="auth()->user()->name" class="h-9 w-9 rounded-sm text-xs" />
             <div class="min-w-0">
                 <p class="truncate text-sm font-semibold text-primary">{{ auth()->user()->name }}</p>
                 <p class="truncate text-xs text-secondary">{{ auth()->user()->email }}</p>

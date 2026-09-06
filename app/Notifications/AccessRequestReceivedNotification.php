@@ -11,7 +11,10 @@ class AccessRequestReceivedNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
-    public function via(object $notifiable): array { return ['mail']; }
+    public function via(object $notifiable): array
+    {
+        return ['mail'];
+    }
 
     public function toMail(object $notifiable): MailMessage
     {

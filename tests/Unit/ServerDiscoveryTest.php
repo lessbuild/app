@@ -35,8 +35,12 @@ class ServerDiscoveryTest extends TestCase
             "uid=0\nos_id=ubuntu\nos_version=24.04\narchitecture=i386\n",
         ] as $output) {
             [$discovery] = $this->discovery($output);
-            try { $discovery->inspect($this->configuration()); $this->fail('Unsafe host was accepted.'); }
-            catch (RuntimeException) { $this->addToAssertionCount(1); }
+            try {
+                $discovery->inspect($this->configuration());
+                $this->fail('Unsafe host was accepted.');
+            } catch (RuntimeException) {
+                $this->addToAssertionCount(1);
+            }
         }
     }
 
@@ -51,7 +55,11 @@ class ServerDiscoveryTest extends TestCase
         $process->shouldReceive('getOutput')->andReturn($output);
         $ssh = Mockery::mock(ManagedSsh::class);
         $capture = (object) ['command' => null];
-        $ssh->shouldReceive('execute')->once()->with(Mockery::on(function ($value) use ($capture) { $capture->command = $value; return true; }))->andReturn($process);
+        $ssh->shouldReceive('execute')->once()->with(Mockery::on(function ($value) use ($capture) {
+            $capture->command = $value;
+
+            return true;
+        }))->andReturn($process);
         $runner = Mockery::mock(Runner::class);
         $runner->shouldReceive('server')->once()->with(Mockery::on(fn (Server $server) => $server->ssh_host_key !== null))->andReturnSelf();
         $runner->shouldReceive('create')->once()->with(false)->andReturn($ssh);

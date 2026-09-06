@@ -63,7 +63,9 @@ class ManagedSsh extends Ssh
         }
         $path = tempnam($directory, 'hosts-');
         if ($path === false || file_put_contents($path, trim($knownHost)."\n", LOCK_EX) === false || ! chmod($path, 0600)) {
-            if (is_string($path)) @unlink($path);
+            if (is_string($path)) {
+                @unlink($path);
+            }
             throw new RuntimeException('Unable to secure the SSH known-hosts file.');
         }
         $this->temporaryKnownHosts = $path;

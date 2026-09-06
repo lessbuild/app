@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Notifications\NotificationInbox;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use App\Support\SqlLike;
 use Carbon\CarbonInterface;
@@ -139,9 +140,9 @@ class NotificationsController extends Controller
         ]);
     }
 
-    public function read(Request $request, string $notification): RedirectResponse
+    public function read(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $this->ensureOwnedNotification($request, $notification);
         $notification->markAsRead();
 
         return redirect(NotificationInbox::destination($notification->data) ?? route('notifications.index'));
@@ -154,9 +155,9 @@ class NotificationsController extends Controller
         return back()->with('success', __('All notifications marked as read.'));
     }
 
-    public function unread(Request $request, string $notification): RedirectResponse
+    public function unread(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $this->ensureOwnedNotification($request, $notification);
         $notification->markAsUnread();
 
         return back()->with('success', __('Notification marked as unread.'));
@@ -200,12 +201,27 @@ class NotificationsController extends Controller
         return back()->with('success', $message);
     }
 
-    public function destroy(Request $request, string $notification): RedirectResponse
+    public function destroy(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $notification = $request->user()->notifications()->whereKey($notification)->firstOrFail();
+        $this->ensureOwnedNotification($request, $notification);
         $notification->delete();
 
         return back()->with('success', __('Notification deleted.'));
+    }
+
+    /**
+     * @param  Request  $request  The authenticated recipient context.
+     * @param  DatabaseNotification  $notification  The route-bound notification.
+     * @return void Reject records for any other recipient or morph type without revealing their existence.
+     */
+    private function ensureOwnedNotification(Request $request, DatabaseNotification $notification): void
+    {
+        $user = $request->user();
+        abort_unless(
+            (string) $notification->notifiable_id === (string) $user->getKey()
+                && $notification->notifiable_type === $user->getMorphClass(),
+            404,
+        );
     }
 
     /** @return array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string} */
@@ -275,12 +291,6 @@ class NotificationsController extends Controller
 
     private function csvCell(string|int|null $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', (string) $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

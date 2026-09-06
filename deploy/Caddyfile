@@ -1,7 +1,7 @@
 buildpusher.com {
 	root * /root/Documents/Codex/2026-08-30/clone-my-repo-work-on-it/deployer/public
 	encode zstd gzip
-	php_fastcgi unix//run/php/php8.3-fpm.sock
+	php_fastcgi unix//run/php/php8.5-fpm.sock
 	file_server
 	header {
 		-Server

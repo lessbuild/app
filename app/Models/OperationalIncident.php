@@ -32,16 +32,19 @@ class OperationalIncident extends Model
         'resolved_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    /** @return HasMany<OperationalIncidentEvent, $this> */
     public function events(): HasMany
     {
         return $this->hasMany(OperationalIncidentEvent::class);

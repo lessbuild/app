@@ -8,7 +8,7 @@
     </x-slot>
 
     @if (session('status') === 'verification-link-sent')
-        <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
             {{ __('A new verification link has been sent.') }}
         </div>
     @endif

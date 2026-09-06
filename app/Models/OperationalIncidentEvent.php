@@ -13,11 +13,13 @@ class OperationalIncidentEvent extends Model
 
     protected $casts = ['message' => 'encrypted', 'metadata' => 'encrypted:array', 'occurred_at' => 'datetime'];
 
+    /** @return BelongsTo<OperationalIncident, $this> */
     public function incident(): BelongsTo
     {
         return $this->belongsTo(OperationalIncident::class, 'operational_incident_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');

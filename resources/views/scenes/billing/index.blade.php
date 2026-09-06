@@ -6,7 +6,7 @@
     @if (session('status'))<div class="mt-6 rounded-xl border border-primary bg-primary p-4 text-secondary">{{ session('status') }}</div>@endif
     @error('plan')<div class="mt-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-900">{{ $message }}</div>@enderror
 
-    <section class="mt-8 overflow-hidden rounded-2xl border border-primary bg-primary shadow-sm">
+    <section class="mt-8 overflow-hidden rounded-2xl border border-primary bg-primary shadow-xs">
         <div class="flex flex-wrap items-center justify-between gap-5 p-6">
             <div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Current workspace plan') }}</p><div class="mt-2 flex flex-wrap items-baseline gap-3"><h2 class="text-3xl font-black text-primary">{{ $plans[$currentPlan]['name'] }}</h2>@if($currentPlan !== 'free')<span class="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary">{{ ucfirst($currentInterval) }}</span>@endif</div>
                 @if($subscription?->onTrial())<p class="mt-2 text-sm text-secondary">{{ __('Trial ends :date.', ['date' => $subscription->trial_ends_at->toFormattedDateString()]) }}</p>@elseif($subscription?->onGracePeriod())<p class="mt-2 text-sm font-semibold text-amber-700">{{ __('Cancels :date.', ['date' => $subscription->ends_at->toFormattedDateString()]) }}</p>@endif
@@ -25,7 +25,7 @@
         @foreach ($plans as $key => $plan)
             @php($shownPrice = $selectedInterval === 'yearly' ? $plan['yearly_price'] : $plan['price'])
             @php($priceId = $plan[$selectedInterval.'_price_id'] ?? null)
-            <article @class(['relative flex flex-col rounded-2xl border bg-primary p-6 shadow-sm', 'border-ternary ring-2 ring-ternary' => $key === 'pro', 'border-primary' => $key !== 'pro'])>
+            <article @class(['relative flex flex-col rounded-2xl border bg-primary p-6 shadow-xs', 'border-ternary ring-2 ring-ternary' => $key === 'pro', 'border-primary' => $key !== 'pro'])>
                 @if($key === 'pro')<span class="absolute -top-3 left-5 rounded-full bg-ternary px-3 py-1 text-xs font-bold uppercase text-white">{{ __('Most popular') }}</span>@endif
                 <h2 class="text-xl font-black text-primary">{{ $plan['name'] }}</h2><p class="mt-2 min-h-12 text-sm text-secondary">{{ $plan['description'] }}</p>
                 <p class="mt-5 text-primary"><span class="text-4xl font-black">${{ $shownPrice }}</span><span class="text-secondary">{{ $shownPrice ? ($selectedInterval === 'yearly' ? __('/year') : __('/month')) : __(' forever') }}</span></p>

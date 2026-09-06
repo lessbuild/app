@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\AccessRequest;
 use App\Notifications\AccessInvitationNotification;
 use App\Services\AccessInvitation;
+use App\Support\CsvCell;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -80,8 +81,6 @@ class AdminAccessRequestController extends Controller
 
     private function csvCell(mixed $value): string
     {
-        $value = str_replace(["\r", "\n"], ' ', (string) $value);
-
-        return preg_match('/^[=+\-@\t]/', $value) ? "'".$value : $value;
+        return CsvCell::singleLine($value);
     }
 }

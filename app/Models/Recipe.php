@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Scopes\RecipeScopes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +15,7 @@ class Recipe extends Model
 {
     use BelongsToOrganization;
     use HasFactory;
+    use RecipeScopes;
 
     public const CATEGORIES = [
         'security',
@@ -49,11 +50,13 @@ class Recipe extends Model
         'source_recipe_id',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsToMany<Server, $this> */
     public function servers(): BelongsToMany
     {
         return $this->belongsToMany(Server::class)
@@ -61,51 +64,48 @@ class Recipe extends Model
             ->orderByPivot('position');
     }
 
+    /** @return BelongsTo<Recipe, $this> */
     public function source(): BelongsTo
     {
         return $this->belongsTo(self::class, 'source_recipe_id');
     }
 
+    /** @return HasMany<Recipe, $this> */
     public function installs(): HasMany
     {
         return $this->hasMany(self::class, 'source_recipe_id');
     }
 
+    /** @return HasMany<RecipeRating, $this> */
     public function ratings(): HasMany
     {
         return $this->hasMany(RecipeRating::class);
     }
 
+    /** @return HasMany<RecipeFavorite, $this> */
     public function favorites(): HasMany
     {
         return $this->hasMany(RecipeFavorite::class);
     }
 
+    /** @return HasMany<RecipeReport, $this> */
     public function reports(): HasMany
     {
         return $this->hasMany(RecipeReport::class);
     }
 
+    /** @return MorphMany<Event, $this> */
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
-    public function scopePublished(Builder $query): Builder
-    {
-        return $query->where('is_published', true)->whereNotNull('published_at');
-    }
-
-    public function scopeInUse(Builder $query): Builder
-    {
-        return $query->whereHas('servers');
-    }
-
-    public function scopeUnused(Builder $query): Builder
-    {
-        return $query->whereDoesntHave('servers');
-    }
-
+    /**
+     * Compare the installed snapshot revision with its gallery source.
+     *
+     * @param  ?self  $source  The source to compare; defaults to the related gallery recipe.
+     * @return bool Whether the source has a newer recorded gallery revision.
+     */
     public function hasGalleryUpdate(?self $source = null): bool
     {
         $source ??= $this->source;

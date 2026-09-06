@@ -17,16 +17,19 @@ class WebsiteBackupSchedule extends Model
         'last_queued_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
+    /** @return BelongsTo<BackupDestination, $this> */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(BackupDestination::class, 'backup_destination_id');
     }
 
+    /** @return HasMany<WebsiteBackup, $this> */
     public function backups(): HasMany
     {
         return $this->hasMany(WebsiteBackup::class);

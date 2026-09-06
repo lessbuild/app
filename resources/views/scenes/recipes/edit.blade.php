@@ -2,14 +2,14 @@
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
     @if (session('status'))
-        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
             {{ session('status') }}
         </div>
     @endif
 
     @if ($recipe->source)
         <div @class([
-            'my-4 rounded border p-4 text-sm',
+            'my-4 rounded-sm border p-4 text-sm',
             'border-yellow-300 bg-yellow-50 text-yellow-800' => $recipe->hasGalleryUpdate(),
             'border-blue-300 bg-blue-50 text-blue-800' => ! $recipe->hasGalleryUpdate(),
         ])>
@@ -35,7 +35,7 @@
             @endif
         </div>
     @elseif ($recipe->source_recipe_id)
-        <div class="my-4 rounded border border-primary bg-secondary p-4 text-sm text-secondary">
+        <div class="my-4 rounded-sm border border-primary bg-secondary p-4 text-sm text-secondary">
             <p class="font-semibold text-primary">{{ __('Gallery source unavailable') }}</p>
             <p class="mt-1">{{ __('The contributor removed or unpublished the source. Your encrypted private snapshot is unchanged and remains editable.') }}</p>
         </div>

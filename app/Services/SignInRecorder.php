@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SignInMethod;
 use App\Models\SignInEvent;
 use App\Models\User;
 use App\Notifications\AccountSecurityNotification;
@@ -12,9 +13,20 @@ class SignInRecorder
 {
     public function __construct(private readonly ClientMetadata $clients) {}
 
-    public function record(User $user, string $method, Request $request): ?SignInEvent
+    /**
+     * Record a recognized authentication method and report new-device activity.
+     *
+     * @param  User  $user  The authenticated account.
+     * @param  SignInMethod|string  $method  A supported method or its persisted value.
+     * @param  Request  $request  The request providing client metadata.
+     * @return SignInEvent|null The recorded event, or null when recording fails.
+     *
+     * @throws \InvalidArgumentException When the method is unsupported.
+     */
+    public function record(User $user, SignInMethod|string $method, Request $request): ?SignInEvent
     {
-        if (! in_array($method, SignInEvent::METHODS, true)) {
+        $method = $method instanceof SignInMethod ? $method : SignInMethod::tryFrom($method);
+        if ($method === null) {
             throw new \InvalidArgumentException('Unsupported sign-in method.');
         }
 
@@ -28,7 +40,7 @@ class SignInRecorder
                 ->where('user_agent', $agent)
                 ->exists();
             $event = $user->signIns()->create([
-                'method' => $method,
+                'method' => $method->value,
                 'ip_address' => $ip,
                 'user_agent' => $agent,
                 'signed_in_at' => now(),

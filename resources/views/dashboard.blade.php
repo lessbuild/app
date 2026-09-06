@@ -99,7 +99,7 @@
         $currentOnboardingStep = collect($onboarding)->search(fn (bool $complete): bool => ! $complete);
     @endphp
     @if (in_array('setup', $dashboardWidgets, true) && $onboardingCompleted < count($onboardingSteps))
-        <section class="mb-12 overflow-hidden rounded-xl border border-blue-300 bg-primary shadow-sm" aria-labelledby="setup-progress-title">
+        <section class="mb-12 overflow-hidden rounded-xl border border-blue-300 bg-primary shadow-xs" aria-labelledby="setup-progress-title">
             <div class="border-b border-primary bg-blue-50 p-5 sm:p-6">
                 <div class="flex flex-wrap items-end justify-between gap-3">
                     <div>
@@ -202,7 +202,7 @@
                 ['status' => \App\Models\Provider::CONNECTION_FAILED, 'label' => __('Failed'), 'count' => $providerHealthCounts['failed'], 'classes' => 'border-red-300 bg-red-50 text-red-800'],
                 ['status' => \App\Models\Provider::CONNECTION_UNCHECKED, 'label' => __('Unchecked'), 'count' => $providerHealthCounts['unchecked'], 'classes' => 'border-primary bg-secondary text-primary'],
             ] as $health)
-                <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="rounded border p-4 {{ $health['classes'] }}">
+                <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="rounded-sm border p-4 {{ $health['classes'] }}">
                     <span class="block text-2xl font-bold">{{ $health['count'] }}</span>
                     <span class="text-sm font-medium">{{ $health['label'] }}</span>
                 </a>
@@ -228,11 +228,11 @@
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3">
-                <div class="rounded border border-amber-200 bg-white p-3">
+                <div class="rounded-sm border border-amber-200 bg-white p-3">
                     <span class="block text-xl font-bold text-amber-900">{{ $provisioningCounts['servers'] }}</span>
                     <span class="text-xs font-semibold uppercase text-amber-700">{{ __('Servers') }}</span>
                 </div>
-                <div class="rounded border border-amber-200 bg-white p-3">
+                <div class="rounded-sm border border-amber-200 bg-white p-3">
                     <span class="block text-xl font-bold text-amber-900">{{ $provisioningCounts['websites'] }}</span>
                     <span class="text-xs font-semibold uppercase text-amber-700">{{ __('Websites') }}</span>
                 </div>
@@ -243,7 +243,7 @@
                     @php($isServer = $resource instanceof \App\Models\Server)
                     <a
                         href="{{ $isServer ? route('servers.show', $resource) : route('websites.show', $resource) }}"
-                        class="flex items-center justify-between gap-4 rounded border border-amber-200 bg-white p-4"
+                        class="flex items-center justify-between gap-4 rounded-sm border border-amber-200 bg-white p-4"
                     >
                         <div>
                             <span class="block font-medium text-primary">{{ $isServer ? $resource->label : $resource->name }}</span>
@@ -285,7 +285,7 @@
                     \App\Models\Build::STATUS_RUNNING => __('Running'),
                     \App\Models\Build::STATUS_TIMING_OUT => __('Timing out'),
                 ] as $status => $label)
-                    <div class="rounded border border-blue-200 bg-white p-3">
+                    <div class="rounded-sm border border-blue-200 bg-white p-3">
                         <span class="block text-xl font-bold text-blue-900">{{ $activeDeploymentCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-blue-700">{{ $label }}</span>
                     </div>
@@ -294,7 +294,7 @@
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($activeDeployments as $build)
-                    <a href="{{ route('builds.show', $build) }}" class="flex items-center justify-between gap-4 rounded border border-blue-200 bg-white p-4">
+                    <a href="{{ route('builds.show', $build) }}" class="flex items-center justify-between gap-4 rounded-sm border border-blue-200 bg-white p-4">
                         <div>
                             <span class="block font-medium text-primary">{{ $build->repository->name }}</span>
                             <span class="mt-1 block text-sm text-secondary">
@@ -343,7 +343,7 @@
                     \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),
                 ] as $status => $label)
-                    <div class="rounded border border-cyan-200 bg-white p-3">
+                    <div class="rounded-sm border border-cyan-200 bg-white p-3">
                         <span class="block text-xl font-bold text-cyan-900">{{ $webhookDeliveryCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-cyan-700">{{ $label }}</span>
                     </div>
@@ -354,7 +354,7 @@
                 @foreach ($recentWebhookDeliveries as $delivery)
                     <a
                         href="{{ route('repositories.show', ['repository' => $delivery->repository, 'delivery_status' => $delivery->status]) }}#webhook-deliveries"
-                        class="flex items-center justify-between gap-4 rounded border border-cyan-200 bg-white p-4"
+                        class="flex items-center justify-between gap-4 rounded-sm border border-cyan-200 bg-white p-4"
                     >
                         <div>
                             <span class="block font-medium text-primary">{{ $delivery->repository->name }}</span>
@@ -396,7 +396,7 @@
                     \App\Models\ServerCommandExecution::STATUS_QUEUED => __('Queued'),
                     \App\Models\ServerCommandExecution::STATUS_RUNNING => __('Running'),
                 ] as $status => $label)
-                    <div class="rounded border border-violet-200 bg-white p-3">
+                    <div class="rounded-sm border border-violet-200 bg-white p-3">
                         <span class="block text-xl font-bold text-violet-900">{{ $activeCommandCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-violet-700">{{ $label }}</span>
                     </div>
@@ -407,7 +407,7 @@
                 @foreach ($activeCommands as $execution)
                     <a
                         href="{{ route('servers.commands.index', ['server' => $execution->server, 'status' => $execution->status]) }}"
-                        class="flex items-center justify-between gap-4 rounded border border-violet-200 bg-white p-4"
+                        class="flex items-center justify-between gap-4 rounded-sm border border-violet-200 bg-white p-4"
                     >
                         <div>
                             <span class="block font-medium text-primary">{{ $execution->server->label }}</span>
@@ -446,15 +446,15 @@
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <a href="{{ route('gallery.reports.index') }}" class="rounded border border-rose-200 bg-white p-3 text-rose-900">
+                <a href="{{ route('gallery.reports.index') }}" class="rounded-sm border border-rose-200 bg-white p-3 text-rose-900">
                     <span class="block text-xl font-bold">{{ $communityReportCount }}</span>
                     <span class="text-xs font-semibold uppercase">{{ __('All needing review') }}</span>
                 </a>
-                <a href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}" class="rounded border border-red-300 bg-red-50 p-3 text-red-900">
+                <a href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}" class="rounded-sm border border-red-300 bg-red-50 p-3 text-red-900">
                     <span class="block text-xl font-bold">{{ $communityReportAttention['security'] }}</span>
                     <span class="text-xs font-semibold uppercase">{{ __('Security reports') }}</span>
                 </a>
-                <a href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}" class="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">
+                <a href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}" class="rounded-sm border border-amber-300 bg-amber-50 p-3 text-amber-900">
                     <span class="block text-xl font-bold">{{ $communityReportAttention['stale'] }}</span>
                     <span class="text-xs font-semibold uppercase">{{ __('Open at least 7 days') }}</span>
                 </a>
@@ -462,7 +462,7 @@
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($reportedGalleryRecipes as $recipe)
-                    <a href="{{ route('gallery.reports.index', ['recipe' => $recipe->id]) }}" class="flex items-center justify-between gap-4 rounded border border-rose-200 bg-white p-4">
+                    <a href="{{ route('gallery.reports.index', ['recipe' => $recipe->id]) }}" class="flex items-center justify-between gap-4 rounded-sm border border-rose-200 bg-white p-4">
                         <div>
                             <span class="block font-medium text-primary">{{ $recipe->name }}</span>
                             <span class="mt-1 block text-sm text-secondary">{{ str($recipe->category)->headline() }}</span>
@@ -500,7 +500,7 @@
                 @foreach ($recipeUpdates as $recipe)
                     @php($installedRecipe = $recipe->installs->first(fn ($copy) => $copy->hasGalleryUpdate($recipe)))
                     @continue($installedRecipe === null)
-                    <div class="rounded border border-orange-200 bg-white p-4">
+                    <div class="rounded-sm border border-orange-200 bg-white p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <span class="block font-medium text-primary">{{ $recipe->name }}</span>
@@ -575,7 +575,7 @@
                     </h3>
                     <div class="space-y-2">
                         @forelse ($attentionWebsites as $website)
-                            <a href="{{ route('websites.show', $website) }}" class="block rounded border border-red-200 bg-white p-3">
+                            <a href="{{ route('websites.show', $website) }}" class="block rounded-sm border border-red-200 bg-white p-3">
                                 <span class="block font-medium text-primary">{{ $website->name }}</span>
                                 <span class="text-sm text-red-700">
                                     @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
@@ -607,7 +607,7 @@
                     </h3>
                     <div class="space-y-2">
                         @forelse ($attentionServers as $server)
-                            <a href="{{ route('servers.show', $server) }}" class="block rounded border border-red-200 bg-white p-3">
+                            <a href="{{ route('servers.show', $server) }}" class="block rounded-sm border border-red-200 bg-white p-3">
                                 <span class="block font-medium text-primary">{{ $server->label }}</span>
                                 <span class="text-sm text-red-700">{{ __('Provisioning failed') }}</span>
                             </a>
@@ -628,7 +628,7 @@
                     </h3>
                     <div class="space-y-2">
                         @forelse ($attentionRepositories as $repository)
-                            <a href="{{ route('builds.show', $repository->latestBuild) }}" class="block rounded border border-red-200 bg-white p-3">
+                            <a href="{{ route('builds.show', $repository->latestBuild) }}" class="block rounded-sm border border-red-200 bg-white p-3">
                                 <span class="block font-medium text-primary">{{ $repository->name }}</span>
                                 <span class="text-sm text-red-700">
                                     {{ __('Latest deployment failed') }}
@@ -654,7 +654,7 @@
                     </h3>
                     <div class="space-y-2">
                         @forelse ($attentionProviders as $provider)
-                            <a href="{{ route('providers.show', $provider) }}" class="block rounded border border-red-200 bg-white p-3">
+                            <a href="{{ route('providers.show', $provider) }}" class="block rounded-sm border border-red-200 bg-white p-3">
                                 <span class="block font-medium text-primary">{{ $provider->name }}</span>
                                 <span class="text-sm text-red-700">
                                     {{ __('Connection failed') }}

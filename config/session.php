@@ -198,4 +198,7 @@ return [
 
     'same_site' => 'lax',
 
+    // JSON avoids object unserialization. Changing this invalidates existing sessions.
+    'serialization' => env('SESSION_SERIALIZATION', 'json'),
+
 ];

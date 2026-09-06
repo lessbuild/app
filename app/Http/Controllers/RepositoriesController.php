@@ -10,6 +10,7 @@ use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
 use App\Services\DeploymentRequest;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use App\Support\SqlLike;
 use Illuminate\Contracts\View\View;
@@ -193,13 +194,7 @@ class RepositoriesController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 
     /**
@@ -210,8 +205,7 @@ class RepositoriesController extends Controller
         Repository $repository,
         DeploymentGate $gate,
         DeploymentPreflight $preflight,
-    ): View
-    {
+    ): View {
         $this->authorize('view', $repository);
         $deliveryFilters = $this->deliveryFilters($request);
 
@@ -400,7 +394,7 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(RepositoryRequest $request)
+    public function store(RepositoryRequest $request): RedirectResponse
     {
         $attributes = $request->validated();
         $provider = $request->user()->workspaceProviders()->findOrFail($attributes['provider_id']);
@@ -436,7 +430,7 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(RepositoryRequest $request, Repository $repository)
+    public function update(RepositoryRequest $request, Repository $repository): RedirectResponse
     {
         $this->authorize('update', $repository);
 
@@ -470,7 +464,7 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function destroy(Repository $repository)
+    public function destroy(Repository $repository): RedirectResponse
     {
         $this->authorize('delete', $repository);
 

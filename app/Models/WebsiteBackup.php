@@ -25,21 +25,25 @@ class WebsiteBackup extends Model
         'https_verified_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
+    /** @return BelongsTo<BackupDestination, $this> */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(BackupDestination::class, 'backup_destination_id');
     }
 
+    /** @return BelongsTo<WebsiteBackupSchedule, $this> */
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(WebsiteBackupSchedule::class, 'website_backup_schedule_id');
     }
 
+    /** @return HasMany<BackupRestore, $this> */
     public function restores(): HasMany
     {
         return $this->hasMany(BackupRestore::class);

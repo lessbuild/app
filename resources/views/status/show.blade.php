@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="robots" content="index,follow">
     <title>{{ $page->name }}</title>
-    @vite(['resources/css/app.scss'])
+    @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-screen bg-secondary text-primary">
 <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -26,7 +26,7 @@
         <section class="mt-8"><h2 class="text-xl font-black">{{ __('Incident and maintenance history') }}</h2><div class="mt-4 space-y-3">@foreach($incidents as $incident)<article class="rounded-xl border border-primary bg-primary p-5"><div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ str($incident->kind)->headline() }} · {{ str($incident->severity)->headline() }}</p><h3 class="mt-1 font-black">{{ $incident->title }}</h3></div><span class="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary">{{ str($incident->status)->headline() }}</span></div><p class="mt-3 whitespace-pre-wrap text-sm text-secondary">{{ $incident->message }}</p><p class="mt-3 text-xs text-secondary">{{ $incident->starts_at->utc()->format('M j, Y H:i').' UTC' }}@if($incident->ends_at) – {{ $incident->ends_at->utc()->format('M j, Y H:i').' UTC' }}@endif</p></article>@endforeach</div></section>
     @endif
 
-    <section class="mt-8 rounded-2xl border border-primary bg-primary p-5"><h2 class="font-black">{{ __('Get status updates') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Receive incident and planned-maintenance updates by email. Confirmation is required.') }}</p>@if(session('status_subscription'))<p class="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{{ session('status_subscription') }}</p>@endif<form method="POST" action="{{ route('status.subscriptions.store', $page->slug) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">@csrf<label class="sr-only" for="status-email">{{ __('Email address') }}</label><input id="status-email" type="email" name="email" required autocomplete="email" class="input secondary min-w-0 flex-1 rounded" placeholder="you@example.com"><button class="button primary" type="submit">{{ __('Subscribe') }}</button></form>@error('email')<p class="mt-2 text-sm text-red-700">{{ $message }}</p>@enderror</section>
+    <section class="mt-8 rounded-2xl border border-primary bg-primary p-5"><h2 class="font-black">{{ __('Get status updates') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Receive incident and planned-maintenance updates by email. Confirmation is required.') }}</p>@if(session('status_subscription'))<p class="mt-3 rounded-lg bg-green-50 p-3 text-sm text-green-800">{{ session('status_subscription') }}</p>@endif<form method="POST" action="{{ route('status.subscriptions.store', $page->slug) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">@csrf<label class="sr-only" for="status-email">{{ __('Email address') }}</label><input id="status-email" type="email" name="email" required autocomplete="email" class="input secondary min-w-0 flex-1 rounded-sm" placeholder="you@example.com"><button class="button primary" type="submit">{{ __('Subscribe') }}</button></form>@error('email')<p class="mt-2 text-sm text-red-700">{{ $message }}</p>@enderror</section>
 
     <footer class="mt-8 text-center text-xs text-secondary">{{ __('Updated :time',['time'=>now()->utc()->format('Y-m-d H:i').' UTC']) }} · <a href="{{ route('status.report',$page->slug) }}" class="underline">JSON</a></footer>
 </main>

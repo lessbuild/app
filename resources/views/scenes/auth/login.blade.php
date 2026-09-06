@@ -27,7 +27,7 @@
                     </span>
                     <input
                         id="email"
-                        class="input primary rounded"
+                        class="input primary rounded-sm"
                         type="email"
                         name="email"
                         value="{{ old('email') }}"
@@ -48,7 +48,7 @@
                     </span>
                     <input
                         id="password"
-                        class="input primary rounded"
+                        class="input primary rounded-sm"
                         type="password"
                         name="password"
                         placeholder="**********"
@@ -66,7 +66,7 @@
         <div class="block mt-4">
             <label for="remember_me" class="inline-flex items-center">
                 <input id="remember_me" type="checkbox"
-                    class="bg-primary rounded border-primary text-secondary shadow-sm"
+                    class="bg-primary rounded-sm border-primary text-secondary shadow-xs"
                     name="remember">
                 <span class="ml-2 text-sm text-primary">{{ __('Remember me') }}</span>
             </label>
@@ -92,7 +92,7 @@
                 </a>
             @endif
 
-            <button type="submit" class="button tertiary rounded ml-3">
+            <button type="submit" class="button tertiary rounded-sm ml-3">
                 {{ __('Login') }}
             </button>
         </div>

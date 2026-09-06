@@ -32,7 +32,7 @@
                     </span>
                     <input
                         type="text"
-                        class="input secondary rounded"
+                        class="input secondary rounded-sm"
                         value="{{ old('name', $invitation?->name) }}"
                         name="name"
                         placeholder="{{ __('Ex: John Doe') }}">
@@ -52,7 +52,7 @@
                     </span>
                     <input
                         type="text"
-                        class="input secondary rounded"
+                        class="input secondary rounded-sm"
                         value="{{ old('email', $invitation?->email) }}"
                         name="email"
                         @readonly($invitation ?? false)
@@ -73,7 +73,7 @@
                     </span>
                     <input
                         type="password"
-                        class="input secondary rounded"
+                        class="input secondary rounded-sm"
                         name="password"
                         autocomplete="new-password"
                         placeholder="********">
@@ -93,7 +93,7 @@
                     </span>
                     <input
                         type="password"
-                        class="input secondary rounded"
+                        class="input secondary rounded-sm"
                         name="password_confirmation"
                         autocomplete="new-password"
                         placeholder="********">
@@ -111,7 +111,7 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <button type="submit" class="button tertiary rounded ml-3">
+            <button type="submit" class="button tertiary rounded-sm ml-3">
                 {{ __('Register') }}
             </button>
         </div>

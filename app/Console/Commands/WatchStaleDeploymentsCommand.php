@@ -68,7 +68,7 @@ class WatchStaleDeploymentsCommand extends Command
     {
         return DB::transaction(function () use ($buildId, $cutoff, $minutes): ?Build {
             $build = Build::query()->lockForUpdate()->find($buildId);
-            if (! $build || ! in_array($build->status, Build::ACTIVE_STATUSES, true)) {
+            if ($build?->statusEnum()?->isActive() !== true) {
                 return null;
             }
 

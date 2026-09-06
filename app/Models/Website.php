@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Scopes\WebsiteScopes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +19,7 @@ class Website extends Model
     use BelongsToOrganization;
     use HasFactory;
     use SoftDeletes;
+    use WebsiteScopes;
 
     protected $attributes = [
         'health_monitoring_enabled' => true,
@@ -85,6 +86,7 @@ class Website extends Model
         'setup_stage' => 'integer',
     ];
 
+    /** Maintain provisioning identity, unique deployment slugs, and primary domain records. */
     protected static function booted(): void
     {
         static::creating(function (Website $website): void {
@@ -133,81 +135,109 @@ class Website extends Model
         });
     }
 
+    /**
+     * Derive the database-safe name from the persistent deployment slug.
+     *
+     * @return string The deployment slug with hyphens replaced by underscores.
+     */
     public function databaseIdentifier(): string
     {
         return str_replace('-', '_', $this->deployment_slug);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
-        return $this->BelongsTo(User::class);
+        return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Server, $this> */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
+    /** @return BelongsTo<Server, $this> */
     public function previousServer(): BelongsTo
     {
         return $this->belongsTo(Server::class, 'previous_server_id');
     }
 
+    /** @return HasMany<Repository, $this> */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
+    /** @return HasMany<Environment, $this> */
     public function environments(): HasMany
     {
         return $this->hasMany(Environment::class);
     }
 
+    /** @return HasManyThrough<Build, Repository, $this> */
     public function builds(): HasManyThrough
     {
         return $this->hasManyThrough(Build::class, Repository::class);
     }
 
+    /**
+     * Check whether any repository still reserves this website for deployment.
+     *
+     * @return bool Whether an active build exists.
+     */
     public function hasActiveDeployment(): bool
     {
         return $this->builds()->whereIn('builds.status', Build::ACTIVE_STATUSES)->exists();
     }
 
+    /** @return MorphMany<Log, $this> */
     public function logs(): MorphMany
     {
         return $this->morphMany(Log::class, 'parentable');
     }
 
+    /** @return MorphMany<Event, $this> */
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
+    /** @return HasMany<WebsiteHealthCheck, $this> */
     public function healthChecks(): HasMany
     {
         return $this->hasMany(WebsiteHealthCheck::class);
     }
 
+    /** @return HasMany<WebsiteLogSnapshot, $this> */
     public function runtimeLogs(): HasMany
     {
         return $this->hasMany(WebsiteLogSnapshot::class);
     }
 
+    /** @return HasMany<WebsiteDomain, $this> */
     public function domains(): HasMany
     {
         return $this->hasMany(WebsiteDomain::class);
     }
 
+    /** @return HasMany<WebsiteBackupSchedule, $this> */
     public function backupSchedules(): HasMany
     {
         return $this->hasMany(WebsiteBackupSchedule::class);
     }
 
+    /** @return HasMany<WebsiteBackup, $this> */
     public function backups(): HasMany
     {
         return $this->hasMany(WebsiteBackup::class);
     }
 
+    /**
+     * Resolve the configured threshold against supported monitoring values.
+     *
+     * @return int The configured threshold, or the application default when unsupported.
+     */
     public static function defaultHealthFailureThreshold(): int
     {
         $configured = (int) config('lessbuild.health_monitor_failure_threshold');
@@ -215,26 +245,5 @@ class Website extends Model
         return in_array($configured, self::HEALTH_FAILURE_THRESHOLDS, true)
             ? $configured
             : self::DEFAULT_HEALTH_FAILURE_THRESHOLD;
-    }
-
-    public function scopeReadyForDeployments(Builder $query): Builder
-    {
-        return $query
-            ->where('provisioning_status', self::STATUS_ACTIVE)
-            ->whereHas('server', fn (Builder $query) => $query
-                ->where('provisioning_status', Server::STATUS_ACTIVE));
-    }
-
-    public function scopeNeedsAttention(Builder $query): Builder
-    {
-        return $query->where(function (Builder $query): void {
-            $query
-                ->where('provisioning_status', self::STATUS_FAILED)
-                ->orWhere(function (Builder $query): void {
-                    $query
-                        ->where('health_check_enabled', true)
-                        ->where('health_status', self::HEALTH_UNHEALTHY);
-                });
-        });
     }
 }

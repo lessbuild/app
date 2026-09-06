@@ -1,0 +1,225 @@
+/* Preserve the established neutral surfaces and blue identity across the upgrade. */
+@theme {
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f3f4f6;
+    --color-gray-200: #e5e7eb;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
+    --color-gray-900: #111827;
+    --color-blue-50: #eff6ff;
+    --color-blue-100: #dbeafe;
+    --color-blue-200: #bfdbfe;
+    --color-blue-300: #93c5fd;
+    --color-blue-400: #60a5fa;
+    --color-blue-500: #3b82f6;
+    --color-blue-600: #2563eb;
+    --color-blue-700: #1d4ed8;
+    --color-blue-800: #1e40af;
+    --color-blue-900: #1e3a8a;
+}
+
+@theme inline {
+    --color-surface-primary: var(--bg-primary);
+    --color-surface-secondary: var(--bg-secondary);
+    --color-surface-tertiary: var(--bg-tertiary);
+    --color-surface-ternary: var(--bg-ternary);
+}
+
+@layer base {
+    :root {
+        @apply light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            @apply dark;
+        }
+    }
+
+    /* Keep existing form, border and keyboard-focus behavior. */
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-gray-400);
+    }
+}
+
+@utility dark {
+    --bg-primary: var(--color-gray-800);
+    --text-primary: var(--color-gray-400);
+    --placeholder-primary: var(--color-gray-300);
+    --border-primary: var(--color-gray-600);
+    --divide-primary: var(--color-gray-600);
+
+    --bg-secondary: var(--color-gray-700);
+    --text-secondary: var(--color-gray-500);
+    --placeholder-secondary: var(--color-gray-400);
+    --border-secondary: var(--color-gray-500);
+    --divide-secondary: var(--color-gray-500);
+
+    --bg-tertiary: var(--color-gray-900);
+    --text-tertiary: var(--color-gray-400);
+    --placeholder-tertiary: var(--color-gray-600);
+    --border-tertiary: var(--color-gray-700);
+    --divide-tertiary: var(--color-gray-700);
+
+    --bg-ternary: var(--color-blue-700);
+    --text-ternary: var(--color-blue-400);
+    --placeholder-ternary: var(--color-blue-600);
+    --border-ternary: var(--color-blue-700);
+    --divide-ternary: var(--color-blue-700);
+}
+
+@utility light {
+    --bg-primary: var(--color-white);
+    --text-primary: var(--color-gray-600);
+    --placeholder-primary: var(--color-gray-800);
+    --border-primary: var(--color-gray-200);
+    --divide-primary: var(--color-gray-200);
+
+    --bg-secondary: var(--color-gray-50);
+    --text-secondary: var(--color-gray-400);
+    --placeholder-secondary: var(--color-gray-400);
+    --border-secondary: var(--color-gray-300);
+    --divide-secondary: var(--color-gray-300);
+
+    --bg-tertiary: var(--color-gray-700);
+    --text-tertiary: var(--color-gray-200);
+    --placeholder-tertiary: var(--color-gray-500);
+    --border-tertiary: var(--color-gray-700);
+    --divide-tertiary: var(--color-gray-700);
+
+    --bg-ternary: var(--color-blue-700);
+    --text-ternary: var(--color-blue-500);
+    --placeholder-ternary: var(--color-blue-600);
+    --border-ternary: var(--color-blue-700);
+    --divide-ternary: var(--color-blue-700);
+}
+
+@utility text-primary {
+    color: var(--text-primary);
+}
+
+@utility border-primary {
+    border-color: var(--border-primary);
+}
+
+@utility divide-primary {
+    :where(& > :not(:last-child)) {
+        border-color: var(--border-primary);
+    }
+}
+
+@utility placeholder-primary {
+    &::placeholder {
+        color: var(--placeholder-primary);
+    }
+}
+
+@utility text-secondary {
+    color: var(--text-secondary);
+}
+
+@utility border-secondary {
+    border-color: var(--border-secondary);
+}
+
+@utility divide-secondary {
+    :where(& > :not(:last-child)) {
+        border-color: var(--border-secondary);
+    }
+}
+
+@utility placeholder-secondary {
+    &::placeholder {
+        color: var(--placeholder-secondary);
+    }
+}
+
+@utility text-tertiary {
+    color: var(--text-tertiary);
+}
+
+@utility border-tertiary {
+    border-color: var(--border-tertiary);
+}
+
+@utility divide-tertiary {
+    :where(& > :not(:last-child)) {
+        border-color: var(--border-tertiary);
+    }
+}
+
+@utility placeholder-tertiary {
+    &::placeholder {
+        color: var(--placeholder-tertiary);
+    }
+}
+
+@utility text-ternary {
+    color: var(--text-ternary);
+}
+
+@utility border-ternary {
+    border-color: var(--border-ternary);
+}
+
+@utility divide-ternary {
+    :where(& > :not(:last-child)) {
+        border-color: var(--border-ternary);
+    }
+}
+
+@utility placeholder-ternary {
+    &::placeholder {
+        color: var(--placeholder-ternary);
+    }
+}
+
+@utility bg-primary {
+    background-color: var(--bg-primary);
+}
+
+@utility ring-primary {
+    --tw-ring-color: var(--bg-primary);
+}
+
+@utility bg-secondary {
+    background-color: var(--bg-secondary);
+}
+
+@utility ring-secondary {
+    --tw-ring-color: var(--bg-secondary);
+}
+
+@utility bg-tertiary {
+    background-color: var(--bg-tertiary);
+}
+
+@utility ring-tertiary {
+    --tw-ring-color: var(--bg-tertiary);
+}
+
+@utility bg-ternary {
+    background-color: var(--bg-ternary);
+}
+
+@utility ring-ternary {
+    --tw-ring-color: var(--bg-ternary);
+}

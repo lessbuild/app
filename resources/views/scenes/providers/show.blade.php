@@ -60,7 +60,7 @@
     @if (session('provider_connection'))
         @php($connection = session('provider_connection'))
         <div @class([
-            'my-4 rounded border p-3 text-sm',
+            'my-4 rounded-sm border p-3 text-sm',
             'border-green-300 bg-green-50 text-green-700' => $connection['successful'],
             'border-red-300 bg-red-50 text-red-700' => ! $connection['successful'],
         ])>
@@ -68,7 +68,7 @@
         </div>
     @endif
 
-    <div class="my-4 flex flex-wrap items-center gap-2 rounded border border-primary bg-primary p-3 text-sm">
+    <div class="my-4 flex flex-wrap items-center gap-2 rounded-sm border border-primary bg-primary p-3 text-sm">
         <span class="font-medium text-primary">{{ __('Confirmed connection status:') }}</span>
         <span @class([
             'font-medium',
@@ -107,7 +107,7 @@
     </div>
 
     @if ($errors->has('provider'))
-        <div class="my-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
             {{ $errors->first('provider') }}
         </div>
     @endif
@@ -233,7 +233,7 @@
                             @forelse($repositories as $repository)
                                 <a href="{{ route('repositories.show', $repository) }}" class="py-3">
                                     <div class="flex items-center space-x-4">
-                                        <div class="flex-shrink-0">
+                                        <div class="shrink-0">
                                             <x-avatar :name="$repository->name" class="h-8 w-8 rounded-full text-xs" />
                                         </div>
                                         <div class="flex-1 min-w-0">
@@ -279,7 +279,7 @@
                             @forelse($servers as $server)
                                 <a href="{{ route('servers.show', $server) }}" class="py-3">
                                     <div class="flex items-center space-x-4">
-                                        <div class="flex-shrink-0">
+                                        <div class="shrink-0">
                                             <x-avatar :name="$server->label" class="h-8 w-8 rounded-full text-xs" />
                                         </div>
                                         <div class="flex-1 min-w-0">

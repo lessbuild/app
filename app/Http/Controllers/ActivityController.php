@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Services\Entitlements;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use App\Support\SqlLike;
 use Carbon\CarbonInterface;
@@ -153,12 +154,6 @@ class ActivityController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

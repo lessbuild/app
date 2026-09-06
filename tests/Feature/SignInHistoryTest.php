@@ -2,15 +2,49 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SignInMethod;
 use App\Models\SignInEvent;
 use App\Models\User;
+use App\Services\SignInRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class SignInHistoryTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_recorder_accepts_a_typed_method_and_persists_its_existing_string_value(): void
+    {
+        $user = User::factory()->create();
+        $request = Request::create('/login', 'POST', server: [
+            'REMOTE_ADDR' => '198.51.100.42',
+            'HTTP_USER_AGENT' => 'Mozilla/5.0 Firefox/140.0',
+        ]);
+
+        $event = app(SignInRecorder::class)->record($user, SignInMethod::GitHub, $request);
+
+        $this->assertNotNull($event);
+        $this->assertSame(SignInMethod::GitHub, $event->fresh()->methodEnum());
+        $this->assertSame('github', $event->method);
+        $this->assertSame('198.51.100.42', $event->ip_address);
+        $this->assertDatabaseHas('sign_in_events', ['id' => $event->id, 'user_id' => $user->id, 'method' => 'github']);
+    }
+
+    public function test_recorder_rejects_unknown_methods_before_recording_history(): void
+    {
+        $user = User::factory()->create();
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported sign-in method.');
+
+        try {
+            app(SignInRecorder::class)->record($user, 'unsupported-method', Request::create('/login', 'POST'));
+        } finally {
+            $this->assertDatabaseCount('sign_in_events', 0);
+        }
+    }
 
     public function test_successful_password_login_records_bounded_client_metadata(): void
     {

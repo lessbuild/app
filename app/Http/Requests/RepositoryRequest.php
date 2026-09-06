@@ -7,6 +7,7 @@ use App\Models\Server;
 use App\Models\Website;
 use App\Rules\GitBranch;
 use App\Rules\SourceRepositoryUrl;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,7 +32,7 @@ class RepositoryRequest extends FormRequest
             'provider_id' => [
                 'required',
                 'integer',
-                Rule::exists('providers', 'id')->where(fn ($query) => $query
+                Rule::exists('providers', 'id')->where(fn (Builder $query): Builder => $query
                     ->where('organization_id', $this->user()->current_organization_id)
                     ->whereIn('provider', Provider::SOURCE_CONTROL_TYPES)
                     ->whereNull('deleted_at')),
@@ -39,10 +40,10 @@ class RepositoryRequest extends FormRequest
             'website_id' => [
                 'required',
                 'integer',
-                Rule::exists('websites', 'id')->where(fn ($query) => $query
+                Rule::exists('websites', 'id')->where(fn (Builder $query): Builder => $query
                     ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Website::STATUS_ACTIVE)
-                    ->whereExists(fn ($servers) => $servers
+                    ->whereExists(fn (Builder $servers): Builder => $servers
                         ->selectRaw('1')
                         ->from('servers')
                         ->whereColumn('servers.id', 'websites.server_id')

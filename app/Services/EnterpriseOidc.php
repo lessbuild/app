@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Organization;
+use App\Support\PublicIpAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -87,7 +88,7 @@ class EnterpriseOidc
         }
         $records = dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
         $addresses = collect($records)->map(fn ($record) => $record['ip'] ?? $record['ipv6'] ?? null)->filter();
-        if ($addresses->isEmpty() || $addresses->contains(fn ($ip) => filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false)) {
+        if ($addresses->isEmpty() || $addresses->contains(fn (string $ip): bool => ! PublicIpAddress::isValid($ip))) {
             throw new RuntimeException('The SSO issuer must resolve only to public addresses.');
         }
     }

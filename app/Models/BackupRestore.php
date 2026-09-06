@@ -19,11 +19,13 @@ class BackupRestore extends Model
 
     protected $casts = ['started_at' => 'datetime', 'completed_at' => 'datetime'];
 
+    /** @return BelongsTo<WebsiteBackup, $this> */
     public function backup(): BelongsTo
     {
         return $this->belongsTo(WebsiteBackup::class, 'website_backup_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');

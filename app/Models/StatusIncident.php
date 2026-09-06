@@ -17,6 +17,7 @@ class StatusIncident extends Model
 
     protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'resolved_at' => 'datetime'];
 
+    /** @return BelongsTo<StatusPage, $this> */
     public function statusPage(): BelongsTo
     {
         return $this->belongsTo(StatusPage::class);

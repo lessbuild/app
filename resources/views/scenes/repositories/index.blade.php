@@ -12,7 +12,7 @@
         <x-slot:buttons>
             <a
                 href="{{ route('repositories.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary"
+                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
             >
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
@@ -33,12 +33,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name, URL, or description') }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
                 <label for="provider_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Provider') }}</label>
-                <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded">
+                <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All providers') }}</option>
                     @foreach ($providers as $provider)
                         <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
@@ -49,7 +49,7 @@
             </div>
             <div>
                 <label for="website_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Website') }}</label>
-                <select id="website_id" name="website_id" class="input secondary mt-1 w-full rounded">
+                <select id="website_id" name="website_id" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All websites') }}</option>
                     @foreach ($websites as $website)
                         <option value="{{ $website->id }}" @selected((int) $filters['website_id'] === $website->id)>
@@ -60,7 +60,7 @@
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Latest deployment') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All deployment states') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -144,7 +144,7 @@
                         <tr class="border-l border-r border-primary">
                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                 <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0">
+                                    <div class="h-10 w-10 shrink-0">
                                         <x-avatar :name="$repository->name" class="h-10 w-10 rounded-md text-sm" />
                                     </div>
                                     <a href="{{ route('repositories.show', $repository) }}" class="ml-4">
@@ -218,7 +218,7 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <a href="{{ route('repositories.index') }}" class="button primary">{{ __('Clear filters') }}</a>
                     @else
-                        <a href="{{ route('repositories.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded text-sm shadow">
+                        <a href="{{ route('repositories.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded-sm text-sm shadow-sm">
                             {{ __('Add Repository') }}
                         </a>
                     @endif

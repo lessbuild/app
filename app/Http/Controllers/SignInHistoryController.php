@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SignInEvent;
 use App\Services\ActivityRecorder;
 use App\Services\ClientMetadata;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
@@ -183,8 +184,6 @@ class SignInHistoryController extends Controller
 
     private function csvCell(string $value): string
     {
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

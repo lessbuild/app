@@ -2,8 +2,11 @@
 
 namespace App\Models\Concerns;
 
+use App\Presenters\DurationPresenter;
+
 trait HasDuration
 {
+    /** @return int|null Completed elapsed seconds, or null for incomplete or inconsistent timestamps. */
     public function durationSeconds(): ?int
     {
         if (! $this->started_at || ! $this->finished_at || $this->finished_at->isBefore($this->started_at)) {
@@ -13,6 +16,7 @@ trait HasDuration
         return (int) $this->started_at->diffInSeconds($this->finished_at);
     }
 
+    /** @return string|null A compact duration label, or null until a valid completion is recorded. */
     public function durationLabel(): ?string
     {
         $seconds = $this->durationSeconds();
@@ -20,27 +24,12 @@ trait HasDuration
         return $seconds === null ? null : self::formatDuration($seconds);
     }
 
+    /**
+     * @param  int  $seconds  A nonnegative elapsed duration.
+     * @return string A compact label shared by build and command history.
+     */
     public static function formatDuration(int $seconds): string
     {
-        if ($seconds < 0) {
-            throw new \InvalidArgumentException('A duration cannot be negative.');
-        }
-
-        $hours = intdiv($seconds, 3600);
-        $minutes = intdiv($seconds % 3600, 60);
-        $remainingSeconds = $seconds % 60;
-        $parts = [];
-
-        if ($hours > 0) {
-            $parts[] = "{$hours}h";
-        }
-        if ($minutes > 0) {
-            $parts[] = "{$minutes}m";
-        }
-        if ($remainingSeconds > 0 || $parts === []) {
-            $parts[] = "{$remainingSeconds}s";
-        }
-
-        return implode(' ', $parts);
+        return DurationPresenter::format($seconds);
     }
 }

@@ -18,6 +18,7 @@ class ScheduledTaskRun extends Model
         'duration_ms' => 'integer',
     ];
 
+    /** @return BelongsTo<ScheduledTask, $this> */
     public function task(): BelongsTo
     {
         return $this->belongsTo(ScheduledTask::class, 'scheduled_task_id');

@@ -22,8 +22,8 @@
                 <p class="mt-4 whitespace-pre-line rounded-xl bg-secondary p-4 text-sm leading-6 text-primary">{{ $lead->use_case }}</p>
                 @if(!$lead->accepted_at)<form method="POST" action="{{ route('admin.access-requests.update', $lead) }}" class="mt-4 grid gap-3 sm:grid-cols-[10rem_1fr_auto]">
                     @csrf @method('PATCH')
-                    <select name="status" class="input secondary rounded">@foreach(\App\Models\AccessRequest::STATUSES as $item)@if($item !== 'accepted')<option value="{{ $item }}" @selected($lead->status === $item)>{{ ucfirst($item) }}</option>@endif @endforeach</select>
-                    <input name="review_notes" value="{{ $lead->review_notes }}" maxlength="2000" placeholder="{{ __('Private review note') }}" class="input secondary rounded">
+                    <select name="status" class="input secondary rounded-sm">@foreach(\App\Models\AccessRequest::STATUSES as $item)@if($item !== 'accepted')<option value="{{ $item }}" @selected($lead->status === $item)>{{ ucfirst($item) }}</option>@endif @endforeach</select>
+                    <input name="review_notes" value="{{ $lead->review_notes }}" maxlength="2000" placeholder="{{ __('Private review note') }}" class="input secondary rounded-sm">
                     <div class="flex gap-2"><button type="submit" class="button primary">{{ __('Save') }}</button>@if($lead->status === 'invited')<button type="submit" name="resend_invitation" value="1" class="button secondary">{{ __('Resend') }}</button>@endif</div>
                 </form>@else<p class="mt-4 text-sm font-semibold text-secondary">{{ __('Invitation accepted; this onboarding record is now read-only.') }}</p>@endif
                 @if($lead->invitation_expires_at && !$lead->accepted_at)<p class="mt-2 text-xs text-secondary">{{ __('Invitation expires :time.', ['time' => $lead->invitation_expires_at->diffForHumans()]) }}</p>@endif

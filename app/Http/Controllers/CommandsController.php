@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServerCommandExecution;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
@@ -150,12 +151,6 @@ class CommandsController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

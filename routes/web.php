@@ -15,6 +15,9 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\BuildPromotionController;
 use App\Http\Controllers\BuildRevisionCallbackController;
 use App\Http\Controllers\BuildsController;
+use App\Http\Controllers\Callbacks\BuildCallbackController;
+use App\Http\Controllers\Callbacks\ServerCallbackController;
+use App\Http\Controllers\Callbacks\WebsiteCallbackController;
 use App\Http\Controllers\CommandsController;
 use App\Http\Controllers\CostController;
 use App\Http\Controllers\DashboardController;
@@ -36,6 +39,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProviderConnectionController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\ProviderServerCatalogController;
+use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicStatusPageController;
 use App\Http\Controllers\RecipeFavoritesController;
 use App\Http\Controllers\RecipeGalleryController;
@@ -55,21 +59,9 @@ use App\Http\Controllers\UsersController;
 use App\Http\Controllers\WebsitesController;
 use App\Http\Livewire\ServerShow;
 use App\Http\Middleware\VerifyCsrfToken;
-use App\Jobs\Web\CleanupWebsitePlacementJob;
-use App\Models\Build;
-use App\Models\Server;
-use App\Models\ServerLogSnapshot;
 use App\Models\User;
-use App\Models\Website;
 use App\Models\WebsiteLogSnapshot;
-use App\Services\AutomaticDeploymentRollback;
-use App\Services\PreviewDeploymentLifecycle;
-use App\Services\RegistrationAccess;
-use App\Services\RepositoryDeploymentPlan;
-use App\Services\ServerProvisioningPlan;
-use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
@@ -85,20 +77,14 @@ use Illuminate\View\Middleware\ShareErrorsFromSession;
 */
 
 Route::permanentRedirect('favicon.ico', '/favicon.svg');
-Route::get('pricing', fn () => view('scenes.pricing', [
-    'plans' => config('billing.plans'),
-    'registrationOpen' => app(RegistrationAccess::class)->allowsNewUser(),
-]))->name('pricing');
+Route::get('pricing', [PublicPageController::class, 'pricing'])->name('pricing');
 Route::get('request-access', [AccessRequestController::class, 'create'])->name('access-request.create');
 Route::post('request-access', [AccessRequestController::class, 'store'])->middleware('throttle:access-requests')->name('access-request.store');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::view('terms', 'legal.terms')->name('terms');
 Route::view('api-docs', 'api-docs')->name('api-docs');
 Route::view('docs', 'docs')->name('docs');
-Route::get('openapi.json', fn () => response()->file(public_path('openapi.json'), [
-    'Cache-Control' => 'public, max-age=300',
-    'Content-Type' => 'application/json',
-]))->name('openapi');
+Route::get('openapi.json', [PublicPageController::class, 'openapi'])->name('openapi');
 Route::middleware([])->withoutMiddleware([
     VerifyCsrfToken::class,
     StartSession::class,
@@ -113,13 +99,7 @@ Route::post('status/{slug}/subscribe', [StatusSubscriptionController::class, 'st
 Route::get('status/subscriptions/{subscription}/confirm/{token}', [StatusSubscriptionController::class, 'confirm'])->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('status/subscriptions/{subscription}/unsubscribe/{token}', [StatusSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 
-Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
-
-    return view('scenes.index');
-});
+Route::get('/', [PublicPageController::class, 'home']);
 
 Route::middleware('auth')->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');
@@ -208,12 +188,12 @@ Route::middleware('auth')->group(function () {
         Route::patch('environments/{environment}', [EnvironmentController::class, 'update'])->name('environments.update');
         Route::delete('environments/{environment}', [EnvironmentController::class, 'destroy'])->name('environments.destroy');
         Route::post('environments/{environment}/variables', [EnvironmentController::class, 'variables'])->name('environments.variables.store');
-        Route::delete('environments/{environment}/variables/{variable}', [EnvironmentController::class, 'destroyVariable'])->name('environments.variables.destroy');
+        Route::delete('environments/{environment}/variables/{variable}', [EnvironmentController::class, 'destroyVariable'])->scopeBindings()->name('environments.variables.destroy');
         Route::post('environments/{environment}/processes', [EnvironmentController::class, 'storeProcess'])->name('environments.processes.store');
-        Route::delete('environments/{environment}/processes/{process}', [EnvironmentController::class, 'destroyProcess'])->name('environments.processes.destroy');
+        Route::delete('environments/{environment}/processes/{process}', [EnvironmentController::class, 'destroyProcess'])->scopeBindings()->name('environments.processes.destroy');
         Route::post('environments/{environment}/resources', [EnvironmentController::class, 'storeResource'])->name('environments.resources.store');
         Route::patch('environments/{environment}/deployment-controls', [EnvironmentController::class, 'updateDeploymentControls'])->name('environments.deployment-controls.update');
-        Route::delete('environments/{environment}/resources/{resource}', [EnvironmentController::class, 'destroyResource'])->name('environments.resources.destroy');
+        Route::delete('environments/{environment}/resources/{resource}', [EnvironmentController::class, 'destroyResource'])->scopeBindings()->name('environments.resources.destroy');
         Route::get('home', DashboardController::class)->name('dashboard');
         Route::get('admin/analytics', AdminAnalyticsController::class)
             ->middleware('throttle:30,1')
@@ -492,280 +472,26 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-Route::post('servers/{server}/provisioning/callback/status', function (Server $server) {
-    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
-        return response()->noContent();
-    }
+Route::post('servers/{server}/provisioning/callback/status', [ServerCallbackController::class, 'status'])->middleware('signed')->name('callbacks.server');
 
-    if (! in_array($server->provisioning_status, [
-        Server::STATUS_QUEUED,
-        Server::STATUS_WAITING_FOR_IP,
-        Server::STATUS_PROVISIONING,
-    ], true)) {
-        return response()->noContent();
-    }
+Route::post('websites/{website}/provisioning/callback/status', [WebsiteCallbackController::class, 'status'])->middleware('signed')->name('callbacks.website');
 
-    $finalStage = app(ServerProvisioningPlan::class)->finalStage($server);
-    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
-    if ($data['status'] > $server->setup_stage) {
-        $server->update(['setup_stage' => $data['status']]);
-    }
+Route::post('servers/{server}/provisioning/callback/failed', [ServerCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.server.failed');
 
-    if ($data['status'] === $finalStage) {
-        $server->update([
-            'provisioning_status' => Server::STATUS_ACTIVE,
-            'password' => null,
-            'provisioned_at' => now(),
-            'provisioning_error' => null,
-            'provisioning_failure_phase' => null,
-            'provisioning_process_id' => null,
-            'provisioning_process_path' => null,
-            'initialization_token' => null,
-        ]);
-    }
-})->middleware('signed')->name('callbacks.server');
+Route::post('servers/{server}/provisioning/callback/log', [ServerCallbackController::class, 'log'])->middleware('signed')->name('callbacks.server.log');
 
-Route::post('websites/{website}/provisioning/callback/status', function (Website $website) {
-    if ($website->provisioning_token && ! hash_equals($website->provisioning_token, (string) request('attempt'))) {
-        return response()->noContent();
-    }
+Route::post('websites/{website}/provisioning/callback/failed', [WebsiteCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.website.failed');
 
-    if (! in_array($website->provisioning_status, [
-        Website::STATUS_QUEUED,
-        Website::STATUS_PROVISIONING,
-    ], true)) {
-        return response()->noContent();
-    }
+Route::post('websites/{website}/provisioning/callback/log', [WebsiteCallbackController::class, 'log'])->middleware('signed')->name('callbacks.website.log');
 
-    $finalStage = app(WebsiteProvisioningPlan::class)->finalStage();
-    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
-    if ($data['status'] > $website->setup_stage) {
-        $website->update(['setup_stage' => $data['status']]);
-    }
-
-    if ($data['status'] === $finalStage) {
-        $previousServerId = $website->previous_server_id;
-        $website->update([
-            'provisioning_status' => Website::STATUS_ACTIVE,
-            'provisioned_at' => now(),
-            'provisioning_error' => null,
-        ]);
-        app(PreviewDeploymentLifecycle::class)->websiteReady($website->fresh());
-
-        if ($previousServerId) {
-            CleanupWebsitePlacementJob::dispatch(
-                $website->id,
-                $previousServerId,
-                $website->deployment_slug,
-            );
-        }
-    }
-})->middleware('signed')->name('callbacks.website');
-
-Route::post('servers/{server}/provisioning/callback/failed', function (Server $server) {
-    if ($server->provisioning_token && ! hash_equals($server->provisioning_token, (string) request('attempt'))) {
-        return response()->noContent();
-    }
-
-    $data = request()->validate([
-        'exit_code' => 'nullable|integer',
-        'message' => 'required|string|max:2000',
-    ]);
-    if (in_array($server->provisioning_status, [
-        Server::STATUS_QUEUED,
-        Server::STATUS_WAITING_FOR_IP,
-        Server::STATUS_PROVISIONING,
-    ], true)) {
-        $server->update([
-            'password' => null,
-            'provisioning_status' => Server::STATUS_FAILED,
-            'provisioning_error' => isset($data['exit_code'])
-                ? "{$data['message']} (exit code {$data['exit_code']})"
-                : $data['message'],
-            'provisioning_failure_phase' => Server::FAILURE_REMOTE,
-            'provisioning_process_id' => null,
-            'provisioning_process_path' => null,
-            'initialization_token' => null,
-        ]);
-        $server->logSnapshots()->updateOrCreate(
-            ['type' => 'provisioning'],
-            [
-                'status' => ServerLogSnapshot::STATUS_FAILED,
-                'error' => $server->provisioning_error,
-                'refreshed_at' => now(),
-            ],
-        );
-    }
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.server.failed');
-
-Route::post('servers/{server}/provisioning/callback/log', function (Server $server) {
-    DB::transaction(function () use ($server): void {
-        $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
-        if ($locked->provisioning_token && ! hash_equals($locked->provisioning_token, (string) request('attempt'))) {
-            return;
-        }
-
-        $data = request()->validate([
-            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.server_log_max_characters'))],
-        ]);
-        $locked->logSnapshots()->updateOrCreate(
-            ['type' => 'provisioning'],
-            [
-                'status' => ServerLogSnapshot::STATUS_READY,
-                'log' => $data['log'],
-                'error' => null,
-                'refreshed_at' => now(),
-            ],
-        );
-    });
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.server.log');
-
-Route::post('websites/{website}/provisioning/callback/failed', function (Website $website) {
-    if ($website->provisioning_token && ! hash_equals($website->provisioning_token, (string) request('attempt'))) {
-        return response()->noContent();
-    }
-
-    $data = request()->validate([
-        'exit_code' => 'nullable|integer',
-        'message' => 'required|string|max:2000',
-    ]);
-    if (in_array($website->provisioning_status, [
-        Website::STATUS_QUEUED,
-        Website::STATUS_PROVISIONING,
-    ], true)) {
-        $website->update([
-            'provisioning_status' => Website::STATUS_FAILED,
-            'provisioning_error' => isset($data['exit_code'])
-                ? "{$data['message']} (exit code {$data['exit_code']})"
-                : $data['message'],
-        ]);
-        app(PreviewDeploymentLifecycle::class)->websiteFailed($website->fresh());
-    }
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.website.failed');
-
-Route::post('websites/{website}/provisioning/callback/log', function (Website $website) {
-    DB::transaction(function () use ($website): void {
-        $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
-        if ($locked->provisioning_token && ! hash_equals($locked->provisioning_token, (string) request('attempt'))) {
-            return;
-        }
-
-        $data = request()->validate([
-            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.website_log_max_characters'))],
-        ]);
-        $locked->logs()->updateOrCreate(
-            ['type' => Website::PROVISIONING_LOG_TYPE],
-            ['log' => $data['log']],
-        );
-    });
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.website.log');
-
-Route::post('builds/{build}/deployment/callback/status', function (Build $build) {
-    $plan = app(RepositoryDeploymentPlan::class);
-    $finalStage = $plan->finalStage();
-    $activationStage = $plan->activationStage();
-    $data = request()->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
-    $finished = false;
-    DB::transaction(function () use ($build, $data, $finalStage, $activationStage, &$finished): void {
-        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
-        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
-            return;
-        }
-
-        $repository = $locked->repository;
-        if ($data['status'] > $repository->setup_stage) {
-            $repository->update(['setup_stage' => $data['status']]);
-        }
-
-        $attributes = ['last_heartbeat_at' => now()];
-        if ($data['status'] > $locked->setup_stage) {
-            $attributes['setup_stage'] = $data['status'];
-        }
-        if ($data['status'] >= $activationStage && $locked->activated_at === null) {
-            $attributes['activated_at'] = now();
-        }
-        if ($data['status'] === $finalStage) {
-            $finished = true;
-            $attributes = array_merge($attributes, [
-                'status' => Build::STATUS_SUCCEEDED,
-                'remote_process_id' => null,
-                'remote_process_path' => null,
-                'built_at' => now(),
-                'finished_at' => now(),
-            ]);
-        }
-        $locked->update($attributes);
-    });
-    if ($finished) {
-        app(PreviewDeploymentLifecycle::class)->buildFinished($build->fresh());
-    }
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.build.status');
+Route::post('builds/{build}/deployment/callback/status', [BuildCallbackController::class, 'status'])->middleware('signed')->name('callbacks.build.status');
 
 Route::post('builds/{build}/deployment/callback/revision', BuildRevisionCallbackController::class)
     ->middleware('signed')
     ->name('callbacks.build.revision');
 
-Route::post('builds/{build}/deployment/callback/failed', function (Build $build) {
-    $data = request()->validate([
-        'exit_code' => 'nullable|integer',
-        'message' => 'required|string|max:2000',
-    ]);
+Route::post('builds/{build}/deployment/callback/failed', [BuildCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.build.failed');
 
-    $finished = false;
-    DB::transaction(function () use ($build, $data, &$finished): void {
-        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
-        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
-            return;
-        }
-
-        $locked->update([
-            'status' => Build::STATUS_FAILED,
-            'remote_process_id' => null,
-            'remote_process_path' => null,
-            'finished_at' => now(),
-            'failure_message' => isset($data['exit_code'])
-                ? "{$data['message']} (exit code {$data['exit_code']})"
-                : $data['message'],
-        ]);
-        $finished = true;
-    });
-    if ($finished) {
-        app(PreviewDeploymentLifecycle::class)->buildFinished($build->fresh());
-        app(AutomaticDeploymentRollback::class)->attempt($build->fresh());
-    }
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.build.failed');
-
-Route::post('builds/{build}/deployment/callback/log', function (Build $build) {
-    DB::transaction(function () use ($build): void {
-        $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
-        if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
-            return;
-        }
-
-        $data = request()->validate([
-            'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.deployment_log_max_characters'))],
-        ]);
-
-        $locked->logs()->updateOrCreate(
-            ['type' => Build::DEPLOYMENT_LOG_TYPE],
-            ['log' => $data['log']],
-        );
-        $locked->update(['last_heartbeat_at' => now()]);
-    });
-
-    return response()->noContent();
-})->middleware('signed')->name('callbacks.build.log');
+Route::post('builds/{build}/deployment/callback/log', [BuildCallbackController::class, 'log'])->middleware('signed')->name('callbacks.build.log');
 
 require __DIR__.'/auth.php';

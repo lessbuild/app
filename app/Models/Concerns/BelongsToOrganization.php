@@ -4,14 +4,19 @@ namespace App\Models\Concerns;
 
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * @phpstan-require-extends Model
+ */
 trait BelongsToOrganization
 {
+    /** Assign missing workspace ownership when a new model is created. */
     public static function bootBelongsToOrganization(): void
     {
-        static::creating(function ($model): void {
+        static::creating(function (Model $model): void {
             if (! $model->organization_id && Auth::user()?->current_organization_id) {
                 $model->organization_id = Auth::user()->current_organization_id;
             }
@@ -24,6 +29,7 @@ trait BelongsToOrganization
         });
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);

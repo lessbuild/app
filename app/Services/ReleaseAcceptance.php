@@ -10,6 +10,7 @@ use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 
 class ReleaseAcceptance
@@ -190,12 +191,12 @@ class ReleaseAcceptance
         ])->map(fn (string $name): array => $this->result($name, false, ''))->all();
     }
 
-    private function atOrAfter($recordedAt, ?Carbon $since): bool
+    private function atOrAfter(?CarbonInterface $recordedAt, ?Carbon $since): bool
     {
         return $recordedAt !== null && ($since === null || $recordedAt->greaterThanOrEqualTo($since));
     }
 
-    private function between($recordedAt, ?Carbon $since, ?Carbon $before): bool
+    private function between(?CarbonInterface $recordedAt, ?Carbon $since, ?Carbon $before): bool
     {
         return $this->atOrAfter($recordedAt, $since)
             && ($before === null || $recordedAt->lessThanOrEqualTo($before));

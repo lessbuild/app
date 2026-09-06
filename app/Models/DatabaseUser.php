@@ -13,6 +13,7 @@ class DatabaseUser extends Model
 
     protected $casts = ['password' => 'encrypted', 'expires_at' => 'datetime', 'applied_at' => 'datetime'];
 
+    /** @return BelongsTo<EnvironmentResource, $this> */
     public function resource(): BelongsTo
     {
         return $this->belongsTo(EnvironmentResource::class, 'environment_resource_id');

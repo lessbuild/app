@@ -31,7 +31,7 @@ class AddWebsiteToCaddyCommand extends Command
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(): void
     {
         $website = Website::find($this->argument('website_id'));
 

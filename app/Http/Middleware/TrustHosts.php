@@ -13,7 +13,7 @@ class TrustHosts extends Middleware
      *
      * @return array<int, string|null>
      */
-    public function hosts()
+    public function hosts(): array
     {
         $hosts = [
             $this->allSubdomainsOfApplicationUrl(),
@@ -32,7 +32,13 @@ class TrustHosts extends Middleware
         return array_values(array_unique($hosts));
     }
 
-    public function handle(Request $request, $next): Response
+    /**
+     * Validate the incoming host before forwarding the request to the next middleware.
+     *
+     * @param  callable(Request): Response  $next  The next handler; the parent contract is untyped.
+     * @return Response The downstream response after host validation.
+     */
+    public function handle(Request $request, mixed $next): Response
     {
         Request::setTrustedHosts(array_filter($this->hosts()));
         $request->getHost();

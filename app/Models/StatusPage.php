@@ -13,11 +13,13 @@ class StatusPage extends Model
 
     protected $casts = ['is_published' => 'boolean'];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsToMany<Website, $this> */
     public function websites(): BelongsToMany
     {
         return $this->belongsToMany(Website::class)
@@ -25,11 +27,13 @@ class StatusPage extends Model
             ->orderByPivot('position');
     }
 
+    /** @return HasMany<StatusIncident, $this> */
     public function incidents(): HasMany
     {
         return $this->hasMany(StatusIncident::class);
     }
 
+    /** @return HasMany<StatusSubscription, $this> */
     public function subscriptions(): HasMany
     {
         return $this->hasMany(StatusSubscription::class);

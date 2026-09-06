@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Services\SshKeyPair;
-use phpseclib3\Crypt\PublicKeyLoader;
+use phpseclib4\Crypt\PublicKeyLoader;
 use PHPUnit\Framework\TestCase;
 
 class SshKeyPairTest extends TestCase

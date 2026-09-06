@@ -38,12 +38,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Notification title or message') }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
                 <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
-                <select id="category" name="category" class="input secondary mt-1 w-full rounded">
+                <select id="category" name="category" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>
@@ -52,7 +52,7 @@
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All statuses') }}</option>
                     <option value="failed" @selected($filters['status'] === 'failed')>{{ __('Failed') }}</option>
                     <option value="healthy" @selected($filters['status'] === 'healthy')>{{ __('Recovered') }}</option>
@@ -61,7 +61,7 @@
             </div>
             <div>
                 <label for="state" class="block text-xs font-semibold uppercase text-secondary">{{ __('State') }}</label>
-                <select id="state" name="state" class="input secondary mt-1 w-full rounded">
+                <select id="state" name="state" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('Read and unread') }}</option>
                     <option value="unread" @selected($filters['state'] === 'unread')>{{ __('Unread') }}</option>
                     <option value="read" @selected($filters['state'] === 'read')>{{ __('Read') }}</option>
@@ -74,7 +74,7 @@
                     name="date_from"
                     type="date"
                     value="{{ $filters['date_from'] }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
@@ -84,7 +84,7 @@
                     name="date_to"
                     type="date"
                     value="{{ $filters['date_to'] }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
         </div>
@@ -102,7 +102,7 @@
     <section class="mb-6 rounded-lg border border-primary bg-primary p-4" aria-labelledby="saved-notification-filters">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div><h2 id="saved-notification-filters" class="font-bold text-primary">{{ __('Saved filters') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Reuse a notification view without rebuilding every filter.') }}</p></div>
-            <form method="POST" action="{{ route('notifications.saved-filters.store', array_filter($filters, fn ($value) => $value !== null)) }}" class="flex gap-2">@csrf<input name="name" maxlength="40" required class="input secondary min-w-0 rounded" placeholder="{{ __('Filter name') }}"><button type="submit" class="button primary">{{ __('Save current') }}</button></form>
+            <form method="POST" action="{{ route('notifications.saved-filters.store', array_filter($filters, fn ($value) => $value !== null)) }}" class="flex gap-2">@csrf<input name="name" maxlength="40" required class="input secondary min-w-0 rounded-sm" placeholder="{{ __('Filter name') }}"><button type="submit" class="button primary">{{ __('Save current') }}</button></form>
         </div>
         @if($savedFilters)
             <div class="mt-4 flex flex-wrap gap-2">
@@ -156,7 +156,7 @@
         }"
     >
         @if ($notifications->isNotEmpty())
-            <form id="notification-bulk-form" method="POST" action="{{ route('notifications.bulk') }}" class="sticky top-3 z-10 mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary bg-primary p-3 shadow-sm">
+            <form id="notification-bulk-form" method="POST" action="{{ route('notifications.bulk') }}" class="sticky top-3 z-10 mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-primary bg-primary p-3 shadow-xs">
                 @csrf
                 @method('PATCH')
                 <button type="button" class="button tertiary" x-on:click="selected = selected.length === pageIds.length ? [] : [...pageIds]">
@@ -199,7 +199,7 @@
                                 value="{{ $notification->id }}"
                                 form="notification-bulk-form"
                                 x-model="selected"
-                                class="h-4 w-4 rounded border-primary text-blue-600 focus:ring-blue-500"
+                                class="h-4 w-4 rounded-sm border-primary text-blue-600 focus:ring-blue-500"
                                 aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}"
                             >
                             <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Notification') }}</h2>

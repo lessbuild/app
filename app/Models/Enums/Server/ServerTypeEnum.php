@@ -11,6 +11,7 @@ enum ServerTypeEnum: string
     case database = 'database';
     case loadbalancer = 'load-balancer';
 
+    /** Return whether this role includes every service required for website provisioning. */
     public function canHostWebsites(): bool
     {
         // Website provisioning currently creates a local MySQL database, so it
@@ -19,7 +20,9 @@ enum ServerTypeEnum: string
     }
 
     /**
-     * @return list<string>
+     * Resolve the persisted role values that satisfy website provisioning requirements.
+     *
+     * @return list<string> Supported website-hosting roles for database queries.
      */
     public static function websiteHostingValues(): array
     {
@@ -29,6 +32,7 @@ enum ServerTypeEnum: string
         );
     }
 
+    /** @return list<string> Ordered software installation steps required for this server role. */
     public function installs(): array
     {
         return match ($this) {

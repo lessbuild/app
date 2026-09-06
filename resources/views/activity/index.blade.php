@@ -15,12 +15,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Activity message') }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
                 <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
-                <select id="category" name="category" class="input secondary mt-1 w-full rounded">
+                <select id="category" name="category" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>
@@ -31,11 +31,11 @@
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('From') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('To') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

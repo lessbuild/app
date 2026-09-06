@@ -4,8 +4,8 @@
         <label for="server_id" class="block text-sm font-medium text-primary">
             {{ __('Server') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="server_id" name="server_id" class="input secondary rounded" required>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="server_id" name="server_id" class="input secondary rounded-sm" required>
                 @foreach($servers as $server)
                     <option value="{{ $server->id }}"
                         @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)
@@ -22,13 +22,13 @@
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Website Name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('name') ?? ($website->name ?? null) }}"
                 type="text"
                 name="name"
                 id="name"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="Example: Deployer">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
@@ -38,7 +38,7 @@
         <label for="url" class="block text-sm font-medium text-primary">
             {{ __('Website URL') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-primary bg-tertiary text-primary text-sm">
                 http://
             </span>
@@ -62,7 +62,7 @@
                 id="environment"
                 name="environment"
                 rows="3"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="APP_ENV=production....">{{ old('environment') ?? ($website->environment ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -75,7 +75,7 @@
         <label for="release_retention" class="block text-sm font-medium text-primary">
             {{ __('Retained releases') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('release_retention', $website->release_retention ?? 5) }}"
                 type="number"
@@ -85,7 +85,7 @@
                 max="20"
                 step="1"
                 inputmode="numeric"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
             >
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -102,7 +102,7 @@
                 name="health_check_enabled"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded border-primary"
+                class="mt-1 rounded-sm border-primary"
                 @checked((bool) old('health_check_enabled', $website->health_check_enabled ?? false))
             >
             <div>
@@ -119,7 +119,7 @@
             <label for="health_check_path" class="block text-sm font-medium text-primary">
                 {{ __('Health check path') }}
             </label>
-            <div class="mt-1 flex rounded-md shadow-sm">
+            <div class="mt-1 flex rounded-md shadow-xs">
                 <span class="inline-flex items-center rounded-l-md border border-r-0 border-primary bg-tertiary px-3 text-sm text-primary">
                     http://{{ old('url', $website->url ?? __('website')) }}
                 </span>
@@ -146,7 +146,7 @@
                 name="health_monitoring_enabled"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded border-primary"
+                class="mt-1 rounded-sm border-primary"
                 @checked((bool) old('health_monitoring_enabled', $website->health_monitoring_enabled ?? true))
             >
             <div>
@@ -167,7 +167,7 @@
             <select
                 id="health_check_interval_minutes"
                 name="health_check_interval_minutes"
-                class="input secondary mt-1 rounded"
+                class="input secondary mt-1 rounded-sm"
             >
                 @foreach (\App\Models\Website::HEALTH_CHECK_INTERVALS as $minutes)
                     <option
@@ -191,7 +191,7 @@
             <select
                 id="health_failure_threshold"
                 name="health_failure_threshold"
-                class="input secondary mt-1 rounded"
+                class="input secondary mt-1 rounded-sm"
             >
                 @foreach (\App\Models\Website::HEALTH_FAILURE_THRESHOLDS as $failures)
                     <option
@@ -218,7 +218,7 @@
                 id="description"
                 name="description"
                 rows="3"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="My website">{{ old('description') ?? ($website->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">

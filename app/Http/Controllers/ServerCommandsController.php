@@ -7,6 +7,7 @@ use App\Actions\Server\QueueServerCommandAction;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -41,19 +42,29 @@ class ServerCommandsController extends Controller
      */
     private function metrics(Server $server, array $filters): array
     {
+        $counts = $this->filteredExecutions($server, $filters)
+            ->selectRaw('COUNT(*) AS total,
+                COALESCE(SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END), 0) AS active,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS succeeded,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS failed,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) AS canceled,
+                COALESCE(SUM(CASE WHEN output IS NOT NULL THEN 1 ELSE 0 END), 0) AS output', [
+                ServerCommandExecution::STATUS_QUEUED,
+                ServerCommandExecution::STATUS_RUNNING,
+                ServerCommandExecution::STATUS_SUCCEEDED,
+                ServerCommandExecution::STATUS_FAILED,
+                ServerCommandExecution::STATUS_CANCELED,
+            ])
+            ->toBase()
+            ->first();
+
         return [
-            'total' => $this->filteredExecutions($server, $filters)->count(),
-            'active' => $this->filteredExecutions($server, $filters)->active()->count(),
-            'succeeded' => $this->filteredExecutions($server, $filters)
-                ->where('status', ServerCommandExecution::STATUS_SUCCEEDED)
-                ->count(),
-            'failed' => $this->filteredExecutions($server, $filters)
-                ->where('status', ServerCommandExecution::STATUS_FAILED)
-                ->count(),
-            'canceled' => $this->filteredExecutions($server, $filters)
-                ->where('status', ServerCommandExecution::STATUS_CANCELED)
-                ->count(),
-            'output' => $this->filteredExecutions($server, $filters)->whereNotNull('output')->count(),
+            'total' => (int) $counts->total,
+            'active' => (int) $counts->active,
+            'succeeded' => (int) $counts->succeeded,
+            'failed' => (int) $counts->failed,
+            'canceled' => (int) $counts->canceled,
+            'output' => (int) $counts->output,
         ];
     }
 
@@ -112,11 +123,11 @@ class ServerCommandsController extends Controller
     public function cancel(
         Request $request,
         Server $server,
-        int $execution,
+        ServerCommandExecution $execution,
         CancelServerCommandAction $cancel,
     ): RedirectResponse {
         $this->authorize('update', $server);
-        $execution = $server->commandExecutions()->findOrFail($execution);
+        $this->ensureBelongsToServer($execution, $server);
 
         return $cancel->handle($execution, $request->user())
             ? back()->with('success', __('Queued command canceled.'))
@@ -126,20 +137,20 @@ class ServerCommandsController extends Controller
     public function rerun(
         Request $request,
         Server $server,
-        int $execution,
+        ServerCommandExecution $execution,
         QueueServerCommandAction $queue,
     ): RedirectResponse {
         $this->authorize('update', $server);
-        $source = $server->commandExecutions()->findOrFail($execution);
-        $rerun = $queue->handle($server, $request->user(), $source->command, $source->id);
+        $this->ensureBelongsToServer($execution, $server);
+        $rerun = $queue->handle($server, $request->user(), $execution->command, $execution->id);
 
         return back()->with('success', __('Command #:id was queued from history.', ['id' => $rerun->id]));
     }
 
-    public function destroy(Server $server, int $execution): RedirectResponse
+    public function destroy(Server $server, ServerCommandExecution $execution): RedirectResponse
     {
         $this->authorize('delete', $server);
-        $execution = $server->commandExecutions()->findOrFail($execution);
+        $this->ensureBelongsToServer($execution, $server);
         $deleted = $server->commandExecutions()
             ->whereKey($execution->id)
             ->whereIn('status', ServerCommandExecution::TERMINAL_STATUSES)
@@ -152,18 +163,27 @@ class ServerCommandsController extends Controller
 
     public function downloadOutput(
         Server $server,
-        int $execution,
+        ServerCommandExecution $execution,
         PlainTextLogDownload $download,
     ): Response {
         $this->authorize('view', $server);
-        $execution = $server->commandExecutions()
-            ->whereNotNull('output')
-            ->findOrFail($execution);
+        $this->ensureBelongsToServer($execution, $server);
+        abort_if($execution->output === null, 404);
 
         return $download->make(
             $execution->output,
             "lessbuild-server-{$server->id}-command-{$execution->id}.log",
         );
+    }
+
+    /**
+     * @param  ServerCommandExecution  $execution  The implicitly bound history record.
+     * @param  Server  $server  The authorized parent from the same route.
+     * @return void Reject a mismatched nested record with the same 404 as a scoped query.
+     */
+    private function ensureBelongsToServer(ServerCommandExecution $execution, Server $server): void
+    {
+        abort_unless((int) $execution->server_id === (int) $server->id, 404);
     }
 
     /** @return array{execution: ?int, status: ?string, output: ?string, date_from: ?string, date_to: ?string} */
@@ -212,12 +232,6 @@ class ServerCommandsController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

@@ -10,12 +10,12 @@
         :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
         <x-slot:buttons>
-            <a href="{{ route('servers.import.create') }}" class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary">
+            <a href="{{ route('servers.import.create') }}" class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary">
                 {{ __('Import existing') }}
             </a>
             <a
                 href="{{ route('servers.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded border border-primary"
+                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
             >
                 <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
@@ -36,12 +36,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name, identifier, or IP address') }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -51,7 +51,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
                     {{ __('Provisioning only') }}
                 </label>
@@ -136,7 +136,7 @@
                         <tr class="border-l border-r border-primary">
                             <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
                                 <div class="flex items-center">
-                                    <div class="h-10 w-10 flex-shrink-0">
+                                    <div class="h-10 w-10 shrink-0">
                                         <x-avatar :name="$server->label" class="h-10 w-10 rounded-md text-sm" />
                                     </div>
                                     <a href="{{ route('servers.show', $server) }}" class="ml-4">
@@ -202,7 +202,7 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
                     @else
-                        <a href="{{ route('servers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded text-sm shadow">
+                        <a href="{{ route('servers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded-sm text-sm shadow-sm">
                             {{ __('Add Server') }}
                         </a>
                     @endif

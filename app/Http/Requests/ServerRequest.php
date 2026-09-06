@@ -4,18 +4,20 @@ namespace App\Http\Requests;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
+use Illuminate\Validation\Rules\Exists;
 
 class ServerRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
-     * @return bool
+     * @return bool Whether the current workspace permits provisioning.
      */
-    public function authorize()
+    public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
@@ -23,9 +25,9 @@ class ServerRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, mixed>
+     * @return array<string, list<string|Enum|Exists>> Provisioning rules scoped to the current workspace.
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'type' => [
@@ -34,7 +36,7 @@ class ServerRequest extends FormRequest
             'provider_id' => [
                 'required',
                 'integer',
-                Rule::exists('providers', 'id')->where(function ($query) {
+                Rule::exists('providers', 'id')->where(function (Builder $query): Builder {
                     return $query
                         ->where('organization_id', $this->user()->current_organization_id)
                         ->whereIn('provider', Provider::SERVER_TYPES)
@@ -53,7 +55,7 @@ class ServerRequest extends FormRequest
             'recipes.*' => [
                 'integer',
                 'distinct',
-                Rule::exists('recipes', 'id')->where(function ($query) {
+                Rule::exists('recipes', 'id')->where(function (Builder $query): Builder {
                     return $query->where('organization_id', $this->user()->current_organization_id);
                 }),
             ],

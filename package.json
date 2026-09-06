@@ -3,22 +3,22 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "test:browser": "playwright test"
+        "test:browser": "playwright test",
+        "test:assets": "npm run build && playwright test tests/Browser/asset-layout.spec.js"
     },
     "devDependencies": {
         "@playwright/test": "^1.63.0",
-        "@tailwindcss/forms": "^0.5.2",
-        "@tailwindcss/typography": "^0.5.7",
+        "@tailwindcss/forms": "^0.5.11",
+        "@tailwindcss/typography": "^0.5.20",
+        "@tailwindcss/vite": "^4.3.3",
         "alpinejs": "^3.17.1",
         "axios": "^1.20.0",
         "laravel-vite-plugin": "^3.2.0",
-        "lodash": "^4.17.19",
-        "postcss": "^8.1.14",
-        "tailwindcss": "^3.1.7",
+        "lodash": "^4.18.1",
+        "tailwindcss": "^4.3.3",
         "vite": "^8.2.2"
     },
-    "dependencies": {
-        "autoprefixer": "^10.4.8",
-        "sass": "^1.54.0"
+    "engines": {
+        "node": "^20.19.0 || >=22.12.0"
     }
 }

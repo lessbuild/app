@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use App\Jobs\Server\RetryRemoteServerProvisioningJob;
 use App\Models\Server;
 use App\Models\ServerImportAssessment;
-use App\Services\ServerDiscovery;
 use App\Models\User;
+use App\Services\ServerDiscovery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
-use phpseclib3\Crypt\RSA;
+use phpseclib4\Crypt\RSA;
 use Tests\TestCase;
 
 class ImportServerTest extends TestCase
@@ -164,6 +164,7 @@ class ImportServerTest extends TestCase
     private function privateKey(): string
     {
         static $key;
+
         return $key ??= RSA::createKey(1024)->toString('OpenSSH');
     }
 }

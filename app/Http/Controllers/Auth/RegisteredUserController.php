@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\PersonalOrganization;
 use App\Services\AccessInvitation;
+use App\Services\PersonalOrganization;
 use App\Services\RegistrationAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -75,11 +75,11 @@ class RegisteredUserController extends Controller
         }
 
         $createUser = fn (): User => User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'password_set_at' => now(),
-            ]);
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'password_set_at' => now(),
+        ]);
 
         $user = $invitation
             ? $invitations->consume($invitationToken, fn ($lockedInvitation) => hash_equals($lockedInvitation->email, $validated['email']) ? $createUser() : null)

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Server;
 use App\Rules\Hostname;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +18,7 @@ class ImportWebsiteRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'server_id' => ['required', 'integer', Rule::exists('servers', 'id')->where(fn ($query) => $query->where('organization_id', $this->user()->current_organization_id)->where('provisioning_status', Server::STATUS_ACTIVE))],
+            'server_id' => ['required', 'integer', Rule::exists('servers', 'id')->where(fn (Builder $query): Builder => $query->where('organization_id', $this->user()->current_organization_id)->where('provisioning_status', Server::STATUS_ACTIVE))],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['required', 'string', 'max:1000'],
             'url' => ['required', 'string', 'max:255', new Hostname],

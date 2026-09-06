@@ -43,9 +43,39 @@ class SessionRevocationTest extends TestCase
         $user->update(['password' => Hash::make('new-password')]);
 
         $this->actingAs($user)
-            ->withSession(['password_hash_web' => $oldPasswordHash])
+            ->withSession([
+                'password_hash_web' => $oldPasswordHash,
+                'revoked_session_data' => 'must-be-cleared',
+            ])
             ->get(route('account.index'))
-            ->assertRedirect(route('login'));
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('url.intended', route('account.index'))
+            ->assertSessionMissing('password_hash_web')
+            ->assertSessionMissing('revoked_session_data');
+
+        $this->assertGuest();
+    }
+
+    public function test_a_json_request_with_a_stale_session_returns_an_authentication_error_without_redirecting(): void
+    {
+        $user = User::factory()->create([
+            'password' => Hash::make('old-password'),
+        ]);
+        $oldPasswordHash = $user->password;
+        $user->update(['password' => Hash::make('new-password')]);
+
+        $this->actingAs($user)
+            ->withSession([
+                'password_hash_web' => $oldPasswordHash,
+                'revoked_session_data' => 'must-be-cleared',
+            ])
+            ->getJson(route('account.index'))
+            ->assertUnauthorized()
+            ->assertExactJson(['message' => 'Unauthenticated.'])
+            ->assertHeaderMissing('Location')
+            ->assertSessionMissing('url.intended')
+            ->assertSessionMissing('password_hash_web')
+            ->assertSessionMissing('revoked_session_data');
 
         $this->assertGuest();
     }

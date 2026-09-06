@@ -25,26 +25,31 @@ class PreviewDeployment extends Model
         'closed_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Project, $this> */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
+    /** @return BelongsTo<Repository, $this> */
     public function sourceRepository(): BelongsTo
     {
         return $this->belongsTo(Repository::class, 'source_repository_id');
     }
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class)->withTrashed();
     }
 
+    /** @return BelongsTo<Repository, $this> */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class)->withTrashed();

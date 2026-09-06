@@ -33,16 +33,23 @@ class Event extends Model
         'user_id',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return MorphTo<Model, $this> */
     public function parentable(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /**
+     * Resolve the associated resource route using the event's existing visibility rules.
+     *
+     * @return ?string The resource URL, or null when no supported destination exists.
+     */
     public function url(): ?string
     {
         return match (true) {

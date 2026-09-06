@@ -7,7 +7,7 @@
             </header>
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 @foreach($plans as $key => $plan)
-                    <article @class(['relative flex flex-col rounded-2xl border bg-primary p-7 shadow-sm', 'border-ternary ring-2 ring-ternary' => $key === 'pro', 'border-primary' => $key !== 'pro'])>
+                    <article @class(['relative flex flex-col rounded-2xl border bg-primary p-7 shadow-xs', 'border-ternary ring-2 ring-ternary' => $key === 'pro', 'border-primary' => $key !== 'pro'])>
                         @if($key === 'pro')<span class="absolute -top-3 left-6 rounded-full bg-ternary px-3 py-1 text-xs font-bold uppercase text-white">{{ __('Most popular') }}</span>@endif
                         <h2 class="text-xl font-black text-primary">{{ $plan['name'] }}</h2><p class="mt-2 min-h-12 text-secondary">{{ $plan['description'] }}</p>
                         <p class="mt-7 text-primary"><span class="text-4xl font-black" x-text="interval === 'yearly' ? '${{ $plan['yearly_price'] }}' : '${{ $plan['price'] }}'">${{ $plan['yearly_price'] }}</span><span class="text-secondary" x-text="{{ $plan['price'] ? "interval === 'yearly' ? '/year' : '/month'" : "' forever'" }}">{{ $plan['price'] ? __('/year') : __(' forever') }}</span></p>

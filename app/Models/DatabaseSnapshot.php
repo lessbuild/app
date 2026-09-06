@@ -13,6 +13,7 @@ class DatabaseSnapshot extends Model
 
     protected $casts = ['size_bytes' => 'integer', 'active_connections' => 'integer', 'slow_queries' => 'integer', 'schema_tables' => 'array', 'collected_at' => 'datetime'];
 
+    /** @return BelongsTo<EnvironmentResource, $this> */
     public function resource(): BelongsTo
     {
         return $this->belongsTo(EnvironmentResource::class, 'environment_resource_id');

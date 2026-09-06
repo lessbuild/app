@@ -14,19 +14,32 @@ use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationResults;
 use App\Services\ApplicationConfigurationRetries;
 use App\Services\ApplicationConfigurationReviews;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 use JsonException;
 
 class ApplicationConfigurationController extends Controller
 {
+    /**
+     * @param  Request  $request  The authenticated workspace member.
+     * @param  Project  $project  The route-bound project.
+     * @return void Reject access unless the member can view and manage the project workspace.
+     */
     private function access(Request $request, Project $project): void
     {
         $this->authorize('view', $project);
         abort_unless($project->organization->permits($request->user(), 'manage'), 403);
     }
 
-    public function create(Request $request, Project $project)
+    /**
+     * @param  Request  $request  The authenticated request, including binding-catalog pagination.
+     * @param  Project  $project  The project being configured.
+     * @return View The upload form and workspace-scoped binding catalog without secret values.
+     */
+    public function create(Request $request, Project $project): View
     {
         $this->access($request, $project);
 
@@ -46,7 +59,13 @@ class ApplicationConfigurationController extends Controller
         ]);
     }
 
-    public function store(Request $request, Project $project, ApplicationConfigurationReviews $reviews)
+    /**
+     * @param  Request  $request  The submitted YAML and JSON bindings.
+     * @param  Project  $project  The authorized configuration target.
+     * @param  ApplicationConfigurationReviews  $reviews  Creates the immutable review and mutation-free plan.
+     * @return RedirectResponse The saved review or validation feedback without flashing input.
+     */
+    public function store(Request $request, Project $project, ApplicationConfigurationReviews $reviews): RedirectResponse
     {
         $this->access($request, $project);
         try {
@@ -66,7 +85,14 @@ class ApplicationConfigurationController extends Controller
         return redirect()->route('projects.configuration.review', [$project, $review]);
     }
 
-    public function show(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReviews $reviews)
+    /**
+     * @param  Request  $request  The member requesting a review or application receipt.
+     * @param  Project  $project  The review's authorized parent project.
+     * @param  ConfigurationReview  $review  The saved review to inspect.
+     * @param  ApplicationConfigurationReviews  $reviews  Revalidates an unapplied review.
+     * @return View|Response The current review/receipt, or a 422 response for a stale review.
+     */
+    public function show(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReviews $reviews): View|Response
     {
         $this->access($request, $project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
@@ -87,7 +113,15 @@ class ApplicationConfigurationController extends Controller
         return view('scenes.projects.configuration', compact('project', 'review', 'plan', 'application'));
     }
 
-    public function cancel(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation)
+    /**
+     * @param  Request  $request  A cancellation request containing only the operation identity.
+     * @param  Project  $project  The authorized parent project.
+     * @param  ConfigurationReview  $review  The review whose receipt references the operation.
+     * @param  ConfigurationOperation  $operation  The operation to cancel if still safe.
+     * @param  ApplicationConfigurationCancellation  $cancellation  Rechecks state and cancels pending work.
+     * @return RedirectResponse The current receipt or an explanation why cancellation was rejected.
+     */
+    public function cancel(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): RedirectResponse
     {
         $this->access($request, $project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
@@ -105,7 +139,15 @@ class ApplicationConfigurationController extends Controller
         return redirect()->route('projects.configuration.review', [$project, $review]);
     }
 
-    public function retry(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries)
+    /**
+     * @param  Request  $request  The review author's explicit retry request.
+     * @param  Project  $project  The authorized parent project.
+     * @param  ConfigurationReview  $review  The original review for the failed operation.
+     * @param  ConfigurationOperation  $operation  The failed operation referenced by the receipt.
+     * @param  ApplicationConfigurationRetries  $retries  Revalidates and reserves an idempotent retry.
+     * @return RedirectResponse The updated receipt or retry validation feedback.
+     */
+    public function retry(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): RedirectResponse
     {
         $this->access($request, $project);
         abort_unless((int) $review->project_id === (int) $project->id && (int) $review->requested_by === (int) $request->user()->id, 404);
@@ -123,7 +165,14 @@ class ApplicationConfigurationController extends Controller
         return redirect()->route('projects.configuration.review', [$project, $review]);
     }
 
-    public function apply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler)
+    /**
+     * @param  Request  $request  The authenticated application request without replacement input.
+     * @param  Project  $project  The authorized review target.
+     * @param  ConfigurationReview  $review  The saved immutable review to apply.
+     * @param  ApplicationConfigurationReconciler  $reconciler  Applies the reviewed local configuration atomically.
+     * @return RedirectResponse The durable receipt or validation feedback requiring a new review.
+     */
+    public function apply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): RedirectResponse
     {
         $this->access($request, $project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);

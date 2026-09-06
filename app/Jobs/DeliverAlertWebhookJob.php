@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\AlertDestination;
 use App\Notifications\AlertEmailNotification;
+use App\Support\PublicIpAddress;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -107,11 +108,7 @@ class DeliverAlertWebhookJob implements ShouldQueue
             throw new RuntimeException('Alert destinations must use HTTPS.');
         }
         $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
-        if ($addresses === [] || collect($addresses)->contains(fn (string $ip): bool => filter_var(
-            $ip,
-            FILTER_VALIDATE_IP,
-            FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE,
-        ) === false)) {
+        if ($addresses === [] || collect($addresses)->contains(fn (string $ip): bool => ! PublicIpAddress::isValid($ip))) {
             throw new RuntimeException('Alert destination does not resolve to a public address.');
         }
     }

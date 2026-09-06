@@ -422,22 +422,24 @@ The daemon installer provides a simple private-IP runtime at
 `http://PUBLIC_IP:8003`. Do not expose that development server as the public
 production runtime.
 
+The control plane requires PHP 8.5 with the extensions verified by `composer check-platform-reqs`; PHP 8.5.10 was used for this upgrade. Run the web process, workers, scheduler, and Composer with the same supported PHP runtime. The daemon installer accepts `BUILDPUSHER_PHP_BINARY=/usr/bin/php8.5` when several PHP versions are installed. See [the dependency upgrade record](docs/php-dependency-upgrade-2026-09-06.md) for rollout requirements and upstream version constraints.
+
 For the BuildPusher domain, Caddy serves `public/` directly and forwards PHP
-requests to the PHP 8.3 FPM Unix socket using [deploy/Caddyfile](deploy/Caddyfile).
+requests to the PHP 8.5 FPM Unix socket using [deploy/Caddyfile](deploy/Caddyfile).
 The FPM pool uses `ondemand` process management with four children on the
 current small host. The `www-data` account needs read access to the application
 and write access only to `database/`, `storage/`, and `bootstrap/cache/`.
 Production diagnostics should set:
 
 ```dotenv
-DIAGNOSTIC_SYSTEMD_SERVICES=php8.3-fpm.service,lessbuild-worker.service,caddy.service
+DIAGNOSTIC_SYSTEMD_SERVICES=php8.5-fpm.service,lessbuild-worker.service,caddy.service
 ```
 
 Check the web and worker processes with:
 
 ```bash
-systemctl status php8.3-fpm lessbuild-worker caddy lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
-journalctl -u php8.3-fpm -u lessbuild-worker -u caddy --since today
+systemctl status php8.5-fpm lessbuild-worker caddy lessbuild-backup.timer lessbuild-watchdog.timer lessbuild-health.timer
+journalctl -u php8.5-fpm -u lessbuild-worker -u caddy --since today
 curl --fail https://buildpusher.com/api/health
 php artisan queue:monitor database:default --max=10
 php artisan lessbuild:backup

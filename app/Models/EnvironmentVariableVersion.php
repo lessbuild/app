@@ -13,11 +13,13 @@ class EnvironmentVariableVersion extends Model
 
     protected $casts = ['value' => 'encrypted', 'version' => 'integer'];
 
+    /** @return BelongsTo<EnvironmentVariable, $this> */
     public function variable(): BelongsTo
     {
         return $this->belongsTo(EnvironmentVariable::class, 'environment_variable_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

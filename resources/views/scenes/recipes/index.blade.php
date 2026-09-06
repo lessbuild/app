@@ -20,7 +20,7 @@
     </x-layouts.partials.heading>
 
     @if (session('status'))
-        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
             {{ session('status') }}
         </div>
     @endif
@@ -36,12 +36,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name or description') }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
                 <label for="usage" class="block text-xs font-semibold uppercase text-secondary">{{ __('Usage') }}</label>
-                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded">
+                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All usage states') }}</option>
                     @foreach ($usages as $usage)
                         <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>

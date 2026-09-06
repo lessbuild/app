@@ -17,6 +17,7 @@ class StatusSubscription extends Model
         'verified_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<StatusPage, $this> */
     public function statusPage(): BelongsTo
     {
         return $this->belongsTo(StatusPage::class);

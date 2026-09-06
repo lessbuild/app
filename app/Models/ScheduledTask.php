@@ -22,11 +22,13 @@ class ScheduledTask extends Model
         'last_finished_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return HasMany<ScheduledTaskRun, $this> */
     public function runs(): HasMany
     {
         return $this->hasMany(ScheduledTaskRun::class);

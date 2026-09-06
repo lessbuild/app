@@ -16,7 +16,7 @@
                 <label class="block" for="display_name">
                     <span class="block pb-1 text-sm text-secondary">{{ __('Display name') }}</span>
                     <input
-                        class="input secondary w-full rounded"
+                        class="input secondary w-full rounded-sm"
                         id="display_name"
                         name="display_name"
                         type="text"
@@ -28,7 +28,7 @@
                 </label>
                 <x-forms.errors name="display_name" />
 
-                <div class="rounded border border-primary bg-secondary p-3 text-sm text-secondary">
+                <div class="rounded-sm border border-primary bg-secondary p-3 text-sm text-secondary">
                     <span class="font-medium text-primary">{{ __('Cloud hostname:') }}</span>
                     <code>{{ $server->name }}</code>
                     <p class="mt-1">{{ __('Leave the display name empty to use this hostname throughout the control panel.') }}</p>

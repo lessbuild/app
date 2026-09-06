@@ -24,6 +24,7 @@ class WebsiteLogSnapshot extends Model
         'refreshed_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);

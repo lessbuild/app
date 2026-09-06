@@ -7,7 +7,7 @@
 
     <div class="mt-8 space-y-8">
         @if (! auth()->user()->hasVerifiedEmail())
-            <div class="rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+            <div class="rounded-sm border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
                 <p class="font-semibold">{{ __('Verify your email') }}</p>
                 <p class="mt-1">{{ __('Verify :email before managing infrastructure or deployments.', ['email' => auth()->user()->email]) }}</p>
                 @if (session('status') === 'verification-link-sent')
@@ -33,7 +33,7 @@
             >
                 <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
                     @if (session('profile_status'))
-                        <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
                             {{ session('profile_status') }}
                         </div>
                     @endif
@@ -41,7 +41,7 @@
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Name') }}</span>
                         <input
-                            class="input secondary rounded"
+                            class="input secondary rounded-sm"
                             name="name"
                             type="text"
                             autocomplete="name"
@@ -54,7 +54,7 @@
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Email') }}</span>
                         <input
-                            class="input secondary rounded"
+                            class="input secondary rounded-sm"
                             name="email"
                             type="email"
                             autocomplete="email"
@@ -68,7 +68,7 @@
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
                             <input
-                                class="input secondary rounded"
+                                class="input secondary rounded-sm"
                                 name="current_password"
                                 type="password"
                                 autocomplete="current-password"
@@ -99,32 +99,32 @@
             >
                 <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
                     @if (session('password_status'))
-                        <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
                             {{ session('password_status') }}
                         </div>
                     @endif
 
                     @if (! auth()->user()->hasLocalPassword())
-                        <p class="rounded border border-primary bg-secondary p-3 text-sm text-secondary">
+                        <p class="rounded-sm border border-primary bg-secondary p-3 text-sm text-secondary">
                             {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type ?? 'a social provider')]) }}
                         </p>
                     @else
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
-                            <input class="input secondary rounded" name="current_password" type="password" autocomplete="current-password" required>
+                            <input class="input secondary rounded-sm" name="current_password" type="password" autocomplete="current-password" required>
                         </label>
                         <x-forms.errors name="current_password" bag="password" />
                     @endif
 
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('New password') }}</span>
-                        <input class="input secondary rounded" name="password" type="password" autocomplete="new-password" required>
+                        <input class="input secondary rounded-sm" name="password" type="password" autocomplete="new-password" required>
                     </label>
                     <x-forms.errors name="password" bag="password" />
 
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Confirm new password') }}</span>
-                        <input class="input secondary rounded" name="password_confirmation" type="password" autocomplete="new-password" required>
+                        <input class="input secondary rounded-sm" name="password_confirmation" type="password" autocomplete="new-password" required>
                     </label>
                 </div>
 
@@ -142,7 +142,7 @@
         >
             <div class="space-y-5 bg-primary px-4 py-5 sm:p-6">
                 @if (session('two_factor_status'))
-                    <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('two_factor_status') }}</div>
+                    <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('two_factor_status') }}</div>
                 @endif
 
                 @if (session('two_factor_recovery_codes'))
@@ -151,7 +151,7 @@
                         <p class="mt-1 text-sm">{{ __('They will not be shown again. Store them somewhere separate from your authenticator app.') }}</p>
                         <div class="mt-4 grid gap-2 font-mono text-sm sm:grid-cols-2">
                             @foreach (session('two_factor_recovery_codes') as $recoveryCode)
-                                <code class="rounded bg-white px-3 py-2">{{ $recoveryCode }}</code>
+                                <code class="rounded-sm bg-white px-3 py-2">{{ $recoveryCode }}</code>
                             @endforeach
                         </div>
                     </div>
@@ -167,18 +167,18 @@
                             @csrf
                             <h3 class="font-bold text-primary">{{ __('Replace recovery codes') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
-                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" placeholder="{{ __('Current password') }}" required>
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" placeholder="{{ __('Current password') }}" required>
                             @endif
-                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
                             <button type="submit" class="button primary">{{ __('Generate new codes') }}</button>
                         </form>
                         <form method="POST" action="{{ route('account.two-factor.disable') }}" class="space-y-3 rounded-xl border border-red-200 p-4">
                             @csrf @method('DELETE')
                             <h3 class="font-bold text-primary">{{ __('Disable two-factor authentication') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
-                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" placeholder="{{ __('Current password') }}" required>
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" placeholder="{{ __('Current password') }}" required>
                             @endif
-                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
                             <button type="submit" class="button secondary text-red-700">{{ __('Disable two-factor') }}</button>
                         </form>
                     </div>
@@ -187,12 +187,12 @@
                         <h3 class="font-bold text-primary">{{ __('Connect your authenticator app') }}</h3>
                         <p class="mt-1 text-sm text-secondary">{{ __('Add this setup key manually, then enter the generated six-digit code.') }}</p>
                         <code class="mt-3 block break-all rounded-lg bg-secondary p-3 font-mono text-primary">{{ auth()->user()->two_factor_secret }}</code>
-                        <details class="mt-3 text-sm text-secondary"><summary class="cursor-pointer font-semibold text-ternary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded bg-secondary p-3 text-xs">{{ $twoFactorProvisioningUri }}</code></details>
+                        <details class="mt-3 text-sm text-secondary"><summary class="cursor-pointer font-semibold text-ternary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-sm bg-secondary p-3 text-xs">{{ $twoFactorProvisioningUri }}</code></details>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <form method="POST" action="{{ route('account.two-factor.confirm') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
                             @csrf
-                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Six-digit code') }}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="input secondary w-full rounded font-mono" required></label>
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Six-digit code') }}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="input secondary w-full rounded-sm font-mono" required></label>
                             <button type="submit" class="button primary">{{ __('Confirm and enable') }}</button>
                         </form>
                         <form method="POST" action="{{ route('account.two-factor.cancel') }}">@csrf @method('DELETE')
@@ -204,7 +204,7 @@
                     <form method="POST" action="{{ route('account.two-factor.enable') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         @csrf
                         @if (auth()->user()->hasLocalPassword())
-                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" required></label>
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" required></label>
                         @endif
                         <button type="submit" class="button primary">{{ __('Set up authenticator') }}</button>
                     </form>
@@ -243,7 +243,7 @@
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('sign_ins_status'))
-                    <div class="m-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <div class="m-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
                         {{ session('sign_ins_status') }}
                     </div>
                 @endif
@@ -296,7 +296,7 @@
                                     {{ __('Current password') }}
                                 </span>
                                 <input
-                                    class="input secondary rounded"
+                                    class="input secondary rounded-sm"
                                     name="current_password"
                                     type="password"
                                     autocomplete="current-password"
@@ -328,18 +328,18 @@
         >
             <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
                 @if (session('sessions_status'))
-                    <div class="rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
                         {{ session('sessions_status') }}
                     </div>
                 @endif
                 @if (session('sessions_error'))
-                    <div class="rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                    <div class="rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
                         {{ session('sessions_error') }}
                     </div>
                 @endif
 
                 @if ($browserSessionManagementAvailable)
-                    <div class="divide-y divide-primary rounded border border-primary">
+                    <div class="divide-y divide-primary rounded-sm border border-primary">
                         @forelse ($browserSessions as $browserSession)
                             <div class="flex flex-wrap items-start justify-between gap-4 p-4">
                                 <div>
@@ -370,7 +370,7 @@
                                                 {{ __('Current password') }}
                                             </span>
                                             <input
-                                                class="input secondary rounded"
+                                                class="input secondary rounded-sm"
                                                 name="current_password"
                                                 type="password"
                                                 autocomplete="current-password"
@@ -409,7 +409,7 @@
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
                             <input
-                                class="input secondary rounded"
+                                class="input secondary rounded-sm"
                                 name="current_password"
                                 type="password"
                                 autocomplete="current-password"
@@ -436,12 +436,12 @@
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('social_status'))
-                    <div class="m-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <div class="m-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
                         {{ session('social_status') }}
                     </div>
                 @endif
                 @if (session('social_error'))
-                    <div class="m-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                    <div class="m-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
                         {{ session('social_error') }}
                     </div>
                 @endif
@@ -465,7 +465,7 @@
                                             {{ __('Current password') }}
                                         </span>
                                         <input
-                                            class="input secondary rounded"
+                                            class="input secondary rounded-sm"
                                             name="current_password"
                                             type="password"
                                             autocomplete="current-password"
@@ -512,12 +512,12 @@
                 <form method="POST" action="{{ route('account.destroy') }}" class="space-y-4 rounded-xl border border-red-200 bg-red-50 p-4">
                     @csrf @method('DELETE')
                     <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes BuildPusher control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.') }}</p></div>
-                    <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded" required></label>
+                    <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded-sm" required></label>
                     @if (auth()->user()->hasLocalPassword())
-                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded" required></label>
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" required></label>
                     @endif
                     @if (auth()->user()->twoFactorEnabled())
-                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Authenticator or recovery code') }}</span><input name="code" autocomplete="one-time-code" class="input secondary w-full rounded font-mono" required></label>
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Authenticator or recovery code') }}</span><input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" required></label>
                     @endif
                     <x-forms.errors name="confirmation" bag="deleteAccount" />
                     <x-forms.errors name="current_password" bag="deleteAccount" />

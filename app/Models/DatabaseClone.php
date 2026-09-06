@@ -13,11 +13,13 @@ class DatabaseClone extends Model
 
     protected $casts = ['transferred_bytes' => 'integer', 'started_at' => 'datetime', 'finished_at' => 'datetime'];
 
+    /** @return BelongsTo<EnvironmentResource, $this> */
     public function source(): BelongsTo
     {
         return $this->belongsTo(EnvironmentResource::class, 'source_resource_id');
     }
 
+    /** @return BelongsTo<EnvironmentResource, $this> */
     public function target(): BelongsTo
     {
         return $this->belongsTo(EnvironmentResource::class, 'target_resource_id');

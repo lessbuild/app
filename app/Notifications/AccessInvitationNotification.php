@@ -13,7 +13,10 @@ class AccessInvitationNotification extends Notification implements ShouldQueue
 
     public function __construct(public readonly string $url, public readonly int $days) {}
 
-    public function via(object $notifiable): array { return ['mail']; }
+    public function via(object $notifiable): array
+    {
+        return ['mail'];
+    }
 
     public function toMail(object $notifiable): MailMessage
     {

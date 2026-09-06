@@ -163,7 +163,7 @@ class LocalUiAssetTest extends TestCase
 
         $homepage = File::get(resource_path('views/scenes/index.blade.php'));
         $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
-        $styles = File::get(resource_path('css/app.scss'));
+        $styles = File::get(resource_path('css/app.css'));
         $this->assertStringContainsString(':livewire="false"', $homepage);
         $this->assertStringContainsString('@if ($livewire)', $coreLayout);
         $this->assertStringContainsString('[x-cloak]', $styles);

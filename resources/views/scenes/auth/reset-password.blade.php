@@ -15,7 +15,7 @@
             <label class="block">
                 <span class="block pb-1 text-sm text-secondary">{{ __('Email') }}</span>
                 <input
-                    class="input secondary rounded"
+                    class="input secondary rounded-sm"
                     type="email"
                     name="email"
                     value="{{ old('email', $request->email) }}"
@@ -29,7 +29,7 @@
             <label class="block">
                 <span class="block pb-1 text-sm text-secondary">{{ __('New password') }}</span>
                 <input
-                    class="input secondary rounded"
+                    class="input secondary rounded-sm"
                     type="password"
                     name="password"
                     autocomplete="new-password"
@@ -41,7 +41,7 @@
             <label class="block">
                 <span class="block pb-1 text-sm text-secondary">{{ __('Confirm new password') }}</span>
                 <input
-                    class="input secondary rounded"
+                    class="input secondary rounded-sm"
                     type="password"
                     name="password_confirmation"
                     autocomplete="new-password"
@@ -51,7 +51,7 @@
         </div>
 
         <div class="mt-5 flex justify-end">
-            <button type="submit" class="button tertiary rounded">{{ __('Reset password') }}</button>
+            <button type="submit" class="button tertiary rounded-sm">{{ __('Reset password') }}</button>
         </div>
     </form>
 </x-layouts.auth>

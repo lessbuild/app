@@ -22,6 +22,7 @@ class Region extends Model
         'slug',
     ];
 
+    /** @return HasMany<Size, $this> */
     public function sizes(): HasMany
     {
         return $this->hasMany(Size::class);

@@ -5,7 +5,6 @@ namespace App\Policies;
 use App\Models\Provider;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
-use Illuminate\Auth\Access\Response;
 
 class ProviderPolicy
 {
@@ -14,19 +13,23 @@ class ProviderPolicy
     /**
      * Determine whether the user can view any models.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user): bool
     {
         //
+        return false;
     }
 
     /**
      * Determine whether the user can view the model.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected provider connection.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function view(User $user, Provider $provider)
+    public function view(User $user, Provider $provider): bool
     {
         return $provider->organization
             ? (int) $provider->organization_id === (int) $user->current_organization_id
@@ -37,19 +40,23 @@ class ProviderPolicy
     /**
      * Determine whether the user can create models.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function create(User $user)
+    public function create(User $user): bool
     {
         //
+        return false;
     }
 
     /**
      * Determine whether the user can update the model.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected provider connection.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function update(User $user, Provider $provider)
+    public function update(User $user, Provider $provider): bool
     {
         return $this->view($user, $provider)
             && ($provider->organization?->permits($user, 'manage') ?? true);
@@ -58,9 +65,11 @@ class ProviderPolicy
     /**
      * Determine whether the user can delete the model.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected provider connection.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function delete(User $user, Provider $provider)
+    public function delete(User $user, Provider $provider): bool
     {
         return $this->update($user, $provider);
     }
@@ -68,20 +77,26 @@ class ProviderPolicy
     /**
      * Determine whether the user can restore the model.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected provider connection.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function restore(User $user, Provider $provider)
+    public function restore(User $user, Provider $provider): bool
     {
         //
+        return false;
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      *
-     * @return Response|bool
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected provider connection.
+     * @return bool Whether this policy grants the requested ability.
      */
-    public function forceDelete(User $user, Provider $provider)
+    public function forceDelete(User $user, Provider $provider): bool
     {
         //
+        return false;
     }
 }

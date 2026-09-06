@@ -31,7 +31,7 @@
             <form method="POST" action="{{ route('servers.import.confirm', $assessment) }}" class="mt-6 space-y-5">@csrf
                 <label class="flex gap-3"><input type="checkbox" name="host_fingerprint_confirmed" value="1" required><span class="text-sm text-secondary">{{ __('I verified the SSH fingerprint through a trusted source.') }}</span></label>
                 <label class="flex gap-3"><input type="checkbox" name="backup_confirmed" value="1" required><span class="text-sm text-secondary">{{ __('I have a current backup or disposable server snapshot and understand existing configuration may change.') }}</span></label>
-                <label><span class="block text-sm font-bold text-primary">{{ __('Type :name to approve', ['name'=>$assessment->configuration['name']]) }}</span><input name="confirmation" required autocomplete="off" class="input secondary mt-2 rounded"></label>
+                <label><span class="block text-sm font-bold text-primary">{{ __('Type :name to approve', ['name'=>$assessment->configuration['name']]) }}</span><input name="confirmation" required autocomplete="off" class="input secondary mt-2 rounded-sm"></label>
                 <button type="submit" class="button primary w-full justify-center">{{ __('Approve and begin provisioning') }}</button>
             </form>
         </section>

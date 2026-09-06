@@ -6,7 +6,7 @@
     <meta name="robots" content="index, follow">
     <meta name="description" content="Current availability of BuildPusher services.">
     <title>{{ __('BuildPusher Status') }}</title>
-    @vite(['resources/css/app.scss'])
+    @vite(['resources/css/app.css'])
 </head>
 <body class="min-h-screen bg-secondary text-primary">
     <main class="mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-16">
@@ -20,7 +20,7 @@
         </header>
 
         <section @class([
-            'mt-10 rounded-2xl border p-6 shadow-sm',
+            'mt-10 rounded-2xl border p-6 shadow-xs',
             'border-green-300 bg-green-50 text-green-900' => $snapshot['operational'],
             'border-amber-300 bg-amber-50 text-amber-950' => ! $snapshot['operational'],
         ]) aria-live="polite">
@@ -30,7 +30,7 @@
             </div>
         </section>
 
-        <section class="mt-6 overflow-hidden rounded-2xl border border-primary bg-primary shadow-sm" aria-label="{{ __('Services') }}">
+        <section class="mt-6 overflow-hidden rounded-2xl border border-primary bg-primary shadow-xs" aria-label="{{ __('Services') }}">
             @foreach ($snapshot['components'] as $component)
                 <article class="flex flex-col gap-3 border-b border-primary p-5 last:border-0 sm:flex-row sm:items-center">
                     <div class="min-w-0 flex-1">

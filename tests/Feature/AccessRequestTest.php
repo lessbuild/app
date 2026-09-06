@@ -129,6 +129,7 @@ class AccessRequestTest extends TestCase
         $this->actingAs($admin)->patch(route('admin.access-requests.update', $lead), ['status' => 'invited']);
         Notification::assertSentOnDemand(AccessInvitationNotification::class, function ($notification) use (&$invitationUrl): bool {
             $invitationUrl = $notification->url;
+
             return true;
         });
         $this->post(route('logout'));
@@ -214,6 +215,8 @@ class AccessRequestTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.access-requests.export', ['status' => 'pending']))->assertOk();
         $this->assertStringContainsString("'=IMPORTXML", $response->streamedContent());
         $this->assertStringContainsString('lead@example.com', $response->streamedContent());
+        $this->assertStringContainsString('Operate production servers safely.', $response->streamedContent());
+        $this->assertStringNotContainsString("Operate production\nservers safely.", $response->streamedContent());
         $this->assertStringNotContainsString('declined@example.com', $response->streamedContent());
         $response->assertHeader('Cache-Control', 'no-store, private');
     }
@@ -230,7 +233,9 @@ class AccessRequestTest extends TestCase
                 'email_hash' => hash('sha256', $email), 'email' => $email, 'name' => 'Lead',
                 'use_case' => 'A sufficiently detailed deployment use case.', 'status' => $status, 'accepted_at' => $accepted,
             ]);
-            if ($index < 3) $lead->update(['updated_at' => now()->subDays(400)]);
+            if ($index < 3) {
+                $lead->update(['updated_at' => now()->subDays(400)]);
+            }
         }
 
         $this->artisan('buildpusher:access-requests:prune', ['--days' => 365])->assertSuccessful();

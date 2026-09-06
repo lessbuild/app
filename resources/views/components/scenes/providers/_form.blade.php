@@ -9,14 +9,14 @@
             {{ __('Provider') }}
         </label>
         <div
-            class="mt-1 grid grid-cols-2 gap-4 rounded-md shadow-sm"
+            class="mt-1 grid grid-cols-2 gap-4 rounded-md shadow-xs"
             role="radiogroup"
             aria-label="{{ __('Provider') }}"
             x-data="{ provider: {{ Illuminate\Support\Js::from(old('provider', $provider->provider ?? null)) }} }"
         >
             <input type="hidden" name="provider" :value="provider">
             <div
-                class="bg-secondary border border-secondary rounded p-2"
+                class="bg-secondary border border-secondary rounded-sm p-2"
                 :class="{ 'bg-tertiary': provider == 'digitalocean' }"
                 @click="provider = 'digitalocean'"
                 @keydown.enter="provider = 'digitalocean'"
@@ -31,7 +31,7 @@
             </div>
 
             <div
-                class="bg-secondary border border-secondary rounded p-2"
+                class="bg-secondary border border-secondary rounded-sm p-2"
                 :class="{ 'bg-tertiary': provider == 'github' }"
                 @click="provider = 'github'"
                 @keydown.enter="provider = 'github'"
@@ -46,7 +46,7 @@
             </div>
 
             <div
-                class="bg-secondary border border-secondary rounded p-2"
+                class="bg-secondary border border-secondary rounded-sm p-2"
                 :class="{ 'bg-tertiary': provider == 'gitlab' }"
                 @click="provider = 'gitlab'"
                 @keydown.enter="provider = 'gitlab'"
@@ -61,7 +61,7 @@
             </div>
 
             <div
-                class="bg-secondary border border-secondary rounded p-2"
+                class="bg-secondary border border-secondary rounded-sm p-2"
                 :class="{ 'bg-tertiary': provider == 'bitbucket' }"
                 @click="provider = 'bitbucket'"
                 @keydown.enter="provider = 'bitbucket'"
@@ -76,7 +76,7 @@
             </div>
 
             <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
                 :class="{ 'bg-tertiary': provider == 'hetzner' }"
                 @click="provider = 'hetzner'"
                 @keydown.enter="provider = 'hetzner'"
@@ -88,7 +88,7 @@
             </div>
 
             <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
                 :class="{ 'bg-tertiary': provider == 'vultr' }"
                 @click="provider = 'vultr'"
                 @keydown.enter="provider = 'vultr'"
@@ -100,7 +100,7 @@
             </div>
 
             <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded p-4 text-center"
+                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
                 :class="{ 'bg-tertiary': provider == 'cloudflare' }"
                 @click="provider = 'cloudflare'"
                 @keydown.enter="provider = 'cloudflare'"
@@ -119,7 +119,7 @@
         <label for="token" class="block text-sm font-medium text-primary">
             {{ __('Provider Token') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('token') }}"
                 type="password"
@@ -127,7 +127,7 @@
                 id="token"
                 autocomplete="off"
                 @if (! isset($provider)) required @endif
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="************">
         </div>
         <x-forms.errors name="token"></x-forms.errors>
@@ -137,13 +137,13 @@
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Provider Name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('name') ?? ($provider->name ?? null) }}"
                 type="text"
                 name="name"
                 id="name"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="Example: Source control access token">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
@@ -158,7 +158,7 @@
                 id="description"
                 name="description"
                 rows="3"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="{{ __('Example: To manage one website') }}">{{ old('description') ?? ($provider->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -175,7 +175,7 @@
                 name="connection_monitoring_enabled"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded border-primary"
+                class="mt-1 rounded-sm border-primary"
                 @checked((bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true))
             >
             <div>
@@ -196,7 +196,7 @@
             <select
                 id="connection_check_interval_minutes"
                 name="connection_check_interval_minutes"
-                class="input secondary mt-1 rounded"
+                class="input secondary mt-1 rounded-sm"
             >
                 @foreach (\App\Models\Provider::CONNECTION_CHECK_INTERVALS as $minutes)
                     @php($hours = intdiv($minutes, 60))
@@ -221,7 +221,7 @@
             <select
                 id="connection_failure_threshold"
                 name="connection_failure_threshold"
-                class="input secondary mt-1 rounded"
+                class="input secondary mt-1 rounded-sm"
             >
                 @foreach (\App\Models\Provider::CONNECTION_FAILURE_THRESHOLDS as $failures)
                     <option

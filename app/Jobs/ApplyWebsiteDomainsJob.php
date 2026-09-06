@@ -63,6 +63,7 @@ class ApplyWebsiteDomainsJob implements ShouldBeUnique, ShouldQueue
         }
 
         $phpVersion = (string) config('lessbuild.default_php_version', '8.4');
+
         return "    root * /var/www/{$website->deployment_slug}/current/public\n{$log}\n    file_server\n    php_fastcgi unix//var/run/php/php{$phpVersion}-fpm.sock";
     }
 }

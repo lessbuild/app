@@ -13,7 +13,7 @@
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="result" class="block text-xs font-semibold uppercase text-secondary">{{ __('Result') }}</label>
-                <select id="result" name="result" class="input secondary mt-1 w-full rounded">
+                <select id="result" name="result" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All results') }}</option>
                     <option value="healthy" @selected($filters['result'] === 'healthy')>{{ __('Healthy') }}</option>
                     <option value="failed" @selected($filters['result'] === 'failed')>{{ __('Failed') }}</option>
@@ -21,7 +21,7 @@
             </div>
             <div>
                 <label for="source" class="block text-xs font-semibold uppercase text-secondary">{{ __('Source') }}</label>
-                <select id="source" name="source" class="input secondary mt-1 w-full rounded">
+                <select id="source" name="source" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All sources') }}</option>
                     @foreach ($sources as $source)
                         <option value="{{ $source }}" @selected($filters['source'] === $source)>{{ str($source)->title() }}</option>
@@ -30,11 +30,11 @@
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Checked from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Checked through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

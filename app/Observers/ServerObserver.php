@@ -58,7 +58,7 @@ class ServerObserver
      *
      * @throws \Exception
      */
-    public function deleting(Server $server)
+    public function deleting(Server $server): void
     {
         $this->deleteCloudServer->handle($server);
 

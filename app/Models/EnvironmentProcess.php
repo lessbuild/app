@@ -15,6 +15,7 @@ class EnvironmentProcess extends Model
 
     protected $casts = ['command' => 'encrypted', 'replicas' => 'integer', 'restart_delay_seconds' => 'integer', 'is_enabled' => 'boolean'];
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);

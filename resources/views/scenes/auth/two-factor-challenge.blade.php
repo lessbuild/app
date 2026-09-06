@@ -6,9 +6,9 @@
         @csrf
         <label class="block">
             <span class="text-sm text-secondary">{{ __('Authentication or recovery code') }}</span>
-            <input name="code" class="input primary mt-1 w-full rounded font-mono" inputmode="text" autocomplete="one-time-code" autofocus required>
+            <input name="code" class="input primary mt-1 w-full rounded-sm font-mono" inputmode="text" autocomplete="one-time-code" autofocus required>
         </label>
         <x-forms.errors name="code" />
-        <button type="submit" class="button tertiary w-full justify-center rounded">{{ __('Verify and sign in') }}</button>
+        <button type="submit" class="button tertiary w-full justify-center rounded-sm">{{ __('Verify and sign in') }}</button>
     </form>
 </x-layouts.auth>

@@ -11,19 +11,19 @@
     />
 
     @if ($filters['execution'])
-        <p class="mb-4 rounded border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+        <p class="mb-4 rounded-sm border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
             {{ __('Focused on execution #:id.', ['id' => $filters['execution']]) }}
         </p>
     @endif
 
     <form method="GET" action="{{ route('servers.commands.index', $server) }}" class="mb-6 rounded-lg border border-primary bg-primary p-4">
         @error('command')
-            <p class="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
+            <p class="mb-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $message }}</p>
         @enderror
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div class="min-w-64 flex-1">
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $option)
                         <option value="{{ $option }}" @selected($filters['status'] === $option)>
@@ -34,7 +34,7 @@
             </div>
             <div>
                 <label for="output" class="block text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</label>
-                <select id="output" name="output" class="input secondary mt-1 w-full rounded">
+                <select id="output" name="output" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('Any output state') }}</option>
                     <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                     <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
@@ -47,7 +47,7 @@
                     name="date_from"
                     type="date"
                     value="{{ $filters['date_from'] }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
             <div>
@@ -57,7 +57,7 @@
                     name="date_to"
                     type="date"
                     value="{{ $filters['date_to'] }}"
-                    class="input secondary mt-1 w-full rounded"
+                    class="input secondary mt-1 w-full rounded-sm"
                 >
             </div>
         </div>

@@ -22,7 +22,7 @@ class RedeployBuildAction
             $repository = Repository::query()->lockForUpdate()->findOrFail($source->repository_id);
             $lockedSource = $repository->builds()->findOrFail($source->id);
 
-            if (! in_array($lockedSource->status, Build::TERMINAL_STATUSES, true)) {
+            if ($lockedSource->statusEnum()?->isTerminal() !== true) {
                 return new BuildRedeploymentResult(BuildRedeploymentResult::INELIGIBLE);
             }
 

@@ -13,7 +13,7 @@
 @endphp
 
 @if ($errors->has('social_auth'))
-    <div class="mt-6 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+    <div class="mt-6 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
         {{ $errors->first('social_auth') }}
     </div>
 @endif

@@ -17,7 +17,7 @@ class GenerateSizesAndRegionsAction
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(): void
     {
         $provider = $this->providers->resolveCredentials(Provider::TYPE_DIGITALOCEAN, (string) Env::get('DO_KEY'));
 

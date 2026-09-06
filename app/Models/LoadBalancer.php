@@ -14,21 +14,25 @@ class LoadBalancer extends Model
 
     protected $casts = ['applied_at' => 'datetime'];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return BelongsTo<Server, $this> */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
+    /** @return HasMany<LoadBalancerNode, $this> */
     public function nodes(): HasMany
     {
         return $this->hasMany(LoadBalancerNode::class);

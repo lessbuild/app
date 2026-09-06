@@ -36,7 +36,7 @@
                 <meta name="twitter:description" content="{{ $description }}">
             @endif
         @endif
-        @vite('resources/css/app.scss')
+        @vite('resources/css/app.css')
         @if (! $livewire)
             @vite('resources/js/alpine.js')
         @endif

@@ -1,0 +1,66 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out the application
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install PHP from the verified runtime file
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version-file: .php-version
+          extensions: bcmath, ctype, curl, dom, fileinfo, intl, mbstring, pcntl, pdo_sqlite, sqlite3, tokenizer, xml, xmlwriter, zip
+          ini-values: memory_limit=1G, max_execution_time=0
+          coverage: none
+          tools: composer:2.10.3
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Validate and install locked PHP dependencies
+        run: |
+          composer validate --strict --no-check-publish
+          composer install --no-interaction --prefer-dist --no-progress
+          composer check-platform-reqs
+          composer audit --locked --no-interaction
+
+      - name: Install locked JavaScript dependencies
+        run: npm ci
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Run isolated application tests
+        run: php artisan test
+
+      - name: Verify production dependency installation
+        run: composer install --no-dev --dry-run --no-scripts --no-interaction
+
+      - name: Install Chromium for browser verification
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify rendered layouts and navigation
+        run: npx playwright test tests/Browser/asset-layout.spec.js

@@ -1,17 +1,17 @@
-@use 'theme';
-@use 'components/button';
-@use 'components/input';
+@import "tailwindcss" source(none);
+@import "./theme.css";
+@import "./components/button.css";
+@import "./components/input.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@source "../views";
+@source "../js";
+@source inline("dark light");
+
+@plugin "@tailwindcss/forms";
 
 [x-cloak] {
     display: none !important;
 }
-
-@include button.styles;
-@include input.styles;
 
 #main-content,
 #main-content .grid,
@@ -28,8 +28,8 @@
     max-width: 100%;
 }
 
-// Status and notice panels use colour as an outline, not as a full surface.
-// Buttons, progress indicators, and compact badges keep their filled states.
+/* Status and notice panels use colour as an outline, not as a full surface.
+   Buttons, progress indicators, and compact badges keep their filled states. */
 #main-content .border:is(
     .bg-red-50,
     .bg-orange-50,

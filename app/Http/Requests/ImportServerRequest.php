@@ -3,10 +3,12 @@
 namespace App\Http\Requests;
 
 use App\Models\Enums\Server\ServerTypeEnum;
+use App\Support\PublicIpAddress;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Enum;
-use phpseclib3\Crypt\PublicKeyLoader;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Enum;
+use phpseclib4\Crypt\PublicKeyLoader;
 
 class ImportServerRequest extends FormRequest
 {
@@ -23,12 +25,9 @@ class ImportServerRequest extends FormRequest
             'type' => ['required', new Enum(ServerTypeEnum::class)],
             'public_ip' => [
                 'required', 'ip',
-                Rule::unique('servers', 'public_ip')->where(fn ($query) => $query->where('organization_id', $this->user()->current_organization_id)),
+                Rule::unique('servers', 'public_ip')->where(fn (Builder $query): Builder => $query->where('organization_id', $this->user()->current_organization_id)),
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    $isPublic = filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
-                    $isMulticast = str_starts_with(strtolower((string) $value), 'ff')
-                        || (filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) && (int) explode('.', (string) $value)[0] >= 224);
-                    if (! config('lessbuild.allow_private_server_ips') && (! $isPublic || $isMulticast)) {
+                    if (! config('lessbuild.allow_private_server_ips') && ! PublicIpAddress::isValid((string) $value)) {
                         $fail(__('Enter a publicly routable IP address. Private, loopback, link-local, multicast, and reserved addresses are blocked.'));
                     }
                 },
@@ -44,9 +43,12 @@ class ImportServerRequest extends FormRequest
                         $privateKey = PublicKeyLoader::loadPrivateKey($key);
                     } catch (\Throwable) {
                         $fail(__('Enter an unencrypted OpenSSH-compatible private key.'));
+
                         return;
                     }
-                    if (! method_exists($privateKey, 'getPublicKey')) $fail(__('Enter an unencrypted OpenSSH-compatible private key.'));
+                    if (! method_exists($privateKey, 'getPublicKey')) {
+                        $fail(__('Enter an unencrypted OpenSSH-compatible private key.'));
+                    }
                 },
             ],
         ];

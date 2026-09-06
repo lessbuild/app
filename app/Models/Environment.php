@@ -33,26 +33,36 @@ class Environment extends Model
         'container_port' => 'integer',
     ];
 
+    /** @return BelongsTo<Project, $this> */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
+    /** @return BelongsTo<Server, $this> */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function deploymentLocker(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deployment_locked_by');
     }
 
+    /**
+     * Evaluate deployment locks and the configured local maintenance window.
+     *
+     * @param  ?Carbon  $at  The time to evaluate; defaults to the current time without mutating the input.
+     * @return ?string The reason deployment is blocked, or null when deployment is allowed.
+     */
     public function deploymentBlockReason(?Carbon $at = null): ?string
     {
         if ($this->deployment_locked_at) {
@@ -77,41 +87,49 @@ class Environment extends Model
         return $inside ? null : __('Deployment is outside this environment’s maintenance window.');
     }
 
+    /** @return HasMany<EnvironmentVariable, $this> */
     public function variables(): HasMany
     {
         return $this->hasMany(EnvironmentVariable::class);
     }
 
+    /** @return HasMany<Build, $this> */
     public function builds(): HasMany
     {
         return $this->hasMany(Build::class);
     }
 
+    /** @return HasMany<EnvironmentProcess, $this> */
     public function processes(): HasMany
     {
         return $this->hasMany(EnvironmentProcess::class);
     }
 
+    /** @return HasMany<EnvironmentResource, $this> */
     public function resources(): HasMany
     {
         return $this->hasMany(EnvironmentResource::class);
     }
 
+    /** @return HasMany<DeploymentSchedule, $this> */
     public function deploymentSchedules(): HasMany
     {
         return $this->hasMany(DeploymentSchedule::class);
     }
 
+    /** @return HasMany<ScalingSchedule, $this> */
     public function scalingSchedules(): HasMany
     {
         return $this->hasMany(ScalingSchedule::class);
     }
 
+    /** @return HasMany<ScheduledTask, $this> */
     public function scheduledTasks(): HasMany
     {
         return $this->hasMany(ScheduledTask::class);
     }
 
+    /** @return HasMany<LoadBalancer, $this> */
     public function loadBalancers(): HasMany
     {
         return $this->hasMany(LoadBalancer::class);

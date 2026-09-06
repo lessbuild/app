@@ -16,21 +16,25 @@ class Project extends Model
         'workflow_yaml' => 'encrypted',
     ];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return HasMany<Environment, $this> */
     public function environments(): HasMany
     {
         return $this->hasMany(Environment::class);
     }
 
+    /** @return HasMany<PreviewDeployment, $this> */
     public function previews(): HasMany
     {
         return $this->hasMany(PreviewDeployment::class);

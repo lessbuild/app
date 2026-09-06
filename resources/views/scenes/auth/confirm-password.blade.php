@@ -13,7 +13,7 @@
         <label class="block">
             <span class="block pb-1 text-sm text-secondary">{{ __('Password') }}</span>
             <input
-                class="input primary w-full rounded"
+                class="input primary w-full rounded-sm"
                 type="password"
                 name="password"
                 autocomplete="current-password"

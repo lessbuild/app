@@ -10,8 +10,8 @@
         </div>
     </div>
 
-    <div class="mt-5 mt-0 col-span-5 lg:col-span-3 border border-primary rounded overflow-hidden">
-        <div class="shadow rounded-t sm:overflow-hidden">
+    <div class="mt-5 mt-0 col-span-5 lg:col-span-3 border border-primary rounded-sm overflow-hidden">
+        <div class="shadow-sm rounded-t sm:overflow-hidden">
             {{ $slot }}
         </div>
         @isset($footer)

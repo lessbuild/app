@@ -28,7 +28,7 @@
     @if(!$planUsage['allowed'])
         <div class="my-4"><x-alerts.info :title="__('Your plan’s server limit has been reached')" :link="route('billing.index')" :anchor="__('Upgrade plan')"></x-alerts.info></div>
     @endif
-    @error('plan')<div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-800">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></div>@enderror
+    @error('plan')<div class="my-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></div>@enderror
 
     <!--
      ! ------------------------------------------------------------

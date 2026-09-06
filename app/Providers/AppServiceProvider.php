@@ -9,14 +9,10 @@ use App\Http\Livewire\ServerSetup;
 use App\Http\Livewire\ServerShow;
 use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
-use App\Jobs\SyncOrganizationSeatQuantityJob;
-use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
-use Laravel\Cashier\Events\WebhookHandled;
 use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
@@ -26,7 +22,7 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         //
     }
@@ -36,19 +32,9 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         Cashier::useCustomerModel(User::class);
-        Event::listen(WebhookHandled::class, function (WebhookHandled $event): void {
-            $object = data_get($event->payload, 'data.object', []);
-            $organizationId = data_get($object, 'metadata.organization_id');
-            if (! $organizationId && ($customer = data_get($object, 'customer'))) {
-                $organizationId = Organization::query()->whereHas('owner', fn ($query) => $query->where('stripe_id', $customer))->value('id');
-            }
-            if ($organizationId) {
-                SyncOrganizationSeatQuantityJob::dispatch((int) $organizationId);
-            }
-        });
 
         DB::prohibitDestructiveCommands(
             (bool) config('lessbuild.prohibit_destructive_database_commands'),

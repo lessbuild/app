@@ -1,5 +1,5 @@
 <x-layouts.core>
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-sm focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
     <div
@@ -17,7 +17,7 @@
          !-->
         <button
             type="button"
-            class="fixed inset-0 z-40 bg-black bg-opacity-40 lg:hidden"
+            class="fixed inset-0 z-40 bg-black/40 lg:hidden"
             style="display: none"
             x-show="menu"
             aria-label="{{ __('Close navigation') }}"
@@ -35,17 +35,17 @@
             <div class="sticky top-0 z-30 bg-gray-800 text-gray-100">
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}" class="font-bold text-lg text-white">{{ config('app.name') }}</a>
-                    <button type="button" x-ref="navigationToggle" class="flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-600 bg-gray-700 px-3 text-sm font-semibold text-gray-100 shadow-sm hover:bg-gray-600" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
+                    <button type="button" x-ref="navigationToggle" class="flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-600 bg-gray-700 px-3 text-sm font-semibold text-gray-100 shadow-xs hover:bg-gray-600" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
                 <div class="w-full h-14 px-6 border-b border-gray-700 hidden lg:flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:block">
-                            <button type="button" x-ref="paletteToggle" class="inline-flex items-center justify-center rounded border border-gray-600 bg-gray-700 px-3 py-2 text-xs font-medium text-gray-100 hover:bg-gray-600" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded border border-gray-500 px-1.5 py-0.5 text-[10px] text-gray-200">⌘K</kbd></button>
+                            <button type="button" x-ref="paletteToggle" class="inline-flex items-center justify-center rounded-sm border border-gray-600 bg-gray-700 px-3 py-2 text-xs font-medium text-gray-100 hover:bg-gray-600" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-sm border border-gray-500 px-1.5 py-0.5 text-[10px] text-gray-200">⌘K</kbd></button>
                         </div>
                     </div>
                     <div class="flex items-center relative">
                         <a href="{{ route('account.index') }}" aria-label="{{ __('Account settings') }}">
-                            <x-avatar :name="auth()->user()->name" class="h-6 w-6 rounded text-[10px] shadow-lg" />
+                            <x-avatar :name="auth()->user()->name" class="h-6 w-6 rounded-sm text-[10px] shadow-lg" />
                         </a>
 
                         <form action="{{ route('logout') }}" method="post" class="ml-4">
@@ -92,7 +92,7 @@
                         [__('API and automation'), route('automation.index'), __('tokens schedules workflow')],
                         [__('Product guide'), route('docs'), __('help documentation')],
                     ] as [$label, $url, $keywords])
-                        <a href="{{ $url }}" x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-none">
+                        <a href="{{ $url }}" x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
                             <span>{{ $label }}</span><span aria-hidden="true" class="text-secondary">↵</span>
                         </a>
                     @endforeach

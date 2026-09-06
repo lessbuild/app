@@ -15,6 +15,7 @@ use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use App\Services\Entitlements;
 use App\Services\PlanLimits;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use App\Support\SqlLike;
 use Carbon\CarbonInterface;
@@ -588,7 +589,7 @@ class WebsitesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function destroy(Website $website)
+    public function destroy(Website $website): RedirectResponse
     {
         $this->authorize('delete', $website);
 
@@ -671,12 +672,6 @@ class WebsitesController extends Controller
 
     private function csvCell(string|int|null $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', (string) $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 }

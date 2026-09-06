@@ -7,6 +7,7 @@ use App\Models\Recipe;
 use App\Models\Server;
 use App\Services\ActivityRecorder;
 use App\Services\RecipeReportNotifier;
+use App\Support\CsvCell;
 use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -261,13 +262,7 @@ class RecipesController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 
     /** @return array<string, mixed> */

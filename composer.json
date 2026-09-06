@@ -2,32 +2,35 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The Laravel Framework.",
-    "keywords": ["framework", "laravel"],
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
-        "guzzlehttp/guzzle": "^7.2",
-        "laravel/cashier": "^16.0",
-        "laravel/framework": "^12.60",
-        "laravel/sanctum": "^4.0",
-        "laravel/socialite": "^5.5",
-        "laravel/telescope": "^5.0",
-        "laravel/tinker": "^2.7",
-        "livewire/livewire": "^3.6",
-        "opcodesio/log-viewer": "^3.24",
-        "phpseclib/phpseclib": "^3.0.55",
-        "spatie/async": "^1.5",
-        "spatie/ssh": "^1.7",
-        "symfony/yaml": "^7.4.17"
+        "php": "^8.5",
+        "guzzlehttp/guzzle": "^7.15.5",
+        "laravel/cashier": "^16.8",
+        "laravel/framework": "^13.30",
+        "laravel/sanctum": "^4.3",
+        "laravel/socialite": "^5.31",
+        "laravel/telescope": "^5.23",
+        "laravel/tinker": "^3.0",
+        "livewire/livewire": "^4.4",
+        "opcodesio/log-viewer": "^3.24.2",
+        "phpseclib/phpseclib": "~4.0.1",
+        "spatie/async": "^1.8.2",
+        "spatie/ssh": "^1.13",
+        "symfony/yaml": "^8.1.6"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.9.1",
-        "laravel/pint": "^1.1",
-        "laravel/sail": "^1.0.1",
-        "mockery/mockery": "^1.4.4",
-        "nunomaduro/collision": "^8.0",
-        "phpunit/phpunit": "^11.5",
-        "spatie/laravel-ignition": "^2.0"
+        "fakerphp/faker": "^1.24",
+        "laravel/pint": "^1.30",
+        "laravel/sail": "^1.67",
+        "mockery/mockery": "^1.6.15",
+        "nunomaduro/collision": "^8.9.5",
+        "phpunit/phpunit": "^13.3",
+        "spatie/laravel-ignition": "^2.12"
     },
     "autoload": {
         "psr-4": {
@@ -66,6 +69,6 @@
         "preferred-install": "dist",
         "sort-packages": true
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

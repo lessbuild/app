@@ -80,7 +80,7 @@
     </x-layouts.partials.heading>
 
     @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
-        <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-700">
             <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
             <p class="text-sm">{{ $website->provisioning_error }}</p>
             @error('retry')
@@ -94,7 +94,7 @@
     @endif
 
     @if ($website->previous_server_id)
-        <div class="my-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="my-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
             <p class="font-semibold">{{ __('Previous server cleanup pending') }}</p>
             <p class="text-sm">
                 @if ($website->placement_cleanup_error)
@@ -130,7 +130,7 @@
                 {{ __('URL') }}
             </span>
             <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-sm cursor-pointer">
+                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
                     {{ $website->url }}
                 </div>
             </div>
@@ -181,7 +181,7 @@
     </div>
 
     @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY && $website->health_last_error)
-        <div class="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-800">
+        <div class="mt-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
             <strong>{{ __('Health check failed:') }}</strong> {{ $website->health_last_error }}
         </div>
     @endif
@@ -294,12 +294,12 @@
             @php($snapshot = $runtimeLogs->get($type))
             <div x-show="logType === '{{ $type }}'" class="mt-4" data-runtime-log-console data-refresh-url="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}" data-report-url="{{ route('websites.runtime-logs.show', [$website, $type]) }}">
                 <div class="mb-3 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p><form method="POST" action="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}">@csrf<button type="submit" class="button primary">{{ __('Refresh :type log', ['type' => $type]) }}</button></form></div>
-                <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]"><input type="search" data-log-search class="input secondary rounded" placeholder="{{ __('Search log lines') }}"><select data-log-level class="input secondary rounded"><option value="">{{ __('All levels') }}</option><option value="emergency">Emergency</option><option value="error">Error</option><option value="warning">Warning</option><option value="info">Info</option><option value="debug">Debug</option></select><label class="flex items-center gap-2 rounded border border-primary px-3 text-sm text-primary"><input type="checkbox" data-log-live> {{ __('Live') }}</label></div>
-                @if($snapshot?->error)<div class="mb-3 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-800">{{ $snapshot->error }}</div>@endif
+                <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]"><input type="search" data-log-search class="input secondary rounded-sm" placeholder="{{ __('Search log lines') }}"><select data-log-level class="input secondary rounded-sm"><option value="">{{ __('All levels') }}</option><option value="emergency">Emergency</option><option value="error">Error</option><option value="warning">Warning</option><option value="info">Info</option><option value="debug">Debug</option></select><label class="flex items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary"><input type="checkbox" data-log-live> {{ __('Live') }}</label></div>
+                @if($snapshot?->error)<div class="mb-3 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-800">{{ $snapshot->error }}</div>@endif
                 <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
             </div>
         @endforeach
-        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">@csrf @method('PATCH')<label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span><select name="log_retention_lines" class="input secondary mt-1 rounded">@foreach([100, 500, 1000, 5000, 10000] as $lines)<option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>@endforeach</select></label><button class="button secondary" type="submit">{{ __('Save retention') }}</button></form>
+        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">@csrf @method('PATCH')<label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span><select name="log_retention_lines" class="input secondary mt-1 rounded-sm">@foreach([100, 500, 1000, 5000, 10000] as $lines)<option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>@endforeach</select></label><button class="button secondary" type="submit">{{ __('Save retention') }}</button></form>
     </section>
 
     <livewire:website-provisioning-log :website="$website" />
@@ -325,7 +325,7 @@
                         @forelse($repositories as $repository)
                             <a href="{{ route('repositories.show', $repository) }}" class="py-3">
                                 <div class="flex items-center space-x-4">
-                                    <div class="flex-shrink-0">
+                                    <div class="shrink-0">
                                         <x-avatar :name="$repository->name" class="h-8 w-8 rounded-full text-xs" />
                                     </div>
                                     <div class="flex-1 min-w-0">

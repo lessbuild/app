@@ -19,7 +19,7 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <div class="mt-6 rounded border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+    <div class="mt-6 rounded-sm border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
         <p class="font-semibold">{{ __('Review every changed command') }}</p>
         <p class="mt-1">{{ __('The left side is your encrypted private snapshot. The right side is the contributor’s current gallery version. No script is executed from this page.') }}</p>
     </div>
@@ -83,14 +83,14 @@
                 <h2 id="private-script-heading" class="text-lg font-bold text-primary">{{ __('My private copy') }}</h2>
                 <span class="text-xs text-secondary">{{ trans_choice(':count line|:count lines', $comparison['current_lines'], ['count' => $comparison['current_lines']]) }}</span>
             </div>
-            <pre class="mt-3 overflow-x-auto rounded bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $copy->script }}</code></pre>
+            <pre class="mt-3 overflow-x-auto rounded-sm bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $copy->script }}</code></pre>
         </section>
         <section class="min-w-0 rounded-lg border border-primary bg-primary p-5" aria-labelledby="gallery-script-heading">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="gallery-script-heading" class="text-lg font-bold text-primary">{{ __('Current gallery version') }}</h2>
                 <span class="text-xs text-secondary">{{ trans_choice(':count line|:count lines', $comparison['gallery_lines'], ['count' => $comparison['gallery_lines']]) }}</span>
             </div>
-            <pre class="mt-3 overflow-x-auto rounded bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
+            <pre class="mt-3 overflow-x-auto rounded-sm bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
         </section>
     </div>
 </x-layouts.app>

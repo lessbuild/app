@@ -20,6 +20,7 @@ class Log extends Model
         'type',
     ];
 
+    /** @return MorphTo<Model, $this> */
     public function parentable(): MorphTo
     {
         return $this->morphTo();

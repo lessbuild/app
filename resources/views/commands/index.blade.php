@@ -9,7 +9,7 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <div>
                 <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
-                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded">
+                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All servers') }}</option>
                     @foreach ($servers as $server)
                         <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>{{ $server->label }}</option>
@@ -18,7 +18,7 @@
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ str($status)->title() }}</option>
@@ -27,25 +27,25 @@
             </div>
             <div>
                 <label for="output" class="block text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</label>
-                <select id="output" name="output" class="input secondary mt-1 w-full rounded">
+                <select id="output" name="output" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('Any output state') }}</option>
                     <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                     <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded border border-primary px-3 text-sm text-primary">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="active" value="1" @checked($filters['active'])>
                     {{ __('Active commands only') }}
                 </label>
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

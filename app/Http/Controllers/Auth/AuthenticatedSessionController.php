@@ -19,7 +19,7 @@ class AuthenticatedSessionController extends Controller
      *
      * @return View
      */
-    public function create()
+    public function create(): View
     {
         return view('scenes.auth.login');
     }
@@ -31,7 +31,7 @@ class AuthenticatedSessionController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(LoginRequest $request, SignInRecorder $signIns)
+    public function store(LoginRequest $request, SignInRecorder $signIns): RedirectResponse
     {
         $request->authenticate();
 
@@ -56,7 +56,7 @@ class AuthenticatedSessionController extends Controller
      *
      * @return RedirectResponse
      */
-    public function destroy(Request $request)
+    public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
 

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Models\User;
-use App\Models\Website;
 use App\Scripts\Cache\InstallMemcachedScript;
 use App\Scripts\Cache\InstallRedisScript;
 use App\Scripts\Database\CreateMysqlDatabase;
@@ -120,6 +119,7 @@ class ProvisioningHardeningTest extends TestCase
         $server = $user->servers()->create(['name' => 'managed', 'type' => ServerTypeEnum::app, 'public_ip' => '1.1.1.1',
             'ssh_public_key' => 'ssh-ed25519 AAAATEST', 'mysql_root_password' => 'mysql-secret']);
         $server->setProvisioningRootPassword('temporary-secret');
+
         return $server;
     }
 }

@@ -6,10 +6,9 @@ use App\Contracts\ServerProvider;
 use App\Data\CloudServerData;
 use App\Data\CloudSshKeyData;
 use Exception;
-use GuzzleHttp\Promise\PromiseInterface;
-use http\Exception\InvalidArgumentException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use InvalidArgumentException;
 
 class DigitalOcean implements ServerProvider
 {
@@ -98,11 +97,11 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * @return null
+     * @return list<array<string, mixed>> Available regions returned by the provider.
      *
      * @throws Exception
      */
-    public function getRegions()
+    public function getRegions(): array
     {
         $response = $this->get(self::$_REGIONS, []);
 
@@ -110,15 +109,15 @@ class DigitalOcean implements ServerProvider
             throw new Exception('Invalid response code.');
         }
 
-        return $response->json()['regions'];
+        return $this->jsonArray($response, 'regions');
     }
 
     /**
-     * @return null
+     * @return list<array<string, mixed>> Available instance sizes returned by the provider.
      *
      * @throws Exception
      */
-    public function getSizes()
+    public function getSizes(): array
     {
         $response = $this->get(self::$_SIZES.'?per_page=200');
 
@@ -126,15 +125,16 @@ class DigitalOcean implements ServerProvider
             throw new Exception('Invalid response code.');
         }
 
-        return $response->json()['sizes'];
+        return $this->jsonArray($response, 'sizes');
     }
 
     /**
-     * @return null
+     * @param  string  $type  Provider image category, defaulting to distribution images.
+     * @return list<array<string, mixed>> Images in the requested category.
      *
      * @throws Exception
      */
-    public function getImages(string $type = 'distribution')
+    public function getImages(string $type = 'distribution'): array
     {
         $response = $this->get(self::$_IMAGES."?type=$type", []);
 
@@ -142,17 +142,17 @@ class DigitalOcean implements ServerProvider
             throw new Exception('Invalid response code.');
         }
 
-        return $response->json()['images'];
+        return $this->jsonArray($response, 'images');
     }
 
     /**
      * Gets all droplets
      *
-     * @return array | null
+     * @return list<array<string, mixed>> Droplets in the provider response.
      *
      * @throws Exception
      */
-    public function getDroplets()
+    public function getDroplets(): array
     {
         $response = $this->get(self::$_DROPLETS, []);
 
@@ -160,17 +160,18 @@ class DigitalOcean implements ServerProvider
             throw new Exception('Invalid response code.');
         }
 
-        return $response->json()['droplets'];
+        return $this->jsonArray($response, 'droplets');
     }
 
     /**
      * Gets information about a single droplet
      *
-     * @return Json
+     * @param  int|string  $droplet_id  The provider's droplet identifier.
+     * @return array<string, mixed> Decoded droplet metadata.
      *
      * @throws Exception
      */
-    public function getDroplet($droplet_id)
+    public function getDroplet(int|string $droplet_id): array
     {
         $response = $this->get(self::$_DROPLETS.'/'.$droplet_id, []);
 
@@ -178,18 +179,18 @@ class DigitalOcean implements ServerProvider
             throw new Exception('Invalid response code.');
         }
 
-        return $response->json()['droplet'];
+        return $this->jsonArray($response, 'droplet');
     }
 
     /**
      * Creates a new droplet.
      *
-     * @param  array  $params  Droplet parameters. The only mandatory item is 'name'.
-     * @return mixed
+     * @param  array<string, mixed>  $params  Droplet parameters. The only locally mandatory item is 'name'.
+     * @return array<string, mixed> The decoded creation response.
      *
      * @throws Exception
      */
-    public function createDroplet(array $params)
+    public function createDroplet(array $params): array
     {
         if (! isset($params['name'])) {
             throw new InvalidArgumentException("Missing the 'name' parameter.");
@@ -201,7 +202,7 @@ class DigitalOcean implements ServerProvider
             throw $this->apiException($response);
         }
 
-        return $response->json();
+        return $this->jsonArray($response);
     }
 
     /**
@@ -211,7 +212,7 @@ class DigitalOcean implements ServerProvider
      *
      * @throws Exception
      */
-    public function createSSH(array $params)
+    public function createSSH(array $params): array
     {
         if (! isset($params['name']) || ! isset($params['public_key'])) {
             throw new Exception("Missing the 'name' or 'key' parameter.");
@@ -244,7 +245,7 @@ class DigitalOcean implements ServerProvider
      *
      * @throws Exception
      */
-    public function destroyDroplet($droplet_id): bool
+    public function destroyDroplet(int|string $droplet_id): bool
     {
         $response = $this->delete(self::$_DROPLETS.'/'.$droplet_id);
 
@@ -259,10 +260,10 @@ class DigitalOcean implements ServerProvider
      * Makes a GET query
      *
      * @param  string  $endpoint  API endpoint
-     * @param  array  $custom_headers  optional custom headers
-     * @return mixed
+     * @param  array<string, mixed>  $custom_headers  Optional query parameters (legacy argument name retained).
+     * @return Response The synchronous HTTP response.
      */
-    public function get(string $endpoint, array $custom_headers = [])
+    public function get(string $endpoint, array $custom_headers = []): Response
     {
         return Http::withToken($this->_API_TOKEN)
             ->get($endpoint, $custom_headers);
@@ -271,9 +272,11 @@ class DigitalOcean implements ServerProvider
     /**
      * Makes a POST query
      *
-     * @return PromiseInterface|Response
+     * @param  string  $endpoint  API endpoint.
+     * @param  array<string, mixed>  $params  JSON request attributes.
+     * @return Response The synchronous HTTP response.
      */
-    public function post(string $endpoint, array $params)
+    public function post(string $endpoint, array $params): Response
     {
         return Http::withToken($this->_API_TOKEN)
             ->post($endpoint, $params);
@@ -282,12 +285,30 @@ class DigitalOcean implements ServerProvider
     /**
      * Makes a DELETE query
      *
-     * @return PromiseInterface|Response
+     * @param  string  $endpoint  API endpoint.
+     * @return Response The synchronous HTTP response.
      */
-    public function delete(string $endpoint)
+    public function delete(string $endpoint): Response
     {
         return Http::withToken($this->_API_TOKEN)
             ->delete($endpoint);
+    }
+
+    /**
+     * @param  Response  $response  The provider response to decode.
+     * @param  string|null  $key  The top-level payload key, or null for the complete response.
+     * @return array<array-key, mixed> The decoded object or list.
+     *
+     * @throws Exception When a successful response contains an incomplete or malformed payload.
+     */
+    private function jsonArray(Response $response, ?string $key = null): array
+    {
+        $data = $response->json($key);
+        if (! is_array($data)) {
+            throw new Exception('DigitalOcean returned an incomplete API response.');
+        }
+
+        return $data;
     }
 
     private function apiException(Response $response): Exception

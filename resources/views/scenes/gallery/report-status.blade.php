@@ -38,7 +38,7 @@
                 {{ __('View or update this report in the gallery') }}
             </a>
         @else
-            <div class="mt-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <div class="mt-4 rounded-sm border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                 {{ __('This recipe is no longer published. Your report status remains available, but the gallery recipe cannot be opened or updated.') }}
             </div>
         @endif
@@ -64,7 +64,7 @@
         </div>
 
         @if ($report->resolved_at && $report->resolution_note)
-            <div class="mt-5 rounded border border-green-200 bg-green-50 p-4 text-green-800">
+            <div class="mt-5 rounded-sm border border-green-200 bg-green-50 p-4 text-green-800">
                 <h3 class="text-sm font-semibold">{{ __('Contributor resolution note') }}</h3>
                 <p class="mt-2 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
             </div>

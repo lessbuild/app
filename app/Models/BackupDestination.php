@@ -20,11 +20,13 @@ class BackupDestination extends Model
         'last_verified_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
     }
 
+    /** @return HasMany<WebsiteBackupSchedule, $this> */
     public function schedules(): HasMany
     {
         return $this->hasMany(WebsiteBackupSchedule::class);

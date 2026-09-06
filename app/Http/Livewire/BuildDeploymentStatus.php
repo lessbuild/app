@@ -28,7 +28,7 @@ class BuildDeploymentStatus extends Component
             'deploymentLog' => $log,
             'previousBuild' => $this->build->previousInRepository(),
             'nextBuild' => $this->build->nextInRepository(),
-            'shouldPoll' => in_array($this->build->status, Build::ACTIVE_STATUSES, true),
+            'shouldPoll' => $this->build->statusEnum()?->isActive() === true,
             'processes' => $plan->scripts(),
             'failureGuidance' => $this->build->status === Build::STATUS_FAILED
                 ? $guidance->for($this->build, $plan)

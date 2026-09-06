@@ -11,10 +11,10 @@
     </x-layouts.partials.heading>
 
     @if (session('status'))
-        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
     @endif
 
-    <div class="mt-6 rounded border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
+    <div class="mt-6 rounded-sm border border-yellow-300 bg-yellow-50 p-4 text-sm text-yellow-800">
         <p class="font-semibold">{{ __('Review community scripts before using them') }}</p>
         <p class="mt-1">{{ __('Recipes run as root during provisioning. Inspect the full script and adapt it to your environment before assigning it to a server.') }}</p>
     </div>
@@ -23,11 +23,11 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-1 w-full rounded">
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
-                <select id="category" name="category" class="input secondary mt-1 w-full rounded">
+                <select id="category" name="category" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>
@@ -36,7 +36,7 @@
             </div>
             <div>
                 <label for="scope" class="block text-xs font-semibold uppercase text-secondary">{{ __('Collection') }}</label>
-                <select id="scope" name="scope" class="input secondary mt-1 w-full rounded">
+                <select id="scope" name="scope" class="input secondary mt-1 w-full rounded-sm">
                     <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
                     <option value="favorites" @selected($filters['scope'] === 'favorites')>{{ __('Saved by me') }}</option>
                     <option value="reported" @selected($filters['scope'] === 'reported')>{{ __('Reported by me') }}</option>
@@ -49,7 +49,7 @@
             </div>
             <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
+                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded-sm">
                     <option value="recent" @selected($filters['sort'] === 'recent')>{{ __('Recently published') }}</option>
                     <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Most installed') }}</option>
                     <option value="top_rated" @selected($filters['sort'] === 'top_rated')>{{ __('Top rated') }}</option>

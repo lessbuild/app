@@ -22,7 +22,7 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <div class="mt-6 rounded border border-primary bg-primary p-4 text-sm text-secondary">
+    <div class="mt-6 rounded-sm border border-primary bg-primary p-4 text-sm text-secondary">
         <p class="font-medium text-primary">{{ __('Provisioning plan snapshots') }}</p>
         <p class="mt-1">
             {{ __('This is the current assignment map. Each server keeps the encrypted recipe plan captured when its provisioning was created, so later recipe edits or deletion do not rewrite an existing server plan.') }}

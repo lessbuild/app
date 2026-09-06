@@ -46,7 +46,7 @@ class Handler extends ExceptionHandler
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->dontReportDuplicates();
 
@@ -56,7 +56,7 @@ class Handler extends ExceptionHandler
 
     }
 
-    public function render($request, Throwable $exception): Response
+    public function render(mixed $request, Throwable $exception): Response
     {
         $response = parent::render($request, $exception);
         if (config('app.debug') || $response->getStatusCode() !== 500) {

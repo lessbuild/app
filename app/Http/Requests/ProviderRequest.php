@@ -5,15 +5,16 @@ namespace App\Http\Requests;
 use App\Models\Provider;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\In;
 
 class ProviderRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      *
-     * @return bool
+     * @return bool Whether the current workspace permits deployment changes.
      */
-    public function authorize()
+    public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
@@ -21,9 +22,9 @@ class ProviderRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, mixed>
+     * @return array<string, string|list<string|In>> Provider identity, credentials, and monitoring rules.
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             'name' => 'required|string|max:255',
@@ -52,6 +53,7 @@ class ProviderRequest extends FormRequest
         ];
     }
 
+    /** Preserve saved monitoring settings when optional form controls are omitted. */
     protected function prepareForValidation(): void
     {
         $this->merge([

@@ -4,8 +4,8 @@
         <label for="website_id" class="block text-sm font-medium text-primary">
             {{ __('Website') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="website_id" name="website_id" class="input secondary rounded" required>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="website_id" name="website_id" class="input secondary rounded-sm" required>
                 @foreach($websites as $website)
                     <option value="{{ $website->id }}"
                         @selected((string) old('website_id', $repository->website_id ?? request()->query('website_id', '')) === (string) $website->id)
@@ -22,8 +22,8 @@
         <label for="provider_id" class="block text-sm font-medium text-primary">
             {{ __('Provider') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="provider_id" name="provider_id" class="input secondary rounded" required>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="provider_id" name="provider_id" class="input secondary rounded-sm" required>
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
@@ -41,13 +41,13 @@
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Repository Name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('name', $repository->name ?? request()->query('name')) }}"
                 type="text"
                 name="name"
                 id="name"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="Example: Deployer">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
@@ -57,7 +57,7 @@
         <label for="url" class="block text-sm font-medium text-primary">
             {{ __('Repository URL') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-primary bg-tertiary text-primary text-sm">
                 https://
             </span>
@@ -76,13 +76,13 @@
         <label for="branch" class="block text-sm font-medium text-primary">
             {{ __('Deployment Branch') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('branch', $repository->branch ?? request()->query('branch', 'main')) }}"
                 type="text"
                 name="branch"
                 id="branch"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="main">
         </div>
         <x-forms.errors name="branch"></x-forms.errors>
@@ -99,7 +99,7 @@
                 rows="6"
                 maxlength="10000"
                 autocomplete="off"
-                class="input secondary rounded font-mono"
+                class="input secondary rounded-sm font-mono"
                 placeholder="php artisan test&#10;npm run build">{{ old('build_commands', $repository->build_commands ?? '') }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -119,7 +119,7 @@
                 rows="6"
                 maxlength="10000"
                 autocomplete="off"
-                class="input secondary rounded font-mono"
+                class="input secondary rounded-sm font-mono"
                 placeholder="php artisan queue:restart">{{ old('post_deployment_commands', $repository->post_deployment_commands ?? '') }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -140,7 +140,7 @@
                 id="description"
                 name="description"
                 rows="3"
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="you@example.com">{{ old('description') ?? ($repository->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">

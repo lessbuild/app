@@ -8,7 +8,7 @@
     </x-slot>
 
     @if (session('status'))
-        <div class="mt-5 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <div class="mt-5 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
             {{ session('status') }}
         </div>
     @endif
@@ -19,7 +19,7 @@
         <label class="block">
             <span class="block pb-1 text-sm text-secondary">{{ __('Email') }}</span>
             <input
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 type="email"
                 name="email"
                 value="{{ old('email') }}"
@@ -34,7 +34,7 @@
             <a href="{{ route('login') }}" class="text-sm text-secondary underline hover:text-primary">
                 {{ __('Back to sign in') }}
             </a>
-            <button type="submit" class="button tertiary rounded">{{ __('Send reset link') }}</button>
+            <button type="submit" class="button tertiary rounded-sm">{{ __('Send reset link') }}</button>
         </div>
     </form>
 </x-layouts.auth>

@@ -45,7 +45,7 @@ class InitialiseServerJob implements ShouldQueue
      *
      * @throws \Exception
      */
-    public function handle(UpdateServerIpAction $updateServerIp)
+    public function handle(UpdateServerIpAction $updateServerIp): void
     {
         $started = $this->attemptQuery()
             ->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_WAITING_FOR_IP])

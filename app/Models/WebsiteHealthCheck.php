@@ -27,6 +27,7 @@ class WebsiteHealthCheck extends Model
         'checked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);

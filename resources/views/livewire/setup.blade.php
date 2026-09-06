@@ -24,14 +24,14 @@
             </div>
 
             @if ($provisioningFailed)
-                <div class="mt-4 rounded border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+                <div class="mt-4 rounded-sm border border-red-300 bg-red-50 p-4 text-sm text-red-700">
                     <p class="font-semibold">{{ __('Provisioning failed') }}</p>
                     <p>{{ $model->provisioning_error ?: __('The remote provisioning process did not complete.') }}</p>
                 </div>
             @endif
 
             @if ($provisioningCanceled)
-                <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-700">
+                <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-sm text-amber-700">
                     <p class="font-semibold">{{ __('Deployment canceled') }}</p>
                     <p>{{ __('The remote deployment process was stopped before it completed.') }}</p>
                 </div>
@@ -46,7 +46,7 @@
 
                 <div class="flex items-center mt-4">
                     <div @class([
-                            'flex flex-shrink-0 justify-center items-center w-5 h-5 rounded border',
+                            'flex shrink-0 justify-center items-center w-5 h-5 rounded-sm border',
                             'bg-green-200 text-green-600 border-green-700' => $model->setup_stage >= ($key + 1),
                             'bg-red-100 text-red-600 border-red-300' => $provisioningFailed && $model->setup_stage < ($key + 1),
                             'bg-amber-100 text-amber-600 border-amber-300' => $provisioningCanceled && $model->setup_stage < ($key + 1),

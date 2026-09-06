@@ -27,11 +27,17 @@ class AccessRequest extends Model
         'accepted_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    /**
+     * Check invitation state, acceptance, and expiry before granting access.
+     *
+     * @return bool Whether an unaccepted invitation is still valid.
+     */
     public function invitationIsValid(): bool
     {
         return $this->status === 'invited'

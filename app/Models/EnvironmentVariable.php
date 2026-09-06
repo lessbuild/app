@@ -22,16 +22,19 @@ class EnvironmentVariable extends Model
         'rotation_due_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    /** @return HasMany<EnvironmentVariableVersion, $this> */
     public function versions(): HasMany
     {
         return $this->hasMany(EnvironmentVariableVersion::class)->latest('version');

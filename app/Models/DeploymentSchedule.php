@@ -11,11 +11,13 @@ class DeploymentSchedule extends Model
 
     protected $casts = ['is_enabled' => 'boolean', 'last_run_at' => 'datetime'];
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

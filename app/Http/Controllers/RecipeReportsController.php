@@ -7,6 +7,7 @@ use App\Models\RecipeReport;
 use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\RecipeReportNotifier;
+use App\Support\CsvCell;
 use App\Support\DateRange;
 use App\Support\SqlLike;
 use Illuminate\Database\Eloquent\Builder;
@@ -133,22 +134,15 @@ class RecipeReportsController extends Controller
         ]);
     }
 
-    public function status(Request $request, string $report): View
+    /**
+     * @param  Request  $request  The authenticated reporter's request.
+     * @param  RecipeReport  $report  The implicitly bound report, including unpublished recipe history.
+     * @return View The report status after verifying ownership.
+     */
+    public function status(Request $request, RecipeReport $report): View
     {
-        $report = $request->user()->recipeReports()
-            ->select([
-                'id',
-                'user_id',
-                'recipe_id',
-                'reason',
-                'details',
-                'resolved_at',
-                'resolution_note',
-                'created_at',
-                'updated_at',
-            ])
-            ->with('recipe:id,user_id,name,category,is_published,published_at')
-            ->findOrFail($report);
+        abort_unless((int) $report->user_id === (int) $request->user()->id, 404);
+        $report->load('recipe:id,user_id,name,category,is_published,published_at');
 
         return view('scenes.gallery.report-status', [
             'report' => $report,
@@ -646,13 +640,7 @@ class RecipeReportsController extends Controller
 
     private function csvCell(?string $value): ?string
     {
-        if ($value === null) {
-            return null;
-        }
-
-        $value = str_replace("\0", '', $value);
-
-        return preg_match('/\A[\x09\x0A\x0D ]*[=+\-@]/', $value) === 1 ? "'{$value}" : $value;
+        return CsvCell::escape($value);
     }
 
     /** @return array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} */

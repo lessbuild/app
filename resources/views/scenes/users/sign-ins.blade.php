@@ -13,7 +13,7 @@
         <div class="grid gap-4 sm:grid-cols-3">
             <div>
                 <label for="method" class="block text-xs font-semibold uppercase text-secondary">{{ __('Method') }}</label>
-                <select id="method" name="method" class="input secondary mt-1 w-full rounded">
+                <select id="method" name="method" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All methods') }}</option>
                     @foreach ($methods as $value => $label)
                         <option value="{{ $value }}" @selected($filters['method'] === $value)>{{ $label }}</option>
@@ -22,11 +22,11 @@
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Signed in from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Signed in through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

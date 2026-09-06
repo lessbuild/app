@@ -16,16 +16,19 @@ class EnvironmentResource extends Model
 
     protected $casts = ['configuration' => 'encrypted:array', 'is_managed' => 'boolean'];
 
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /** @return HasMany<DatabaseSnapshot, $this> */
     public function snapshots(): HasMany
     {
         return $this->hasMany(DatabaseSnapshot::class);
     }
 
+    /** @return HasMany<DatabaseUser, $this> */
     public function databaseUsers(): HasMany
     {
         return $this->hasMany(DatabaseUser::class);

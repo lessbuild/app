@@ -28,6 +28,7 @@ class InstallRedisScript implements ServerScript
     public function script(int $step, Server $server): string
     {
         $phpVersion = (string) config('lessbuild.default_php_version', '8.4');
+
         return <<<SCRIPT
         provisionPing {$server->id} {$step}
 

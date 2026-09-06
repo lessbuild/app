@@ -20,11 +20,17 @@ class User extends Authenticatable implements MustVerifyEmailContract
 {
     use Billable, HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
 
+    /** Ensure each newly created account has a personal workspace. */
     protected static function booted(): void
     {
-        static::created(fn (User $user) => app(PersonalOrganization::class)->ensure($user));
+        static::created(fn (User $user): Organization => app(PersonalOrganization::class)->ensure($user));
     }
 
+    /**
+     * Resolve the highest configured plan covered by an active subscription price.
+     *
+     * @return string The subscribed plan key, or free when no paid plan matches.
+     */
     public function billingPlan(): string
     {
         foreach (array_reverse(config('billing.plans')) as $plan => $details) {
@@ -42,11 +48,21 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return 'free';
     }
 
+    /**
+     * Check the normalized account email against configured platform administrators.
+     *
+     * @return bool Whether this account has platform administrator access.
+     */
     public function isPlatformAdmin(): bool
     {
         return in_array(strtolower($this->email), config('lessbuild.platform_admin_emails', []), true);
     }
 
+    /**
+     * Resolve the billing cadence from the current plan and default subscription.
+     *
+     * @return string Yearly for a matching yearly price; otherwise monthly.
+     */
     public function billingInterval(): string
     {
         $plan = config('billing.plans.'.$this->billingPlan(), []);
@@ -109,46 +125,63 @@ class User extends Authenticatable implements MustVerifyEmailContract
         'preferences' => 'array',
     ];
 
+    /**
+     * Check whether the account has explicitly configured password authentication.
+     *
+     * @return bool Whether a local password setup timestamp exists.
+     */
     public function hasLocalPassword(): bool
     {
         return $this->password_set_at !== null;
     }
 
+    /**
+     * Check that two-factor credentials have been configured and confirmed.
+     *
+     * @return bool Whether two-factor authentication is enabled.
+     */
     public function twoFactorEnabled(): bool
     {
         return filled($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function currentOrganization(): BelongsTo
     {
         return $this->belongsTo(Organization::class, 'current_organization_id');
     }
 
+    /** @return BelongsToMany<Organization, $this> */
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class)->withPivot('role')->withTimestamps();
     }
 
+    /** @return HasMany<Provider, Organization> */
     public function workspaceProviders(): HasMany
     {
         return $this->currentOrganization()->firstOrFail()->providers();
     }
 
+    /** @return HasMany<Server, Organization> */
     public function workspaceServers(): HasMany
     {
         return $this->currentOrganization()->firstOrFail()->servers();
     }
 
+    /** @return HasMany<Website, Organization> */
     public function workspaceWebsites(): HasMany
     {
         return $this->currentOrganization()->firstOrFail()->websites();
     }
 
+    /** @return HasMany<Repository, Organization> */
     public function workspaceRepositories(): HasMany
     {
         return $this->currentOrganization()->firstOrFail()->repositories();
     }
 
+    /** @return HasMany<Recipe, Organization> */
     public function workspaceRecipes(): HasMany
     {
         return $this->currentOrganization()->firstOrFail()->recipes();
@@ -164,71 +197,85 @@ class User extends Authenticatable implements MustVerifyEmailContract
             ->all();
     }
 
+    /** @return HasMany<Website, $this> */
     public function websites(): HasMany
     {
         return $this->hasMany(Website::class);
     }
 
+    /** @return HasMany<Provider, $this> */
     public function providers(): HasMany
     {
         return $this->hasMany(Provider::class);
     }
 
+    /** @return HasMany<Server, $this> */
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class);
     }
 
+    /** @return HasMany<Repository, $this> */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
+    /** @return HasManyThrough<Build, Repository, $this> */
     public function builds(): HasManyThrough
     {
         return $this->hasManyThrough(Build::class, Repository::class);
     }
 
+    /** @return HasManyThrough<RepositoryWebhookDelivery, Repository, $this> */
     public function webhookDeliveries(): HasManyThrough
     {
         return $this->hasManyThrough(RepositoryWebhookDelivery::class, Repository::class);
     }
 
+    /** @return HasMany<Recipe, $this> */
     public function recipes(): HasMany
     {
         return $this->hasMany(Recipe::class);
     }
 
+    /** @return HasMany<RecipeRating, $this> */
     public function recipeRatings(): HasMany
     {
         return $this->hasMany(RecipeRating::class);
     }
 
+    /** @return HasMany<RecipeFavorite, $this> */
     public function recipeFavorites(): HasMany
     {
         return $this->hasMany(RecipeFavorite::class);
     }
 
+    /** @return HasMany<RecipeReport, $this> */
     public function recipeReports(): HasMany
     {
         return $this->hasMany(RecipeReport::class);
     }
 
+    /** @return HasMany<Event, $this> */
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
     }
 
+    /** @return MorphMany<Event, $this> */
     public function accountEvents(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
+    /** @return HasMany<SignInEvent, $this> */
     public function signIns(): HasMany
     {
         return $this->hasMany(SignInEvent::class);
     }
 
+    /** @return HasMany<ServerCommandExecution, $this> */
     public function commandExecutions(): HasMany
     {
         return $this->hasMany(ServerCommandExecution::class);

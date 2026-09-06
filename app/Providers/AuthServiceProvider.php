@@ -19,6 +19,8 @@ use App\Policies\RepositoryPolicy;
 use App\Policies\ServerPolicy;
 use App\Policies\WebsitePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Http\Request;
+use Illuminate\Session\Middleware\AuthenticateSession;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -43,10 +45,20 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $this->registerPolicies();
 
+        AuthenticateSession::redirectUsing($this->sessionLoginRedirect(...));
+
         //
+    }
+
+    /**
+     * Send revoked browser sessions to login while retaining JSON authentication errors.
+     */
+    private function sessionLoginRedirect(Request $request): ?string
+    {
+        return $request->expectsJson() ? null : route('login');
     }
 }

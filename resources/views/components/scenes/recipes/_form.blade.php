@@ -3,7 +3,7 @@
         <label for="name" class="block text-sm font-medium text-primary">{{ __('Name') }}</label>
         <input
             id="name"
-            class="input secondary mt-1 rounded"
+            class="input secondary mt-1 rounded-sm"
             name="name"
             type="text"
             value="{{ old('name', $recipe->name ?? '') }}"
@@ -17,7 +17,7 @@
         <label for="description" class="block text-sm font-medium text-primary">{{ __('Description') }}</label>
         <textarea
             id="description"
-            class="input secondary mt-1 rounded"
+            class="input secondary mt-1 rounded-sm"
             name="description"
             rows="3"
             placeholder="Describe what this recipe changes on a server."
@@ -32,7 +32,7 @@
         </p>
         <textarea
             id="script"
-            class="input secondary rounded font-mono"
+            class="input secondary rounded-sm font-mono"
             name="script"
             rows="14"
             spellcheck="false"
@@ -50,7 +50,7 @@
                 name="is_published"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded"
+                class="mt-1 rounded-sm"
                 @checked(old('is_published', $recipe->is_published ?? false))
             >
             <div>
@@ -62,7 +62,7 @@
         </div>
         <div class="mt-4">
             <label for="category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
-            <select id="category" name="category" class="input secondary mt-1 w-full rounded sm:max-w-xs">
+            <select id="category" name="category" class="input secondary mt-1 w-full rounded-sm sm:max-w-xs">
                 <option value="">{{ __('Select a category') }}</option>
                 @foreach (\App\Models\Recipe::CATEGORIES as $category)
                     <option value="{{ $category }}" @selected(old('category', $recipe->category ?? '') === $category)>

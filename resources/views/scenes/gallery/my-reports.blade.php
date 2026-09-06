@@ -21,11 +21,11 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded">
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Report status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All statuses') }}</option>
                     <option value="open" @selected($filters['status'] === 'open')>{{ __('Needs contributor review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved by contributor') }}</option>
@@ -33,7 +33,7 @@
             </div>
             <div>
                 <label for="availability" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe availability') }}</label>
-                <select id="availability" name="availability" class="input secondary mt-1 w-full rounded">
+                <select id="availability" name="availability" class="input secondary mt-1 w-full rounded-sm">
                     <option value="all" @selected($filters['availability'] === 'all')>{{ __('Published and unpublished') }}</option>
                     <option value="published" @selected($filters['availability'] === 'published')>{{ __('Published') }}</option>
                     <option value="unpublished" @selected($filters['availability'] === 'unpublished')>{{ __('No longer published') }}</option>
@@ -41,7 +41,7 @@
             </div>
             <div>
                 <label for="updates" class="block text-xs font-semibold uppercase text-secondary">{{ __('Contributor updates') }}</label>
-                <select id="updates" name="updates" class="input secondary mt-1 w-full rounded">
+                <select id="updates" name="updates" class="input secondary mt-1 w-full rounded-sm">
                     <option value="all" @selected($filters['updates'] === 'all')>{{ __('Reviewed and unread') }}</option>
                     <option value="unread" @selected($filters['updates'] === 'unread')>{{ __('Unread updates') }}</option>
                     <option value="reviewed" @selected($filters['updates'] === 'reviewed')>{{ __('No unread update') }}</option>
@@ -49,7 +49,7 @@
             </div>
             <div>
                 <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded">
+                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach (\App\Models\RecipeReport::REASONS as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -58,7 +58,7 @@
             </div>
             <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
+                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded-sm">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>

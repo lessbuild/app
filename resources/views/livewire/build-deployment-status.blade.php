@@ -108,7 +108,7 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
-        <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
             <p>{{ __('This deployment stopped reporting progress. BuildPusher is safely stopping its remote process before allowing another deployment.') }}</p>
             @if ($build->failure_message)
                 <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
@@ -159,7 +159,7 @@
     @endif
 
     @if ($build->automatic_rollback_build_id)
-        <div class="mt-4 rounded border border-amber-300 bg-amber-50 p-4 text-amber-950">{{ __('Automatic recovery was queued as') }} <a class="font-bold underline" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</div>
+        <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-950">{{ __('Automatic recovery was queued as') }} <a class="font-bold underline" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</div>
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_AWAITING_APPROVAL)
@@ -171,7 +171,7 @@
                     @csrf
                     <label class="block text-sm font-medium">
                         {{ __('Decision note (optional)') }}
-                        <textarea name="approval_note" rows="3" maxlength="2000" class="input secondary mt-2 w-full rounded" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}">{{ old('approval_note') }}</textarea>
+                        <textarea name="approval_note" rows="3" maxlength="2000" class="input secondary mt-2 w-full rounded-sm" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}">{{ old('approval_note') }}</textarea>
                     </label>
                     <x-forms.errors name="approval_note" bag="approval" />
                     <div class="mt-3 flex flex-wrap gap-3">
@@ -182,14 +182,14 @@
             @endcan
         </section>
     @elseif ($build->status === \App\Models\Build::STATUS_REJECTED)
-        <div class="mt-4 rounded border border-red-300 bg-red-50 p-4 text-red-800">
+        <div class="mt-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
             <strong>{{ __('Deployment rejected.') }}</strong>
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
         </div>
     @elseif ($build->approved_at)
-        <div class="mt-4 rounded border border-green-300 bg-green-50 p-4 text-green-800">
+        <div class="mt-4 rounded-sm border border-green-300 bg-green-50 p-4 text-green-800">
             {{ __('Approved :time.', ['time' => $build->approved_at->diffForHumans()]) }}
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
@@ -211,7 +211,7 @@
                     name="operator_note"
                     rows="4"
                     maxlength="2000"
-                    class="input secondary w-full rounded"
+                    class="input secondary w-full rounded-sm"
                     placeholder="{{ __('Example: Approved rollback for incident INC-1042.') }}"
                 >{{ old('operator_note', $build->operator_note) }}</textarea>
             </label>
@@ -265,7 +265,7 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
-        <div class="mt-6 rounded border border-red-300 bg-red-50 p-4 text-red-800">
+        <div class="mt-6 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
             <strong>{{ __('Deployment failed:') }}</strong> {{ $build->failure_message }}
         </div>
         @if ($failureGuidance)
@@ -302,7 +302,7 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_CANCELED)
-        <div class="mt-6 rounded border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="mt-6 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
             {{ __('This deployment was canceled before it completed.') }}
         </div>
     @endif

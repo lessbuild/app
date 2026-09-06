@@ -6,6 +6,7 @@ use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
 use App\Models\Website;
 use App\Rules\Hostname;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class WebsiteRequest extends FormRequest
             'server_id' => [
                 'required',
                 'integer',
-                Rule::exists('servers', 'id')->where(fn ($query) => $query
+                Rule::exists('servers', 'id')->where(fn (Builder $query): Builder => $query
                     ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Server::STATUS_ACTIVE)
                     ->whereIn('type', ServerTypeEnum::websiteHostingValues())

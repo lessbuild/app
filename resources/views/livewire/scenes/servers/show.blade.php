@@ -87,7 +87,7 @@
     </x-layouts.partials.heading>
 
     @if ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
-        <div class="my-4 rounded border border-red-300 bg-red-50 p-4 text-red-700">
+        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-700">
             <p class="font-semibold">{{ __('Server provisioning failed') }}</p>
             <p class="text-sm">{{ $server->provisioning_error }}</p>
             @error('retry')
@@ -130,7 +130,7 @@
                 {{ __('Public IP') }}
             </span>
             <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-sm cursor-pointer">
+                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
                     {{ $server->public_ip ?? 'Pending' }}
                 </div>
             </div>
@@ -150,7 +150,7 @@
                 {{ __('Private IP') }}
             </span>
             <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-sm cursor-pointer">
+                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
                     {{ $server->private_ip ?? 'Pending' }}
                 </div>
             </div>
@@ -179,7 +179,7 @@
         </div>
         <div class="flex items-center mr-6">
             <div class="inline-block">
-                <div class="-mx-1 px-1 rounded-sm cursor-pointer" tabindex="0">
+                <div class="-mx-1 px-1 rounded-xs cursor-pointer" tabindex="0">
                     <div class="flex items-center">
                         <div class="">
                             <span class="flex items-center">
@@ -206,7 +206,7 @@
             @foreach([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label,$value])<div class="rounded-xl border border-primary bg-secondary p-4"><dt class="text-xs font-bold uppercase text-secondary">{{ __($label) }}</dt><dd class="mt-1 text-2xl font-black text-primary">{{ $value ?? '—' }}</dd></div>@endforeach
         </dl>
         @if($metricHistory->isNotEmpty())
-            <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">@foreach($metricHistory as $metric)<span class="min-w-px rounded-t bg-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>@endforeach</div>
+            <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">@foreach($metricHistory as $metric)<span class="min-w-px rounded-t bg-surface-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>@endforeach</div>
         @else
             <div class="mt-4 rounded-xl border border-dashed border-primary p-5 text-sm text-secondary">{{ __('No metric samples yet. Collection runs automatically every five minutes.') }}</div>
         @endif
@@ -231,8 +231,8 @@
                     @forelse($websites as $website)
                         <a href="{{ route('websites.show', $website) }}" class="block py-2">
                             <div class="flex items-center space-x-4">
-                                <div class="flex-shrink-0">
-                                    <x-avatar :name="$website->name" class="h-8 w-8 rounded text-xs" />
+                                <div class="shrink-0">
+                                    <x-avatar :name="$website->name" class="h-8 w-8 rounded-sm text-xs" />
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-ternary truncate">

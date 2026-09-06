@@ -4,7 +4,8 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Enums\Server\ServerTypeEnum;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\Scopes\ServerScopes;
+use App\Presenters\ServerPresenter;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ use Illuminate\Support\Str;
 class Server extends Model
 {
     use BelongsToOrganization, HasFactory;
+    use ServerScopes;
 
     private ?string $provisioningRootPassword = null;
 
@@ -65,6 +67,7 @@ class Server extends Model
         'recipe_snapshot',
     ];
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -96,6 +99,7 @@ class Server extends Model
         'provisioned_at' => 'datetime',
     ];
 
+    /** Initialize stable provisioning identities for newly created servers. */
     protected static function booted(): void
     {
         static::creating(function (Server $server): void {
@@ -104,53 +108,61 @@ class Server extends Model
         });
     }
 
+    /** @return Attribute<string|null, never> The public display label for this server. */
     protected function label(): Attribute
     {
-        return Attribute::get(fn (): ?string => is_string($this->display_name) && $this->display_name !== ''
-            ? $this->display_name
-            : $this->name);
+        return Attribute::get(fn (): ?string => ServerPresenter::label($this));
     }
 
+    /** @return BelongsTo<Provider, $this> */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
+    /** @return MorphMany<Event, $this> */
     public function events(): MorphMany
     {
         return $this->morphMany(Event::class, 'parentable');
     }
 
+    /** @return MorphMany<Log, $this> */
     public function logs(): MorphMany
     {
         return $this->morphMany(Log::class, 'parentable');
     }
 
+    /** @return HasMany<Website, $this> */
     public function websites(): HasMany
     {
         return $this->hasMany(Website::class);
     }
 
+    /** @return HasMany<ServerLogSnapshot, $this> */
     public function logSnapshots(): HasMany
     {
         return $this->hasMany(ServerLogSnapshot::class);
     }
 
+    /** @return HasMany<ServerMetric, $this> */
     public function metrics(): HasMany
     {
         return $this->hasMany(ServerMetric::class);
     }
 
+    /** @return HasMany<ServerCommandExecution, $this> */
     public function commandExecutions(): HasMany
     {
         return $this->hasMany(ServerCommandExecution::class);
     }
 
+    /** @return HasMany<Repository, $this> */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
+    /** @return BelongsToMany<Recipe, $this> */
     public function recipes(): BelongsToMany
     {
         return $this->belongsToMany(Recipe::class)
@@ -174,6 +186,7 @@ class Server extends Model
         ]);
     }
 
+    /** Persist an encrypted, ordered recipe snapshot for provisioning retries. */
     public function captureProvisioningRecipes(): void
     {
         $this->forceFill([
@@ -185,19 +198,21 @@ class Server extends Model
         ])->save();
     }
 
-    public function scopeReadyForWebsites(Builder $query): Builder
-    {
-        return $query
-            ->where('provisioning_status', self::STATUS_ACTIVE)
-            ->whereIn('type', ServerTypeEnum::websiteHostingValues())
-            ->whereNotNull('mysql_root_password');
-    }
-
+    /**
+     * Read the temporary root credential kept only on this model instance.
+     *
+     * @return ?string The credential, or null when it has not been supplied.
+     */
     public function provisioningRootPassword(): ?string
     {
         return $this->provisioningRootPassword;
     }
 
+    /**
+     * Keep the initial root credential in memory for provisioning.
+     *
+     * @param  string  $password  The supplied root credential; this method does not persist it.
+     */
     public function setProvisioningRootPassword(string $password): void
     {
         $this->provisioningRootPassword = $password;

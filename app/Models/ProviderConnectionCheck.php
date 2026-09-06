@@ -27,6 +27,7 @@ class ProviderConnectionCheck extends Model
         'checked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Provider, $this> */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);

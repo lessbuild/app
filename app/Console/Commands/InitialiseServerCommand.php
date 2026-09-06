@@ -31,7 +31,7 @@ class InitialiseServerCommand extends Command
      *
      * @throws \Exception
      */
-    public function handle()
+    public function handle(): void
     {
         $server = Server::find($this->argument('server_id'));
 

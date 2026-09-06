@@ -114,10 +114,12 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Environment variable saved securely.'));
     }
 
-    public function destroyVariable(Environment $environment, int $variable): RedirectResponse
+    /** Delete the route-bound variable only from its authorized parent environment. */
+    public function destroyVariable(Environment $environment, EnvironmentVariable $variable): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $environment->variables()->findOrFail($variable)->delete();
+        abort_unless((int) $variable->environment_id === (int) $environment->id, 404);
+        $variable->delete();
 
         return back()->with('success', __('Environment variable deleted.'));
     }

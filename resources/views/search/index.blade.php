@@ -14,7 +14,7 @@
                 maxlength="100"
                 value="{{ $query }}"
                 placeholder="{{ __('Name, URL, IP address, revision, or description') }}"
-                class="input secondary min-w-0 flex-1 rounded"
+                class="input secondary min-w-0 flex-1 rounded-sm"
                 autofocus
             >
             <button type="submit" class="button primary">{{ __('Search') }}</button>
@@ -55,7 +55,7 @@
                             </div>
                             <div class="space-y-2">
                                 @foreach ($group['results'] as $result)
-                                    <a href="{{ $result['url'] }}" class="block rounded border border-primary bg-secondary p-3 hover:border-ternary">
+                                    <a href="{{ $result['url'] }}" class="block rounded-sm border border-primary bg-secondary p-3 hover:border-ternary">
                                         <span class="block font-medium text-primary">{{ $result['title'] }}</span>
                                         @if ($result['subtitle'])
                                             <span class="mt-1 block truncate text-sm text-secondary">{{ $result['subtitle'] }}</span>

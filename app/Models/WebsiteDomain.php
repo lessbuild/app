@@ -19,16 +19,19 @@ class WebsiteDomain extends Model
         'last_checked_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Website, $this> */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return BelongsTo<Provider, $this> */
     public function dnsProvider(): BelongsTo
     {
         return $this->belongsTo(Provider::class, 'dns_provider_id');

@@ -7,11 +7,11 @@
     />
 
     @if (session('status'))
-        <div class="my-4 rounded border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
     @endif
 
     @if ($filters['report'] || $filters['recipe'])
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
             <span>{{ $filters['report']
                 ? __('Showing the community report opened from your notification.')
                 : __('Showing all matching feedback for the selected recipe.') }}</span>
@@ -23,11 +23,11 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded">
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Review status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
                     <option value="unresolved" @selected($filters['status'] === 'unresolved')>{{ __('Needs review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved') }}</option>
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All reports') }}</option>
@@ -35,7 +35,7 @@
             </div>
             <div>
                 <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded">
+                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded-sm">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach ($reasons as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -44,15 +44,15 @@
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported to') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
             </div>
             <div>
                 <label for="age" class="block text-xs font-semibold uppercase text-secondary">{{ __('Minimum age') }}</label>
-                <select id="age" name="age" class="input secondary mt-1 w-full rounded">
+                <select id="age" name="age" class="input secondary mt-1 w-full rounded-sm">
                     <option value="" @selected($filters['age'] === null)>{{ __('Any age') }}</option>
                     <option value="24h" @selected($filters['age'] === '24h')>{{ __('At least 24 hours') }}</option>
                     <option value="7d" @selected($filters['age'] === '7d')>{{ __('At least 7 days') }}</option>
@@ -61,7 +61,7 @@
             </div>
             <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded">
+                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded-sm">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
@@ -153,7 +153,7 @@
                                         form="bulk-resolve-form"
                                         x-model.number="openSelected"
                                         aria-label="{{ __('Select report for :recipe', ['recipe' => $report->recipe->name]) }}"
-                                        class="rounded border-primary"
+                                        class="rounded-sm border-primary"
                                     >
                                 @else
                                     <input
@@ -163,7 +163,7 @@
                                         form="bulk-reopen-form"
                                         x-model.number="resolvedSelected"
                                         aria-label="{{ __('Select resolved report for :recipe', ['recipe' => $report->recipe->name]) }}"
-                                        class="rounded border-primary"
+                                        class="rounded-sm border-primary"
                                     >
                                 @endif
                                 <span @class([
@@ -198,7 +198,7 @@
                     </div>
                     <p class="mt-4 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
                     @if ($report->resolved_at && $report->resolution_note)
-                        <div class="mt-3 rounded border border-green-200 bg-green-50 p-3">
+                        <div class="mt-3 rounded-sm border border-green-200 bg-green-50 p-3">
                             <p class="text-xs font-semibold uppercase text-green-700">{{ __('Resolution note') }}</p>
                             <p class="mt-1 whitespace-pre-line text-sm text-green-800">{{ $report->resolution_note }}</p>
                         </div>
@@ -210,7 +210,7 @@
                                 @method('PATCH')
                                 <div>
                                     <label for="resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note (optional)') }}</label>
-                                    <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
+                                    <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
                                 </div>
                                 <button type="submit" class="button secondary">{{ __('Mark Resolved') }}</button>
                             </form>
@@ -220,7 +220,7 @@
                                 @method('PATCH')
                                 <div>
                                     <label for="edit_resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note') }}</label>
-                                    <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
+                                    <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
                                     <p class="mt-1 text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
                                     <x-forms.errors name="resolution_note" />
                                 </div>

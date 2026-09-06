@@ -3,7 +3,13 @@
 set -Eeuo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PHP_BIN="$(command -v php)"
+PHP_BIN="${BUILDPUSHER_PHP_BINARY:-$(command -v php)}"
+
+# Check before changing environment files, running migrations, or installing services.
+if ! "${PHP_BIN}" -r 'exit(PHP_VERSION_ID >= 80500 ? 0 : 1);'; then
+    echo "BuildPusher requires PHP 8.5 or newer. Set BUILDPUSHER_PHP_BINARY to its executable." >&2
+    exit 1
+fi
 SERVICE_NAME="lessbuild-app"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 WORKER_SERVICE_NAME="lessbuild-worker"

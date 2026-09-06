@@ -27,11 +27,13 @@ class RepositoryWebhookDelivery extends Model
 
     protected $guarded = [];
 
+    /** @return BelongsTo<Repository, $this> */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);
     }
 
+    /** @return BelongsTo<Build, $this> */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);

@@ -4,8 +4,8 @@
         <label for="provider_id" class="block text-sm font-medium text-primary">
             {{ __('Providers') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="provider_id" name="provider_id" class="input secondary rounded" required>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="provider_id" name="provider_id" class="input secondary rounded-sm" required>
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
@@ -25,8 +25,8 @@
         <label for="type" class="block text-sm font-medium text-primary">
             {{ __('Server Type') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="type" name="type" class="input secondary rounded" required>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="type" name="type" class="input secondary rounded-sm" required>
                 @foreach($types as $type)
                     <option value="{{ $type->value }}"
                         @selected(old('type') == $type->value || ($server->type ?? null) == $type->value)
@@ -43,7 +43,7 @@
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Cloud server name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
+        <div class="mt-1 flex rounded-md shadow-xs">
             <input
                 value="{{ old('name') ?? ($server->name ?? null) }}"
                 type="text"
@@ -51,7 +51,7 @@
                 id="name"
                 maxlength="255"
                 required
-                class="input secondary rounded"
+                class="input secondary rounded-sm"
                 placeholder="Example: Deployer">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
@@ -61,8 +61,8 @@
         <label for="image" class="block text-sm font-medium text-primary">
             {{ __('Image') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="image" name="image" class="input secondary rounded" required data-selected="{{ old('image', $server->image ?? '') }}">
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="image" name="image" class="input secondary rounded-sm" required data-selected="{{ old('image', $server->image ?? '') }}">
                 @foreach($images as $key => $value)
                     <option
                         value="{{ $key }}"
@@ -78,8 +78,8 @@
         <label for="region" class="block text-sm font-medium text-primary">
             {{ __('Region') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="region" name="region" class="input secondary rounded" required data-selected="{{ old('region', $server->region ?? '') }}">
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="region" name="region" class="input secondary rounded-sm" required data-selected="{{ old('region', $server->region ?? '') }}">
                 @foreach($regions as $region)
                     <option
                         value="{{ $region->slug }}"
@@ -95,8 +95,8 @@
         <label for="size" class="block text-sm font-medium text-primary">
             {{ __('Sizes') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-sm">
-            <select id="size" name="size" class="input secondary rounded" required data-selected="{{ old('size', $server->size ?? '') }}">
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <select id="size" name="size" class="input secondary rounded-sm" required data-selected="{{ old('size', $server->size ?? '') }}">
                 @foreach($sizes as $size)
                     <option
                         value="{{ $size->slug }}"
@@ -120,11 +120,11 @@
         <fieldset class="col-span-3 sm:col-span-2">
             <legend class="block text-sm font-medium text-primary">{{ __('Provisioning recipes') }}</legend>
             <p class="mt-1 text-xs text-secondary">{{ __('Selected recipes run as root, in this order, while the server is provisioned.') }}</p>
-            <div class="mt-3 space-y-2 rounded border border-primary bg-secondary p-3">
+            <div class="mt-3 space-y-2 rounded-sm border border-primary bg-secondary p-3">
                 @foreach ($recipes as $recipe)
                     <label class="flex items-start gap-3">
                         <input
-                            class="mt-1 rounded border-primary bg-primary text-ternary"
+                            class="mt-1 rounded-sm border-primary bg-primary text-ternary"
                             type="checkbox"
                             name="recipes[]"
                             value="{{ $recipe->id }}"

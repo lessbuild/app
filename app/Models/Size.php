@@ -28,6 +28,7 @@ class Size extends Model
         'price_hourly',
     ];
 
+    /** @return BelongsToMany<Region, $this> */
     public function regions(): BelongsToMany
     {
         return $this->belongsToMany(Region::class);

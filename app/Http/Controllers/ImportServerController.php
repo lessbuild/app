@@ -7,17 +7,17 @@ use App\Http\Requests\ImportServerRequest;
 use App\Jobs\Server\RetryRemoteServerProvisioningJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Server;
-use App\Models\ServerLogSnapshot;
 use App\Models\ServerImportAssessment;
+use App\Models\ServerLogSnapshot;
 use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
 use App\Services\ServerDiscovery;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use phpseclib3\Crypt\PublicKeyLoader;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use phpseclib4\Crypt\PublicKeyLoader;
 
 class ImportServerController extends Controller
 {
@@ -85,7 +85,9 @@ class ImportServerController extends Controller
         $server = $limits->withinLimit($request->user(), 'servers', function ($organization) use ($request, $prepare): Server {
             $assessment = ServerImportAssessment::query()->lockForUpdate()->findOrFail($request->route('assessment')->id);
             $token = (string) $request->session()->get("server_import_assessment.{$assessment->id}");
-            if (! $assessment->isUsableBy($request->user(), $token)) throw ValidationException::withMessages(['confirmation' => __('This import assessment expired or was already used. Run the inspection again.')]);
+            if (! $assessment->isUsableBy($request->user(), $token)) {
+                throw ValidationException::withMessages(['confirmation' => __('This import assessment expired or was already used. Run the inspection again.')]);
+            }
             $configuration = $assessment->configuration;
             $server = $organization->servers()->create([
                 'user_id' => $request->user()->id,

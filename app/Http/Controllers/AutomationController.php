@@ -15,8 +15,10 @@ use App\Services\WorkflowConfiguration;
 use Cron\CronExpression;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AutomationController extends Controller
 {
@@ -148,7 +150,7 @@ class AutomationController extends Controller
         return back()->with('success', __('Scheduled task deleted.'));
     }
 
-    public function scheduledTaskOutput(ScheduledTaskRun $run)
+    public function scheduledTaskOutput(ScheduledTaskRun $run): Response
     {
         $this->authorize('view', $run->task->environment);
 
@@ -180,26 +182,46 @@ class AutomationController extends Controller
         return back()->with('success', __('API token created. Copy it now; it will not be shown again.'))->with('plainTextToken', $token->plainTextToken);
     }
 
-    public function destroyToken(Request $request, int $token): RedirectResponse
+    public function destroyToken(Request $request, PersonalAccessToken $token): RedirectResponse
     {
-        $request->user()->tokens()->findOrFail($token)->delete();
+        $this->ensureOwnedToken($request, $token);
+        $token->delete();
 
         return back()->with('success', __('API token revoked.'));
     }
 
-    public function rotateToken(Request $request, int $token): RedirectResponse
+    public function rotateToken(Request $request, PersonalAccessToken $token): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
         abort_unless($organization->owner->is($request->user()), 403);
         $this->entitlements->enforce($organization, 'api');
-        $current = $request->user()->tokens()->findOrFail($token);
-        $replacement = $request->user()->createToken($current->name, $current->abilities, now()->addYear());
-        $current->delete();
+        $this->ensureOwnedToken($request, $token);
+        $replacement = $request->user()->createToken($token->name, $token->abilities, now()->addYear());
+        $token->delete();
 
         return back()->with('success', __('API token rotated. The previous token has been revoked.'))
             ->with('plainTextToken', $replacement->plainTextToken);
     }
 
+    /**
+     * @param  Request  $request  The authenticated token owner's request.
+     * @param  PersonalAccessToken  $token  The route-bound Sanctum token.
+     * @return void Reject tokens owned by another user or authenticatable model with a 404.
+     */
+    private function ensureOwnedToken(Request $request, PersonalAccessToken $token): void
+    {
+        $user = $request->user();
+        abort_unless(
+            (string) $token->tokenable_id === (string) $user->getKey()
+                && $token->tokenable_type === $user->getMorphClass(),
+            404,
+        );
+    }
+
+    /**
+     * @param  Request  $request  Submitted schedule name, cron expression and timezone.
+     * @return array{name: string, cron_expression: string, timezone: string} Validated schedule attributes.
+     */
     private function scheduleData(Request $request): array
     {
         return $request->validate([

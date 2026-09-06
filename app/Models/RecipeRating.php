@@ -14,11 +14,13 @@ class RecipeRating extends Model
 
     protected $casts = ['rating' => 'integer'];
 
+    /** @return BelongsTo<Recipe, $this> */
     public function recipe(): BelongsTo
     {
         return $this->belongsTo(Recipe::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
