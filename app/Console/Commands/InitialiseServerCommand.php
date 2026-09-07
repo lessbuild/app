@@ -25,19 +25,26 @@ class InitialiseServerCommand extends Command
     protected $description = 'Initialise the server';
 
     /**
-     * Run initialization synchronously for the server_id argument; lookup or initialization errors propagate.
+     * Run initialization synchronously for the server_id argument; reject missing targets before dispatch.
      *
      * Execute the console command.
      *
-     * @return void
+     * @return int Failure when the server is absent, otherwise success after synchronous dispatch; initialization errors propagate.
      *
      * @throws \Exception
      */
-    public function handle(): void
+    public function handle(): int
     {
         $server = Server::find($this->argument('server_id'));
+        if (! $server) {
+            $this->error('Server not found.');
+
+            return self::FAILURE;
+        }
 
         InitialiseServerJob::dispatchSync($server);
+
+        return self::SUCCESS;
     }
 
     /**

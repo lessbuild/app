@@ -25,19 +25,26 @@ class AddWebsiteToCaddyCommand extends Command
     protected $description = 'Add website to caddy';
 
     /**
-     * Run website provisioning synchronously for the website_id argument; lookup or provisioning errors propagate.
+     * Dispatch website provisioning synchronously through Laravel's job lifecycle; reject missing targets before dispatch.
      *
      * Execute the console command.
      *
-     * @return void
+     * @return int Failure when the website is absent, otherwise success after synchronous dispatch; provisioning errors propagate.
      *
      * @throws \Exception
      */
-    public function handle(): void
+    public function handle(): int
     {
         $website = Website::find($this->argument('website_id'));
+        if (! $website) {
+            $this->error('Website not found.');
 
-        (new AddWebsiteJob($website))->handle();
+            return self::FAILURE;
+        }
+
+        AddWebsiteJob::dispatchSync($website);
+
+        return self::SUCCESS;
     }
 
     /**

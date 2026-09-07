@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use RuntimeException;
 
 class RemoveLoadBalancerJob implements ShouldQueue
 {
@@ -23,9 +24,12 @@ class RemoveLoadBalancerJob implements ShouldQueue
     public function __construct(public readonly int $serverId, public readonly int $loadBalancerId) {}
 
     /**
-     * Remove the balancer's Caddy file and request validation and reload when its server still exists; the command result is not inspected.
+     * Remove the balancer's Caddy file, validate and reload; stop and fail the job if any remote command fails.
      *
      * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @return void Skip deleted servers; otherwise require successful remote removal and reload.
+     *
+     * @throws RuntimeException If the remote removal, validation or reload exits unsuccessfully.
      */
     public function handle(Runner $runner): void
     {
@@ -34,6 +38,9 @@ class RemoveLoadBalancerJob implements ShouldQueue
             return;
         }
         $file = escapeshellarg('/etc/caddy/websites/ha-'.$this->loadBalancerId.'.conf');
-        $runner->server($server)->create()->execute("rm -f -- {$file}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy");
+        $result = $runner->server($server)->create()->execute("set -e\nrm -f -- {$file}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy");
+        if (! $result->isSuccessful()) {
+            throw new RuntimeException("Unable to remove load-balancer configuration {$this->loadBalancerId} from server {$this->serverId}.");
+        }
     }
 }

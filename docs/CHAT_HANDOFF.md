@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Queue correctness and dependency blocker — 2026-09-07
+
+The follow-up after `abdd8df` fixes fail-fast load-balancer removal and manual provisioning command dispatch/lookup behavior. **107 tests / 946 assertions** across four relevant suites passed, as did scoped formatting and the signature/documentation audit. See [the requirement and verification record](verification/modernization-remaining-requirements-2026-09-07.md).
+
+The full modernization goal is **blocked, not complete**. The same official-release constraint has persisted across three goal checkpoints: latest Laravel 13.30.1 and Ramsey UUID 4.9.3 still reject latest Brick Math 0.20.0. Fresh registry and Composer checks confirm it. The named refactor/documentation work and the concrete correctness follow-ups are implemented and verified; local edits cannot make the official all-latest graph resolvable. Resume dependency work when upstream constraints change or the user explicitly changes that requirement. Do not silently substitute latest-compatible completion.
+
+Publication remains authorized. Inspect Git history/remote state for the published checkpoint. No deployment, real migration, cloud operation or next-roadmap feature was performed.
+
 ## Documentation and authentication checkpoint — 2026-09-07
 
 The follow-up to `ed9182c` completes the missing method documentation and fixes a recovery-code consumption race. See [the verification record](verification/method-contracts-and-recovery-codes-2026-09-07.md). Publication to GitHub remains authorized; inspect the final commit and remote state for its exact publication identity.
