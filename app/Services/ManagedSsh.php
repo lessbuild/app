@@ -11,6 +11,14 @@ class ManagedSsh extends Ssh
 
     private ?string $temporaryKnownHosts = null;
 
+    /**
+     * Write private-key bytes to a restricted temporary file and configure the SSH client.
+     *
+     * @param  string  $privateKey  The private-key contents to write with mode 0600.
+     * @return self This SSH client for chaining; previously managed temporary files are removed first.
+     *
+     * @throws RuntimeException If the temporary directory or key file cannot be created securely.
+     */
     public function usePrivateKeyContents(string $privateKey): self
     {
         $this->close();
@@ -43,6 +51,11 @@ class ManagedSsh extends Ssh
         return $this;
     }
 
+    /**
+     * Attempt to remove managed temporary key and known-hosts files.
+     *
+     * @return void No value; clears the tracked paths after attempting file deletion.
+     */
     public function close(): void
     {
         if ($this->temporaryPrivateKey !== null) {
@@ -55,6 +68,14 @@ class ManagedSsh extends Ssh
         }
     }
 
+    /**
+     * Write a restricted known-hosts file and enable strict SSH host-key checking.
+     *
+     * @param  string  $knownHost  The known-hosts entry to trim and write with a trailing newline.
+     * @return self This SSH client with explicit host-key validation options.
+     *
+     * @throws RuntimeException If the temporary directory or known-hosts file cannot be created securely.
+     */
     public function useKnownHost(string $knownHost): self
     {
         $directory = storage_path('app/ssh');
@@ -74,6 +95,9 @@ class ManagedSsh extends Ssh
         return $this;
     }
 
+    /**
+     * Remove tracked temporary SSH credentials and host records when the client is destroyed.
+     */
     public function __destruct()
     {
         $this->close();

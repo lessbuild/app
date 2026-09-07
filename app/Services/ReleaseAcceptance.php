@@ -52,6 +52,14 @@ class ReleaseAcceptance
         return $best;
     }
 
+    /**
+     * Evaluate provisioning, deployment, rollback, backup, restore and health evidence in temporal order.
+     *
+     * @param  Environment  $environment  The environment whose server and website supply release evidence.
+     * @param  Carbon|null  $since  An optional earliest accepted evidence timestamp.
+     * @param  array{initial: Build|null, second: Build|null, rollback: Build|null}  $chain  The selected deployment sequence to validate against later backup and restore records.
+     * @return list<array{name: string, passed: bool, detail: string}> Seven acceptance checks for the selected evidence chain.
+     */
     private function auditChain(Environment $environment, ?Carbon $since, array $chain): array
     {
         $server = $environment->server;
@@ -156,6 +164,15 @@ class ReleaseAcceptance
         yield ['initial' => null, 'second' => null, 'rollback' => null];
     }
 
+    /**
+     * Check that the original successful release belongs to this environment and matches the rollback.
+     *
+     * @param  Build|null  $initial  The candidate original deployment, or null when it cannot be found.
+     * @param  Environment  $environment  The environment and workspace the original release must belong to.
+     * @param  Carbon|null  $since  The optional earliest accepted deployment timestamp.
+     * @param  Build  $rollback  The later rollback whose repository, revision and release paths must match.
+     * @return bool Whether the candidate supplies coherent pre-rollback evidence.
+     */
     private function validInitialBuild(?Build $initial, Environment $environment, ?Carbon $since, Build $rollback): bool
     {
         return $initial !== null
@@ -177,6 +194,12 @@ class ReleaseAcceptance
             && filled($rollback->release_path);
     }
 
+    /**
+     * Check whether a recorded revision has a 40- to 64-character hexadecimal form.
+     *
+     * @param  string|null  $revision  The optional stored source revision.
+     * @return bool True only when the complete value matches the expected hexadecimal length.
+     */
     private function validRevision(?string $revision): bool
     {
         return preg_match('/\A[a-f0-9]{40,64}\z/Di', (string) $revision) === 1;
@@ -191,17 +214,40 @@ class ReleaseAcceptance
         ])->map(fn (string $name): array => $this->result($name, false, ''))->all();
     }
 
+    /**
+     * Require an evidence timestamp and optionally enforce its lower bound.
+     *
+     * @param  CarbonInterface|null  $recordedAt  The recorded event time, or null for missing evidence.
+     * @param  Carbon|null  $since  The optional inclusive lower bound.
+     * @return bool Whether the timestamp exists and is at or after the lower bound.
+     */
     private function atOrAfter(?CarbonInterface $recordedAt, ?Carbon $since): bool
     {
         return $recordedAt !== null && ($since === null || $recordedAt->greaterThanOrEqualTo($since));
     }
 
+    /**
+     * Check evidence timestamps against optional inclusive lower and upper bounds.
+     *
+     * @param  CarbonInterface|null  $recordedAt  The recorded event time to validate.
+     * @param  Carbon|null  $since  The optional inclusive lower bound.
+     * @param  Carbon|null  $before  The optional inclusive upper bound.
+     * @return bool Whether the timestamp exists and falls within all supplied bounds.
+     */
     private function between(?CarbonInterface $recordedAt, ?Carbon $since, ?Carbon $before): bool
     {
         return $this->atOrAfter($recordedAt, $since)
             && ($before === null || $recordedAt->lessThanOrEqualTo($before));
     }
 
+    /**
+     * Format one acceptance result without claiming success when evidence is missing.
+     *
+     * @param  string  $name  The acceptance-check label.
+     * @param  bool  $passed  Whether the required evidence was found.
+     * @param  string  $successDetail  The explanation included only when the check passes.
+     * @return array{name: string, passed: bool, detail: string} The check outcome and either its success detail or missing-evidence message.
+     */
     private function result(string $name, bool $passed, string $successDetail): array
     {
         return ['name' => $name, 'passed' => $passed, 'detail' => $passed ? $successDetail : 'Required acceptance evidence is missing'];

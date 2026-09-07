@@ -8,6 +8,13 @@ use App\Services\ProvisioningCallbackUrl;
 
 abstract class BuildProvisioningScript implements BuildScript
 {
+    /**
+     * Render a signed, shell-escaped build progress callback.
+     *
+     * @param  int  $step  The provisioning stage to report.
+     * @param  Build  $build  The build supplying the callback identity.
+     * @return string A curl command; rendering does not send the callback.
+     */
     protected function progress(int $step, Build $build): string
     {
         $callback = escapeshellarg(ProvisioningCallbackUrl::buildStatus($build));

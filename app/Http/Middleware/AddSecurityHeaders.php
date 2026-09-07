@@ -8,6 +8,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AddSecurityHeaders
 {
+    /**
+     * Add browser isolation and content policies to the downstream response, with HSTS only for HTTPS requests.
+     *
+     * @param  Closure(Request): Response  $next  The remaining HTTP middleware pipeline.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);

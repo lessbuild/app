@@ -20,6 +20,12 @@ class ServerCatalog
         };
     }
 
+    /**
+     * Normalize DigitalOcean regions, sizes and Ubuntu images for server-selection controls.
+     *
+     * @param  ServerProvider  $client  The DigitalOcean adapter supplying catalog responses.
+     * @return array{regions: array, sizes: array, images: array} Sorted identifier/label choices, with provider-specific capacity and price details.
+     */
     private function digitalOcean(ServerProvider $client): array
     {
         return [
@@ -48,6 +54,12 @@ class ServerCatalog
         ];
     }
 
+    /**
+     * Normalize Hetzner regions, sizes and Ubuntu images for server-selection controls.
+     *
+     * @param  ServerProvider  $client  The Hetzner adapter supplying catalog responses.
+     * @return array{regions: array, sizes: array, images: array} Sorted identifier/label choices, with provider-specific capacity and price details.
+     */
     private function hetzner(ServerProvider $client): array
     {
         return [
@@ -74,6 +86,12 @@ class ServerCatalog
         ];
     }
 
+    /**
+     * Normalize Vultr regions, sizes and Ubuntu images for server-selection controls.
+     *
+     * @param  ServerProvider  $client  The Vultr adapter supplying catalog responses.
+     * @return array{regions: array, sizes: array, images: array} Sorted identifier/label choices, with provider-specific capacity and price details.
+     */
     private function vultr(ServerProvider $client): array
     {
         return [
@@ -110,6 +128,12 @@ class ServerCatalog
             ->all();
     }
 
+    /**
+     * Format a catalog quantity with at most two fractional digits.
+     *
+     * @param  float  $value  The capacity or price value to display.
+     * @return string A decimal string without trailing fractional zeroes or grouping separators.
+     */
     private function number(float $value): string
     {
         return rtrim(rtrim(number_format($value, 2, '.', ''), '0'), '.');

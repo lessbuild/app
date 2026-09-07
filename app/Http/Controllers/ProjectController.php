@@ -14,6 +14,9 @@ use Illuminate\View\View;
 
 class ProjectController extends Controller
 {
+    /**
+     * Render current-workspace applications with environment counts in creation order.
+     */
     public function index(Request $request): View
     {
         return view('scenes.projects.index', [
@@ -21,6 +24,9 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Require workspace deployment permission and render the configured application templates.
+     */
     public function create(Request $request): View
     {
         abort_unless($request->user()->currentOrganization->permits($request->user(), 'deploy'), 403);
@@ -28,6 +34,11 @@ class ProjectController extends Controller
         return view('scenes.projects.create', ['templates' => config('application-templates')]);
     }
 
+    /**
+     * Validate an application name, description, and template, then create protected production defaults atomically.
+     *
+     * @return RedirectResponse The created application page with any entitled template processes configured.
+     */
     public function store(Request $request, Entitlements $entitlements): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -74,6 +85,9 @@ class ProjectController extends Controller
         return redirect()->route('projects.show', $project)->with('success', __('Application created with a protected production environment.'));
     }
 
+    /**
+     * Authorize application visibility and render its environment placements, resources, previews, and available features.
+     */
     public function show(Request $request, Project $project, Entitlements $entitlements): View
     {
         $this->authorize('view', $project);
@@ -98,6 +112,9 @@ class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Authorize deletion of the bound application and redirect to the application list after removing its record.
+     */
     public function destroy(Project $project): RedirectResponse
     {
         $this->authorize('delete', $project);
@@ -106,6 +123,9 @@ class ProjectController extends Controller
         return redirect()->route('projects.index')->with('success', __('Application deleted.'));
     }
 
+    /**
+     * Normalize and validate preview enablement, hostname, and expiry for an editable application, then save the settings.
+     */
     public function updatePreviews(Request $request, Project $project, Entitlements $entitlements): RedirectResponse
     {
         $this->authorize('update', $project);
@@ -127,6 +147,9 @@ class ProjectController extends Controller
         return back()->with('success', __('Preview environment settings saved.'));
     }
 
+    /**
+     * Find an available application slug within the given workspace, adding numeric suffixes when the name collides.
+     */
     private function uniqueSlug(int $organizationId, string $name): string
     {
         $base = Str::slug($name) ?: 'application';

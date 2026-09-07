@@ -21,8 +21,19 @@ class RestoreWebsiteBackupJob implements ShouldQueue
 
     public int $timeout = 3600;
 
+    /**
+     * Capture the queued restore request and resolve its retained backup during execution.
+     *
+     * @param  int  $restoreId  Queued restore request identifying the retained backup to apply.
+     */
     public function __construct(public int $restoreId) {}
 
+    /**
+     * Require a valid snapshot, no active deployment, and database credentials; restore database, environment, and storage with a remote safety rollback, then record successful completion.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @param  ResticRepository  $repositories  Restic configuration service supplying authenticated shell environments for backup destinations.
+     */
     public function handle(Runner $runner, ResticRepository $repositories): void
     {
         $restore = BackupRestore::query()->with(['backup.website.server', 'backup.destination'])->find($this->restoreId);
@@ -95,6 +106,11 @@ class RestoreWebsiteBackupJob implements ShouldQueue
         $restore->update(['status' => BackupRestore::STATUS_SUCCEEDED, 'completed_at' => now()]);
     }
 
+    /**
+     * Mark the restore failed with a completion timestamp and bounded error when queue handling fails.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         BackupRestore::query()->whereKey($this->restoreId)->update([

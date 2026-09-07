@@ -15,8 +15,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityController extends Controller
 {
+    /**
+     * Use workspace audit entitlements to control activity export availability.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render the request user's activity with normalized search, category, date filters, and aggregate counts.
+     */
     public function __invoke(Request $request): View
     {
         $filters = $this->filters($request);
@@ -67,6 +73,9 @@ class ActivityController extends Controller
         ];
     }
 
+    /**
+     * Require the audit entitlement and stream filtered user activity as a private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $this->entitlements->enforce($request->user()->currentOrganization, 'audit');
@@ -145,6 +154,9 @@ class ActivityController extends Controller
                 ->whereDate('created_at', '<=', $value));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -152,6 +164,9 @@ class ActivityController extends Controller
         return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);

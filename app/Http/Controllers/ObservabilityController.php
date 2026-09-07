@@ -21,8 +21,14 @@ use Illuminate\View\View;
 
 class ObservabilityController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate alerting and public status-page configuration.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render current-workspace alerts, bounded incident/deployment/health context, metrics, and responder permissions.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -45,6 +51,9 @@ class ObservabilityController extends Controller
         ]);
     }
 
+    /**
+     * Require entitled workspace management access and validate a metric, threshold, breach count, cooldown, and optional owned server.
+     */
     public function storeMetricRule(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -66,6 +75,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Metric alert created.'));
     }
 
+    /**
+     * Require the metric rule's current-workspace ownership, management access, and alerts entitlement before deleting it.
+     */
     public function destroyMetricRule(Request $request, MetricAlertRule $rule): RedirectResponse
     {
         abort_unless($rule->organization_id === $request->user()->current_organization_id
@@ -76,6 +88,11 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Metric alert deleted.'));
     }
 
+    /**
+     * Validate an entitled workspace manager's alert type, endpoint, and event subscriptions before creating its signing secret.
+     *
+     * @return RedirectResponse A saved destination or a provider-host validation error.
+     */
     public function storeDestination(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -116,6 +133,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Alert destination created.'));
     }
 
+    /**
+     * Require management access to an entitled workspace alert destination, queue a test delivery, and redirect back.
+     */
     public function testDestination(Request $request, AlertDestination $destination): RedirectResponse
     {
         $this->assertDestination($request, $destination);
@@ -133,6 +153,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Test alert queued.'));
     }
 
+    /**
+     * Require management access to an entitled workspace alert destination, delete it, and redirect back.
+     */
     public function destroyDestination(Request $request, AlertDestination $destination): RedirectResponse
     {
         $this->assertDestination($request, $destination);
@@ -142,6 +165,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Alert destination deleted.'));
     }
 
+    /**
+     * Validate an entitled workspace manager's page details and website IDs, then atomically create a uniquely slugged status page.
+     */
     public function storeStatusPage(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -169,6 +195,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Status page created: :url', ['url' => route('status.show', $page->slug)]));
     }
 
+    /**
+     * Require management access to the entitled workspace page and atomically update its details and website membership.
+     */
     public function updateStatusPage(Request $request, StatusPage $statusPage): RedirectResponse
     {
         $this->assertStatusPage($request, $statusPage);
@@ -186,6 +215,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Status page updated.'));
     }
 
+    /**
+     * Require management access to the entitled workspace page, delete its record, and redirect back.
+     */
     public function destroyStatusPage(Request $request, StatusPage $statusPage): RedirectResponse
     {
         $this->assertStatusPage($request, $statusPage);
@@ -195,6 +227,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Status page deleted.'));
     }
 
+    /**
+     * Validate an entitled workspace manager's status update for an owned page, publish it, and notify subscribers.
+     */
     public function storeIncident(Request $request, StatusSubscriberNotifier $notifier): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -212,6 +247,9 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Status update published.'));
     }
 
+    /**
+     * Validate an authorized status-page incident update, maintain its resolution timestamp, and notify subscribers.
+     */
     public function updateIncident(Request $request, StatusIncident $incident, StatusSubscriberNotifier $notifier): RedirectResponse
     {
         $this->assertStatusPage($request, $incident->statusPage);
@@ -227,18 +265,30 @@ class ObservabilityController extends Controller
         return back()->with('success', __('Status update saved and subscribers notified.'));
     }
 
+    /**
+     * Abort with 403 unless the alert destination belongs to the current workspace and the user can manage it.
+     */
     private function assertDestination(Request $request, AlertDestination $destination): void
     {
         abort_unless($destination->organization_id === $request->user()->current_organization_id
             && $destination->organization->permits($request->user(), 'manage'), 403);
     }
 
+    /**
+     * Abort with 403 unless the status page belongs to the current workspace and the user can manage it.
+     */
     private function assertStatusPage(Request $request, StatusPage $statusPage): void
     {
         abort_unless($statusPage->organization_id === $request->user()->current_organization_id
             && $statusPage->organization->permits($request->user(), 'manage'), 403);
     }
 
+    /**
+     * Validate status-page details and restrict component website IDs to the supplied workspace.
+     *
+     * @param  bool  $withSlug  Allow a nullable slug during creation; updates only validate a submitted slug.
+     * @return array<string, mixed> Validated fields, with optional slug and description entries.
+     */
     private function statusPageData(Request $request, int $organizationId, bool $withSlug = true): array
     {
         return $request->validate([
@@ -251,6 +301,12 @@ class ObservabilityController extends Controller
         ]);
     }
 
+    /**
+     * Validate incident/maintenance content, chronology, and status compatibility for an owned status page.
+     *
+     * @param  bool  $withPage  Require the page ID on creation; updates validate it only if submitted.
+     * @return array<string, mixed> Validated update fields, including optional postmortem details.
+     */
     private function incidentData(Request $request, int $organizationId, bool $withPage = true): array
     {
         $data = $request->validate([

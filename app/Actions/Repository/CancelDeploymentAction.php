@@ -8,11 +8,24 @@ use RuntimeException;
 
 class CancelDeploymentAction
 {
+    /**
+     * Capture the deployment whose recorded remote process must be stopped.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     */
     public function __construct(
         private readonly Build $build,
         private readonly ?Runner $runner = null,
     ) {}
 
+    /**
+     * Validate the saved process identity, stop its matching remote process group, collect its remaining log, and remove temporary deployment files.
+     *
+     * @return string|null Remaining deployment output, or null when the remote log is empty.
+     *
+     * @throws RuntimeException If the recorded process identity is unsafe or remote cancellation fails.
+     */
     public function handle(): ?string
     {
         $processId = $this->build->remote_process_id;

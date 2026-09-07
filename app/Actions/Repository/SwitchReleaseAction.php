@@ -8,8 +8,21 @@ use RuntimeException;
 
 class SwitchReleaseAction
 {
+    /**
+     * Accept an optional SSH runner for activating a retained release.
+     *
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     */
     public function __construct(private readonly ?Runner $runner = null) {}
 
+    /**
+     * Validate the retained release path and atomically switch the current symlink; attempt to restore the previous release if the configured health check fails.
+     *
+     * @param  Build  $build  Rollback build carrying the retained release name and exact website release path.
+     * @return string Trimmed remote activation output after a successful release switch.
+     *
+     * @throws RuntimeException If release metadata is unsafe, the release is unavailable, or remote activation fails.
+     */
     public function handle(Build $build): string
     {
         $website = $build->repository->website;

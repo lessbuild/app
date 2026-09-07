@@ -7,6 +7,14 @@ use Illuminate\Support\Facades\Cache;
 
 class MonetizationTelemetry
 {
+    /**
+     * Increment daily UTC plan-denial counters without storing request payloads.
+     *
+     * @param  string  $type  The denial category, such as entitlement or limit.
+     * @param  string  $capability  The feature or resource key that was denied.
+     * @param  Organization|null  $organization  The optional workspace whose owner's plan is counted.
+     * @return void No value; increments total, category, capability and optional plan counters.
+     */
     public function denied(string $type, string $capability, ?Organization $organization = null): void
     {
         $date = now()->utc()->toDateString();

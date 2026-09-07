@@ -22,6 +22,11 @@ class Repository extends Command
 
     protected $description = 'Safely clone a public source repository into local checkout storage';
 
+    /**
+     * Validate clone options and a dedicated checkout root, clone into a temporary directory, then publish the completed checkout with replacement recovery.
+     *
+     * @return int SUCCESS after publishing the checkout, otherwise FAILURE with a reported validation or clone error.
+     */
     public function handle(): int
     {
         $input = $this->validatedInput();
@@ -96,6 +101,11 @@ class Repository extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve and create the configured dedicated checkout directory while rejecting an unsafe filesystem root.
+     *
+     * @return string|null The real checkout-root path, or null after reporting invalid configuration or directory creation failure.
+     */
     private function checkoutRoot(): ?string
     {
         $configured = rtrim((string) config('lessbuild.repository_checkout_directory'), DIRECTORY_SEPARATOR);
@@ -124,7 +134,11 @@ class Repository extends Command
         return $root;
     }
 
-    /** @return array{repository: string, branch: string, name: string, timeout: int}|null */
+    /**
+     * Normalize and validate the repository URL, branch, checkout name, and process timeout from command input.
+     *
+     * @return array{repository: string, branch: string, name: string, timeout: int}|null Normalized clone options, or null after reporting validation errors.
+     */
     private function validatedInput(): ?array
     {
         $repository = SourceRepositoryUrl::normalize((string) $this->argument('repository'));
@@ -158,6 +172,15 @@ class Repository extends Command
         ];
     }
 
+    /**
+     * Replace the destination with the completed temporary checkout, preserving a backup of an existing checkout until publication succeeds.
+     *
+     * @param  string  $temporary  Completed temporary clone directory ready for publication.
+     * @param  string  $destination  Final checkout directory, which may already contain a checkout.
+     * @param  string  $root  Validated checkout root in which a temporary recovery backup can be created.
+     * @param  string  $name  Validated checkout name used to distinguish the recovery directory.
+     * @return bool True when the checkout was published; false after cleanup and attempted restoration of an earlier checkout.
+     */
     private function publish(string $temporary, string $destination, string $root, string $name): bool
     {
         $backup = null;
@@ -192,6 +215,11 @@ class Repository extends Command
         }
     }
 
+    /**
+     * Remove a checkout tree, or unlink the path itself when it is a symlink.
+     *
+     * @param  string  $path  Checkout or temporary path to remove without following a symlink.
+     */
     private function deleteCheckout(string $path): void
     {
         if (is_link($path)) {

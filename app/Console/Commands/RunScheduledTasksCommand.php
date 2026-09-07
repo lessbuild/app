@@ -13,6 +13,11 @@ class RunScheduledTasksCommand extends Command
 
     protected $description = 'Queue due application tasks';
 
+    /**
+     * Claim each due enabled task once per minute, persist its queued run, and dispatch remote execution.
+     *
+     * @return int SUCCESS after evaluating task schedules.
+     */
     public function handle(): int
     {
         ScheduledTask::query()->where('is_enabled', true)->with('environment.website')->each(function (ScheduledTask $task): void {

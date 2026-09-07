@@ -13,6 +13,13 @@ class ConfigureResourcesScript extends BuildProvisioningScript
 
     public static string $identifier = 'configured-resources';
 
+    /**
+     * Render installation commands for locally managed Redis, Valkey and PostgreSQL resources.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         // New snapshots explicitly record management intent. Historical snapshots

@@ -8,6 +8,14 @@ use Throwable;
 
 class OperationalDiagnostics
 {
+    /**
+     * Bind readiness probes used by operational diagnostics.
+     *
+     * @param  ApplicationReadiness  $readiness  Reports whether the application is ready to serve traffic.
+     * @param  DatabaseManager  $database  Supplies configured database connections.
+     * @param  EmailReadiness  $email  Checks outbound mail configuration readiness.
+     * @param  ExternalMonitoring  $externalMonitoring  Checks heartbeat and external status endpoints.
+     */
     public function __construct(
         private readonly ApplicationReadiness $readiness,
         private readonly DatabaseManager $database,

@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 class AccountDeletionController extends Controller
 {
+    /**
+     * Validate email confirmation and applicable password/two-factor challenges before deleting the account.
+     *
+     * Shared memberships, remaining teammates, or active operations block deletion; success clears the session and redirects home.
+     */
     public function __invoke(Request $request, TwoFactorAuthentication $twoFactor): RedirectResponse
     {
         $user = $request->user();

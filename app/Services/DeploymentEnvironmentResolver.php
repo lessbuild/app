@@ -7,6 +7,12 @@ use App\Models\Repository;
 
 class DeploymentEnvironmentResolver
 {
+    /**
+     * Find a same-workspace website environment, preferring matching branches and then production.
+     *
+     * @param  Repository  $repository  The repository supplying website, workspace and branch constraints.
+     * @return Environment|null The preferred environment, or null if no owned environment is attached.
+     */
     public function for(Repository $repository): ?Environment
     {
         return Environment::query()

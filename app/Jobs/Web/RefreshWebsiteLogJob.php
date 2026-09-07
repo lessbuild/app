@@ -19,13 +19,29 @@ class RefreshWebsiteLogJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 60;
 
+    /**
+     * Capture the website and runtime log category whose queued snapshot should be refreshed.
+     *
+     * @param  int  $websiteId  Website identifier retained for lookup when the job runs.
+     * @param  string  $type  Supported log category identifying the snapshot and remote log source.
+     */
     public function __construct(public int $websiteId, public string $type) {}
 
+    /**
+     * Coalesce refresh requests for the same website and runtime log category.
+     *
+     * @return string The website identifier and log category used as the unique-job lock key.
+     */
     public function uniqueId(): string
     {
         return "{$this->websiteId}:{$this->type}";
     }
 
+    /**
+     * Claim an existing queued runtime-log snapshot, fetch its configured trailing lines, and record readiness; skip missing websites, unsupported categories, or changed snapshot state.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $website = Website::query()->with('server')->find($this->websiteId);
@@ -54,6 +70,11 @@ class RefreshWebsiteLogJob implements ShouldBeUnique, ShouldQueue
         ]);
     }
 
+    /**
+     * Mark the requested runtime-log snapshot failed with a bounded queue error.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         WebsiteLogSnapshot::query()

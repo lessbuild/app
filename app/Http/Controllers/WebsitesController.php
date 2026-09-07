@@ -34,6 +34,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WebsitesController extends Controller
 {
+    /**
+     * Use workspace entitlements to guard website features that depend on a paid plan.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
@@ -82,6 +85,9 @@ class WebsitesController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace website inventory, monitoring settings, and placement metadata as private CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
@@ -174,6 +180,11 @@ class WebsitesController extends Controller
         ]);
     }
 
+    /**
+     * Authorize the website and validate the requested log type before queuing an active website's snapshot.
+     *
+     * @return RedirectResponse A queued result or an explanation that provisioning is unfinished.
+     */
     public function refreshRuntimeLog(Website $website, string $type): RedirectResponse
     {
         $this->authorize('update', $website);
@@ -190,6 +201,11 @@ class WebsitesController extends Controller
         return back()->with('success', __('Runtime log refresh queued.'));
     }
 
+    /**
+     * Authorize website visibility and return an uncached snapshot for a supported runtime log type.
+     *
+     * Missing snapshots return idle status and empty log text; unsupported types return 404.
+     */
     public function runtimeLog(Website $website, string $type): JsonResponse
     {
         $this->authorize('view', $website);
@@ -204,6 +220,9 @@ class WebsitesController extends Controller
         ])->header('Cache-Control', 'no-store, private');
     }
 
+    /**
+     * Validate a supported retained-line count for an editable website and redirect after saving future-snapshot settings.
+     */
     public function updateLogRetention(Request $request, Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
@@ -253,6 +272,9 @@ class WebsitesController extends Controller
         ];
     }
 
+    /**
+     * Authorize website visibility and render filtered, paginated check history with matching aggregate metrics.
+     */
     public function healthChecks(Request $request, Website $website): View
     {
         $this->authorize('view', $website);
@@ -294,6 +316,9 @@ class WebsitesController extends Controller
         ];
     }
 
+    /**
+     * Authorize website visibility and stream bounded, filtered health-check history as private, spreadsheet-safe CSV.
+     */
     public function exportHealthChecks(Request $request, Website $website): StreamedResponse
     {
         $this->authorize('view', $website);
@@ -379,6 +404,9 @@ class WebsitesController extends Controller
                 ->whereDate('checked_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -518,6 +546,9 @@ class WebsitesController extends Controller
         return redirect()->route('websites.show', $website);
     }
 
+    /**
+     * Authorize website updates and queue cleanup of its previous server placement when one remains.
+     */
     public function retryPlacementCleanup(Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
@@ -536,6 +567,9 @@ class WebsitesController extends Controller
         return back()->with('success', __('Previous server cleanup queued.'));
     }
 
+    /**
+     * Authorize website updates and request a failed-provisioning retry, redirecting with its eligibility result.
+     */
     public function retryProvisioning(
         Website $website,
         RetryWebsiteProvisioningAction $retry,
@@ -549,6 +583,9 @@ class WebsitesController extends Controller
         return back()->with('success', __('Website provisioning retry queued.'));
     }
 
+    /**
+     * Authorize website updates and queue a manual check only when monitoring is enabled and both website and server are active.
+     */
     public function checkHealth(Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
@@ -568,6 +605,9 @@ class WebsitesController extends Controller
         return back()->with('success', __('Health check queued. Refresh shortly to see the result.'));
     }
 
+    /**
+     * Authorize website visibility and return its provisioning log as a plain-text download, or fail with 404 when absent.
+     */
     public function downloadProvisioningLog(
         Website $website,
         PlainTextLogDownload $download,
@@ -670,6 +710,9 @@ class WebsitesController extends Controller
         ];
     }
 
+    /**
+     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
+     */
     private function csvCell(string|int|null $value): ?string
     {
         return CsvCell::escape($value);

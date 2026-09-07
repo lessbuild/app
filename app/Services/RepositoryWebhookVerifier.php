@@ -11,6 +11,15 @@ use JsonException;
 
 class RepositoryWebhookVerifier
 {
+    /**
+     * Authenticate the raw provider webhook before parsing deployment and preview event details.
+     *
+     * @param  Repository  $repository  The webhook-enabled source and its signing secret/provider.
+     * @param  Request  $request  The incoming request containing raw bytes and signature headers.
+     * @return VerifiedRepositoryWebhook The verified delivery identity and normalized push/preview metadata.
+     *
+     * @throws InvalidRepositoryWebhook If enablement, size, signature, JSON or event revision validation fails.
+     */
     public function verify(Repository $repository, Request $request): VerifiedRepositoryWebhook
     {
         $raw = $request->getContent();
@@ -74,6 +83,16 @@ class RepositoryWebhookVerifier
         );
     }
 
+    /**
+     * Verify the GitHub SHA-256 signature and validate its delivery identifier.
+     *
+     * @param  Request  $request  The request carrying provider-specific signature and delivery headers.
+     * @param  string  $raw  The exact request bytes covered by the signature.
+     * @param  string  $secret  The repository's configured webhook signing secret.
+     * @return string The validated delivery identifier.
+     *
+     * @throws InvalidRepositoryWebhook If authentication or delivery metadata is invalid.
+     */
     private function verifyGitHub(Request $request, string $raw, string $secret): string
     {
         $this->verifyHexHmac($request->header('X-Hub-Signature-256'), $raw, $secret);
@@ -81,6 +100,16 @@ class RepositoryWebhookVerifier
         return $this->deliveryId($request->header('X-GitHub-Delivery'));
     }
 
+    /**
+     * Verify the Bitbucket SHA-256 signature and validate its delivery identifier.
+     *
+     * @param  Request  $request  The request carrying provider-specific signature and delivery headers.
+     * @param  string  $raw  The exact request bytes covered by the signature.
+     * @param  string  $secret  The repository's configured webhook signing secret.
+     * @return string The validated delivery identifier.
+     *
+     * @throws InvalidRepositoryWebhook If authentication or delivery metadata is invalid.
+     */
     private function verifyBitbucket(Request $request, string $raw, string $secret): string
     {
         $this->verifyHexHmac($request->header('X-Hub-Signature'), $raw, $secret);
@@ -88,6 +117,16 @@ class RepositoryWebhookVerifier
         return $this->deliveryId($request->header('X-Request-UUID'));
     }
 
+    /**
+     * Verify the GitLab timestamped signing-token signature and validate its delivery identifier.
+     *
+     * @param  Request  $request  The request carrying provider-specific signature and delivery headers.
+     * @param  string  $raw  The exact request bytes covered by the signature.
+     * @param  string  $secret  The repository's configured webhook signing secret.
+     * @return string The validated delivery identifier.
+     *
+     * @throws InvalidRepositoryWebhook If authentication or delivery metadata is invalid.
+     */
     private function verifyGitLab(Request $request, string $raw, string $secret): string
     {
         $deliveryId = $this->deliveryId($request->header('webhook-id'));
@@ -120,6 +159,16 @@ class RepositoryWebhookVerifier
         return $deliveryId;
     }
 
+    /**
+     * Validate an exact sha256-prefixed hexadecimal HMAC using a constant-time comparison.
+     *
+     * @param  string|null  $received  The signature header supplied by the provider.
+     * @param  string  $raw  The unmodified webhook request body.
+     * @param  string  $secret  The repository's webhook signing secret.
+     * @return void No value when the signature matches.
+     *
+     * @throws InvalidRepositoryWebhook If the signature format or digest is invalid.
+     */
     private function verifyHexHmac(?string $received, string $raw, string $secret): void
     {
         if (! is_string($received) || ! preg_match('/^sha256=[a-f0-9]{64}$/D', $received)) {
@@ -132,6 +181,14 @@ class RepositoryWebhookVerifier
         }
     }
 
+    /**
+     * Trim and validate a nonempty, bounded webhook delivery identifier.
+     *
+     * @param  string|null  $deliveryId  The optional provider delivery header.
+     * @return string The trimmed identifier of at most 255 bytes without control characters.
+     *
+     * @throws InvalidRepositoryWebhook If the identifier is missing or malformed.
+     */
     private function deliveryId(?string $deliveryId): string
     {
         $deliveryId = trim((string) $deliveryId);
@@ -277,6 +334,12 @@ class RepositoryWebhookVerifier
         return [$action, (int) $number, $cleanTitle ?: null, $cleanBranch, $this->revision($revision)];
     }
 
+    /**
+     * Normalize a hexadecimal source revision from provider event data.
+     *
+     * @param  mixed  $revision  The untrusted payload value.
+     * @return string|null A lowercase 40- to 64-character revision, or null when invalid.
+     */
     private function revision(mixed $revision): ?string
     {
         return is_string($revision) && preg_match('/\A[0-9a-f]{40,64}\z/Di', $revision)
@@ -284,11 +347,23 @@ class RepositoryWebhookVerifier
             : null;
     }
 
+    /**
+     * Recognize the all-zero revision sentinel used for deleted branches.
+     *
+     * @param  mixed  $revision  The untrusted payload revision.
+     * @return bool True only for an all-zero string between 40 and 64 characters.
+     */
     private function isNullRevision(mixed $revision): bool
     {
         return is_string($revision) && preg_match('/\A0{40,64}\z/D', $revision) === 1;
     }
 
+    /**
+     * Remove unsafe control characters and bound a provider commit message.
+     *
+     * @param  mixed  $message  The untrusted message value from the event payload.
+     * @return string|null A trimmed message of at most 500 characters, or null for nonstrings and empty results.
+     */
     private function commitMessage(mixed $message): ?string
     {
         if (! is_string($message)) {

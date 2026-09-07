@@ -25,11 +25,21 @@ class RunServerCommandJob implements ShouldQueue
 
     public bool $failOnTimeout = true;
 
+    /**
+     * Capture the queued execution and reserve worker timeout beyond the configured SSH timeout.
+     *
+     * @param  int  $executionId  Queued server command execution to claim before remote work.
+     */
     public function __construct(public readonly int $executionId)
     {
         $this->timeout = max(2, (int) config('lessbuild.ssh_command_timeout') + 15);
     }
 
+    /**
+     * Claim a queued command and run it only on an active server; persist bounded output, exit code, and terminal status while the execution remains running.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $started = ServerCommandExecution::query()
@@ -81,6 +91,11 @@ class RunServerCommandJob implements ShouldQueue
         });
     }
 
+    /**
+     * Store a bounded execution failure and finish only commands that are still queued or running.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         $maximum = max(1, (int) config('lessbuild.server_command_output_max_characters'));

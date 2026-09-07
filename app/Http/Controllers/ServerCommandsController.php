@@ -18,6 +18,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ServerCommandsController extends Controller
 {
+    /**
+     * Authorize server visibility and render filtered command history, rerun provenance, and matching execution metrics.
+     */
     public function index(Request $request, Server $server): View
     {
         $this->authorize('view', $server);
@@ -68,6 +71,9 @@ class ServerCommandsController extends Controller
         ];
     }
 
+    /**
+     * Authorize server visibility and stream filtered command history and execution metadata as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request, Server $server): StreamedResponse
     {
         $this->authorize('view', $server);
@@ -120,6 +126,9 @@ class ServerCommandsController extends Controller
         ]);
     }
 
+    /**
+     * Require the execution to belong to the editable server and redirect with its queued-command cancellation outcome.
+     */
     public function cancel(
         Request $request,
         Server $server,
@@ -134,6 +143,9 @@ class ServerCommandsController extends Controller
             : back()->with('info', __('This command is no longer queued and cannot be canceled.'));
     }
 
+    /**
+     * Require the execution to belong to the editable server, queue its command with provenance, and return the new execution ID in feedback.
+     */
     public function rerun(
         Request $request,
         Server $server,
@@ -147,6 +159,11 @@ class ServerCommandsController extends Controller
         return back()->with('success', __('Command #:id was queued from history.', ['id' => $rerun->id]));
     }
 
+    /**
+     * Require server deletion permission and matching execution ownership, then remove only a terminal history record.
+     *
+     * @return RedirectResponse The deletion acknowledgement or an active-command refusal.
+     */
     public function destroy(Server $server, ServerCommandExecution $execution): RedirectResponse
     {
         $this->authorize('delete', $server);
@@ -161,6 +178,9 @@ class ServerCommandsController extends Controller
             : back()->with('info', __('Queued or running commands cannot be deleted.'));
     }
 
+    /**
+     * Authorize server visibility and matching execution ownership before downloading non-null command output; otherwise return 404.
+     */
     public function downloadOutput(
         Server $server,
         ServerCommandExecution $execution,
@@ -223,6 +243,9 @@ class ServerCommandsController extends Controller
                 ->whereDate('created_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -230,6 +253,9 @@ class ServerCommandsController extends Controller
         return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);

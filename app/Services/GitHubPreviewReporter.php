@@ -7,8 +7,19 @@ use Throwable;
 
 class GitHubPreviewReporter
 {
+    /**
+     * Bind the GitHub App client used to publish preview status.
+     *
+     * @param  GitHubApp  $github  Creates check runs and updates preview comments.
+     */
     public function __construct(private readonly GitHubApp $github) {}
 
+    /**
+     * Publish the preview's current status to its GitHub App source repository.
+     *
+     * @param  PreviewDeployment  $preview  The preview with source repository, pull-request number and revision.
+     * @return void No value; skips unsupported sources and reports provider exceptions without propagating them.
+     */
     public function report(PreviewDeployment $preview): void
     {
         $preview->loadMissing('sourceRepository.provider');

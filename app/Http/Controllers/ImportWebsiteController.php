@@ -16,6 +16,9 @@ use Illuminate\Validation\ValidationException;
 
 class ImportWebsiteController extends Controller
 {
+    /**
+     * Render active workspace servers and the website allowance for importing an existing application.
+     */
     public function create(Request $request, PlanLimits $limits): View
     {
         return view('scenes.websites.import', [
@@ -24,6 +27,11 @@ class ImportWebsiteController extends Controller
         ]);
     }
 
+    /**
+     * Verify the validated application directory on an active workspace server and create an imported website.
+     *
+     * @return RedirectResponse The imported website page; an unreadable directory raises a validation error.
+     */
     public function store(ImportWebsiteRequest $request, PlanLimits $limits, Runner $runner, ActivityRecorder $activity): RedirectResponse
     {
         $server = $request->user()->workspaceServers()->where('provisioning_status', Server::STATUS_ACTIVE)->findOrFail($request->integer('server_id'));

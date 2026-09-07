@@ -12,6 +12,9 @@ use Illuminate\Support\Str;
 
 class StatusSubscriptionController extends Controller
 {
+    /**
+     * Validate an email for a published status-page slug, reset its subscription verification, and send a confirmation link.
+     */
     public function store(Request $request, string $slug): RedirectResponse
     {
         $page = StatusPage::query()->where('slug', $slug)->where('is_published', true)->firstOrFail();
@@ -31,6 +34,11 @@ class StatusSubscriptionController extends Controller
         return back()->with('status_subscription', __('Check your email to confirm status updates.'));
     }
 
+    /**
+     * Match the one-time verification token, mark the subscription verified, and redirect to its status page.
+     *
+     * Invalid or already-used tokens return 404.
+     */
     public function confirm(StatusSubscription $subscription, string $token): RedirectResponse
     {
         abort_unless($subscription->verification_token_hash
@@ -41,6 +49,11 @@ class StatusSubscriptionController extends Controller
             ->with('status_subscription', __('Status updates are now enabled.'));
     }
 
+    /**
+     * Match the subscription's unsubscribe token, delete the subscription, and redirect to its status page.
+     *
+     * Invalid tokens return 404.
+     */
     public function unsubscribe(StatusSubscription $subscription, string $token): RedirectResponse
     {
         abort_unless(hash_equals($subscription->unsubscribe_token, $token), 404);

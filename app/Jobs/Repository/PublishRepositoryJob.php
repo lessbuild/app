@@ -27,7 +27,11 @@ class PublishRepositoryJob implements ShouldQueue
     public Build $build;
 
     /**
+     * Capture the build to claim and launch when the queue worker runs.
+     *
      * Create a new job instance.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
      */
     public function __construct(Build $build)
     {
@@ -35,8 +39,11 @@ class PublishRepositoryJob implements ShouldQueue
     }
 
     /**
+     * Claim the queued deployment, start its remote script, and store the process identity without overwriting a terminal callback; skip builds whose claim is no longer valid.
+     *
      * Execute the job.
      *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
      *
      * @throws \Exception
      */
@@ -84,6 +91,11 @@ class PublishRepositoryJob implements ShouldQueue
         }
     }
 
+    /**
+     * Mark a still-active deployment failed, clear its remote identity, and ask the automatic rollback service to evaluate recovery.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         DB::transaction(function () use ($exception): void {

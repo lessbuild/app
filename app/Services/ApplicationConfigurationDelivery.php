@@ -9,11 +9,23 @@ use Throwable;
 
 class ApplicationConfigurationDelivery
 {
+    /**
+     * Bind build reservation and queue delivery for durable configuration intents.
+     *
+     * @param  ApplicationConfigurationBuilds  $builds  Prepares or reuses the single build associated with an operation.
+     * @param  DeploymentRequest  $deployments  Dispatches the existing build through the normal deployment lifecycle.
+     */
     public function __construct(
         private readonly ApplicationConfigurationBuilds $builds,
         private readonly DeploymentRequest $deployments,
     ) {}
 
+    /**
+     * Lease an eligible operation and enqueue its reserved build outside the transaction.
+     *
+     * @param  ConfigurationOperation  $operation  The durable operation to prepare, claim and deliver.
+     * @return void Preparation may update operation/build state before a lease is checked; claimed delivery records enqueue or failure outcomes.
+     */
     public function deliver(ConfigurationOperation $operation): void
     {
         $build = $this->builds->prepare($operation);

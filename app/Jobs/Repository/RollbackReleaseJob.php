@@ -16,8 +16,18 @@ class RollbackReleaseJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Capture the queued rollback build carrying its retained release metadata.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     */
     public function __construct(public Build $build) {}
 
+    /**
+     * Claim the rollback, activate its retained release, and persist output and successful completion only while the build still owns the deploying state.
+     *
+     * @param  SwitchReleaseAction  $releases  Action that validates and activates a retained release on the managed server.
+     */
     public function handle(SwitchReleaseAction $releases): void
     {
         $started = Build::query()
@@ -52,6 +62,11 @@ class RollbackReleaseJob implements ShouldQueue
         });
     }
 
+    /**
+     * Mark the rollback failed only while its build remains queued or deploying, preserving later terminal transitions.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         Build::query()

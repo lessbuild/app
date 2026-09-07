@@ -7,6 +7,14 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class Hostname implements ValidationRule
 {
+    /**
+     * Accept a DNS name, IP address, or localhost with an optional valid port.
+     *
+     * @param  string  $attribute  Attribute name included in the translated failure message.
+     * @param  mixed  $value  Candidate host; credentials, paths, queries, and fragments are rejected.
+     * @param  Closure(string, ?string=): object  $fail  Records a failure and returns a potentially translated validation message.
+     * @return void Failures are reported through the callback.
+     */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         if (! is_string($value) || $value === '') {

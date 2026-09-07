@@ -13,6 +13,13 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
 
     public static string $identifier = 'configured-web-runtime';
 
+    /**
+     * Render candidate startup, readiness checks and Caddy activation for the captured web runtime.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         $runtime = $build->environment_payload['runtime'] ?? [];

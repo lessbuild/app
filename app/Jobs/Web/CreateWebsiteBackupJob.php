@@ -20,8 +20,19 @@ class CreateWebsiteBackupJob implements ShouldQueue
 
     public int $timeout = 3600;
 
+    /**
+     * Capture the queued website backup record and resolve its destination when execution starts.
+     *
+     * @param  int  $backupId  Queued website backup record identifying its website and destination.
+     */
     public function __construct(public int $backupId) {}
 
+    /**
+     * Claim a queued backup, archive its database, environment, and shared storage with Restic, apply retention, and persist the returned snapshot identifier; failures propagate to queue handling.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @param  ResticRepository  $repositories  Restic configuration service supplying authenticated shell environments for backup destinations.
+     */
     public function handle(Runner $runner, ResticRepository $repositories): void
     {
         $backup = WebsiteBackup::query()->with(['website.server', 'destination', 'schedule'])->find($this->backupId);
@@ -81,6 +92,11 @@ class CreateWebsiteBackupJob implements ShouldQueue
         $backup->destination->update(['last_verified_at' => now(), 'last_error' => null]);
     }
 
+    /**
+     * Mark the backup failed with a completion timestamp and bounded error when queue handling fails.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         WebsiteBackup::query()->whereKey($this->backupId)->update([

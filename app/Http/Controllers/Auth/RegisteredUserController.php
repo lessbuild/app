@@ -104,6 +104,9 @@ class RegisteredUserController extends Controller
         return redirect()->route('verification.notice');
     }
 
+    /**
+     * Redirect to login with the shared registration-closed error for unavailable registration paths.
+     */
     private function closedResponse(): RedirectResponse
     {
         return redirect()->route('login')->withErrors([

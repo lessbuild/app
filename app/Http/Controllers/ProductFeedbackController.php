@@ -10,6 +10,9 @@ use Illuminate\View\View;
 
 class ProductFeedbackController extends Controller
 {
+    /**
+     * Render status/category-filtered workspace feedback, restricting non-managers to their own submissions.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -25,6 +28,9 @@ class ProductFeedbackController extends Controller
         return view('feedback.index', compact('feedback', 'canReview', 'status', 'category'));
     }
 
+    /**
+     * Validate feedback category, severity, description, and optional reproduction context, then save it privately.
+     */
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -40,6 +46,9 @@ class ProductFeedbackController extends Controller
         return back()->with('success', __('Feedback submitted privately to your workspace.'));
     }
 
+    /**
+     * Require workspace management access and save the review status and response before redirecting back.
+     */
     public function update(Request $request, ProductFeedback $feedback): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -50,6 +59,9 @@ class ProductFeedbackController extends Controller
         return back()->with('success', __('Feedback review updated.'));
     }
 
+    /**
+     * Delete current-workspace feedback belonging to the user or managed by them, then redirect back.
+     */
     public function destroy(Request $request, ProductFeedback $feedback): RedirectResponse
     {
         abort_unless($feedback->organization_id === $request->user()->current_organization_id

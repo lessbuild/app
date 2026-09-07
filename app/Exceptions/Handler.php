@@ -56,6 +56,13 @@ class Handler extends ExceptionHandler
 
     }
 
+    /**
+     * Render production server errors with a stable incident reference and private cache policy.
+     *
+     * @param  mixed  $request  The incoming request used to select JSON or HTML error output.
+     * @param  Throwable  $exception  The exception to render and log once.
+     * @return Response The framework response, or a sanitized 500 response outside debug mode.
+     */
     public function render(mixed $request, Throwable $exception): Response
     {
         $response = parent::render($request, $exception);
@@ -87,6 +94,12 @@ class Handler extends ExceptionHandler
         ], 500, $headers);
     }
 
+    /**
+     * Assign one incident reference for each live exception object.
+     *
+     * @param  Throwable  $exception  The exception whose reference is held weakly.
+     * @return string The existing or newly generated UUID for this exception.
+     */
     private function incidentId(Throwable $exception): string
     {
         /** @var WeakMap<Throwable, string> $incidentIds */
@@ -96,6 +109,12 @@ class Handler extends ExceptionHandler
         return $incidentIds[$exception] ??= (string) Str::uuid();
     }
 
+    /**
+     * Write an exception and its matching incident reference to the error log.
+     *
+     * @param  Throwable  $exception  The exception associated with the public error reference.
+     * @return void No value; emits an error-level log entry.
+     */
     private function logIncident(Throwable $exception): void
     {
         Log::error('Unhandled application exception.', [

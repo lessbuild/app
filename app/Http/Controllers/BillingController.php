@@ -6,9 +6,13 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Laravel\Cashier\Checkout;
 
 class BillingController extends Controller
 {
+    /**
+     * Render current-workspace owner billing, plan intervals, subscription state, and billing-management availability.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -26,6 +30,11 @@ class BillingController extends Controller
         ]);
     }
 
+    /**
+     * Validate a paid plan and interval, require billing access, and create checkout with applicable seats and trial.
+     *
+     * @return Checkout|RedirectResponse Stripe checkout, or billing settings when already subscribed.
+     */
     public function checkout(Request $request, string $plan): mixed
     {
         abort_unless(array_key_exists($plan, config('billing.plans')) && $plan !== 'free', 404);
@@ -63,6 +72,9 @@ class BillingController extends Controller
         ]);
     }
 
+    /**
+     * Require configured Stripe billing and workspace billing access, then redirect the owner's customer to the billing portal.
+     */
     public function portal(Request $request): RedirectResponse
     {
         abort_unless(filled(config('cashier.secret')), 503, 'Stripe billing is not configured yet.');
@@ -72,6 +84,9 @@ class BillingController extends Controller
         return $billingUser->redirectToBillingPortal(route('billing.index'));
     }
 
+    /**
+     * Require workspace billing access and an active subscription, schedule period-end cancellation, and redirect back.
+     */
     public function cancel(Request $request): RedirectResponse
     {
         $billingUser = $request->user()->currentOrganization?->owner;
@@ -82,6 +97,9 @@ class BillingController extends Controller
         return back()->with('status', __('Your subscription will end after the current billing period.'));
     }
 
+    /**
+     * Require workspace billing access and a subscription in its grace period, resume it, and redirect back.
+     */
     public function resume(Request $request): RedirectResponse
     {
         $billingUser = $request->user()->currentOrganization?->owner;

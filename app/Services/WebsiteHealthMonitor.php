@@ -10,6 +10,13 @@ use Throwable;
 
 class WebsiteHealthMonitor
 {
+    /**
+     * Bind remote probes and incident reporting for website health checks.
+     *
+     * @param  Runner  $runner  Executes the website probe through its attached server.
+     * @param  ActivityRecorder  $activity  Records health-state transitions.
+     * @param  IncidentNotifier  $incidents  Persists and notifies failure and recovery events.
+     */
     public function __construct(
         private readonly Runner $runner,
         private readonly ActivityRecorder $activity,
@@ -91,6 +98,17 @@ class WebsiteHealthMonitor
         ];
     }
 
+    /**
+     * Persist a health probe only if its website configuration and prior-check snapshot still match.
+     *
+     * @param  Website  $website  The probed website snapshot used to reject stale results.
+     * @param  bool  $successful  Whether the probe returned a successful health response.
+     * @param  string|null  $error  The optional failure detail.
+     * @param  int|null  $httpStatus  The observed HTTP status, if available.
+     * @param  int|null  $durationMs  The measured probe duration in milliseconds, if available.
+     * @param  bool  $automatic  Whether this probe requires automatic monitoring to remain enabled.
+     * @return bool True only on a new unhealthy transition; false for stale, healthy or unchanged-state results.
+     */
     private function recordResult(
         Website $website,
         bool $successful,

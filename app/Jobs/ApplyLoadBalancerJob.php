@@ -20,13 +20,28 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 300;
 
+    /**
+     * Capture the load balancer whose current nodes will be rendered at execution time.
+     *
+     * @param  int  $loadBalancerId  Persisted load-balancer identifier used to locate its routing configuration.
+     */
     public function __construct(public readonly int $loadBalancerId) {}
 
+    /**
+     * Coalesce queued instances of this job for the same load balancer.
+     *
+     * @return string The load balancer identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->loadBalancerId;
     }
 
+    /**
+     * Render weighted active upstreams, validate and reload Caddy, and record the applied state; skip unavailable servers and record then rethrow application failures.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $balancer = LoadBalancer::query()->with(['server', 'nodes.server'])->find($this->loadBalancerId);

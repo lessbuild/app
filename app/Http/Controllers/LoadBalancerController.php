@@ -15,8 +15,14 @@ use Illuminate\View\View;
 
 class LoadBalancerController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate high-availability configuration changes.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render current-workspace balancers, environment placements, active servers, and management availability.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -31,6 +37,11 @@ class LoadBalancerController extends Controller
         ]);
     }
 
+    /**
+     * Validate a workspace environment, dedicated server, hostname, and health path before creating a balancer.
+     *
+     * @return RedirectResponse A prompt to add application nodes after the balancer is created.
+     */
     public function store(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -49,6 +60,9 @@ class LoadBalancerController extends Controller
         return back()->with('success', __('Load balancer created. Add at least two application nodes.'));
     }
 
+    /**
+     * Validate a distinct workspace server, port, and weight, then add its node and queue balancer configuration.
+     */
     public function storeNode(Request $request, LoadBalancer $loadBalancer): RedirectResponse
     {
         $this->manage($loadBalancer);
@@ -64,6 +78,9 @@ class LoadBalancerController extends Controller
         return back()->with('success', __('Application node added and configuration queued.'));
     }
 
+    /**
+     * Authorize the bound balancer and queue configuration generation, then redirect with an acknowledgement.
+     */
     public function apply(LoadBalancer $loadBalancer): RedirectResponse
     {
         $this->manage($loadBalancer);
@@ -72,6 +89,9 @@ class LoadBalancerController extends Controller
         return back()->with('success', __('Load-balancer configuration queued.'));
     }
 
+    /**
+     * Authorize the node's workspace balancer, remove the node, and queue the updated configuration.
+     */
     public function destroyNode(LoadBalancerNode $node): RedirectResponse
     {
         $balancer = $node->loadBalancer;
@@ -82,6 +102,9 @@ class LoadBalancerController extends Controller
         return back()->with('success', __('Node removed.'));
     }
 
+    /**
+     * Authorize the bound balancer, queue remote removal, delete its record, and redirect with DNS cleanup guidance.
+     */
     public function destroy(LoadBalancer $loadBalancer): RedirectResponse
     {
         $this->manage($loadBalancer);
@@ -91,6 +114,9 @@ class LoadBalancerController extends Controller
         return back()->with('success', __('Load balancer removed. Remove its DNS record if it is no longer used.'));
     }
 
+    /**
+     * Require ownership by the current workspace, management permission, and the high-availability entitlement.
+     */
     private function manage(LoadBalancer $loadBalancer): void
     {
         abort_unless($loadBalancer->organization_id === request()->user()->current_organization_id

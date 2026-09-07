@@ -11,8 +11,14 @@ use Throwable;
 
 class EnterpriseSsoController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate enterprise identity-provider verification.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Require the SSO entitlement and redirect to the current workspace's identity-provider authorization URL.
+     */
     public function connect(Request $request, EnterpriseOidc $oidc): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -21,6 +27,11 @@ class EnterpriseSsoController extends Controller
         return redirect()->away($oidc->authorizationUrl($request, $organization));
     }
 
+    /**
+     * Validate the authorization code and state, verify the entitled workspace's OIDC response, and redirect to the dashboard.
+     *
+     * Provider verification failures become a generic SSO validation error.
+     */
     public function callback(Request $request, EnterpriseOidc $oidc): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;

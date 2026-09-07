@@ -25,6 +25,8 @@ class InitialiseServerCommand extends Command
     protected $description = 'Initialise the server';
 
     /**
+     * Run initialization synchronously for the server_id argument; lookup or initialization errors propagate.
+     *
      * Execute the console command.
      *
      * @return void
@@ -39,7 +41,11 @@ class InitialiseServerCommand extends Command
     }
 
     /**
+     * Leave automatic scheduling disabled for this manually invoked command.
+     *
      * Define the command's schedule.
+     *
+     * @param  Schedule  $schedule  Scheduler supplied by command discovery; this command currently registers no recurring task.
      */
     public function schedule(Schedule $schedule): void
     {

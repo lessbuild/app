@@ -9,6 +9,11 @@ use Throwable;
 
 class ProviderConnectionTester
 {
+    /**
+     * Bind installation-token exchange for GitHub App connection checks.
+     *
+     * @param  GitHubApp  $github  Obtains tokens for GitHub App installations.
+     */
     public function __construct(private readonly GitHubApp $github) {}
 
     /** @return array{successful: bool, message: string, http_status: ?int} */
@@ -60,6 +65,12 @@ class ProviderConnectionTester
         ];
     }
 
+    /**
+     * Select the public credential-check endpoint for a supported provider type.
+     *
+     * @param  string  $providerType  The stored provider type key.
+     * @return string|null The endpoint URL, or null for unsupported provider types.
+     */
     public function endpoint(string $providerType): ?string
     {
         return match ($providerType) {
@@ -74,6 +85,12 @@ class ProviderConnectionTester
         };
     }
 
+    /**
+     * Send a bounded provider-specific credential check using the appropriate authentication scheme.
+     *
+     * @param  Provider  $provider  The connection whose type and credentials determine the request.
+     * @return Response|null The HTTP response, or null for an unsupported provider; transport failures propagate.
+     */
     private function request(Provider $provider): ?Response
     {
         $request = Http::acceptJson()
@@ -108,6 +125,12 @@ class ProviderConnectionTester
         };
     }
 
+    /**
+     * Format a provider's display name for connection diagnostics.
+     *
+     * @param  Provider  $provider  The connection whose provider type should be displayed.
+     * @return string The known provider label, or a headline-formatted fallback.
+     */
     private function label(Provider $provider): string
     {
         return match ($provider->provider) {

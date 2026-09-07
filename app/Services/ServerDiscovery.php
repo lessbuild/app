@@ -7,6 +7,12 @@ use RuntimeException;
 
 class ServerDiscovery
 {
+    /**
+     * Bind SSH identity verification and command execution for server discovery.
+     *
+     * @param  SshHostIdentity  $hostIdentity  Validates the server's SSH host identity.
+     * @param  Runner  $runner  Executes discovery commands against the selected server.
+     */
     public function __construct(private readonly SshHostIdentity $hostIdentity, private readonly Runner $runner) {}
 
     /** @param array{public_ip:string,ssh_port:int,ssh_private_key:string} $configuration

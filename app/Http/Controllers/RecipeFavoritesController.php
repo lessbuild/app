@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 
 class RecipeFavoritesController extends Controller
 {
+    /**
+     * Require a published recipe and save it once to the request user's favorites, recording activity only for a new favorite.
+     */
     public function store(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
@@ -31,6 +34,9 @@ class RecipeFavoritesController extends Controller
             : __('This recipe is already in your gallery favorites.'));
     }
 
+    /**
+     * Delete the request user's existing favorite for the bound recipe, record the removal, and redirect back.
+     */
     public function destroy(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $request->user()->recipeFavorites()

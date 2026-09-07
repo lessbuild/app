@@ -13,6 +13,12 @@ class CheckLoadBalancerNodesCommand extends Command
 
     protected $description = 'Check load-balancer upstream nodes from their edge servers';
 
+    /**
+     * Probe enabled upstream nodes from their balancer server and persist healthy or unhealthy status, including probe exceptions.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @return int SUCCESS after evaluating nodes, even when some probes report unhealthy.
+     */
     public function handle(Runner $runner): int
     {
         LoadBalancerNode::query()->where('is_enabled', true)->with(['server', 'loadBalancer.server'])->each(function (LoadBalancerNode $node) use ($runner): void {

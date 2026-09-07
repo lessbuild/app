@@ -11,6 +11,11 @@ use Throwable;
 
 class SignInRecorder
 {
+    /**
+     * Bind normalized client metadata for account sign-in history.
+     *
+     * @param  ClientMetadata  $clients  Validates addresses and bounds user-agent details before recording them.
+     */
     public function __construct(private readonly ClientMetadata $clients) {}
 
     /**

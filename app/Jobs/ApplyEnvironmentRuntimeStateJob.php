@@ -18,13 +18,29 @@ class ApplyEnvironmentRuntimeStateJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 120;
 
+    /**
+     * Capture the environment and requested sleep or wake state for deferred SSH execution.
+     *
+     * @param  int  $environmentId  Persisted environment identifier reloaded by the queue worker.
+     * @param  bool  $hibernate  Whether to stop application units and enter maintenance mode instead of restoring configured replicas.
+     */
     public function __construct(public readonly int $environmentId, public readonly bool $hibernate = false) {}
 
+    /**
+     * Coalesce queued instances of this job for the same environment.
+     *
+     * @return string The environment identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->environmentId;
     }
 
+    /**
+     * Apply maintenance mode and replica unit state remotely, then persist hibernation timestamps; skip environments without an attached server and deployment slug.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $environment = Environment::query()->with(['website.server', 'processes'])->find($this->environmentId);

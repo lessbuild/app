@@ -81,6 +81,9 @@ class ServersController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace server inventory with provider details and website counts as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
@@ -173,6 +176,9 @@ class ServersController extends Controller
         ]);
     }
 
+    /**
+     * Authorize server updates and render the form for its display label.
+     */
     public function edit(Server $server): View
     {
         $this->authorize('update', $server);
@@ -180,6 +186,11 @@ class ServersController extends Controller
         return view('scenes.servers.edit', ['server' => $server]);
     }
 
+    /**
+     * Save the validated display label for an editable server and record activity only when the visible label changes.
+     *
+     * @return RedirectResponse The server page; labels matching the technical name are stored as null.
+     */
     public function update(
         ServerDisplayNameRequest $request,
         Server $server,
@@ -295,6 +306,11 @@ class ServersController extends Controller
         return redirect()->route('servers.show', $server);
     }
 
+    /**
+     * Attempt deletion of an application-owned provider SSH key and clear its fingerprint only on success.
+     *
+     * Missing or externally owned keys are ignored; provider exceptions are reported without propagating.
+     */
     private function cleanUpSshKey(Server $server, ServerProvider $provider): void
     {
         if (! $server->ssh_fingerprint || ! $server->ssh_key_owned) {
@@ -332,6 +348,9 @@ class ServersController extends Controller
             ->with('success', __('Server deleted successfully.'));
     }
 
+    /**
+     * Authorize server updates and redirect with the initialization retry action's eligibility result.
+     */
     public function retryInitialization(
         Server $server,
         RetryServerInitializationAction $retry,
@@ -345,6 +364,9 @@ class ServersController extends Controller
         return back()->with('success', __('Server initialization retry queued.'));
     }
 
+    /**
+     * Authorize server updates and redirect with the remote-provisioning retry action's eligibility result.
+     */
     public function retryRemoteProvisioning(
         Server $server,
         QueueRemoteServerProvisioningRetryAction $retry,
@@ -358,6 +380,9 @@ class ServersController extends Controller
         return back()->with('success', __('Remote server provisioning retry queued.'));
     }
 
+    /**
+     * Authorize server visibility and download an existing snapshot for a supported log type, or fail with 404.
+     */
     public function downloadLog(
         Server $server,
         string $type,
@@ -423,6 +448,9 @@ class ServersController extends Controller
         ];
     }
 
+    /**
+     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
+     */
     private function csvCell(string|int|null $value): ?string
     {
         return CsvCell::escape($value);

@@ -11,6 +11,15 @@ use Throwable;
 
 class ActivityRecorder
 {
+    /**
+     * Append bounded metadata to a resource's activity history.
+     *
+     * @param  Model  $subject  A model exposing the events relation; it determines the recorded resource.
+     * @param  int  $userId  The actor's user identifier.
+     * @param  string  $category  The activity category, truncated to 255 characters.
+     * @param  string  $message  The event description, truncated to 255 characters; callers must omit secrets.
+     * @return Event The persisted activity event.
+     */
     public function record(Model $subject, int $userId, string $category, string $message): Event
     {
         return $subject->events()->create([
@@ -20,6 +29,13 @@ class ActivityRecorder
         ]);
     }
 
+    /**
+     * Record an account-security event and attempt to notify its owner.
+     *
+     * @param  User  $user  The account whose own activity stream receives the event.
+     * @param  string  $message  Metadata-only security description, bounded to 255 characters.
+     * @return Event The persisted event; notification failures are reported without discarding it.
+     */
     public function recordAccount(User $user, string $message): Event
     {
         $event = $user->accountEvents()->create([

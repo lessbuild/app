@@ -10,6 +10,11 @@ use Illuminate\Validation\ValidationException;
 
 class PlanLimits
 {
+    /**
+     * Bind telemetry for rejected subscription resource-limit checks.
+     *
+     * @param  MonetizationTelemetry  $telemetry  Records limit denials by workspace and capability.
+     */
     public function __construct(private readonly MonetizationTelemetry $telemetry) {}
 
     /** @return array{plan: string, used: int, limit: int|null, allowed: bool} */
@@ -57,6 +62,15 @@ class PlanLimits
         ];
     }
 
+    /**
+     * Require available capacity for one resource in the user's current workspace.
+     *
+     * @param  User  $user  The account whose current workspace determines usage and billing.
+     * @param  string  $resource  The configured resource-limit key.
+     * @return void No value when usage permits another resource.
+     *
+     * @throws ValidationException If the applicable resource limit has been reached.
+     */
     public function enforce(User $user, string $resource): void
     {
         $usage = $this->usage($user, $resource);
@@ -64,11 +78,28 @@ class PlanLimits
         $this->enforceUsage($usage, $resource, $user->currentOrganization);
     }
 
+    /**
+     * Require available plan capacity for an explicitly selected workspace.
+     *
+     * @param  Organization  $organization  The workspace whose owner plan and resource usage are checked.
+     * @param  string  $resource  The configured resource-limit key.
+     * @return void No value when another resource is allowed.
+     *
+     * @throws ValidationException If the applicable resource limit has been reached.
+     */
     public function enforceForOrganization(Organization $organization, string $resource): void
     {
         $this->enforceUsage($this->usageForOrganization($organization, $resource), $resource, $organization);
     }
 
+    /**
+     * Run resource creation under a workspace lock after checking deploy permission and capacity.
+     *
+     * @param  User  $user  The account whose current workspace must allow deployments.
+     * @param  string  $resource  The resource-limit key checked before invoking the callback.
+     * @param  Closure(Organization): mixed  $callback  The operation executed inside the transaction for the locked workspace.
+     * @return mixed The callback result; transaction failures roll back its database changes.
+     */
     public function withinLimit(User $user, string $resource, Closure $callback): mixed
     {
         return DB::transaction(function () use ($user, $resource, $callback): mixed {

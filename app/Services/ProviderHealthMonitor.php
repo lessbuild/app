@@ -8,6 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class ProviderHealthMonitor
 {
+    /**
+     * Bind connection checks and state-change reporting for provider health monitoring.
+     *
+     * @param  ProviderConnectionTester  $tester  Checks whether provider credentials can reach their service.
+     * @param  ActivityRecorder  $activity  Records connection health changes in activity history.
+     * @param  IncidentNotifier  $incidents  Records and delivers failure/recovery notifications.
+     */
     public function __construct(
         private readonly ProviderConnectionTester $tester,
         private readonly ActivityRecorder $activity,

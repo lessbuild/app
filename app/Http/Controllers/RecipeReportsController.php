@@ -25,6 +25,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecipeReportsController extends Controller
 {
+    /**
+     * Render the request user's filtered recipe reports with pagination, availability counts, and unread report updates.
+     */
     public function mine(Request $request): View
     {
         $filters = $this->reporterFilters($request);
@@ -56,6 +59,9 @@ class RecipeReportsController extends Controller
         ]);
     }
 
+    /**
+     * Mark the request user's unread gallery report notifications reviewed and redirect with the affected count.
+     */
     public function reviewUpdates(Request $request): RedirectResponse
     {
         $reviewed = $this->unreadReportUpdateQuery($request)->update(['read_at' => now()]);
@@ -65,6 +71,9 @@ class RecipeReportsController extends Controller
             : __('There are no unread report updates.'));
     }
 
+    /**
+     * Stream the reporter's filtered submissions, recipe availability, and resolution notes as private CSV.
+     */
     public function exportMine(Request $request): StreamedResponse
     {
         $filters = $this->reporterFilters($request);
@@ -150,6 +159,9 @@ class RecipeReportsController extends Controller
         ]);
     }
 
+    /**
+     * Render filtered reports about the request user's contributed recipes with review and recipe counts.
+     */
     public function index(Request $request): View
     {
         $filters = $this->filters($request);
@@ -175,6 +187,9 @@ class RecipeReportsController extends Controller
         ]);
     }
 
+    /**
+     * Stream filtered community reports about the request user's contributed recipes as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
@@ -230,6 +245,11 @@ class RecipeReportsController extends Controller
         ]);
     }
 
+    /**
+     * Validate a report reason and optional details for another contributor's published recipe, then create or reopen the user's report.
+     *
+     * @return RedirectResponse A private-report acknowledgement after locked persistence, notification, and activity recording.
+     */
     public function store(Request $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
@@ -277,6 +297,11 @@ class RecipeReportsController extends Controller
         return back()->with('status', __('Your private gallery report was saved.'));
     }
 
+    /**
+     * Authorize the contributor and recipe/report relationship, validate a resolution note, and resolve the locked report.
+     *
+     * @return RedirectResponse An acknowledgement; repeated resolution does not replace the existing note.
+     */
     public function resolve(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
@@ -313,6 +338,11 @@ class RecipeReportsController extends Controller
         return back()->with('status', __('The community report was marked as resolved.'));
     }
 
+    /**
+     * Authorize a resolved contributor report and validate a replacement note under the recipe/report locks.
+     *
+     * @return RedirectResponse The changed or unchanged note result; an unresolved report yields HTTP 409.
+     */
     public function updateResolutionNote(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
@@ -352,6 +382,11 @@ class RecipeReportsController extends Controller
             : __('The resolution note was updated.'));
     }
 
+    /**
+     * Validate at most 20 distinct report IDs and require every report to belong to the contributor's recipes.
+     *
+     * @return RedirectResponse The count newly resolved after atomic updates and report notifications.
+     */
     public function resolveMany(Request $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $data = $request->validateWithBag('bulkResolve', [
@@ -411,6 +446,9 @@ class RecipeReportsController extends Controller
             : __('The selected community reports were already resolved.'));
     }
 
+    /**
+     * Authorize the contributor and recipe/report relationship, reopen a resolved report under locks, and redirect back.
+     */
     public function reopen(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
@@ -444,6 +482,11 @@ class RecipeReportsController extends Controller
         return back()->with('status', __('The community report was reopened.'));
     }
 
+    /**
+     * Validate at most 20 distinct contributor report IDs and atomically reopen those currently resolved.
+     *
+     * @return RedirectResponse The reopened count; any missing or foreign report aborts the operation with 404.
+     */
     public function reopenMany(Request $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $data = $request->validateWithBag('bulkReopen', [
@@ -508,6 +551,9 @@ class RecipeReportsController extends Controller
             : __('The selected community reports were already open.'));
     }
 
+    /**
+     * Withdraw the request user's report for the bound recipe under a lock and remove its notifications before redirecting back.
+     */
     public function destroy(Request $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         DB::transaction(function () use ($activity, $notifications, $recipe, $request): void {
@@ -596,6 +642,12 @@ class RecipeReportsController extends Controller
         };
     }
 
+    /**
+     * Order the supplied report query by configured reason priority, then newest report and ID.
+     *
+     * @param  Builder<RecipeReport>  $query  The already-scoped report query.
+     * @return Builder<RecipeReport> The same builder with deterministic priority ordering.
+     */
     private function orderReportsByPriority(Builder $query): Builder
     {
         $cases = collect(RecipeReport::REASONS)
@@ -611,6 +663,9 @@ class RecipeReportsController extends Controller
             ->latest('id');
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -618,6 +673,9 @@ class RecipeReportsController extends Controller
         return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
+    /**
+     * Validate the optional bounded resolution_note input and return trimmed text, or null when blank.
+     */
     private function resolutionNote(Request $request): ?string
     {
         $data = $request->validate([
@@ -629,6 +687,9 @@ class RecipeReportsController extends Controller
             : null;
     }
 
+    /**
+     * Return 404 unless the request user contributed the recipe and the report belongs to that recipe.
+     */
     private function authorizeContributorReport(Request $request, Recipe $recipe, RecipeReport $report): void
     {
         abort_unless(
@@ -638,6 +699,9 @@ class RecipeReportsController extends Controller
         );
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);
@@ -698,6 +762,9 @@ class RecipeReportsController extends Controller
         };
     }
 
+    /**
+     * Load a recipe by ID under a transaction lock, taking a SQLite write lock when needed; missing IDs return 404.
+     */
     private function lockedRecipe(int $recipeId): Recipe
     {
         if (DB::connection()->getDriverName() === 'sqlite') {
@@ -725,6 +792,11 @@ class RecipeReportsController extends Controller
             ->keyBy(fn ($notification): int => (int) $notification->data['report_id']);
     }
 
+    /**
+     * Build the request user's unread gallery notification query restricted to report updates.
+     *
+     * @return MorphMany<DatabaseNotification, User>
+     */
     private function unreadReportUpdateQuery(Request $request): MorphMany
     {
         return $request->user()->unreadNotifications()
@@ -732,6 +804,11 @@ class RecipeReportsController extends Controller
             ->whereNotNull('data->report_id');
     }
 
+    /**
+     * Configure an EXISTS subquery matching unread gallery updates for the user and outer recipe-report row.
+     *
+     * The supplied query builder is mutated; no query is executed here.
+     */
     private function unreadReportUpdateExists(QueryBuilder $notifications, int $userId): void
     {
         $notifications

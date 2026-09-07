@@ -13,6 +13,11 @@ class CheckDomainCertificatesCommand extends Command
 
     protected $description = 'Check managed DNS resolution and TLS certificate expiration';
 
+    /**
+     * Inspect a bounded batch of the least recently checked domains and persist their DNS and certificate status.
+     *
+     * @return int SUCCESS after processing the batch; individual domain errors are retained on their records.
+     */
     public function handle(): int
     {
         $limit = max(1, min(500, (int) $this->option('limit')));
@@ -25,6 +30,11 @@ class CheckDomainCertificatesCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve domain addresses against its server and inspect the verified TLS certificate; persist DNS/SSL observations and store certificate errors instead of rethrowing them.
+     *
+     * @param  WebsiteDomain  $domain  Domain whose expected server address and current certificate should be inspected.
+     */
     private function check(WebsiteDomain $domain): void
     {
         $addresses = collect(dns_get_record($domain->hostname, DNS_A | DNS_AAAA) ?: [])

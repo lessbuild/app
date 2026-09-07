@@ -11,6 +11,11 @@ class PruneServerImportAssessmentsCommand extends Command
 
     protected $description = 'Delete expired or consumed server import assessments and their encrypted credentials';
 
+    /**
+     * Delete consumed or expired server-import assessments and report the number removed.
+     *
+     * @return int SUCCESS after removing unusable assessments.
+     */
     public function handle(): int
     {
         $deleted = ServerImportAssessment::query()

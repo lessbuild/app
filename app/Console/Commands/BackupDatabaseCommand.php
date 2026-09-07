@@ -16,6 +16,12 @@ class BackupDatabaseCommand extends Command
 
     protected $description = 'Create a consistent SQLite database snapshot and prune expired automatic backups';
 
+    /**
+     * Create, verify, and publish an SQLite snapshot before pruning old automatic backups; report snapshot or verification failures.
+     *
+     * @param  SqliteBackupVerifier  $verifier  SQLite snapshot integrity verifier run before a backup is accepted.
+     * @return int SUCCESS after publishing a verified backup, otherwise FAILURE.
+     */
     public function handle(SqliteBackupVerifier $verifier): int
     {
         $connection = DB::connection($this->option('connection') ?: null);
@@ -63,6 +69,14 @@ class BackupDatabaseCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Create a fresh SQLite VACUUM INTO snapshot and require a nonempty output file.
+     *
+     * @param  ConnectionInterface  $connection  Live SQLite connection whose consistent contents should be copied.
+     * @param  string  $path  Temporary snapshot path, replaced before VACUUM INTO executes.
+     *
+     * @throws \RuntimeException If SQLite does not produce a nonempty snapshot file.
+     */
     private function snapshot(ConnectionInterface $connection, string $path): void
     {
         File::delete($path);
@@ -73,6 +87,13 @@ class BackupDatabaseCommand extends Command
         }
     }
 
+    /**
+     * Delete expired automatic SQLite backups while retaining the snapshot just published.
+     *
+     * @param  string  $directory  Directory containing automatic database snapshots.
+     * @param  int  $retentionDays  Age threshold in days for deleting earlier automatic snapshots.
+     * @param  string  $currentPath  Newly verified snapshot that must survive this pruning pass.
+     */
     private function prune(string $directory, int $retentionDays, string $currentPath): void
     {
         $cutoff = now()->subDays($retentionDays)->getTimestamp();

@@ -10,9 +10,16 @@ use Illuminate\Support\Env;
 
 class GenerateSizesAndRegionsAction
 {
+    /**
+     * Use the provider resolver to read the DigitalOcean catalog.
+     *
+     * @param  ServerProviderResolver  $providers  Resolver for authenticated server-provider clients.
+     */
     public function __construct(private readonly ServerProviderResolver $providers) {}
 
     /**
+     * Refresh stored DigitalOcean sizes and regions and attach their availability relationships; provider failures propagate.
+     *
      * @return void
      *
      * @throws \Exception

@@ -11,6 +11,9 @@ class WebsiteProvisioningLog extends Component
 {
     public Website $website;
 
+    /**
+     * Refresh and authorize the website before rendering provisioning log lines and active-state polling metadata.
+     */
     public function render(): View
     {
         $this->website->refresh();

@@ -21,6 +21,9 @@ use phpseclib4\Crypt\PublicKeyLoader;
 
 class ImportServerController extends Controller
 {
+    /**
+     * Show supported server roles and the requesting workspace's current server allowance.
+     */
     public function create(Request $request, PlanLimits $limits): View
     {
         return view('scenes.servers.import', [
@@ -29,6 +32,11 @@ class ImportServerController extends Controller
         ]);
     }
 
+    /**
+     * Inspect validated SSH connection details and redirect to a session-bound import assessment.
+     *
+     * Connection errors and exhausted server allowances become validation errors.
+     */
     public function store(
         ImportServerRequest $request,
         PlanLimits $limits,
@@ -60,6 +68,9 @@ class ImportServerController extends Controller
         return redirect()->route('servers.import.review', $assessment);
     }
 
+    /**
+     * Render an unexpired, unused import assessment authorized by its user and session token.
+     */
     public function review(Request $request, ServerImportAssessment $assessment): View
     {
         $this->authorizeAssessment($request, $assessment);
@@ -67,6 +78,11 @@ class ImportServerController extends Controller
         return view('scenes.servers.import-review', ['assessment' => $assessment]);
     }
 
+    /**
+     * Validate the server-name, backup, and host-fingerprint confirmations before consuming an assessment.
+     *
+     * @return RedirectResponse The imported server page after provisioning is queued following commit.
+     */
     public function confirm(
         Request $request,
         ServerImportAssessment $assessment,
@@ -123,6 +139,9 @@ class ImportServerController extends Controller
             ->with('success', __('Server imported. BuildPusher is securely connecting and applying the selected runtime.'));
     }
 
+    /**
+     * Require a usable assessment belonging to the request user and session token; otherwise return 404.
+     */
     private function authorizeAssessment(Request $request, ServerImportAssessment $assessment): void
     {
         $token = (string) $request->session()->get("server_import_assessment.{$assessment->id}");

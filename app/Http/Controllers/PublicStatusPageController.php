@@ -11,6 +11,9 @@ use Illuminate\Http\Response;
 
 class PublicStatusPageController extends Controller
 {
+    /**
+     * Use the shared component presenter for both HTML and public JSON status responses.
+     */
     public function __construct(private readonly StatusComponentPresenter $presenter) {}
 
     /** @return Response The published page and subscription form, with shared caching disabled. */

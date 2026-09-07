@@ -15,6 +15,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminAccessRequestController extends Controller
 {
+    /**
+     * Require platform administration and render status-filtered access requests with reviewer details and aggregate status counts.
+     */
     public function index(Request $request): View
     {
         abort_unless($request->user()->isPlatformAdmin(), 403);
@@ -27,6 +30,11 @@ class AdminAccessRequestController extends Controller
         ]);
     }
 
+    /**
+     * Validate an administrator's review decision and optional invitation resend while preserving accepted onboarding records.
+     *
+     * @return RedirectResponse The saved result after issuing or invalidating invitation credentials as needed.
+     */
     public function update(Request $request, AccessRequest $accessRequest, AccessInvitation $invitations): RedirectResponse
     {
         abort_unless($request->user()->isPlatformAdmin(), 403);
@@ -58,6 +66,9 @@ class AdminAccessRequestController extends Controller
         return back()->with('success', __('Access request updated.'));
     }
 
+    /**
+     * Require platform administration and stream status-filtered applicant and review details as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         abort_unless($request->user()->isPlatformAdmin(), 403);
@@ -79,6 +90,9 @@ class AdminAccessRequestController extends Controller
         }, 'buildpusher-access-requests-'.now()->format('Y-m-d').'.csv', ['Cache-Control' => 'no-store, private', 'Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
+    /**
+     * Cast export values to text, flatten line breaks, and escape leading spreadsheet formula characters.
+     */
     private function csvCell(mixed $value): string
     {
         return CsvCell::singleLine($value);

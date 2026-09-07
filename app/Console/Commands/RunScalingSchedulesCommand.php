@@ -14,6 +14,12 @@ class RunScalingSchedulesCommand extends Command
 
     protected $description = 'Apply due environment scaling schedules';
 
+    /**
+     * Claim due entitled scaling schedules, clamp desired replicas, clear hibernation, and queue application of the runtime state.
+     *
+     * @param  Entitlements  $entitlements  Workspace entitlement evaluator for the requested automation capability.
+     * @return int SUCCESS after evaluating schedules and queuing accepted changes.
+     */
     public function handle(Entitlements $entitlements): int
     {
         ScalingSchedule::query()->where('is_enabled', true)->with('environment.project.organization.owner')->each(function (ScalingSchedule $schedule) use ($entitlements): void {

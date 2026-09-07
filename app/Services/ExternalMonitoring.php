@@ -35,6 +35,11 @@ class ExternalMonitoring
         ];
     }
 
+    /**
+     * Request the configured HTTPS heartbeat endpoint using bounded retries.
+     *
+     * @return bool True for a successful response; false for invalid configuration or a reported request failure.
+     */
     public function sendHeartbeat(): bool
     {
         $url = config('monitoring.heartbeat_url');
@@ -55,6 +60,11 @@ class ExternalMonitoring
         }
     }
 
+    /**
+     * Probe the configured external status-page URL over HTTPS.
+     *
+     * @return bool True for a successful response; false for invalid configuration or a reported request failure.
+     */
     public function statusPageIsReachable(): bool
     {
         $url = config('monitoring.status_url');
@@ -75,6 +85,12 @@ class ExternalMonitoring
         }
     }
 
+    /**
+     * Check that a configured monitoring endpoint is a valid HTTPS URL with a host.
+     *
+     * @param  mixed  $url  The untrusted configuration value to inspect.
+     * @return bool Whether the URL passes syntax, scheme and host checks; DNS is not resolved here.
+     */
     private function isSecureUrl(mixed $url): bool
     {
         return is_string($url)

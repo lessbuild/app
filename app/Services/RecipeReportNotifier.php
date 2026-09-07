@@ -11,6 +11,13 @@ use Illuminate\Notifications\DatabaseNotification;
 
 class RecipeReportNotifier
 {
+    /**
+     * Notify a recipe contributor once while a report notification remains unread.
+     *
+     * @param  Recipe  $recipe  The recipe whose contributor receives the report.
+     * @param  RecipeReport  $report  The report identity used to deduplicate unread notifications.
+     * @return void No value; creates a contributor notification only when none is already open.
+     */
     public function open(Recipe $recipe, RecipeReport $report): void
     {
         $contributor = $recipe->user()->select('users.id')->firstOrFail();
@@ -48,18 +55,38 @@ class RecipeReportNotifier
             ->each(fn (RecipeReport $report) => $this->notifyReporter($report, $report->recipe, 'resolved'));
     }
 
+    /**
+     * Notify the report author that a recipe report has been reopened.
+     *
+     * @param  Recipe  $recipe  The recipe associated with the reopened report.
+     * @param  RecipeReport  $report  The report whose author should receive the status update.
+     * @return void No value; marks previous status notifications read before notifying.
+     */
     public function reopened(Recipe $recipe, RecipeReport $report): void
     {
         $report->loadMissing('user:id');
         $this->notifyReporter($report, $recipe, 'reopened');
     }
 
+    /**
+     * Delete contributor and reporter notifications for one recipe report.
+     *
+     * @param  Recipe  $recipe  The recipe identifying its contributor.
+     * @param  RecipeReport  $report  The report identifying its author and notification references.
+     * @return void No value; removes matching notifications for both participants.
+     */
     public function forget(Recipe $recipe, RecipeReport $report): void
     {
         $this->deleteContributorNotifications((int) $recipe->user_id, [$report->id]);
         $this->deleteReporterNotifications((int) $report->user_id, [$report->id]);
     }
 
+    /**
+     * Delete all report-related notifications for a recipe and its report authors.
+     *
+     * @param  Recipe  $recipe  The recipe whose report IDs and authors define the deletion scope.
+     * @return void No value; returns immediately when the recipe has no reports.
+     */
     public function forgetRecipe(Recipe $recipe): void
     {
         $reports = $recipe->reports()->select(['id', 'user_id'])->get();
@@ -73,6 +100,14 @@ class RecipeReportNotifier
         });
     }
 
+    /**
+     * Replace unread report-status notifications with the requested status update.
+     *
+     * @param  RecipeReport  $report  The report whose author receives the notification.
+     * @param  Recipe  $recipe  The recipe shown in the report notification.
+     * @param  string  $state  The report lifecycle state to communicate.
+     * @return void No value; marks earlier status notifications read and sends the new notification.
+     */
     private function notifyReporter(RecipeReport $report, Recipe $recipe, string $state): void
     {
         $report->user->unreadNotifications()

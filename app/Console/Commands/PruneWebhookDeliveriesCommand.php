@@ -13,6 +13,11 @@ class PruneWebhookDeliveriesCommand extends Command
 
     protected $description = 'Prune expired webhook delivery history while preserving active deliveries';
 
+    /**
+     * Delete old unavailable or superseded deliveries and queued deliveries without an active build, preserving pending revisions.
+     *
+     * @return int SUCCESS after pruning, or FAILURE when retention is not a positive integer.
+     */
     public function handle(): int
     {
         $days = $this->retentionDays();
@@ -56,6 +61,11 @@ class PruneWebhookDeliveriesCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve the optional days argument against the configured retention and require a positive integer.
+     *
+     * @return int|null Validated retention in days, or null when the option or configured default is invalid.
+     */
     private function retentionDays(): ?int
     {
         $value = $this->option('days');

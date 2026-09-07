@@ -18,8 +18,16 @@ use Illuminate\Validation\ValidationException;
 
 class EnvironmentController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate worker, resource, scaling, and hibernation configuration.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Validate environment placement and runtime settings for an editable application and assign an available slug.
+     *
+     * @return RedirectResponse The creation result, or a validation error for a second production environment.
+     */
     public function store(Request $request, Project $project): RedirectResponse
     {
         $this->authorize('update', $project);
@@ -52,6 +60,11 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Environment created.'));
     }
 
+    /**
+     * Validate environment settings while retaining omitted runtime values and enforcing changed-feature entitlements.
+     *
+     * @return RedirectResponse The saved result, or a validation error for a second production environment.
+     */
     public function update(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -76,6 +89,9 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Environment updated.'));
     }
 
+    /**
+     * Validate a key, value, scope, and optional rotation date for an editable environment and append an encrypted version.
+     */
     public function variables(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -124,6 +140,11 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Environment variable deleted.'));
     }
 
+    /**
+     * Validate an entitled environment process definition and restart policy, limiting schedulers to one replica.
+     *
+     * @return RedirectResponse A saved acknowledgement; the next deployment applies the definition.
+     */
     public function storeProcess(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -146,6 +167,9 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Process definition saved. It will be applied on the next deployment.'));
     }
 
+    /**
+     * Require the process to belong to the editable environment, remove its definition, and redirect with deployment guidance.
+     */
     public function destroyProcess(Environment $environment, EnvironmentProcess $process): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -155,6 +179,11 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Process removed. The next deployment will stop its service.'));
     }
 
+    /**
+     * Validate an entitled environment resource and resolve managed service variables or external credentials.
+     *
+     * @return RedirectResponse The attachment result, or an unsupported managed-resource validation error.
+     */
     public function storeResource(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -206,6 +235,9 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Resource attached. Its variables will be snapshotted into future deployments.'));
     }
 
+    /**
+     * Require the resource to belong to the editable environment, detach its record, and redirect back.
+     */
     public function destroyResource(Environment $environment, EnvironmentResource $resource): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -215,6 +247,9 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Resource detached.'));
     }
 
+    /**
+     * Validate locks, deployment windows, strategy, and rollback settings for an editable environment, then save them.
+     */
     public function updateDeploymentControls(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -260,6 +295,9 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Deployment controls updated.'));
     }
 
+    /**
+     * Authorize a non-production environment's deletion and redirect back after removing its record.
+     */
     public function destroy(Environment $environment): RedirectResponse
     {
         $this->authorize('delete', $environment);
@@ -269,6 +307,11 @@ class EnvironmentController extends Controller
         return back()->with('success', __('Environment deleted.'));
     }
 
+    /**
+     * Validate runtime and deployment-protection fields with placements restricted to the project's workspace.
+     *
+     * @return array<string, mixed> Only validated environment attributes; optional fields may be absent.
+     */
     private function validated(Request $request, Project $project): array
     {
         $organizationId = $project->organization_id;
@@ -293,6 +336,12 @@ class EnvironmentController extends Controller
         ]);
     }
 
+    /**
+     * Enforce paid scaling or hibernation only when submitted values enable or change those features.
+     *
+     * @param  array<string, mixed>  $data  Validated environment attributes.
+     * @param  Environment|null  $current  Existing values for updates, or null when creating an environment.
+     */
     private function enforceRuntimeFeatures(Project $project, array $data, ?Environment $current = null): void
     {
         $scalingChanged = ! $current

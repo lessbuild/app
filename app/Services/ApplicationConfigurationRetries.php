@@ -15,6 +15,13 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationRetries
 {
+    /**
+     * Bind explicit retry preparation, deployment snapshots and receipt synchronization.
+     *
+     * @param  ApplicationConfigurationBuilds  $builds  Revalidates and prepares the failed operation's replacement build.
+     * @param  DeploymentRequest  $deployments  Captures current environment attributes for the retry; delivery dispatches its build separately.
+     * @param  ApplicationConfigurationResults  $results  Refreshes aggregate receipt outcomes after retry reservation.
+     */
     public function __construct(
         private readonly ApplicationConfigurationBuilds $builds,
         private readonly DeploymentRequest $deployments,
@@ -96,6 +103,14 @@ class ApplicationConfigurationRetries
         return $retry;
     }
 
+    /**
+     * Reject a retry that cannot safely reuse the saved configuration intent.
+     *
+     * @param  string  $message  A sanitized operator-facing explanation of the rejected retry.
+     * @return never This method always throws.
+     *
+     * @throws ValidationException With an operation error.
+     */
     private function invalid(string $message): never
     {
         throw ValidationException::withMessages(['operation' => $message]);

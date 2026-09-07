@@ -8,6 +8,9 @@ use Illuminate\Http\RedirectResponse;
 
 class ProviderConnectionController extends Controller
 {
+    /**
+     * Check an editable provider connection and redirect to its page with the health result.
+     */
     public function __invoke(Provider $provider, ProviderHealthMonitor $monitor): RedirectResponse
     {
         $this->authorize('update', $provider);

@@ -18,8 +18,18 @@ class CloneDatabaseJob implements ShouldQueue
 
     public int $timeout = 3600;
 
+    /**
+     * Capture the database clone request to execute from its persisted source and target.
+     *
+     * @param  int  $cloneId  Persisted clone request identifying the source and target database resources.
+     */
     public function __construct(public readonly int $cloneId) {}
 
+    /**
+     * Transfer the database between compatible resources on the same server into a nonproduction target; record running and terminal state, and record then rethrow failures.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $clone = DatabaseClone::query()->with(['source.environment.website.server', 'target.environment.website.server'])->find($this->cloneId);
@@ -54,7 +64,14 @@ class CloneDatabaseJob implements ShouldQueue
         }
     }
 
-    /** @return array{database:string,username:string,password:string} */
+    /**
+     * Validate database and account identifiers and extract the password from stored resource variables.
+     *
+     * @param  array<string, mixed>  $variables  Resource environment variables containing DB_DATABASE, DB_USERNAME, and optional DB_PASSWORD.
+     * @return array{database:string,username:string,password:string} Validated source or target connection values for the remote transfer command.
+     *
+     * @throws RuntimeException If the configured database or account identifier is unsafe.
+     */
     private function connection(array $variables): array
     {
         foreach (['DB_DATABASE' => 'database', 'DB_USERNAME' => 'username'] as $key => $label) {

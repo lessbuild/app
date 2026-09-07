@@ -12,6 +12,12 @@ class SendMonitoringHeartbeatCommand extends Command
 
     protected $description = 'Notify the configured independent monitor that the scheduler is running';
 
+    /**
+     * Validate external-monitoring configuration, send the heartbeat, and optionally verify public status reachability.
+     *
+     * @param  ExternalMonitoring  $monitoring  External heartbeat delivery and public status reachability service.
+     * @return int SUCCESS when required monitoring checks pass, otherwise FAILURE.
+     */
     public function handle(ExternalMonitoring $monitoring): int
     {
         if (blank(config('monitoring.heartbeat_url'))) {

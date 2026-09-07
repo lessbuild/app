@@ -10,8 +10,18 @@ use Illuminate\Support\Str;
 
 class PrepareServerProvisioningAction
 {
+    /**
+     * Use the provisioning plan to determine whether managed MySQL credentials are needed.
+     *
+     * @param  ServerProvisioningPlan  $plan  Ordered provisioning or deployment plan defining the steps to render.
+     */
     public function __construct(private readonly ServerProvisioningPlan $plan) {}
 
+    /**
+     * Generate the root credential for provisioning and flash it to the session; persist and flash a MySQL root password when the plan requires one.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     */
     public function handle(Server $server): void
     {
         if (! $server->provisioningRootPassword()) {

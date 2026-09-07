@@ -12,6 +12,11 @@ class EvaluateEnvironmentHibernationCommand extends Command
 
     protected $description = 'Evaluate inactivity-based environment hibernation';
 
+    /**
+     * Queue idle evaluations for environments with a hibernation threshold that are not currently sleeping.
+     *
+     * @return int SUCCESS after queuing evaluations.
+     */
     public function handle(): int
     {
         Environment::query()->whereNotNull('hibernate_after_minutes')->whereNull('hibernated_at')->pluck('id')

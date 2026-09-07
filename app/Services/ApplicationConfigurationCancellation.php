@@ -12,8 +12,23 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationCancellation
 {
+    /**
+     * Bind receipt-status synchronization for cancellation outcomes.
+     *
+     * @param  ApplicationConfigurationResults  $results  Refreshes both the owning receipt and receipts sharing its operation.
+     */
     public function __construct(private readonly ApplicationConfigurationResults $results) {}
 
+    /**
+     * Cancel only configuration work that has not begun remote execution, then refresh related receipts.
+     *
+     * @param  ConfigurationOperation  $operation  The operation identity to reload and lock under its project.
+     * @param  User  $user  The current workspace member whose manage permission is rechecked.
+     * @return ConfigurationOperation The refreshed canceled operation, including an idempotent existing cancellation.
+     *
+     * @throws AuthorizationException If workspace access no longer permits cancellation.
+     * @throws ValidationException If remote execution or a terminal outcome prevents cancellation.
+     */
     public function cancel(ConfigurationOperation $operation, User $user): ConfigurationOperation
     {
         $projectId = $operation->application->review->project_id;

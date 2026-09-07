@@ -13,6 +13,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CommandsController extends Controller
 {
+    /**
+     * Render filtered workspace command executions and metrics without loading command output bodies.
+     */
     public function __invoke(Request $request): View
     {
         $filters = $this->filters($request);
@@ -32,6 +35,9 @@ class CommandsController extends Controller
         ]);
     }
 
+    /**
+     * Stream filtered workspace command metadata as private CSV, omitting command text and output bodies.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
@@ -149,6 +155,9 @@ class CommandsController extends Controller
             ->when($filters['date_to'], fn ($query, string $date) => $query->whereDate('created_at', '<=', $date));
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);

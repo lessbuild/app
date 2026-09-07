@@ -7,6 +7,9 @@ use Illuminate\Http\JsonResponse;
 
 class HealthController extends Controller
 {
+    /**
+     * Return an uncached readiness response: HTTP 200 when ready, or HTTP 503 when unavailable.
+     */
     public function __invoke(ApplicationReadiness $readiness): JsonResponse
     {
         $ready = $readiness->isReady();

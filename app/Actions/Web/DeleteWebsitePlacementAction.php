@@ -8,12 +8,24 @@ use RuntimeException;
 
 class DeleteWebsitePlacementAction
 {
+    /**
+     * Capture one server placement independently of the website's current server.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @param  string  $deploymentSlug  Stable website directory and Caddy configuration identifier to remove.
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     */
     public function __construct(
         private readonly Server $server,
         private readonly string $deploymentSlug,
         private readonly ?Runner $runner = null,
     ) {}
 
+    /**
+     * Validate the deployment slug, remove its Caddy configuration and application files, drop managed MySQL resources when credentials exist, and reload Caddy.
+     *
+     * @throws RuntimeException If the deployment slug is unsafe or remote cleanup fails.
+     */
     public function handle(): void
     {
         if (! preg_match('/^[a-z0-9][a-z0-9-]{0,31}$/', $this->deploymentSlug)) {

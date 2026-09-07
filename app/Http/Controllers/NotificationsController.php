@@ -16,6 +16,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class NotificationsController extends Controller
 {
+    /**
+     * Render the user's filtered inbox, matching counts, read-state availability, and saved filter preferences.
+     */
     public function index(Request $request): View
     {
         $filters = $this->filters($request);
@@ -35,6 +38,9 @@ class NotificationsController extends Controller
         ]);
     }
 
+    /**
+     * Validate a filter name and save normalized inbox criteria, replacing matching names and retaining at most ten presets.
+     */
     public function saveFilter(Request $request): RedirectResponse
     {
         $data = $request->validate(['name' => ['required', 'string', 'max:40']]);
@@ -51,6 +57,9 @@ class NotificationsController extends Controller
         return back()->with('success', __('Notification filter saved.'));
     }
 
+    /**
+     * Remove a saved-filter identifier from the request user's preferences and redirect with an acknowledgement.
+     */
     public function destroyFilter(Request $request, string $filter): RedirectResponse
     {
         $preferences = $request->user()->preferences ?? [];
@@ -91,6 +100,9 @@ class NotificationsController extends Controller
         ];
     }
 
+    /**
+     * Stream the user's filtered notification metadata as private CSV, excluding unsupported payload value types.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
@@ -140,6 +152,9 @@ class NotificationsController extends Controller
         ]);
     }
 
+    /**
+     * Require notification ownership, mark it read, and redirect to its allowed destination or the inbox.
+     */
     public function read(Request $request, DatabaseNotification $notification): RedirectResponse
     {
         $this->ensureOwnedNotification($request, $notification);
@@ -148,6 +163,9 @@ class NotificationsController extends Controller
         return redirect(NotificationInbox::destination($notification->data) ?? route('notifications.index'));
     }
 
+    /**
+     * Mark all of the request user's unread notifications as read and redirect back.
+     */
     public function readAll(Request $request): RedirectResponse
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
@@ -155,6 +173,9 @@ class NotificationsController extends Controller
         return back()->with('success', __('All notifications marked as read.'));
     }
 
+    /**
+     * Require notification ownership, clear its read timestamp, and redirect back.
+     */
     public function unread(Request $request, DatabaseNotification $notification): RedirectResponse
     {
         $this->ensureOwnedNotification($request, $notification);
@@ -163,6 +184,9 @@ class NotificationsController extends Controller
         return back()->with('success', __('Notification marked as unread.'));
     }
 
+    /**
+     * Delete only the request user's read notifications and redirect with the affected count.
+     */
     public function clearRead(Request $request): RedirectResponse
     {
         $deleted = $request->user()->readNotifications()->delete();
@@ -174,6 +198,11 @@ class NotificationsController extends Controller
         ));
     }
 
+    /**
+     * Validate up to 25 distinct notification UUIDs and a read, unread, or delete action.
+     *
+     * @return RedirectResponse The count affected within the requesting user's own notifications.
+     */
     public function bulk(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -201,6 +230,9 @@ class NotificationsController extends Controller
         return back()->with('success', $message);
     }
 
+    /**
+     * Require ownership of the route-bound notification, delete it, and redirect back.
+     */
     public function destroy(Request $request, DatabaseNotification $notification): RedirectResponse
     {
         $this->ensureOwnedNotification($request, $notification);
@@ -275,6 +307,9 @@ class NotificationsController extends Controller
                 ->whereDate('created_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -282,6 +317,9 @@ class NotificationsController extends Controller
         return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
+    /**
+     * Read a notification payload key as string or integer, returning null for missing or unsupported values.
+     */
     private function dataValue(DatabaseNotification $notification, string $key): string|int|null
     {
         $value = $notification->data[$key] ?? null;
@@ -289,6 +327,9 @@ class NotificationsController extends Controller
         return is_string($value) || is_int($value) ? $value : null;
     }
 
+    /**
+     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
+     */
     private function csvCell(string|int|null $value): ?string
     {
         return CsvCell::escape($value);

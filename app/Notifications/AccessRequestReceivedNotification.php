@@ -11,11 +11,23 @@ class AccessRequestReceivedNotification extends Notification implements ShouldQu
 {
     use Queueable;
 
+    /**
+     * Deliver this notification through Laravel's mail channel.
+     *
+     * @param  object  $notifiable  Notification recipient whose delivery routing is resolved by Laravel.
+     * @return list<string> The single mail channel used for this notification.
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * Compose an acknowledgement that the access request awaits review.
+     *
+     * @param  object  $notifiable  Notification recipient whose delivery routing is resolved by Laravel.
+     * @return MailMessage The composed email message for Laravel to deliver to the recipient.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)->subject(__('We received your BuildPusher access request'))

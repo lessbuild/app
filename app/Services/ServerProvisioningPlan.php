@@ -79,11 +79,23 @@ class ServerProvisioningPlan
         ];
     }
 
+    /**
+     * Count provisioning steps for the selected server role.
+     *
+     * @param  Server|ServerTypeEnum|string|null  $serverOrType  A server, role enum or stored role string; unknown values use the application role.
+     * @return int The completion stage for that role's provisioning plan.
+     */
     public function finalStage(Server|ServerTypeEnum|string|null $serverOrType): int
     {
         return count($this->steps($serverOrType));
     }
 
+    /**
+     * Normalize a server or role value to a supported provisioning role.
+     *
+     * @param  Server|ServerTypeEnum|string|null  $serverOrType  A server, role enum, stored string or absent value.
+     * @return ServerTypeEnum The matching role enum, defaulting to the application-server role.
+     */
     private function type(Server|ServerTypeEnum|string|null $serverOrType): ServerTypeEnum
     {
         if ($serverOrType instanceof Server) {

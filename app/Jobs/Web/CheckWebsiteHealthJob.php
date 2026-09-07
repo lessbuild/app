@@ -20,8 +20,18 @@ class CheckWebsiteHealthJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 240;
 
+    /**
+     * Capture the website whose current health should be checked by the queue worker.
+     *
+     * @param  int  $websiteId  Website identifier retained for lookup when the job runs.
+     */
     public function __construct(public readonly int $websiteId) {}
 
+    /**
+     * Run the website health monitor when the website still exists.
+     *
+     * @param  WebsiteHealthMonitor  $monitor  Website health checker that persists the current HTTP health outcome.
+     */
     public function handle(WebsiteHealthMonitor $monitor): void
     {
         $website = Website::with('server')->find($this->websiteId);
@@ -30,6 +40,11 @@ class CheckWebsiteHealthJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
+    /**
+     * Coalesce queued instances of this job for the same website.
+     *
+     * @return string The website identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->websiteId;

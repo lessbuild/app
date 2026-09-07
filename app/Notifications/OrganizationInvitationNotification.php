@@ -10,13 +10,31 @@ class OrganizationInvitationNotification extends Notification
 {
     use Queueable;
 
+    /**
+     * Capture the workspace display name and invitation acceptance URL.
+     *
+     * @param  string  $organization  Workspace name displayed in the invitation.
+     * @param  string  $url  Invitation acceptance URL for the intended workspace member.
+     */
     public function __construct(public readonly string $organization, public readonly string $url) {}
 
+    /**
+     * Deliver this notification through Laravel's mail channel.
+     *
+     * @param  object  $notifiable  Notification recipient whose delivery routing is resolved by Laravel.
+     * @return list<string> The single mail channel used for this notification.
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * Compose the workspace invitation and its seven-day acceptance notice.
+     *
+     * @param  object  $notifiable  Notification recipient whose delivery routing is resolved by Laravel.
+     * @return MailMessage The composed email message for Laravel to deliver to the recipient.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)

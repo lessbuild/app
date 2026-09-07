@@ -13,6 +13,11 @@ use Illuminate\Http\Request;
 
 class RepositoryWebhookController extends Controller
 {
+    /**
+     * Verify a repository webhook, route preview events, and queue matching push deployments.
+     *
+     * @return JsonResponse The processing status: 202 for accepted work, 409 when unavailable, or the verification error.
+     */
     public function __invoke(
         Request $request,
         Repository $repository,

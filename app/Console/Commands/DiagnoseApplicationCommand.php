@@ -11,6 +11,12 @@ class DiagnoseApplicationCommand extends Command
 
     protected $description = 'Run read-only application configuration and readiness diagnostics';
 
+    /**
+     * Run operational readiness checks and present either a diagnostic table or JSON report.
+     *
+     * @param  OperationalDiagnostics  $diagnostics  Collector of operational readiness checks and diagnostic evidence.
+     * @return int SUCCESS when the application is ready, otherwise FAILURE.
+     */
     public function handle(OperationalDiagnostics $diagnostics): int
     {
         $checks = $diagnostics->run();

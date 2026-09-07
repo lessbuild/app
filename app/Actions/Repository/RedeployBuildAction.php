@@ -12,8 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 class RedeployBuildAction
 {
+    /**
+     * Use the deployment request service to create and dispatch a deployment from retained build history.
+     *
+     * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
+     */
     public function __construct(private readonly DeploymentRequest $deployments) {}
 
+    /**
+     * Lock the website and repository, verify a terminal source and deployment readiness, and request another deployment with source lineage preserved.
+     *
+     * @param  Build  $source  Finished deployment whose revision and commit details should be reused.
+     * @param  User|null  $requester  Optional user to attribute the redeployment request to.
+     * @return BuildRedeploymentResult The eligibility outcome and newly created build when redeployment is accepted.
+     */
     public function handle(Build $source, ?User $requester = null): BuildRedeploymentResult
     {
         $result = DB::transaction(function () use ($source, $requester): BuildRedeploymentResult {

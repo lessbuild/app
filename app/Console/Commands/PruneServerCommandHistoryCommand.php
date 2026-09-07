@@ -12,6 +12,11 @@ class PruneServerCommandHistoryCommand extends Command
 
     protected $description = 'Prune expired terminal server command history while preserving active commands';
 
+    /**
+     * Delete old terminal command executions in batches while preserving queued and running commands.
+     *
+     * @return int SUCCESS after pruning, or FAILURE when retention is not a positive integer.
+     */
     public function handle(): int
     {
         $days = $this->retentionDays();
@@ -38,6 +43,11 @@ class PruneServerCommandHistoryCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve the optional days argument against the configured retention and require a positive integer.
+     *
+     * @return int|null Validated retention in days, or null when the option or configured default is invalid.
+     */
     private function retentionDays(): ?int
     {
         $value = $this->option('days');

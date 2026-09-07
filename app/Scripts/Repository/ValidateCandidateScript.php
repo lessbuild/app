@@ -13,6 +13,13 @@ class ValidateCandidateScript extends BuildProvisioningScript
 
     public static string $identifier = 'validated-canary-candidate';
 
+    /**
+     * Render a temporary PHP server health probe when PHP canary validation is selected.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         $runtime = $build->environment_payload['runtime'] ?? [];

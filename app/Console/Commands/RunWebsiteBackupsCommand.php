@@ -15,6 +15,11 @@ class RunWebsiteBackupsCommand extends Command
 
     protected $description = 'Queue due managed website backups';
 
+    /**
+     * Lock and recheck due backup schedules, create queued backup records, and dispatch their workers.
+     *
+     * @return int SUCCESS after dispatching the due backups.
+     */
     public function handle(): int
     {
         $queued = 0;
@@ -51,6 +56,12 @@ class RunWebsiteBackupsCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Compare the schedule's run time and daily or weekly recurrence with its last queued slot.
+     *
+     * @param  WebsiteBackupSchedule  $schedule  Backup recurrence and last-queued timestamp to evaluate.
+     * @return bool Whether the current time has reached an unclaimed backup slot.
+     */
     private function due(WebsiteBackupSchedule $schedule): bool
     {
         $now = now();

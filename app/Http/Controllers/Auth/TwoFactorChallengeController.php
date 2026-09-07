@@ -15,6 +15,9 @@ use Illuminate\View\View;
 
 class TwoFactorChallengeController extends Controller
 {
+    /**
+     * Render a challenge for the session's pending login, or redirect to login when no challenge is pending.
+     */
     public function create(Request $request): View|RedirectResponse
     {
         return $request->session()->has('two_factor_login_user_id')
@@ -22,6 +25,11 @@ class TwoFactorChallengeController extends Controller
             : redirect()->route('login');
     }
 
+    /**
+     * Validate an authentication or recovery code for the pending user, complete sign-in, and consume challenge state.
+     *
+     * @return RedirectResponse The intended page after session regeneration and sign-in recording.
+     */
     public function store(
         Request $request,
         TwoFactorAuthentication $twoFactor,

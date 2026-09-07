@@ -15,8 +15,22 @@ use Illuminate\Support\Str;
 
 class PromoteBuildAction
 {
+    /**
+     * Use the deployment request service to persist and dispatch approved promotion requests.
+     *
+     * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
+     */
     public function __construct(private readonly DeploymentRequest $deployments) {}
 
+    /**
+     * Validate workspace access, source identity, and forward environment order before creating a promotion under locks; notify required approvers and dispatch eligible work.
+     *
+     * @param  Build  $source  Successful build whose exact revision will be promoted.
+     * @param  Environment  $target  Destination environment in the same project.
+     * @param  User  $requester  User whose workspace membership and deployment permission are checked.
+     * @param  string|null  $note  Optional approval context, bounded before storage.
+     * @return BuildPromotionResult The promotion outcome and created build when the target accepts the request.
+     */
     public function handle(Build $source, Environment $target, User $requester, ?string $note = null): BuildPromotionResult
     {
         $result = DB::transaction(function () use ($source, $target, $requester, $note): BuildPromotionResult {
@@ -82,12 +96,26 @@ class PromoteBuildAction
         return $result;
     }
 
+    /**
+     * Compare normalized repository URLs, provider types, and branches for promotion compatibility.
+     *
+     * @param  Repository  $source  Repository attached to the source build.
+     * @param  Repository  $target  Repository configured on the target website.
+     * @return bool Whether both repositories identify the same source and branch.
+     */
     private function sameSource(Repository $source, Repository $target): bool
     {
         return strtolower(rtrim($source->url, '/')) === strtolower(rtrim($target->url, '/'))
             && $source->provider?->provider === $target->provider?->provider;
     }
 
+    /**
+     * Compare environment ranks from preview through development and staging to production.
+     *
+     * @param  Environment  $source  Environment containing the source build.
+     * @param  Environment  $target  Environment requested as the next deployment destination.
+     * @return bool Whether the target has a strictly higher promotion rank than the source.
+     */
     private function movesForward(Environment $source, Environment $target): bool
     {
         $rank = ['preview' => 0, 'development' => 1, 'staging' => 2, 'production' => 3];
@@ -95,6 +123,11 @@ class PromoteBuildAction
         return ($rank[$target->type] ?? -1) > ($rank[$source->type] ?? -1);
     }
 
+    /**
+     * Notify unique workspace owners and administrators when the build awaits approval and deployment notifications are enabled.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     */
     private function notifyApprovers(Build $build): void
     {
         if ($build->status !== Build::STATUS_AWAITING_APPROVAL) {

@@ -19,6 +19,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProviderController extends Controller
 {
+    /**
+     * Use workspace entitlements to guard provider features that depend on a paid plan.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
@@ -65,6 +68,9 @@ class ProviderController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace providers, their resource associations, and monitoring configuration as private CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
@@ -204,6 +210,9 @@ class ProviderController extends Controller
         ];
     }
 
+    /**
+     * Authorize provider visibility and render filtered, paginated connection history with matching metrics.
+     */
     public function connectionChecks(Request $request, Provider $provider): View
     {
         $this->authorize('view', $provider);
@@ -245,6 +254,9 @@ class ProviderController extends Controller
         ];
     }
 
+    /**
+     * Authorize provider visibility and stream bounded, filtered connection-check history as private CSV.
+     */
     public function exportConnectionChecks(Request $request, Provider $provider): StreamedResponse
     {
         $this->authorize('view', $provider);
@@ -332,6 +344,9 @@ class ProviderController extends Controller
                 ->whereDate('checked_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -473,6 +488,9 @@ class ProviderController extends Controller
         ]));
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);

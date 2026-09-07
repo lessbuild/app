@@ -9,6 +9,12 @@ use RuntimeException;
 
 class CloudflareDns
 {
+    /**
+     * Create or update the domain's A/AAAA record and persist its provider reference.
+     *
+     * @param  WebsiteDomain  $domain  The domain with DNS credentials and an attached server address.
+     * @return void No value; saves active DNS status after a successful provider response.
+     */
     public function sync(WebsiteDomain $domain): void
     {
         $domain->loadMissing(['dnsProvider', 'website.server']);
@@ -44,6 +50,12 @@ class CloudflareDns
         ])->save();
     }
 
+    /**
+     * Delete the recorded Cloudflare DNS record when its reference and credentials are available.
+     *
+     * @param  WebsiteDomain  $domain  The domain carrying the zone/record reference and DNS provider.
+     * @return void No value; returns without a request when the reference or token is missing.
+     */
     public function delete(WebsiteDomain $domain): void
     {
         $reference = $this->recordReference($domain->dns_record_id);
@@ -83,6 +95,12 @@ class CloudflareDns
         return [$matches[1], $matches[2]];
     }
 
+    /**
+     * Prepare an authenticated JSON request with bounded connection, response and retry settings.
+     *
+     * @param  string  $token  The Cloudflare API token for this request.
+     * @return PendingRequest The pending request targeting the configured Cloudflare API base URL.
+     */
     private function client(string $token): PendingRequest
     {
         return Http::baseUrl(rtrim((string) config('domains.cloudflare_api_url'), '/'))

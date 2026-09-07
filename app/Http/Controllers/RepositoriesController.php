@@ -74,6 +74,9 @@ class RepositoriesController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace repositories with provider, placement, latest-deployment, and webhook metadata as private CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
@@ -174,6 +177,9 @@ class RepositoriesController extends Controller
                 ->latestBuildStatus($filters['status']));
     }
 
+    /**
+     * Normalize untrusted identifier input into a positive integer, returning null for invalid or non-positive values.
+     */
     private function positiveInteger(mixed $value): ?int
     {
         $integer = filter_var($value, FILTER_VALIDATE_INT, [
@@ -192,6 +198,9 @@ class RepositoriesController extends Controller
         ];
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);
@@ -290,6 +299,9 @@ class RepositoriesController extends Controller
         ];
     }
 
+    /**
+     * Authorize repository visibility and stream its filtered webhook delivery and build outcomes as private CSV.
+     */
     public function exportWebhookDeliveries(Request $request, Repository $repository): StreamedResponse
     {
         $this->authorize('view', $repository);
@@ -368,6 +380,9 @@ class RepositoriesController extends Controller
                 ->whereDate('created_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);

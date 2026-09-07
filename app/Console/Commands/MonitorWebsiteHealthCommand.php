@@ -14,6 +14,13 @@ class MonitorWebsiteHealthCommand extends Command
 
     protected $description = 'Check enabled websites from their managed servers and record health transitions';
 
+    /**
+     * Check a bounded due batch of entitled websites and summarize checks, skipped records, and newly detected outages.
+     *
+     * @param  WebsiteHealthMonitor  $monitor  Website HTTP health checker that persists checks and incident transitions.
+     * @param  Entitlements  $entitlements  Workspace entitlement evaluator for the requested automation capability.
+     * @return int SUCCESS after the monitoring pass, including unhealthy checks recorded as outcomes.
+     */
     public function handle(WebsiteHealthMonitor $monitor, Entitlements $entitlements): int
     {
         $ids = collect($this->option('website'))

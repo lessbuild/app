@@ -24,6 +24,9 @@ use Illuminate\View\View;
 
 class OrganizationController extends Controller
 {
+    /**
+     * Ensure and authorize the current workspace, then render members, outstanding invitations, and the seat allowance.
+     */
     public function index(Request $request, PersonalOrganization $personal, PlanLimits $limits): View
     {
         $organization = $personal->ensure($request->user());
@@ -37,6 +40,11 @@ class OrganizationController extends Controller
         ]);
     }
 
+    /**
+     * Validate an entitled workspace manager's email and role invitation against domain and member limits.
+     *
+     * @return RedirectResponse A sent acknowledgement after creating a seven-day hashed-token invitation.
+     */
     public function invite(Request $request, PlanLimits $limits, Entitlements $entitlements): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -68,6 +76,11 @@ class OrganizationController extends Controller
         return back()->with('success', __('Invitation sent.'));
     }
 
+    /**
+     * Validate the invitation token, email ownership, expiry, and seat allowance under locks before joining the workspace.
+     *
+     * @return RedirectResponse Workspace settings after switching membership and queuing billing-seat synchronization.
+     */
     public function accept(Request $request, OrganizationInvitation $invitation, PlanLimits $limits): RedirectResponse
     {
         abort_unless($invitation->isUsable() && hash_equals($invitation->token_hash, hash('sha256', (string) $request->query('token'))), 403);
@@ -88,6 +101,9 @@ class OrganizationController extends Controller
         return redirect()->route('organizations.index')->with('success', __('Workspace invitation accepted.'));
     }
 
+    /**
+     * Require visibility of the bound workspace, select it as current, and redirect to its dashboard.
+     */
     public function switch(Request $request, Organization $organization): RedirectResponse
     {
         abort_unless($organization->permits($request->user(), 'view'), 403);
@@ -96,6 +112,9 @@ class OrganizationController extends Controller
         return redirect()->route('dashboard')->with('success', __('Workspace changed to :name.', ['name' => $organization->name]));
     }
 
+    /**
+     * Validate a role for an existing non-owner member of the managed workspace, update the membership, and redirect back.
+     */
     public function updateMember(Request $request, User $member): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -108,6 +127,9 @@ class OrganizationController extends Controller
         return back()->with('success', __('Member role updated.'));
     }
 
+    /**
+     * Require workspace management access, validate categories and recovery alerts, and save normalized notification preferences.
+     */
     public function updateNotificationPreferences(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -125,6 +147,11 @@ class OrganizationController extends Controller
         return back()->with('success', __('Workspace notification preferences updated.'));
     }
 
+    /**
+     * Validate workspace network, email-domain, authentication, idle-timeout, and SSO policy settings before saving them.
+     *
+     * New IP restrictions must retain the current client address; changed SSO settings require the SSO entitlement.
+     */
     public function updateSecurityPolicy(Request $request, Entitlements $entitlements): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -184,6 +211,9 @@ class OrganizationController extends Controller
         return back()->with('success', __('Workspace security policy updated.'));
     }
 
+    /**
+     * Test whether an IP address belongs to a previously validated same-family address or CIDR range.
+     */
     private function rangeContains(string $range, string $ip): bool
     {
         [$network, $prefix] = array_pad(explode('/', $range, 2), 2, null);
@@ -202,6 +232,9 @@ class OrganizationController extends Controller
         return $remainder === 0 || ((ord($address[$bytes]) & ((0xFF << (8 - $remainder)) & 0xFF)) === (ord($base[$bytes]) & ((0xFF << (8 - $remainder)) & 0xFF)));
     }
 
+    /**
+     * Require workspace management access and an existing non-owner member, remove them, and queue billing-seat synchronization.
+     */
     public function removeMember(Request $request, User $member): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -214,6 +247,11 @@ class OrganizationController extends Controller
         return back()->with('success', __('Member removed.'));
     }
 
+    /**
+     * Require current-workspace ownership and name/password/two-factor confirmation before deleting an empty, inactive workspace.
+     *
+     * @return RedirectResponse Workspace settings after the user's personal workspace is ensured.
+     */
     public function destroy(
         Request $request,
         Organization $organization,

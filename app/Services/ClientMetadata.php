@@ -6,6 +6,12 @@ use Illuminate\Support\Str;
 
 class ClientMetadata
 {
+    /**
+     * Describe a browser and platform from a client-supplied user-agent string.
+     *
+     * @param  string|null  $userAgent  The optional raw user-agent header.
+     * @return string A localized browser/device label with unknown-value fallbacks.
+     */
     public function deviceName(?string $userAgent): string
     {
         if (blank($userAgent)) {
@@ -33,6 +39,12 @@ class ClientMetadata
         return __(':browser on :platform', compact('browser', 'platform'));
     }
 
+    /**
+     * Validate and trim an IPv4 or IPv6 address for session metadata.
+     *
+     * @param  string|null  $ipAddress  The optional client address to normalize.
+     * @return string|null The trimmed valid address, or null for absent or invalid input.
+     */
     public function normalizedIp(?string $ipAddress): ?string
     {
         $ipAddress = trim((string) $ipAddress);
@@ -42,11 +54,23 @@ class ClientMetadata
             : null;
     }
 
+    /**
+     * Provide a safe display label for an optional client address.
+     *
+     * @param  string|null  $ipAddress  The client address to validate.
+     * @return string The valid address, or the localized unknown-address label.
+     */
     public function displayIp(?string $ipAddress): string
     {
         return $this->normalizedIp($ipAddress) ?? __('Unknown IP address');
     }
 
+    /**
+     * Bound stored user-agent metadata after trimming surrounding whitespace.
+     *
+     * @param  string|null  $userAgent  The optional raw user-agent string.
+     * @return string|null At most 500 characters, or null for blank input.
+     */
     public function normalizedUserAgent(?string $userAgent): ?string
     {
         $userAgent = trim((string) $userAgent);

@@ -18,13 +18,28 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 240;
 
+    /**
+     * Capture the database resource whose inspection snapshot should be collected.
+     *
+     * @param  int  $resourceId  Managed database resource identifier to inspect.
+     */
     public function __construct(public readonly int $resourceId) {}
 
+    /**
+     * Coalesce queued instances of this job for the same database resource.
+     *
+     * @return string The database resource identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->resourceId;
     }
 
+    /**
+     * Inspect a managed MySQL or PostgreSQL database, save available size, connection, and table metadata, and prune snapshots older than 30 days; reject missing resources or unsafe identifiers.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $resource = EnvironmentResource::query()->with('environment.website.server')->find($this->resourceId);
@@ -61,6 +76,14 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
         $resource->snapshots()->where('collected_at', '<', now()->subDays(30))->delete();
     }
 
+    /**
+     * Reject database and account identifiers that cannot safely be interpolated into inspection commands.
+     *
+     * @param  string  $value  Database or account identifier from stored resource configuration.
+     * @return string The unchanged identifier after validation.
+     *
+     * @throws RuntimeException If the identifier contains unsupported characters or begins with a digit.
+     */
     private function identifier(string $value): string
     {
         if (! preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/D', $value)) {

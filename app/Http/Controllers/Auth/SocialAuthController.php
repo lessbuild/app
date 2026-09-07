@@ -18,6 +18,9 @@ use Throwable;
 
 class SocialAuthController extends Controller
 {
+    /**
+     * Record account-linking activity and completed provider sign-ins through shared audit services.
+     */
     public function __construct(
         private readonly ActivityRecorder $activity,
         private readonly SignInRecorder $signIns,
@@ -31,6 +34,9 @@ class SocialAuthController extends Controller
         return array_keys(User::SOCIAL_PROVIDER_COLUMNS);
     }
 
+    /**
+     * Start sign-in for a route-allowed provider, clearing connection intent; redirect to login if configuration is missing.
+     */
     public function redirect(string $provider): RedirectResponse
     {
         request()->session()->forget('social_connect_provider');
@@ -46,6 +52,11 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
+    /**
+     * Start linking a route-allowed provider to the authenticated account and remember that intent in the session.
+     *
+     * Already-linked or unconfigured providers redirect back with an explanation.
+     */
     public function connect(string $provider): RedirectResponse
     {
         if (! self::configured($provider)) {
@@ -64,6 +75,11 @@ class SocialAuthController extends Controller
         return Socialite::driver($provider)->redirect();
     }
 
+    /**
+     * Resolve the provider identity as a deliberate account connection or a registration-aware sign-in.
+     *
+     * @return RedirectResponse Account settings, an authentication error, a two-factor challenge, or the intended page.
+     */
     public function callback(string $provider, RegistrationAccess $registration, PersonalOrganization $organizations): RedirectResponse
     {
         $connecting = Auth::check()
@@ -174,6 +190,9 @@ class SocialAuthController extends Controller
         return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Return whether the selected provider has client ID, secret, and redirect URI configured.
+     */
     public static function configured(string $provider): bool
     {
         return filled(config("services.{$provider}.client_id"))
@@ -181,6 +200,12 @@ class SocialAuthController extends Controller
             && filled(config("services.{$provider}.redirect"));
     }
 
+    /**
+     * Attach the verified provider identity under an account lock unless another user owns it.
+     *
+     * @param  string  $providerColumn  A trusted column from User::SOCIAL_PROVIDER_COLUMNS.
+     * @return RedirectResponse Account settings with the connection or ownership-conflict result.
+     */
     private function connectAuthenticatedUser(
         string $provider,
         string $providerColumn,
@@ -213,6 +238,9 @@ class SocialAuthController extends Controller
             );
     }
 
+    /**
+     * Return the supplied authentication error to account settings for linking, or login for sign-in.
+     */
     private function socialFailure(bool $connecting, string $message): RedirectResponse
     {
         return $connecting

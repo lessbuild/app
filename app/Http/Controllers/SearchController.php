@@ -16,6 +16,9 @@ use Illuminate\Support\Collection;
 
 class SearchController extends Controller
 {
+    /**
+     * Render workspace-scoped result groups for a trimmed query of at most 100 characters.
+     */
     public function __invoke(Request $request): View
     {
         $query = str($request->string('q')->toString())->trim()->limit(100, '')->toString();

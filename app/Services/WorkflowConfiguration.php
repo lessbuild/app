@@ -12,8 +12,23 @@ use Symfony\Component\Yaml\Yaml;
 
 class WorkflowConfiguration
 {
+    /**
+     * Bind plan-feature enforcement for version-1 workflow settings.
+     *
+     * @param  Entitlements  $entitlements  Checks scheduling, scaling and process-management features.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Validate and transactionally apply version-1 workflow settings to existing project environments.
+     *
+     * @param  Project  $project  The project whose named environments may be updated.
+     * @param  string  $yaml  The version-1 YAML document, limited to 50,000 bytes.
+     * @param  int  $userId  The actor recorded on deployment and scaling schedules.
+     * @return void No value; saves schedules, scaling, process settings and the accepted YAML together.
+     *
+     * @throws ValidationException If the document, referenced environment or required plan feature is invalid.
+     */
     public function apply(Project $project, string $yaml, int $userId): void
     {
         if (strlen($yaml) > 50000) {
@@ -109,6 +124,14 @@ class WorkflowConfiguration
         });
     }
 
+    /**
+     * Require a valid cron expression and an IANA timezone for a workflow schedule.
+     *
+     * @param  mixed  $schedule  The decoded schedule value; timezone defaults to UTC.
+     * @return void No value when the schedule is valid.
+     *
+     * @throws ValidationException If the schedule shape, cron or timezone is invalid.
+     */
     private function validateSchedule(mixed $schedule): void
     {
         if (! is_array($schedule) || ! is_string($schedule['cron'] ?? null) || ! CronExpression::isValidExpression($schedule['cron'])
@@ -117,6 +140,14 @@ class WorkflowConfiguration
         }
     }
 
+    /**
+     * Reject workflow configuration under the workflow validation field.
+     *
+     * @param  string  $message  The validation explanation to translate for the caller.
+     * @return never This method always throws.
+     *
+     * @throws ValidationException With the translated workflow error.
+     */
     private function invalid(string $message): never
     {
         throw ValidationException::withMessages(['workflow' => __($message)]);

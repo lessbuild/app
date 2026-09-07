@@ -45,11 +45,21 @@ class RepositoryDeploymentPlan
         ];
     }
 
+    /**
+     * Determine the completion stage from the ordered repository deployment scripts.
+     *
+     * @return int The number of deployment stages.
+     */
     public function finalStage(): int
     {
         return count($this->scripts());
     }
 
+    /**
+     * Locate the one-based stage that activates the candidate release.
+     *
+     * @return int The activation stage, or the final stage when no activation script is present.
+     */
     public function activationStage(): int
     {
         $index = array_search(ActivateReleaseScript::class, $this->scripts(), true);

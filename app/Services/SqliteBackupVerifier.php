@@ -7,6 +7,15 @@ use PDO;
 
 class SqliteBackupVerifier
 {
+    /**
+     * Require a nonempty SQLite snapshot and run its integrity check.
+     *
+     * @param  string  $path  The filesystem path to the backup snapshot.
+     * @return void No value when SQLite reports the snapshot is structurally valid.
+     *
+     * @throws \RuntimeException If the file is absent, empty or fails the integrity check.
+     * @throws \PDOException If opening or checking the SQLite snapshot fails.
+     */
     public function verify(string $path): void
     {
         if (! File::isFile($path)) {

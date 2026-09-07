@@ -8,8 +8,19 @@ use App\Models\Build;
 
 class AutomaticDeploymentRollback
 {
+    /**
+     * Bind the action used to queue restoration of a previously successful release.
+     *
+     * @param  RollbackBuildAction  $rollback  Validates and queues rollback deployment requests.
+     */
     public function __construct(private readonly RollbackBuildAction $rollback) {}
 
+    /**
+     * Queue restoration after an activated deployment fails with automatic rollback enabled.
+     *
+     * @param  Build  $failed  The failed build; rollback builds cannot trigger another automatic rollback.
+     * @return Build|null The queued rollback build, or null if disabled, no valid source exists, or queueing is rejected.
+     */
     public function attempt(Build $failed): ?Build
     {
         $failed->loadMissing(['environment', 'repository.user']);

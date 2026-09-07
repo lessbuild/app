@@ -12,6 +12,9 @@ use phpseclib4\Crypt\PublicKeyLoader;
 
 class ImportServerRequest extends FormRequest
 {
+    /**
+     * Allow server import submissions only when the user has deployment permission in the current workspace.
+     */
     public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;

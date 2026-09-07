@@ -10,6 +10,14 @@ use Symfony\Component\Yaml\Yaml;
 
 class ApplicationConfigurationDocument
 {
+    /**
+     * Parse and validate bounded version-2 YAML without aliases or secret-bearing parser diagnostics.
+     *
+     * @param  string  $yaml  Submitted YAML, limited to 50,000 bytes before parsing.
+     * @return array<string, mixed> Validated configuration with an environments map, including removal-only documents.
+     *
+     * @throws ValidationException For unsupported syntax, types, names, runtimes or structural limits.
+     */
     public function parse(string $yaml): array
     {
         if (strlen($yaml) > 50000) {
@@ -154,6 +162,16 @@ class ApplicationConfigurationDocument
         return $document;
     }
 
+    /**
+     * Validate a logical identifier using the appropriate environment or variable-name grammar.
+     *
+     * @param  mixed  $name  Untrusted identifier to validate.
+     * @param  bool  $variable  Use uppercase environment-variable syntax when true.
+     * @param  int  $maximumLength  Maximum permitted identifier length in bytes.
+     * @return void Return normally only for a valid bounded identifier.
+     *
+     * @throws ValidationException When the identifier is malformed.
+     */
     private function name(mixed $name, bool $variable = false, int $maximumLength = 100): void
     {
         if (! is_string($name) || strlen($name) > $maximumLength || ! preg_match($variable ? '/\A[A-Z_][A-Z0-9_]*\z/' : '/\A[a-z][a-z0-9_-]*\z/', $name)) {
@@ -161,6 +179,14 @@ class ApplicationConfigurationDocument
         }
     }
 
+    /**
+     * Require an actual YAML boolean for an explicitly supplied adoption flag.
+     *
+     * @param  array<string, mixed>  $settings  Environment or child settings that may contain adopt.
+     * @return void Leave valid or absent flags unchanged; reject coercible non-booleans.
+     *
+     * @throws ValidationException If adopt is present with another type.
+     */
     private function adoption(array $settings): void
     {
         if (array_key_exists('adopt', $settings) && ! is_bool($settings['adopt'])) {
@@ -168,6 +194,14 @@ class ApplicationConfigurationDocument
         }
     }
 
+    /**
+     * Bound parsed document size before wildcard validation expands nested collections.
+     *
+     * @param  array<string, mixed>  $document  The parsed YAML tree to traverse without modifying it.
+     * @return void Return after verifying no more than 10,000 nodes and depth 12.
+     *
+     * @throws ValidationException When a structural limit is exceeded.
+     */
     private function boundStructure(array $document): void
     {
         // Bound expanded YAML data before Laravel expands wildcard validation rules.
@@ -189,6 +223,13 @@ class ApplicationConfigurationDocument
         }
     }
 
+    /**
+     * Reject invalid configuration without returning submitted commands or parser details.
+     *
+     * @return never This method always throws.
+     *
+     * @throws ValidationException With the generic document error.
+     */
     private function invalid(): never
     {
         throw ValidationException::withMessages(['document' => 'Invalid version 2 application configuration.']);

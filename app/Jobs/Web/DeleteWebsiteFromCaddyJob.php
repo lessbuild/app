@@ -29,7 +29,11 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Retain the website identifier so soft-deleted placements remain available to the worker.
+     *
      * Create a new job instance.
+     *
+     * @param  int  $websiteId  Website identifier retained for lookup when the job runs.
      */
     public function __construct(int $websiteId)
     {
@@ -37,8 +41,11 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
     }
 
     /**
+     * Clean the previous placement before the current one, then permanently remove website, repository, build, and log records in a transaction; skip an already removed website.
+     *
      * Execute the job.
      *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
      *
      * @throws \Exception
      */
@@ -78,6 +85,11 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
         });
     }
 
+    /**
+     * Restore the soft-deleted website and record a bounded provisioning failure so incomplete remote cleanup remains visible.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         $website = Website::withTrashed()->find($this->websiteId);

@@ -87,6 +87,9 @@ class BuildsController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace deployment history, release provenance, and operator notes as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
@@ -150,6 +153,9 @@ class BuildsController extends Controller
         ]);
     }
 
+    /**
+     * Authorize build visibility and render its deployment page with repository and infrastructure context.
+     */
     public function show(Build $build): View
     {
         $this->authorize('view', $build);
@@ -160,6 +166,9 @@ class BuildsController extends Controller
         ]);
     }
 
+    /**
+     * Authorize two distinct builds in the same repository and render their comparison with a nullable duration delta.
+     */
     public function compare(Build $build, Build $baseline): View
     {
         $this->authorize('view', $build);
@@ -180,6 +189,9 @@ class BuildsController extends Controller
         ]);
     }
 
+    /**
+     * Authorize build visibility and return its deployment log as plain text, or fail with 404 when no log exists.
+     */
     public function downloadLog(Build $build, PlainTextLogDownload $download): Response
     {
         $this->authorize('view', $build);
@@ -192,6 +204,11 @@ class BuildsController extends Controller
         return $download->make($log->log, $filename);
     }
 
+    /**
+     * Authorize cancellation of queued work or its matching remote process while preserving any partial log.
+     *
+     * @return RedirectResponse The cancellation outcome, including concurrent completion or remote failure.
+     */
     public function cancel(
         Build $build,
         Runner $runner,
@@ -253,6 +270,9 @@ class BuildsController extends Controller
             : back()->with('info', __('The deployment finished before it could be canceled.'));
     }
 
+    /**
+     * Authorize reuse of a completed build and redirect to the queued redeployment or its blocking reason.
+     */
     public function redeploy(Build $build, RedeployBuildAction $redeploy): RedirectResponse
     {
         $this->authorize('redeploy', $build);
@@ -272,6 +292,11 @@ class BuildsController extends Controller
         };
     }
 
+    /**
+     * Validate an optional approval note and atomically approve an authorized build that is still eligible and awaiting review.
+     *
+     * @return RedirectResponse The dispatched deployment result or its current eligibility failure.
+     */
     public function approve(Request $request, Build $build, DeploymentRequest $deployments, DeploymentGate $gate, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('approve', $build);
@@ -315,6 +340,9 @@ class BuildsController extends Controller
         return back()->with('success', __('Deployment approved and queued.'));
     }
 
+    /**
+     * Authorize restoration of the bound release and redirect to its queued rollback or the blocking reason.
+     */
     public function rollback(Request $request, Build $build, RollbackBuildAction $rollback): RedirectResponse
     {
         $this->authorize('rollback', $build);
@@ -333,6 +361,11 @@ class BuildsController extends Controller
         };
     }
 
+    /**
+     * Validate an optional approval note and atomically reject an authorized build still awaiting review.
+     *
+     * @return RedirectResponse The rejection acknowledgement or a concurrent-state notice.
+     */
     public function reject(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('approve', $build);
@@ -367,6 +400,9 @@ class BuildsController extends Controller
             : back()->with('info', __('This deployment is no longer awaiting approval.'));
     }
 
+    /**
+     * Validate and normalize the authorized build's operator note, recording activity only when its value changes.
+     */
     public function updateNote(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('updateNote', $build);
@@ -472,6 +508,9 @@ class BuildsController extends Controller
                 ->whereDate('builds.created_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -491,6 +530,9 @@ class BuildsController extends Controller
         return [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY, Build::TRIGGER_ROLLBACK, Build::TRIGGER_SCHEDULED, Build::TRIGGER_API, Build::TRIGGER_PROMOTION];
     }
 
+    /**
+     * Mark unread informational approval notifications for the supplied build as read after a review decision.
+     */
     private function acknowledgeApprovalNotifications(Build $build): void
     {
         DatabaseNotification::query()
@@ -501,6 +543,9 @@ class BuildsController extends Controller
             ->update(['read_at' => now()]);
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);

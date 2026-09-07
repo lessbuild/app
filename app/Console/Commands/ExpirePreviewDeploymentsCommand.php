@@ -12,6 +12,12 @@ class ExpirePreviewDeploymentsCommand extends Command
 
     protected $description = 'Remove preview environments that exceeded their configured lifetime';
 
+    /**
+     * Expire active previews whose recorded activity exceeds the project's preview lifetime and report the count.
+     *
+     * @param  PreviewDeploymentLifecycle  $lifecycle  Service that tears down expired previews and records their lifecycle state.
+     * @return int SUCCESS after processing eligible preview deployments.
+     */
     public function handle(PreviewDeploymentLifecycle $lifecycle): int
     {
         $expired = 0;

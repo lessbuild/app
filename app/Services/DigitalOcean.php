@@ -34,26 +34,55 @@ class DigitalOcean implements ServerProvider
         $this->_API_TOKEN = $api_token;
     }
 
+    /**
+     * Identify this cloud provider for displays and diagnostics.
+     *
+     * @return string The DigitalOcean provider label.
+     */
     public function name(): string
     {
         return 'DigitalOcean';
     }
 
+    /**
+     * Read the available DigitalOcean region catalog.
+     *
+     * @return array<array-key, mixed> The provider's region entries from the corresponding catalog request.
+     */
     public function regions(): array
     {
         return $this->getRegions();
     }
 
+    /**
+     * Read the available DigitalOcean machine size catalog.
+     *
+     * @return array<array-key, mixed> The provider's machine size entries from the corresponding catalog request.
+     */
     public function sizes(): array
     {
         return $this->getSizes();
     }
 
+    /**
+     * Read the available DigitalOcean image catalog.
+     *
+     * @return array<array-key, mixed> The provider's image entries from the corresponding catalog request.
+     */
     public function images(): array
     {
         return $this->getImages();
     }
 
+    /**
+     * Register or reuse the supplied public SSH key and normalize its fingerprint.
+     *
+     * @param  string  $name  The provider-visible key label.
+     * @param  string  $publicKey  The OpenSSH public key to register.
+     * @return CloudSshKeyData The key fingerprint and whether the provider key was newly created.
+     *
+     * @throws Exception If the provider returns no usable fingerprint.
+     */
     public function createSshKey(string $name, string $publicKey): CloudSshKeyData
     {
         $sshKey = $this->createSSH([
@@ -72,6 +101,12 @@ class DigitalOcean implements ServerProvider
         );
     }
 
+    /**
+     * Remove a DigitalOcean SSH key by fingerprint.
+     *
+     * @param  string  $fingerprint  The provider key fingerprint.
+     * @return bool True when deletion succeeds or the key is already absent.
+     */
     public function deleteSshKey(string $fingerprint): bool
     {
         $response = $this->delete(self::$_KEYS.'/'.$fingerprint);
@@ -79,6 +114,12 @@ class DigitalOcean implements ServerProvider
         return in_array($response->status(), [204, 404]);
     }
 
+    /**
+     * Create a droplet and normalize the returned server identity.
+     *
+     * @param  array<string, mixed>  $parameters  The provider-specific droplet creation payload.
+     * @return CloudServerData The normalized droplet details, including available network addresses.
+     */
     public function createServer(array $parameters): CloudServerData
     {
         $response = $this->createDroplet($parameters);
@@ -86,11 +127,23 @@ class DigitalOcean implements ServerProvider
         return $this->serverData($response['droplet'] ?? null);
     }
 
+    /**
+     * Fetch a droplet and normalize its current state.
+     *
+     * @param  int|string  $identifier  The droplet's numeric identifier, accepting a numeric string.
+     * @return CloudServerData The normalized server details.
+     */
     public function server(int|string $identifier): CloudServerData
     {
         return $this->serverData($this->getDroplet((int) $identifier));
     }
 
+    /**
+     * Destroy a droplet by its provider identifier.
+     *
+     * @param  int|string  $identifier  The droplet's numeric identifier, accepting a numeric string.
+     * @return bool Whether the provider deletion helper reports success.
+     */
     public function deleteServer(int|string $identifier): bool
     {
         return $this->destroyDroplet((int) $identifier);
@@ -311,6 +364,12 @@ class DigitalOcean implements ServerProvider
         return $data;
     }
 
+    /**
+     * Build a bounded diagnostic exception from a failed provider response.
+     *
+     * @param  Response  $response  The unsuccessful DigitalOcean HTTP response.
+     * @return Exception An exception containing the HTTP status and optional bounded provider message.
+     */
     private function apiException(Response $response): Exception
     {
         $message = $response->json('message');
@@ -345,6 +404,12 @@ class DigitalOcean implements ServerProvider
             : null;
     }
 
+    /**
+     * Decode the binary key blob from an OpenSSH public key.
+     *
+     * @param  string  $publicKey  The key algorithm, base64 payload and optional comment.
+     * @return string|null The decoded nonempty key bytes, or null for malformed input.
+     */
     private function publicKeyBlob(string $publicKey): ?string
     {
         $parts = preg_split('/\s+/', trim($publicKey));
@@ -357,6 +422,14 @@ class DigitalOcean implements ServerProvider
         return $decoded === false || $decoded === '' ? null : $decoded;
     }
 
+    /**
+     * Validate a droplet response and translate it to the shared server representation.
+     *
+     * @param  mixed  $droplet  The decoded provider droplet object.
+     * @return CloudServerData The normalized identity, catalog labels and IPv4 addresses.
+     *
+     * @throws Exception If required server fields are missing.
+     */
     private function serverData(mixed $droplet): CloudServerData
     {
         if (! is_array($droplet)

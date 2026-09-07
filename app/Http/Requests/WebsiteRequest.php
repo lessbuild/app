@@ -12,6 +12,9 @@ use Illuminate\Validation\Rule;
 
 class WebsiteRequest extends FormRequest
 {
+    /**
+     * Allow website submissions only when the user has deployment permission in the current workspace.
+     */
     public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
@@ -65,6 +68,11 @@ class WebsiteRequest extends FormRequest
         ];
     }
 
+    /**
+     * Explain that website placement requires an active application server with MySQL configured.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
@@ -72,6 +80,9 @@ class WebsiteRequest extends FormRequest
         ];
     }
 
+    /**
+     * Normalize the hostname and health path, coerce monitoring toggles, and retain or default monitoring and retention values.
+     */
     protected function prepareForValidation(): void
     {
         $url = trim((string) $this->input('url'));

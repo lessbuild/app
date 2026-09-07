@@ -10,11 +10,25 @@ use Illuminate\Support\Facades\DB;
 
 class DeploymentLauncher
 {
+    /**
+     * Bind build snapshot creation and environment deployment gates.
+     *
+     * @param  DeploymentRequest  $deployments  Captures build attributes and dispatches queued builds.
+     * @param  DeploymentGate  $gate  Resolves environment-level deployment restrictions.
+     */
     public function __construct(
         private readonly DeploymentRequest $deployments,
         private readonly DeploymentGate $gate,
     ) {}
 
+    /**
+     * Reserve a build under website/repository locks and dispatch it after the transaction.
+     *
+     * @param  Repository  $repository  Readiness and gates are checked before locking; website association and active deployments are rechecked under lock.
+     * @param  User|null  $requester  The requesting account, or null for an unattended trigger.
+     * @param  string  $source  The persisted trigger source, defaulting to manual.
+     * @return Build|null The created build, or null if readiness, environment gates or active-deployment checks reject it.
+     */
     public function launch(Repository $repository, ?User $requester, string $source = Build::TRIGGER_MANUAL): ?Build
     {
         if (! $repository->isDeploymentReady() || $this->gate->blockReason($repository)) {

@@ -75,6 +75,17 @@ class ProvisioningScriptRenderer
         );
     }
 
+    /**
+     * Resolve ordered provisioning scripts, enforce their contract and concatenate rendered stages.
+     *
+     * @param  list<class-string>  $scripts  The ordered script implementation classes.
+     * @param  class-string  $contract  The interface or base class required of every resolved script.
+     * @param  callable(object, int): string  $render  Renders one script instance at its assigned stage.
+     * @param  int  $firstStep  The stage number added to each zero-based list index.
+     * @return string The concatenated provisioning shell source.
+     *
+     * @throws LogicException If a resolved script does not implement the required contract.
+     */
     private function render(array $scripts, string $contract, callable $render, int $firstStep = 1): string
     {
         $output = '';

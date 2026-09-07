@@ -8,6 +8,13 @@ use App\Services\ProvisioningCallbackUrl;
 
 abstract class WebsiteProvisioningScript implements WebsiteScript
 {
+    /**
+     * Render log-upload and signed website progress commands.
+     *
+     * @param  int  $step  The provisioning stage to report.
+     * @param  Website  $website  The website supplying the callback identity.
+     * @return string Shell commands to upload the log and submit stage progress.
+     */
     protected function progress(int $step, Website $website): string
     {
         $callback = escapeshellarg(ProvisioningCallbackUrl::websiteStatus($website));

@@ -22,6 +22,9 @@ class ServerShow extends Component
 
     public Server $server;
 
+    /**
+     * Retain the requested server and default unfinished servers to provisioning logs when no log query is supplied.
+     */
     public function mount(Server $server): void
     {
         $this->server = $server;
@@ -31,6 +34,11 @@ class ServerShow extends Component
         }
     }
 
+    /**
+     * Authorize updates and queue the selected server log snapshot when provisioning is complete.
+     *
+     * An inactive server adds a component validation error and queues no collection job.
+     */
     public function refreshLogs(): void
     {
         Gate::authorize('update', $this->server);
@@ -54,12 +62,18 @@ class ServerShow extends Component
         RefreshServerLogJob::dispatch($this->server->id, $this->log);
     }
 
+    /**
+     * Authorize server updates and queue collection of a new metrics sample.
+     */
     public function refreshMetrics(): void
     {
         Gate::authorize('update', $this->server);
         CollectServerMetricsJob::dispatch($this->server->id);
     }
 
+    /**
+     * Refresh and authorize server visibility, then render bounded metric history, selected logs, and polling state.
+     */
     public function render(): View
     {
         $this->server->refresh();
@@ -99,6 +113,9 @@ class ServerShow extends Component
         ])->layout('components.layouts.app');
     }
 
+    /**
+     * Return the requested supported log type, falling back to apt for unrecognized component input.
+     */
     private function selectedLogType(): string
     {
         return in_array($this->log, CollectServerLogAction::TYPES, true) ? $this->log : 'apt';

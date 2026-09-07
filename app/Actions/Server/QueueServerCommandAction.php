@@ -12,6 +12,18 @@ use Illuminate\Validation\ValidationException;
 
 class QueueServerCommandAction
 {
+    /**
+     * Lock an active server, enforce ownership and a single active command, and queue an encrypted execution after the transaction commits.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @param  User  $user  Owner requesting the command execution.
+     * @param  string  $command  Shell command to encrypt and queue unless a rerun source replaces it.
+     * @param  int|null  $rerunFromExecutionId  Optional finished execution on this server whose stored command should be reused.
+     * @return ServerCommandExecution The persisted queued execution, containing the original command when rerunning a finished execution.
+     *
+     * @throws AuthorizationException If the requesting user does not own the server.
+     * @throws ValidationException If the server, active-command state, or rerun source is ineligible.
+     */
     public function handle(
         Server $server,
         User $user,

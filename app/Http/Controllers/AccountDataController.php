@@ -8,6 +8,11 @@ use Illuminate\Http\Request;
 
 class AccountDataController extends Controller
 {
+    /**
+     * Download uncached account, membership, current-workspace resource metadata, and sign-in history as JSON.
+     *
+     * Credentials, environment secrets, private keys, command contents, and retained logs are excluded.
+     */
     public function export(Request $request): JsonResponse
     {
         $user = $request->user();

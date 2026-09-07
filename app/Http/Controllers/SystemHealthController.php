@@ -9,6 +9,9 @@ use Illuminate\Http\Response;
 
 class SystemHealthController extends Controller
 {
+    /**
+     * Render a fresh, uncached health snapshot for a workspace manager.
+     */
     public function __invoke(Request $request, SystemHealth $systemHealth): Response
     {
         $this->authorizeAccess($request);
@@ -25,6 +28,9 @@ class SystemHealthController extends Controller
         ]);
     }
 
+    /**
+     * Download a fresh health snapshot as JSON after checking workspace management access.
+     */
     public function report(Request $request, SystemHealth $systemHealth): JsonResponse
     {
         $this->authorizeAccess($request);
@@ -47,6 +53,9 @@ class SystemHealthController extends Controller
         ]);
     }
 
+    /**
+     * Require the request user to manage their current workspace; abort with 403 otherwise.
+     */
     private function authorizeAccess(Request $request): void
     {
         $organization = $request->user()->currentOrganization;

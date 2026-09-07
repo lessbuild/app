@@ -8,6 +8,9 @@ use Illuminate\Http\Response;
 
 class AdminAnalyticsController extends Controller
 {
+    /**
+     * Require platform administration and render an uncached business analytics snapshot.
+     */
     public function __invoke(Request $request, BusinessAnalytics $analytics): Response
     {
         abort_unless($request->user()->isPlatformAdmin(), 403);

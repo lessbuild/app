@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\DB;
 
 class RollbackBuildAction
 {
+    /**
+     * Lock the website and repository, validate a retained successful release, and queue a rollback build with the requester recorded as approver.
+     *
+     * @param  Build  $source  Successful build retaining the release name and path to reactivate.
+     * @param  User  $requester  User already authorized by the caller to request and approve the rollback.
+     * @return BuildRedeploymentResult The ineligible, unavailable, active, or queued result, including the rollback build when accepted.
+     */
     public function handle(Build $source, User $requester): BuildRedeploymentResult
     {
         $result = DB::transaction(function () use ($source, $requester): BuildRedeploymentResult {

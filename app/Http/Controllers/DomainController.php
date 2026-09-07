@@ -17,6 +17,9 @@ use Throwable;
 
 class DomainController extends Controller
 {
+    /**
+     * Render workspace websites, domain records, DNS providers, and domain-management availability.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -29,6 +32,11 @@ class DomainController extends Controller
         ]);
     }
 
+    /**
+     * Normalize and validate a hostname, alias/redirect type, and optional workspace Cloudflare provider.
+     *
+     * @return RedirectResponse The saved domain result after DNS synchronization and queued proxy configuration.
+     */
     public function store(Request $request, CloudflareDns $cloudflare): RedirectResponse
     {
         $website = $this->website($request);
@@ -53,6 +61,11 @@ class DomainController extends Controller
         return back()->with($warning ? 'warning' : 'success', $warning ?: __('Domain added. Caddy will request its TLS certificate automatically.'));
     }
 
+    /**
+     * Issue a unique hostname beneath the configured temporary domain for an editable workspace website.
+     *
+     * @return RedirectResponse A DNS outcome or a missing-base-domain validation error.
+     */
     public function temporary(Request $request, CloudflareDns $cloudflare): RedirectResponse
     {
         $website = $this->website($request);
@@ -80,6 +93,9 @@ class DomainController extends Controller
         return back()->with($warning ? 'warning' : 'success', $warning ?: __('Temporary domain issued.'));
     }
 
+    /**
+     * Authorize the domain's website and redirect with the Cloudflare synchronization result or missing-provider error.
+     */
     public function sync(WebsiteDomain $domain, CloudflareDns $cloudflare): RedirectResponse
     {
         $this->authorize('update', $domain->website);
@@ -91,6 +107,11 @@ class DomainController extends Controller
         return back()->with($warning ? 'warning' : 'success', $warning ?: __('DNS record synchronized.'));
     }
 
+    /**
+     * Authorize and remove a non-primary domain after DNS deletion succeeds, then queue proxy configuration.
+     *
+     * @return RedirectResponse The deletion result; a DNS failure preserves the domain record.
+     */
     public function destroy(WebsiteDomain $domain, CloudflareDns $cloudflare): RedirectResponse
     {
         $this->authorize('update', $domain->website);
@@ -107,11 +128,19 @@ class DomainController extends Controller
         return back()->with('success', __('Domain removed.'));
     }
 
+    /**
+     * Resolve submitted website_id within the requesting user's workspace, or fail with 404.
+     */
     private function website(Request $request): Website
     {
         return $request->user()->workspaceWebsites()->findOrFail((int) $request->input('website_id'));
     }
 
+    /**
+     * Synchronize the domain's DNS record when a provider is attached.
+     *
+     * @return string|null A manual-DNS or failed-sync warning; null when synchronization succeeds.
+     */
     private function syncDns(WebsiteDomain $domain, CloudflareDns $cloudflare): ?string
     {
         if (! $domain->dns_provider_id) {

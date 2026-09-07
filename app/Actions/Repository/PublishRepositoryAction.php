@@ -21,8 +21,14 @@ class PublishRepositoryAction extends Publishable
     private RepositoryDeploymentPlan $plan;
 
     /**
+     * Bind the build and its server to the deployment plan and remote script renderer.
+     *
      * Publish Repository Action constructor
      *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     * @param  ProvisioningScriptRenderer|null  $renderer  Optional provisioning script renderer; null uses the application default.
+     * @param  RepositoryDeploymentPlan|null  $plan  Optional ordered step plan; null resolves the corresponding application plan.
      *
      * @throws \Exception
      */
@@ -45,7 +51,11 @@ class PublishRepositoryAction extends Publishable
      * @throws \Exception
      */
     /**
-     * @return array{id: int, path: string}
+     * Render and upload the deployment script, then launch it in the background with build callbacks and remote logging.
+     *
+     * @return array{id: int, path: string} Validated positive remote process ID and the uploaded script path used for later cancellation.
+     *
+     * @throws \RuntimeException If remote startup does not return a valid positive process ID.
      */
     public function handle(): array
     {

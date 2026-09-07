@@ -6,6 +6,15 @@ use App\Models\Repository;
 
 class ApplicationConfigurationRepositoryIdentity
 {
+    /**
+     * Derive the keyed identity used to deduplicate equivalent deployment intents.
+     *
+     * @param  string  $repositoryFingerprint  The captured source/deployment identity of the repository.
+     * @param  array{environment_payload: mixed, status: string}  $attributes  Captured environment payload and initial build status; other attributes do not affect the digest.
+     * @return string A SHA-256 HMAC covering source identity, payload and status.
+     *
+     * @throws \JsonException If the captured values cannot be encoded.
+     */
     public static function intentDigest(string $repositoryFingerprint, array $attributes): string
     {
         return hash_hmac('sha256', json_encode([

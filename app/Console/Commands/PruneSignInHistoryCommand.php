@@ -12,6 +12,11 @@ class PruneSignInHistoryCommand extends Command
 
     protected $description = 'Prune successful sign-in history older than the configured retention window';
 
+    /**
+     * Delete sign-in events older than the configured retention in bounded batches.
+     *
+     * @return int SUCCESS after pruning, or FAILURE when retention is not a positive integer.
+     */
     public function handle(): int
     {
         $days = $this->retentionDays();
@@ -38,6 +43,11 @@ class PruneSignInHistoryCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve the optional days argument against the configured retention and require a positive integer.
+     *
+     * @return int|null Validated retention in days, or null when the option or configured default is invalid.
+     */
     private function retentionDays(): ?int
     {
         $value = $this->option('days');

@@ -12,6 +12,11 @@ use Illuminate\Http\Request;
 
 class GitHubAppWebhookController extends Controller
 {
+    /**
+     * Authenticate a bounded GitHub App payload and locate its installation-owned repository.
+     *
+     * @return JsonResponse A ping acknowledgement or the repository webhook processing result.
+     */
     public function __invoke(
         Request $request,
         RepositoryWebhookController $webhooks,

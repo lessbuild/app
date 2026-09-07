@@ -7,6 +7,13 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class PlainTextLogDownload
 {
+    /**
+     * Return log contents as a private, noncacheable plain-text attachment.
+     *
+     * @param  string  $contents  The log bytes to include in the response body.
+     * @param  string  $filename  The attachment filename validated by HeaderUtils.
+     * @return Response A successful download response with MIME sniffing disabled.
+     */
     public function make(string $contents, string $filename): Response
     {
         return response($contents, 200, [

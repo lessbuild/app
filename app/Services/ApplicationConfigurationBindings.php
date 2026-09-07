@@ -13,6 +13,18 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationBindings
 {
+    /**
+     * Resolve logical names to authorized workspace targets and current secret/repository fingerprints.
+     *
+     * @param  Project  $project  The configuration target and workspace boundary.
+     * @param  User  $user  The member who must currently have manage access in that workspace.
+     * @param  array<string, mixed>  $document  A parsed version-2 document declaring placements and references.
+     * @param  array<string, array<string, int>>  $bindings  Logical placement, secret and repository names mapped to stored IDs.
+     * @return array{placements: array<string, array<string, mixed>>, secrets: array<string, array{variable_id: int, version: int}>, repositories: array<string, array{repository_id: int, fingerprint: string}>} Resolved identities without plaintext secret values.
+     *
+     * @throws AuthorizationException If the member cannot manage the target workspace.
+     * @throws ValidationException If a binding is malformed, unavailable or incompatible.
+     */
     public function resolve(Project $project, User $user, array $document, array $bindings): array
     {
         if ((int) $user->current_organization_id !== (int) $project->organization_id
@@ -97,6 +109,13 @@ class ApplicationConfigurationBindings
         return $resolved;
     }
 
+    /**
+     * Reject a binding without disclosing cross-workspace existence or secret metadata.
+     *
+     * @return never This method always throws.
+     *
+     * @throws ValidationException With the generic bindings error.
+     */
     private function invalid(): never
     {
         throw ValidationException::withMessages(['bindings' => 'A required binding is unavailable or incompatible in this workspace.']);

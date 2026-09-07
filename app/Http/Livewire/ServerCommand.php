@@ -21,12 +21,18 @@ class ServerCommand extends Component
 
     public Server $model;
 
+    /**
+     * Authorize server visibility before retaining the server used by subsequent command actions.
+     */
     public function mount(Server $model): void
     {
         Gate::authorize('view', $model);
         $this->model = $model;
     }
 
+    /**
+     * Require an editable, currently active server before displaying its command dialog.
+     */
     public function open(): void
     {
         Gate::authorize('update', $this->model);
@@ -35,6 +41,9 @@ class ServerCommand extends Component
         $this->open = true;
     }
 
+    /**
+     * Hide the command dialog and clear its command input and validation errors.
+     */
     public function close(): void
     {
         $this->open = false;
@@ -42,6 +51,11 @@ class ServerCommand extends Component
         $this->resetValidation();
     }
 
+    /**
+     * Authorize the server and validate a nonempty, bounded command without null bytes before queuing it.
+     *
+     * The command input is cleared after queueing; validation failures remain on the component.
+     */
     public function run(QueueServerCommandAction $queue): void
     {
         $user = auth()->user();
@@ -58,6 +72,11 @@ class ServerCommand extends Component
         $this->reset('command');
     }
 
+    /**
+     * Resolve an execution ID within the editable server and attempt queued-command cancellation.
+     *
+     * A missing execution returns 404; an execution that can no longer be canceled adds a component error.
+     */
     public function cancel(int $executionId, CancelServerCommandAction $cancel): void
     {
         $user = auth()->user();
@@ -70,6 +89,9 @@ class ServerCommand extends Component
         }
     }
 
+    /**
+     * Resolve an execution ID within the editable server and queue its command with rerun provenance.
+     */
     public function rerun(int $executionId, QueueServerCommandAction $queue): void
     {
         $user = auth()->user();

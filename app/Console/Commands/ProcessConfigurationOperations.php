@@ -15,6 +15,13 @@ class ProcessConfigurationOperations extends Command
 
     protected $description = 'Deliver due configuration operations and reconcile recorded deployment outcomes';
 
+    /**
+     * Deliver available configuration operations and refresh their receipts; record processing failures and defer them for retry.
+     *
+     * @param  ApplicationConfigurationDelivery  $delivery  Service that dispatches durable configuration operations to their execution handlers.
+     * @param  ApplicationConfigurationResults  $results  Service that refreshes operation and revision receipts from retained execution outcomes.
+     * @return int SUCCESS when the batch processes without errors, otherwise FAILURE for invalid limits or processing failures.
+     */
     public function handle(ApplicationConfigurationDelivery $delivery, ApplicationConfigurationResults $results): int
     {
         $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT);

@@ -10,8 +10,22 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationReviews
 {
+    /**
+     * Bind mutation-free planning used when creating and validating saved reviews.
+     *
+     * @param  ApplicationConfigurationPlanner  $planner  Resolves and fingerprints the proposed configuration and current state.
+     */
     public function __construct(private readonly ApplicationConfigurationPlanner $planner) {}
 
+    /**
+     * Persist an encrypted immutable review after validating the proposal against current workspace state.
+     *
+     * @param  Project  $project  The project receiving the proposed configuration.
+     * @param  User  $user  The requesting member whose access is checked by planning.
+     * @param  string  $yaml  Submitted version-2 document saved for exact later application.
+     * @param  array<string, array<string, int>>  $bindings  Logical placement, secret and repository mappings.
+     * @return ConfigurationReview The saved review with its plan summary and a 15-minute expiry.
+     */
     public function create(Project $project, User $user, string $yaml, array $bindings): ConfigurationReview
     {
         $summary = $this->planner->plan($project, $user, $yaml, $bindings);

@@ -26,7 +26,12 @@ final class NotificationInbox
         'account',
     ];
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Validate notification resource identifiers and map supported categories to their application destinations.
+     *
+     * @param  array<string, mixed>  $data  Persisted inbox payload containing a category, resource_id, and optional report_id.
+     * @return string|null The related application URL, optionally with a report anchor, or null for an invalid resource or unsupported category.
+     */
     public static function destination(array $data): ?string
     {
         $resourceId = filter_var($data['resource_id'] ?? null, FILTER_VALIDATE_INT, [

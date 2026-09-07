@@ -1,5 +1,14 @@
 # BuildPusher chat handoff
 
+## Documentation and authentication checkpoint — 2026-09-07
+
+The follow-up to `ed9182c` completes the missing method documentation and fixes a recovery-code consumption race. See [the verification record](verification/method-contracts-and-recovery-codes-2026-09-07.md). Publication to GitHub remains authorized; inspect the final commit and remote state for its exact publication identity.
+
+- All **1,491 class methods across 423 app PHP files** now have PHPDoc, with zero missing native parameter/return types (constructor/destructor returns excluded). Added 851 docblocks and expanded 40 existing contracts; corrected the recipe-validation return annotation to admit its rule objects. Existing comments and executable behavior were preserved apart from the explicit authentication fix.
+- Consuming recovery-code verification now returns the locked check/removal result, so two stale user instances cannot both accept one code. The regression failed against the old implementation; four authentication suites pass **21 tests / 157 assertions** after the fix. The preceding full-suite/browser results below were not rerun wholesale for this follow-up.
+- The [dependency feasibility audit](dependency-latest-blockers-2026-09-06.md) independently confirms that all-latest official stable dependencies remain impossible under current Laravel/Ramsey, OAuth, Ignition and frontend-tool constraints. The broader modernization goal remains active; do not equate newest-compatible locks with literal all-latest completion.
+- No dependency manifests, lockfiles, deployment configuration or database schema changed in this follow-up. No live migrations, paid-provider actions or deployment occurred. The CI template remains inactive pending GitHub workflow permission.
+
 ## Modernization checkpoint — 2026-09-06
 
 Configuration as code was completed and published in `b6ee620`. The subsequent modernization refactors and dependency upgrades are verified; see [the implementation and verification record](laravel-modernization-2026-09-06.md). Inspect Git history for the publication commit rather than treating historical uncommitted-work notes below as current.
@@ -7,7 +16,7 @@ Configuration as code was completed and published in `b6ee620`. The subsequent m
 - Full suite: **1,165 tests / 10,643 assertions**, all 205 Unit/Feature files, zero failures/errors/skips/warnings/deprecations. Browser coverage: **48 layouts**. Formatting, route caching, clean asset build and dependency audits passed.
 - Laravel 13 / Livewire 4 / PHP 8.5 / PHPUnit 13 / phpseclib 4 / Tailwind 4 / Vite 8; newest compatible dependencies are locked. Six PHP packages and several npm transitive dependencies retain documented upstream constraints. See the PHP/frontend records linked from the implementation record.
 - Dedicated callback controllers, model bindings and ownership guards, all 14 scopes extracted, separate presenters, domain enums preserving string APIs, named billing listener, native method types and model documentation, shared CSV/IP helpers, receipt/status/history query improvements, callback concurrency/numeric-string fixes and revoked-session redirect compatibility are implemented.
-- Existing comments/code were preserved or moved with their implementation. No `strict_types` declarations were added. Not every legacy method has a PHPDoc block; the signature audit and documentation coverage are described precisely in the verification record.
+- Existing comments/code were preserved or moved with their implementation. No `strict_types` declarations were added. The September 7 follow-up above closes the remaining PHPDoc coverage gaps.
 - PHP 8.5 is required before deploying this checkout. The system PHP/FPM/services were not changed. Session serialization and browser/runtime prerequisites are documented. The six configuration migrations remain a separate rollout requirement; no paid-provider actions, real configuration operations or persistent-database migrations were run.
 - GitHub publication is authorized by the user's push request. Publication does not deploy the application. No preview-environment backlog feature was started.
 - GitHub refused the active CI workflow because the connection lacks `workflow` scope. Its complete definition is published as the inactive `docs/ci/verify.yml` template. The original commit with the active workflow is preserved on local branch `local/modernization-with-ci-20260906`; activation instructions are in `docs/ci/README.md`.

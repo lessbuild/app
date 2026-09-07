@@ -68,12 +68,29 @@ class ApplicationConfigurationRemovalPlan
         return $changes;
     }
 
+    /**
+     * Describe a local removal or detachment with explicit remote-effect boundaries.
+     *
+     * @param  string  $slug  Logical environment containing the change.
+     * @param  string  $kind  Resource category shown in the plan.
+     * @param  string  $name  Logical resource name.
+     * @param  string  $action  Planned local action.
+     * @return array{environment: string, kind: string, name: string, action: string, fields: array{}, remote_data_deleted: false, remote_services_changed: false} A mutation-free plan entry.
+     */
     private function change(string $slug, string $kind, string $name, string $action): array
     {
         return ['environment' => $slug, 'kind' => $kind, 'name' => $name, 'action' => $action,
             'fields' => [], 'remote_data_deleted' => false, 'remote_services_changed' => false];
     }
 
+    /**
+     * Reject an unsafe removal with an operator-facing plan error.
+     *
+     * @param  string  $message  A sanitized reason why the local removal cannot proceed.
+     * @return never This method always throws.
+     *
+     * @throws ValidationException With the supplied plan error.
+     */
     private function invalid(string $message): never
     {
         throw ValidationException::withMessages(['plan' => $message]);

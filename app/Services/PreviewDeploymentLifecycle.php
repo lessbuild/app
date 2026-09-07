@@ -16,12 +16,26 @@ use Illuminate\Support\Str;
 
 class PreviewDeploymentLifecycle
 {
+    /**
+     * Bind resource limits, deployment requests and plan features for preview lifecycle actions.
+     *
+     * @param  PlanLimits  $limits  Checks workspace website capacity before preview creation.
+     * @param  DeploymentRequest  $deployments  Captures and dispatches preview builds.
+     * @param  Entitlements  $entitlements  Checks whether the workspace plan permits previews.
+     */
     public function __construct(
         private readonly PlanLimits $limits,
         private readonly DeploymentRequest $deployments,
         private readonly Entitlements $entitlements,
     ) {}
 
+    /**
+     * Apply a verified pull-request event to the matching preview and queue its next lifecycle step.
+     *
+     * @param  Repository  $source  The repository whose configured project supplies preview settings.
+     * @param  VerifiedRepositoryWebhook  $webhook  A verified repository event with preview identity, action and revision.
+     * @return string The resulting preview status, or a reason the event was ignored or rejected.
+     */
     public function handle(Repository $source, VerifiedRepositoryWebhook $webhook): string
     {
         if (! $webhook->isPreviewEvent()) {
@@ -97,6 +111,12 @@ class PreviewDeploymentLifecycle
         return $preview->status;
     }
 
+    /**
+     * Queue the latest preview revision after website provisioning completes.
+     *
+     * @param  Website  $website  The provisioned website used to locate its preview.
+     * @return void No value; skips missing or closed previews.
+     */
     public function websiteReady(Website $website): void
     {
         $preview = PreviewDeployment::query()->where('website_id', $website->id)->first();
@@ -105,6 +125,12 @@ class PreviewDeploymentLifecycle
         }
     }
 
+    /**
+     * Mark active previews for the website as failed after provisioning failure.
+     *
+     * @param  Website  $website  The website whose nonclosed preview records should be updated.
+     * @return void No value; closed previews retain their status.
+     */
     public function websiteFailed(Website $website): void
     {
         PreviewDeployment::query()
@@ -113,6 +139,12 @@ class PreviewDeploymentLifecycle
             ->update(['status' => PreviewDeployment::STATUS_FAILED]);
     }
 
+    /**
+     * Reconcile a finished preview build with its current desired revision.
+     *
+     * @param  Build  $build  The finished build used to locate the preview and compare revisions.
+     * @return void No value; marks readiness/failure, queues a newer revision or attempts closed-preview cleanup.
+     */
     public function buildFinished(Build $build): void
     {
         $preview = PreviewDeployment::query()->where('repository_id', $build->repository_id)->first();
@@ -139,6 +171,12 @@ class PreviewDeploymentLifecycle
         ReportGitHubPreviewJob::dispatch($preview->id);
     }
 
+    /**
+     * Close a preview, enqueue its GitHub report and attempt website cleanup.
+     *
+     * @param  PreviewDeployment  $preview  The preview whose closed timestamp and status are recorded.
+     * @return void No value; website deletion is deferred while a deployment remains active.
+     */
     public function expire(PreviewDeployment $preview): void
     {
         $preview->update(['status' => PreviewDeployment::STATUS_CLOSED, 'closed_at' => now()]);
@@ -146,6 +184,16 @@ class PreviewDeploymentLifecycle
         $this->deleteWebsiteWhenIdle($preview);
     }
 
+    /**
+     * Create preview website, repository and environment records from the selected source.
+     *
+     * @param  Project  $project  The preview-enabled project and workspace owner.
+     * @param  Environment  $baseEnvironment  The nonpreview environment supplying server placement.
+     * @param  Repository  $source  The source repository whose website settings and hooks are copied.
+     * @param  VerifiedRepositoryWebhook  $webhook  The verified pull-request details used for preview identity and revision.
+     * @param  PreviewDeployment|null  $preview  An existing preview record to repoint, or null to create one.
+     * @return PreviewDeployment The created or updated preview record; the caller supplies the surrounding transaction.
+     */
     private function create(
         Project $project,
         Environment $baseEnvironment,
@@ -219,6 +267,12 @@ class PreviewDeploymentLifecycle
         return PreviewDeployment::query()->create($attributes);
     }
 
+    /**
+     * Create and dispatch a preview build when its repository is ready and idle.
+     *
+     * @param  PreviewDeployment  $preview  The preview reloaded for current revision and repository readiness.
+     * @return void No value; skips repositories that are unready or already deploying.
+     */
     private function queueLatest(PreviewDeployment $preview): void
     {
         $preview->refresh()->loadMissing('repository.website.server');
@@ -235,6 +289,13 @@ class PreviewDeploymentLifecycle
         $this->deployments->dispatch($build);
     }
 
+    /**
+     * Find and expire the preview for one source pull request.
+     *
+     * @param  Repository  $source  The repository used to scope the preview lookup.
+     * @param  int  $number  The source pull-request number.
+     * @return string The closed status, or preview_not_found if no preview exists.
+     */
     private function close(Repository $source, int $number): string
     {
         $preview = PreviewDeployment::query()
@@ -249,6 +310,12 @@ class PreviewDeploymentLifecycle
         return PreviewDeployment::STATUS_CLOSED;
     }
 
+    /**
+     * Soft-delete the preview website once no active deployment remains.
+     *
+     * @param  PreviewDeployment  $preview  The preview whose website may be cleaned up.
+     * @return void No value; missing, already deleted and busy websites are skipped.
+     */
     private function deleteWebsiteWhenIdle(PreviewDeployment $preview): void
     {
         $website = $preview->website;

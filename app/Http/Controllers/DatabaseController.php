@@ -17,8 +17,14 @@ use Illuminate\View\View;
 
 class DatabaseController extends Controller
 {
+    /**
+     * Use workspace resource entitlements to gate database inspection and management.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render current-workspace database resources, bounded snapshot and clone history, and management availability.
+     */
     public function index(Request $request): View
     {
         $resources = EnvironmentResource::query()
@@ -36,6 +42,9 @@ class DatabaseController extends Controller
         ]);
     }
 
+    /**
+     * Require visibility and resource entitlement for a supported database, then queue a fresh inspection snapshot.
+     */
     public function inspect(EnvironmentResource $resource): RedirectResponse
     {
         $this->ensureResourceAbility($resource, 'view');
@@ -46,6 +55,11 @@ class DatabaseController extends Controller
         return back()->with('success', __('Database inspection queued.'));
     }
 
+    /**
+     * Validate a unique database username, privilege, and optional expiry for an authorized resource, then queue creation.
+     *
+     * @return RedirectResponse The generated password flashed for one-time display.
+     */
     public function storeUser(Request $request, EnvironmentResource $resource): RedirectResponse
     {
         $this->ensureResourceAbility($resource, 'manage');
@@ -69,6 +83,9 @@ class DatabaseController extends Controller
         return back()->with('success', __('Database user queued. Copy the password now; it will not be shown again.'))->with('databasePassword', $password);
     }
 
+    /**
+     * Require resource management permission and entitlement, then queue removal of the bound database user.
+     */
     public function destroyUser(DatabaseUser $databaseUser): RedirectResponse
     {
         $this->ensureResourceAbility($databaseUser->resource, 'manage');
@@ -78,6 +95,11 @@ class DatabaseController extends Controller
         return back()->with('success', __('Database user removal queued.'));
     }
 
+    /**
+     * Validate a distinct same-type non-production target in the source workspace and require its exact name as confirmation.
+     *
+     * @return RedirectResponse A queued replacement result or a confirmation validation error.
+     */
     public function clone(Request $request, EnvironmentResource $resource): RedirectResponse
     {
         $this->ensureResourceAbility($resource, 'manage');
@@ -105,6 +127,9 @@ class DatabaseController extends Controller
         return back()->with('success', __('Database clone queued. The target will be replaced.'));
     }
 
+    /**
+     * Require the resource's environment to belong to the current workspace and the user to hold the requested ability.
+     */
     private function ensureResourceAbility(EnvironmentResource $resource, string $ability): void
     {
         $environment = $resource->environment()->with('project.organization')->firstOrFail();

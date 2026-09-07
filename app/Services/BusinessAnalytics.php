@@ -11,8 +11,18 @@ use Laravel\Cashier\Subscription;
 
 class BusinessAnalytics
 {
+    /**
+     * Bind plan-denial telemetry for the business dashboard.
+     *
+     * @param  MonetizationTelemetry  $telemetry  Supplies daily feature-denial counts.
+     */
     public function __construct(private readonly MonetizationTelemetry $telemetry) {}
 
+    /**
+     * Aggregate account, subscription and deployment activity over the current 30-day window.
+     *
+     * @return array<string, mixed> Dashboard totals, plan distribution, daily trends and generation time; MRR is estimated from configured prices.
+     */
     public function snapshot(): array
     {
         $start = now()->startOfDay()->subDays(29);

@@ -26,7 +26,11 @@ class AddWebsiteJob implements ShouldQueue
     public ?string $attemptToken;
 
     /**
+     * Capture the website and provisioning token so stale queued jobs cannot claim a later retry.
+     *
      * Create a new job instance.
+     *
+     * @param  Website  $website  Website supplying its provisioning state and managed placement.
      */
     public function __construct(Website $website)
     {
@@ -35,8 +39,9 @@ class AddWebsiteJob implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * Claim the matching queued website attempt and execute its provisioning action; skip attempts whose token or provisioning status has changed.
      *
+     * Execute the job.
      *
      * @throws \Exception
      */
@@ -60,6 +65,11 @@ class AddWebsiteJob implements ShouldQueue
         (new AddWebsiteAction($this->website))->handle();
     }
 
+    /**
+     * Under a lock, mark only the captured active website attempt failed and persist its bounded provisioning log.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         DB::transaction(function () use ($exception): void {

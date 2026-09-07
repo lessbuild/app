@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Schema;
 
 class RegistrationAccess
 {
+    /**
+     * Check open registration or the configured first-account bootstrap exception.
+     *
+     * @return bool True when registration is enabled, or first-user registration is enabled and no account exists.
+     */
     public function allowsNewUser(): bool
     {
         if (config('lessbuild.registration.enabled')) {

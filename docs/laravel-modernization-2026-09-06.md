@@ -14,7 +14,7 @@ This refactor preserves the configuration-as-code feature completed at `b6ee620`
 | Events and jobs | Cashier's completed-webhook event maps to `SyncSeatsAfterBillingWebhook` in `EventServiceProvider`; the listener resolves its workspace and dispatches the existing seat-reconciliation job. Existing queues, retries, observers and lifecycle actions remain in use. |
 | Enums | `BuildStatus`, `ServerCommandStatus` and `SignInMethod` provide typed domain values, classification and guards. Model constants, database values and serialized output retain their existing strings, including unknown historical values. |
 | Native types | Application methods have explicit native parameter and return types, including `mixed` where external inputs or inherited contracts require it. Constructors/destructors are excluded from return-type requirements. No `strict_types` declaration was added. |
-| Documentation | All model/enum methods, extracted scopes/presenters/listener and configuration-controller actions describe input/output contracts; model relationship generics are supplied throughout. Existing comments are retained or moved with the code. This does not claim every legacy application method has a PHPDoc block. |
+| Documentation | The September 7 follow-up completes PHPDoc coverage for all 1,491 application class methods, including HTTP, service, job, command and provider boundaries. Model relationship generics remain supplied throughout. Existing comments are retained or expanded, with one inaccurate recipe-rule return annotation corrected. |
 | Shared helpers | CSV spreadsheet-formula escaping is centralized across 13 export controllers. Public-IP validation is shared across server import, SSO endpoint and alert-webhook validation. |
 | Formatting and CI | Pint preserves existing PHPDoc tags and checks the repository. The CI template installs locked dependencies, checks formatting and advisories, builds assets and runs the PHP/browser suites; activation is pending GitHub workflow permission. |
 
@@ -30,13 +30,15 @@ This refactor preserves the configuration-as-code feature completed at `b6ee620`
 
 ## Dependency and rollout boundaries
 
-The latest stable versions permitted by the upstream dependency graph are locked. Six PHP packages and several npm transitive packages cannot use their newest releases under current upstream constraints. No unsupported aliases, vendor edits or forced major-version overrides are used. Exact versions and blockers are in [the PHP upgrade record](php-dependency-upgrade-2026-09-06.md) and [the frontend verification record](verification/frontend-modernization-2026-09-06.md).
+The latest stable versions permitted by the upstream dependency graph are locked. Six PHP packages and several npm transitive packages cannot use their newest releases under current upstream constraints. No unsupported aliases, vendor edits or forced major-version overrides are used. Exact versions and blockers are in [the PHP upgrade record](php-dependency-upgrade-2026-09-06.md), [the frontend verification record](verification/frontend-modernization-2026-09-06.md) and [the independent latest-version feasibility audit](dependency-latest-blockers-2026-09-06.md). The literal all-latest dependency requirement remains unresolved.
 
 PHP 8.5 must be available to FPM, queue workers and the scheduler before deploying this checkout. The task-local runtime used for tests did not replace the system PHP or restart any services. JSON session serialization requires renewed sign-in at rollout unless the documented temporary PHP-serialization override is used. Livewire 4 uses hashed asset/update paths. Tailwind 4 raises the browser baseline; see the frontend record. The six configuration migrations remain a separate rollout requirement.
 
 All database verification uses isolated test databases. Live paid-provider actions, OAuth/Stripe integration accounts, FPM deployment and real configuration operations have not been exercised by this refactor.
 
-## Verified checkpoint
+## Full-suite checkpoint at ed9182c
+
+The [September 7 follow-up record](verification/method-contracts-and-recovery-codes-2026-09-07.md) covers complete method documentation and a recovery-code race correction, verified with 21 authentication tests / 157 assertions. The full-suite results below belong to the preceding modernization commit.
 
 The complete PHP suite passed **1,165 tests / 10,643 assertions** across all **205 test files**, with zero failures, errors, skips, warnings, risky tests or deprecations. Four independent PHP 8.5 processes each used the repository's in-memory SQLite test configuration and separate PHPUnit run-history directories; every Unit/Feature file was included once. All four processes exited zero. Each process used at most 109 MB as reported by PHPUnit. Temporary evidence is `/tmp/buildpusher-modernization-verified-{0,1,2,3}.{log,xml}`.
 

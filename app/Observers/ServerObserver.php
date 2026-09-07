@@ -13,17 +13,34 @@ use App\Services\IncidentNotifier;
 
 class ServerObserver
 {
+    /**
+     * Coordinate provider cleanup, server activity history, and provisioning incidents.
+     *
+     * @param  DeleteCloudServerAction  $deleteCloudServer  Action removing provider-owned cloud resources before local server deletion.
+     * @param  ActivityRecorder  $activity  Recorder for attributed lifecycle events in the application activity stream.
+     * @param  IncidentNotifier  $incidents  Incident service used for lifecycle failure and recovery notifications.
+     */
     public function __construct(
         private readonly DeleteCloudServerAction $deleteCloudServer,
         private readonly ActivityRecorder $activity,
         private readonly IncidentNotifier $incidents,
     ) {}
 
+    /**
+     * Record server creation in the owner's activity history.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     */
     public function created(Server $server): void
     {
         $this->record($server, "Server \"{$server->label}\" was created.");
     }
 
+    /**
+     * Record provisioning transitions and open or recover provisioning incidents for failed or active states.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     */
     public function updated(Server $server): void
     {
         if ($server->wasChanged('provisioning_status')) {
@@ -52,8 +69,11 @@ class ServerObserver
     }
 
     /**
+     * Delete the cloud resource before local teardown, then remove hosted website data and clear former placement references; provider failures prevent local deletion.
+     *
      * Server Deleting
      *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
      * @return void
      *
      * @throws \Exception
@@ -95,6 +115,12 @@ class ServerObserver
         });
     }
 
+    /**
+     * Store server activity when the server has an owning user.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @param  string  $message  Human-readable lifecycle event to retain in the activity stream.
+     */
     private function record(Server $server, string $message): void
     {
         if ($server->user_id) {

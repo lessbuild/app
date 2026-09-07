@@ -9,6 +9,11 @@ use Illuminate\Http\Request;
 
 class RecipeRatingsController extends Controller
 {
+    /**
+     * Validate a 1–5 rating for a published recipe installed in the workspace, excluding the contributor's own recipe.
+     *
+     * @return RedirectResponse A saved-rating acknowledgement after activity is recorded.
+     */
     public function store(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
@@ -35,6 +40,9 @@ class RecipeRatingsController extends Controller
         return back()->with('status', __('Your gallery rating was saved.'));
     }
 
+    /**
+     * Delete the request user's rating for the bound recipe, record the change, and redirect back.
+     */
     public function destroy(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $rating = $request->user()->recipeRatings()

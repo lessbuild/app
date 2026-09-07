@@ -13,6 +13,13 @@ class VerifyDeploymentHealthScript extends BuildProvisioningScript
 
     public static string $identifier = 'verified-deployment-health';
 
+    /**
+     * Render the configured post-deployment HTTP health probe and failure reporting.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         $website = $build->repository->website;

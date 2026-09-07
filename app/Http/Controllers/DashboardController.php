@@ -23,6 +23,11 @@ class DashboardController extends Controller
 {
     public const WIDGETS = ['stats', 'setup', 'status', 'providers'];
 
+    /**
+     * Render current-workspace operational metrics, attention items, recent activity, plan usage, and selected dashboard widgets.
+     *
+     * System-health details are included only for workspace managers.
+     */
     public function __invoke(
         Request $request,
         SystemHealth $systemHealth,
@@ -296,6 +301,9 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Validate distinct supported widget names, save the user's dashboard selection, and redirect with an acknowledgement.
+     */
     public function updatePreferences(Request $request): RedirectResponse
     {
         $data = $request->validate([

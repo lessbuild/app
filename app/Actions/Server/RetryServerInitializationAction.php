@@ -10,6 +10,14 @@ use Illuminate\Validation\ValidationException;
 
 class RetryServerInitializationAction
 {
+    /**
+     * Claim a failed initialization attempt, validate its cloud provider identity, rotate the initialization token, and queue another address lookup after commit.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @return bool Whether an eligible initialization failure was reset and queued; false for other server states.
+     *
+     * @throws ValidationException If the server lacks its cloud provider or remote identifier.
+     */
     public function handle(Server $server): bool
     {
         return DB::transaction(function () use ($server): bool {

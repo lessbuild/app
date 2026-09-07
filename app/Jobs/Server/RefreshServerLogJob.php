@@ -23,11 +23,22 @@ class RefreshServerLogJob implements ShouldQueue
 
     public int $backoff = 10;
 
+    /**
+     * Capture the server and supported log category for asynchronous snapshot refresh.
+     *
+     * @param  int  $serverId  Managed server identifier retained for remote work when the job runs.
+     * @param  string  $type  Supported log category identifying the snapshot and remote log source.
+     */
     public function __construct(
         public readonly int $serverId,
         public readonly string $type,
     ) {}
 
+    /**
+     * Refresh an allowlisted log snapshot for an active server; skip missing servers or unsupported categories and mark inactive-server snapshots failed.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $server = Server::find($this->serverId);
@@ -63,6 +74,11 @@ class RefreshServerLogJob implements ShouldQueue
         ]);
     }
 
+    /**
+     * Store a bounded queue failure on the requested server log category.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         ServerLogSnapshot::query()

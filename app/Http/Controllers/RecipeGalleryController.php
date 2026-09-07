@@ -14,6 +14,9 @@ use Illuminate\View\View;
 
 class RecipeGalleryController extends Controller
 {
+    /**
+     * Render filtered published gallery recipes with ratings, personal saved/report state, installation context, and aggregate counts.
+     */
     public function index(Request $request): View
     {
         $filters = $this->filters($request);
@@ -69,6 +72,11 @@ class RecipeGalleryController extends Controller
         ]);
     }
 
+    /**
+     * Require a published recipe and render its installation, rating, and saved/report context for the request user.
+     *
+     * Contributor-only report summaries are withheld from other viewers.
+     */
     public function show(Request $request, Recipe $recipe): View
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
@@ -112,6 +120,9 @@ class RecipeGalleryController extends Controller
         ]);
     }
 
+    /**
+     * Require an editable copy of the published source recipe and render script, metadata, and line-count differences.
+     */
     public function compare(Recipe $recipe, Recipe $copy): View
     {
         $this->authorize('update', $copy);
@@ -138,6 +149,11 @@ class RecipeGalleryController extends Controller
         ]);
     }
 
+    /**
+     * Lock a published source and create one private workspace copy, reusing an existing installation when present.
+     *
+     * @return RedirectResponse The copy's editor with review guidance or an already-installed acknowledgement.
+     */
     public function install(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $copy = DB::transaction(function () use ($request, $recipe): Recipe {
@@ -184,6 +200,11 @@ class RecipeGalleryController extends Controller
                 : __('This gallery recipe is already in your account.'));
     }
 
+    /**
+     * Authorize an unpublished copy and replace its contents from the currently published source under locks.
+     *
+     * @return RedirectResponse The copy editor; published copies are returned unchanged with an explanation.
+     */
     public function refresh(Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
@@ -296,6 +317,9 @@ class RecipeGalleryController extends Controller
             });
     }
 
+    /**
+     * Count newline-delimited script lines, returning zero for an empty script.
+     */
     private function lineCount(string $script): int
     {
         return $script === '' ? 0 : substr_count($script, "\n") + 1;

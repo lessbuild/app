@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Schema;
 
 class ApplicationConfigurationExecution
 {
+    /**
+     * Bind the operation-to-build checks used immediately before remote execution.
+     *
+     * @param  ApplicationConfigurationBuilds  $builds  Validates the durable configuration operation associated with a build.
+     */
     public function __construct(private readonly ApplicationConfigurationBuilds $builds) {}
 
     /** null means an ordinary build; configuration builds recheck gates at remote start. */

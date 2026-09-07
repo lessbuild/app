@@ -20,6 +20,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecipesController extends Controller
 {
+    /**
+     * Render filtered workspace recipes with server usage counts and published-source revision context.
+     */
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
@@ -66,6 +69,9 @@ class RecipesController extends Controller
         ];
     }
 
+    /**
+     * Stream filtered workspace recipe metadata and assigned server labels as private CSV, excluding script bodies.
+     */
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
@@ -113,11 +119,17 @@ class RecipesController extends Controller
         ]);
     }
 
+    /**
+     * Render the form for a new workspace recipe and its publication options.
+     */
     public function create(): View
     {
         return view('scenes.recipes.create');
     }
 
+    /**
+     * Authorize recipe visibility and render its metadata plus servers owned by the request user and their status counts.
+     */
     public function show(Request $request, Recipe $recipe): View
     {
         $this->authorize('view', $recipe);
@@ -157,6 +169,9 @@ class RecipesController extends Controller
         ]);
     }
 
+    /**
+     * Create a workspace recipe from validated script and publication settings, record its publication state, and redirect to the list.
+     */
     public function store(RecipeRequest $request, ActivityRecorder $activity): RedirectResponse
     {
         $data = $this->recipeData($request);
@@ -173,6 +188,9 @@ class RecipesController extends Controller
         return redirect()->route('recipes.index')->with('status', __('Recipe created.'));
     }
 
+    /**
+     * Authorize recipe updates and render its editor with any currently published source and contributor context.
+     */
     public function edit(Recipe $recipe): View
     {
         $this->authorize('update', $recipe);
@@ -183,6 +201,9 @@ class RecipesController extends Controller
         return view('scenes.recipes.edit', ['recipe' => $recipe]);
     }
 
+    /**
+     * Save validated recipe and publication settings after authorization, recording the resulting publication transition.
+     */
     public function update(RecipeRequest $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
@@ -198,6 +219,9 @@ class RecipesController extends Controller
         return redirect()->route('recipes.index')->with('status', __('Recipe updated.'));
     }
 
+    /**
+     * Authorize recipe deletion, remove its report notifications under a recipe lock, and redirect after deletion and activity recording.
+     */
     public function destroy(Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorize('delete', $recipe);
@@ -211,6 +235,9 @@ class RecipesController extends Controller
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
     }
 
+    /**
+     * Authorize the source recipe and create a workspace copy of its name, description, and script for review in the editor.
+     */
     public function duplicate(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
     {
         $this->authorize('update', $recipe);
@@ -260,6 +287,9 @@ class RecipesController extends Controller
             ->when($filters['usage'] === 'unused', fn ($query) => $query->unused());
     }
 
+    /**
+     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);
@@ -293,6 +323,9 @@ class RecipesController extends Controller
         return $data;
     }
 
+    /**
+     * Load a recipe by ID under a transaction lock, taking a SQLite write lock when needed; missing IDs return 404.
+     */
     private function lockedRecipe(int $recipeId): Recipe
     {
         if (DB::connection()->getDriverName() === 'sqlite') {

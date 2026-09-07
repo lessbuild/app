@@ -15,6 +15,12 @@ class DiagnoseEmailCommand extends Command
 
     protected $description = 'Verify production email configuration and optionally send a delivery test';
 
+    /**
+     * Inspect email readiness and optionally send a test notification to a validated address when configuration is ready.
+     *
+     * @param  EmailReadiness  $readiness  Email transport configuration and readiness inspector.
+     * @return int SUCCESS for ready configuration and successful requested delivery, otherwise FAILURE.
+     */
     public function handle(EmailReadiness $readiness): int
     {
         $check = $readiness->check();

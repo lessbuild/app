@@ -11,6 +11,11 @@ class PruneAccessRequestsCommand extends Command
 
     protected $description = 'Prune declined and accepted access requests after the configured retention window';
 
+    /**
+     * Delete accepted or declined access requests older than the configured retention, requiring at least 30 days.
+     *
+     * @return int SUCCESS after deletion, or FAILURE when the retention value is invalid.
+     */
     public function handle(): int
     {
         $value = $this->option('days') ?: config('lessbuild.access_request_retention_days');

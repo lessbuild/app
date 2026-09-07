@@ -9,13 +9,25 @@ use RuntimeException;
 
 class UpdateServerIpAction
 {
+    /**
+     * Resolve cloud addresses and capture the corresponding SSH host identity.
+     *
+     * @param  ServerProviderResolver  $providers  Resolver for authenticated server-provider clients.
+     * @param  SshHostIdentity  $hostIdentity  Scanner that captures the SSH host key used for subsequent pinned connections.
+     */
     public function __construct(
         private readonly ServerProviderResolver $providers,
         private readonly SshHostIdentity $hostIdentity,
     ) {}
 
     /**
+     * Read the cloud server addresses, scan its SSH host identity, and persist the public/private addresses and pinned host key.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @return bool True after the cloud addresses and SSH host identity have been saved.
+     *
      * @throws \Exception
+     * @throws RuntimeException If the server, provider, or public address is unavailable.
      */
     public function handle(Server $server): bool
     {

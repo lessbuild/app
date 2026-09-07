@@ -10,8 +10,14 @@ use Illuminate\View\View;
 
 class CostController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate infrastructure-budget controls.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render workspace server cost estimates, missing prices, recent utilization, and budget availability.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -42,6 +48,9 @@ class CostController extends Controller
         ]);
     }
 
+    /**
+     * Require entitled workspace management access, validate a nullable monthly budget, save it, and redirect back.
+     */
     public function update(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;

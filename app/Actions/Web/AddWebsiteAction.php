@@ -18,6 +18,13 @@ class AddWebsiteAction extends Publishable
     private WebsiteProvisioningPlan $plan;
 
     /**
+     * Bind website provisioning to its server, ordered setup plan, and remote script renderer.
+     *
+     * @param  Website  $website  Website supplying its provisioning state and managed placement.
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     * @param  ProvisioningScriptRenderer|null  $renderer  Optional provisioning script renderer; null uses the application default.
+     * @param  WebsiteProvisioningPlan|null  $plan  Optional ordered step plan; null resolves the corresponding application plan.
+     *
      * @throws \Exception
      */
     public function __construct(
@@ -34,6 +41,8 @@ class AddWebsiteAction extends Publishable
     }
 
     /**
+     * Render and upload website provisioning steps with stage and log callbacks, then execute them on the managed server.
+     *
      * @throws \Exception
      */
     public function handle(): void

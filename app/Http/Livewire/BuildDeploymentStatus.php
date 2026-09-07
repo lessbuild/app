@@ -13,6 +13,11 @@ class BuildDeploymentStatus extends Component
 {
     public Build $build;
 
+    /**
+     * Refresh and authorize the bound build, then render deployment progress, logs, and recovery guidance.
+     *
+     * The view polls active builds and exposes rollback candidates only after deployment failure.
+     */
     public function render(
         RepositoryDeploymentPlan $plan,
         DeploymentFailureGuidance $guidance,

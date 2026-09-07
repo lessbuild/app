@@ -10,6 +10,11 @@ use Illuminate\Support\Str;
 
 class RepositoryWebhookSettingsController extends Controller
 {
+    /**
+     * Enable an editable repository's webhook using a validated GitLab signing token or a newly generated secret.
+     *
+     * @return RedirectResponse Webhook settings; generated non-GitLab secrets are flashed for one-time display.
+     */
     public function store(Request $request, Repository $repository): RedirectResponse
     {
         $this->authorize('update', $repository);
@@ -46,6 +51,9 @@ class RepositoryWebhookSettingsController extends Controller
             ->with('success', __('Deployment webhook enabled.'));
     }
 
+    /**
+     * Disable an editable repository's webhook, clear its secret and pending revision, and redirect to webhook settings.
+     */
     public function destroy(Repository $repository): RedirectResponse
     {
         $this->authorize('update', $repository);

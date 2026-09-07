@@ -11,6 +11,11 @@ use Illuminate\Http\Response;
 
 class BuildRevisionCallbackController extends Controller
 {
+    /**
+     * Validate the callback's commit SHA and optional message against the build's immutable revision.
+     *
+     * @return Response|JsonResponse An empty acknowledgement, or HTTP 409 when the revision conflicts.
+     */
     public function __invoke(
         Request $request,
         Build $build,

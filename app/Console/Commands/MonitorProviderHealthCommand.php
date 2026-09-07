@@ -13,6 +13,13 @@ class MonitorProviderHealthCommand extends Command
 
     protected $description = 'Check stale provider credentials and record connection health transitions';
 
+    /**
+     * Check a bounded due batch of entitled provider connections, optionally restricted by provider IDs, and summarize stored outcomes.
+     *
+     * @param  ProviderHealthMonitor  $monitor  Provider API health checker that persists connection outcomes.
+     * @param  Entitlements  $entitlements  Workspace entitlement evaluator for the requested automation capability.
+     * @return int SUCCESS after the monitoring pass, including failed health checks recorded as outcomes.
+     */
     public function handle(ProviderHealthMonitor $monitor, Entitlements $entitlements): int
     {
         $ids = collect($this->option('provider'))

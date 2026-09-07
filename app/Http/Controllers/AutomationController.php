@@ -22,8 +22,14 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 class AutomationController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate automation features and API credential issuance.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render current-workspace automation, recent scheduled-task runs, personal tokens, and feature availability.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -36,6 +42,9 @@ class AutomationController extends Controller
         ]);
     }
 
+    /**
+     * Validate workflow text for an editable project and redirect after its atomic application.
+     */
     public function workflow(Request $request, Project $project, WorkflowConfiguration $workflow): RedirectResponse
     {
         $this->authorize('update', $project);
@@ -45,6 +54,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Workflow applied atomically.'));
     }
 
+    /**
+     * Validate cron timing for an editable, entitled environment, then create an enabled deployment schedule.
+     */
     public function deploymentSchedule(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -55,6 +67,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Deployment schedule created.'));
     }
 
+    /**
+     * Authorize updates to the schedule's environment, delete the schedule, and redirect back.
+     */
     public function destroyDeploymentSchedule(Request $request, DeploymentSchedule $schedule): RedirectResponse
     {
         $this->authorize('update', $schedule->environment);
@@ -63,6 +78,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Deployment schedule deleted.'));
     }
 
+    /**
+     * Validate cron timing and replicas within an entitled environment's limits, then save an enabled schedule.
+     */
     public function scalingSchedule(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -73,6 +91,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Scaling schedule created.'));
     }
 
+    /**
+     * Authorize updates to the schedule's environment, delete the scaling schedule, and redirect back.
+     */
     public function destroyScalingSchedule(Request $request, ScalingSchedule $schedule): RedirectResponse
     {
         $this->authorize('update', $schedule->environment);
@@ -81,6 +102,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Scaling schedule deleted.'));
     }
 
+    /**
+     * Validate replica bounds and optional idle timeout, update the authorized environment, and queue its running state.
+     */
     public function scale(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -97,6 +121,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Scaling change queued.'));
     }
 
+    /**
+     * Validate running or hibernated state for an editable environment and redirect after queuing the transition.
+     */
     public function runtime(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -109,6 +136,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Runtime state change queued.'));
     }
 
+    /**
+     * Validate cron timing, command, timeout, overlap, and alert options before saving an entitled environment task.
+     */
     public function scheduledTask(Request $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
@@ -128,6 +158,11 @@ class AutomationController extends Controller
         return back()->with('success', __('Scheduled task created.'));
     }
 
+    /**
+     * Queue an authorized, entitled task unless its non-overlap policy detects an active run.
+     *
+     * @return RedirectResponse A queued acknowledgement or an already-running validation error.
+     */
     public function runScheduledTask(ScheduledTask $task): RedirectResponse
     {
         $this->authorize('update', $task->environment);
@@ -142,6 +177,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Task queued.'));
     }
 
+    /**
+     * Authorize updates to the task's environment, delete the task, and redirect back.
+     */
     public function destroyScheduledTask(ScheduledTask $task): RedirectResponse
     {
         $this->authorize('update', $task->environment);
@@ -150,6 +188,9 @@ class AutomationController extends Controller
         return back()->with('success', __('Scheduled task deleted.'));
     }
 
+    /**
+     * Authorize viewing the run's environment and return uncached plain-text output or an empty-output message.
+     */
     public function scheduledTaskOutput(ScheduledTaskRun $run): Response
     {
         $this->authorize('view', $run->task->environment);
@@ -161,6 +202,11 @@ class AutomationController extends Controller
         ]);
     }
 
+    /**
+     * Validate token name, allowed abilities, and expiry for an entitled workspace owner.
+     *
+     * @return RedirectResponse The new plaintext credential flashed for one-time display.
+     */
     public function token(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -182,6 +228,9 @@ class AutomationController extends Controller
         return back()->with('success', __('API token created. Copy it now; it will not be shown again.'))->with('plainTextToken', $token->plainTextToken);
     }
 
+    /**
+     * Require ownership of the route-bound personal token, revoke it, and redirect with an acknowledgement.
+     */
     public function destroyToken(Request $request, PersonalAccessToken $token): RedirectResponse
     {
         $this->ensureOwnedToken($request, $token);
@@ -190,6 +239,11 @@ class AutomationController extends Controller
         return back()->with('success', __('API token revoked.'));
     }
 
+    /**
+     * Require an entitled workspace owner and owned token before replacing it with matching abilities.
+     *
+     * @return RedirectResponse The replacement plaintext token; the previous credential is revoked.
+     */
     public function rotateToken(Request $request, PersonalAccessToken $token): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;

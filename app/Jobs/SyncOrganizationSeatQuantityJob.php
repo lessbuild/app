@@ -15,8 +15,16 @@ class SyncOrganizationSeatQuantityJob implements ShouldQueue
 
     public int $tries = 3;
 
+    /**
+     * Capture the workspace whose active subscription should reflect its current membership.
+     *
+     * @param  int  $organizationId  Workspace identifier whose owner subscription and member count will be reconciled.
+     */
     public function __construct(public readonly int $organizationId) {}
 
+    /**
+     * Reconcile extra-seat prices and quantities for a valid subscription with configured seat allowances; remove obsolete seat prices and skip unbillable workspaces.
+     */
     public function handle(): void
     {
         $organization = Organization::query()->with('owner')->find($this->organizationId);

@@ -10,6 +10,11 @@ class SystemHealth
 {
     private const CACHE_KEY = 'lessbuild:system-health-summary:v1';
 
+    /**
+     * Bind operational diagnostics for the authenticated health summary.
+     *
+     * @param  OperationalDiagnostics  $diagnostics  Supplies readiness and infrastructure diagnostic checks.
+     */
     public function __construct(private readonly OperationalDiagnostics $diagnostics) {}
 
     /**

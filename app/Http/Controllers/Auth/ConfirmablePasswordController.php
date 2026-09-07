@@ -12,6 +12,9 @@ use Illuminate\Validation\ValidationException;
 
 class ConfirmablePasswordController extends Controller
 {
+    /**
+     * Render local-password confirmation, or redirect social-only accounts to their account settings.
+     */
     public function show(Request $request): View|RedirectResponse
     {
         if (! $request->user()->hasLocalPassword()) {

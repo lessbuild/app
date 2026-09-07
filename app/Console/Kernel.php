@@ -9,8 +9,11 @@ use Illuminate\Support\Facades\Schema;
 class Kernel extends ConsoleKernel
 {
     /**
+     * Register recurring maintenance commands with overlap guards, configured intervals, and schema availability checks.
+     *
      * Define the application's command schedule.
      *
+     * @param  Schedule  $schedule  Application scheduler receiving maintenance and monitoring registrations.
      * @return void
      */
     protected function schedule(Schedule $schedule): void
@@ -49,6 +52,8 @@ class Kernel extends ConsoleKernel
     }
 
     /**
+     * Load command classes and console routes into Artisan discovery.
+     *
      * Register the commands for the application.
      *
      * @return void

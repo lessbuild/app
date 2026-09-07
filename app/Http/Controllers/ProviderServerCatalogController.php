@@ -11,6 +11,11 @@ use Throwable;
 
 class ProviderServerCatalogController extends Controller
 {
+    /**
+     * Require deployment access to a current-workspace server provider and fetch its provisioning catalog.
+     *
+     * @return JsonResponse Catalog options, or HTTP 502 when the provider cannot be queried.
+     */
     public function __invoke(
         Request $request,
         Provider $provider,

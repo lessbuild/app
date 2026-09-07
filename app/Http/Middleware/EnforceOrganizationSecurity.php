@@ -8,6 +8,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnforceOrganizationSecurity
 {
+    /**
+     * Enforce current-workspace network, two-factor, SSO, and idle-session policies before continuing.
+     *
+     * @param  Closure(Request): Response  $next  The remaining HTTP middleware pipeline.
+     * @return Response The downstream response or the required authentication/setup redirect.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -44,6 +50,11 @@ class EnforceOrganizationSecurity
         return $next($request);
     }
 
+    /**
+     * Test whether an IPv4 or IPv6 address belongs to a same-family address or CIDR range.
+     *
+     * @return bool False for malformed addresses, invalid prefix lengths, or a non-matching range.
+     */
     public function contains(string $range, string $ip): bool
     {
         [$network, $prefix] = array_pad(explode('/', trim($range), 2), 2, null);

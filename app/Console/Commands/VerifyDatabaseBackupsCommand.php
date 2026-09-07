@@ -15,6 +15,12 @@ class VerifyDatabaseBackupsCommand extends Command
 
     protected $description = 'Verify the integrity of the latest, a specific, or every retained SQLite backup';
 
+    /**
+     * Resolve the selected SQLite backups and report verification results without stopping after an individual verification failure.
+     *
+     * @param  SqliteBackupVerifier  $verifier  SQLite snapshot integrity verifier run before a backup is accepted.
+     * @return int SUCCESS when every selected backup verifies, otherwise FAILURE for invalid selection, no backups, or verification errors.
+     */
     public function handle(SqliteBackupVerifier $verifier): int
     {
         if ($this->argument('path') && $this->option('all')) {
@@ -53,7 +59,11 @@ class VerifyDatabaseBackupsCommand extends Command
         return self::SUCCESS;
     }
 
-    /** @return list<string> */
+    /**
+     * Resolve an explicit snapshot path, every discovered snapshot, or the newest snapshot from the backup directory.
+     *
+     * @return list<string> Selected snapshot paths; an empty list indicates no matching backup files.
+     */
     private function paths(): array
     {
         $directory = (string) config('lessbuild.database_backup_directory');

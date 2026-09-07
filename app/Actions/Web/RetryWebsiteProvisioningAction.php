@@ -12,7 +12,14 @@ use Illuminate\Validation\ValidationException;
 class RetryWebsiteProvisioningAction
 {
     /**
+     * Require a server ready for websites, rotate the attempt token, reset provisioning output, and dispatch the new attempt after commit.
+     *
      * Atomically queue a new attempt when the website is still failed.
+     *
+     * @param  Website  $website  Website supplying its provisioning state and managed placement.
+     * @return bool Whether the website was still failed and a new provisioning attempt was queued.
+     *
+     * @throws ValidationException If the assigned server is not ready to provision websites.
      */
     public function handle(Website $website): bool
     {

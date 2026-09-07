@@ -25,6 +25,8 @@ class AddWebsiteToCaddyCommand extends Command
     protected $description = 'Add website to caddy';
 
     /**
+     * Run website provisioning synchronously for the website_id argument; lookup or provisioning errors propagate.
+     *
      * Execute the console command.
      *
      * @return void
@@ -39,7 +41,11 @@ class AddWebsiteToCaddyCommand extends Command
     }
 
     /**
+     * Leave automatic scheduling disabled for this manually invoked command.
+     *
      * Define the command's schedule.
+     *
+     * @param  Schedule  $schedule  Scheduler supplied by command discovery; this command currently registers no recurring task.
      */
     public function schedule(Schedule $schedule): void
     {

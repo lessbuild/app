@@ -15,6 +15,13 @@ class RunDeploymentSchedulesCommand extends Command
 
     protected $description = 'Queue deployments whose workspace schedules are due';
 
+    /**
+     * Claim due deployment schedules once per minute and request matching environment repository deployments when entitlements allow.
+     *
+     * @param  DeploymentLauncher  $launcher  Service that authorizes and queues scheduled deployment requests.
+     * @param  Entitlements  $entitlements  Workspace entitlement evaluator for the requested automation capability.
+     * @return int SUCCESS after evaluating schedules; accepted deployments execute asynchronously.
+     */
     public function handle(DeploymentLauncher $launcher, Entitlements $entitlements): int
     {
         DeploymentSchedule::query()->where('is_enabled', true)->with(['environment.project.organization.owner', 'environment.website.repositories', 'creator'])

@@ -17,6 +17,12 @@ class WatchStaleDeploymentsCommand extends Command
 
     protected $description = 'Stop stale remote deployments and release their repository locks';
 
+    /**
+     * Claim stale active builds and finish unstarted attempts or cancel their remote processes; leave failed cancellation attempts leased for a later retry.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @return int SUCCESS after the watchdog pass, including attempts retained for a later cancellation retry.
+     */
     public function handle(Runner $runner): int
     {
         $minutes = max(1, (int) ($this->option('minutes') ?: config('lessbuild.deployment_stale_minutes')));
@@ -64,6 +70,14 @@ class WatchStaleDeploymentsCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Lock a stale active build and acquire its timing-out lease; require the previous two-minute lease to expire before reclaiming it.
+     *
+     * @param  int  $buildId  Candidate active build selected by the watchdog.
+     * @param  Carbon  $cutoff  Latest activity timestamp still considered stale.
+     * @param  int  $minutes  Configured inactivity threshold used in the recorded failure explanation.
+     * @return Build|null The claimed build with deployment relationships loaded, or null when absent, fresh, terminal, or already leased.
+     */
     private function claim(int $buildId, Carbon $cutoff, int $minutes): ?Build
     {
         return DB::transaction(function () use ($buildId, $cutoff, $minutes): ?Build {
@@ -95,6 +109,13 @@ class WatchStaleDeploymentsCommand extends Command
         });
     }
 
+    /**
+     * Under a lock, finish only a build still timing out, save any remaining log, and clear its remote process identity.
+     *
+     * @param  Build  $build  Previously claimed timing-out build to complete as failed.
+     * @param  string|null  $log  Optional remaining remote log returned by cancellation.
+     * @param  int  $minutes  Inactivity threshold included in the terminal failure message.
+     */
     private function finish(Build $build, ?string $log, int $minutes): void
     {
         DB::transaction(function () use ($build, $log, $minutes): void {

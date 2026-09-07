@@ -19,8 +19,14 @@ use Illuminate\View\View;
 
 class BackupController extends Controller
 {
+    /**
+     * Use workspace entitlements to gate backup configuration and recovery operations.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Render the current workspace's recent backups, destinations, schedules, and recovery metrics.
+     */
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
@@ -43,6 +49,11 @@ class BackupController extends Controller
         ]);
     }
 
+    /**
+     * Validate an S3-compatible destination and credentials, then redirect after creating its encryption password.
+     *
+     * Requires workspace management access and the backups entitlement.
+     */
     public function storeDestination(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -67,6 +78,11 @@ class BackupController extends Controller
         return back()->with('success', __('Encrypted backup destination created.'));
     }
 
+    /**
+     * Delete an authorized, entitled backup destination only when no schedules or retained backups reference it.
+     *
+     * @return RedirectResponse A deletion acknowledgement or the remaining-reference error.
+     */
     public function destroyDestination(Request $request, BackupDestination $destination): RedirectResponse
     {
         $this->authorizeDestination($request, $destination);
@@ -79,6 +95,9 @@ class BackupController extends Controller
         return back()->with('success', __('Backup destination deleted.'));
     }
 
+    /**
+     * Validate workspace-owned website and destination IDs with UTC timing and retention, then save their schedule.
+     */
     public function storeSchedule(Request $request): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -100,6 +119,9 @@ class BackupController extends Controller
         return back()->with('success', __('Backup schedule saved in UTC.'));
     }
 
+    /**
+     * Require workspace management and backup access, then delete the bound schedule and redirect back.
+     */
     public function destroySchedule(Request $request, WebsiteBackupSchedule $schedule): RedirectResponse
     {
         abort_unless($schedule->website->organization_id === $request->user()->current_organization_id
@@ -110,6 +132,11 @@ class BackupController extends Controller
         return back()->with('success', __('Backup schedule deleted.'));
     }
 
+    /**
+     * Validate a workspace backup destination and queue a backup for an authorized website.
+     *
+     * @return RedirectResponse A queued acknowledgement, or notice that a backup is already active.
+     */
     public function run(Request $request, Website $website): RedirectResponse
     {
         abort_unless($website->organization_id === $request->user()->current_organization_id
@@ -131,6 +158,11 @@ class BackupController extends Controller
         return back()->with('success', __('Offsite backup queued.'));
     }
 
+    /**
+     * Require the website-name confirmation and queue recovery from a completed, authorized backup.
+     *
+     * @return RedirectResponse The queued result, or an incomplete-backup or active-deployment error.
+     */
     public function restore(Request $request, WebsiteBackup $backup): RedirectResponse
     {
         $backup->loadMissing('website.organization');
@@ -153,6 +185,9 @@ class BackupController extends Controller
         return back()->with('success', __('Restore queued with automatic safety rollback.'));
     }
 
+    /**
+     * Abort with 403 unless the destination belongs to the current workspace and the user can manage it.
+     */
     private function authorizeDestination(Request $request, BackupDestination $destination): void
     {
         abort_unless($destination->organization_id === $request->user()->current_organization_id

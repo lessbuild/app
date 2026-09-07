@@ -48,6 +48,15 @@ class DeploymentPreflight
         ];
     }
 
+    /**
+     * Format one named preflight check with its success or failure status.
+     *
+     * @param  string  $name  The stable check identifier.
+     * @param  bool  $passes  Whether the check succeeded.
+     * @param  string  $detail  The explanation shown with the result.
+     * @param  string  $failure  The status to use when the check fails.
+     * @return array{name: string, status: string, detail: string} The named status and explanation.
+     */
     private function check(string $name, bool $passes, string $detail, string $failure = 'failed'): array
     {
         return ['name' => $name, 'status' => $passes ? 'passed' : $failure, 'detail' => $detail];

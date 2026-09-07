@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 
 class GitHubAppController extends Controller
 {
+    /**
+     * Require workspace management and configured GitHub App credentials, store installation state, and redirect to GitHub.
+     */
     public function connect(Request $request, GitHubApp $github): RedirectResponse
     {
         abort_unless($request->user()->currentOrganization->permits($request->user(), 'manage'), 403);
@@ -21,6 +24,11 @@ class GitHubAppController extends Controller
         return redirect()->away($github->installationUrl($state));
     }
 
+    /**
+     * Validate installation details and one-time session state for a workspace manager, then attach the installation provider.
+     *
+     * @return RedirectResponse The installation's repository picker after remote repository access succeeds.
+     */
     public function callback(Request $request, GitHubApp $github): RedirectResponse
     {
         abort_unless($request->user()->currentOrganization->permits($request->user(), 'manage'), 403);
@@ -49,6 +57,9 @@ class GitHubAppController extends Controller
         return redirect()->route('github-app.repositories', $provider)->with('success', __('GitHub App installed. Choose a repository to connect.'));
     }
 
+    /**
+     * Require a current-workspace GitHub App provider and render its remotely accessible repositories; foreign providers return 404.
+     */
     public function repositories(Request $request, Provider $provider, GitHubApp $github): View
     {
         abort_unless($provider->organization_id === $request->user()->current_organization_id && $provider->isGitHubApp(), 404);

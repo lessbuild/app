@@ -10,11 +10,19 @@ use Illuminate\Validation\Rule;
 
 class ImportWebsiteRequest extends FormRequest
 {
+    /**
+     * Allow existing-website imports only when the user has deployment permission in the current workspace.
+     */
     public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
+    /**
+     * Require an active workspace server, valid hostname, and unique safe application-directory slug.
+     *
+     * @return array<string, list<mixed>> Validation rules for existing-application import fields.
+     */
     public function rules(): array
     {
         return [
@@ -26,6 +34,9 @@ class ImportWebsiteRequest extends FormRequest
         ];
     }
 
+    /**
+     * Strip URL schemes and trailing slashes, then lowercase the imported hostname and deployment-directory slug.
+     */
     protected function prepareForValidation(): void
     {
         $this->merge([

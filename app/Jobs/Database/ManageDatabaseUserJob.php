@@ -18,13 +18,29 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 300;
 
+    /**
+     * Capture the managed database user and whether its remote account should be removed or applied.
+     *
+     * @param  int  $databaseUserId  Stored database account whose remote privileges should be reconciled.
+     * @param  string  $action  The literal remove deletes the account; other values apply its stored credentials and privileges.
+     */
     public function __construct(public readonly int $databaseUserId, public readonly string $action) {}
 
+    /**
+     * Keep account application and removal jobs distinct while coalescing duplicates of each operation.
+     *
+     * @return string The database-user identifier combined with the requested action.
+     */
     public function uniqueId(): string
     {
         return $this->databaseUserId.'-'.$this->action;
     }
 
+    /**
+     * Apply database privileges and credentials or remove the remote account; persist the applied timestamp or delete its record only after successful execution.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $record = DatabaseUser::query()->with('resource.environment.website.server')->find($this->databaseUserId);
@@ -67,6 +83,14 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
+    /**
+     * Accept only SQL identifiers composed of an initial letter or underscore followed by letters, digits, or underscores.
+     *
+     * @param  string  $value  Database or account identifier from stored resource configuration.
+     * @return string The unchanged identifier after validation.
+     *
+     * @throws RuntimeException If the identifier contains unsupported characters or begins with a digit.
+     */
     private function identifier(string $value): string
     {
         if (! preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]*\z/D', $value)) {

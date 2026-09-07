@@ -9,6 +9,11 @@ class PublicPlatformStatus
 {
     private const CACHE_KEY = 'buildpusher:public-platform-status:v1';
 
+    /**
+     * Bind internal diagnostics used to produce public platform status.
+     *
+     * @param  OperationalDiagnostics  $diagnostics  Supplies the operational results summarized for public display.
+     */
     public function __construct(private readonly OperationalDiagnostics $diagnostics) {}
 
     /**

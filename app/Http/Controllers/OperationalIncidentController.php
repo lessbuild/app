@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OperationalIncidentController extends Controller
 {
+    /**
+     * Authorize an unresolved workspace incident, record its acknowledgement and responder, then redirect back.
+     */
     public function acknowledge(Request $request, OperationalIncident $incident): RedirectResponse
     {
         $this->authorizeIncident($request, $incident);
@@ -24,6 +27,9 @@ class OperationalIncidentController extends Controller
         return back()->with('success', __('Incident acknowledged.'));
     }
 
+    /**
+     * Validate a nullable workspace responder ID, record the incident ownership change, and redirect back.
+     */
     public function assign(Request $request, OperationalIncident $incident): RedirectResponse
     {
         $this->authorizeIncident($request, $incident);
@@ -40,6 +46,9 @@ class OperationalIncidentController extends Controller
         return back()->with('success', __('Incident owner updated.'));
     }
 
+    /**
+     * Validate a timeline message for an authorized incident, append the attributed note, and redirect back.
+     */
     public function note(Request $request, OperationalIncident $incident): RedirectResponse
     {
         $this->authorizeIncident($request, $incident);
@@ -49,6 +58,9 @@ class OperationalIncidentController extends Controller
         return back()->with('success', __('Timeline note added.'));
     }
 
+    /**
+     * Validate a resolution for an authorized incident and atomically record resolved state and its timeline event.
+     */
     public function resolve(Request $request, OperationalIncident $incident): RedirectResponse
     {
         $this->authorizeIncident($request, $incident);
@@ -61,6 +73,9 @@ class OperationalIncidentController extends Controller
         return back()->with('success', __('Incident resolved.'));
     }
 
+    /**
+     * Require audit or operations access and stream current-workspace incidents as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request): StreamedResponse
     {
         $organization = $request->user()->currentOrganization;
@@ -78,6 +93,9 @@ class OperationalIncidentController extends Controller
         }, 'operational-incidents.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'no-store, private']);
     }
 
+    /**
+     * Abort with 403 unless the incident belongs to the current workspace and the user has operations access.
+     */
     private function authorizeIncident(Request $request, OperationalIncident $incident): void
     {
         abort_unless($incident->organization_id === $request->user()->current_organization_id && $incident->organization->permits($request->user(), 'operate'), 403);

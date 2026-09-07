@@ -7,6 +7,9 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class ServerDisplayNameRequest extends FormRequest
 {
+    /**
+     * Allow label changes only when a server is route-bound and the request user can update it.
+     */
     public function authorize(): bool
     {
         $server = $this->route('server');
@@ -22,6 +25,9 @@ class ServerDisplayNameRequest extends FormRequest
         ];
     }
 
+    /**
+     * Collapse display-name whitespace and convert an empty label to null so the technical name is used.
+     */
     protected function prepareForValidation(): void
     {
         $displayName = str((string) $this->input('display_name'))->squish()->toString();

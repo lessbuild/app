@@ -9,6 +9,12 @@ use Illuminate\Support\Str;
 
 class PersonalOrganization
 {
+    /**
+     * Resolve or create the user's current workspace under a user-row lock.
+     *
+     * @param  User  $user  The persisted account whose workspace attributes and relation are refreshed.
+     * @return Organization The existing workspace, or a new personal workspace with an owner membership.
+     */
     public function ensure(User $user): Organization
     {
         return DB::transaction(function () use ($user): Organization {

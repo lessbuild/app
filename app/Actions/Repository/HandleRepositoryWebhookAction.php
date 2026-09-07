@@ -14,12 +14,26 @@ use Illuminate\Support\Facades\DB;
 
 class HandleRepositoryWebhookAction
 {
+    /**
+     * Coordinate webhook receipt deduplication, deployment admission, and pending delivery dispatch.
+     *
+     * @param  QueuePendingWebhookDeploymentAction  $queuePendingDeployment  Action that drains an eligible retained webhook revision after website capacity becomes available.
+     * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
+     * @param  DeploymentGate  $gate  Deployment lock and scheduling-window policy evaluator.
+     */
     public function __construct(
         private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
         private readonly DeploymentRequest $deployments,
         private readonly DeploymentGate $gate,
     ) {}
 
+    /**
+     * Record a verified delivery once and either queue its deployment or retain its revision pending deployment availability.
+     *
+     * @param  Repository  $repository  Repository addressed by the verified webhook.
+     * @param  VerifiedRepositoryWebhook  $webhook  Authenticated delivery identity, source revision, and commit details.
+     * @return RepositoryWebhookResult The duplicate, unavailable, pending, or queued disposition, including the build when one was created.
+     */
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): RepositoryWebhookResult
     {
         $result = DB::transaction(function () use ($repository, $webhook): RepositoryWebhookResult {

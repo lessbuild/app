@@ -17,6 +17,12 @@ final class DateRange
         return [$from, $to];
     }
 
+    /**
+     * Accept only an exact calendar date in YYYY-MM-DD form.
+     *
+     * @param  string  $value  The date string to parse without accepting calendar overflow.
+     * @return string|null The original valid date, or null when parsing or exact round-trip validation fails.
+     */
     private static function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);

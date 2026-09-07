@@ -8,13 +8,18 @@ use Illuminate\Validation\Rule;
 
 class RecipeRequest extends FormRequest
 {
+    /**
+     * Allow recipe submissions only when the user has deployment permission in the current workspace.
+     */
     public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
     }
 
     /**
-     * @return array<string, list<string>>
+     * Validate recipe fields and require a supported category when publishing.
+     *
+     * @return array<string, list<string|object>> String rules and conditional/category rule objects for each field.
      */
     public function rules(): array
     {
@@ -32,6 +37,9 @@ class RecipeRequest extends FormRequest
         ];
     }
 
+    /**
+     * Convert the submitted publication checkbox into a boolean before applying recipe rules.
+     */
     protected function prepareForValidation(): void
     {
         $this->merge([

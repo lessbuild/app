@@ -17,6 +17,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SignInHistoryController extends Controller
 {
+    /**
+     * Render the request user's filtered sign-in history with readable device/IP labels and matching summary metrics.
+     */
     public function index(Request $request, ClientMetadata $clients): View
     {
         $filters = $this->filters($request);
@@ -79,6 +82,9 @@ class SignInHistoryController extends Controller
         ];
     }
 
+    /**
+     * Stream the request user's filtered sign-in history with readable client metadata as private, spreadsheet-safe CSV.
+     */
     public function export(Request $request, ClientMetadata $clients): StreamedResponse
     {
         $filters = $this->filters($request);
@@ -150,6 +156,9 @@ class SignInHistoryController extends Controller
                 ->whereDate('signed_in_at', '<=', $date));
     }
 
+    /**
+     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
+     */
     private function date(string $value): ?string
     {
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
@@ -157,6 +166,9 @@ class SignInHistoryController extends Controller
         return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
+    /**
+     * Validate the current password, delete the user's sign-in history atomically, and redirect with the deleted count.
+     */
     public function destroy(Request $request, ActivityRecorder $activity): RedirectResponse
     {
         $request->validateWithBag('signIns', [
@@ -182,6 +194,9 @@ class SignInHistoryController extends Controller
             : __('There was no sign-in history to clear.'));
     }
 
+    /**
+     * Escape sign-in export text that could be interpreted as a spreadsheet formula.
+     */
     private function csvCell(string $value): string
     {
         return CsvCell::escape($value);

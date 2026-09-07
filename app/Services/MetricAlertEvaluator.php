@@ -7,8 +7,19 @@ use App\Models\ServerMetric;
 
 class MetricAlertEvaluator
 {
+    /**
+     * Bind incident notifications for metric threshold transitions.
+     *
+     * @param  IncidentNotifier  $notifier  Records and delivers failure or recovery events.
+     */
     public function __construct(private readonly IncidentNotifier $notifier) {}
 
+    /**
+     * Update matching metric-rule breach counters and notify threshold or recovery transitions.
+     *
+     * @param  ServerMetric  $metric  The server sample used to evaluate enabled workspace and server-specific rules.
+     * @return void No value; skips missing owners and nonnumeric metric values.
+     */
     public function evaluate(ServerMetric $metric): void
     {
         $metric->loadMissing('server.organization');

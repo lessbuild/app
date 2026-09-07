@@ -19,13 +19,29 @@ class CollectServerMetricsJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 240;
 
+    /**
+     * Capture the managed server to inspect when this metrics job runs.
+     *
+     * @param  int  $serverId  Managed server identifier retained for remote work when the job runs.
+     */
     public function __construct(public int $serverId) {}
 
+    /**
+     * Coalesce queued instances of this job for the same server.
+     *
+     * @return string The server identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->serverId;
     }
 
+    /**
+     * Collect and bound operating-system metrics for an active server, evaluate alerts, and prune 30-day history; skip inactive servers and throw on failed or incomplete metric output.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @param  MetricAlertEvaluator|null  $alerts  Optional metric alert evaluator; null resolves the application service.
+     */
     public function handle(Runner $runner, ?MetricAlertEvaluator $alerts = null): void
     {
         $server = Server::query()->whereKey($this->serverId)->where('provisioning_status', Server::STATUS_ACTIVE)->first();

@@ -16,6 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationTransaction
 {
+    /**
+     * Bind review revalidation used inside the configuration transaction.
+     *
+     * @param  ApplicationConfigurationReviews  $reviews  Checks immutable review identity, access and state freshness.
+     */
     public function __construct(private readonly ApplicationConfigurationReviews $reviews) {}
 
     /** Internal transaction boundary. The writer must only perform local database writes,

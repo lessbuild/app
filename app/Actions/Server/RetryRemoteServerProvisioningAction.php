@@ -15,6 +15,14 @@ class RetryRemoteServerProvisioningAction extends Publishable
 
     private ServerProvisioningPlan $plan;
 
+    /**
+     * Bind the server and remaining provisioning plan to remote script execution.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @param  Runner|null  $runner  Optional SSH runner; null creates the default runner for this operation.
+     * @param  ProvisioningScriptRenderer|null  $renderer  Optional provisioning script renderer; null uses the application default.
+     * @param  ServerProvisioningPlan|null  $plan  Optional ordered step plan; null resolves the corresponding application plan.
+     */
     public function __construct(
         private readonly Server $server,
         ?Runner $runner = null,
@@ -27,7 +35,11 @@ class RetryRemoteServerProvisioningAction extends Publishable
     }
 
     /**
-     * @return array{id: int, path: string}
+     * Render and launch only unfinished provisioning steps and return the validated identity of their background process.
+     *
+     * @return array{id: int, path: string} Positive process ID and uploaded script path for the new remote attempt.
+     *
+     * @throws RuntimeException If remote startup fails to return a valid process ID.
      */
     public function handle(): array
     {

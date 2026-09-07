@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\DB;
 
 class RecordBuildRevisionAction
 {
+    /**
+     * Lock the running deployment, reject stale or conflicting revisions, and save normalized commit details with a fresh heartbeat.
+     *
+     * @param  Build  $build  Deployment receiving the remote revision callback.
+     * @param  string  $revision  Reported source revision, normalized to lowercase before comparison.
+     * @param  string|null  $commitMessage  Optional remote commit message to sanitize before storage.
+     * @return string A BuildRevisionResult disposition: recorded, stale, or mismatch.
+     */
     public function handle(Build $build, string $revision, ?string $commitMessage): string
     {
         return DB::transaction(function () use ($build, $revision, $commitMessage): string {
@@ -32,6 +40,12 @@ class RecordBuildRevisionAction
         });
     }
 
+    /**
+     * Remove control characters and surrounding whitespace, then bound the commit message to 500 characters.
+     *
+     * @param  string|null  $message  Optional untrusted commit message reported by the deployment process.
+     * @return string|null The bounded commit message, or null when absent or empty after normalization.
+     */
     private function normalizeMessage(?string $message): ?string
     {
         if ($message === null) {

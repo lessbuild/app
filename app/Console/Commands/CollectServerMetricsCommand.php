@@ -12,6 +12,11 @@ class CollectServerMetricsCommand extends Command
 
     protected $description = 'Queue resource metric collection for every active server';
 
+    /**
+     * Queue a metrics collection job for each active server and report the number dispatched.
+     *
+     * @return int SUCCESS after dispatching collection jobs; metric collection occurs in the workers.
+     */
     public function handle(): int
     {
         $count = 0;

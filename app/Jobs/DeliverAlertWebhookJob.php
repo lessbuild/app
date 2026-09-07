@@ -22,9 +22,17 @@ class DeliverAlertWebhookJob implements ShouldQueue
 
     public array $backoff = [10, 60, 300];
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Capture the alert destination and event payload for asynchronous delivery.
+     *
+     * @param  array<string, mixed>  $payload  Alert event data including event, title, and message, with optional category and resource_id.
+     * @param  int  $destinationId  Alert destination identifier reloaded before applying event subscriptions.
+     */
     public function __construct(public int $destinationId, public array $payload) {}
 
+    /**
+     * Deliver subscribed events to an active email or public HTTPS destination and record success; skip inactive or unsubscribed destinations and let delivery failures reach queue retry handling.
+     */
     public function handle(): void
     {
         $destination = AlertDestination::query()->find($this->destinationId);
@@ -92,6 +100,11 @@ class DeliverAlertWebhookJob implements ShouldQueue
         $destination->update(['last_delivered_at' => now(), 'last_failed_at' => null, 'last_error' => null]);
     }
 
+    /**
+     * Record a bounded delivery error and failure timestamp when the queue exhausts this alert job.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         AlertDestination::query()->whereKey($this->destinationId)->update([
@@ -100,6 +113,13 @@ class DeliverAlertWebhookJob implements ShouldQueue
         ]);
     }
 
+    /**
+     * Require HTTPS and DNS results consisting entirely of public addresses before issuing an alert request.
+     *
+     * @param  string  $endpoint  Destination URL, or the fixed PagerDuty event endpoint after resolving the destination type.
+     *
+     * @throws RuntimeException If HTTPS, hostname resolution, or public-address validation fails.
+     */
     private function assertPublicEndpoint(string $endpoint): void
     {
         $parts = parse_url($endpoint);

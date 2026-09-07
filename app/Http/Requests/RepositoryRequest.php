@@ -13,6 +13,9 @@ use Illuminate\Validation\Rule;
 
 class RepositoryRequest extends FormRequest
 {
+    /**
+     * Allow repository submissions only when the user has deployment permission in the current workspace.
+     */
     public function authorize(): bool
     {
         return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
@@ -63,6 +66,11 @@ class RepositoryRequest extends FormRequest
         ];
     }
 
+    /**
+     * Explain that a repository must attach to an active website when placement validation fails.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
@@ -70,6 +78,9 @@ class RepositoryRequest extends FormRequest
         ];
     }
 
+    /**
+     * Normalize the repository URL and branch while retaining omitted commands and converting blank commands to null.
+     */
     protected function prepareForValidation(): void
     {
         $repository = $this->route('repository');

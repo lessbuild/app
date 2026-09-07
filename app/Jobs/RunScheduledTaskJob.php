@@ -19,8 +19,18 @@ class RunScheduledTaskJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 3600;
 
+    /**
+     * Capture the persisted scheduled-task run whose command and environment are resolved by the worker.
+     *
+     * @param  int  $runId  Persisted scheduled-task run to execute and finish.
+     */
     public function __construct(public readonly int $runId) {}
 
+    /**
+     * Choose a task-wide lock when overlap is disabled, otherwise give each persisted run its own lock.
+     *
+     * @return string A task-prefixed key for nonoverlapping tasks, or a run-prefixed key otherwise.
+     */
     public function uniqueId(): string
     {
         $run = ScheduledTaskRun::query()->with('task')->find($this->runId);
@@ -28,6 +38,12 @@ class RunScheduledTaskJob implements ShouldBeUnique, ShouldQueue
         return $run?->task?->without_overlapping ? 'task-'.$run->scheduled_task_id : 'run-'.$this->runId;
     }
 
+    /**
+     * Execute the task with its environment and timeout, save bounded output and duration, retain recent history, and update incidents; remote exceptions become failed run results.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @param  IncidentNotifier  $notifier  Incident service that records failures and closes matching recovered incidents.
+     */
     public function handle(Runner $runner, IncidentNotifier $notifier): void
     {
         $run = ScheduledTaskRun::query()->with(['task.environment.website.server', 'task.environment.project.organization.owner'])->find($this->runId);

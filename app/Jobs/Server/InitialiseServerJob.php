@@ -30,7 +30,11 @@ class InitialiseServerJob implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Capture the server and current initialization token so later retries cannot be overwritten.
+     *
      * Create a new job instance.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
      */
     public function __construct(Server $server)
     {
@@ -39,8 +43,11 @@ class InitialiseServerJob implements ShouldQueue
     }
 
     /**
+     * Claim the matching initialization attempt, discover its address when absent, and advance it to remote provisioning; stale attempts return without changing state.
+     *
      * Execute the job.
      *
+     * @param  UpdateServerIpAction  $updateServerIp  Action that resolves cloud IP addresses and pins their SSH host identity.
      * @return void
      *
      * @throws \Exception
@@ -73,6 +80,11 @@ class InitialiseServerJob implements ShouldQueue
             ]);
     }
 
+    /**
+     * Mark only the captured initialization attempt failed and clear its token while retaining the initialization failure phase.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(\Throwable $exception): void
     {
         $this->attemptQuery()
@@ -85,6 +97,11 @@ class InitialiseServerJob implements ShouldQueue
             ]);
     }
 
+    /**
+     * Constrain server updates to the captured initialization attempt, including legacy null tokens.
+     *
+     * @return Builder<Server> An unexecuted query restricted to this server and the attempt owned by this job.
+     */
     private function attemptQuery(): Builder
     {
         $query = Server::query()->whereKey($this->server->id);

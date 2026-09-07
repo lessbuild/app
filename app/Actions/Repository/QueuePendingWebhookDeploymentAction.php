@@ -12,11 +12,23 @@ use Illuminate\Support\Facades\DB;
 
 class QueuePendingWebhookDeploymentAction
 {
+    /**
+     * Coordinate deployment admission and dispatch for retained webhook revisions.
+     *
+     * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
+     * @param  DeploymentGate  $gate  Deployment lock and scheduling-window policy evaluator.
+     */
     public function __construct(
         private readonly DeploymentRequest $deployments,
         private readonly DeploymentGate $gate,
     ) {}
 
+    /**
+     * Under the website lock, inspect pending webhook revisions in receipt order and dispatch at most one eligible deployment.
+     *
+     * @param  Repository  $repository  Repository identifying the website whose pending webhook queue should be drained.
+     * @return Build|null The newly queued build, or null when no pending revision can currently deploy.
+     */
     public function handle(Repository $repository): ?Build
     {
         $build = DB::transaction(function () use ($repository): ?Build {

@@ -96,6 +96,13 @@ class ApplicationConfigurationBuilds
         }, 5);
     }
 
+    /**
+     * Check plan features required by a captured deployment payload.
+     *
+     * @param  Organization  $organization  The workspace whose current subscription supplies feature access.
+     * @param  array<string, mixed>  $payload  Captured environment payload, including optional processes and resources.
+     * @return bool Whether workers/resources where needed and deployments are all permitted.
+     */
     private function entitled(Organization $organization, array $payload): bool
     {
         foreach (['processes' => 'workers', 'resources' => 'resources'] as $section => $feature) {

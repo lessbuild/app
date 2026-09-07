@@ -13,6 +13,11 @@ class FindIncidentCommand extends Command
 
     protected $description = 'Locate a production incident reference in retained Laravel logs';
 
+    /**
+     * Validate an incident UUID and search retained application logs, printing only matching incident metadata and its file location.
+     *
+     * @return int SUCCESS when the incident is found, otherwise FAILURE for invalid input or no retained match.
+     */
     public function handle(): int
     {
         $reference = strtolower(trim((string) $this->argument('reference')));
@@ -55,7 +60,13 @@ class FindIncidentCommand extends Command
         return self::FAILURE;
     }
 
-    /** @return array{timestamp: string, environment: string, level: string, line: int}|null */
+    /**
+     * Scan one retained log for the requested incident reference without exposing the full log message or context.
+     *
+     * @param  string  $path  Readable application log file to inspect.
+     * @param  string  $reference  Validated incident UUID to locate in structured log context.
+     * @return array{timestamp: string, environment: string, level: string, line: int}|null Timestamp, environment, level, and one-based line number for the match, or null if the reference is absent.
+     */
     private function find(string $path, string $reference): ?array
     {
         $log = new SplFileObject($path, 'rb');

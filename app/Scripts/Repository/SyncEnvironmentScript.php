@@ -14,6 +14,13 @@ class SyncEnvironmentScript extends BuildProvisioningScript
 
     public static string $identifier = 'synced-environment';
 
+    /**
+     * Render runtime and build environment files from the captured deployment payload.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         $payload = $build->environment_payload ?? [];

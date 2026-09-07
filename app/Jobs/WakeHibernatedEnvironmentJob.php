@@ -18,13 +18,29 @@ class WakeHibernatedEnvironmentJob implements ShouldBeUnique, ShouldQueue
 
     public int $uniqueFor = 55;
 
+    /**
+     * Capture the sleeping environment to inspect for requests received after hibernation.
+     *
+     * @param  int  $environmentId  Persisted environment identifier reloaded by the queue worker.
+     */
     public function __construct(public readonly int $environmentId) {}
 
+    /**
+     * Coalesce queued instances of this job for the same environment.
+     *
+     * @return string The environment identifier used by Laravel's unique-job lock.
+     */
     public function uniqueId(): string
     {
         return (string) $this->environmentId;
     }
 
+    /**
+     * For an entitled hibernated environment with a server, inspect the access-log modification time and queue a wake operation only when newer requests exist.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     * @param  Entitlements  $entitlements  Workspace entitlement evaluator for the requested automation capability.
+     */
     public function handle(Runner $runner, Entitlements $entitlements): void
     {
         $environment = Environment::query()->with(['project.organization.owner', 'website.server'])->find($this->environmentId);

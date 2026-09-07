@@ -15,8 +15,22 @@ use LogicException;
 
 class QueueRemoteServerProvisioningRetryAction
 {
+    /**
+     * Use the provisioning plan to locate unfinished remote setup stages.
+     *
+     * @param  ServerProvisioningPlan  $plan  Ordered provisioning or deployment plan defining the steps to render.
+     */
     public function __construct(private readonly ServerProvisioningPlan $plan) {}
 
+    /**
+     * Validate a failed remote provisioning attempt, rotate its token and required credentials, reset its state, and queue the remaining setup after commit.
+     *
+     * @param  Server  $server  Managed server supplying its provisioning state and remote connection details.
+     * @return bool Whether a failed remote attempt was claimed and queued; false when the failure is not eligible.
+     *
+     * @throws ValidationException If the server lacks the address or credentials required for a retry.
+     * @throws LogicException If the provisioning plan lacks its required configuration step.
+     */
     public function handle(Server $server): bool
     {
         $rootPassword = null;

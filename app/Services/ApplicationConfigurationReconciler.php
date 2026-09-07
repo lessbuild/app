@@ -13,6 +13,15 @@ use Illuminate\Support\Str;
 
 class ApplicationConfigurationReconciler
 {
+    /**
+     * Bind the services that atomically apply an immutable reviewed configuration.
+     *
+     * @param  ApplicationConfigurationTransaction  $transactions  Locks and revalidates review/project state around local changes.
+     * @param  ApplicationConfigurationDocument  $documents  Parses the review's saved configuration.
+     * @param  ApplicationConfigurationBindings  $bindings  Resolves and verifies the saved binding identities.
+     * @param  ApplicationConfigurationVariables  $variables  Applies encrypted variables and their version history.
+     * @param  DeploymentRequest  $deployments  Builds deployment attributes for durable operation intents.
+     */
     public function __construct(
         private readonly ApplicationConfigurationTransaction $transactions,
         private readonly ApplicationConfigurationDocument $documents,
@@ -150,6 +159,16 @@ class ApplicationConfigurationReconciler
         });
     }
 
+    /**
+     * Record the reviewed ownership identity for a reconciled environment child.
+     *
+     * @param  ConfigurationReview  $review  The review whose project and identity own the claim.
+     * @param  string  $slug  Logical environment slug inside the project.
+     * @param  string  $kind  Owned resource category.
+     * @param  string  $name  Logical name within that category and environment.
+     * @param  int  $id  Database identifier of the reconciled resource.
+     * @return void Create or update the local ownership row without changing remote resources.
+     */
     private function claim(ConfigurationReview $review, string $slug, string $kind, string $name, int $id): void
     {
         ConfigurationOwnership::query()->updateOrCreate([

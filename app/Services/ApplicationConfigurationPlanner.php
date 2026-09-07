@@ -12,6 +12,14 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationPlanner
 {
+    /**
+     * Bind syntax, workspace resolution, entitlements and removal planning without applying changes.
+     *
+     * @param  ApplicationConfigurationDocument  $documents  Validates the submitted version-2 configuration.
+     * @param  ApplicationConfigurationBindings  $bindings  Resolves authorized placements and secret/repository references.
+     * @param  Entitlements  $entitlements  Checks workspace features required by the plan.
+     * @param  ApplicationConfigurationRemovalPlan  $removals  Plans guarded local removals and dependency checks.
+     */
     public function __construct(
         private readonly ApplicationConfigurationDocument $documents,
         private readonly ApplicationConfigurationBindings $bindings,

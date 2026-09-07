@@ -14,6 +14,13 @@ class ConfigureProcessesScript extends BuildProvisioningScript
 
     public static string $identifier = 'configured-processes';
 
+    /**
+     * Render systemd worker and scheduler units, replica activation and obsolete-unit cleanup.
+     *
+     * @param  int  $step  The provisioning stage reported when these commands succeed.
+     * @param  Build  $build  The build supplying the immutable environment snapshot and website identity.
+     * @return string Shell source for the remote provisioning runner.
+     */
     public function script(int $step, Build $build): string
     {
         $slug = $build->repository->website->deployment_slug;

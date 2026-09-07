@@ -19,6 +19,12 @@ class AuditReleaseAcceptanceCommand extends Command
 
     protected $description = 'Verify recorded evidence for the real-provider release acceptance lifecycle';
 
+    /**
+     * Validate the project option and print release acceptance checks from retained lifecycle evidence.
+     *
+     * @param  ReleaseAcceptance  $acceptance  Evaluator of persisted release lifecycle acceptance evidence.
+     * @return int SUCCESS when every acceptance check passes, FAILURE when evidence fails, or INVALID for an invalid project.
+     */
     public function handle(ReleaseAcceptance $acceptance): int
     {
         $projectId = filter_var($this->argument('project'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);

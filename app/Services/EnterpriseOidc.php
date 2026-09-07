@@ -11,6 +11,13 @@ use RuntimeException;
 
 class EnterpriseOidc
 {
+    /**
+     * Begin a workspace SSO attempt with session-bound state and an S256 PKCE challenge.
+     *
+     * @param  Request  $request  The current browser request whose session stores the attempt.
+     * @param  Organization  $organization  The workspace supplying the identity-provider configuration.
+     * @return string The discovered authorization URL with client, callback, state and PKCE parameters.
+     */
     public function authorizationUrl(Request $request, Organization $organization): string
     {
         $configuration = $this->configuration($organization);
@@ -26,6 +33,15 @@ class EnterpriseOidc
         ]);
     }
 
+    /**
+     * Consume the SSO state, exchange the code and match userinfo to the signed-in account.
+     *
+     * @param  Request  $request  The callback request containing state/code and the authenticated user.
+     * @param  Organization  $organization  The workspace supplying SSO configuration and allowed email domains.
+     * @return void No value; records the workspace verification timestamp only after all checks pass.
+     *
+     * @throws RuntimeException If state, provider profile, email or domain verification fails.
+     */
     public function verify(Request $request, Organization $organization): void
     {
         $attempt = $request->session()->pull('oidc.'.$organization->id);
@@ -54,6 +70,14 @@ class EnterpriseOidc
         $request->session()->put('organization_sso_verified.'.$organization->id, time());
     }
 
+    /**
+     * Require the workspace's issuer and client credentials before an SSO exchange.
+     *
+     * @param  Organization  $organization  The workspace whose SSO settings are read.
+     * @return array<string, mixed> The saved SSO configuration including issuer, client ID and secret.
+     *
+     * @throws RuntimeException If required settings are absent.
+     */
     private function configuration(Organization $organization): array
     {
         $configuration = $organization->sso_configuration ?? [];
@@ -64,6 +88,14 @@ class EnterpriseOidc
         return $configuration;
     }
 
+    /**
+     * Discover the issuer's authorization, token and userinfo endpoints and validate their addresses.
+     *
+     * @param  string  $issuer  The configured issuer base URL.
+     * @return array<string, mixed> The provider metadata with required public HTTPS endpoints.
+     *
+     * @throws RuntimeException If an endpoint is missing, insecure or resolves to a nonpublic address.
+     */
     private function metadata(string $issuer): array
     {
         $issuer = rtrim($issuer, '/');
@@ -79,6 +111,14 @@ class EnterpriseOidc
         return $metadata;
     }
 
+    /**
+     * Validate HTTPS syntax and require every resolved endpoint address to be public.
+     *
+     * @param  string  $url  The issuer or discovered endpoint URL to validate.
+     * @return void No value when the URL and DNS records pass validation.
+     *
+     * @throws RuntimeException If HTTPS, host, userinfo or public-address validation fails.
+     */
     private function assertPublicHttps(string $url): void
     {
         $parts = parse_url($url);

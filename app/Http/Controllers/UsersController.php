@@ -22,6 +22,9 @@ use Throwable;
 
 class UsersController extends Controller
 {
+    /**
+     * Render the current account's sessions, bounded sign-in/activity history, linked providers, and two-factor setup details.
+     */
     public function index(
         Request $request,
         BrowserSessionManager $browserSessions,
@@ -70,6 +73,11 @@ class UsersController extends Controller
         ]);
     }
 
+    /**
+     * Validate name and email, requiring the local password when changing an established account email.
+     *
+     * @return RedirectResponse The saved profile result and any verification-email error; local-password email changes revoke other sessions.
+     */
     public function updateProfile(
         Request $request,
         ActivityRecorder $activity,
@@ -136,6 +144,9 @@ class UsersController extends Controller
         }
     }
 
+    /**
+     * Validate a confirmed replacement password and any existing local password, then revoke other sessions and redirect back.
+     */
     public function updatePassword(
         Request $request,
         ActivityRecorder $activity,
@@ -163,6 +174,9 @@ class UsersController extends Controller
         return back()->with('password_status', __('Password updated.'));
     }
 
+    /**
+     * Validate the current password, revoke other browser sessions, regenerate this session, and redirect with an acknowledgement.
+     */
     public function revokeOtherSessions(
         Request $request,
         ActivityRecorder $activity,
@@ -180,6 +194,11 @@ class UsersController extends Controller
         return back()->with('sessions_status', __('Other browser sessions logged out.'));
     }
 
+    /**
+     * Validate the current password and matching route/form session IDs before attempting to revoke another owned session.
+     *
+     * @return RedirectResponse The revoked, current-session, unavailable, or already-inactive outcome.
+     */
     public function revokeSession(
         Request $request,
         string $session,
@@ -209,6 +228,11 @@ class UsersController extends Controller
         };
     }
 
+    /**
+     * Disconnect a route-allowed provider under an account lock, requiring a password when applicable and retaining a sign-in method.
+     *
+     * @return RedirectResponse The disconnected result or an explanation that the provider is missing or the only method.
+     */
     public function disconnectSocial(Request $request, string $provider, ActivityRecorder $activity): RedirectResponse
     {
         if ($request->user()->hasLocalPassword()
@@ -256,6 +280,9 @@ class UsersController extends Controller
         };
     }
 
+    /**
+     * Return the display label for a supported GitHub, GitLab, or Bitbucket provider key.
+     */
     private function socialProviderName(string $provider): string
     {
         return match ($provider) {

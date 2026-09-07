@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 
 class BuildPromotionController extends Controller
 {
+    /**
+     * Validate a target environment and optional promotion note within the source workspace.
+     *
+     * @return RedirectResponse The queued build, or the reason promotion could not proceed.
+     */
     public function __invoke(Request $request, Build $build, PromoteBuildAction $promote): RedirectResponse
     {
         $this->authorize('view', $build);

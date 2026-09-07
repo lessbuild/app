@@ -24,11 +24,22 @@ class RetryRemoteServerProvisioningJob implements ShouldQueue
 
     public int $backoff = 10;
 
+    /**
+     * Capture the server and attempt token that authorize this remote provisioning retry.
+     *
+     * @param  int  $serverId  Managed server identifier retained for remote work when the job runs.
+     * @param  string  $attemptToken  Provisioning generation token restricting this job to the retry that queued it.
+     */
     public function __construct(
         public readonly int $serverId,
         public readonly string $attemptToken,
     ) {}
 
+    /**
+     * Claim the matching queued attempt, launch its remaining setup, and save its process identity; reset the claim and rethrow startup failures so the queue can retry.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
     public function handle(Runner $runner): void
     {
         $started = $this->attemptQuery()
@@ -68,6 +79,11 @@ class RetryRemoteServerProvisioningJob implements ShouldQueue
             ]);
     }
 
+    /**
+     * Mark only the matching active retry failed, remove its transient root credential, and clear remote process metadata.
+     *
+     * @param  Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
     public function failed(Throwable $exception): void
     {
         $this->attemptQuery()
@@ -82,6 +98,11 @@ class RetryRemoteServerProvisioningJob implements ShouldQueue
             ]);
     }
 
+    /**
+     * Constrain server reads and updates to the captured remote provisioning token.
+     *
+     * @return Builder<Server> An unexecuted query restricted to this server and the attempt owned by this job.
+     */
     private function attemptQuery(): Builder
     {
         return Server::query()

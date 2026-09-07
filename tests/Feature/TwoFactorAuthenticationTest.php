@@ -78,6 +78,54 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_two_stale_user_instances_cannot_consume_the_same_recovery_code(): void
+    {
+        $user = $this->enabledUser();
+        $service = app(TwoFactorAuthentication::class);
+        $recoveryCode = 'ABCD-EFAB-CDEF';
+        $remainingCode = 'CDEF-ABCD-EFAB';
+        $hashes = $service->recoveryCodeHashes([$recoveryCode, $remainingCode]);
+        $user->forceFill(['two_factor_recovery_codes' => $hashes])->save();
+        $firstRequestUser = $user->fresh();
+        $secondRequestUser = $user->fresh();
+
+        $this->assertTrue($service->verifyUser($firstRequestUser, $recoveryCode));
+        $this->assertSame($hashes, $secondRequestUser->two_factor_recovery_codes);
+        $this->assertFalse($service->verifyUser($secondRequestUser, strtolower($recoveryCode)));
+        $this->assertSame([$hashes[1]], $user->fresh()->two_factor_recovery_codes);
+        $this->assertFalse($service->verifyUser($firstRequestUser, $recoveryCode));
+        $this->assertTrue($service->verifyUser($secondRequestUser, $remainingCode));
+        $this->assertSame([], $user->fresh()->two_factor_recovery_codes);
+    }
+
+    public function test_recovery_code_verification_can_leave_the_loaded_code_unconsumed(): void
+    {
+        $user = $this->enabledUser();
+        $service = app(TwoFactorAuthentication::class);
+        $recoveryCode = 'ABCD-EFAB-CDEF';
+        $hashes = $service->recoveryCodeHashes([$recoveryCode]);
+        $user->forceFill(['two_factor_recovery_codes' => $hashes])->save();
+
+        $this->assertTrue($service->verifyUser($user, $recoveryCode, consumeRecoveryCode: false));
+        $this->assertTrue($service->verifyUser($user, strtolower($recoveryCode), consumeRecoveryCode: false));
+        $this->assertFalse($service->verifyUser($user, 'FFFF-FFFF-FFFF', consumeRecoveryCode: false));
+        $this->assertSame($hashes, $user->fresh()->two_factor_recovery_codes);
+        $this->assertTrue($service->verifyUser($user, $recoveryCode));
+        $this->assertSame([], $user->fresh()->two_factor_recovery_codes);
+    }
+
+    public function test_authenticator_verification_does_not_consume_recovery_codes(): void
+    {
+        $user = $this->enabledUser();
+        $service = app(TwoFactorAuthentication::class);
+        $hashes = $user->two_factor_recovery_codes;
+        $code = $this->totp($user->two_factor_secret);
+
+        $this->assertTrue($service->verifyUser($user, $code));
+        $this->assertTrue($service->verifyUser($user, $code, consumeRecoveryCode: false));
+        $this->assertSame($hashes, $user->fresh()->two_factor_recovery_codes);
+    }
+
     public function test_user_can_disable_two_factor_with_password_and_authenticator_code(): void
     {
         $user = $this->enabledUser();
