@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Isolated live-drill preparation — 2026-09-08
+
+DigitalOcean provider ID 6 works for the required read preflight. The £10 total cap and deletion of all drill-created resources remain authorized. Fresh source-control checks returned HTTP 401 for GitHub IDs 2/5, GitLab ID 3 and Bitbucket ID 4. The user has been asked to connect one working source-control credential and name a disposable repository; never request the token in chat.
+
+The live Free workspace already has five server records against a limit of one and lacks backup/resource entitlements. Do not change its subscription, remove existing resources, or disable its billing enforcement to run the drill. Instead an isolated detached checkout at `/root/.local/share/buildpusher/drill-20260908/app` is prepared at code commit `c1105b8`, with independent vendor/assets/storage, a new application key, its own SQLite database and test-only billing flags. It contains zero provider credentials and zero queued jobs. All 119 schema migrations passed; runtime assertions verified its code and database resolve inside the isolated checkout. Local HTTP readiness, login and homepage returned 200; the temporary localhost web process was stopped.
+
+The isolated instance is not yet exposed for remote callbacks and has no cloud worker running. Do not create paid resources before completing its callback, source-repository and cleanup prerequisites. No cloud resources have been created and spending remains £0. See [the preparation record](verification/isolated-drill-preparation-2026-09-08.md).
+
 ## Scoped DigitalOcean connection check — 2026-09-08
 
 The user's newly added DigitalOcean connection (provider ID 6) has a working scoped token. Real GET requests to droplets, sizes and SSH keys returned HTTP 200; account details alone returned HTTP 403. The old connection (ID 1) must not be confused with this new credential. Existing provider resources were observed and must not be altered by the disposable drill.
