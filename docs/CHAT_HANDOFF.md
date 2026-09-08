@@ -1,5 +1,11 @@
 # BuildPusher chat handoff
 
+## Live PHP runtime repair — 2026-09-08
+
+The reported Composer platform error was reproduced on the live login page: Caddy still used PHP 8.3 after the dependency upgrade. BuildPusher now has an isolated PHP 8.5.10-FPM service, and its existing worker/timer service commands use the matching PHP 8.5 CLI. See [the runtime repair record](verification/php-runtime-repair-2026-09-08.md) for host configuration and verification.
+
+Login, public pages and the authentication redirect work again. Composer production platform requirements pass in the CLI and the actual FPM bootstrap. The readiness endpoint still returns HTTP 503 because the six previously deferred configuration migrations remain pending. No database migrations or new configuration operations were run. This runtime repair supersedes earlier statements that BuildPusher's live services had not been switched to PHP 8.5; system PHP and other applications remain unchanged.
+
 ## Queue correctness and dependency blocker — 2026-09-07
 
 The follow-up after `abdd8df` fixes fail-fast load-balancer removal and manual provisioning command dispatch/lookup behavior. **107 tests / 946 assertions** across four relevant suites passed, as did scoped formatting and the signature/documentation audit. See [the requirement and verification record](verification/modernization-remaining-requirements-2026-09-07.md).
