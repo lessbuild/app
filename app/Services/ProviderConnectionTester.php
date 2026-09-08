@@ -77,7 +77,7 @@ class ProviderConnectionTester
             Provider::TYPE_GITHUB => 'https://api.github.com/user',
             Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
             Provider::TYPE_BITBUCKET => 'https://api.bitbucket.org/2.0/user',
-            Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+            Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/droplets?per_page=1',
             Provider::TYPE_HETZNER => 'https://api.hetzner.cloud/v1/servers?per_page=1',
             Provider::TYPE_VULTR => 'https://api.vultr.com/v2/account',
             Provider::TYPE_CLOUDFLARE => rtrim((string) config('domains.cloudflare_api_url'), '/').'/user/tokens/verify',
@@ -109,9 +109,10 @@ class ProviderConnectionTester
             Provider::TYPE_BITBUCKET => $request
                 ->withToken($provider->token)
                 ->get('https://api.bitbucket.org/2.0/user'),
+            // Scoped deployment credentials do not need access to account details.
             Provider::TYPE_DIGITALOCEAN => $request
                 ->withToken($provider->token)
-                ->get('https://api.digitalocean.com/v2/account'),
+                ->get('https://api.digitalocean.com/v2/droplets', ['per_page' => 1]),
             Provider::TYPE_HETZNER => $request
                 ->withToken($provider->token)
                 ->get('https://api.hetzner.cloud/v1/servers', ['per_page' => 1]),

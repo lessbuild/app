@@ -46,3 +46,7 @@ All API paths below are relative to `/api/v1/projects/{project}` and require the
 ### Completion record
 
 Record the selected target and authorization, UTC interval, source revisions, sanitized identity chain, per-step result, restored-data comparison and independent cleanup evidence. Link the generic audit JSON and explain its narrower lifecycle scope. Configuration acceptance requires the configuration-specific checks above as well as the relevant real deployment/recovery evidence. The production schema rollout at [the September 8 checkpoint](verification/configuration-rollout-2026-09-08.md) proves data-preserving installation and readiness, not completion of this drill.
+
+## DigitalOcean scoped credentials
+
+BuildPusher tests DigitalOcean connections with `GET /v2/droplets?per_page=1`, requiring `droplet:read`. A deployment-scoped token can legitimately lack `account:read`; a 403 from `/v2/account` alone does not invalidate droplet access. The successful connection check does not prove permission to create/delete droplets or SSH keys. Verify the needed creation and cleanup permissions before provisioning. See [DigitalOcean's scope reference](https://docs.digitalocean.com/reference/api/scopes/) and [droplet creation dependencies](https://docs.digitalocean.com/reference/api/scopes/droplet/create/).

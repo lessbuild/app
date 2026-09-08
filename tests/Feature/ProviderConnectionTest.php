@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Models\User;
+use App\Services\ProviderConnectionTester;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -22,7 +23,7 @@ class ProviderConnectionTest extends TestCase
             'https://api.github.com/user' => Http::response(['login' => 'owner']),
             'https://gitlab.com/api/v4/user' => Http::response(['username' => 'owner']),
             'https://api.bitbucket.org/2.0/user' => Http::response(['display_name' => 'Owner']),
-            'https://api.digitalocean.com/v2/account' => Http::response(['account' => ['status' => 'active']]),
+            'https://api.digitalocean.com/v2/droplets?per_page=1' => Http::response(['droplets' => []]),
             'https://api.hetzner.cloud/v1/servers*' => Http::response(['servers' => []]),
             'https://api.vultr.com/v2/account' => Http::response(['account' => ['name' => 'owner']]),
         ]);
@@ -31,7 +32,7 @@ class ProviderConnectionTest extends TestCase
             Provider::TYPE_GITHUB => 'https://api.github.com/user',
             Provider::TYPE_GITLAB => 'https://gitlab.com/api/v4/user',
             Provider::TYPE_BITBUCKET => 'https://api.bitbucket.org/2.0/user',
-            Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/account',
+            Provider::TYPE_DIGITALOCEAN => 'https://api.digitalocean.com/v2/droplets?per_page=1',
             Provider::TYPE_HETZNER => 'https://api.hetzner.cloud/v1/servers?per_page=1',
             Provider::TYPE_VULTR => 'https://api.vultr.com/v2/account',
         ];
@@ -69,6 +70,24 @@ class ProviderConnectionTest extends TestCase
         }
 
         Http::assertSentCount(6);
+    }
+
+    public function test_digitalocean_connection_accepts_droplet_access_without_account_read_permission(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake([
+            'https://api.digitalocean.com/v2/account' => Http::response(['id' => 'Forbidden'], 403),
+            'https://api.digitalocean.com/v2/droplets?per_page=1' => Http::response(['droplets' => []], 200),
+        ]);
+        $provider = $this->provider(User::factory()->create(), Provider::TYPE_DIGITALOCEAN, 'scoped-fixture-token');
+
+        $result = app(ProviderConnectionTester::class)->test($provider);
+
+        $this->assertTrue($result['successful']);
+        $this->assertSame(200, $result['http_status']);
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'GET'
+            && $request->url() === 'https://api.digitalocean.com/v2/droplets?per_page=1');
     }
 
     public function test_success_and_failure_feedback_never_exposes_credentials_or_response_bodies(): void
@@ -134,7 +153,7 @@ class ProviderConnectionTest extends TestCase
         $this->assertNotNull($provider->fresh()->connection_checked_at);
         $check = $provider->connectionChecks()->sole();
         $this->assertNull($check->http_status);
-        $this->assertSame('https://api.digitalocean.com/v2/account', $check->endpoint);
+        $this->assertSame('https://api.digitalocean.com/v2/droplets?per_page=1', $check->endpoint);
         $this->assertSame('Could not reach DigitalOcean. Try again later.', $check->error);
     }
 

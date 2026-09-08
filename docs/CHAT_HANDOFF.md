@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Scoped DigitalOcean connection check — 2026-09-08
+
+The user's newly added DigitalOcean connection (provider ID 6) has a working scoped token. Real GET requests to droplets, sizes and SSH keys returned HTTP 200; account details alone returned HTTP 403. The old connection (ID 1) must not be confused with this new credential. Existing provider resources were observed and must not be altered by the disposable drill.
+
+The connection tester now uses `GET /v2/droplets?per_page=1` instead of requiring account-details access. Its recorded endpoint matches the request. The new regression fails against the old account check and passes after the correction; connection/monitoring suites pass **17 tests / 221 assertions**. The actual application tester returned success/HTTP 200 with the new saved token. This validates read access, not untested create/delete permissions. No cloud resources were created and the authorized £10 budget is unspent.
+
+The previous credential-401 checkpoint is historical. Resume the authorized drill with provider ID 6, a fresh resource inventory, bounded costs and cleanup of only drill-created resources. No further budget or cleanup confirmation is needed.
+
 ## Provider submission feedback correction — 2026-09-08
 
 The user's continued silent reload had a separate cause from the JavaScript failure: credential monitoring was checked by default even for Free workspaces, and the controller's `plan` validation error was not rendered by the form. Live read-only inspection confirmed the workspace is Free, monitoring is unavailable and entitlement denials had occurred.
