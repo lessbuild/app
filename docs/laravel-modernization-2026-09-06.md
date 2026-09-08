@@ -1,5 +1,7 @@
 # Laravel modernization — 2026-09-06
 
+> September 8 update: the user accepted latest-compatible dependencies. The historical all-latest blocker below is superseded by [the acceptance record](verification/modernization-accepted-2026-09-08.md).
+
 This refactor preserves the configuration-as-code feature completed at `b6ee620`, existing routes, authorization boundaries, persisted status strings and display APIs. It upgrades the framework and assets, extracts presentation/query responsibilities, and improves explicit types and database access. It does not deploy the application or apply its pending migrations.
 
 ## Implementation

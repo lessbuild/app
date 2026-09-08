@@ -1,5 +1,7 @@
 # Latest dependency feasibility audit — 2026-09-06
 
+> September 8 update: the user accepted latest-compatible dependencies. The historical all-latest blocker below is superseded by [the acceptance record](verification/modernization-accepted-2026-09-08.md).
+
 The literal requirement that every installed direct and transitive dependency use its latest stable release is **not satisfied**. The existing PHP graph is unsatisfiable with every package fixed to its latest release. The npm graph also contains incompatible upstream ranges. Removing unused dependencies can reduce the gaps; it cannot resolve the Laravel, Tailwind, and Vite constraints. The modernization goal remains active.
 
 This audit changed no application code, dependency manifests, lockfiles, installed packages, or credentials. Registry snapshots and Composer solver experiments were written under `/tmp` only. The report itself is the only repository change made for this audit.

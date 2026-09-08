@@ -1,5 +1,7 @@
 # Modernization requirement audit — 2026-09-07
 
+> September 8 update: the user accepted latest-compatible dependencies. The historical all-latest blocker below is superseded by [the acceptance record](modernization-accepted-2026-09-08.md).
+
 The requested refactor has delivered the architecture, typing, documentation and query improvements below. The **full goal is not achieved**: official stable upstream dependency constraints prevent an all-latest dependency graph. The objective has not been reduced to latest-compatible versions.
 
 ## Current correctness follow-up

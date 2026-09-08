@@ -1,5 +1,9 @@
 # BuildPusher chat handoff
 
+## Latest-compatible dependency acceptance — 2026-09-08
+
+The user explicitly accepted latest-compatible dependencies after the all-latest upstream conflict was explained. This supersedes the literal all-latest blocker in historical checkpoints below. Preserve the existing integrations and upstream constraints; unsupported overrides or replacements are not required. See [the acceptance verification record](verification/modernization-accepted-2026-09-08.md) for the refreshed lockfiles and final verification status. The modernization is complete under that accepted requirement: **1,178 tests / 10,705 assertions**, all 207 Unit/Feature files, 48 browser layouts, formatting, type/documentation audit, route caching, dependency resolution and security checks passed. Publication remains authorized; inspect Git history for the published checkpoint.
+
 ## Live PHP runtime repair — 2026-09-08
 
 The reported Composer platform error was reproduced on the live login page: Caddy still used PHP 8.3 after the dependency upgrade. BuildPusher now has an isolated PHP 8.5.10-FPM service, and its existing worker/timer service commands use the matching PHP 8.5 CLI. See [the runtime repair record](verification/php-runtime-repair-2026-09-08.md) for host configuration and verification.
