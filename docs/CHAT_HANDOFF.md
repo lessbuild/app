@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Mobile navigation and provider form repair — 2026-09-08
+
+The live route cache still registered old `/livewire/...` endpoints while pages emitted Livewire 4's `/livewire-75af7612/...` URLs. The actual JavaScript request returned HTTP 404, preventing Alpine navigation and provider selection from initializing. The old route cache was backed up outside the repository and rebuilt with PHP 8.5; the served runtime now returns HTTP 200. The signed-in navigation fixture, using the live runtime, passes open/close, Escape, focus restoration and scroll-lock checks at 320/390/768px.
+
+Provider selection now uses native, required radio controls rather than Alpine-only divs and a hidden input. Provider identities, icons, edit selection, validation and encrypted-token storage remain intact. The mobile browser test submits the selected provider with JavaScript disabled; eight provider capability tests / 49 assertions pass. The live public runtime/menu smoke test passes. See [the runtime regression instructions](verification/mobile-navigation-provider-form-2026-09-08.md).
+
+The DigitalOcean drill remains authorized under the £10 limit below. This UI repair did not replace or test a newly supplied credential, create cloud resources or spend money.
+
 ## DigitalOcean drill authorization and credential preflight — 2026-09-08
 
 The user explicitly authorized the connected DigitalOcean account, a maximum **£10 total spend**, and deletion of all resources created for the test afterward. This authorization persists; do not ask again for the provider, budget or cleanup permission. Existing unrelated resources must remain untouched.

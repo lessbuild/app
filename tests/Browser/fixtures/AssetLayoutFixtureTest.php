@@ -31,6 +31,7 @@ class AssetLayoutFixtureTest extends TestCase
         $owner = User::factory()->create(['name' => 'Layout fixture owner']);
         $this->actingAs($owner);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()->getContent());
+        File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());
 
         $project = $owner->currentOrganization->projects()->create([
             'name' => 'Layout fixture application', 'slug' => 'layout-fixture', 'created_by' => $owner->id,

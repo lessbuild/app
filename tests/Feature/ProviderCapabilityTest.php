@@ -38,9 +38,30 @@ class ProviderCapabilityTest extends TestCase
             ->assertSee('bitbucket')
             ->assertDontSee('linode');
 
-        $this->actingAs($user)->get(route('providers.edit', $github))
-            ->assertSuccessful()
-            ->assertSee("provider: 'github'", escape: false);
+        $response = $this->actingAs($user)->get(route('providers.edit', $github))->assertSuccessful();
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $selected = (new \DOMXPath($document))->query('//input[@name="provider" and @checked]/@value');
+        $this->assertCount(1, $selected);
+        $this->assertSame('github', $selected->item(0)->nodeValue);
+    }
+
+    public function test_native_provider_form_submission_creates_an_encrypted_connection(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('providers.store'), [
+            'provider' => 'digitalocean',
+            'name' => 'Disposable connection',
+            'description' => 'Provider form regression',
+            'token' => 'fixture-private-token',
+            'connection_monitoring_enabled' => '0',
+        ])->assertSessionHasNoErrors()->assertRedirect();
+
+        $provider = $user->workspaceProviders()->sole();
+        $this->assertSame('digitalocean', $provider->provider);
+        $this->assertSame('fixture-private-token', $provider->token);
+        $this->assertNotSame('fixture-private-token', $provider->getRawOriginal('token'));
     }
 
     public function test_repository_forms_only_offer_source_control_providers(): void

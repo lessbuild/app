@@ -12,104 +12,60 @@
             class="mt-1 grid grid-cols-2 gap-4 rounded-md shadow-xs"
             role="radiogroup"
             aria-label="{{ __('Provider') }}"
-            x-data="{ provider: {{ Illuminate\Support\Js::from(old('provider', $provider->provider ?? null)) }} }"
         >
-            <input type="hidden" name="provider" :value="provider">
-            <div
-                class="bg-secondary border border-secondary rounded-sm p-2"
-                :class="{ 'bg-tertiary': provider == 'digitalocean' }"
-                @click="provider = 'digitalocean'"
-                @keydown.enter="provider = 'digitalocean'"
-                @keydown.space.prevent="provider = 'digitalocean'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'digitalocean'">
+            <label class="relative cursor-pointer bg-secondary border border-secondary rounded-sm p-2 has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="digitalocean" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'digitalocean')>
                 <svg class="w-full h-full text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#digital-ocean"></use>
                 </svg>
                 <span class="sr-only">{{ __('DigitalOcean') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="bg-secondary border border-secondary rounded-sm p-2"
-                :class="{ 'bg-tertiary': provider == 'github' }"
-                @click="provider = 'github'"
-                @keydown.enter="provider = 'github'"
-                @keydown.space.prevent="provider = 'github'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'github'">
+            <label class="relative cursor-pointer bg-secondary border border-secondary rounded-sm p-2 has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="github" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'github')>
                 <svg class="w-full h-full text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#github"></use>
                 </svg>
                 <span class="sr-only">{{ __('GitHub') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="bg-secondary border border-secondary rounded-sm p-2"
-                :class="{ 'bg-tertiary': provider == 'gitlab' }"
-                @click="provider = 'gitlab'"
-                @keydown.enter="provider = 'gitlab'"
-                @keydown.space.prevent="provider = 'gitlab'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'gitlab'">
+            <label class="relative cursor-pointer bg-secondary border border-secondary rounded-sm p-2 has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="gitlab" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'gitlab')>
                 <svg class="w-full h-full text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#gitlab"></use>
                 </svg>
                 <span class="sr-only">{{ __('GitLab') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="bg-secondary border border-secondary rounded-sm p-2"
-                :class="{ 'bg-tertiary': provider == 'bitbucket' }"
-                @click="provider = 'bitbucket'"
-                @keydown.enter="provider = 'bitbucket'"
-                @keydown.space.prevent="provider = 'bitbucket'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'bitbucket'">
+            <label class="relative cursor-pointer bg-secondary border border-secondary rounded-sm p-2 has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="bitbucket" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'bitbucket')>
                 <svg class="w-full h-full text-secondary stroke-2 mr-2">
                     <use xlink:href="/assets/images/icons.svg#bitbucket"></use>
                 </svg>
                 <span class="sr-only">{{ __('Bitbucket') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
-                :class="{ 'bg-tertiary': provider == 'hetzner' }"
-                @click="provider = 'hetzner'"
-                @keydown.enter="provider = 'hetzner'"
-                @keydown.space.prevent="provider = 'hetzner'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'hetzner'">
+            <label class="relative cursor-pointer flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="hetzner" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'hetzner')>
                 <span class="text-sm font-semibold text-primary">{{ __('Hetzner Cloud') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
-                :class="{ 'bg-tertiary': provider == 'vultr' }"
-                @click="provider = 'vultr'"
-                @keydown.enter="provider = 'vultr'"
-                @keydown.space.prevent="provider = 'vultr'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'vultr'">
+            <label class="relative cursor-pointer flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="vultr" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'vultr')>
                 <span class="text-sm font-semibold text-primary">{{ __('Vultr') }}</span>
-            </div>
+            </label>
 
-            <div
-                class="flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center"
-                :class="{ 'bg-tertiary': provider == 'cloudflare' }"
-                @click="provider = 'cloudflare'"
-                @keydown.enter="provider = 'cloudflare'"
-                @keydown.space.prevent="provider = 'cloudflare'"
-                role="radio"
-                tabindex="0"
-                :aria-checked="provider == 'cloudflare'">
+            <label class="relative cursor-pointer flex min-h-24 items-center justify-center bg-secondary border border-secondary rounded-sm p-4 text-center has-checked:bg-tertiary has-checked:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                <input type="radio" name="provider" value="cloudflare" class="absolute left-2 top-2 h-4 w-4" required
+                    @checked(old('provider', $provider->provider ?? null) === 'cloudflare')>
                 <span class="text-sm font-semibold text-primary">{{ __('Cloudflare DNS') }}</span>
-            </div>
+            </label>
 
         </div>
         <x-forms.errors name="provider"></x-forms.errors>

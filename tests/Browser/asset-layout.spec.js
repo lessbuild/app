@@ -27,7 +27,7 @@ async function serveFixtures(page) {
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
-        if (screens.includes(pathname.slice(1))) {
+        if ([...screens, 'provider-create'].includes(pathname.slice(1))) {
             let html = fs.readFileSync(path.join(fixtures, `${pathname.slice(1)}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -112,3 +112,25 @@ for (const colorScheme of ['light', 'dark']) {
         });
     }
 }
+
+// Native controls must preserve provider submission if the JavaScript runtime fails.
+test('provider creation submits the selected provider without JavaScript', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    try {
+        await serveFixtures(page);
+        await page.route('**/providers', route => route.fulfill({ contentType: 'text/html', body: 'Submitted fixture' }));
+        await page.goto('http://buildpusher.test/provider-create');
+        await page.getByRole('radio', { name: 'DigitalOcean', exact: true }).check();
+        await page.locator('#name').fill('Disposable connection');
+        await page.locator('#description').fill('Provider form regression');
+        await page.locator('#token').fill('fixture-private-token');
+        const request = page.waitForRequest(request => request.method() === 'POST');
+        await page.getByRole('button', { name: 'Create Provider', exact: true }).click();
+        const submitted = new URLSearchParams((await request).postData());
+        expect(submitted.get('provider')).toBe('digitalocean');
+        expect(submitted.get('name')).toBe('Disposable connection');
+    } finally {
+        await context.close();
+    }
+});
