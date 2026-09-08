@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Configuration rollout — 2026-09-08
+
+The user resumed the feature sequence after accepting modernization, starting with the proposed configuration rollout. The six configuration migrations are now applied to the live SQLite database. Consistent private backups, a rehearsal on a database copy, rollback/reapply, integrity/foreign-key checks and hashes of all 71 existing tables establish data preservation. Live readiness now returns HTTP 200 with `status: ready`; maintenance is disabled and the worker/original timers are restored.
+
+A missing configuration-delivery runner was found and corrected: the daemon installer now provisions `lessbuild-configuration.service` and its minute timer. The same generated units are installed on this host, use PHP 8.5, skip maintenance and have completed an empty-operation pass successfully. See [the rollout verification record](verification/configuration-rollout-2026-09-08.md).
+
+The current feature's remaining live deployment drill still needs a disposable provider/server and explicit spending limits. An asynchronous question requests these from the user. Do not create paid resources without that information or move to preview environments while this gate remains unresolved. Earlier statements that the six migrations are pending are historical and superseded by this checkpoint.
+
 ## Latest-compatible dependency acceptance — 2026-09-08
 
 The user explicitly accepted latest-compatible dependencies after the all-latest upstream conflict was explained. This supersedes the literal all-latest blocker in historical checkpoints below. Preserve the existing integrations and upstream constraints; unsupported overrides or replacements are not required. See [the acceptance verification record](verification/modernization-accepted-2026-09-08.md) for the refreshed lockfiles and final verification status. The modernization is complete under that accepted requirement: **1,178 tests / 10,705 assertions**, all 207 Unit/Feature files, 48 browser layouts, formatting, type/documentation audit, route caching, dependency resolution and security checks passed. Publication remains authorized; inspect Git history for the published checkpoint.

@@ -26,6 +26,10 @@ HEALTH_SERVICE_NAME="lessbuild-health"
 HEALTH_SERVICE_FILE="/etc/systemd/system/${HEALTH_SERVICE_NAME}.service"
 HEALTH_TIMER_NAME="lessbuild-health"
 HEALTH_TIMER_FILE="/etc/systemd/system/${HEALTH_TIMER_NAME}.timer"
+CONFIGURATION_SERVICE_NAME="lessbuild-configuration"
+CONFIGURATION_SERVICE_FILE="/etc/systemd/system/${CONFIGURATION_SERVICE_NAME}.service"
+CONFIGURATION_TIMER_NAME="lessbuild-configuration"
+CONFIGURATION_TIMER_FILE="/etc/systemd/system/${CONFIGURATION_TIMER_NAME}.timer"
 PUBLIC_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -224,10 +228,43 @@ Unit=${HEALTH_SERVICE_NAME}.service
 WantedBy=timers.target
 TIMER
 
+cat > "${CONFIGURATION_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Deliver BuildPusher configuration operations
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!${APP_DIR}/storage/framework/down
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan buildpusher:configuration:process --limit=100
+TimeoutStartSec=300
+Nice=5
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+SERVICE
+
+cat > "${CONFIGURATION_TIMER_FILE}" <<TIMER
+[Unit]
+Description=Reconcile BuildPusher configuration operations every minute
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+Persistent=true
+Unit=${CONFIGURATION_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
 systemctl enable --now "${WATCHDOG_TIMER_NAME}.timer"
 systemctl enable --now "${HEALTH_TIMER_NAME}.timer"
+systemctl enable --now "${CONFIGURATION_TIMER_NAME}.timer"
 DATABASE_CONNECTION="$(sed -n 's/^DB_CONNECTION=//p' "${APP_DIR}/.env" | tail -n 1 | tr -d "\"'")"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl enable --now "${BACKUP_TIMER_NAME}.timer"
@@ -241,6 +278,7 @@ systemctl --no-pager --full status "${SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WORKER_SERVICE_NAME}.service"
 systemctl --no-pager --full status "${WATCHDOG_TIMER_NAME}.timer"
 systemctl --no-pager --full status "${HEALTH_TIMER_NAME}.timer"
+systemctl --no-pager --full status "${CONFIGURATION_TIMER_NAME}.timer"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl --no-pager --full status "${BACKUP_TIMER_NAME}.timer"
 else
