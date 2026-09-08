@@ -6,7 +6,7 @@ The user resumed the feature sequence after accepting modernization, starting wi
 
 A missing configuration-delivery runner was found and corrected: the daemon installer now provisions `lessbuild-configuration.service` and its minute timer. The same generated units are installed on this host, use PHP 8.5, skip maintenance and have completed an empty-operation pass successfully. See [the rollout verification record](verification/configuration-rollout-2026-09-08.md).
 
-The current feature's remaining live deployment drill still needs a disposable provider/server and explicit spending limits. An asynchronous question requests these from the user. Do not create paid resources without that information or move to preview environments while this gate remains unresolved. Earlier statements that the six migrations are pending are historical and superseded by this checkpoint.
+The current feature's remaining live deployment drill still needs a disposable provider/server and explicit spending limits. An asynchronous question requests these from the user. Do not create paid resources without that information or move to preview environments while this gate remains unresolved. The [configuration-specific live drill](real-provider-acceptance.md#configuration-as-code-acceptance-drill) now specifies the required evidence for review/apply, idempotency, stale/foreign rejection, cancel/retry, remote failure recovery and whole-environment removal; the generic acceptance audit alone does not cover those paths. Earlier statements that the six migrations are pending are historical and superseded by this checkpoint.
 
 ## Latest-compatible dependency acceptance — 2026-09-08
 
