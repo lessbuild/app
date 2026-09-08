@@ -1,5 +1,11 @@
 # BuildPusher chat handoff
 
+## DigitalOcean drill authorization and credential preflight — 2026-09-08
+
+The user explicitly authorized the connected DigitalOcean account, a maximum **£10 total spend**, and deletion of all resources created for the test afterward. This authorization persists; do not ask again for the provider, budget or cleanup permission. Existing unrelated resources must remain untouched.
+
+The connected DigitalOcean provider was found, but fresh authenticated GET requests to `/v2/account`, `/v2/droplets`, `/v2/sizes` and `/v2/account/keys` each returned **HTTP 401**. The saved healthy label is historical and does not prove the credential works now. No token or response body was printed, no resources were created, and no spend occurred. The user must refresh the credential in BuildPusher's provider settings; then rerun preflight, inventory existing resources, select and bound the test cost, and execute the already prepared configuration acceptance drill. Earlier requests below for target/spend limits are superseded; the current missing prerequisite is a working credential.
+
 ## Configuration rollout — 2026-09-08
 
 The user resumed the feature sequence after accepting modernization, starting with the proposed configuration rollout. The six configuration migrations are now applied to the live SQLite database. Consistent private backups, a rehearsal on a database copy, rollback/reapply, integrity/foreign-key checks and hashes of all 71 existing tables establish data preservation. Live readiness now returns HTTP 200 with `status: ready`; maintenance is disabled and the worker/original timers are restored.
