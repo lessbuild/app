@@ -31,7 +31,10 @@ class AssetLayoutFixtureTest extends TestCase
         $owner = User::factory()->create(['name' => 'Layout fixture owner']);
         $this->actingAs($owner);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()->getContent());
+        $entitlementEnforcement = config('billing.enforce_entitlements');
+        config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());
+        config(['billing.enforce_entitlements' => $entitlementEnforcement]);
 
         $project = $owner->currentOrganization->projects()->create([
             'name' => 'Layout fixture application', 'slug' => 'layout-fixture', 'created_by' => $owner->id,

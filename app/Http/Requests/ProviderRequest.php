@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Provider;
+use App\Services\Entitlements;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\In;
@@ -53,13 +54,16 @@ class ProviderRequest extends FormRequest
         ];
     }
 
-    /** Preserve saved monitoring settings when optional form controls are omitted. */
+    /** Preserve saved settings and default new connections to monitoring only when the workspace permits it. */
     protected function prepareForValidation(): void
     {
+        $organization = $this->user()?->currentOrganization;
+        $monitoringAllowed = $organization && app(Entitlements::class)->allows($organization, 'monitoring');
+
         $this->merge([
             'connection_monitoring_enabled' => $this->has('connection_monitoring_enabled')
                 ? $this->boolean('connection_monitoring_enabled')
-                : ($this->route('provider')?->connection_monitoring_enabled ?? true),
+                : ($this->route('provider')?->connection_monitoring_enabled ?? $monitoringAllowed),
             'connection_check_interval_minutes' => $this->input(
                 'connection_check_interval_minutes',
                 $this->route('provider')?->connection_check_interval_minutes

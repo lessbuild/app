@@ -375,7 +375,7 @@ class ProviderController extends Controller
             'provider' => str($request->input('provider'))->lower(),
         ]));
 
-        return redirect()->route('providers.show', $provider);
+        return redirect()->route('providers.show', $provider)->with('success', __('Provider created successfully.'));
     }
 
     /**
@@ -422,7 +422,7 @@ class ProviderController extends Controller
             $provider->resetConnectionHealth();
         }
 
-        return redirect()->route('providers.show', $provider);
+        return redirect()->route('providers.show', $provider)->with('success', __('Provider updated successfully.'));
     }
 
     /**

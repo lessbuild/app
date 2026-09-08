@@ -15,6 +15,8 @@
      ! Content
      ! ------------------------------------------------------------
      !-->
+    <x-scenes.providers.validation-errors />
+
     <form action="{{ route('providers.store') }}" method="POST">
         @csrf
         <x-forms.section

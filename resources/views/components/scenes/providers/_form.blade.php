@@ -1,3 +1,5 @@
+@php($monitoringAllowed = app(\App\Services\Entitlements::class)->allows(auth()->user()->currentOrganization, 'monitoring'))
+
 <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
 
     @if(!isset($provider) && app(\App\Services\GitHubApp::class)->configured())
@@ -132,14 +134,19 @@
                 type="checkbox"
                 value="1"
                 class="mt-1 rounded-sm border-primary"
-                @checked((bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true))
+                @checked($monitoringAllowed && (bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true))
+                @disabled(! $monitoringAllowed)
             >
             <div>
                 <label for="connection_monitoring_enabled" class="block text-sm font-medium text-primary">
                     {{ __('Automatically monitor credential health') }}
                 </label>
                 <p class="mt-1 text-sm text-secondary">
-                    {{ __('Periodically verify this credential and alert on failures or recovery. Manual connection tests remain available when paused.') }}
+                    @if ($monitoringAllowed)
+                        {{ __('Periodically verify this credential and alert on failures or recovery. Manual connection tests remain available when paused.') }}
+                    @else
+                        {{ __('Automatic checks require a plan with monitoring. You can add a provider and test its connection manually.') }}
+                    @endif
                 </p>
             </div>
         </div>

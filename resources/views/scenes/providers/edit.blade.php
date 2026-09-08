@@ -15,6 +15,8 @@
      ! Content
      ! ------------------------------------------------------------
      !-->
+    <x-scenes.providers.validation-errors />
+
     <form action="{{ route('providers.update', $provider) }}" method="POST">
         @csrf
         @method('patch')

@@ -1,5 +1,13 @@
 # BuildPusher chat handoff
 
+## Provider submission feedback correction — 2026-09-08
+
+The user's continued silent reload had a separate cause from the JavaScript failure: credential monitoring was checked by default even for Free workspaces, and the controller's `plan` validation error was not rendered by the form. Live read-only inspection confirmed the workspace is Free, monitoring is unavailable and entitlement denials had occurred.
+
+New-provider defaults and the rendered checkbox now respect monitoring entitlement. A Free workspace can save a provider with monitoring off; manual connection tests remain available. A shared provider error summary displays all validation errors, including `plan`; create/update redirects now flash success. Tokens are excluded from flashed validation input. Explicit requests for unauthorized monitoring still fail rather than bypassing billing enforcement.
+
+Regression coverage includes the real POST and subsequent GET with the same session cookie, Free and entitled defaults, visible plan/field errors, success feedback and token non-disclosure. See [the verification record](verification/provider-submission-feedback-2026-09-08.md). No live provider credentials or billing settings were changed.
+
 ## Mobile navigation and provider form repair — 2026-09-08
 
 The live route cache still registered old `/livewire/...` endpoints while pages emitted Livewire 4's `/livewire-75af7612/...` URLs. The actual JavaScript request returned HTTP 404, preventing Alpine navigation and provider selection from initializing. The old route cache was backed up outside the repository and rebuilt with PHP 8.5; the served runtime now returns HTTP 200. The signed-in navigation fixture, using the live runtime, passes open/close, Escape, focus restoration and scroll-lock checks at 320/390/768px.

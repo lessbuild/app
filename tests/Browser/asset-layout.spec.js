@@ -130,6 +130,7 @@ test('provider creation submits the selected provider without JavaScript', async
         const submitted = new URLSearchParams((await request).postData());
         expect(submitted.get('provider')).toBe('digitalocean');
         expect(submitted.get('name')).toBe('Disposable connection');
+        expect(submitted.get('connection_monitoring_enabled')).toBe('0');
     } finally {
         await context.close();
     }
