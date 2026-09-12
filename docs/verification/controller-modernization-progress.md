@@ -1577,6 +1577,60 @@ promotion request boundary, preserving deploy-token and build-policy ordering,
 current-workspace target lookup, validation keys, 404 target behavior and the
 existing queued/conflict response envelope.
 
+## Phase 4J — API promotion request boundary
+
+### Responsibility problem
+
+`ControlPlaneController::promote()` still mixed API capability enforcement,
+build visibility authorization, request validation, current-workspace target
+lookup and response mapping around the existing transaction-aware
+`PromoteBuildAction`. The target lookup is an organization-scoped resource
+resolution rather than a write, so it remains explicit at the controller
+boundary while the request owns only validated input and authorization.
+
+### Boundaries applied
+
+- `Api\V1\PromoteBuildRequest` enforces the existing deploy token capability,
+  build visibility policy and target/note validation in the original order.
+- The controller uses explicit request accessors, performs the existing
+  current-workspace target query and `firstOrFail()` lookup, then invokes
+  `PromoteBuildAction` and maps its unchanged result statuses to the existing
+  API envelope.
+
+This applies single responsibility and dependency inversion without moving
+promotion invariants, locks, notifications or dispatch out of the existing
+action.
+
+### Preserved contracts and safety guarantees
+
+- The route, deploy-token requirement, build policy, validation keys and
+  nullable note behavior remain unchanged. A missing deploy capability still
+  returns 403 before malformed input, and an unavailable scoped target still
+  returns 404 before any write.
+- The action continues to enforce transaction-time organization/deploy access,
+  source attestation, forward-only promotion, target compatibility, active
+  deployment protection, lock ordering, approval notifications and dispatch.
+- The 202/409 status mapping, deployment serialization, persisted values and
+  job compatibility are unchanged.
+
+### Verification
+
+- Build-promotion and automation/API regression set: **48 passed, 220
+  assertions**.
+- Added coverage for deploy-capability denial before malformed input and
+  current-workspace target lookup returning 404 without a promotion write.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `92cc670` — `refactor: extract API promotion request`
+
+**Phase 4J exit gate: complete.** Exact next task: begin Phase 5 with metric
+alert-rule creation and deletion, introducing resource authorization, a
+validated request and a cohesive operation while preserving alert entitlements,
+workspace-scoped server IDs and no-write denial behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1603,3 +1657,4 @@ existing queued/conflict response envelope.
 | Phase 4G-automation-tokens | Token creation, rotation and revocation mixed validation, owner checks, hashed credential creation, replacement ordering and direct deletes in `AutomationController`. | 44 automation/token/API/platform/tenancy tests passed, 261 assertions; Pint and diff checks passed. | `c87e230` — `refactor: extract automation token operations` | Characterize web/API workflow validation and authorization ordering before extracting separate workflow requests around `WorkflowConfiguration`. |
 | Phase 4H-workflow | Web/API workflow controllers mixed basic YAML validation with policy/capability checks before invoking the existing transaction-aware `WorkflowConfiguration` service. | 67 automation/workflow/API/configuration/environment/tenancy/entitlement/platform tests passed, 453 assertions; Pint and diff checks passed. | `dc57901` — `refactor: extract workflow request boundaries` | Characterize API variables parsing, secret-safe failures, scoping and transaction/lock behavior before extracting its request/action boundary. |
 | Phase 4I-api-variables | API variable replacement mixed control-plane access, environment authorization, bounded text validation, secret-safe parsing, versioned persistence and the JSON response in `ControlPlaneController`. | 52 automation/platform/environment-runtime/shared-tenancy tests passed, 296 assertions; Pint and diff checks passed. | `28ab03e` — `refactor: extract API variables operation` | Extract the remaining API promotion request boundary, preserving deploy-token and build-policy ordering, current-workspace target lookup, validation keys, 404 target behavior and the existing queued/conflict response envelope. |
+| Phase 4J-api-promotion | API promotion mixed capability/policy checks, validation, tenant-scoped target lookup and response mapping around `PromoteBuildAction`. | 48 build-promotion/automation/API tests passed, 220 assertions; Pint and diff checks passed. | `92cc670` — `refactor: extract API promotion request` | Begin Phase 5 with metric alert-rule creation and deletion, introducing resource authorization, a validated request and a cohesive operation while preserving alert entitlements, workspace-scoped server IDs and no-write denial behavior. |
