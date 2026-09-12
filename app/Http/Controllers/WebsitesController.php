@@ -15,10 +15,10 @@ use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use App\Services\Entitlements;
 use App\Services\PlanLimits;
+use App\Services\WebsiteHealthHistoryExporter;
 use App\Services\WebsiteHealthHistoryQuery;
 use App\Services\WebsiteInventoryExporter;
 use App\Services\WebsiteInventoryQuery;
-use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +38,7 @@ class WebsitesController extends Controller
      */
     public function __construct(
         private readonly Entitlements $entitlements,
+        private readonly WebsiteHealthHistoryExporter $healthHistoryExporter,
         private readonly WebsiteHealthHistoryQuery $healthHistory,
         private readonly WebsiteInventoryExporter $websiteInventoryExporter,
         private readonly WebsiteInventoryQuery $websiteInventory,
@@ -175,50 +176,8 @@ class WebsitesController extends Controller
     {
         $this->authorize('view', $website);
         $filters = $this->healthCheckFilters($request);
-        $filename = "lessbuild-website-{$website->id}-health-checks-".now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($website, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Check ID',
-                'Result',
-                'Source',
-                'HTTP status',
-                'Duration ms',
-                'Endpoint',
-                'Error',
-                'Checked at',
-            ], ',', '"', '');
-
-            $this->healthHistory->for($website, $filters)
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->limit(WebsiteHealthCheck::MAX_PER_WEBSITE)
-                ->get()
-                ->each(function (WebsiteHealthCheck $check) use ($output): void {
-                    fputcsv($output, [
-                        $check->id,
-                        $check->successful ? 'healthy' : 'failed',
-                        $check->source,
-                        $check->http_status,
-                        $check->duration_ms,
-                        $this->csvCell($check->endpoint),
-                        $this->csvCell($check->error),
-                        $check->checked_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->healthHistoryExporter->stream($website, $filters);
     }
 
     /** @return array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} */
@@ -515,13 +474,5 @@ class WebsitesController extends Controller
             Website::STATUS_ACTIVE,
             Website::STATUS_FAILED,
         ];
-    }
-
-    /**
-     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
-     */
-    private function csvCell(string|int|null $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }

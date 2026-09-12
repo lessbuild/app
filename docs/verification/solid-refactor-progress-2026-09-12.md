@@ -402,6 +402,23 @@ Verification after the slice:
 - `WebsiteHealthHistoryTest` and `WebsiteHealthInsightsTest`: 12 passed (117 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — website health-history export slice
+
+Responsibility problem: `WebsitesController::exportHealthChecks()` still combined the authenticated endpoint with CSV headers/BOM, retained-row iteration, formula-safe serialization and private response headers.
+
+Boundary used: `WebsiteHealthHistoryExporter` now owns the health-history CSV protocol and consumes `WebsiteHealthHistoryQuery`. The controller retains policy authorization and filter normalization before delegation. The exporter is concrete and constructor-injected; it does not broaden the health-monitoring or provider contracts.
+
+Preserved guarantees:
+
+- Filename, private/no-store/nosniff headers, UTF-8 BOM, header/row order, newest-first ordering and `MAX_PER_WEBSITE` bound remain unchanged.
+- Result labels, nullable fields, endpoint/error formula escaping and timestamp serialization remain unchanged.
+- The export remains website-policy protected and uses the same filtered query semantics as the history page.
+
+Verification after the slice:
+
+- `WebsiteHealthHistoryTest` and `WebsiteHealthInsightsTest`: 12 passed (117 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Extract the website health-history CSV protocol, then assess whether any lifecycle operation has a clear reusable boundary before changing provisioning, relocation or deletion behavior.
+Assess website lifecycle orchestration—provisioning, relocation, retry, cleanup and deletion—for a smallest justified action boundary before making lifecycle changes.
