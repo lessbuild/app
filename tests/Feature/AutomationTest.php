@@ -13,6 +13,7 @@ use App\Services\ManagedSsh;
 use App\Services\Runner;
 use App\Services\WorkflowConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
@@ -27,7 +28,54 @@ class AutomationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Cache::flush();
         config(['billing.enforce_entitlements' => false]);
+    }
+
+    public function test_owner_can_create_a_deployment_schedule_with_a_validated_contract(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Scheduled', 'slug' => 'scheduled', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($user)->post(route('automation.deployment-schedules.store', $environment), [
+            'name' => 'Weekday deploy', 'cron_expression' => '0 3 * * 1-5', 'timezone' => 'UTC',
+        ])->assertRedirect()->assertSessionHas('success', 'Deployment schedule created.');
+
+        $schedule = $environment->deploymentSchedules()->sole();
+        $this->assertSame('Weekday deploy', $schedule->name);
+        $this->assertSame('0 3 * * 1-5', $schedule->cron_expression);
+        $this->assertSame('UTC', $schedule->timezone);
+        $this->assertTrue($schedule->is_enabled);
+        $this->assertSame($user->id, $schedule->created_by);
+    }
+
+    public function test_deployment_schedule_denial_precedes_malformed_input_and_writes_nothing(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Scheduled', 'slug' => 'scheduled', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($viewer)->post(route('automation.deployment-schedules.store', $environment), [])->assertForbidden();
+
+        $this->assertDatabaseCount('deployment_schedules', 0);
+    }
+
+    public function test_free_plan_rejects_deployment_schedule_before_persistence(): void
+    {
+        config(['billing.enforce_entitlements' => true]);
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Scheduled', 'slug' => 'scheduled', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($user)->post(route('automation.deployment-schedules.store', $environment), [
+            'name' => 'Weekday deploy', 'cron_expression' => '0 3 * * 1-5', 'timezone' => 'UTC',
+        ])->assertSessionHasErrors('plan');
+
+        $this->assertDatabaseCount('deployment_schedules', 0);
     }
 
     public function test_workflow_yaml_applies_schedules_scaling_and_processes_atomically(): void

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Automation\CreateDeploymentScheduleAction;
+use App\Http\Requests\StoreDeploymentScheduleRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Jobs\RunScheduledTaskJob;
 use App\Models\DeploymentSchedule;
@@ -57,12 +59,9 @@ class AutomationController extends Controller
     /**
      * Validate cron timing for an editable, entitled environment, then create an enabled deployment schedule.
      */
-    public function deploymentSchedule(Request $request, Environment $environment): RedirectResponse
+    public function deploymentSchedule(StoreDeploymentScheduleRequest $request, Environment $environment, CreateDeploymentScheduleAction $createSchedule): RedirectResponse
     {
-        $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'scheduled_deployments');
-        $data = $this->scheduleData($request);
-        $environment->deploymentSchedules()->create([...$data, 'created_by' => $request->user()->id, 'is_enabled' => true]);
+        $createSchedule->handle($environment, $request->user(), $request->validated());
 
         return back()->with('success', __('Deployment schedule created.'));
     }
