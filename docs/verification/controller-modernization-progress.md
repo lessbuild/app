@@ -246,9 +246,78 @@ validation, string-versus-array bindings, `relatedOperations()` receipt
 lookups, claims, leases and stale-callback behavior. Do not begin environment
 extractions until the configuration slice is committed.
 
+## Phase 2A — configuration input and API capability boundary
+
+### Responsibility problem
+
+The configuration controllers repeated document/binding validation and mixed
+the project deployment policy with the stronger workspace-management rule
+required by the configuration services. API capability checks also lived in a
+controller helper, but Form Requests resolve before controller methods; moving
+validation without relocating that boundary would let request validation run
+before API entitlement, network and token checks.
+
+### Boundaries applied
+
+- `ProjectPolicy::viewConfiguration` and `manageConfiguration` now express the
+  existing manager-only configuration capability separately from project
+  deployment permission.
+- `StoreApplicationConfigurationRequest` owns web document/binding rules,
+  bounded depth-20 JSON decoding and explicit validated accessors. Its custom
+  failure response flashes errors without submitted document or binding input,
+  including parser failures raised after ordinary validation.
+- API `ConfigurationInputRequest` owns the unchanged string-document and
+  array-binding contract for both planning and review, including required
+  presence of empty bindings for removal-only documents.
+- `EnsureControlPlaneAccess` is route middleware for the six configuration API
+  endpoints. It preserves the existing API entitlement, IP-range and Sanctum
+  ability order before Form Request authorization and validation.
+- Existing review, planner, reconciler, cancellation and retry services remain
+  the operation boundaries. Their locks, transactions and relationship-based
+  receipt semantics were not duplicated in controllers or new generic actions.
+
+### Preserved contracts and safety guarantees
+
+- Web routes retain their redirects, validation keys, error messages and
+  no-`_old_input` behavior. API routes retain JSON envelopes, status codes,
+  `present|array:placements,secrets,repositories` semantics and OpenAPI paths.
+- Configuration management no longer relies on the project's deployment-only
+  `update` policy. A developer/deployment role with a manage API token is
+  rejected before malformed input is evaluated, with no review or other write.
+- Review visibility, receipt recovery access, cross-project 404 concealment,
+  cancellation/retry requester rules, `relatedOperations()` lookup, secret
+  exclusion, ownership, claim, lease and stale-attempt behavior remain in the
+  existing controller/service ordering.
+- No jobs, events, remote calls, schema, serialized payload or dependency
+  lockfile changed.
+
+### Verification
+
+- Fresh configuration suite: **177 passed, 1,736 assertions** across all
+  `tests/Feature/ApplicationConfiguration*.php` files.
+- Added coverage for web request-validation and JSON-parser failures without
+  flashing document/binding input, non-manager denial before validation, and
+  API management-role denial before malformed input.
+- Existing web/API, removal-only, OpenAPI, receipt-performance, concurrency,
+  ownership, environment-removal and retry tests all passed.
+- Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `bd68cdf` — `refactor: extract configuration input boundaries`
+
+**Phase 2A exit gate: complete.** Exact next task: characterize the no-input
+apply/cancel/retry guards and review/application receipt visibility, then add
+resource-specific policy abilities or request boundaries only where they
+preserve parent/child 404 checks, requester-only apply/retry, manager recovery
+cancel, exact error keys/messages and `relatedOperations()` semantics. Commit
+that operation-authorization slice before beginning environment requests or
+actions.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
 | --- | --- | --- | --- | --- |
 | Phase 0 | Complete inventory and isolated baseline before source changes. | See baseline above. | `ea81610` — `docs: record controller modernization baseline` | Add the project creation pilot: characterize current tests, then introduce `StoreProjectRequest`, `ProjectPolicy::create` and `CreateProjectAction` without changing contracts. |
 | Phase 1 | Project creation mixed permission, validation, template selection and transactional writes in `ProjectController`. | 26 focused tests passed, 166 assertions; Pint and diff checks passed. | `5c055ff` — `refactor: extract project creation operation` | Characterize configuration web/API ordering and extract the smallest configuration request/operation boundary; preserve secret-safe validation, receipt relationships, claims, leases and stale callbacks. |
+| Phase 2A | Configuration web/API document and binding validation mixed with project deployment permission and controller API capability checks. | 177 configuration tests passed, 1,736 assertions; Pint and diff checks passed. | `bd68cdf` — `refactor: extract configuration input boundaries` | Characterize no-input apply/cancel/retry and receipt visibility, then extract only operation-specific policies/requests that preserve 404, requester and recovery semantics. |
