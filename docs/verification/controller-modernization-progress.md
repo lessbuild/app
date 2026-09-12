@@ -4838,6 +4838,54 @@ controller audit by classifying cost/dashboard/subscription writes, global
 admin gates, Livewire writes and any other inline validation or authorization;
 extract only justified boundaries before running final verification.
 
+## Phase 7AW — web build promotion request
+
+### Responsibility problem
+
+`BuildPromotionController` repeated build visibility authorization, workspace
+deployment permission and request validation before resolving the target and
+calling the existing promotion action. The API promotion endpoint already had
+an explicit request boundary, while this web endpoint retained the older
+controller-local version.
+
+### Boundary and principles
+
+`BuildPolicy::promote` now expresses the combined resource visibility and
+workspace deployment ability. `PromoteBuildRequest` authorizes through that
+policy and exposes only validated target/note accessors. The controller keeps
+the organization-scoped target lookup and response mapping; `PromoteBuildAction`
+continues to own transactional eligibility, locks, lineage, approval and
+dispatch. This applies single responsibility and dependency inversion without
+duplicating the operation.
+
+### Preserved guarantees
+
+- Unauthorized actors are rejected before malformed input is validated and
+  cannot create promotion records or queue work.
+- Target organization scoping, not-found behavior, note validation and all
+  queued/incompatible/unavailable/active/blocked response messages remain
+  unchanged.
+- Existing action-level source identity, forward-environment, lock ordering,
+  approval, notification and dispatch guarantees remain unchanged. No routes,
+  API envelopes, persisted values, serialized jobs, provider behavior,
+  dependency lockfiles or external acceptance state changed.
+
+### Verification
+
+- Build-promotion web/API, tenancy, concurrency and workflow regression set:
+  **7 passed, 57 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `407c914` — `refactor: extract web build promotion request`
+
+**Phase 7AW exit gate: complete.** Exact next task: classify and, where
+justified, extract cost-budget and dashboard-preference request/action
+boundaries while preserving entitlement/authorization ordering and user
+preference values.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4924,3 +4972,4 @@ extract only justified boundaries before running final verification.
 | Phase 7AT-website-log | WebsiteCallbackController mixed attempt-only lock-point validation, post-completion log acceptance and provisioning-log replacement. | 51 website provisioning/log/retry/relocation/lifecycle/preview/callback-integrity/concurrency tests passed, 426 assertions; Pint, syntax and diff checks passed. | `9d1ac9b` — `refactor: extract website provisioning log callback` | Audit raw-body GitHub App webhook and repository webhook delegation, preserving payload-size/signature/JSON ordering, deliberate 404 concealment and response envelopes. |
 | Phase 7AU-github-app-webhook | GitHubAppWebhookController mixed raw-body protocol verification, ping/metadata validation and installation lookup before reusing the existing repository webhook pipeline. | 25 GitHub App/raw-webhook/repository-webhook/revision-attestation/callback-integrity tests passed, 184 assertions; Pint, syntax and diff checks passed. | `63d8c56` — `refactor: extract GitHub App webhook verification` | Audit remaining OAuth/SSO and callback controllers, then classify the remaining controller writes, validation and authorization exceptions before final verification. |
 | Phase 7AV-project-lifecycle | ProjectController mixed preview normalization/validation/entitlement checks and direct project update/deletion with HTTP coordination. | 8 preview/project creation/environment/lifecycle tests passed, 52 assertions; Pint, syntax and diff checks passed. | `30d4832` — `refactor: extract project lifecycle operations` | Finish the controller audit by classifying cost/dashboard/subscription writes, global admin gates, Livewire writes and remaining inline validation/authorization before final verification. |
+| Phase 7AW-web-build-promotion | BuildPromotionController duplicated visibility/deploy authorization and validation around the existing promotion action. | 7 build-promotion web/API/tenancy/concurrency/workflow tests passed, 57 assertions; Pint, syntax and diff checks passed. | `407c914` — `refactor: extract web build promotion request` | Classify and, where justified, extract cost-budget and dashboard-preference request/action boundaries while preserving entitlement/authorization ordering and user preference values. |
