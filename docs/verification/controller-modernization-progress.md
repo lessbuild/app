@@ -2568,6 +2568,70 @@ creation/configuration boundary shared by create and update, preserving
 tenant-scoped provider selection, GitHub App webhook-secret availability,
 validation ordering, encrypted-secret behavior and the existing 503 response.
 
+## Phase 7E — repository creation and provider webhook configuration
+
+### Responsibility problem
+
+`RepositoriesController` duplicated tenant-scoped provider lookup and the
+GitHub App webhook configuration transition in both create and update. The
+controller also translated missing integration configuration directly into a
+503 response while the update action already owned the website/repository
+locking transaction. This made a provider-specific integration rule harder to
+exercise outside HTTP and left creation as a direct persistence operation.
+
+### Boundaries applied
+
+- `CreateRepositoryAction` owns provider lookup in the actor's current
+  workspace, integration-aware attribute preparation and repository creation.
+- `RepositoryWebhookConfiguration` is the concrete shared collaborator for
+  GitHub App creation and provider-switch transitions. It enables and secrets
+  App repositories, disables and clears the secret when switching away, and
+  raises a domain-specific exception when the required configured secret is
+  absent.
+- `UpdateRepositoryAction` now receives the explicit actor, resolves the
+  tenant-scoped target provider, delegates webhook preparation and retains its
+  existing website/repository locks and transaction.
+- `RepositoriesController` consumes validated attributes, invokes operations
+  and maps only the integration-unavailable exception to the existing 503;
+  redirects and validation-error mapping remain HTTP concerns.
+
+This applies single responsibility and dependency inversion around a real
+provider variant without introducing a generic repository or speculative
+provider strategy.
+
+### Preserved contracts and safety guarantees
+
+- GitHub App repositories remain automatically subscribed with the configured
+  encrypted secret; switching to a normal source provider still disables and
+  clears the App webhook fields.
+- Tenant-scoped provider selection, repository URL/branch and encrypted hook
+  handling, update placement locks, active-deployment conflict validation,
+  redirects and 503 status/message remain unchanged.
+- Missing GitHub App configuration fails before repository creation or update,
+  and does not queue work. The provider exception is kept out of the shared
+  operation so non-HTTP callers are not coupled to redirects or responses.
+
+### Verification
+
+- Repository creation/update, GitHub App, webhook, deployment, provider
+  capability, inventory and safety regression set: **57 passed, 486
+  assertions**.
+- Added no-secret tests for both App repository creation and switching an
+  existing repository to an App provider; both prove no persistence side
+  effect.
+- Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `2263941` — `refactor: extract repository creation operation`
+
+**Phase 7E exit gate: complete.** Exact next task: characterize
+`RepositoryWebhookSettingsController` and its GitLab/non-GitLab contracts,
+then extract the request and cohesive enable/disable operations while
+preserving policy ordering, GitLab `whsec_` validation, one-time secret flash,
+encrypted persistence, pending-revision cleanup and redirect fragments.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2610,3 +2674,4 @@ validation ordering, encrypted-secret behavior and the existing 503 response.
 | Phase 7B-report-filter-requests | RecipeReportsController normalized contributor-inbox and reporter-history GET filters alongside query and export orchestration. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `7b845e0` — `refactor: move recipe report filters to requests` | Audit recipe/gallery/report controllers for remaining direct writes, inline permission guards, unclassified lookups and query/export duplication before the next product slice. |
 | Phase 7C-build-review | BuildsController validated approval/operator notes and directly wrote operator notes alongside already-extracted workflow actions. | 65 build/repository/deployment tests passed, 530 assertions; Pint and diff checks passed. | `ae1812d` — `refactor: extract build note and approval requests` | Characterize build/repository inventory filter requests and repository creation/configuration boundary, preserving scoped IDs, webhook-secret availability, validation ordering and exports. |
 | Phase 7D-build-repository-filters | Build and repository controllers normalized inventory and webhook-delivery filters alongside query/export orchestration. | 38 build/repository filter, export, insight, webhook and safety tests passed, 375 assertions; Pint and diff checks passed. | `8938e7d` — `refactor: extract build repository filter requests` | Extract the repository creation/configuration boundary shared by create and update, preserving tenant-scoped provider selection, webhook-secret availability, validation ordering, encrypted-secret behavior and the 503 response. |
+| Phase 7E-repository-creation | Repository create/update duplicated tenant provider lookup and GitHub App webhook configuration around direct creation and an existing locked update action. | 57 repository/GitHub App/webhook/deployment/provider/inventory/safety tests passed, 486 assertions; Pint and diff checks passed. | `2263941` — `refactor: extract repository creation operation` | Extract repository webhook-settings request and enable/disable operations, preserving GitLab token validation, one-time secret flash, encrypted persistence, pending cleanup and redirect behavior. |
