@@ -1317,6 +1317,81 @@ contracts together, then extract the smallest shared runtime transition
 operation only where semantics match; preserve distinct request validation,
 token abilities, entitlements, status envelopes and dispatch behavior.
 
+## Phase 4F — runtime scaling and API parity
+
+### Responsibility problem
+
+The web and API runtime endpoints still combined request validation, policy and
+entitlement ordering, environment persistence, queue dispatch and response
+mapping in their controllers. The API controller also duplicated the API
+entitlement, network-range and token-ability check already used by
+`EnsureControlPlaneAccess`, which made moving API validation into Form Requests
+liable to change the access-before-validation contract.
+
+### Boundaries applied
+
+- `ScaleEnvironmentRequest` and `RuntimeEnvironmentRequest` own the web input
+  contracts and environment-policy boundary. The scaling request retains the
+  scaling entitlement check before validation; runtime entitlement remains in
+  the operation because it depends on the validated state.
+- API `ScaleEnvironmentRequest` and `RuntimeEnvironmentRequest` retain the
+  separate `replicas` and `state` contracts. Their authorization first uses
+  `ControlPlaneAccess`, then the environment policy and (for scale) scaling
+  entitlement, preserving the former API capability/network/policy/entitlement
+  ordering before validation.
+- `ControlPlaneAccess` is the shared API capability collaborator used by both
+  `EnsureControlPlaneAccess` and `ControlPlaneController`; it preserves API
+  entitlement, encrypted workspace IP-range matching, Sanctum abilities and
+  exact 403 messages without putting these integration access checks in a
+  resource policy.
+- `UpdateEnvironmentScalingAction` owns canonical scaling persistence,
+  clearing the hibernation marker and dispatching the existing unique runtime
+  job. `QueueEnvironmentRuntimeStateAction` owns state-dependent hibernation
+  entitlement and dispatch. Both actions are reusable without an HTTP Request;
+  web and API response envelopes remain in their controllers.
+
+This applies single responsibility and dependency inversion with concrete
+Laravel requests, policies, a shared access collaborator and focused actions.
+It keeps web/API request schemas distinct because their semantics differ and
+does not add a generic runtime repository or strategy.
+
+### Preserved contracts and safety guarantees
+
+- Web routes retain redirects, flash messages, field names, nullable scaling
+  behavior and validation keys. API routes retain `replicas` versus `state`,
+  JSON 202 envelopes, status text and response fields.
+- Policy and API token denial still precede malformed input. Foreign
+  environments remain forbidden, and denied requests create neither database
+  writes nor `ApplyEnvironmentRuntimeStateJob` instances.
+- Scaling still persists the submitted minimum/maximum/desired values,
+  clears `hibernated_at` and queues the job with `hibernate=false`. Runtime
+  still validates before checking the state-specific hibernation entitlement,
+  and queues the existing `hibernate` flag only after that check succeeds.
+- Laravel's existing per-environment unique-job lock continues to coalesce
+  overlapping runtime transitions. No transaction, remote call, job payload,
+  route, schema, persisted value or dependency lockfile changed.
+
+### Verification
+
+- Runtime/API and adjacent automation, configuration, environment, tenancy,
+  entitlement and platform regression set: **53 passed, 334 assertions**.
+- Added coverage for web scale persistence/queueing, web runtime entitlement
+  ordering, API access-before-validation, foreign-resource denial, exact scale
+  and runtime envelopes, hibernation queueing, validation failure and no-side-
+  effect behavior. Existing control-plane middleware/configuration tests also
+  passed after the shared access extraction.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `49bd49a` — `refactor: extract runtime operations`
+
+**Phase 4F exit gate: complete.** Exact next task: characterize automation
+token creation, rotation and deletion—ownership, abilities, expiry, plan
+entitlement, plaintext-token flash behavior and no-secret logging—then extract
+the smallest request/action boundaries without changing token serialization or
+feedback.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1339,3 +1414,4 @@ token abilities, entitlements, status envelopes and dispatch behavior.
 | Phase 4C-scheduled-task | Scheduled-task creation mixed policy, entitlement ordering, cron/task validation, encrypted command persistence and actor attribution in `AutomationController`; manual runs and output remain separate operations. | 40 automation/API/runtime/tenancy/entitlement regression tests passed, 236 assertions; Pint and diff checks passed. | `f6878ed` — `refactor: extract scheduled task operation` | Extract manual scheduled-task runs while preserving overlap guards, run timestamps, job dispatch and task authorization. |
 | Phase 4D-task-run | Manual scheduled-task execution mixed policy, entitlement, overlap checks, queued-run persistence, timestamp mutation and job dispatch in `AutomationController`. | 43 automation/API/runtime/tenancy/entitlement regression tests passed, 250 assertions; Pint and diff checks passed. | `9c5edf3` — `refactor: extract scheduled task runs` | Extract scheduled-task deletion, then paired deployment/scaling schedule deletion actions, preserving policy ordering and existing responses. |
 | Phase 4E-automation-deletions | Three automation controllers directly deleted scheduled-task, deployment-schedule and scaling-schedule records after authorization. | 45 automation/API/runtime/tenancy/entitlement regression tests passed, 265 assertions; Pint and diff checks passed. | `7ad26fa` — `refactor: extract automation deletion operations` | Characterize web scale and API scale/runtime contracts, then extract only matching runtime transition logic. |
+| Phase 4F-runtime-api | Web/API scale and runtime controllers mixed validation, policy/entitlement ordering, persistence, dispatch and response mapping; API access checks were duplicated. | 53 automation/API/runtime/configuration/tenancy/entitlement/platform tests passed, 334 assertions; Pint and diff checks passed. | `49bd49a` — `refactor: extract runtime operations` | Characterize token creation/rotation/deletion ownership, abilities, expiry, entitlement and plaintext feedback before extracting request/action boundaries. |
