@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Callbacks;
 
+use App\Actions\Web\RecordWebsiteProvisioningFailureAction;
+use App\Actions\Web\RecordWebsiteProvisioningStatusAction;
 use App\Http\Controllers\Controller;
-use App\Jobs\Web\CleanupWebsitePlacementJob;
 use App\Models\Website;
-use App\Services\PreviewDeploymentLifecycle;
-use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -20,41 +19,16 @@ class WebsiteCallbackController extends Controller
      * @param  Website  $website  The route-bound lifecycle target.
      * @return Response Empty acknowledgement, including ignored stale callbacks.
      */
-    public function status(Request $request, Website $website): Response
-    {
-        $accepted = DB::transaction(function () use ($request, $website): bool {
-            $website = Website::query()->lockForUpdate()->findOrFail($website->id);
-            if (! $this->acceptsLifecycleCallback($request, $website)) {
-                return false;
-            }
-
-            $finalStage = app(WebsiteProvisioningPlan::class)->finalStage();
-            $data = $request->validate(['status' => "required|integer|min:0|max:{$finalStage}"]);
-            $data['status'] = (int) $data['status'];
-            if ($data['status'] > $website->setup_stage) {
-                $website->update(['setup_stage' => $data['status']]);
-            }
-
-            if ($data['status'] === $finalStage) {
-                $previousServerId = $website->previous_server_id;
-                $website->update([
-                    'provisioning_status' => Website::STATUS_ACTIVE,
-                    'provisioned_at' => now(),
-                    'provisioning_error' => null,
-                ]);
-                app(PreviewDeploymentLifecycle::class)->websiteReady($website->fresh());
-
-                if ($previousServerId) {
-                    CleanupWebsitePlacementJob::dispatch(
-                        $website->id,
-                        $previousServerId,
-                        $website->deployment_slug,
-                    )->afterCommit();
-                }
-            }
-
-            return true;
-        }, 5);
+    public function status(
+        Request $request,
+        Website $website,
+        RecordWebsiteProvisioningStatusAction $record,
+    ): Response {
+        $accepted = $record->handle(
+            $website,
+            $request->input('attempt'),
+            $request->input('status'),
+        );
 
         return $accepted ? response('') : response()->noContent();
     }
@@ -62,30 +36,21 @@ class WebsiteCallbackController extends Controller
     /**
      * Record a failure for the current signed lifecycle attempt.
      *
-     * @param  Request  $request  Signed callback input, validated before persistence.
+     * @param  Request  $request  Signed callback input, validated after lifecycle acceptance.
      * @param  Website  $website  The route-bound lifecycle target.
      * @return Response Empty acknowledgement, including ignored stale callbacks.
      */
-    public function failed(Request $request, Website $website): Response
-    {
-        DB::transaction(function () use ($request, $website): void {
-            $website = Website::query()->lockForUpdate()->findOrFail($website->id);
-            if (! $this->acceptsLifecycleCallback($request, $website)) {
-                return;
-            }
-
-            $data = $request->validate([
-                'exit_code' => 'nullable|integer',
-                'message' => 'required|string|max:2000',
-            ]);
-            $website->update([
-                'provisioning_status' => Website::STATUS_FAILED,
-                'provisioning_error' => isset($data['exit_code'])
-                    ? "{$data['message']} (exit code {$data['exit_code']})"
-                    : $data['message'],
-            ]);
-            app(PreviewDeploymentLifecycle::class)->websiteFailed($website->fresh());
-        }, 5);
+    public function failed(
+        Request $request,
+        Website $website,
+        RecordWebsiteProvisioningFailureAction $record,
+    ): Response {
+        $record->handle(
+            $website,
+            $request->input('attempt'),
+            $request->input('exit_code'),
+            $request->input('message'),
+        );
 
         return response()->noContent();
     }
@@ -93,7 +58,7 @@ class WebsiteCallbackController extends Controller
     /**
      * Store bounded callback output without accepting stale attempts.
      *
-     * @param  Request  $request  Signed callback input, validated before persistence.
+     * @param  Request  $request  Signed callback input, validated after lifecycle acceptance.
      * @param  Website  $website  The route-bound lifecycle target.
      * @return Response Empty acknowledgement, including ignored stale callbacks.
      */
@@ -115,21 +80,5 @@ class WebsiteCallbackController extends Controller
         });
 
         return response()->noContent();
-    }
-
-    /**
-     * Check current attempt identity and lifecycle state while the target row is locked.
-     *
-     * @param  Request  $request  The signed callback carrying the attempt token.
-     * @param  Website  $website  The freshly locked record, never the stale route-binding snapshot.
-     * @return bool Whether this callback can still change the lifecycle state.
-     */
-    private function acceptsLifecycleCallback(Request $request, Website $website): bool
-    {
-        return (! $website->provisioning_token || hash_equals($website->provisioning_token, (string) $request->input('attempt')))
-            && in_array($website->provisioning_status, [
-                Website::STATUS_QUEUED,
-                Website::STATUS_PROVISIONING,
-            ], true);
     }
 }
