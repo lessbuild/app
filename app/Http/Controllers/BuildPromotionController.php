@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Repository\PromoteBuildAction;
 use App\Data\BuildPromotionResult;
+use App\Http\Requests\PromoteBuildRequest;
 use App\Models\Build;
 use App\Models\Environment;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class BuildPromotionController extends Controller
 {
@@ -16,19 +16,13 @@ class BuildPromotionController extends Controller
      *
      * @return RedirectResponse The queued build, or the reason promotion could not proceed.
      */
-    public function __invoke(Request $request, Build $build, PromoteBuildAction $promote): RedirectResponse
+    public function __invoke(PromoteBuildRequest $request, Build $build, PromoteBuildAction $promote): RedirectResponse
     {
-        $this->authorize('view', $build);
         $organization = $build->repository->organization;
-        abort_unless($organization?->permits($request->user(), 'deploy'), 403);
-        $data = $request->validate([
-            'target_environment_id' => ['required', 'integer'],
-            'promotion_note' => ['nullable', 'string', 'max:2000'],
-        ]);
-        $target = Environment::query()->whereKey($data['target_environment_id'])
+        $target = Environment::query()->whereKey($request->targetEnvironmentId())
             ->whereHas('project', fn ($query) => $query->where('organization_id', $organization->id))
             ->firstOrFail();
-        $result = $promote->handle($build, $target, $request->user(), $data['promotion_note'] ?? null);
+        $result = $promote->handle($build, $target, $request->user(), $request->promotionNote());
 
         return match ($result->status) {
             BuildPromotionResult::QUEUED => redirect()->route('builds.show', $result->build)->with('success', __('Release promotion requested.')),

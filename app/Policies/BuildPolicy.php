@@ -50,6 +50,19 @@ class BuildPolicy
     }
 
     /**
+     * Require build visibility and repository-workspace deployment permission for promotion.
+     *
+     * @param  User  $user  Account requesting the ability in its current organization.
+     * @param  Build  $build  Successful release whose promotion is being requested.
+     * @return bool Whether the account may request a promotion; lifecycle eligibility is checked by the action.
+     */
+    public function promote(User $user, Build $build): bool
+    {
+        return $this->view($user, $build)
+            && ($build->repository?->organization?->permits($user, 'deploy') ?? false);
+    }
+
+    /**
      * Require a visible build and repository-organization management permission for approval.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

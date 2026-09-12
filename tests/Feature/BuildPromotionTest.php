@@ -94,6 +94,7 @@ class BuildPromotionTest extends TestCase
 
         $intruder = User::factory()->create();
         $this->actingAs($intruder)->post(route('builds.promote', $source), ['target_environment_id' => $production->id])->assertForbidden();
+        $this->actingAs($intruder)->post(route('builds.promote', $source), ['target_environment_id' => 'not-an-integer'])->assertForbidden();
         $this->assertSame(BuildPromotionResult::INELIGIBLE, app(PromoteBuildAction::class)->handle($source, $production, $intruder)->status);
         $this->assertSame(0, Build::query()->where('trigger_source', Build::TRIGGER_PROMOTION)->count());
     }
