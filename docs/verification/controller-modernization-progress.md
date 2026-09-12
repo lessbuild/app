@@ -2138,6 +2138,75 @@ authorization, two-factor/password ordering, teammate and active-workflow
 guards, transaction and personal-workspace recovery, then extract the
 request/action boundary while preserving 403/409/422 behavior.
 
+## Phase 5I — workspace deletion and organization visibility
+
+### Responsibility problem
+
+Workspace deletion still combined owner/current-workspace authorization,
+dynamic password and two-factor validation, recovery-code verification,
+teammate and active-workflow safeguards, transactional deletion, personal
+workspace recovery, and HTTP status mapping in `OrganizationController`.
+The organization index also used an inline permission abort for resource
+visibility.
+
+### Boundaries applied
+
+- `OrganizationPolicy::delete` owns the owner and current-workspace decision;
+  `OrganizationPolicy::view` owns workspace visibility for the organization
+  index. The policy methods do not write, query external services, or decide
+  workflow-state safety.
+- `DeleteOrganizationRequest` owns the dynamic confirmation, local-password
+  and two-factor rules and preserves the `deleteWorkspace` error bag.
+- `DeleteOrganizationAction` owns two-factor verification, teammate and
+  active-build/command guards, the existing deletion transaction, current
+  workspace clearing, and post-transaction personal-workspace recovery.
+  `OrganizationDeletionOperationException` carries only the operation's
+  existing 422/409 response status for the controller to map to HTTP.
+- `OrganizationController` now coordinates authorization supplied by the
+  request/policy, invokes the action, maps operation status, and returns the
+  existing redirect/flash response.
+
+This applies single responsibility and dependency inversion while preserving
+the distinction between actor authorization, request validation, and business
+state. It does not move destructive-workflow guards into a policy or create a
+generic deletion service.
+
+### Preserved contracts and safety guarantees
+
+- Owner-only/current-workspace deletion remains 403 for unauthorized actors,
+  including when the submitted payload is malformed. Invalid confirmation,
+  password and two-factor responses retain the `deleteWorkspace` bag and
+  password non-flashing behavior.
+- Recovery-code verification still occurs before teammate and active-operation
+  checks, and the existing two-factor service retains its single-use locking.
+  Teammates still produce 422; active builds or server commands still produce
+  409; neither path deletes records.
+- The delete transaction still removes the workspace and clears the actor's
+  current workspace before `PersonalOrganization` ensures a new personal
+  workspace after commit. Routes, response text, persistence, observers,
+  middleware ordering and external provider resources remain unchanged.
+
+### Verification
+
+- Organization deletion, account lifecycle and two-factor regression set:
+  **28 passed, 163 assertions**.
+- Organization visibility/tenancy regression set: **25 passed, 131
+  assertions**.
+- Coverage includes named-bag validation, malformed unauthorized deletion,
+  invalid 2FA, teammate and active-command safeguards, successful recovery,
+  policy-backed workspace visibility, and existing account/2FA behavior.
+- Full Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commits: `d253ca0` — `refactor: extract organization deletion operation`;
+`35719ac` — `refactor: authorize organization workspace page`
+
+**Phase 5 organization exit gate: complete.** Exact next task: begin Phase 6
+with provider management by inventorying `ProviderController`, its request,
+provider policies/adapters, connection testing/monitoring, inventory queries
+and exports before separating shared reads and provider operations.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2173,3 +2242,4 @@ request/action boundary while preserving 403/409/422 behavior.
 | Phase 5F-organization-invitations | Organization invitation endpoints mixed policy, entitlement, normalization, validation, domain/member rules, seat locking, hashed-token persistence, notifications and locked acceptance. | 28 organization/invitation/entitlement/plan-limit/billing tests passed, 122 assertions; Pint and diff checks passed. | `be7d410` — `refactor: extract organization invitation operations` | Characterize member role updates, member removal and workspace switching, preserving owner protection, scoped-member 404 behavior, pivot writes, current-workspace selection and seat synchronization timing. |
 | Phase 5G-organization-membership | Member role/removal and workspace switch endpoints mixed policy checks, scoped member lookup, owner safeguards, pivot/current-workspace writes and seat dispatch in `OrganizationController`. | 30 organization/invitation/entitlement/plan-limit/billing tests passed, 140 assertions; Pint and diff checks passed. | `39f2830` — `refactor: extract organization membership operations` | Characterize notification/security settings, including normalization, IP self-lockout protection, SSO entitlement/configuration rules and named validation behavior. |
 | Phase 5H-organization-settings | Organization settings endpoints mixed manager authorization, request validation/normalization, IP/domain/SSO invariants, encrypted persistence and shared IP matching in the controller and middleware. | 21 organization/platform regression tests passed, 112 assertions; Pint and diff checks passed. | `a1be9af` — `refactor: extract organization settings operations` | Characterize workspace deletion's named `deleteWorkspace` validation bag, owner/current-workspace authorization, two-factor/password ordering, teammate and active-workflow guards, transaction and personal-workspace recovery, then extract the request/action boundary. |
+| Phase 5I-organization-deletion | Workspace deletion and organization-index visibility mixed policy decisions, dynamic named-bag validation, 2FA verification, workflow safety guards, transactional deletion/recovery and HTTP status mapping in `OrganizationController`. | 28 deletion/account/2FA tests passed, 163 assertions; 25 organization/tenancy tests passed, 131 assertions; Pint and diff checks passed. | `d253ca0` + `35719ac` — `refactor: extract organization deletion operation`; `refactor: authorize organization workspace page` | Begin Phase 6 provider management: inventory provider reads/exports, connection testing/monitoring, request validation, policies, adapters, entitlements and encrypted credential safety. |
