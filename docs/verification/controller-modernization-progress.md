@@ -1631,6 +1631,62 @@ alert-rule creation and deletion, introducing resource authorization, a
 validated request and a cohesive operation while preserving alert entitlements,
 workspace-scoped server IDs and no-write denial behavior.
 
+## Phase 5A — metric alert-rule operations
+
+### Responsibility problem
+
+`ObservabilityController` combined metric-rule workspace permission checks,
+alert entitlements, workspace-scoped server validation and direct create/delete
+writes. The same controller also handled unrelated destinations, status pages,
+incidents and read-side observability data.
+
+### Boundaries applied
+
+- `MetricAlertRulePolicy` owns create/delete actor decisions for the selected
+  workspace.
+- `StoreMetricAlertRuleRequest` owns the metric-rule field contract and
+  organization-scoped server existence rule while preserving authorization and
+  entitlement-before-validation ordering.
+- `CreateMetricAlertRuleAction` and `DeleteMetricAlertRuleAction` own the
+  alert entitlement check and cohesive persistence operation, including actor
+  attribution and enabled defaults.
+- The controller now coordinates the request/policy/action and retains the
+  existing redirect and flash responses.
+
+This applies single responsibility, interface segregation and dependency
+inversion without introducing a generic repository or abstraction for unrelated
+observability resources.
+
+### Preserved contracts and safety guarantees
+
+- Metric-rule route names, validation keys, metric/operator values, threshold
+  bounds, cooldown options, workspace-scoped server IDs, entitlement message,
+  redirects and flash text remain unchanged.
+- Unauthorized actors still receive 403 before malformed input and cannot
+  create or delete rows. Foreign server IDs remain validation failures, and
+  deletion remains limited to a manager of the rule's current workspace.
+- Rules are still created enabled with the request actor recorded; the action
+  rechecks the alerts entitlement so the operation remains safe outside this
+  controller. No schema, job, serialization or dependency lockfile changed.
+
+### Verification
+
+- Observability, entitlement and incident regression set: **22 passed, 172
+  assertions**.
+- Added coverage for create/delete policy boundaries, malformed-input denial,
+  organization-scoped server validation and no-write behavior.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `ca9d515` — `refactor: extract metric alert rule operations`
+
+**Phase 5A exit gate: complete.** Exact next task: characterize alert
+destination creation, endpoint-type validation, encrypted credentials, test
+delivery and deletion, then extract its request/policy/action boundaries while
+preserving sanitized feedback and queued webhook behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1658,3 +1714,4 @@ workspace-scoped server IDs and no-write denial behavior.
 | Phase 4H-workflow | Web/API workflow controllers mixed basic YAML validation with policy/capability checks before invoking the existing transaction-aware `WorkflowConfiguration` service. | 67 automation/workflow/API/configuration/environment/tenancy/entitlement/platform tests passed, 453 assertions; Pint and diff checks passed. | `dc57901` — `refactor: extract workflow request boundaries` | Characterize API variables parsing, secret-safe failures, scoping and transaction/lock behavior before extracting its request/action boundary. |
 | Phase 4I-api-variables | API variable replacement mixed control-plane access, environment authorization, bounded text validation, secret-safe parsing, versioned persistence and the JSON response in `ControlPlaneController`. | 52 automation/platform/environment-runtime/shared-tenancy tests passed, 296 assertions; Pint and diff checks passed. | `28ab03e` — `refactor: extract API variables operation` | Extract the remaining API promotion request boundary, preserving deploy-token and build-policy ordering, current-workspace target lookup, validation keys, 404 target behavior and the existing queued/conflict response envelope. |
 | Phase 4J-api-promotion | API promotion mixed capability/policy checks, validation, tenant-scoped target lookup and response mapping around `PromoteBuildAction`. | 48 build-promotion/automation/API tests passed, 220 assertions; Pint and diff checks passed. | `92cc670` — `refactor: extract API promotion request` | Begin Phase 5 with metric alert-rule creation and deletion, introducing resource authorization, a validated request and a cohesive operation while preserving alert entitlements, workspace-scoped server IDs and no-write denial behavior. |
+| Phase 5A-metric-rules | Observability metric-rule endpoints mixed workspace permission, alert entitlement, scoped server validation and direct persistence/deletion. | 22 observability/entitlement/incident tests passed, 172 assertions; Pint and diff checks passed. | `ca9d515` — `refactor: extract metric alert rule operations` | Characterize alert destination creation, endpoint-type validation, encrypted credentials, test delivery and deletion, then extract its request/policy/action boundaries while preserving sanitized feedback and queued webhook behavior. |
