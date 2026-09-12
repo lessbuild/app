@@ -12,10 +12,10 @@ use App\Services\DeploymentPreflight;
 use App\Services\DeploymentRequest;
 use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
+use App\Services\RepositoryWebhookDeliveryHistoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +27,7 @@ class RepositoriesController extends Controller
     public function __construct(
         private readonly RepositoryInventoryExporter $repositoryInventoryExporter,
         private readonly RepositoryInventoryQuery $repositoryInventory,
+        private readonly RepositoryWebhookDeliveryHistoryQuery $webhookDeliveryHistory,
     ) {}
 
     /**
@@ -125,41 +126,19 @@ class RepositoriesController extends Controller
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
             'deploymentMetrics' => $this->deploymentMetrics($repository),
-            'webhookDeliveries' => $this->filteredWebhookDeliveries($repository, $deliveryFilters)
+            'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters)
                 ->with('build')
                 ->latest('id')
                 ->paginate(10, pageName: 'webhook_page')
                 ->appends(array_filter($deliveryFilters, fn ($value) => $value !== null)),
             'deliveryFilters' => $deliveryFilters,
-            'deliveryMetrics' => $this->deliveryMetrics($repository, $deliveryFilters),
+            'deliveryMetrics' => $this->webhookDeliveryHistory->metrics($repository, $deliveryFilters),
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
             'deploymentPreflight' => $preflight->assess($repository, $gate->environment($repository)),
             'isFirstDeployment' => ! $repository->builds()->exists(),
         ]);
-    }
-
-    /**
-     * @param  array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string}  $filters
-     * @return array{total: int, queued: int, pending: int, unavailable: int, superseded: int, received: int}
-     */
-    private function deliveryMetrics(Repository $repository, array $filters): array
-    {
-        $counts = $this->filteredWebhookDeliveries($repository, $filters)
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status')
-            ->map(fn ($count): int => (int) $count);
-
-        return [
-            'total' => $counts->sum(),
-            'queued' => $counts->get(RepositoryWebhookDelivery::STATUS_QUEUED, 0),
-            'pending' => $counts->get(RepositoryWebhookDelivery::STATUS_PENDING, 0),
-            'unavailable' => $counts->get(RepositoryWebhookDelivery::STATUS_UNAVAILABLE, 0),
-            'superseded' => $counts->get(RepositoryWebhookDelivery::STATUS_SUPERSEDED, 0),
-            'received' => $counts->get(RepositoryWebhookDelivery::STATUS_RECEIVED, 0),
-        ];
     }
 
     /** @return array{total: int, succeeded: int, failed: int, success_rate: ?int, median_duration_seconds: ?int, duration_sample_size: int} */
@@ -230,7 +209,7 @@ class RepositoriesController extends Controller
                 'Updated at',
             ], ',', '"', '');
 
-            $this->filteredWebhookDeliveries($repository, $deliveryFilters)
+            $this->webhookDeliveryHistory->for($repository, $deliveryFilters)
                 ->with('build')
                 ->latest('id')
                 ->lazy(250)
@@ -269,18 +248,6 @@ class RepositoriesController extends Controller
             'delivery_date_from' => $dateFrom,
             'delivery_date_to' => $dateTo,
         ];
-    }
-
-    /** @param array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string} $filters */
-    private function filteredWebhookDeliveries(Repository $repository, array $filters): HasMany
-    {
-        return $repository->webhookDeliveries()
-            ->when($filters['delivery_status'], fn ($query, string $status) => $query
-                ->where('status', $status))
-            ->when($filters['delivery_date_from'], fn ($query, string $date) => $query
-                ->whereDate('created_at', '>=', $date))
-            ->when($filters['delivery_date_to'], fn ($query, string $date) => $query
-                ->whereDate('created_at', '<=', $date));
     }
 
     /**
