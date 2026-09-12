@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SharedOrganizationTenancyTest extends TestCase
@@ -52,6 +53,21 @@ class SharedOrganizationTenancyTest extends TestCase
         $this->actingAs($viewer)->patch(route('servers.update', $server), $payload)->assertForbidden();
         $this->actingAs($developer)->patch(route('servers.update', $server), $payload)->assertRedirect(route('servers.show', $server));
         $this->assertSame('Primary', $server->fresh()->display_name);
+    }
+
+    public function test_viewer_cannot_create_a_server_before_malformed_input_is_validated(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->post(route('servers.store'), ['provider_id' => 999999])->assertForbidden();
+
+        $this->assertDatabaseCount('servers', 0);
+        Queue::assertNothingPushed();
     }
 
     public function test_workspace_creation_assigns_resource_creator_and_tenant(): void

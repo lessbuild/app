@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Server\CollectServerLogAction;
 use App\Actions\Server\CreateServerAction;
+use App\Actions\Server\DeleteServerAction;
 use App\Actions\Server\QueueRemoteServerProvisioningRetryAction;
 use App\Actions\Server\RetryServerInitializationAction;
+use App\Actions\Server\UpdateServerDisplayNameAction;
 use App\Http\Requests\ServerDisplayNameRequest;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\PlainTextLogDownload;
@@ -13,7 +15,6 @@ use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
 use App\Models\Server;
 use App\Models\Size;
-use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
 use App\Services\ServerInventoryExporter;
 use App\Services\ServerInventoryQuery;
@@ -21,7 +22,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -106,25 +106,12 @@ class ServersController extends Controller
     public function update(
         ServerDisplayNameRequest $request,
         Server $server,
-        ActivityRecorder $activity,
+        UpdateServerDisplayNameAction $updateDisplayName,
     ): RedirectResponse {
         $this->authorize('update', $server);
-
-        $oldLabel = $server->label;
+        /** @var string|null $displayName */
         $displayName = $request->validated('display_name');
-        if ($displayName === $server->name) {
-            $displayName = null;
-        }
-
-        $server->update(['display_name' => $displayName]);
-        if ($oldLabel !== $server->label) {
-            $activity->record(
-                $server,
-                $server->user_id,
-                'server',
-                "Server display name changed from \"{$oldLabel}\" to \"{$server->label}\".",
-            );
-        }
+        $updateDisplayName->handle($server, $displayName);
 
         return redirect()
             ->route('servers.show', $server)
@@ -165,12 +152,12 @@ class ServersController extends Controller
     /**
      * Delete a droplet
      */
-    public function destroy(Request $request, Server $server): RedirectResponse
+    public function destroy(Server $server, DeleteServerAction $deleteServer): RedirectResponse
     {
         $this->authorize('delete', $server);
 
         try {
-            DB::transaction(fn () => $server->delete());
+            $deleteServer->handle($server);
         } catch (Throwable $exception) {
             report($exception);
 

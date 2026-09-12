@@ -8,6 +8,14 @@ use App\Models\User;
 class ServerPolicy
 {
     /**
+     * Allow an account with deployment permission in its current workspace to provision a server.
+     */
+    public function create(User $user): bool
+    {
+        return $user->currentOrganization?->permits($user, 'deploy') ?? false;
+    }
+
+    /**
      * Allow the server owner or a viewer in its currently selected organization.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

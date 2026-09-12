@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Provider;
+use App\Models\Server;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,7 +20,7 @@ class ServerRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
+        return $this->user()?->can('create', Server::class) ?? false;
     }
 
     /**
