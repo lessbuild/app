@@ -4483,6 +4483,56 @@ the smallest protocol-safe extraction that preserves signature verification,
 validation-after-lock ordering, stale-attempt outcomes, transaction semantics
 and website after-commit cleanup.
 
+## Phase 7AP — build log callback operation
+
+### Responsibility problem
+
+The remaining `BuildCallbackController::log()` method still owned a database
+transaction, build locking, active-state filtering, bounded input validation,
+log replacement and heartbeat persistence. Its validation deliberately occurs
+after the lock because terminal callbacks must remain harmless no-ops even when
+their payload is malformed.
+
+### Boundary and principles
+
+`BuildDeploymentLogCallbackValidator` is a narrow validation collaborator that
+accepts only the raw log field and returns its validated string. `RecordBuildLogAction`
+owns the lock, active-build guard, validator call, idempotent log replacement
+and heartbeat update. The controller passes the explicit `log` field and
+returns the existing empty response. This applies single responsibility and
+dependency inversion while documenting the deliberate exception to the normal
+Form Request boundary: moving this validation earlier would change stale
+callback behavior.
+
+### Preserved guarantees
+
+- Signed middleware remains the protocol authorization, and terminal or
+  canceled builds still acknowledge callbacks without validating or writing.
+- The configured deployment-log limit, required string rule, replacement by
+  deployment-log type, heartbeat update, row lock, transaction rollback and
+  response remain unchanged.
+- Invalid active callbacks still use Laravel’s normal validation response and
+  error handling, while late callbacks retain the no-op path. No request data
+  beyond the explicit `log` field enters the action.
+- No routes, persisted values, serialized jobs, provider behavior, dependency
+  lockfiles or external acceptance state changed.
+
+### Verification
+
+- Deployment-log, watchdog, callback-integrity, provisioning-concurrency and
+  cancellation regression set: **50 passed, 438 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `92cbc5d` — `refactor: extract build log callback operation`
+
+**Phase 7AP exit gate: complete.** Exact next task: extract the server
+provisioning callback operations with a dedicated lock-point validator,
+preserving tokenless compatibility, attempt checks, validation-after-lock
+ordering, five-attempt transactions and provisioning snapshot behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4562,3 +4612,4 @@ and website after-commit cleanup.
 | Phase 7AM-enterprise-sso | EnterpriseSsoController/EnterpriseOidc mixed entitlement, callback validation, OIDC state/PKCE exchange, identity/domain checks, remote failure mapping and verified-session marking. | 35 enterprise SSO/platform-expansion/organization-management/shared-tenancy tests passed, 186 assertions; Pint, syntax and diff checks passed. | `53ff5d3` — `refactor: extract enterprise SSO verification` | Inventory remaining GitHub App webhook and provisioning callbacks plus OAuth/SSO protocol handlers, preserving verifier and stale-attempt ordering. |
 | Phase 7AN-build-revision | BuildRevisionCallbackController mixed signed callback validation with an already-extracted lock-aware revision action. | 47 build-revision/callback-integrity/concurrency/repository-webhook/GitHub-App tests passed, 373 assertions; Pint, syntax and diff checks passed. | `0512e65` — `refactor: extract build revision callback request` | Characterize raw-body GitHub App webhook and locked server/website/build status/failure/log callbacks, preserving protocol and stale-attempt ordering. |
 | Phase 7AO-build-callbacks | BuildCallbackController mixed status/failure validation, locked persistence, preview reconciliation and automatic rollback; lock-sensitive log validation remained inline. | 68 repository-deployment/log/preview/callback-integrity/concurrency/cancellation/watchdog/revision/rollback tests passed, 549 assertions; Pint, syntax and diff checks passed. | `bb30e43` — `refactor: extract build callback operations` | Characterize raw-body GitHub App webhook and server/website callback contracts, preserving signature and validation-after-lock ordering before the next protocol-safe extraction. |
+| Phase 7AP-build-log | BuildCallbackController mixed lock-point validation, terminal-state filtering, log replacement and heartbeat persistence. | 50 deployment-log/watchdog/callback-integrity/provisioning-concurrency/cancellation tests passed, 438 assertions; Pint, syntax and diff checks passed. | `92cbc5d` — `refactor: extract build log callback operation` | Extract server provisioning callback operations with lock-point validation, preserving tokenless compatibility, attempt checks, transaction retries and snapshot behavior. |
