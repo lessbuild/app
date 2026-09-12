@@ -16,6 +16,7 @@ use App\Models\Provider;
 use App\Models\Recipe;
 use App\Models\Repository;
 use App\Models\Server;
+use App\Models\StatusPage;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
@@ -34,6 +35,7 @@ use App\Policies\ProviderPolicy;
 use App\Policies\RecipePolicy;
 use App\Policies\RepositoryPolicy;
 use App\Policies\ServerPolicy;
+use App\Policies\StatusPagePolicy;
 use App\Policies\WebsiteBackupPolicy;
 use App\Policies\WebsiteBackupSchedulePolicy;
 use App\Policies\WebsitePolicy;
@@ -65,6 +67,7 @@ class AuthServiceProvider extends ServiceProvider
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,
         Server::class => ServerPolicy::class,
+        StatusPage::class => StatusPagePolicy::class,
         Website::class => WebsitePolicy::class,
         WebsiteBackup::class => WebsiteBackupPolicy::class,
         WebsiteBackupSchedule::class => WebsiteBackupSchedulePolicy::class,

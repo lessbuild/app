@@ -9,6 +9,7 @@ use App\Models\AlertDestination;
 use App\Models\MetricAlertRule;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\StatusPage;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
@@ -206,6 +207,80 @@ class ObservabilityTest extends TestCase
             ->assertDontSee($website->server->public_ip ?? 'never-visible-secret');
         $this->getJson(route('status.report', 'platform-status'))
             ->assertOk()->assertJsonPath('status', 'operational')->assertJsonPath('components.0.uptime_30d', 100);
+    }
+
+    public function test_status_page_operations_keep_slug_collision_and_atomic_website_membership_behavior(): void
+    {
+        [$owner, $server, $website] = $this->infrastructure();
+        $attributes = [
+            'name' => 'Platform Status', 'slug' => 'platform-status', 'description' => 'Service health',
+            'is_published' => '1', 'website_ids' => [$website->id],
+        ];
+
+        $this->actingAs($owner)->post(route('observability.status-pages.store'), $attributes)->assertRedirect();
+        $first = StatusPage::query()->sole();
+        $this->assertSame('platform-status', $first->slug);
+        $this->assertSame([$website->id], $first->websites()->pluck('websites.id')->all());
+
+        $this->actingAs($owner)->post(route('observability.status-pages.store'), $attributes)->assertRedirect();
+        $second = StatusPage::query()->whereKeyNot($first->id)->sole();
+        $this->assertStringStartsWith('platform-status-', $second->slug);
+
+        $this->actingAs($owner)->patch(route('observability.status-pages.update', $first), [
+            'name' => 'Updated Status', 'slug' => 'ignored-but-valid', 'description' => null,
+            'is_published' => '0', 'website_ids' => [$website->id],
+        ])->assertRedirect()->assertSessionHas('success', 'Status page updated.');
+        $first->refresh();
+        $this->assertSame('Updated Status', $first->name);
+        $this->assertSame('platform-status', $first->slug);
+        $this->assertFalse($first->is_published);
+        $this->assertSame([$website->id], $first->websites()->pluck('websites.id')->all());
+
+        $this->assertNotNull($server->fresh());
+    }
+
+    public function test_status_page_policy_denies_foreign_updates_and_deletes_without_mutation(): void
+    {
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id, 'name' => 'Private Status', 'slug' => 'private-status',
+            'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)->patch(route('observability.status-pages.update', $page), [
+            'name' => '', 'is_published' => 'not-bool', 'website_ids' => [],
+        ])->assertForbidden();
+        $this->actingAs($intruder)->delete(route('observability.status-pages.destroy', $page))->assertForbidden();
+
+        $this->assertSame('Private Status', $page->fresh()->name);
+        $this->assertDatabaseHas('status_page_website', ['status_page_id' => $page->id, 'website_id' => $website->id]);
+    }
+
+    public function test_status_page_requests_reject_component_websites_from_another_workspace(): void
+    {
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id, 'name' => 'Status', 'slug' => 'status', 'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $other = User::factory()->create();
+        $otherServer = $other->servers()->create([
+            'name' => 'Other', 'public_ip' => '203.0.113.56', 'ssh_private_key' => 'key',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $otherWebsite = $other->websites()->create([
+            'server_id' => $otherServer->id, 'name' => 'Other site', 'description' => 'Other',
+            'environment' => '', 'url' => 'other.example.com', 'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($owner)->patch(route('observability.status-pages.update', $page), [
+            'name' => 'Status', 'is_published' => '1', 'website_ids' => [$otherWebsite->id],
+        ])->assertSessionHasErrors('website_ids.0');
+
+        $this->assertDatabaseHas('status_page_website', ['status_page_id' => $page->id, 'website_id' => $website->id]);
+        $this->assertDatabaseMissing('status_page_website', ['status_page_id' => $page->id, 'website_id' => $otherWebsite->id]);
     }
 
     public function test_server_metrics_and_runtime_logs_are_collected_and_encrypted(): void

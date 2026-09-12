@@ -4,11 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Actions\Observability\CreateAlertDestinationAction;
 use App\Actions\Observability\CreateMetricAlertRuleAction;
+use App\Actions\Observability\CreateStatusPageAction;
 use App\Actions\Observability\DeleteAlertDestinationAction;
 use App\Actions\Observability\DeleteMetricAlertRuleAction;
+use App\Actions\Observability\DeleteStatusPageAction;
 use App\Actions\Observability\QueueAlertDestinationTestAction;
+use App\Actions\Observability\UpdateStatusPageAction;
 use App\Http\Requests\StoreAlertDestinationRequest;
 use App\Http\Requests\StoreMetricAlertRuleRequest;
+use App\Http\Requests\StoreStatusPageRequest;
+use App\Http\Requests\UpdateStatusPageRequest;
 use App\Models\AlertDestination;
 use App\Models\Build;
 use App\Models\MetricAlertRule;
@@ -19,8 +24,6 @@ use App\Services\Entitlements;
 use App\Services\StatusSubscriberNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -117,29 +120,10 @@ class ObservabilityController extends Controller
     /**
      * Validate an entitled workspace manager's page details and website IDs, then atomically create a uniquely slugged status page.
      */
-    public function storeStatusPage(Request $request): RedirectResponse
+    public function storeStatusPage(StoreStatusPageRequest $request, CreateStatusPageAction $createPage): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'status_pages');
-        $data = $this->statusPageData($request, $organization->id);
-        $base = Str::slug($data['slug'] ?: $data['name']) ?: 'status';
-        $slug = $base;
-        while (StatusPage::query()->where('slug', $slug)->exists()) {
-            $slug = $base.'-'.Str::lower(Str::random(5));
-        }
-        $page = DB::transaction(function () use ($organization, $request, $data, $slug): StatusPage {
-            $page = $organization->statusPages()->create([
-                'created_by' => $request->user()->id,
-                'name' => $data['name'],
-                'slug' => $slug,
-                'description' => $data['description'] ?? null,
-                'is_published' => $data['is_published'],
-            ]);
-            $page->websites()->sync($data['website_ids']);
-
-            return $page;
-        });
+        $page = $createPage->handle($organization, $request->user(), $request->validated());
 
         return back()->with('success', __('Status page created: :url', ['url' => route('status.show', $page->slug)]));
     }
@@ -147,19 +131,9 @@ class ObservabilityController extends Controller
     /**
      * Require management access to the entitled workspace page and atomically update its details and website membership.
      */
-    public function updateStatusPage(Request $request, StatusPage $statusPage): RedirectResponse
+    public function updateStatusPage(UpdateStatusPageRequest $request, StatusPage $statusPage, UpdateStatusPageAction $updatePage): RedirectResponse
     {
-        $this->assertStatusPage($request, $statusPage);
-        $this->entitlements->enforce($statusPage->organization, 'status_pages');
-        $data = $this->statusPageData($request, $statusPage->organization_id, false);
-        DB::transaction(function () use ($statusPage, $data): void {
-            $statusPage->update([
-                'name' => $data['name'],
-                'description' => $data['description'] ?? null,
-                'is_published' => $data['is_published'],
-            ]);
-            $statusPage->websites()->sync($data['website_ids']);
-        });
+        $updatePage->handle($statusPage, $request->validated());
 
         return back()->with('success', __('Status page updated.'));
     }
@@ -167,11 +141,10 @@ class ObservabilityController extends Controller
     /**
      * Require management access to the entitled workspace page, delete its record, and redirect back.
      */
-    public function destroyStatusPage(Request $request, StatusPage $statusPage): RedirectResponse
+    public function destroyStatusPage(StatusPage $statusPage, DeleteStatusPageAction $deletePage): RedirectResponse
     {
-        $this->assertStatusPage($request, $statusPage);
-        $this->entitlements->enforce($statusPage->organization, 'status_pages');
-        $statusPage->delete();
+        $this->authorize('delete', $statusPage);
+        $deletePage->handle($statusPage);
 
         return back()->with('success', __('Status page deleted.'));
     }
@@ -221,24 +194,6 @@ class ObservabilityController extends Controller
     {
         abort_unless($statusPage->organization_id === $request->user()->current_organization_id
             && $statusPage->organization->permits($request->user(), 'manage'), 403);
-    }
-
-    /**
-     * Validate status-page details and restrict component website IDs to the supplied workspace.
-     *
-     * @param  bool  $withSlug  Allow a nullable slug during creation; updates only validate a submitted slug.
-     * @return array<string, mixed> Validated fields, with optional slug and description entries.
-     */
-    private function statusPageData(Request $request, int $organizationId, bool $withSlug = true): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'slug' => [$withSlug ? 'nullable' : 'sometimes', 'string', 'max:100', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'is_published' => ['required', 'boolean'],
-            'website_ids' => ['required', 'array', 'min:1'],
-            'website_ids.*' => ['integer', Rule::exists('websites', 'id')->where('organization_id', $organizationId)],
-        ]);
     }
 
     /**
