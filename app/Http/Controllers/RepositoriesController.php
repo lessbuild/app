@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Repository\DeployRepositoryAction;
 use App\Http\Requests\RepositoryRequest;
 use App\Models\Build;
 use App\Models\Repository;
@@ -9,7 +10,6 @@ use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
-use App\Services\DeploymentRequest;
 use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
 use App\Services\RepositoryWebhookDeliveryHistoryExporter;
@@ -324,7 +324,7 @@ class RepositoriesController extends Controller
     /**
      * Deploy a repo
      */
-    public function deploy(Request $request, Repository $repository, DeploymentRequest $deployments, DeploymentGate $gate): RedirectResponse
+    public function deploy(Request $request, Repository $repository, DeployRepositoryAction $deploy, DeploymentGate $gate): RedirectResponse
     {
         $this->authorize('deploy', $repository);
 
@@ -335,30 +335,11 @@ class RepositoriesController extends Controller
             return back()->with('error', $reason);
         }
 
-        $build = DB::transaction(function () use ($repository, $request, $deployments): ?Build {
-            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
-            $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            if ((int) $lockedRepository->website_id !== (int) $website->id) {
-                return null;
-            }
-
-            if ($website->hasActiveDeployment()) {
-                return null;
-            }
-
-            $lockedRepository->update(['setup_stage' => 0]);
-
-            return $lockedRepository->builds()->create([
-                'trigger_source' => Build::TRIGGER_MANUAL,
-                ...$deployments->attributes($lockedRepository, $request->user()),
-            ]);
-        });
+        $build = $deploy->handle($repository, $request->user());
 
         if (! $build) {
             return back()->with('info', 'A deployment is already in progress');
         }
-
-        $deployments->dispatch($build);
 
         return redirect()->route('builds.show', $build)->with('success', $build->status === Build::STATUS_AWAITING_APPROVAL
             ? 'Deployment submitted for approval'

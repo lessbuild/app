@@ -600,6 +600,23 @@ Verification after the slice:
 - DeploymentCancellationTest and DeploymentWatchdogTest: 15 passed (138 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — manual repository deployment action slice
+
+Responsibility problem: RepositoriesController combined the manual deployment endpoint with website/repository locking, overlap protection, setup-stage reset, build creation and queue dispatch.
+
+Boundary used: DeployRepositoryAction now owns the manual deployment transaction and post-transaction dispatch, consuming the existing DeploymentRequest for build attributes. The controller retains policy authorization, readiness and deployment-gate checks, exact concurrency feedback and redirect/flash mapping.
+
+Preserved guarantees:
+
+- Website-before-repository lock order, repository placement verification, active-deployment guard and setup-stage reset remain unchanged.
+- Build trigger, requester attribution, environment snapshot, approval status, queue dispatch timing and synchronous-queue compatibility remain unchanged.
+- Existing routes, authorization, policy-block messages and deployment callbacks/jobs remain at their prior boundaries.
+
+Verification after the slice:
+
+- RepositoryDeploymentTest, DeploymentApprovalTest, DeploymentControlsTest and RepositorySafetyTest: 21 passed (146 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Review repository update, deletion and deployment request mutations, extracting only cohesive action boundaries while preserving validation, entitlement, lock, queue and webhook behavior.
+Review repository update and deletion safety mutations; keep straightforward store CRUD in the controller unless a transaction or security boundary makes an action materially useful.
