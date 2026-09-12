@@ -17,7 +17,18 @@ class WebsiteRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
+        $user = $this->user();
+        if ($user === null) {
+            return false;
+        }
+
+        if ($this->isMethod('post')) {
+            return $user->can('create', Website::class);
+        }
+
+        $website = $this->route('website');
+
+        return $website instanceof Website && $user->can('update', $website);
     }
 
     /**

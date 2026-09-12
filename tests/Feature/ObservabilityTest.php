@@ -125,6 +125,30 @@ class ObservabilityTest extends TestCase
         ])->assertSessionHasErrors('log_retention_lines');
     }
 
+    public function test_active_website_can_queue_a_runtime_log_refresh_but_inactive_website_cannot(): void
+    {
+        Queue::fake();
+        [$owner, , $website] = $this->infrastructure();
+
+        $this->actingAs($owner)->post(route('websites.runtime-logs.refresh', [$website, 'application']))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Runtime log refresh queued.');
+        $this->assertDatabaseHas('website_log_snapshots', [
+            'website_id' => $website->id,
+            'type' => 'application',
+            'status' => WebsiteLogSnapshot::STATUS_QUEUED,
+        ]);
+        Queue::assertPushed(RefreshWebsiteLogJob::class, fn (RefreshWebsiteLogJob $job): bool => $job->websiteId === $website->id
+            && $job->type === 'application');
+
+        $website->update(['provisioning_status' => Website::STATUS_FAILED]);
+        $this->actingAs($owner)->post(route('websites.runtime-logs.refresh', [$website, 'access']))
+            ->assertRedirect()
+            ->assertSessionHas('info', 'Runtime logs are available after website provisioning completes.');
+        Queue::assertPushedTimes(RefreshWebsiteLogJob::class, 1);
+        $this->assertDatabaseMissing('website_log_snapshots', ['type' => 'access']);
+    }
+
     public function test_email_discord_teams_and_pagerduty_alert_payloads_are_supported(): void
     {
         Notification::fake();

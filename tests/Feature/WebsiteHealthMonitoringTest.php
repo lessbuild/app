@@ -14,6 +14,7 @@ use App\Services\WebsiteHealthMonitor;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Symfony\Component\Process\Process;
@@ -22,6 +23,12 @@ use Tests\TestCase;
 class WebsiteHealthMonitoringTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
 
     public function test_three_consecutive_failures_create_one_outage_and_recovery_resets_it(): void
     {

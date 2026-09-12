@@ -8,6 +8,14 @@ use App\Models\Website;
 class WebsitePolicy
 {
     /**
+     * Allow an account with deployment permission in its current workspace to create a website.
+     */
+    public function create(User $user): bool
+    {
+        return $user->currentOrganization?->permits($user, 'deploy') ?? false;
+    }
+
+    /**
      * Allow the website owner or a viewer in its currently selected organization.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

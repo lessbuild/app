@@ -55,6 +55,39 @@ class WebsitePlacementTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_viewer_cannot_create_a_website_before_malformed_input_is_validated(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->post(route('websites.store'), [])->assertForbidden();
+
+        $this->assertDatabaseCount('websites', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_free_workspace_cannot_create_a_website_with_monitoring_enabled(): void
+    {
+        Queue::fake();
+        config(['billing.enforce_entitlements' => true]);
+        $user = User::factory()->create();
+        $server = $this->server($user, 'Application', ServerTypeEnum::app, Server::STATUS_ACTIVE);
+
+        $this->actingAs($user)->post(route('websites.store'), [
+            ...$this->payload($server),
+            'health_check_enabled' => '1',
+            'health_monitoring_enabled' => '1',
+        ])
+            ->assertSessionHasErrors('plan');
+
+        $this->assertDatabaseCount('websites', 0);
+        Queue::assertNothingPushed();
+    }
+
     public function test_updating_a_website_moves_it_to_the_selected_ready_server(): void
     {
         Queue::fake();

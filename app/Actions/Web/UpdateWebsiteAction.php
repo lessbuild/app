@@ -4,12 +4,15 @@ namespace App\Actions\Web;
 
 use App\Jobs\Web\AddWebsiteJob;
 use App\Models\Website;
+use App\Services\Entitlements;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class UpdateWebsiteAction
 {
+    public function __construct(private readonly Entitlements $entitlements) {}
+
     /**
      * Apply validated website settings while preserving placement and provisioning state guarantees.
      *
@@ -20,6 +23,10 @@ class UpdateWebsiteAction
      */
     public function handle(Website $website, array $attributes): void
     {
+        if ($attributes['health_monitoring_enabled']) {
+            $this->entitlements->enforce($website->organization, 'monitoring');
+        }
+
         DB::transaction(function () use ($attributes, $website): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if ($locked->hasActiveDeployment()) {

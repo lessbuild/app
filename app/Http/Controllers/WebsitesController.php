@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Web\CreateWebsiteAction;
 use App\Actions\Web\DeleteWebsiteAction;
+use App\Actions\Web\QueueWebsiteHealthCheckAction;
+use App\Actions\Web\QueueWebsiteLogRefreshAction;
+use App\Actions\Web\QueueWebsitePlacementCleanupAction;
 use App\Actions\Web\RetryWebsiteProvisioningAction;
 use App\Actions\Web\UpdateWebsiteAction;
+use App\Actions\Web\UpdateWebsiteLogRetentionAction;
+use App\Data\WebsiteHealthCheckResult;
+use App\Http\Requests\UpdateWebsiteLogRetentionRequest;
 use App\Http\Requests\WebsiteRequest;
 use App\Http\Responses\PlainTextLogDownload;
-use App\Jobs\Web\AddWebsiteJob;
-use App\Jobs\Web\CheckWebsiteHealthJob;
-use App\Jobs\Web\CleanupWebsitePlacementJob;
-use App\Jobs\Web\RefreshWebsiteLogJob;
-use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
-use App\Services\Entitlements;
 use App\Services\PlanLimits;
 use App\Services\WebsiteHealthHistoryExporter;
 use App\Services\WebsiteHealthHistoryQuery;
@@ -27,19 +28,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class WebsitesController extends Controller
 {
-    /**
-     * Use workspace entitlements to guard website features that depend on a paid plan.
-     */
     public function __construct(
         private readonly DeleteWebsiteAction $deleteWebsite,
-        private readonly Entitlements $entitlements,
         private readonly WebsiteHealthHistoryExporter $healthHistoryExporter,
         private readonly WebsiteHealthHistoryQuery $healthHistory,
         private readonly WebsiteInventoryExporter $websiteInventoryExporter,
@@ -102,18 +97,16 @@ class WebsitesController extends Controller
      *
      * @return RedirectResponse A queued result or an explanation that provisioning is unfinished.
      */
-    public function refreshRuntimeLog(Website $website, string $type): RedirectResponse
-    {
+    public function refreshRuntimeLog(
+        Website $website,
+        string $type,
+        QueueWebsiteLogRefreshAction $refreshLog,
+    ): RedirectResponse {
         $this->authorize('update', $website);
         abort_unless(in_array($type, WebsiteLogSnapshot::TYPES, true), 404);
-        if ($website->provisioning_status !== Website::STATUS_ACTIVE) {
+        if (! $refreshLog->handle($website, $type)) {
             return back()->with('info', __('Runtime logs are available after website provisioning completes.'));
         }
-        $website->runtimeLogs()->updateOrCreate(['type' => $type], [
-            'status' => WebsiteLogSnapshot::STATUS_QUEUED,
-            'error' => null,
-        ]);
-        RefreshWebsiteLogJob::dispatch($website->id, $type);
 
         return back()->with('success', __('Runtime log refresh queued.'));
     }
@@ -140,13 +133,13 @@ class WebsitesController extends Controller
     /**
      * Validate a supported retained-line count for an editable website and redirect after saving future-snapshot settings.
      */
-    public function updateLogRetention(Request $request, Website $website): RedirectResponse
-    {
+    public function updateLogRetention(
+        UpdateWebsiteLogRetentionRequest $request,
+        Website $website,
+        UpdateWebsiteLogRetentionAction $updateRetention,
+    ): RedirectResponse {
         $this->authorize('update', $website);
-        $data = $request->validate([
-            'log_retention_lines' => ['required', 'integer', Rule::in([100, 500, 1000, 5000, 10000])],
-        ]);
-        $website->update($data);
+        $updateRetention->handle($website, (int) $request->validated('log_retention_lines'));
 
         return back()->with('success', __('Log retention updated. Future snapshots will keep the selected number of lines.'));
     }
@@ -230,31 +223,14 @@ class WebsitesController extends Controller
     /**
      * Store a newly created resource in storage
      *
-     * @param  Request  $request
-     *
      * @throws ValidationException
      */
-    public function store(WebsiteRequest $request, PlanLimits $limits): RedirectResponse
+    public function store(WebsiteRequest $request, CreateWebsiteAction $createWebsite): RedirectResponse
     {
-        $validated = $request->validated();
-        if ($validated['health_monitoring_enabled']) {
-            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
-        }
+        $result = $createWebsite->handle($request->user(), $request->validated());
+        session()->flash("website:{$result->website->id}:mysql_password", $result->databasePassword);
 
-        $password = Str::random(32);
-        $website = $limits->withinLimit(
-            $request->user(),
-            'websites',
-            fn ($organization) => $organization->websites()->create(array_merge($validated, [
-                'user_id' => $request->user()->id,
-                'database_password' => $password,
-                'provisioning_status' => Website::STATUS_QUEUED,
-            ])),
-        );
-        session()->flash("website:{$website->id}:mysql_password", $password);
-        AddWebsiteJob::dispatch($website);
-
-        return redirect()->route('websites.show', $website);
+        return redirect()->route('websites.show', $result->website);
     }
 
     /**
@@ -275,17 +251,12 @@ class WebsitesController extends Controller
     /**
      * Store a newly created resource in storage
      *
-     * @param  Request  $request
-     *
      * @throws ValidationException
      */
     public function update(WebsiteRequest $request, Website $website): RedirectResponse
     {
         $this->authorize('update', $website);
         $validated = $request->validated();
-        if ($validated['health_monitoring_enabled']) {
-            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
-        }
         $this->updateWebsite->handle($website, $validated);
 
         return redirect()->route('websites.show', $website);
@@ -294,20 +265,15 @@ class WebsitesController extends Controller
     /**
      * Authorize website updates and queue cleanup of its previous server placement when one remains.
      */
-    public function retryPlacementCleanup(Website $website): RedirectResponse
-    {
+    public function retryPlacementCleanup(
+        Website $website,
+        QueueWebsitePlacementCleanupAction $queueCleanup,
+    ): RedirectResponse {
         $this->authorize('update', $website);
 
-        if (! $website->previous_server_id) {
+        if (! $queueCleanup->handle($website)) {
             return back()->with('info', __('There is no previous website placement to clean up.'));
         }
-
-        $website->update(['placement_cleanup_error' => null]);
-        CleanupWebsitePlacementJob::dispatch(
-            $website->id,
-            $website->previous_server_id,
-            $website->deployment_slug,
-        );
 
         return back()->with('success', __('Previous server cleanup queued.'));
     }
@@ -331,23 +297,16 @@ class WebsitesController extends Controller
     /**
      * Authorize website updates and queue a manual check only when monitoring is enabled and both website and server are active.
      */
-    public function checkHealth(Website $website): RedirectResponse
+    public function checkHealth(Website $website, QueueWebsiteHealthCheckAction $queueHealthCheck): RedirectResponse
     {
         $this->authorize('update', $website);
-        $website->loadMissing('server');
+        $result = $queueHealthCheck->handle($website);
 
-        if (! $website->health_check_enabled) {
-            return back()->with('info', __('Enable health checks before requesting a manual check.'));
-        }
-
-        if ($website->provisioning_status !== Website::STATUS_ACTIVE
-            || $website->server?->provisioning_status !== Server::STATUS_ACTIVE) {
-            return back()->with('info', __('The website and its server must be active before checking health.'));
-        }
-
-        CheckWebsiteHealthJob::dispatch($website->id);
-
-        return back()->with('success', __('Health check queued. Refresh shortly to see the result.'));
+        return match ($result->status) {
+            WebsiteHealthCheckResult::DISABLED => back()->with('info', __('Enable health checks before requesting a manual check.')),
+            WebsiteHealthCheckResult::INACTIVE => back()->with('info', __('The website and its server must be active before checking health.')),
+            WebsiteHealthCheckResult::QUEUED => back()->with('success', __('Health check queued. Refresh shortly to see the result.')),
+        };
     }
 
     /**
