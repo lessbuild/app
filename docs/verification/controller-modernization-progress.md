@@ -314,6 +314,80 @@ cancel, exact error keys/messages and `relatedOperations()` semantics. Commit
 that operation-authorization slice before beginning environment requests or
 actions.
 
+## Phase 2B — configuration operation authorization boundary
+
+### Responsibility problem
+
+The configuration operation endpoints still used unrestricted Request objects
+for no-input contracts, inline replacement-input validation and actor
+permission checks. Receipt visibility and recovery decisions were also
+duplicated beside relationship lookups. Moving these concerns required
+preserving the old ordering: manager access and deliberately concealed
+parent/receipt/operation mismatches must be resolved before operation-body
+validation, while requester/recovery policy decisions must retain their
+existing response status.
+
+### Boundaries applied
+
+- Web ApplyApplicationConfigurationRequest,
+  CancelApplicationConfigurationRequest and
+  RetryApplicationConfigurationRequest own the no-replacement-input
+  contract, with a shared base preserving the configuration-specific
+  no-_old_input failure response.
+- API operation requests own the corresponding empty-body contract while the
+  control-plane middleware continues to run entitlement, network and token
+  checks before request validation.
+- ConfigurationReviewPolicy owns review visibility and requester-only apply
+  decisions. ConfigurationApplicationPolicy owns receipt visibility,
+  manager cancellation and requester-only retry decisions.
+- Parent and relatedOperations() checks remain relationship/resource
+  lookups in request authorization, not permission policies, because their
+  deliberate 404 ordering is part of the endpoint contract.
+- Controllers now authorize resource abilities, inject
+  ApplicationConfigurationResults, and pass the validated request actor to
+  the existing transaction-aware services. The services retain their
+  defense-in-depth ownership, lock, state, idempotency and stale-attempt
+  checks.
+
+This applies single responsibility, interface segregation at the HTTP
+boundary and dependency inversion for receipt serialization without adding
+generic CRUD services or moving business-state rules into policies.
+
+### Preserved contracts and safety guarantees
+
+- Web and API operation routes, response formats, redirects, status codes,
+  exact error keys/messages and empty-body semantics remain unchanged.
+- Cross-project and unrelated operation identities still return 404 before
+  replacement-input validation; unauthorized managers still cannot apply
+  another reviewer's request, while workspace recovery can cancel a pending
+  request.
+- relatedOperations() remains the source of receipt-operation membership;
+  no direct foreign-key assumption or schema change was introduced.
+- Receipt refresh remains sanitized and now uses constructor injection.
+  Existing transaction boundaries, leases, claims, retries, remote dispatch
+  timing and no-secret behavior remain in the existing services.
+
+### Verification
+
+- Focused web/API, recovery, retry and removal suite: 43 passed, 318
+  assertions.
+- Complete configuration suite: 177 passed, 1,736 assertions.
+- Added coverage confirming operation-validation failures do not flash
+  _old_input; existing API/OpenAPI, authorization, receipt-performance,
+  concurrency, ownership, environment-removal and retry tests passed.
+- PHP syntax checks, Pint test and git diff --check passed.
+
+### Commit and next task
+
+Commit: f269fdf — refactor: extract configuration operation boundaries
+
+**Phase 2B exit gate: complete.** The configuration web/API input and
+operation boundaries are complete. Exact next task: inspect the remaining
+EnvironmentController request/action boundaries for processes, variables,
+resources, deployment controls, child deletion and environment deletion;
+reuse existing Environment actions and preserve encryption, version history,
+nested-resource 404s and production/removal safeguards.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -321,3 +395,4 @@ actions.
 | Phase 0 | Complete inventory and isolated baseline before source changes. | See baseline above. | `ea81610` — `docs: record controller modernization baseline` | Add the project creation pilot: characterize current tests, then introduce `StoreProjectRequest`, `ProjectPolicy::create` and `CreateProjectAction` without changing contracts. |
 | Phase 1 | Project creation mixed permission, validation, template selection and transactional writes in `ProjectController`. | 26 focused tests passed, 166 assertions; Pint and diff checks passed. | `5c055ff` — `refactor: extract project creation operation` | Characterize configuration web/API ordering and extract the smallest configuration request/operation boundary; preserve secret-safe validation, receipt relationships, claims, leases and stale callbacks. |
 | Phase 2A | Configuration web/API document and binding validation mixed with project deployment permission and controller API capability checks. | 177 configuration tests passed, 1,736 assertions; Pint and diff checks passed. | `bd68cdf` — `refactor: extract configuration input boundaries` | Characterize no-input apply/cancel/retry and receipt visibility, then extract only operation-specific policies/requests that preserve 404, requester and recovery semantics. |
+| Phase 2B | Configuration operation bodies and receipt abilities remained inline around relationship lookups and transaction-aware services. | 43 focused tests passed, 318 assertions; complete configuration family 177/1,736; Pint and diff checks passed. | `f269fdf` — `refactor: extract configuration operation boundaries` | Inspect remaining environment request/action boundaries for processes, variables, resources, deployment controls and deletion safeguards. |
