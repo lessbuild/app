@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\RevokeOtherSessionsAction;
 use App\Actions\Account\UpdatePasswordAction;
 use App\Actions\Account\UpdateProfileAction;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Requests\RevokeOtherSessionsRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\SignInEvent;
@@ -15,7 +17,6 @@ use App\Services\ClientMetadata;
 use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -104,19 +105,9 @@ class UsersController extends Controller
     /**
      * Validate the current password, revoke other browser sessions, regenerate this session, and redirect with an acknowledgement.
      */
-    public function revokeOtherSessions(
-        Request $request,
-        ActivityRecorder $activity,
-        BrowserSessionManager $browserSessions,
-    ): RedirectResponse {
-        $validated = $request->validateWithBag('sessions', [
-            'current_password' => ['required', 'current_password'],
-        ]);
-
-        Auth::guard('web')->logoutOtherDevices($validated['current_password']);
-        $browserSessions->revokeOthers($request->user(), $request->session()->getId());
-        $request->session()->regenerate(true);
-        $activity->recordAccount($request->user(), 'Other browser sessions were logged out.');
+    public function revokeOtherSessions(RevokeOtherSessionsRequest $request, RevokeOtherSessionsAction $revoke): RedirectResponse
+    {
+        $revoke->handle($request->user(), $request->currentPassword(), $request->session()->getId());
 
         return back()->with('sessions_status', __('Other browser sessions logged out.'));
     }
