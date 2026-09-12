@@ -2273,6 +2273,64 @@ provider adapter result/failure contracts, idempotent cloud deletion, and
 DigitalOcean droplets probing—then add/strengthen contract coverage and make
 only a justified adapter or tester extraction if the semantics require it.
 
+## Phase 6B — provider integration contract verification
+
+### Responsibility problem
+
+The provider adapters and connection tester were already cohesive integration
+boundaries. Each cloud adapter translated provider-specific HTTP requests into
+the shared `ServerProvider` contract, while `ProviderConnectionTester` kept
+credential checks bounded and sanitized. There was no justified common adapter
+extraction, but the shared deletion guarantee was not exercised against every
+real adapter.
+
+### Boundaries applied
+
+- Retain `ServerProvider` as the capability contract and keep
+  `DigitalOcean`, `HetznerCloud`, and `Vultr` responsible for their own API
+  endpoints, response normalization and bounded failures.
+- Add a real-adapter contract test covering the common idempotent deletion
+  behavior: an already absent server or SSH key is success, while another
+  provider failure is reported as failure.
+- Retain `ProviderConnectionTester` and `ProviderHealthMonitor` as the
+  existing manual/automatic check boundaries. Their fixed endpoints,
+  DigitalOcean droplets probe, rate limits, leases, stale-result guards and
+  sanitized messages already match the required semantics.
+
+This verifies Liskov substitution at the behavior boundary without adding a
+speculative base class, generic integration interface or provider repository.
+
+### Preserved contracts and safety guarantees
+
+- All three server providers continue to return the shared boolean deletion
+  result and accept HTTP 404 as idempotent success; non-success statuses such
+  as 503 remain failures.
+- Provider-specific credentials, URLs, HTTP status handling, normalized cloud
+  data, SSH-key reuse, cleanup ordering and failure messages remain unchanged.
+- Manual and automatic connection checks continue to use bounded requests,
+  fixed HTTPS endpoints and provider-safe feedback. DigitalOcean checks use
+  the droplets endpoint so scoped deployment tokens do not require account
+  access.
+
+### Verification
+
+- Real-adapter contract plus DigitalOcean response/reuse, cloud expansion,
+  server deletion, cloud deletion action and provider connection regression
+  set: **38 passed, 258 assertions**.
+- The preceding provider CRUD and integration regression set remains **75
+  passed, 688 assertions**.
+- Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `0e1379a` — `test: codify server provider contract`
+
+**Phase 6 provider exit gate: complete.** Exact next task: begin Phase 7A
+recipe reports by inventorying `RecipeReportsController`, its routes,
+validation, authorization, report/history queries, CSV output, mutations and
+notification timing before extracting only the justified request/query/action
+boundaries.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2310,3 +2368,4 @@ only a justified adapter or tester extraction if the semantics require it.
 | Phase 5H-organization-settings | Organization settings endpoints mixed manager authorization, request validation/normalization, IP/domain/SSO invariants, encrypted persistence and shared IP matching in the controller and middleware. | 21 organization/platform regression tests passed, 112 assertions; Pint and diff checks passed. | `a1be9af` — `refactor: extract organization settings operations` | Characterize workspace deletion's named `deleteWorkspace` validation bag, owner/current-workspace authorization, two-factor/password ordering, teammate and active-workflow guards, transaction and personal-workspace recovery, then extract the request/action boundary. |
 | Phase 5I-organization-deletion | Workspace deletion and organization-index visibility mixed policy decisions, dynamic named-bag validation, 2FA verification, workflow safety guards, transactional deletion/recovery and HTTP status mapping in `OrganizationController`. | 28 deletion/account/2FA tests passed, 163 assertions; 25 organization/tenancy tests passed, 131 assertions; Pint and diff checks passed. | `d253ca0` + `35719ac` — `refactor: extract organization deletion operation`; `refactor: authorize organization workspace page` | Begin Phase 6 provider management: inventory provider reads/exports, connection testing/monitoring, request validation, policies, adapters, entitlements and encrypted credential safety. |
 | Phase 6A-provider-operations | Provider CRUD mixed entitlement checks, credential-preserving updates, attachment safeguards, health resets and direct writes; cloud catalog access used a combined inline guard. | 75 provider/entitlement/monitoring/history/inventory/export/cloud-catalog tests passed, 688 assertions; Pint and diff checks passed. | `d257128` — `refactor: extract provider operations` | Characterize manual/automatic connection-check and adapter contracts, idempotent cloud deletion and DigitalOcean droplets probing; strengthen contract coverage and extract only a justified integration boundary. |
+| Phase 6B-provider-contracts | Real provider adapters shared an idempotent deletion contract without a common test proving 404-success versus other-failure behavior. | 38 provider/integration/deletion tests passed, 258 assertions; Pint and diff checks passed. | `0e1379a` — `test: codify server provider contract` | Begin Phase 7A recipe reports: inventory report/history queries, filters, CSV, authorization, mutations, locks and notification timing before extracting justified boundaries. |
