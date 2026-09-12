@@ -93,6 +93,24 @@ class PlatformExpansionTest extends TestCase
         $token = $owner->createToken('automation', ['read', 'deploy', 'manage'])->plainTextToken;
         $this->withToken($token)->putJson('/api/v1/environments/'.$environment->id.'/variables', ['variables' => "APP_ENV=production\nAPI_KEY=secret"])
             ->assertOk()->assertJsonPath('data.count', 2);
+        $this->assertStringNotContainsString('secret', (string) DB::table('environment_variables')->where('key', 'API_KEY')->value('value'));
+    }
+
+    public function test_api_variable_parser_is_secret_safe_and_does_not_mutate_on_invalid_input(): void
+    {
+        [$owner, , $environment] = $this->infrastructure();
+        $existing = $environment->variables()->create([
+            'key' => 'KEEP', 'value' => 'existing-secret', 'scope' => 'all', 'is_secret' => true,
+            'current_version' => 1, 'updated_by' => $owner->id,
+        ]);
+        $token = $owner->createToken('automation', ['manage'])->plainTextToken;
+
+        $invalid = $this->withToken($token)->putJson('/api/v1/environments/'.$environment->id.'/variables', [
+            'variables' => "MALFORMED LINE\nNEW_SECRET=should-not-save",
+        ]);
+        $invalid->assertUnprocessable()->assertJsonValidationErrors('variables')->assertDontSee('should-not-save');
+        $this->assertNotNull($existing->fresh());
+        $this->assertDatabaseMissing('environment_variables', ['key' => 'NEW_SECRET']);
     }
 
     /** @return array{User, Server, Environment, EnvironmentResource} */

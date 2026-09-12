@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Environment\QueueEnvironmentRuntimeStateAction;
+use App\Actions\Environment\ReplaceEnvironmentVariablesAction;
 use App\Actions\Environment\UpdateEnvironmentScalingAction;
 use App\Actions\Repository\PromoteBuildAction;
 use App\Actions\Repository\RollbackBuildAction;
@@ -13,6 +14,7 @@ use App\Http\Requests\Api\V1\ApplyConfigurationRequest;
 use App\Http\Requests\Api\V1\ApplyWorkflowRequest;
 use App\Http\Requests\Api\V1\CancelConfigurationRequest;
 use App\Http\Requests\Api\V1\ConfigurationInputRequest;
+use App\Http\Requests\Api\V1\ReplaceEnvironmentVariablesRequest;
 use App\Http\Requests\Api\V1\RetryConfigurationRequest;
 use App\Http\Requests\Api\V1\RuntimeEnvironmentRequest;
 use App\Http\Requests\Api\V1\ScaleEnvironmentRequest;
@@ -34,8 +36,6 @@ use App\Services\WorkflowConfiguration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class ControlPlaneController extends Controller
 {
@@ -311,37 +311,11 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse Applied status and variable count; malformed lines fail validation and values remain secret.
      */
-    public function variables(Request $request, Environment $environment): JsonResponse
+    public function variables(ReplaceEnvironmentVariablesRequest $request, Environment $environment, ReplaceEnvironmentVariablesAction $replaceVariables): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $environment);
-        $data = $request->validate(['variables' => ['required', 'string', 'max:50000']]);
-        $variables = [];
-        foreach (preg_split('/\R/', $data['variables']) ?: [] as $line) {
-            if (trim($line) === '' || str_starts_with(ltrim($line), '#')) {
-                continue;
-            }
-            if (! preg_match('/\A([A-Z_][A-Z0-9_]*)=(.*)\z/', $line, $matches)) {
-                throw ValidationException::withMessages(['variables' => 'Each variable must use KEY=value on its own line.']);
-            }
-            $variables[$matches[1]] = $matches[2];
-        }
-        DB::transaction(function () use ($environment, $variables, $request): void {
-            $environment->variables()->whereNotIn('key', array_keys($variables))->delete();
-            foreach ($variables as $key => $value) {
-                $variable = $environment->variables()->where('key', $key)->lockForUpdate()->first();
-                $version = ($variable?->current_version ?? 0) + 1;
-                $attributes = ['value' => $value, 'scope' => 'all', 'is_secret' => true, 'current_version' => $version, 'updated_by' => $request->user()->id, 'rotated_at' => $variable ? now() : null];
-                if ($variable) {
-                    $variable->update($attributes);
-                } else {
-                    $variable = $environment->variables()->create(['key' => $key, ...$attributes]);
-                }
-                $variable->versions()->create(['created_by' => $request->user()->id, 'version' => $version, 'value' => $value]);
-            }
-        });
+        $count = $replaceVariables->handle($environment, $request->user(), $request->contents());
 
-        return response()->json(['data' => ['status' => 'applied', 'count' => count($variables)]]);
+        return response()->json(['data' => ['status' => 'applied', 'count' => $count]]);
     }
 
     /**
