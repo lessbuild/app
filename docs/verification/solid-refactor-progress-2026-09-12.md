@@ -348,6 +348,25 @@ Recipe Reports now has explicit query, export, validation, lock and mutation bou
 
 The local report regression gates are green when run with the isolated PHPUnit-style in-memory database and array cache. The earlier aggregate failures caused by the cached disposable file and shared rate limiter are documented above; no production or acceptance-drill checkout was used. Live paid-provider acceptance remains outstanding and is unrelated to this slice.
 
+## Phase 3B — website inventory query slice
+
+Responsibility problem: `WebsitesController` combined HTTP coordination with organization-scoped website filtering and six independently derived inventory metrics. The same filtering logic was also embedded in the CSV export, allowing the HTML and export paths to drift.
+
+Boundary used: `WebsiteInventoryQuery` now owns the typed, organization-scoped website query and inventory metrics. The controller still normalizes request input, authorizes resource routes, handles pagination and formats the CSV response. The collaborator is concrete and constructor-injected; no generic repository or speculative interface was added.
+
+Preserved guarantees:
+
+- Current-organization scoping, search escaping, status/health/attention/provisioning filters and six metric meanings remain unchanged.
+- Listing ordering, eager loading, pagination, export ordering, repository counts, lazy batch size, CSV headers/BOM/escaping and sensitive-field exclusion remain unchanged.
+- Website lifecycle jobs, placement/relocation behavior, encrypted environment persistence, validation, authorization, flash messages and provider behavior were not changed.
+
+Verification after the slice:
+
+- `WebsiteInventoryInsightsTest`: 3 passed (16 assertions).
+- `InfrastructureListFilterTest`: 8 passed (62 assertions).
+- `WebsiteInventoryExportTest`: 3 passed (44 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Begin Phase 3B: map `WebsitesController` and its existing `app/Actions/Web`, placement, relocation, retry, deletion, encrypted-environment, inventory and export responsibilities before selecting the smallest justified extraction.
+Complete the remaining Phase 3B website read boundaries, starting with a dedicated inventory CSV exporter if its protocol remains sufficiently cohesive, then assess health-history reporting before touching lifecycle orchestration.

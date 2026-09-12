@@ -15,9 +15,9 @@ use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use App\Services\Entitlements;
 use App\Services\PlanLimits;
+use App\Services\WebsiteInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
-use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
@@ -37,7 +37,10 @@ class WebsitesController extends Controller
     /**
      * Use workspace entitlements to guard website features that depend on a paid plan.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly Entitlements $entitlements,
+        private readonly WebsiteInventoryQuery $websiteInventory,
+    ) {}
 
     /**
      * List all created websites for the user
@@ -45,7 +48,7 @@ class WebsitesController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $websites = $this->filteredWebsites($request, $filters)
+        $websites = $this->websiteInventory->for($request->user(), $filters)
             ->with('server')
             ->latest()
             ->paginate()
@@ -54,35 +57,10 @@ class WebsitesController extends Controller
         return view('scenes.websites.index', [
             'websites' => $websites,
             'filters' => $filters,
-            'metrics' => $this->indexMetrics($request, $filters),
+            'metrics' => $this->websiteInventory->metrics($request->user(), $filters),
             'statuses' => $this->websiteStatuses(),
             'healthStatuses' => ['disabled', Website::HEALTH_UNKNOWN, Website::HEALTH_HEALTHY, Website::HEALTH_UNHEALTHY],
         ]);
-    }
-
-    /**
-     * @param  array{search: ?string, status: ?string, health: ?string, attention: ?string, provisioning: ?string}  $filters
-     * @return array{total: int, active: int, provisioning: int, failed: int, unhealthy: int, attention: int}
-     */
-    private function indexMetrics(Request $request, array $filters): array
-    {
-        return [
-            'total' => $this->filteredWebsites($request, $filters)->count(),
-            'active' => $this->filteredWebsites($request, $filters)
-                ->where('provisioning_status', Website::STATUS_ACTIVE)
-                ->count(),
-            'provisioning' => $this->filteredWebsites($request, $filters)
-                ->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES)
-                ->count(),
-            'failed' => $this->filteredWebsites($request, $filters)
-                ->where('provisioning_status', Website::STATUS_FAILED)
-                ->count(),
-            'unhealthy' => $this->filteredWebsites($request, $filters)
-                ->where('health_check_enabled', true)
-                ->where('health_status', Website::HEALTH_UNHEALTHY)
-                ->count(),
-            'attention' => $this->filteredWebsites($request, $filters)->needsAttention()->count(),
-        ];
     }
 
     /**
@@ -120,7 +98,7 @@ class WebsitesController extends Controller
                 'Created at',
             ], ',', '"', '');
 
-            $this->filteredWebsites($request, $filters)
+            $this->websiteInventory->for($request->user(), $filters)
                 ->with('server')
                 ->withCount('repositories')
                 ->latest('websites.id')
@@ -666,37 +644,6 @@ class WebsitesController extends Controller
             'attention' => $request->boolean('attention') ? '1' : null,
             'provisioning' => $request->boolean('provisioning') ? '1' : null,
         ];
-    }
-
-    /** @param array{search: ?string, status: ?string, health: ?string, attention: ?string, provisioning: ?string} $filters */
-    private function filteredWebsites(Request $request, array $filters): HasMany
-    {
-        return $request->user()->workspaceWebsites()
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("url LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('provisioning_status', $value))
-            ->when($filters['health'], function ($query, string $value): void {
-                if ($value === 'disabled') {
-                    $query->where('health_check_enabled', false);
-
-                    return;
-                }
-
-                $query
-                    ->where('health_check_enabled', true)
-                    ->where('health_status', $value);
-            })
-            ->when($filters['attention'], fn ($query) => $query->needsAttention())
-            ->when($filters['provisioning'], fn ($query) => $query
-                ->whereIn('provisioning_status', Website::ACTIVE_PROVISIONING_STATUSES));
     }
 
     /** @return list<string> */
