@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Notification\RemoveNotificationFilterAction;
 use App\Actions\Notification\SaveNotificationFilterAction;
+use App\Actions\Notification\UpdateNotificationStateAction;
+use App\Enums\NotificationBulkOperation;
+use App\Http\Requests\BulkNotificationRequest;
 use App\Http\Requests\NotificationIndexRequest;
 use App\Http\Requests\SaveNotificationFilterRequest;
 use App\Notifications\NotificationInbox;
@@ -22,6 +25,7 @@ class NotificationsController extends Controller
         private readonly NotificationInboxExporter $exporter,
         private readonly SaveNotificationFilterAction $saveNotificationFilter,
         private readonly RemoveNotificationFilterAction $removeNotificationFilter,
+        private readonly UpdateNotificationStateAction $notificationState,
     ) {}
 
     /**
@@ -79,8 +83,8 @@ class NotificationsController extends Controller
      */
     public function read(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $this->ensureOwnedNotification($request, $notification);
-        $notification->markAsRead();
+        $this->authorize('read', $notification);
+        $this->notificationState->markRead($notification);
 
         return redirect(NotificationInbox::destination($notification->data) ?? route('notifications.index'));
     }
@@ -90,7 +94,7 @@ class NotificationsController extends Controller
      */
     public function readAll(Request $request): RedirectResponse
     {
-        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+        $this->notificationState->markAllRead($request->user());
 
         return back()->with('success', __('All notifications marked as read.'));
     }
@@ -100,8 +104,8 @@ class NotificationsController extends Controller
      */
     public function unread(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $this->ensureOwnedNotification($request, $notification);
-        $notification->markAsUnread();
+        $this->authorize('unread', $notification);
+        $this->notificationState->markUnread($notification);
 
         return back()->with('success', __('Notification marked as unread.'));
     }
@@ -111,7 +115,7 @@ class NotificationsController extends Controller
      */
     public function clearRead(Request $request): RedirectResponse
     {
-        $deleted = $request->user()->readNotifications()->delete();
+        $deleted = $this->notificationState->clearRead($request->user());
 
         return back()->with('success', trans_choice(
             ':count read notification deleted.|:count read notifications deleted.',
@@ -125,28 +129,15 @@ class NotificationsController extends Controller
      *
      * @return RedirectResponse The count affected within the requesting user's own notifications.
      */
-    public function bulk(Request $request): RedirectResponse
+    public function bulk(BulkNotificationRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'action' => ['required', 'string', 'in:read,unread,delete'],
-            'notifications' => ['required', 'array', 'min:1', 'max:25'],
-            'notifications.*' => ['required', 'string', 'uuid', 'distinct'],
-        ]);
+        $operation = $request->operation();
+        $affected = $this->notificationState->bulk($request->user(), $operation, $request->notificationIds());
 
-        $notifications = $request->user()
-            ->notifications()
-            ->whereKey($validated['notifications']);
-
-        $affected = match ($validated['action']) {
-            'read' => $notifications->update(['read_at' => now()]),
-            'unread' => $notifications->update(['read_at' => null]),
-            'delete' => $notifications->delete(),
-        };
-
-        $message = match ($validated['action']) {
-            'read' => trans_choice(':count notification marked as read.|:count notifications marked as read.', $affected, ['count' => $affected]),
-            'unread' => trans_choice(':count notification marked as unread.|:count notifications marked as unread.', $affected, ['count' => $affected]),
-            'delete' => trans_choice(':count notification deleted.|:count notifications deleted.', $affected, ['count' => $affected]),
+        $message = match ($operation) {
+            NotificationBulkOperation::Read => trans_choice(':count notification marked as read.|:count notifications marked as read.', $affected, ['count' => $affected]),
+            NotificationBulkOperation::Unread => trans_choice(':count notification marked as unread.|:count notifications marked as unread.', $affected, ['count' => $affected]),
+            NotificationBulkOperation::Delete => trans_choice(':count notification deleted.|:count notifications deleted.', $affected, ['count' => $affected]),
         };
 
         return back()->with('success', $message);
@@ -157,24 +148,9 @@ class NotificationsController extends Controller
      */
     public function destroy(Request $request, DatabaseNotification $notification): RedirectResponse
     {
-        $this->ensureOwnedNotification($request, $notification);
-        $notification->delete();
+        $this->authorize('delete', $notification);
+        $this->notificationState->delete($notification);
 
         return back()->with('success', __('Notification deleted.'));
-    }
-
-    /**
-     * @param  Request  $request  The authenticated recipient context.
-     * @param  DatabaseNotification  $notification  The route-bound notification.
-     * @return void Reject records for any other recipient or morph type without revealing their existence.
-     */
-    private function ensureOwnedNotification(Request $request, DatabaseNotification $notification): void
-    {
-        $user = $request->user();
-        abort_unless(
-            (string) $notification->notifiable_id === (string) $user->getKey()
-                && $notification->notifiable_type === $user->getMorphClass(),
-            404,
-        );
     }
 }

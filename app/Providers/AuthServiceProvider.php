@@ -35,6 +35,7 @@ use App\Policies\EnvironmentPolicy;
 use App\Policies\EnvironmentResourcePolicy;
 use App\Policies\LoadBalancerPolicy;
 use App\Policies\MetricAlertRulePolicy;
+use App\Policies\NotificationPolicy;
 use App\Policies\OperationalIncidentPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\PersonalAccessTokenPolicy;
@@ -52,6 +53,7 @@ use App\Policies\WebsiteBackupSchedulePolicy;
 use App\Policies\WebsitePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Session\Middleware\AuthenticateSession;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -75,6 +77,7 @@ class AuthServiceProvider extends ServiceProvider
         EnvironmentResource::class => EnvironmentResourcePolicy::class,
         LoadBalancer::class => LoadBalancerPolicy::class,
         MetricAlertRule::class => MetricAlertRulePolicy::class,
+        DatabaseNotification::class => NotificationPolicy::class,
         OperationalIncident::class => OperationalIncidentPolicy::class,
         Organization::class => OrganizationPolicy::class,
         PersonalAccessToken::class => PersonalAccessTokenPolicy::class,
