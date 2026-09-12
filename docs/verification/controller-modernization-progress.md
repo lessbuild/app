@@ -832,6 +832,71 @@ resource reporting from lifecycle operations while preserving provisioning
 attempt ownership, placement/relocation cleanup, encrypted environment data,
 callback ordering and import assessment semantics.
 
+## Phase 3E — server lifecycle operation boundary
+
+### Responsibility problem
+
+The existing server provisioning and retry actions were already reusable, but
+`ServersController` still persisted display labels and recorded their activity
+directly, and it owned the transaction that triggers the server observer's
+provider/resource teardown. `ServerRequest` also duplicated the workspace
+deploy decision instead of consuming the registered server policy.
+
+### Boundaries applied
+
+- `ServerPolicy::create` now owns the existing current-workspace `deploy`
+  permission, and ServerRequest delegates to that policy. This keeps the
+  request validation boundary while removing a second role decision.
+- `UpdateServerDisplayNameAction` owns the visible-label normalization against
+  the technical name, persistence and activity event. The controller passes
+  the already normalized request value and retains the existing response.
+- `DeleteServerAction` owns the existing transaction around model deletion.
+  `ServerObserver` remains responsible for provider deletion, SSH-key
+  cleanup, hosted website/repository teardown and previous-placement cleanup;
+  the controller still maps thrown provider errors to the existing flash.
+- Existing `CreateServerAction`, retry actions, provider resolver and jobs were
+  reused unchanged. No generic server repository or provider abstraction was
+  introduced.
+
+This applies single responsibility and dependency inversion without moving
+remote cleanup into a new transaction or changing observer execution order.
+The unsupported-log-type 404 remains a resource/output guard rather than a
+policy decision.
+
+### Preserved contracts and safety guarantees
+
+- Server create/update/delete routes, policy status, validation keys,
+  display-label normalization, activity text, redirects and flash messages
+  remain unchanged.
+- Viewer requests are rejected before malformed server-creation validation
+  and create neither rows nor jobs. Foreign-resource authorization remains
+  unchanged.
+- Server deletion still invokes provider and SSH-key cleanup before local
+  teardown, preserves the full child-resource cleanup tree, rolls back local
+  changes on provider failure and keeps already-absent provider resources
+  idempotent.
+- Provisioning creation, retry, lease/token, callback and serialized-job
+  behavior remains in the existing actions/jobs and was not duplicated.
+
+### Verification
+
+- Server display-name, deletion, initialization/remote retry, creation-failure,
+  provider lifecycle, inventory and shared-tenancy regression set: **36
+  passed, 308 assertions**.
+- Added coverage for policy-backed viewer denial before malformed input and
+  no-write/no-job behavior.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `306ff7e` — `refactor: extract server lifecycle operations`
+
+**Phase 3E server exit gate: complete.** Exact next task: characterize the
+remaining direct writes in `WebsitesController`—runtime-log refresh,
+retention, website creation, placement-cleanup retry and health-check
+queueing—then extract only the cohesive operations not already covered by
+the existing website actions.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -846,3 +911,4 @@ callback ordering and import assessment semantics.
 | Phase 3B | Database inspection, credential, removal and clone endpoints mixed resource lookup/permission, validation, encrypted writes, safety rules and job dispatch in `DatabaseController`. | 5 new database-operation tests passed, 27 assertions; combined database/platform/entitlement/safety set 18/111; Pint and diff checks passed. | `b66e1f5` — `refactor: extract database operations` | Continue Phase 3 with Load balancers and domains: inventory resource policies, requests, operations, remote dispatch and scoped IDs. |
 | Phase 3C | Load-balancer validation, authorization, placement invariants, direct node/balancer writes and Caddy dispatch remained in `LoadBalancerController`. | 20 focused tests passed, 116 assertions; Pint and diff checks passed. | `d5835bd` — `refactor: extract load balancer operations` | Continue Phase 3 with Domains: preserve website lookup, hostname normalization, Cloudflare outcomes, primary protection and Caddy dispatch. |
 | Phase 3D | Domain validation, website authorization, DNS synchronization/deletion, primary protection and Caddy dispatch remained in `DomainController`. | 24 adjacent domain/website/tenancy tests passed, 219 assertions; Pint and diff checks passed. | `7d12a23` — `refactor: extract domain operations` | Inventory remaining server, website and import writes; separate reporting from lifecycle operations while preserving provisioning, relocation, encryption, callback and import semantics. |
+| Phase 3E-server | Server display-label and deletion persistence remained in `ServersController`, and create permission was duplicated in `ServerRequest`. | 36 server/provider/retry/deletion/tenancy tests passed, 308 assertions; Pint and diff checks passed. | `306ff7e` — `refactor: extract server lifecycle operations` | Characterize remaining `WebsitesController` direct writes and extract cohesive runtime-log, retention, creation, cleanup-retry and health-check operations not already covered by existing actions. |
