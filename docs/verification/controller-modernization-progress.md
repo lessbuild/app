@@ -4533,6 +4533,60 @@ provisioning callback operations with a dedicated lock-point validator,
 preserving tokenless compatibility, attempt checks, validation-after-lock
 ordering, five-attempt transactions and provisioning snapshot behavior.
 
+## Phase 7AQ — server provisioning status and failure operations
+
+### Responsibility problem
+
+`ServerCallbackController` mixed locked attempt/lifecycle checks, dynamic plan
+validation, provisioning state writes, failure snapshot persistence and
+transaction retry configuration. The same transition logic was reachable only
+through the HTTP controller, while its validation had to remain after the lock.
+
+### Boundary and principles
+
+`RecordServerProvisioningStatusAction` and
+`RecordServerProvisioningFailureAction` now own the respective locked
+transitions and existing five-attempt transactions. `ServerProvisioningCallbackGuard`
+owns the shared token/lifecycle acceptance rules. `ProvisioningCallbackValidator`
+owns the genuinely shared status/failure payload validation and returns the
+immutable `ProvisioningFailureData` boundary. The controller passes explicit raw
+fields because a normal Form Request would validate before the stale-attempt
+check; it retains the separate log endpoint for its own follow-up boundary.
+This applies single responsibility, dependency inversion and a documented
+protocol-safe exception to the normal Form Request ordering.
+
+### Preserved guarantees
+
+- Signed middleware, tokenless legacy callbacks, attempt matching, queued /
+  waiting-for-IP / provisioning acceptance, terminal/stale no-ops and the
+  accepted status response remain unchanged.
+- Dynamic server plan bounds, integer status normalization, setup-stage
+  monotonicity, active-state cleanup, provisioning error/failure phase fields,
+  process/token clearing and timestamps remain unchanged.
+- Failure message exit-code formatting, failed snapshot upsert, lock ordering,
+  transaction rollback and five-attempt retry behavior remain unchanged. A
+  snapshot failure still rolls back the server transition.
+- No routes, persisted values, serialized jobs, provider behavior, dependency
+  lockfiles or external acceptance state changed.
+
+### Verification
+
+- Server provisioning log, initialization/retry, remote provisioning retry,
+  authorization, callback-integrity and provisioning-concurrency regression
+  set: **53 passed, 418 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `d57b15f` — `refactor: extract server provisioning callbacks`
+
+**Phase 7AQ exit gate: complete.** Exact next task: extract the server log
+callback with the shared validator while preserving its attempt-only guard,
+tokenless compatibility, lock-point validation, snapshot replacement and
+heartbeat-equivalent response behavior, then handle website callbacks
+separately.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4613,3 +4667,4 @@ ordering, five-attempt transactions and provisioning snapshot behavior.
 | Phase 7AN-build-revision | BuildRevisionCallbackController mixed signed callback validation with an already-extracted lock-aware revision action. | 47 build-revision/callback-integrity/concurrency/repository-webhook/GitHub-App tests passed, 373 assertions; Pint, syntax and diff checks passed. | `0512e65` — `refactor: extract build revision callback request` | Characterize raw-body GitHub App webhook and locked server/website/build status/failure/log callbacks, preserving protocol and stale-attempt ordering. |
 | Phase 7AO-build-callbacks | BuildCallbackController mixed status/failure validation, locked persistence, preview reconciliation and automatic rollback; lock-sensitive log validation remained inline. | 68 repository-deployment/log/preview/callback-integrity/concurrency/cancellation/watchdog/revision/rollback tests passed, 549 assertions; Pint, syntax and diff checks passed. | `bb30e43` — `refactor: extract build callback operations` | Characterize raw-body GitHub App webhook and server/website callback contracts, preserving signature and validation-after-lock ordering before the next protocol-safe extraction. |
 | Phase 7AP-build-log | BuildCallbackController mixed lock-point validation, terminal-state filtering, log replacement and heartbeat persistence. | 50 deployment-log/watchdog/callback-integrity/provisioning-concurrency/cancellation tests passed, 438 assertions; Pint, syntax and diff checks passed. | `92cbc5d` — `refactor: extract build log callback operation` | Extract server provisioning callback operations with lock-point validation, preserving tokenless compatibility, attempt checks, transaction retries and snapshot behavior. |
+| Phase 7AQ-server-status-failure | ServerCallbackController mixed lock-point attempt/lifecycle checks, dynamic validation, status/failure persistence and failed snapshot writes. | 53 server provisioning/log/retry/authorization/callback-integrity/concurrency tests passed, 418 assertions; Pint, syntax and diff checks passed. | `d57b15f` — `refactor: extract server provisioning callbacks` | Extract the server log callback with attempt-only lock-point validation and tokenless compatibility, then handle website callbacks separately. |
