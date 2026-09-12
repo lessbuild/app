@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Account\SendPasswordResetLinkAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SendPasswordResetLinkRequest;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
@@ -25,15 +24,11 @@ class PasswordResetLinkController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(SendPasswordResetLinkRequest $request, SendPasswordResetLinkAction $send): RedirectResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         // Deliberately ignore the broker result so registered and unregistered
         // addresses receive the same public response.
-        Password::sendResetLink($request->only('email'));
+        $send->handle($request->email());
 
         return back()->with(
             'status',
