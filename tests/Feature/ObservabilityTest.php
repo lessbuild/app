@@ -9,6 +9,7 @@ use App\Models\AlertDestination;
 use App\Models\MetricAlertRule;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\StatusIncident;
 use App\Models\StatusPage;
 use App\Models\User;
 use App\Models\Website;
@@ -281,6 +282,64 @@ class ObservabilityTest extends TestCase
 
         $this->assertDatabaseHas('status_page_website', ['status_page_id' => $page->id, 'website_id' => $website->id]);
         $this->assertDatabaseMissing('status_page_website', ['status_page_id' => $page->id, 'website_id' => $otherWebsite->id]);
+    }
+
+    public function test_status_incident_operations_preserve_kind_validation_resolution_and_notification_order(): void
+    {
+        Notification::fake();
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id, 'name' => 'Status', 'slug' => 'incident-status', 'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $startsAt = now()->format('Y-m-d H:i:s');
+
+        $this->actingAs($owner)->post(route('observability.incidents.store'), [
+            'status_page_id' => $page->id, 'kind' => 'incident', 'status' => 'investigating',
+            'severity' => 'major', 'title' => 'Latency', 'message' => 'Investigating latency.',
+            'starts_at' => $startsAt,
+        ])->assertRedirect()->assertSessionHas('success', 'Status update published.');
+        $incident = StatusIncident::query()->sole();
+        $this->assertNull($incident->resolved_at);
+        Notification::assertNothingSent();
+
+        $this->actingAs($owner)->post(route('observability.incidents.store'), [
+            'status_page_id' => $page->id, 'kind' => 'incident', 'status' => 'completed',
+            'severity' => 'major', 'title' => 'Invalid', 'message' => 'Wrong status.',
+            'starts_at' => $startsAt,
+        ])->assertSessionHasErrors(['status' => 'Choose a status that matches the update type.']);
+        $this->assertDatabaseCount('status_incidents', 1);
+
+        $this->actingAs($owner)->patch(route('observability.incidents.update', $incident), [
+            'kind' => 'incident', 'status' => 'resolved', 'severity' => 'major', 'title' => 'Resolved',
+            'message' => 'The incident is resolved.', 'starts_at' => $startsAt,
+        ])->assertRedirect()->assertSessionHas('success', 'Status update saved and subscribers notified.');
+        $resolvedAt = $incident->fresh()->resolved_at;
+        $this->assertNotNull($resolvedAt);
+
+        $this->actingAs($owner)->patch(route('observability.incidents.update', $incident), [
+            'kind' => 'incident', 'status' => 'monitoring', 'severity' => 'major', 'title' => 'Monitoring',
+            'message' => 'Monitoring recovery.', 'starts_at' => $startsAt,
+        ])->assertRedirect();
+        $this->assertNull($incident->fresh()->resolved_at);
+    }
+
+    public function test_status_incident_policy_denies_malformed_creation_before_any_write(): void
+    {
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id, 'name' => 'Status', 'slug' => 'denied-status', 'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($viewer)->post(route('observability.incidents.store'), [
+            'status_page_id' => $page->id, 'kind' => 'unknown', 'status' => 'invalid',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('status_incidents', 0);
     }
 
     public function test_server_metrics_and_runtime_logs_are_collected_and_encrypted(): void

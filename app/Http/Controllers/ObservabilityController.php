@@ -4,15 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Actions\Observability\CreateAlertDestinationAction;
 use App\Actions\Observability\CreateMetricAlertRuleAction;
+use App\Actions\Observability\CreateStatusIncidentAction;
 use App\Actions\Observability\CreateStatusPageAction;
 use App\Actions\Observability\DeleteAlertDestinationAction;
 use App\Actions\Observability\DeleteMetricAlertRuleAction;
 use App\Actions\Observability\DeleteStatusPageAction;
 use App\Actions\Observability\QueueAlertDestinationTestAction;
+use App\Actions\Observability\UpdateStatusIncidentAction;
 use App\Actions\Observability\UpdateStatusPageAction;
 use App\Http\Requests\StoreAlertDestinationRequest;
 use App\Http\Requests\StoreMetricAlertRuleRequest;
+use App\Http\Requests\StoreStatusIncidentRequest;
 use App\Http\Requests\StoreStatusPageRequest;
+use App\Http\Requests\UpdateStatusIncidentRequest;
 use App\Http\Requests\UpdateStatusPageRequest;
 use App\Models\AlertDestination;
 use App\Models\Build;
@@ -20,21 +24,12 @@ use App\Models\MetricAlertRule;
 use App\Models\StatusIncident;
 use App\Models\StatusPage;
 use App\Models\WebsiteHealthCheck;
-use App\Services\Entitlements;
-use App\Services\StatusSubscriberNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ObservabilityController extends Controller
 {
-    /**
-     * Use workspace entitlements to gate alerting and public status-page configuration.
-     */
-    public function __construct(private readonly Entitlements $entitlements) {}
-
     /**
      * Render current-workspace alerts, bounded incident/deployment/health context, metrics, and responder permissions.
      */
@@ -152,19 +147,10 @@ class ObservabilityController extends Controller
     /**
      * Validate an entitled workspace manager's status update for an owned page, publish it, and notify subscribers.
      */
-    public function storeIncident(Request $request, StatusSubscriberNotifier $notifier): RedirectResponse
+    public function storeIncident(StoreStatusIncidentRequest $request, CreateStatusIncidentAction $createIncident): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'status_pages');
-        $data = $this->incidentData($request, $organization->id);
-        $page = $organization->statusPages()->findOrFail($data['status_page_id']);
-        $incident = $page->incidents()->create([
-            ...collect($data)->except('status_page_id')->all(),
-            'created_by' => $request->user()->id,
-            'resolved_at' => in_array($data['status'], ['resolved', 'completed'], true) ? now() : null,
-        ]);
-        $notifier->send($incident);
+        $createIncident->handle($organization, $request->user(), $request->validated());
 
         return back()->with('success', __('Status update published.'));
     }
@@ -172,58 +158,10 @@ class ObservabilityController extends Controller
     /**
      * Validate an authorized status-page incident update, maintain its resolution timestamp, and notify subscribers.
      */
-    public function updateIncident(Request $request, StatusIncident $incident, StatusSubscriberNotifier $notifier): RedirectResponse
+    public function updateIncident(UpdateStatusIncidentRequest $request, StatusIncident $incident, UpdateStatusIncidentAction $updateIncident): RedirectResponse
     {
-        $this->assertStatusPage($request, $incident->statusPage);
-        $this->entitlements->enforce($incident->statusPage->organization, 'status_pages');
-        $data = $this->incidentData($request, $incident->statusPage->organization_id, false);
-        $incident->update([
-            ...collect($data)->except('status_page_id')->all(),
-            'resolved_at' => in_array($data['status'], ['resolved', 'completed'], true)
-                ? ($incident->resolved_at ?? now()) : null,
-        ]);
-        $notifier->send($incident->fresh());
+        $updateIncident->handle($incident, $request->validated());
 
         return back()->with('success', __('Status update saved and subscribers notified.'));
-    }
-
-    /**
-     * Abort with 403 unless the status page belongs to the current workspace and the user can manage it.
-     */
-    private function assertStatusPage(Request $request, StatusPage $statusPage): void
-    {
-        abort_unless($statusPage->organization_id === $request->user()->current_organization_id
-            && $statusPage->organization->permits($request->user(), 'manage'), 403);
-    }
-
-    /**
-     * Validate incident/maintenance content, chronology, and status compatibility for an owned status page.
-     *
-     * @param  bool  $withPage  Require the page ID on creation; updates validate it only if submitted.
-     * @return array<string, mixed> Validated update fields, including optional postmortem details.
-     */
-    private function incidentData(Request $request, int $organizationId, bool $withPage = true): array
-    {
-        $data = $request->validate([
-            'status_page_id' => [$withPage ? 'required' : 'sometimes', 'integer', Rule::exists('status_pages', 'id')->where('organization_id', $organizationId)],
-            'kind' => ['required', Rule::in(StatusIncident::KINDS)],
-            'status' => ['required', Rule::in(StatusIncident::STATUSES)],
-            'severity' => ['required', Rule::in(StatusIncident::SEVERITIES)],
-            'title' => ['required', 'string', 'max:255'],
-            'message' => ['required', 'string', 'max:5000'],
-            'root_cause' => ['nullable', 'string', 'max:5000'],
-            'remediation' => ['nullable', 'string', 'max:5000'],
-            'follow_up' => ['nullable', 'string', 'max:5000'],
-            'starts_at' => ['required', 'date'],
-            'ends_at' => ['nullable', 'date', 'after:starts_at'],
-        ]);
-        $validStatus = $data['kind'] === 'incident'
-            ? in_array($data['status'], ['investigating', 'identified', 'monitoring', 'resolved'], true)
-            : in_array($data['status'], ['scheduled', 'in_progress', 'completed'], true);
-        if (! $validStatus) {
-            throw ValidationException::withMessages(['status' => __('Choose a status that matches the update type.')]);
-        }
-
-        return $data;
     }
 }
