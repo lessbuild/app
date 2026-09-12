@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ActivityIndexRequest;
 use App\Models\Event;
+use App\Services\ActivityExporter;
+use App\Services\ActivityQuery;
 use App\Services\Entitlements;
-use App\Support\CsvCell;
-use App\Support\DateRange;
-use App\Support\SqlLike;
-use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ActivityController extends Controller
@@ -18,157 +15,40 @@ class ActivityController extends Controller
     /**
      * Use workspace audit entitlements to control activity export availability.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly ActivityQuery $activity,
+        private readonly ActivityExporter $exporter,
+        private readonly Entitlements $entitlements,
+    ) {}
 
     /**
      * Render the request user's activity with normalized search, category, date filters, and aggregate counts.
      */
-    public function __invoke(Request $request): View
+    public function __invoke(ActivityIndexRequest $request): View
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
+        $user = $request->user();
 
         return view('activity.index', [
-            'events' => $this->filteredEvents($request, $filters)
+            'events' => $this->activity->for($user, $filters)
                 ->with('parentable')
                 ->latest()
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
-            'metrics' => $this->metrics($request, $filters),
+            'metrics' => $this->activity->metrics($user, $filters),
             'categories' => Event::CATEGORIES,
             'auditAvailable' => $this->entitlements->allows($request->user()->currentOrganization, 'audit'),
         ]);
     }
 
     /**
-     * @param  array{search: ?string, category: ?string, date_from: ?string, date_to: ?string}  $filters
-     * @return array{total: int, deployments: int, infrastructure: int, commands: int, recipes: int, account: int, latest_at: CarbonInterface|null}
-     */
-    private function metrics(Request $request, array $filters): array
-    {
-        $latest = $this->filteredEvents($request, $filters)
-            ->select(['id', 'created_at'])
-            ->latest('created_at')
-            ->latest('id')
-            ->first();
-
-        return [
-            'total' => $this->filteredEvents($request, $filters)->count(),
-            'deployments' => $this->filteredEvents($request, $filters)
-                ->where('category', 'deployment')
-                ->count(),
-            'infrastructure' => $this->filteredEvents($request, $filters)
-                ->whereIn('category', ['website', 'server', 'provider'])
-                ->count(),
-            'commands' => $this->filteredEvents($request, $filters)
-                ->where('category', 'command')
-                ->count(),
-            'recipes' => $this->filteredEvents($request, $filters)
-                ->where('category', 'recipe')
-                ->count(),
-            'account' => $this->filteredEvents($request, $filters)
-                ->where('category', 'account')
-                ->count(),
-            'latest_at' => $latest?->created_at,
-        ];
-    }
-
-    /**
      * Require the audit entitlement and stream filtered user activity as a private, spreadsheet-safe CSV.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(ActivityIndexRequest $request): StreamedResponse
     {
         $this->entitlements->enforce($request->user()->currentOrganization, 'audit');
-        $filters = $this->filters($request);
-        $filename = 'lessbuild-activity-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Event ID',
-                'Category',
-                'Activity',
-                'Resource type',
-                'Resource ID',
-                'Recorded at',
-            ], ',', '"', '');
-
-            $this->filteredEvents($request, $filters)
-                ->latest('id')
-                ->lazy(250)
-                ->each(function (Event $event) use ($output): void {
-                    fputcsv($output, [
-                        $event->id,
-                        $this->csvCell($event->category),
-                        $this->csvCell($event->event),
-                        $this->csvCell(class_basename($event->parentable_type)),
-                        $event->parentable_id,
-                        $event->created_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
-    }
-
-    /** @return array{search: ?string, category: ?string, date_from: ?string, date_to: ?string} */
-    private function filters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $category = $request->string('category')->toString();
-        [$dateFrom, $dateTo] = DateRange::normalize(
-            $request->string('date_from')->toString(),
-            $request->string('date_to')->toString(),
-        );
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'category' => in_array($category, Event::CATEGORIES, true) ? $category : null,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-        ];
-    }
-
-    /**
-     * @param  array{search: ?string, category: ?string, date_from: ?string, date_to: ?string}  $filters
-     */
-    private function filteredEvents(Request $request, array $filters): HasMany
-    {
-        return $request->user()->events()
-            ->when($filters['search'], fn ($query, string $value) => $query
-                ->whereRaw("event LIKE ? ESCAPE '!'", [SqlLike::contains($value)]))
-            ->when($filters['category'], fn ($query, string $value) => $query
-                ->where('category', $value))
-            ->when($filters['date_from'], fn ($query, string $value) => $query
-                ->whereDate('created_at', '>=', $value))
-            ->when($filters['date_to'], fn ($query, string $value) => $query
-                ->whereDate('created_at', '<=', $value));
-    }
-
-    /**
-     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
-     */
-    private function date(string $value): ?string
-    {
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value ? $value : null;
-    }
-
-    /**
-     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
-     */
-    private function csvCell(?string $value): ?string
-    {
-        return CsvCell::escape($value);
+        return $this->exporter->stream($request->user(), $request->filters());
     }
 }
