@@ -2,17 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\Database\CloneDatabaseJob;
-use App\Jobs\Database\CollectDatabaseSnapshotJob;
-use App\Jobs\Database\ManageDatabaseUserJob;
+use App\Actions\Database\CreateDatabaseUserAction;
+use App\Actions\Database\QueueDatabaseCloneAction;
+use App\Actions\Database\QueueDatabaseInspectionAction;
+use App\Actions\Database\QueueDatabaseUserRemovalAction;
+use App\Data\DatabaseCloneResult;
+use App\Exceptions\DatabaseCloneException;
+use App\Http\Requests\CloneDatabaseRequest;
+use App\Http\Requests\StoreDatabaseUserRequest;
 use App\Models\DatabaseClone;
 use App\Models\DatabaseUser;
 use App\Models\EnvironmentResource;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class DatabaseController extends Controller
@@ -45,12 +48,13 @@ class DatabaseController extends Controller
     /**
      * Require visibility and resource entitlement for a supported database, then queue a fresh inspection snapshot.
      */
-    public function inspect(EnvironmentResource $resource): RedirectResponse
+    public function inspect(EnvironmentResource $resource, QueueDatabaseInspectionAction $queueInspection): RedirectResponse
     {
-        $this->ensureResourceAbility($resource, 'view');
+        $this->loadResource($resource);
+        $this->authorize('view', $resource);
         $this->entitlements->enforce($resource->environment->project->organization, 'resources');
         abort_unless(in_array($resource->type, ['mysql', 'postgresql'], true), 422);
-        CollectDatabaseSnapshotJob::dispatch($resource->id);
+        $queueInspection->handle($resource);
 
         return back()->with('success', __('Database inspection queued.'));
     }
@@ -60,37 +64,25 @@ class DatabaseController extends Controller
      *
      * @return RedirectResponse The generated password flashed for one-time display.
      */
-    public function storeUser(Request $request, EnvironmentResource $resource): RedirectResponse
+    public function storeUser(StoreDatabaseUserRequest $request, EnvironmentResource $resource, CreateDatabaseUserAction $createUser): RedirectResponse
     {
-        $this->ensureResourceAbility($resource, 'manage');
-        $this->entitlements->enforce($resource->environment->project->organization, 'resources');
-        abort_unless(in_array($resource->type, ['mysql', 'postgresql'], true), 422);
-        $data = $request->validate([
-            'username' => ['required', 'string', 'max:40', 'regex:/\A[a-zA-Z_][a-zA-Z0-9_]*\z/', Rule::unique('database_users')->where('environment_resource_id', $resource->id)],
-            'privilege' => ['required', Rule::in(['read', 'write', 'admin'])],
-            'expires_in_days' => ['nullable', 'integer', Rule::in([1, 7, 30, 90])],
-        ]);
-        $password = Str::password(32);
-        $user = $resource->databaseUsers()->create([
-            'created_by' => $request->user()->id,
-            'username' => $data['username'],
-            'password' => $password,
-            'privilege' => $data['privilege'],
-            'expires_at' => filled($data['expires_in_days'] ?? null) ? now()->addDays((int) $data['expires_in_days']) : null,
-        ]);
-        ManageDatabaseUserJob::dispatch($user->id, 'apply');
+        $this->loadResource($resource);
+        $this->authorize('manage', $resource);
+        $result = $createUser->handle($resource, $request->user(), $request->validated());
 
-        return back()->with('success', __('Database user queued. Copy the password now; it will not be shown again.'))->with('databasePassword', $password);
+        return back()->with('success', __('Database user queued. Copy the password now; it will not be shown again.'))->with('databasePassword', $result->password);
     }
 
     /**
      * Require resource management permission and entitlement, then queue removal of the bound database user.
      */
-    public function destroyUser(DatabaseUser $databaseUser): RedirectResponse
+    public function destroyUser(DatabaseUser $databaseUser, QueueDatabaseUserRemovalAction $queueRemoval): RedirectResponse
     {
-        $this->ensureResourceAbility($databaseUser->resource, 'manage');
-        $this->entitlements->enforce($databaseUser->resource->environment->project->organization, 'resources');
-        ManageDatabaseUserJob::dispatch($databaseUser->id, 'remove');
+        $resource = $databaseUser->resource;
+        $this->loadResource($resource);
+        $this->authorize('manage', $resource);
+        $this->entitlements->enforce($resource->environment->project->organization, 'resources');
+        $queueRemoval->handle($databaseUser);
 
         return back()->with('success', __('Database user removal queued.'));
     }
@@ -100,29 +92,22 @@ class DatabaseController extends Controller
      *
      * @return RedirectResponse A queued replacement result or a confirmation validation error.
      */
-    public function clone(Request $request, EnvironmentResource $resource): RedirectResponse
+    public function clone(CloneDatabaseRequest $request, EnvironmentResource $resource, QueueDatabaseCloneAction $queueClone): RedirectResponse
     {
-        $this->ensureResourceAbility($resource, 'manage');
-        $this->entitlements->enforce($resource->environment->project->organization, 'resources');
-        $data = $request->validate([
-            'target_resource_id' => ['required', 'integer', 'different:source_resource_id'],
-            'confirmation' => ['required', 'string', 'max:50'],
-        ]);
+        $this->loadResource($resource);
+        $this->authorize('manage', $resource);
+        $data = $request->validated();
         $target = EnvironmentResource::query()->findOrFail($data['target_resource_id']);
-        $this->ensureResourceAbility($target, 'manage');
-        abort_unless($target->environment->project->organization_id === $resource->environment->project->organization_id, 403);
-        abort_unless($target->type === $resource->type && $target->id !== $resource->id, 422, 'Choose another database of the same type.');
-        abort_if($target->environment->type === 'production', 422, 'Production databases cannot be clone targets.');
-        if (! hash_equals($target->name, $data['confirmation'])) {
+        $this->loadResource($target);
+        $this->authorize('manage', $target);
+        try {
+            $result = $queueClone->handle($resource, $target, $request->user(), $data['confirmation']);
+        } catch (DatabaseCloneException $exception) {
+            abort(422, $exception->getMessage());
+        }
+        if ($result->status === DatabaseCloneResult::CONFIRMATION_MISMATCH) {
             return back()->withErrors(['confirmation' => __('Type the target database resource name exactly to confirm replacement.')])->withInput();
         }
-        $clone = DatabaseClone::query()->create([
-            'source_resource_id' => $resource->id,
-            'target_resource_id' => $target->id,
-            'requested_by' => $request->user()->id,
-            'status' => 'queued',
-        ]);
-        CloneDatabaseJob::dispatch($clone->id);
 
         return back()->with('success', __('Database clone queued. The target will be replaced.'));
     }
@@ -130,10 +115,9 @@ class DatabaseController extends Controller
     /**
      * Require the resource's environment to belong to the current workspace and the user to hold the requested ability.
      */
-    private function ensureResourceAbility(EnvironmentResource $resource, string $ability): void
+    private function loadResource(EnvironmentResource $resource): void
     {
-        $environment = $resource->environment()->with('project.organization')->firstOrFail();
-        abort_unless($environment->project->organization_id === request()->user()->current_organization_id
-            && $environment->project->organization->permits(request()->user(), $ability), 403);
+        $resource->loadMissing('environment.project.organization');
+        abort_unless($resource->environment !== null, 404);
     }
 }
