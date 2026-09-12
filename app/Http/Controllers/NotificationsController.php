@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Notification\RemoveNotificationFilterAction;
+use App\Actions\Notification\SaveNotificationFilterAction;
+use App\Http\Requests\NotificationIndexRequest;
+use App\Http\Requests\SaveNotificationFilterRequest;
 use App\Notifications\NotificationInbox;
-use App\Support\CsvCell;
-use App\Support\DateRange;
-use App\Support\SqlLike;
-use Carbon\CarbonInterface;
+use App\Services\NotificationInboxExporter;
+use App\Services\NotificationInboxQuery;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -16,21 +17,28 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class NotificationsController extends Controller
 {
+    public function __construct(
+        private readonly NotificationInboxQuery $inbox,
+        private readonly NotificationInboxExporter $exporter,
+        private readonly SaveNotificationFilterAction $saveNotificationFilter,
+        private readonly RemoveNotificationFilterAction $removeNotificationFilter,
+    ) {}
+
     /**
      * Render the user's filtered inbox, matching counts, read-state availability, and saved filter preferences.
      */
-    public function index(Request $request): View
+    public function index(NotificationIndexRequest $request): View
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
         $user = $request->user();
 
         return view('notifications.index', [
-            'notifications' => $this->filteredNotifications($request, $filters)
+            'notifications' => $this->inbox->for($user, $filters)
                 ->latest('created_at')
                 ->paginate(25)
                 ->appends(array_filter($filters, fn ($value) => $value !== null)),
             'filters' => $filters,
-            'metrics' => $this->metrics($request, $filters),
+            'metrics' => $this->inbox->metrics($user, $filters),
             'categories' => NotificationInbox::CATEGORIES,
             'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
             'hasReadNotifications' => $user->readNotifications()->exists(),
@@ -41,18 +49,9 @@ class NotificationsController extends Controller
     /**
      * Validate a filter name and save normalized inbox criteria, replacing matching names and retaining at most ten presets.
      */
-    public function saveFilter(Request $request): RedirectResponse
+    public function saveFilter(SaveNotificationFilterRequest $request): RedirectResponse
     {
-        $data = $request->validate(['name' => ['required', 'string', 'max:40']]);
-        $filters = $this->filters($request);
-        $preferences = $request->user()->preferences ?? [];
-        $saved = collect($preferences['notification_saved_filters'] ?? [])
-            ->reject(fn (array $filter): bool => mb_strtolower($filter['name']) === mb_strtolower($data['name']))
-            ->take(9)
-            ->values();
-        $saved->prepend(['id' => (string) str()->uuid(), 'name' => $data['name'], 'filters' => array_filter($filters, fn ($value) => $value !== null)]);
-        $preferences['notification_saved_filters'] = $saved->all();
-        $request->user()->update(['preferences' => $preferences]);
+        $this->saveNotificationFilter->handle($request->user(), $request->filterName(), $request->filters());
 
         return back()->with('success', __('Notification filter saved.'));
     }
@@ -62,94 +61,17 @@ class NotificationsController extends Controller
      */
     public function destroyFilter(Request $request, string $filter): RedirectResponse
     {
-        $preferences = $request->user()->preferences ?? [];
-        $preferences['notification_saved_filters'] = collect($preferences['notification_saved_filters'] ?? [])
-            ->reject(fn (array $saved): bool => hash_equals((string) $saved['id'], $filter))
-            ->values()
-            ->all();
-        $request->user()->update(['preferences' => $preferences]);
+        $this->removeNotificationFilter->handle($request->user(), $filter);
 
         return back()->with('success', __('Saved filter removed.'));
     }
 
     /**
-     * @param  array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string}  $filters
-     * @return array{total: int, unread: int, failed: int, healthy: int, info: int, latest_at: CarbonInterface|null}
-     */
-    private function metrics(Request $request, array $filters): array
-    {
-        $latest = $this->filteredNotifications($request, $filters)
-            ->select(['id', 'created_at'])
-            ->latest('created_at')
-            ->latest('id')
-            ->first();
-
-        return [
-            'total' => $this->filteredNotifications($request, $filters)->count(),
-            'unread' => $this->filteredNotifications($request, $filters)->whereNull('read_at')->count(),
-            'failed' => $this->filteredNotifications($request, $filters)
-                ->where('data->status', NotificationInbox::STATUS_FAILED)
-                ->count(),
-            'healthy' => $this->filteredNotifications($request, $filters)
-                ->where('data->status', NotificationInbox::STATUS_HEALTHY)
-                ->count(),
-            'info' => $this->filteredNotifications($request, $filters)
-                ->where('data->status', NotificationInbox::STATUS_INFO)
-                ->count(),
-            'latest_at' => $latest?->created_at,
-        ];
-    }
-
-    /**
      * Stream the user's filtered notification metadata as private CSV, excluding unsupported payload value types.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(NotificationIndexRequest $request): StreamedResponse
     {
-        $filters = $this->filters($request);
-        $filename = 'lessbuild-notifications-'.now()->utc()->format('Ymd-His').'.csv';
-
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Notification ID',
-                'Category',
-                'Title',
-                'Message',
-                'Status',
-                'State',
-                'Resource ID',
-                'Created at',
-                'Read at',
-            ], ',', '"', '');
-
-            $this->filteredNotifications($request, $filters)
-                ->latest('created_at')
-                ->lazy(250)
-                ->each(function (DatabaseNotification $notification) use ($output): void {
-                    fputcsv($output, [
-                        $notification->id,
-                        $this->csvCell($this->dataValue($notification, 'category')),
-                        $this->csvCell($this->dataValue($notification, 'title')),
-                        $this->csvCell($this->dataValue($notification, 'message')),
-                        $this->csvCell($this->dataValue($notification, 'status')),
-                        $notification->read_at === null ? 'unread' : 'read',
-                        $this->csvCell($this->dataValue($notification, 'resource_id')),
-                        $notification->created_at?->toIso8601String(),
-                        $notification->read_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->exporter->stream($request->user(), $request->filters());
     }
 
     /**
@@ -254,84 +176,5 @@ class NotificationsController extends Controller
                 && $notification->notifiable_type === $user->getMorphClass(),
             404,
         );
-    }
-
-    /** @return array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string} */
-    private function filters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $category = $request->string('category')->toString();
-        $status = $request->string('status')->toString();
-        $state = $request->string('state')->toString();
-        [$dateFrom, $dateTo] = DateRange::normalize(
-            $request->string('date_from')->toString(),
-            $request->string('date_to')->toString(),
-        );
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'category' => in_array($category, NotificationInbox::CATEGORIES, true) ? $category : null,
-            'status' => in_array($status, NotificationInbox::STATUSES, true) ? $status : null,
-            'state' => in_array($state, ['unread', 'read'], true) ? $state : null,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-        ];
-    }
-
-    /** @param array{search: ?string, category: ?string, status: ?string, state: ?string, date_from: ?string, date_to: ?string} $filters */
-    private function filteredNotifications(Request $request, array $filters): MorphMany
-    {
-        return $request->user()
-            ->notifications()
-            ->when($filters['state'] === 'unread', fn ($query) => $query->whereNull('read_at'))
-            ->when($filters['state'] === 'read', fn ($query) => $query->whereNotNull('read_at'))
-            ->when($filters['category'], fn ($query, string $category) => $query
-                ->where('data->category', $category))
-            ->when($filters['status'], fn ($query, string $status) => $query
-                ->where('data->status', $status))
-            ->when($filters['search'], function ($query, string $search): void {
-                $pattern = SqlLike::contains($search);
-                $grammar = $query->getQuery()->getGrammar();
-                $title = $grammar->wrap('data->title');
-                $message = $grammar->wrap('data->message');
-
-                $query->where(function ($query) use ($message, $pattern, $title): void {
-                    $query
-                        ->whereRaw("{$title} LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("{$message} LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['date_from'], fn ($query, string $date) => $query
-                ->whereDate('created_at', '>=', $date))
-            ->when($filters['date_to'], fn ($query, string $date) => $query
-                ->whereDate('created_at', '<=', $date));
-    }
-
-    /**
-     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
-     */
-    private function date(string $value): ?string
-    {
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value ? $value : null;
-    }
-
-    /**
-     * Read a notification payload key as string or integer, returning null for missing or unsupported values.
-     */
-    private function dataValue(DatabaseNotification $notification, string $key): string|int|null
-    {
-        $value = $notification->data[$key] ?? null;
-
-        return is_string($value) || is_int($value) ? $value : null;
-    }
-
-    /**
-     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
-     */
-    private function csvCell(string|int|null $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }
