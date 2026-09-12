@@ -16,6 +16,23 @@ class ProjectPolicy
     }
 
     /**
+     * Require workspace management permission to view configuration reviews and receipts.
+     */
+    public function viewConfiguration(User $user, Project $project): bool
+    {
+        return (int) $project->organization_id === (int) $user->current_organization_id
+            && $project->organization->permits($user, 'manage');
+    }
+
+    /**
+     * Require workspace management permission to plan, review or apply configuration.
+     */
+    public function manageConfiguration(User $user, Project $project): bool
+    {
+        return $this->viewConfiguration($user, $project);
+    }
+
+    /**
      * Require viewing permission in the project's currently selected organization.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

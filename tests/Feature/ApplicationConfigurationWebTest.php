@@ -12,6 +12,36 @@ class ApplicationConfigurationWebTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_configuration_request_validation_does_not_flash_documents_or_bindings(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['name' => 'App', 'slug' => 'app', 'created_by' => $user->id]);
+        $url = route('projects.configuration.create', $project);
+
+        $this->actingAs($user)->from($url)->post($url, ['bindings' => '{}'])
+            ->assertSessionHasErrors('document')
+            ->assertSessionMissing('_old_input');
+        $this->actingAs($user)->from($url)->post($url, [
+            'document' => "version: 2\nremove:\n  environments: [staging]\n",
+            'bindings' => '{invalid-json',
+        ])->assertSessionHasErrors('bindings')->assertSessionMissing('_old_input');
+        $this->assertDatabaseCount('configuration_reviews', 0);
+    }
+
+    public function test_non_manager_is_denied_before_configuration_validation(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+        $project = $organization->projects()->create(['name' => 'App', 'slug' => 'app', 'created_by' => $owner->id]);
+        $url = route('projects.configuration.create', $project);
+
+        $this->actingAs($viewer)->post($url, [])->assertForbidden();
+        $this->assertDatabaseCount('configuration_reviews', 0);
+    }
+
     public function test_browser_can_review_and_apply_without_echoing_commands(): void
     {
         $user = User::factory()->create();

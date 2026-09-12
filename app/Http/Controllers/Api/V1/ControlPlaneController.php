@@ -8,6 +8,7 @@ use App\Data\BuildPromotionResult;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnforceOrganizationSecurity;
+use App\Http\Requests\Api\V1\ConfigurationInputRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Models\Build;
 use App\Models\ConfigurationApplication;
@@ -213,13 +214,11 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse The proposed project changes without applying them.
      */
-    public function configurationPlan(Request $request, Project $project, ApplicationConfigurationPlanner $planner): JsonResponse
+    public function configurationPlan(ConfigurationInputRequest $request, Project $project, ApplicationConfigurationPlanner $planner): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $project);
-        $data = $request->validate(['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present', 'array:placements,secrets,repositories']]);
+        $this->authorize('manageConfiguration', $project);
 
-        return response()->json(['data' => $planner->plan($project, $request->user(), $data['document'], $data['bindings'])]);
+        return response()->json(['data' => $planner->plan($project, $request->user(), $request->document(), $request->bindings())]);
     }
 
     /**
@@ -227,12 +226,10 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse HTTP 201 with the saved review identity, plan, and expiration.
      */
-    public function configurationReview(Request $request, Project $project, ApplicationConfigurationReviews $reviews): JsonResponse
+    public function configurationReview(ConfigurationInputRequest $request, Project $project, ApplicationConfigurationReviews $reviews): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $project);
-        $data = $request->validate(['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present', 'array:placements,secrets,repositories']]);
-        $review = $reviews->create($project, $request->user(), $data['document'], $data['bindings']);
+        $this->authorize('manageConfiguration', $project);
+        $review = $reviews->create($project, $request->user(), $request->document(), $request->bindings());
 
         return response()->json(['data' => ['id' => $review->id, 'plan' => $review->summary, 'expires_at' => $review->expires_at->toIso8601String()]], 201);
     }
@@ -244,8 +241,7 @@ class ControlPlaneController extends Controller
      */
     public function configurationApply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $project);
+        $this->authorize('manageConfiguration', $project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         if ($request->all() !== []) {
             throw ValidationException::withMessages(['review' => 'Apply accepts only the saved review identity, with no replacement inputs.']);
@@ -260,8 +256,7 @@ class ControlPlaneController extends Controller
      */
     public function configurationApplication(Request $request, Project $project, ConfigurationApplication $application): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('view', $project);
+        $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
         abort_unless($project->organization->permits($request->user(), 'manage'), 403);
 
@@ -275,8 +270,7 @@ class ControlPlaneController extends Controller
      */
     public function configurationCancel(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('view', $project);
+        $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
         if ($request->all() !== []) {
@@ -294,8 +288,7 @@ class ControlPlaneController extends Controller
      */
     public function configurationRetry(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('view', $project);
+        $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
         if ($request->all() !== []) {

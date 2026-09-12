@@ -11,6 +11,22 @@ class ApplicationConfigurationApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_api_configuration_requires_workspace_management_before_input_validation(): void
+    {
+        $owner = User::factory()->create();
+        $developer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($developer, ['role' => 'developer']);
+        $developer->update(['current_organization_id' => $organization->id]);
+        $project = $organization->projects()->create(['name' => 'App', 'slug' => 'app', 'created_by' => $owner->id]);
+
+        Sanctum::actingAs($developer, ['manage']);
+        $this->postJson('/api/v1/projects/'.$project->id.'/configuration/plan', [
+            'document' => '', 'bindings' => [],
+        ])->assertForbidden();
+        $this->assertDatabaseCount('configuration_reviews', 0);
+    }
+
     public function test_api_plans_without_mutation_and_creates_private_reviews_with_manage_tokens(): void
     {
         config(['billing.enforce_entitlements' => false]);

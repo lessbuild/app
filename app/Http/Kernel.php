@@ -6,6 +6,7 @@ use App\Http\Middleware\AddSecurityHeaders;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\EncryptCookies;
 use App\Http\Middleware\EnforceOrganizationSecurity;
+use App\Http\Middleware\EnsureControlPlaneAccess;
 use App\Http\Middleware\EnsureCurrentOrganization;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Http\Middleware\RedirectIfAuthenticated;
@@ -88,6 +89,7 @@ class Kernel extends HttpKernel
         'auth.basic' => AuthenticateWithBasicAuth::class,
         'auth.session' => AuthenticateSession::class,
         'cache.headers' => SetCacheHeaders::class,
+        'control-plane' => EnsureControlPlaneAccess::class,
         'can' => Authorize::class,
         'guest' => RedirectIfAuthenticated::class,
         'password.confirm' => RequirePassword::class,

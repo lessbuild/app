@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreApplicationConfigurationRequest;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
 use App\Models\ConfigurationReview;
@@ -19,7 +20,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
-use JsonException;
 
 class ApplicationConfigurationController extends Controller
 {
@@ -28,10 +28,9 @@ class ApplicationConfigurationController extends Controller
      * @param  Project  $project  The route-bound project.
      * @return void Reject access unless the member can view and manage the project workspace.
      */
-    private function access(Request $request, Project $project): void
+    private function access(Project $project): void
     {
-        $this->authorize('view', $project);
-        abort_unless($project->organization->permits($request->user(), 'manage'), 403);
+        $this->authorize('manageConfiguration', $project);
     }
 
     /**
@@ -41,7 +40,7 @@ class ApplicationConfigurationController extends Controller
      */
     public function create(Request $request, Project $project): View
     {
-        $this->access($request, $project);
+        $this->access($project);
 
         return view('scenes.projects.configuration', [
             'project' => $project, 'review' => null, 'plan' => null, 'application' => null,
@@ -65,18 +64,11 @@ class ApplicationConfigurationController extends Controller
      * @param  ApplicationConfigurationReviews  $reviews  Creates the immutable review and mutation-free plan.
      * @return RedirectResponse The saved review or validation feedback without flashing input.
      */
-    public function store(Request $request, Project $project, ApplicationConfigurationReviews $reviews): RedirectResponse
+    public function store(StoreApplicationConfigurationRequest $request, Project $project, ApplicationConfigurationReviews $reviews): RedirectResponse
     {
-        $this->access($request, $project);
+        $this->access($project);
         try {
-            $data = $request->validate(['document' => 'required|string|max:50000', 'bindings' => 'required|string|max:20000']);
-            $bindings = json_decode($data['bindings'], true, 20, JSON_THROW_ON_ERROR);
-            if (! is_array($bindings)) {
-                throw ValidationException::withMessages(['bindings' => 'Bindings must be a JSON object.']);
-            }
-            $review = $reviews->create($project, $request->user(), $data['document'], $bindings);
-        } catch (JsonException) {
-            return back()->withErrors(['bindings' => 'Bindings must be a valid JSON object.']);
+            $review = $reviews->create($project, $request->user(), $request->document(), $request->bindings());
         } catch (ValidationException $exception) {
             // Never flash submitted commands or binding input into session storage.
             return back()->withErrors($exception->errors());
@@ -94,7 +86,7 @@ class ApplicationConfigurationController extends Controller
      */
     public function show(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReviews $reviews): View|Response
     {
-        $this->access($request, $project);
+        $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->with('operations')->first();
         abort_unless($application || (int) $review->requested_by === (int) $request->user()->id, 404);
@@ -123,7 +115,7 @@ class ApplicationConfigurationController extends Controller
      */
     public function cancel(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): RedirectResponse
     {
-        $this->access($request, $project);
+        $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
@@ -149,7 +141,7 @@ class ApplicationConfigurationController extends Controller
      */
     public function retry(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): RedirectResponse
     {
-        $this->access($request, $project);
+        $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id && (int) $review->requested_by === (int) $request->user()->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
@@ -174,7 +166,7 @@ class ApplicationConfigurationController extends Controller
      */
     public function apply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): RedirectResponse
     {
-        $this->access($request, $project);
+        $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         if ($request->except('_token') !== []) {
             return back()->withErrors(['review' => 'Apply accepts only the saved review.']);
