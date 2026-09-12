@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Environment\SaveEnvironmentProcessAction;
 use App\Actions\Environment\SaveEnvironmentResourceAction;
 use App\Actions\Environment\SaveEnvironmentVariableAction;
 use App\Http\Requests\DeploymentControlsRequest;
 use App\Http\Requests\EnvironmentRequest;
+use App\Http\Requests\StoreEnvironmentProcessRequest;
+use App\Http\Requests\StoreEnvironmentResourceRequest;
+use App\Http\Requests\StoreEnvironmentVariableRequest;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentResource;
@@ -13,9 +17,7 @@ use App\Models\EnvironmentVariable;
 use App\Models\Project;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class EnvironmentController extends Controller
@@ -73,18 +75,10 @@ class EnvironmentController extends Controller
     /**
      * Validate a key, value, scope, and optional rotation date for an editable environment and append an encrypted version.
      */
-    public function variables(Request $request, Environment $environment, SaveEnvironmentVariableAction $saveVariable): RedirectResponse
+    public function variables(StoreEnvironmentVariableRequest $request, Environment $environment, SaveEnvironmentVariableAction $saveVariable): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $request->mergeIfMissing(['scope' => 'runtime']);
-        $data = $request->validate([
-            'key' => ['required', 'string', 'max:100', 'regex:/\A[A-Z_][A-Z0-9_]*\z/'],
-            'value' => ['required', 'string', 'max:10000'],
-            'is_secret' => ['nullable', 'boolean'],
-            'scope' => ['required', Rule::in(EnvironmentVariable::SCOPES)],
-            'rotation_due_at' => ['nullable', 'date', 'after:today'],
-        ]);
-        $saveVariable->handle($environment, $request->user(), $data, $request->boolean('is_secret', true));
+        $saveVariable->handle($environment, $request->user(), $request->validated(), $request->isSecret());
 
         return back()->with('success', __('Environment variable saved securely.'));
     }
@@ -104,24 +98,10 @@ class EnvironmentController extends Controller
      *
      * @return RedirectResponse A saved acknowledgement; the next deployment applies the definition.
      */
-    public function storeProcess(Request $request, Environment $environment): RedirectResponse
+    public function storeProcess(StoreEnvironmentProcessRequest $request, Environment $environment, SaveEnvironmentProcessAction $saveProcess): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'workers');
-        $request->mergeIfMissing(['restart_policy' => 'always', 'restart_delay_seconds' => 5]);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'regex:/\A[a-zA-Z][a-zA-Z0-9_-]*\z/'],
-            'type' => ['required', Rule::in(EnvironmentProcess::TYPES)],
-            'command' => ['required', 'string', 'max:2000'],
-            'replicas' => ['required', 'integer', 'between:1,20'],
-            'restart_policy' => ['required', Rule::in(['always', 'on-failure', 'no'])],
-            'restart_delay_seconds' => ['required', 'integer', 'between:0,300'],
-            'is_enabled' => ['required', 'boolean'],
-        ]);
-        if ($data['type'] === 'scheduler') {
-            $data['replicas'] = 1;
-        }
-        $environment->processes()->updateOrCreate(['name' => $data['name']], $data);
+        $saveProcess->handle($environment, $request->validated());
 
         return back()->with('success', __('Process definition saved. It will be applied on the next deployment.'));
     }
@@ -143,26 +123,14 @@ class EnvironmentController extends Controller
      *
      * @return RedirectResponse The attachment result, or an unsupported managed-resource validation error.
      */
-    public function storeResource(Request $request, Environment $environment, SaveEnvironmentResourceAction $saveResource): RedirectResponse
+    public function storeResource(StoreEnvironmentResourceRequest $request, Environment $environment, SaveEnvironmentResourceAction $saveResource): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'resources');
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:50', 'regex:/\A[a-zA-Z][a-zA-Z0-9_-]*\z/'],
-            'type' => ['required', Rule::in(EnvironmentResource::TYPES)],
-            'is_managed' => ['required', 'boolean'],
-            'variables' => ['nullable', 'string', 'max:10000'],
-        ]);
-        if ($data['is_managed'] && $data['type'] === 'object_storage') {
-            return back()->withErrors(['type' => __('Object storage must use externally supplied credentials.')])->withInput();
+        try {
+            $saveResource->handle($environment, $request->validated());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
         }
-        $variables = $this->parseVariables((string) ($data['variables'] ?? ''));
-        if ($data['is_managed'] && in_array($data['type'], ['mysql', 'postgresql'], true)) {
-            if (! $environment->website) {
-                return back()->withErrors(['type' => __('Attach a website before adding its managed database.')])->withInput();
-            }
-        }
-        $saveResource->handle($environment, $data, $variables);
 
         return back()->with('success', __('Resource attached. Its variables will be snapshotted into future deployments.'));
     }
@@ -234,24 +202,5 @@ class EnvironmentController extends Controller
         if ($hibernationChanged && ! is_null($data['hibernate_after_minutes'] ?? null)) {
             $this->entitlements->enforce($project->organization, 'hibernation');
         }
-    }
-
-    /** @return array<string, string> */
-    private function parseVariables(string $input): array
-    {
-        $variables = [];
-        foreach (preg_split('/\R/', $input) ?: [] as $line) {
-            if (trim($line) === '') {
-                continue;
-            }
-            if (! preg_match('/\A([A-Z_][A-Z0-9_]*)=(.*)\z/', $line, $matches)) {
-                throw ValidationException::withMessages([
-                    'variables' => __('Each resource variable must use KEY=value on its own line.'),
-                ]);
-            }
-            $variables[$matches[1]] = $matches[2];
-        }
-
-        return $variables;
     }
 }
