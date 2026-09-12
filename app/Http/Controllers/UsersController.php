@@ -2,25 +2,25 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\DisconnectSocialAccountAction;
 use App\Actions\Account\RevokeOtherSessionsAction;
 use App\Actions\Account\RevokeSessionAction;
 use App\Actions\Account\UpdatePasswordAction;
 use App\Actions\Account\UpdateProfileAction;
+use App\Data\SocialAccountDisconnectResult;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Requests\DisconnectSocialRequest;
 use App\Http\Requests\RevokeOtherSessionsRequest;
 use App\Http\Requests\RevokeSessionRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\SignInEvent;
 use App\Models\User;
-use App\Services\ActivityRecorder;
 use App\Services\BrowserSessionManager;
 use App\Services\ClientMetadata;
 use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UsersController extends Controller
@@ -140,49 +140,15 @@ class UsersController extends Controller
      *
      * @return RedirectResponse The disconnected result or an explanation that the provider is missing or the only method.
      */
-    public function disconnectSocial(Request $request, string $provider, ActivityRecorder $activity): RedirectResponse
+    public function disconnectSocial(DisconnectSocialRequest $request, DisconnectSocialAccountAction $disconnect): RedirectResponse
     {
-        if ($request->user()->hasLocalPassword()
-            && in_array($provider, $request->user()->connectedSocialProviders(), true)) {
-            $request->validateWithBag('social', [
-                'social_provider' => ['required', Rule::in([$provider])],
-                'current_password' => ['required', 'current_password'],
-            ]);
-        }
+        $result = $disconnect->handle($request->user(), $request->provider());
 
-        $result = DB::transaction(function () use ($request, $provider): string {
-            $user = User::query()->lockForUpdate()->findOrFail($request->user()->id);
-            $column = User::SOCIAL_PROVIDER_COLUMNS[$provider];
-            $connected = $user->connectedSocialProviders();
-
-            if (! in_array($provider, $connected, true)) {
-                return 'missing';
-            }
-
-            if (! $user->hasLocalPassword() && count($connected) === 1) {
-                return 'last_method';
-            }
-
-            $remaining = array_values(array_diff($connected, [$provider]));
-            $user->forceFill([
-                $column => null,
-                'auth_type' => $user->auth_type === $provider
-                    ? ($remaining[0] ?? null)
-                    : $user->auth_type,
-            ])->save();
-
-            return 'disconnected';
-        });
-
-        if ($result === 'disconnected') {
-            $activity->recordAccount($request->user(), $this->socialProviderName($provider).' sign-in was disconnected.');
-        }
-
-        return match ($result) {
-            'disconnected' => back()->with('social_status', __(':provider disconnected.', [
-                'provider' => $this->socialProviderName($provider),
+        return match ($result->status) {
+            SocialAccountDisconnectResult::DISCONNECTED => back()->with('social_status', __(':provider disconnected.', [
+                'provider' => $result->providerName,
             ])),
-            'last_method' => back()->with('social_error', __('Set a local password before disconnecting your only sign-in method.')),
+            SocialAccountDisconnectResult::LAST_METHOD => back()->with('social_error', __('Set a local password before disconnecting your only sign-in method.')),
             default => back()->with('social_status', __('That social account is not connected.')),
         };
     }
