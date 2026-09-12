@@ -2454,6 +2454,64 @@ remaining direct writes, inline permission guards, unclassified resource
 lookups or query/export duplication; then begin the next product slice only
 after classifying those findings.
 
+## Phase 7C — build approval and operator-note boundaries
+
+### Responsibility problem
+
+`BuildsController` still owned approval/rejection note validation and named
+error-bag selection, and its operator-note endpoint directly updated a build
+and recorded activity. The existing approval/rejection actions already owned
+their locked workflow transitions, while `BuildPolicy` already owned the
+resource abilities.
+
+### Boundaries applied
+
+- `BuildApprovalRequest` owns the optional approval/rejection note rules and
+  the `approval` error bag. Its authorization calls the existing `approve`
+  policy before validation, matching the previous controller ordering for both
+  endpoints.
+- `BuildNoteRequest` owns operator-note validation and the `buildNote` error
+  bag, including the existing blank-to-null normalization.
+- `UpdateBuildNoteAction` owns the note change, unchanged-value decision,
+  persistence and metadata-only activity recording. It receives an explicit
+  build, actor and normalized note, not an HTTP request.
+- `BuildsController` now coordinates validated input, existing approval/
+  rejection actions, the new note action and the existing dispatch service.
+
+This applies single responsibility and dependency inversion without moving
+workflow eligibility, locks, approval notification timing or deployment
+dispatch out of their existing operations.
+
+### Preserved contracts and safety guarantees
+
+- Approval/rejection and note routes, statuses, redirects, flash messages,
+  validation keys, named bags, trimming/clearing behavior and activity text
+  remain unchanged. Unauthorized actors are rejected before malformed note
+  validation, as before.
+- Approval actions retain transaction-time state checks, approver identity and
+  notification behavior. Deployment cancel/redeploy/rollback, comparison,
+  repository deployment, idempotency and callback-related behavior remain
+  unchanged.
+- The controller write audit shows no direct build persistence mutation; the
+  comparison same-repository check remains a route/resource relationship
+  safeguard, not an actor permission.
+
+### Verification
+
+- Build approval, note, promotion, redeployment, cancellation, comparison,
+  history-filter/export and repository deployment/safety regression set:
+  **65 passed, 530 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `ae1812d` — `refactor: extract build note and approval requests`
+
+**Phase 7C build review slice: complete.** Exact next task: characterize
+`BuildsController` and `RepositoriesController` inventory filter requests and
+the remaining repository-create/configuration boundary, preserving scoped
+IDs, webhook-secret availability, validation ordering and export semantics.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2494,3 +2552,4 @@ after classifying those findings.
 | Phase 6B-provider-contracts | Real provider adapters shared an idempotent deletion contract without a common test proving 404-success versus other-failure behavior. | 38 provider/integration/deletion tests passed, 258 assertions; Pint and diff checks passed. | `0e1379a` — `test: codify server provider contract` | Begin Phase 7A recipe reports: inventory report/history queries, filters, CSV, authorization, mutations, locks and notification timing before extracting justified boundaries. |
 | Phase 7A-report-auth-and-review | RecipeReportsController retained a notification bulk write and actor guards alongside already-extracted report queries, exporters and lifecycle actions. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `a5c99fd` — `refactor: move recipe report permissions and review` | Extract the reporter and contributor GET-filter normalization boundaries into Form Requests or immutable filter contracts without changing silent defaults or export/pagination behavior. |
 | Phase 7B-report-filter-requests | RecipeReportsController normalized contributor-inbox and reporter-history GET filters alongside query and export orchestration. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `7b845e0` — `refactor: move recipe report filters to requests` | Audit recipe/gallery/report controllers for remaining direct writes, inline permission guards, unclassified lookups and query/export duplication before the next product slice. |
+| Phase 7C-build-review | BuildsController validated approval/operator notes and directly wrote operator notes alongside already-extracted workflow actions. | 65 build/repository/deployment tests passed, 530 assertions; Pint and diff checks passed. | `ae1812d` — `refactor: extract build note and approval requests` | Characterize build/repository inventory filter requests and repository creation/configuration boundary, preserving scoped IDs, webhook-secret availability, validation ordering and exports. |
