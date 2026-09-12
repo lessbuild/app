@@ -48,6 +48,24 @@ Verification after the extraction:
 - Pint: passed.
 - The full-suite baseline remains 1,132 passed and 53 failed; the failures are recorded above and are unrelated to this slice.
 
+## Phase 1 — single-environment reconciliation slice
+
+Responsibility problem: after resource configuration was isolated, the reconciler still combined the per-environment state machine—environment attributes, processes, resources, variables, child removal, ownership claims and deployment intent reuse—with the review-level transaction coordinator.
+
+Boundary used: `ApplicationConfigurationEnvironmentReconciler` now converges one environment and its owned children using the existing resource, variable and deployment collaborators. The outer reconciler retains immutable-review parsing and binding resolution, the transaction callback, cross-environment ordering, and project-wide environment deletion. The method explicitly documents that it must run inside the caller's transaction.
+
+Preserved guarantees:
+
+- Environment and child writes, ownership claims, secret revalidation, deployment snapshots and intent de-duplication execute in their original order and transaction.
+- The existing project lock, review freshness checks, row locks, cancellation/retry behavior, and no-network transaction boundary remain unchanged.
+- No route, request, YAML, persistence, serialization, queue or remote-execution contract changed.
+
+Verification after the slice:
+
+- Configuration, operation and ownership suite: 178 passed (1,743 assertions).
+- Pint: passed.
+- `git diff --check`: passed.
+
 ## Next task
 
-Review the remaining `ApplicationConfigurationReconciler::apply()` environment/process/resource/variable orchestration and determine whether a second extraction has a distinct responsibility and an independently testable boundary. Do not begin provider management until Phase 1 contracts and execution guarantees are reviewed.
+Review the completed Phase 1 configuration boundaries and exit guarantees against the plan, then begin Phase 2 provider-management inspection only after a cohesive commit. Do not modify provider behavior while the inspection is still being mapped.
