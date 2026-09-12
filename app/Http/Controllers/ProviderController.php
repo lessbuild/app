@@ -6,10 +6,10 @@ use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Services\Entitlements;
+use App\Services\ProviderConnectionHistoryExporter;
 use App\Services\ProviderConnectionHistoryQuery;
 use App\Services\ProviderInventoryExporter;
 use App\Services\ProviderInventoryQuery;
-use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,6 +24,7 @@ class ProviderController extends Controller
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly ProviderConnectionHistoryQuery $connectionHistory,
+        private readonly ProviderConnectionHistoryExporter $connectionHistoryExporter,
         private readonly ProviderInventoryExporter $providerInventoryExporter,
         private readonly ProviderInventoryQuery $providerInventory,
     ) {}
@@ -117,52 +118,8 @@ class ProviderController extends Controller
     {
         $this->authorize('view', $provider);
         $filters = $this->connectionCheckFilters($request);
-        $filename = "lessbuild-provider-{$provider->id}-connection-checks-".now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($provider, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Check ID',
-                'Result',
-                'Source',
-                'Provider type',
-                'HTTP status',
-                'Duration ms',
-                'Endpoint',
-                'Error',
-                'Checked at',
-            ], ',', '"', '');
-
-            $this->connectionHistory->for($provider, $filters)
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->limit(ProviderConnectionCheck::MAX_PER_PROVIDER)
-                ->get()
-                ->each(function (ProviderConnectionCheck $check) use ($output): void {
-                    fputcsv($output, [
-                        $check->id,
-                        $check->successful ? 'healthy' : 'failed',
-                        $check->source,
-                        $this->csvCell($check->provider_type),
-                        $check->http_status,
-                        $check->duration_ms,
-                        $this->csvCell($check->endpoint),
-                        $this->csvCell($check->error),
-                        $check->checked_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->connectionHistoryExporter->stream($provider, $filters);
     }
 
     /** @return array{result: ?string, source: ?string, date_from: ?string, date_to: ?string} */
@@ -309,13 +266,5 @@ class ProviderController extends Controller
             ...Provider::SOURCE_CONTROL_TYPES,
             ...Provider::DNS_TYPES,
         ]));
-    }
-
-    /**
-     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
-     */
-    private function csvCell(?string $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }

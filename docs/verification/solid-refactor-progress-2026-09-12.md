@@ -119,6 +119,27 @@ Verification after the slice:
 - Provider inventory, filter and export suite: 11 passed (100 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 2 — provider connection-history export slice
+
+Responsibility problem: `ProviderController::exportConnectionChecks()` still mixed the authenticated HTTP endpoint with CSV protocol, retained-history iteration and spreadsheet-safe field serialization.
+
+Boundary used: `ProviderConnectionHistoryExporter` now owns the streamed history response and consumes `ProviderConnectionHistoryQuery`. The controller retains authorization and request filter normalization before delegation. The exporter is concrete and constructor-injected; it does not broaden the provider contract or expose credentials.
+
+Preserved guarantees:
+
+- The private response headers, filename pattern, UTF-8 BOM, header/row order and `MAX_PER_PROVIDER` bound are unchanged.
+- Filtered newest-first history, result labels, provider metadata, endpoint/error escaping, null handling and timestamp serialization are unchanged.
+- The controller's show/history routes still use the same policy checks and the same query collaborator as HTML responses.
+
+Verification after the slice:
+
+- Provider history, insight and inventory-export suite: 12 passed (158 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
+## Next task
+
+Run the complete provider-management regression set after the four read-boundary slices. Then review `ProviderConnectionTester`, `ProviderHealthMonitor`, `ServerProviderResolver`, the DigitalOcean droplets probe and cloud adapter contract expectations before deciding whether any integration extraction is justified.
+
 ## Next task
 
 Extract the connection-history CSV writer with the same care for retained-sample bounds, filter semantics, row ordering, headers, escaping and private response behavior. Then run the complete provider-management regression set and inspect adapter contract expectations.
