@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Dashboard\UpdateDashboardPreferencesAction;
+use App\Http\Requests\UpdateDashboardPreferencesRequest;
 use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Recipe;
@@ -17,7 +19,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class DashboardController extends Controller
 {
@@ -304,15 +305,11 @@ class DashboardController extends Controller
     /**
      * Validate distinct supported widget names, save the user's dashboard selection, and redirect with an acknowledgement.
      */
-    public function updatePreferences(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'widgets' => ['nullable', 'array'],
-            'widgets.*' => ['required', Rule::in(self::WIDGETS), 'distinct'],
-        ]);
-        $preferences = $request->user()->preferences ?? [];
-        $preferences['dashboard_widgets'] = array_values($data['widgets'] ?? []);
-        $request->user()->update(['preferences' => $preferences]);
+    public function updatePreferences(
+        UpdateDashboardPreferencesRequest $request,
+        UpdateDashboardPreferencesAction $updatePreferences,
+    ): RedirectResponse {
+        $updatePreferences->handle($request->user(), $request->validated());
 
         return back()->with('success', __('Dashboard layout saved.'));
     }

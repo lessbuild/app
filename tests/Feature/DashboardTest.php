@@ -798,6 +798,19 @@ class DashboardTest extends TestCase
         $this->get(route('dashboard'))->assertOk()->assertSee('Platform status')->assertDontSee('Provider credential health');
     }
 
+    public function test_invalid_dashboard_widgets_do_not_replace_existing_preferences(): void
+    {
+        $user = User::factory()->create(['preferences' => ['dashboard_widgets' => ['stats'], 'theme' => 'dark']]);
+
+        $this->actingAs($user)->from(route('dashboard'))
+            ->patch(route('dashboard.preferences.update'), ['widgets' => ['unsupported']])
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHasErrors('widgets.0');
+
+        $this->assertSame(['stats'], $user->fresh()->preferences['dashboard_widgets']);
+        $this->assertSame('dark', $user->fresh()->preferences['theme']);
+    }
+
     private function createResources(User $user, string $name)
     {
         $provider = $user->providers()->create([
