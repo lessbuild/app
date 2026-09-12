@@ -5019,6 +5019,54 @@ controller/Livewire direct writes that are substantive—server command history
 deletion and server log refresh queuing—then classify billing’s external
 checkout/portal guards and any residual protocol or resource guards.
 
+## Phase 7BA — server operational writes
+
+### Responsibility problem
+
+`ServerCommandsController::destroy` directly deleted a terminal command
+history row after the HTTP authorization and parent-scope checks.
+`ServerShow::refreshLogs` also combined Livewire authorization, server-state
+validation, snapshot upsert and refresh-job dispatch. These were operational
+state changes rather than response/rendering responsibilities.
+
+### Boundary and principles
+
+`DeleteServerCommandHistoryAction` now owns the parent-scoped terminal delete,
+while the controller retains policy authorization and deliberate nested-record
+404 concealment. `QueueServerLogRefreshAction` owns fresh server-state and
+allowlist checks, snapshot queueing and refresh-job dispatch; Livewire retains
+only component authorization, input normalization and component error mapping.
+This applies single responsibility and dependency inversion across HTTP and
+Livewire boundaries without moving read queries or creating a repository.
+
+### Preserved guarantees
+
+- Foreign executions remain 404, unauthorized users remain forbidden, active
+  command history remains undeletable, and terminal deletion keeps the existing
+  success/info messages.
+- Invalid log types still normalize to `apt`; inactive servers create no
+  snapshot and dispatch no job; active refreshes retain queued status and the
+  same job payload.
+- Existing server authorization, encrypted command/log behavior, retry
+  semantics, routes, persisted values, serialized jobs, dependency lockfiles
+  and external acceptance state remain unchanged.
+
+### Verification
+
+- Server command history and log snapshot regression set: **20 passed, 183
+  assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `b1842a8` — `refactor: extract server operational writes`
+
+**Phase 7BA exit gate: complete.** Exact next task: classify BillingController’s
+external checkout/portal and subscription-state guards, then finish the
+controller inventory and final verification without changing Stripe ordering or
+making live billing calls.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -5109,3 +5157,4 @@ checkout/portal guards and any residual protocol or resource guards.
 | Phase 7AX-infrastructure-budget | CostController mixed manager authorization, entitlement ordering, budget validation and direct organization persistence. | 4 cost/infrastructure/entitlement/product tests passed, 16 assertions; Pint, syntax and diff checks passed. | `28d33ce` — `refactor: extract infrastructure budget operation` | Extract dashboard widget preference validation and persistence, preserving the existing widget list, preference JSON shape, omitted-field behavior and success response. |
 | Phase 7AY-dashboard-preferences | DashboardController mixed widget validation, preference merging and direct user persistence with HTTP coordination. | 22 dashboard regression tests passed, 223 assertions; Pint, syntax and diff checks passed. | `461d154` — `refactor: extract dashboard preferences operation` | Classify public status subscription validation, token protocol checks and writes; extract only safe request/verifier/operation boundaries without changing token ordering, notification timing or 404 behavior. |
 | Phase 7AZ-status-subscriptions | StatusSubscriptionController mixed published-page lookup, email validation, token protocol checks, encrypted upsert/deletion and notification dispatch. | 18 observability/status subscription tests passed, 145 assertions; Pint, syntax and diff checks passed. | `06aa6a6` — `refactor: extract status subscription operations` | Extract substantive server command history deletion and server log refresh queuing, then classify billing external guards and residual protocol/resource exceptions. |
+| Phase 7BA-server-operational-writes | Server command history and Livewire server-log refresh mixed authorization, workflow state, direct persistence and job dispatch. | 20 server command/log snapshot tests passed, 183 assertions; Pint, syntax and diff checks passed. | `b1842a8` — `refactor: extract server operational writes` | Classify BillingController’s external checkout/portal and subscription-state guards, then finish the controller inventory and final verification without changing Stripe ordering or making live billing calls. |
