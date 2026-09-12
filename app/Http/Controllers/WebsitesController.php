@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Web\RetryWebsiteProvisioningAction;
+use App\Actions\Web\UpdateWebsiteAction;
 use App\Http\Requests\WebsiteRequest;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Jobs\Web\AddWebsiteJob;
@@ -42,6 +43,7 @@ class WebsitesController extends Controller
         private readonly WebsiteHealthHistoryQuery $healthHistory,
         private readonly WebsiteInventoryExporter $websiteInventoryExporter,
         private readonly WebsiteInventoryQuery $websiteInventory,
+        private readonly UpdateWebsiteAction $updateWebsite,
     ) {}
 
     /**
@@ -283,62 +285,7 @@ class WebsitesController extends Controller
         if ($validated['health_monitoring_enabled']) {
             $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
         }
-        DB::transaction(function () use ($validated, $website): void {
-            $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
-            if ($locked->hasActiveDeployment()) {
-                throw ValidationException::withMessages([
-                    'server_id' => __('Wait for the current website deployment to finish before editing this website.'),
-                ]);
-            }
-            if (in_array($locked->provisioning_status, [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING], true)) {
-                throw ValidationException::withMessages([
-                    'server_id' => __('Wait for the current website provisioning operation to finish.'),
-                ]);
-            }
-
-            $moving = (int) $validated['server_id'] !== (int) $locked->server_id;
-            $healthSettingsChanged = ! $validated['health_check_enabled']
-                || ! $locked->health_check_enabled
-                || $validated['health_check_path'] !== $locked->health_check_path
-                || $validated['url'] !== $locked->url
-                || $moving;
-            if ($healthSettingsChanged) {
-                $validated = array_merge($validated, [
-                    'health_status' => Website::HEALTH_UNKNOWN,
-                    'health_failure_count' => 0,
-                    'health_last_checked_at' => null,
-                    'health_last_error' => null,
-                ]);
-            }
-            if ($moving && $locked->previous_server_id) {
-                throw ValidationException::withMessages([
-                    'server_id' => __('Finish cleaning up the previous server before moving this website again.'),
-                ]);
-            }
-
-            $requiresProvisioning = $locked->provisioning_status === Website::STATUS_FAILED
-                || $moving
-                || $validated['url'] !== $locked->url
-                || $validated['environment'] !== $locked->environment;
-            if (! $requiresProvisioning) {
-                $locked->update($validated);
-
-                return;
-            }
-
-            $locked->update(array_merge($validated, [
-                'previous_server_id' => $moving ? $locked->server_id : $locked->previous_server_id,
-                'placement_cleanup_error' => $moving ? null : $locked->placement_cleanup_error,
-                'provisioning_token' => (string) Str::uuid(),
-                'setup_stage' => 0,
-                'provisioning_status' => Website::STATUS_QUEUED,
-                'provisioning_error' => null,
-                'provisioned_at' => null,
-            ]));
-            $locked->logs()->where('type', Website::PROVISIONING_LOG_TYPE)->delete();
-
-            AddWebsiteJob::dispatch($locked)->afterCommit();
-        });
+        $this->updateWebsite->handle($website, $validated);
 
         return redirect()->route('websites.show', $website);
     }

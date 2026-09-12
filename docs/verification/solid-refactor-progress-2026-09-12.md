@@ -419,6 +419,23 @@ Verification after the slice:
 - `WebsiteHealthHistoryTest` and `WebsiteHealthInsightsTest`: 12 passed (117 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — website update action slice
+
+Responsibility problem: `WebsitesController::update()` combined HTTP coordination with the locked website state machine: deployment/provisioning guards, health-state reset, relocation safeguards, provisioning identity rotation, log cleanup and after-commit dispatch.
+
+Boundary used: `UpdateWebsiteAction` now owns that cohesive state transition and accepts a website plus validated attributes. The controller retains policy authorization, Form Request validation, monitoring entitlement enforcement and redirect mapping. Existing Web actions continue to own remote provisioning, retry recovery and former-placement cleanup; no duplicate remote abstraction was introduced.
+
+Preserved guarantees:
+
+- Locking and active-deployment/provisioning guards, validation keys/messages, health reset rules and release-retention no-op behavior remain unchanged.
+- Relocation source retention, previous-placement safeguards, provisioning-token rotation, bounded log deletion, transaction scope and `AddWebsiteJob::afterCommit()` timing remain unchanged.
+- Encrypted environment handling, safe URL/slug behavior, authorization, queue payloads and all public responses remain unchanged.
+
+Verification after the slice:
+
+- Website lifecycle, relocation, retention, monitoring, deployment-serialization and security suite: 38 passed (451 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
 Assess website lifecycle orchestration—provisioning, relocation, retry, cleanup and deletion—for a smallest justified action boundary before making lifecycle changes.
