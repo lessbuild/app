@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Recipe\ReopenRecipeReportAction;
+use App\Actions\Recipe\ReopenRecipeReportsAction;
 use App\Actions\Recipe\ResolveRecipeReportAction;
+use App\Actions\Recipe\ResolveRecipeReportsAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
 use App\Http\Requests\RecipeReportResolutionRequest;
@@ -200,55 +202,11 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The count newly resolved after atomic updates and report notifications.
      */
-    public function resolveMany(ResolveRecipeReportsRequest $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function resolveMany(ResolveRecipeReportsRequest $request, ResolveRecipeReportsAction $resolveReports): RedirectResponse
     {
         $reportIds = collect($request->validated('reports'))->map(fn ($id): int => (int) $id)->sort()->values()->all();
 
-        $resolvedCount = DB::transaction(function () use ($activity, $notifications, $request, $reportIds): int {
-            $reports = RecipeReport::query()
-                ->whereIn('id', $reportIds)
-                ->whereHas('recipe', fn ($query) => $query->where('user_id', $request->user()->id))
-                ->select(['id', 'recipe_id', 'resolved_at'])
-                ->with('recipe:id,user_id,name')
-                ->lockForUpdate()
-                ->get();
-
-            abort_unless($reports->count() === count($reportIds), 404);
-
-            $unresolved = $reports->whereNull('resolved_at');
-            if ($unresolved->isEmpty()) {
-                $notifications->resolve($request->user(), $reportIds);
-
-                return 0;
-            }
-
-            RecipeReport::query()
-                ->whereKey($unresolved->modelKeys())
-                ->update([
-                    'resolved_at' => now(),
-                    'resolution_note' => null,
-                    'updated_at' => now(),
-                ]);
-
-            $notifications->resolve($request->user(), $reportIds);
-            $notifications->resolved($unresolved->modelKeys());
-
-            $unresolved->groupBy('recipe_id')->each(function ($reports) use ($activity, $request): void {
-                $recipe = $reports->first()->recipe;
-                $activity->record(
-                    $recipe,
-                    $request->user()->id,
-                    'recipe',
-                    trans_choice(
-                        ':count community report for gallery recipe ":recipe" was resolved.|:count community reports for gallery recipe ":recipe" were resolved.',
-                        $reports->count(),
-                        ['count' => $reports->count(), 'recipe' => $recipe->name],
-                    ),
-                );
-            });
-
-            return $unresolved->count();
-        });
+        $resolvedCount = $resolveReports->handle($request->user(), $reportIds);
 
         return back()->with('status', $resolvedCount > 0
             ? trans_choice(':count community report was marked as resolved.|:count community reports were marked as resolved.', $resolvedCount, ['count' => $resolvedCount])
@@ -272,60 +230,11 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The reopened count; any missing or foreign report aborts the operation with 404.
      */
-    public function reopenMany(ReopenRecipeReportsRequest $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function reopenMany(ReopenRecipeReportsRequest $request, ReopenRecipeReportsAction $reopenReports): RedirectResponse
     {
         $reportIds = collect($request->validated('reports'))->map(fn ($id): int => (int) $id)->sort()->values()->all();
 
-        $reopenedCount = DB::transaction(function () use ($activity, $notifications, $request, $reportIds): int {
-            $reports = RecipeReport::query()
-                ->whereIn('id', $reportIds)
-                ->whereHas('recipe', fn ($query) => $query->where('user_id', $request->user()->id))
-                ->select(['id', 'recipe_id', 'resolved_at'])
-                ->with('recipe:id,user_id,name')
-                ->lockForUpdate()
-                ->get();
-
-            abort_unless($reports->count() === count($reportIds), 404);
-
-            $resolved = $reports->whereNotNull('resolved_at');
-            if ($resolved->isEmpty()) {
-                return 0;
-            }
-
-            RecipeReport::query()
-                ->whereKey($resolved->modelKeys())
-                ->update([
-                    'resolved_at' => null,
-                    'resolution_note' => null,
-                    'updated_at' => now(),
-                ]);
-
-            RecipeReport::query()
-                ->whereKey($resolved->modelKeys())
-                ->select(['id', 'user_id', 'recipe_id'])
-                ->with(['recipe:id,user_id,name'])
-                ->get()
-                ->each(function (RecipeReport $report) use ($notifications): void {
-                    $notifications->open($report->recipe, $report);
-                    $notifications->reopened($report->recipe, $report);
-                });
-
-            $resolved->groupBy('recipe_id')->each(function ($reports) use ($activity, $request): void {
-                $recipe = $reports->first()->recipe;
-                $activity->record(
-                    $recipe,
-                    $request->user()->id,
-                    'recipe',
-                    trans_choice(
-                        ':count community report for gallery recipe ":recipe" was reopened.|:count community reports for gallery recipe ":recipe" were reopened.',
-                        $reports->count(),
-                        ['count' => $reports->count(), 'recipe' => $recipe->name],
-                    ),
-                );
-            });
-
-            return $resolved->count();
-        });
+        $reopenedCount = $reopenReports->handle($request->user(), $reportIds);
 
         return back()->with('status', $reopenedCount > 0
             ? trans_choice(':count community report was reopened.|:count community reports were reopened.', $reopenedCount, ['count' => $reopenedCount])

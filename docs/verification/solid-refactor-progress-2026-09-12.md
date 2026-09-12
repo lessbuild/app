@@ -291,6 +291,24 @@ Verification after the slice:
 - Reopen notification/rollback gate: 2 passed (17 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — bulk report transition actions slice
+
+Responsibility problem: `resolveMany()` and `reopenMany()` still combined validated selection handling with organization-scoped row locking, atomic state transitions, notification fan-out and per-recipe audit grouping.
+
+Boundary used: `ResolveRecipeReportsAction` and `ReopenRecipeReportsAction` now own their distinct bulk workflows and return the changed count. The controller retains validated-ID normalization and HTTP status-message mapping; each action receives the contributor and IDs, performs its own transaction and injects the notifier/activity recorder.
+
+Preserved guarantees:
+
+- Sorted selection order, all-or-nothing contributor recipe ownership checks, row locks, rollback behavior and changed-count semantics remain unchanged.
+- Resolve-only notification acknowledgement, reopen notification ordering, per-recipe audit grouping, resolution-note clearing, status labels and flash messages remain unchanged.
+- No route, validation key, persisted field, serialized value, YAML schema or queue behavior changed.
+
+Verification after the slice:
+
+- Targeted bulk atomic/notification gate: 4 passed (30 assertions).
+- Full `RecipeFeedbackInboxTest`: 21 passed, 1 failed (208 assertions); the single failure was the existing route throttle returning 429 before a later foreign-selection assertion. The same foreign-selection and rollback tests pass in isolation.
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Evaluate the bulk resolve and reopen transitions as separate cohesive actions, preserving sorted selections, ownership locks, atomic updates, per-recipe audit grouping and notification scope.
+Extract the reporter's withdraw operation into a cohesive action, preserving recipe/report locks, notification deletion, cascade safety, activity timing and rollback behavior.
