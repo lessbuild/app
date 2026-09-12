@@ -95,6 +95,44 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame(48, $project->preview_ttl_hours);
     }
 
+    public function test_preview_settings_entitlement_is_checked_before_validation_and_writes(): void
+    {
+        config(['billing.enforce_entitlements' => true]);
+        [$owner, , $project] = $this->application(previews: false);
+
+        $this->actingAs($owner)->from(route('projects.show', $project))
+            ->patch(route('projects.previews.update', $project), [
+                'preview_enabled' => '1',
+                'preview_domain' => '',
+                'preview_ttl_hours' => 'not-an-integer',
+            ])
+            ->assertRedirect(route('projects.show', $project))
+            ->assertSessionHasErrors('plan')
+            ->assertSessionMissing('_old_input.preview_domain');
+
+        $this->assertFalse($project->fresh()->preview_enabled);
+        $this->assertNull($project->fresh()->preview_domain);
+    }
+
+    public function test_project_deletion_uses_the_existing_authorization_and_cascade_behavior(): void
+    {
+        [$owner, , $project] = $this->application();
+        $project->environments()->create([
+            'name' => 'Staging', 'slug' => 'staging', 'type' => 'staging', 'branch' => 'develop',
+        ]);
+        $outsider = User::factory()->create();
+
+        $this->actingAs($outsider)->delete(route('projects.destroy', $project))->assertForbidden();
+        $this->assertDatabaseHas('projects', ['id' => $project->id]);
+
+        $this->actingAs($owner)->delete(route('projects.destroy', $project))
+            ->assertRedirect(route('projects.index'))
+            ->assertSessionHas('success', 'Application deleted.');
+
+        $this->assertDatabaseMissing('projects', ['id' => $project->id]);
+        $this->assertDatabaseMissing('environments', ['project_id' => $project->id]);
+    }
+
     /** @return array{User, Repository, Project} */
     private function application(bool $previews = true): array
     {

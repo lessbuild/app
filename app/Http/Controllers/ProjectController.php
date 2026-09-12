@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Project\CreateProjectAction;
+use App\Actions\Project\DeleteProjectAction;
+use App\Actions\Project\UpdateProjectPreviewsAction;
 use App\Http\Requests\StoreProjectRequest;
+use App\Http\Requests\UpdateProjectPreviewsRequest;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Rules\Hostname;
@@ -78,10 +81,10 @@ class ProjectController extends Controller
     /**
      * Authorize deletion of the bound application and redirect to the application list after removing its record.
      */
-    public function destroy(Project $project): RedirectResponse
+    public function destroy(Project $project, DeleteProjectAction $deleteProject): RedirectResponse
     {
         $this->authorize('delete', $project);
-        $project->delete();
+        $deleteProject->handle($project);
 
         return redirect()->route('projects.index')->with('success', __('Application deleted.'));
     }
@@ -89,23 +92,12 @@ class ProjectController extends Controller
     /**
      * Normalize and validate preview enablement, hostname, and expiry for an editable application, then save the settings.
      */
-    public function updatePreviews(Request $request, Project $project, Entitlements $entitlements): RedirectResponse
-    {
-        $this->authorize('update', $project);
-        $domain = preg_replace('#^https?://#i', '', trim((string) $request->input('preview_domain')));
-        $request->merge([
-            'preview_enabled' => $request->boolean('preview_enabled'),
-            'preview_domain' => rtrim((string) $domain, '/'),
-        ]);
-        if ($request->boolean('preview_enabled')) {
-            $entitlements->enforce($project->organization, 'previews');
-        }
-        $data = $request->validate([
-            'preview_enabled' => ['required', 'boolean'],
-            'preview_domain' => ['required_if:preview_enabled,true', 'nullable', 'string', 'max:200', new Hostname],
-            'preview_ttl_hours' => ['required', 'integer', 'between:1,720'],
-        ]);
-        $project->update($data);
+    public function updatePreviews(
+        UpdateProjectPreviewsRequest $request,
+        Project $project,
+        UpdateProjectPreviewsAction $updateProjectPreviews,
+    ): RedirectResponse {
+        $updateProjectPreviews->handle($project, $request->validated());
 
         return back()->with('success', __('Preview environment settings saved.'));
     }
