@@ -96,4 +96,17 @@ class BillingTest extends TestCase
             ->assertRedirect(route('billing.index'))
             ->assertSessionHasErrors('interval');
     }
+
+    public function test_non_billing_members_cannot_use_billing_management_endpoints(): void
+    {
+        config(['cashier.secret' => 'sk_test']);
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $owner->currentOrganization->members()->attach($member, ['role' => 'viewer']);
+        $member->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($member)->post(route('billing.portal'))->assertForbidden();
+        $this->actingAs($member)->post(route('billing.cancel'))->assertForbidden();
+        $this->actingAs($member)->post(route('billing.resume'))->assertForbidden();
+    }
 }

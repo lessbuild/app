@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Organization;
 use App\Services\SystemHealth;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,12 +55,13 @@ class SystemHealthController extends Controller
     }
 
     /**
-     * Require the request user to manage their current workspace; abort with 403 otherwise.
+     * Require the request user to manage their current workspace through its policy.
      */
     private function authorizeAccess(Request $request): void
     {
         $organization = $request->user()->currentOrganization;
 
-        abort_unless($organization && $organization->permits($request->user(), 'manage'), 403);
+        abort_unless($organization instanceof Organization, 403);
+        $this->authorize('manage', $organization);
     }
 }

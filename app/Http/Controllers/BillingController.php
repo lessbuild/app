@@ -62,8 +62,10 @@ class BillingController extends Controller
     public function portal(Request $request): RedirectResponse
     {
         abort_unless(filled(config('cashier.secret')), 503, 'Stripe billing is not configured yet.');
-        $billingUser = $request->user()->currentOrganization?->owner;
-        abort_unless($request->user()->currentOrganization?->permits($request->user(), 'billing'), 403);
+        $organization = $request->user()->currentOrganization;
+        abort_unless($organization instanceof Organization, 403);
+        $this->authorize('manageBilling', $organization);
+        $billingUser = $organization->owner;
 
         return $billingUser->redirectToBillingPortal(route('billing.index'));
     }
@@ -73,8 +75,10 @@ class BillingController extends Controller
      */
     public function cancel(Request $request): RedirectResponse
     {
-        $billingUser = $request->user()->currentOrganization?->owner;
-        abort_unless($request->user()->currentOrganization?->permits($request->user(), 'billing'), 403);
+        $organization = $request->user()->currentOrganization;
+        abort_unless($organization instanceof Organization, 403);
+        $this->authorize('manageBilling', $organization);
+        $billingUser = $organization->owner;
         abort_unless($billingUser->subscribed('default'), 422);
         $billingUser->subscription('default')->cancel();
 
@@ -86,8 +90,10 @@ class BillingController extends Controller
      */
     public function resume(Request $request): RedirectResponse
     {
-        $billingUser = $request->user()->currentOrganization?->owner;
-        abort_unless($request->user()->currentOrganization?->permits($request->user(), 'billing'), 403);
+        $organization = $request->user()->currentOrganization;
+        abort_unless($organization instanceof Organization, 403);
+        $this->authorize('manageBilling', $organization);
+        $billingUser = $organization->owner;
         $subscription = $billingUser->subscription('default');
         abort_unless($subscription?->onGracePeriod(), 422);
         $subscription->resume();
