@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RecipeReportResolutionRequest;
+use App\Http\Requests\StoreRecipeReportRequest;
 use App\Models\Recipe;
 use App\Models\RecipeReport;
 use App\Services\ActivityRecorder;
@@ -13,7 +15,6 @@ use App\Support\DateRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -140,18 +141,13 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse A private-report acknowledgement after locked persistence, notification, and activity recording.
      */
-    public function store(Request $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function store(StoreRecipeReportRequest $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
         abort_if((int) $recipe->user_id === (int) $request->user()->id, 403);
 
-        $data = $request->validate([
-            'reason' => ['required', 'string', Rule::in(RecipeReport::REASONS)],
-            'details' => ['nullable', 'string', 'max:1000'],
-        ]);
-        $data['details'] = filled($data['details'] ?? null)
-            ? str($data['details'])->trim()->toString()
-            : null;
+        $data = $request->validated();
+        $data['details'] = $request->details();
         $data['resolved_at'] = null;
         $data['resolution_note'] = null;
 
@@ -192,10 +188,10 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse An acknowledgement; repeated resolution does not replace the existing note.
      */
-    public function resolve(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function resolve(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
-        $resolutionNote = $this->resolutionNote($request);
+        $resolutionNote = $request->resolutionNote();
 
         DB::transaction(function () use ($activity, $notifications, $recipe, $report, $request, $resolutionNote): void {
             $lockedRecipe = $this->lockedRecipe($recipe->id);
@@ -233,11 +229,11 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The changed or unchanged note result; an unresolved report yields HTTP 409.
      */
-    public function updateResolutionNote(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function updateResolutionNote(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
 
-        $resolutionNote = $this->resolutionNote($request);
+        $resolutionNote = $request->resolutionNote();
         $updated = DB::transaction(function () use ($activity, $notifications, $recipe, $report, $request, $resolutionNote): bool {
             $lockedRecipe = $this->lockedRecipe($recipe->id);
             $lockedReport = RecipeReport::query()
@@ -505,20 +501,6 @@ class RecipeReportsController extends Controller
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
 
         return $date && $date->format('Y-m-d') === $value ? $value : null;
-    }
-
-    /**
-     * Validate the optional bounded resolution_note input and return trimmed text, or null when blank.
-     */
-    private function resolutionNote(Request $request): ?string
-    {
-        $data = $request->validate([
-            'resolution_note' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        return filled($data['resolution_note'] ?? null)
-            ? str($data['resolution_note'])->trim()->toString()
-            : null;
     }
 
     /**

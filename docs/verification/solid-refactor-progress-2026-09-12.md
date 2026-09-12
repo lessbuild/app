@@ -186,6 +186,23 @@ Verification after the slice:
 - Export-focused report/history gate: 5 passed (85 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — recipe-report mutation validation slice
+
+Responsibility problem: single-report submission and resolution-note endpoints kept reusable field rules and text normalization inside the controller, alongside authorization and locked state transitions. That made validated input harder to reuse and obscured the HTTP boundary without offering a safe reason to move business state changes.
+
+Boundary used: `StoreRecipeReportRequest` owns report reason/details validation and `RecipeReportResolutionRequest` owns the shared resolution-note rule and normalization. The controller consumes `validated()` data and request accessors, while publication/authorship checks, contributor ownership checks, locks, transactions, notifications and activity recording remain explicit in the operation coordinator.
+
+Preserved guarantees:
+
+- Existing validation keys, max lengths, supported reasons, whitespace behavior, blank values, unauthenticated redirects and authorization status codes remain unchanged.
+- Secret-safe encrypted persistence, SQLite writer reservation, recipe/report lock order, transaction rollback, notification timing and redirect flash messages remain unchanged.
+- No route, payload, serialized value, YAML schema or mutation state transition changed.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Evaluate Form Requests for substantial report mutation validation, starting with the single-report submission and resolution-note inputs while preserving existing authorization guards, validation keys and redirect/error behavior.
+Move the two bulk report-selection rule sets into Form Requests, preserving the `bulkResolve` and `bulkReopen` error bags before evaluating mutation action boundaries.
