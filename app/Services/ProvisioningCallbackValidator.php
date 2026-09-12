@@ -50,4 +50,21 @@ class ProvisioningCallbackValidator
             $validatedExitCode === null ? null : (int) $validatedExitCode,
         );
     }
+
+    /**
+     * Validate one provisioning log at the callback's lock-safe execution point.
+     *
+     * @param  mixed  $log  Raw log input retained until attempt acceptance completes.
+     * @param  int  $maxCharacters  Maximum configured log length for the resource.
+     * @return string The bounded validated log output.
+     */
+    public function log(mixed $log, int $maxCharacters): string
+    {
+        $data = $this->validation->validate(
+            ['log' => $log],
+            ['log' => ['required', 'string', 'max:'.max(1, $maxCharacters)]],
+        );
+
+        return (string) $data['log'];
+    }
 }
