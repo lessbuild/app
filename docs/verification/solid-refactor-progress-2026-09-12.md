@@ -548,6 +548,23 @@ Verification after the slice:
 - `RepositoryWebhookDeliveryHistoryTest`: 4 passed (68 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3C — repository webhook-history export slice
+
+Responsibility problem: `RepositoriesController::exportWebhookDeliveries()` still mixed the authenticated endpoint with CSV protocol, build projection, lazy delivery iteration and spreadsheet-safe serialization.
+
+Boundary used: `RepositoryWebhookDeliveryHistoryExporter` now owns the streamed delivery-history response and consumes `RepositoryWebhookDeliveryHistoryQuery`. The controller retains policy authorization and filter normalization before delegation. The exporter is concrete and constructor-injected; it does not change webhook contracts or delivery processing.
+
+Preserved guarantees:
+
+- Filename, private/no-store/nosniff headers, UTF-8 BOM, header/row order, newest-first ordering, lazy batch size and build eager loading remain unchanged.
+- Delivery status/revision/message fields, build status, timestamps, formula escaping and null handling remain unchanged.
+- The export remains repository-policy protected and uses the same filtered history semantics as the detail page.
+
+Verification after the slice:
+
+- `RepositoryWebhookDeliveryHistoryTest`: 4 passed (68 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
 Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.
