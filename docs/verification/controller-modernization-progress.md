@@ -1059,6 +1059,61 @@ deployment/scaling/scheduled-task/workflow/token endpoints, documenting their
 request, response, authorization, entitlement and dispatch contracts, then
 extract the smallest schedule operation with separate web/API input boundaries.
 
+## Phase 4A — deployment schedule operation
+
+### Responsibility problem
+
+`AutomationController::deploymentSchedule` performed environment policy
+authorization, paid-feature enforcement, cron/timezone validation, schedule
+persistence and actor attribution in one HTTP method. The automation inventory
+also confirmed that the API currently exposes workflow, runtime and scaling
+operations rather than a separate schedule-create route; `WorkflowConfiguration`
+remains the YAML/API-compatible schedule path.
+
+### Boundaries applied
+
+- `StoreDeploymentScheduleRequest` owns the schedule input contract and uses
+  the environment update policy. It enforces the existing
+  `scheduled_deployments` entitlement in `authorize()` so entitlement denial
+  remains ahead of validation, matching the former controller order.
+- `CreateDeploymentScheduleAction` injects `Entitlements`, rechecks the
+  feature for non-HTTP callers, and owns enabled schedule persistence and
+  creator attribution.
+- `AutomationController` now passes validated input to the action and returns
+  the existing redirect/flash response. No new API route or generic schedule
+  abstraction was introduced.
+
+This applies single responsibility, dependency inversion and Laravel Form
+Request/policy conventions while retaining the existing workflow service for
+the different YAML operation.
+
+### Preserved contracts and safety guarantees
+
+- The route, response status, redirect target, success message, validation keys,
+  cron expression semantics, IANA timezone allowlist, enabled default and
+  `created_by` value are unchanged.
+- Environment policy denial still precedes entitlement and malformed input;
+  free-plan entitlement denial still precedes validation and creates no row.
+- The action performs no remote work and does not change workflow YAML,
+  scheduled-run claiming, runtime dispatch, API envelopes or persistence
+  schemas.
+
+### Verification
+
+- Automation, API, workflow, runtime, tenancy, entitlement and configuration
+  regression set: **36 passed, 247 assertions**.
+- Added valid schedule, viewer-denial/no-write and free-plan/no-write tests.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `936fa7c` — `refactor: extract deployment schedule operation`
+
+Exact next task: characterize `AutomationController::scalingSchedule` and its
+distinct replica-bound validation, then extract a separate request/action
+while preserving the `scheduled_scaling` entitlement and no-write denial
+behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1076,3 +1131,4 @@ extract the smallest schedule operation with separate web/API input boundaries.
 | Phase 3E-server | Server display-label and deletion persistence remained in `ServersController`, and create permission was duplicated in `ServerRequest`. | 36 server/provider/retry/deletion/tenancy tests passed, 308 assertions; Pint and diff checks passed. | `306ff7e` — `refactor: extract server lifecycle operations` | Characterize remaining `WebsitesController` direct writes and extract cohesive runtime-log, retention, creation, cleanup-retry and health-check operations not already covered by existing actions. |
 | Phase 3F-website | Website creation, runtime-log writes, retention, placement-cleanup state and health dispatch remained in `WebsitesController`; `WebsiteRequest` duplicated deploy permission. | 55 website/observability/relocation/deletion/tenancy/entitlement tests passed, 563 assertions; Pint and diff checks passed. | `a35360a` — `refactor: extract website operations` | Characterize and extract remaining server/website import assessment and import-write operations, preserving session token, expiry, locks, probes, encryption and activity timing. |
 | Phase 3G-imports | Server and website import controllers mixed protocol validation, remote inspection/probes, assessment/website persistence, plan limits and activity side effects; import requests duplicated deploy permission. | 82 import/server/website/infrastructure regression tests passed, 694 assertions; Pint and diff checks passed. | `70f2d57` — `refactor: extract import operations` | Inventory AutomationController and API/V1/ControlPlaneController schedule, workflow, runtime and token contracts, then extract the smallest schedule operation with separate web/API request boundaries. |
+| Phase 4A-deployment-schedule | Deployment-schedule creation mixed policy, entitlement ordering, cron validation and persistence in `AutomationController`; API has no separate schedule-create route and continues to use workflow YAML for that contract. | 36 automation/API/runtime/tenancy/entitlement/configuration regression tests passed, 247 assertions; Pint and diff checks passed. | `936fa7c` — `refactor: extract deployment schedule operation` | Characterize scaling-schedule replica bounds and scheduled-scaling entitlement, then extract its separate request/action and no-write denial tests. |
