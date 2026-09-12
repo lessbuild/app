@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Actions\Account\BeginTwoFactorSetupAction;
 use App\Actions\Account\CancelTwoFactorSetupAction;
+use App\Actions\Account\ConfirmTwoFactorAction;
 use App\Exceptions\TwoFactorOperationException;
+use App\Http\Requests\ConfirmTwoFactorRequest;
 use App\Http\Requests\EnableTwoFactorRequest;
 use App\Services\ActivityRecorder;
 use App\Services\TwoFactorAuthentication;
@@ -33,27 +35,13 @@ class TwoFactorAuthenticationController extends Controller
      *
      * @return RedirectResponse The plaintext recovery codes flashed for one-time saving.
      */
-    public function confirm(
-        Request $request,
-        TwoFactorAuthentication $twoFactor,
-        ActivityRecorder $activity,
-    ): RedirectResponse {
-        $data = $request->validateWithBag('twoFactor', ['code' => ['required', 'string', 'max:20']]);
-        $user = $request->user();
-        if (blank($user->two_factor_secret) || ! $twoFactor->verifyCode($user->two_factor_secret, $data['code'])) {
-            throw ValidationException::withMessages(['code' => __('The authentication code is invalid.')])->errorBag('twoFactor');
-        }
-
-        $recoveryCodes = $twoFactor->generateRecoveryCodes();
-        $user->forceFill([
-            'two_factor_recovery_codes' => $twoFactor->recoveryCodeHashes($recoveryCodes),
-            'two_factor_confirmed_at' => now(),
-        ])->save();
-        $activity->recordAccount($user, 'Two-factor authentication was enabled.');
+    public function confirm(ConfirmTwoFactorRequest $request, ConfirmTwoFactorAction $confirm): RedirectResponse
+    {
+        $result = $confirm->handle($request->user(), $request->code());
 
         return back()
             ->with('two_factor_status', __('Two-factor authentication enabled. Save your recovery codes now.'))
-            ->with('two_factor_recovery_codes', $recoveryCodes);
+            ->with('two_factor_recovery_codes', $result->recoveryCodes);
     }
 
     /**

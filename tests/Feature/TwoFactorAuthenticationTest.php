@@ -37,6 +37,44 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->assertNotContains($recoveryCodes[0], $user->two_factor_recovery_codes);
         $this->assertArrayNotHasKey('two_factor_secret', $user->toArray());
         $this->assertArrayNotHasKey('two_factor_recovery_codes', $user->toArray());
+        $this->assertDatabaseHas('events', [
+            'user_id' => $user->id,
+            'category' => 'account',
+            'event' => 'Two-factor authentication was enabled.',
+        ]);
+    }
+
+    public function test_confirmation_rejects_an_invalid_code_without_changing_pending_setup(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post(route('account.two-factor.enable'), [
+            'current_password' => 'password',
+        ])->assertRedirect();
+        $user->refresh();
+        $secret = $user->two_factor_secret;
+
+        $this->actingAs($user)->post(route('account.two-factor.confirm'), [
+            'code' => '000000',
+        ])->assertSessionHasErrors(['code'], errorBag: 'twoFactor');
+
+        $user->refresh();
+        $this->assertSame($secret, $user->two_factor_secret);
+        $this->assertNull($user->two_factor_confirmed_at);
+        $this->assertNull($user->two_factor_recovery_codes);
+    }
+
+    public function test_confirmation_requires_a_pending_secret(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('account.two-factor.confirm'), [
+            'code' => '000000',
+        ])->assertSessionHasErrors(['code'], errorBag: 'twoFactor');
+
+        $this->assertDatabaseMissing('events', [
+            'user_id' => $user->id,
+            'event' => 'Two-factor authentication was enabled.',
+        ]);
     }
 
     public function test_enabled_two_factor_rejects_setup_before_password_validation(): void
