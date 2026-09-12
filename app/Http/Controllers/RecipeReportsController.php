@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Recipe\ReopenRecipeReportAction;
 use App\Actions\Recipe\ResolveRecipeReportAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
@@ -257,35 +258,11 @@ class RecipeReportsController extends Controller
     /**
      * Authorize the contributor and recipe/report relationship, reopen a resolved report under locks, and redirect back.
      */
-    public function reopen(Request $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function reopen(Request $request, Recipe $recipe, RecipeReport $report, ReopenRecipeReportAction $reopenReport): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
 
-        DB::transaction(function () use ($activity, $notifications, $recipe, $report, $request): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            $lockedReport = RecipeReport::query()
-                ->whereKey($report->id)
-                ->where('recipe_id', $lockedRecipe->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $this->authorizeContributorReport($request, $lockedRecipe, $lockedReport);
-            if ($lockedReport->resolved_at === null) {
-                return;
-            }
-
-            $lockedReport->update([
-                'resolved_at' => null,
-                'resolution_note' => null,
-            ]);
-            $notifications->open($lockedRecipe, $lockedReport);
-            $notifications->reopened($lockedRecipe, $lockedReport);
-            $activity->record(
-                $lockedRecipe,
-                $request->user()->id,
-                'recipe',
-                "A community report for gallery recipe \"{$lockedRecipe->name}\" was reopened.",
-            );
-        });
+        $reopenReport->handle($recipe, $report, $request->user());
 
         return back()->with('status', __('The community report was reopened.'));
     }

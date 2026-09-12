@@ -273,6 +273,24 @@ Verification after the slice:
 - Resolution-note rollback regression: 1 passed (5 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — single report reopen action slice
+
+Responsibility problem: `RecipeReportsController::reopen()` combined locked relationship authorization, resolved-state idempotency, state reset, two notification transitions and audit recording.
+
+Boundary used: `ReopenRecipeReportAction` now owns the locked reopen operation and receives typed recipe/report/contributor models. The controller retains the immediate HTTP relationship guard and redirect response; the action rechecks ownership after locking and injects notification/activity collaborators.
+
+Preserved guarantees:
+
+- Recipe lock then report lock ordering, stale ownership protection, resolved-state no-op behavior and clearing of `resolution_note` remain unchanged.
+- Contributor notification reopening, reporter notification ordering, activity wording/timing, transaction rollback and flash messages remain unchanged.
+- No route, validation key, persisted field, serialized value, YAML schema or queue behavior changed.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- Reopen notification/rollback gate: 2 passed (17 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Evaluate extracting the single-report reopen transition into a cohesive action, preserving resolved-state idempotency, notification ordering, ownership checks and audit timing.
+Evaluate the bulk resolve and reopen transitions as separate cohesive actions, preserving sorted selections, ownership locks, atomic updates, per-recipe audit grouping and notification scope.
