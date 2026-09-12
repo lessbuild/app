@@ -68,6 +68,22 @@ class ProductImprovementTest extends TestCase
         $this->assertSame('100.00', $owner->currentOrganization->fresh()->monthly_infrastructure_budget);
     }
 
+    public function test_cost_budget_denies_non_managers_before_validation_and_writing(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        [$owner] = $this->application();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->from(route('costs.index'))
+            ->patch(route('costs.update'), ['monthly_infrastructure_budget' => 'not-a-number'])
+            ->assertForbidden();
+
+        $this->assertNull($organization->fresh()->monthly_infrastructure_budget);
+    }
+
     private function application(): array
     {
         $owner = User::factory()->create();

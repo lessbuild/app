@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Cost\UpdateInfrastructureBudgetAction;
+use App\Http\Requests\UpdateInfrastructureBudgetRequest;
 use App\Models\Size;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
@@ -51,13 +53,12 @@ class CostController extends Controller
     /**
      * Require entitled workspace management access, validate a nullable monthly budget, save it, and redirect back.
      */
-    public function update(Request $request): RedirectResponse
-    {
+    public function update(
+        UpdateInfrastructureBudgetRequest $request,
+        UpdateInfrastructureBudgetAction $updateBudget,
+    ): RedirectResponse {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'cost_controls');
-        $data = $request->validate(['monthly_infrastructure_budget' => ['nullable', 'numeric', 'between:1,1000000']]);
-        $organization->update(['monthly_infrastructure_budget' => $data['monthly_infrastructure_budget'] ?? null]);
+        $updateBudget->handle($organization, $request->validated());
 
         return back()->with('success', __('Infrastructure budget updated.'));
     }
