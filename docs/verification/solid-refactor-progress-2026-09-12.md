@@ -66,6 +66,25 @@ Verification after the slice:
 - Pint: passed.
 - `git diff --check`: passed.
 
+## Phase 2 — shared provider inventory query slice
+
+Responsibility problem: `ProviderController` combined HTTP coordination with organization-scoped provider filtering and six independently derived inventory metrics. The same filter construction was also repeated by the private CSV export, making it easy for the HTML and export paths to drift.
+
+Boundary used: `ProviderInventoryQuery` now owns the typed, organization-scoped provider query and its inventory metrics. The controller still normalizes request input, handles pagination/response construction, and formats CSV cells. The collaborator is concrete and constructor-injected; no generic repository or speculative interface was added.
+
+Preserved guarantees:
+
+- Workspace scoping still resolves through the current organization relationship.
+- Search escaping, type/usage/connection filters, inventory scopes, six metric meanings, ordering, pagination, eager loading and export filtering remain unchanged.
+- Provider tokens remain excluded from HTML and CSV output; encrypted persistence, entitlement checks, validation keys, flash messages and provider adapter behavior are untouched.
+
+Verification after the slice:
+
+- Provider inventory, export, insight and capability suite: 19 passed (149 assertions).
+- Pint and PHP syntax checks: passed.
+- `git diff --check`: passed.
+- The broader provider baseline remains 62 passed and 3 failed in the pre-existing manual connection feedback/rate-limit tests; this slice does not alter that path.
+
 ## Next task
 
-Review the completed Phase 1 configuration boundaries and exit guarantees against the plan, then begin Phase 2 provider-management inspection only after a cohesive commit. Do not modify provider behavior while the inspection is still being mapped.
+Commit the shared provider inventory query slice, then extract connection-history filtering and metrics as the next cohesive provider read boundary. Preserve the bounded retained sample, filter normalization, pagination, ordering and export semantics before reviewing provider adapter contract coverage.

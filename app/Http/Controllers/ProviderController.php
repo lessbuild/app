@@ -6,13 +6,12 @@ use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Services\Entitlements;
+use App\Services\ProviderInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
-use App\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,7 +21,10 @@ class ProviderController extends Controller
     /**
      * Use workspace entitlements to guard provider features that depend on a paid plan.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly Entitlements $entitlements,
+        private readonly ProviderInventoryQuery $providerInventory,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -30,7 +32,7 @@ class ProviderController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $providers = $this->filteredProviders($request, $filters)
+        $providers = $this->providerInventory->for($request->user(), $filters)
             ->withCount(['servers', 'repositories'])
             ->latest()
             ->paginate()
@@ -39,33 +41,11 @@ class ProviderController extends Controller
         return view('scenes.providers.index', [
             'providers' => $providers,
             'filters' => $filters,
-            'metrics' => $this->indexMetrics($request, $filters),
+            'metrics' => $this->providerInventory->metrics($request->user(), $filters),
             'types' => $this->providerTypes(),
             'usages' => ['in_use', 'unused'],
             'connectionStatuses' => Provider::CONNECTION_STATUSES,
         ]);
-    }
-
-    /**
-     * @param  array{search: ?string, type: ?string, usage: ?string, connection: ?string}  $filters
-     * @return array{total: int, in_use: int, unused: int, healthy: int, failed: int, unchecked: int}
-     */
-    private function indexMetrics(Request $request, array $filters): array
-    {
-        return [
-            'total' => $this->filteredProviders($request, $filters)->count(),
-            'in_use' => $this->filteredProviders($request, $filters)->inUse()->count(),
-            'unused' => $this->filteredProviders($request, $filters)->unused()->count(),
-            'healthy' => $this->filteredProviders($request, $filters)
-                ->connectionState(Provider::CONNECTION_HEALTHY)
-                ->count(),
-            'failed' => $this->filteredProviders($request, $filters)
-                ->connectionState(Provider::CONNECTION_FAILED)
-                ->count(),
-            'unchecked' => $this->filteredProviders($request, $filters)
-                ->connectionState(Provider::CONNECTION_UNCHECKED)
-                ->count(),
-        ];
     }
 
     /**
@@ -102,7 +82,7 @@ class ProviderController extends Controller
                 'Updated at',
             ], ',', '"', '');
 
-            $this->filteredProviders($request, $filters)
+            $this->providerInventory->for($request->user(), $filters)
                 ->with([
                     'servers' => fn ($query) => $query
                         ->select(['id', 'provider_id', 'name', 'display_name'])
@@ -457,25 +437,6 @@ class ProviderController extends Controller
             'usage' => in_array($usage, ['in_use', 'unused'], true) ? $usage : null,
             'connection' => in_array($connection, Provider::CONNECTION_STATUSES, true) ? $connection : null,
         ];
-    }
-
-    /** @param array{search: ?string, type: ?string, usage: ?string, connection: ?string} $filters */
-    private function filteredProviders(Request $request, array $filters): HasMany
-    {
-        return $request->user()->workspaceProviders()
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['type'], fn ($query, string $value) => $query
-                ->where('provider', $value))
-            ->when($filters['usage'] === 'in_use', fn ($query) => $query->inUse())
-            ->when($filters['usage'] === 'unused', fn ($query) => $query->unused())
-            ->when($filters['connection'], fn ($query, string $status) => $query->connectionState($status));
     }
 
     /** @return list<string> */
