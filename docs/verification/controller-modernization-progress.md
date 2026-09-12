@@ -3075,9 +3075,57 @@ registration semantics.
 Commit: fa31c24 — refactor: extract access request intake operation
 
 **Phase 7N exit gate: complete.** Exact next task: extract notification inbox
-filter normalization/query/export responsibilities and notification state
-operations, preserving ownership concealment, bulk counts, saved preferences,
-CSV payload redaction and redirect messages.
+filter normalization/query/export responsibilities and saved-filter
+operations, preserving ownership concealment, bulk counts, preferences, CSV
+payload redaction and redirect messages.
+
+## Phase 7O — notification inbox read model and saved-filter boundaries
+
+### Responsibility problem
+
+NotificationsController combined filter normalization, repeated recipient-scoped
+inbox queries, metrics, CSV serialization and saved-filter preference writes with
+the remaining notification state endpoints.
+
+### Boundary and principles
+
+NotificationIndexRequest and SaveNotificationFilterRequest now own normalized
+filter/name validation. NotificationInboxQuery owns the reusable user-scoped
+listing and metrics query, while NotificationInboxExporter owns streaming CSV
+formatting and payload-value redaction. SaveNotificationFilterAction and
+RemoveNotificationFilterAction own preference persistence. The controller now
+coordinates those collaborators and retains the separate state-transition
+responses. This applies single responsibility and dependency inversion without
+introducing a generic repository or changing the existing notification model.
+
+### Preserved guarantees
+
+- Inbox filters still trim and bound search text, silently ignore unsupported
+  values, normalize reversed valid dates, and preserve pagination parameters.
+- Metrics, category/status/state filtering, owner scoping, wildcard escaping and
+  query ordering remain unchanged, including the existing metric query shape.
+- CSV filename, headers, BOM, private/no-store response headers, lazy batch size,
+  supported payload values and spreadsheet-safe escaping remain unchanged.
+- Saved filters still replace case-insensitive names, retain at most ten entries,
+  preserve normalized non-null criteria and use the same success messages.
+- Notification state endpoints and their deliberate foreign-recipient 404
+  concealment were not changed in this slice.
+
+### Verification
+
+- Notification inbox, export, saved-filter, bulk, ownership and authentication
+  regression set: **23 passed, 198 assertions**.
+- Targeted Pint test, PHP syntax checks and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: 142b5b1 — refactor: extract notification inbox operations
+
+**Phase 7O exit gate: complete.** Exact next task: extract notification state
+operations and a policy-compatible ownership boundary, preserving deliberate
+404 concealment, bulk counts, read/unread/delete messages, query scoping and
+no-write behavior for foreign route-bound records.
 
 ## Slice ledger
 
@@ -3131,3 +3179,4 @@ CSV payload redaction and redirect messages.
 | Phase 7L-product-feedback | ProductFeedbackController mixed validation, workspace-role/ownership checks and encrypted feedback writes. | 5 product-feedback authorization/validation/persistence tests passed, 31 assertions; Pint and diff checks passed. | `0aabe54` — `refactor: extract product feedback operations` | Extract platform access-request administration, preserving platform-admin denial, accepted-request immutability, invitation token lifecycle, notification timing and CSV output. |
 | Phase 7M-access-review | AdminAccessRequestController mixed platform-admin authorization, review validation, accepted-state invariants, invitation mutation and notification dispatch. | 13 access-request/invitation administration tests passed, 97 assertions; Pint and diff checks passed. | `b4905c5` — `refactor: extract access request review operation` | Extract public access-request intake, preserving honeypot no-op behavior, normalized email deduplication, pending-only updates, encrypted persistence and notification timing. |
 | Phase 7N-access-intake | AccessRequestController mixed registration availability, honeypot handling, applicant validation/normalization, deduplication, encrypted persistence and notifications. | 13 public/administration access-request tests passed, 97 assertions; Pint and diff checks passed. | `fa31c24` — `refactor: extract access request intake operation` | Extract notification inbox filters/query/export and state operations, preserving ownership concealment, bulk counts, saved preferences, payload redaction and redirects. |
+| Phase 7O-notification-inbox | NotificationsController mixed filter validation, recipient-scoped query/metrics, CSV serialization and saved-filter preference writes with state endpoints. | 23 notification inbox/export/saved-filter/bulk/ownership/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `142b5b1` — `refactor: extract notification inbox operations` | Extract notification state operations and a policy-compatible ownership boundary, preserving deliberate 404 concealment, bulk counts, state messages, scoping and no-write denial. |
