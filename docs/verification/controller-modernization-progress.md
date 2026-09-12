@@ -3317,6 +3317,59 @@ authentication-device revocation, browser-session cleanup, session
 regeneration, activity recording, social-account behavior and exact flash
 responses.
 
+## Phase 7T — password update request and operation boundary
+
+### Responsibility problem
+
+`UsersController` mixed named-bag password validation, conditional local
+password rules, password hashing and timestamp persistence, authentication
+device invalidation, stored-session cleanup, session regeneration, activity
+recording and response mapping.
+
+### Boundary and principles
+
+`UpdatePasswordRequest` owns the existing `password` validation bag and the
+conditional current-password challenge, while `PasswordUpdateData` carries
+only the validated replacement password. `UpdatePasswordAction` owns
+hashing, password persistence and the existing security/session/activity
+sequence. It reuses the injected `AccountAuthentication` collaborator and
+`BrowserSessionManager`; the controller now only consumes validated input,
+invokes the operation and returns the existing redirect. This applies single
+responsibility and dependency inversion without introducing a generic account
+service.
+
+### Preserved guarantees
+
+- The `password` error bag, conditional `current_password` behavior,
+  confirmation rules and `Password::defaults()` remain unchanged. Current
+  password input is used only at the request boundary for validation and is
+  not passed into the operation data.
+- Password hashing, `password_set_at`, `logoutOtherDevices` with the new
+  password, current-session retention, stored-session revocation, session
+  regeneration and account activity timing remain unchanged.
+- Social-only users can still establish a local password without a current
+  password; subsequent changes still require one. `password_status` and the
+  exact success message remain unchanged, and reset/social/profile endpoints
+  were not changed in this slice.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Account profile/password/session/social and security-activity regression
+  set: **27 passed, 219 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `c470200` — `refactor: extract password update operation`
+
+**Phase 7T exit gate: complete.** Exact next task: extract the “revoke other
+browser sessions” operation, preserving the `sessions` bag, current-password
+validation, authentication-device invalidation, stored-session cleanup,
+session regeneration, activity recording and exact status response.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3374,3 +3427,4 @@ responses.
 | Phase 7Q-activity | ActivityController mixed filter normalization, repeated account-scoped metrics queries, CSV rendering and audit-entitlement coordination. | 13 activity/insight tests passed, 86 assertions; 7 entitlement tests passed, 38 assertions; Pint, syntax and diff checks passed. | `e3a630d` — `refactor: extract activity feed queries` | Extract sign-in history filter/query/metrics/export boundaries, preserving account scoping, client metadata derivation, pagination defaults, CSV redaction and the named `signIns` history-clear contract. |
 | Phase 7R-sign-in-history | SignInHistoryController mixed filter normalization, account-scoped queries/metrics, client metadata/CSV rendering and the password-protected clear workflow. | 16 sign-in recorder/history/filter/insight/management tests passed, 129 assertions; Pint, syntax and diff checks passed. | `0fd6212` — `refactor: extract sign-in history queries` | Modernize account profile, password, browser-session and social-account writes with dedicated requests and justified policies/actions, preserving `profile`, `password`, `sessions` and `social` error bags and security ordering. |
 | Phase 7S-profile | UsersController mixed profile validation/normalization, email-verification reset, device/session invalidation, activity and verification delivery. | 25 account profile/password/session/social tests passed, 179 assertions; Pint, syntax and diff checks passed. | `d54146d` — `refactor: extract profile update operation` | Extract the password update operation, preserving the `password` bag, hashing, device/session revocation, social-account behavior, activity and exact flash responses. |
+| Phase 7T-password | UsersController mixed password validation, hashing/timestamp persistence, device/session invalidation, regeneration and activity recording. | 27 account profile/password/session/social/security-activity tests passed, 219 assertions; Pint, syntax and diff checks passed. | `c470200` — `refactor: extract password update operation` | Extract the revoke-other-browser-sessions operation, preserving the `sessions` bag, authentication/session invalidation, regeneration, activity and exact status response. |
