@@ -11,6 +11,7 @@ use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
+use App\Services\RepositoryDeploymentInsightsQuery;
 use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
 use App\Services\RepositoryWebhookDeliveryHistoryExporter;
@@ -111,6 +112,7 @@ class RepositoriesController extends Controller
         Repository $repository,
         DeploymentGate $gate,
         DeploymentPreflight $preflight,
+        RepositoryDeploymentInsightsQuery $deploymentInsights,
     ): View {
         $this->authorize('view', $repository);
         $deliveryFilters = $this->deliveryFilters($request);
@@ -118,7 +120,7 @@ class RepositoriesController extends Controller
         return view('scenes.repositories.show', [
             'repository' => $repository,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
-            'deploymentMetrics' => $this->deploymentMetrics($repository),
+            'deploymentMetrics' => $deploymentInsights->metrics($repository),
             'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters)
                 ->with('build')
                 ->latest('id')
@@ -132,46 +134,6 @@ class RepositoriesController extends Controller
             'deploymentPreflight' => $preflight->assess($repository, $gate->environment($repository)),
             'isFirstDeployment' => ! $repository->builds()->exists(),
         ]);
-    }
-
-    /** @return array{total: int, succeeded: int, failed: int, success_rate: ?int, median_duration_seconds: ?int, duration_sample_size: int} */
-    private function deploymentMetrics(Repository $repository): array
-    {
-        $counts = $repository->builds()
-            ->selectRaw('status, COUNT(*) as aggregate')
-            ->groupBy('status')
-            ->pluck('aggregate', 'status')
-            ->map(fn ($count): int => (int) $count);
-        $succeeded = $counts->get(Build::STATUS_SUCCEEDED, 0);
-        $failed = $counts->get(Build::STATUS_FAILED, 0);
-        $completed = $succeeded + $failed;
-        $durations = $repository->builds()
-            ->whereNotNull('started_at')
-            ->whereNotNull('finished_at')
-            ->orderByDesc('created_at')
-            ->orderByDesc('id')
-            ->limit(20)
-            ->get(['id', 'started_at', 'finished_at'])
-            ->map(fn (Build $build): ?int => $build->durationSeconds())
-            ->filter(fn (?int $duration): bool => $duration !== null)
-            ->sort()
-            ->values();
-        $durationCount = $durations->count();
-        $middle = intdiv($durationCount, 2);
-        $median = match (true) {
-            $durationCount === 0 => null,
-            $durationCount % 2 === 1 => $durations[$middle],
-            default => intdiv($durations[$middle - 1] + $durations[$middle], 2),
-        };
-
-        return [
-            'total' => (int) $counts->sum(),
-            'succeeded' => $succeeded,
-            'failed' => $failed,
-            'success_rate' => $completed > 0 ? (int) round(($succeeded / $completed) * 100) : null,
-            'median_duration_seconds' => $median,
-            'duration_sample_size' => $durationCount,
-        ];
     }
 
     /**

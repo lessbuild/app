@@ -651,6 +651,23 @@ Verification after the slice:
 - WebsiteDeploymentSerializationTest and ResourceAuthorizationTest: 9 passed (66 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — repository deployment-insights query slice
+
+Responsibility problem: RepositoriesController combined repository-detail response coordination with deployment outcome aggregation, bounded duration sampling, median calculation and empty-state shaping.
+
+Boundary used: RepositoryDeploymentInsightsQuery now owns the detail-page deployment metrics. The controller retains policy authorization, related-page queries and response composition. The collaborator is concrete and constructor-injected because this read has one repository history source and no alternate implementation.
+
+Preserved guarantees:
+
+- Outcome totals, succeeded/failed counts, completed-run success rate and explicit null/zero values remain unchanged.
+- Duration rows remain newest-first before the 20-row bound, invalid durations remain excluded, and odd/even median behavior is unchanged.
+- Detail response keys, query relationships, deployment locking behavior and inventory metrics remain unchanged.
+
+Verification after the slice:
+
+- RepositoryDeploymentInsightsTest, WebsiteDeploymentSerializationTest and RepositoryDeploymentTest: 16 passed (106 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Extract the repository detail deployment-insights query, preserving its bounded duration sample, outcome counters and empty-state values.
+Run the complete Phase 3C builds/repositories regression gate, review remaining methods for unjustified extraction, then close the slice before starting Servers and Environments.
