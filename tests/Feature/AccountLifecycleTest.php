@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Provider;
+use App\Models\ServerCommandExecution;
 use App\Models\User;
+use App\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -82,5 +84,74 @@ class AccountLifecycleTest extends TestCase
 
         $this->assertDatabaseHas('users', ['id' => $owner->id]);
         $this->assertDatabaseHas('organizations', ['id' => $owner->current_organization_id]);
+    }
+
+    public function test_account_deletion_refuses_a_shared_workspace_membership_before_deleting_anything(): void
+    {
+        $user = User::factory()->create();
+        $workspaceOwner = User::factory()->create();
+        $sharedWorkspace = $workspaceOwner->currentOrganization;
+        $sharedWorkspace->members()->attach($user, ['role' => 'viewer']);
+
+        $this->actingAs($user)->delete(route('account.destroy'), [
+            'confirmation' => $user->email,
+            'current_password' => 'password',
+        ])->assertStatus(422);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseHas('organizations', ['id' => $user->current_organization_id]);
+        $this->assertDatabaseHas('organizations', ['id' => $sharedWorkspace->id]);
+    }
+
+    public function test_account_deletion_requires_two_factor_and_consumes_a_recovery_code_only_after_validation(): void
+    {
+        $user = User::factory()->create();
+        $service = app(TwoFactorAuthentication::class);
+        $recoveryCode = 'ABCD-EFAB-CDEF';
+        $user->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => $service->recoveryCodeHashes([$recoveryCode]),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)->delete(route('account.destroy'), [
+            'confirmation' => $user->email,
+            'current_password' => 'password',
+            'code' => 'invalid-code',
+        ])->assertSessionHasErrors(['code'], errorBag: 'deleteAccount');
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertCount(1, $user->fresh()->two_factor_recovery_codes);
+
+        $this->actingAs($user)->delete(route('account.destroy'), [
+            'confirmation' => $user->email,
+            'current_password' => 'password',
+            'code' => $recoveryCode,
+        ])->assertRedirect('/');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    }
+
+    public function test_account_deletion_refuses_active_commands_without_deleting_the_account(): void
+    {
+        $user = User::factory()->create();
+        $server = $user->servers()->create([
+            'name' => 'Production',
+            'provisioning_status' => 'active',
+        ]);
+        $execution = $server->commandExecutions()->create([
+            'user_id' => $user->id,
+            'command' => 'uptime',
+            'status' => ServerCommandExecution::STATUS_RUNNING,
+        ]);
+
+        $this->actingAs($user)->delete(route('account.destroy'), [
+            'confirmation' => $user->email,
+            'current_password' => 'password',
+        ])->assertStatus(409);
+
+        $this->assertDatabaseHas('users', ['id' => $user->id]);
+        $this->assertDatabaseHas('organizations', ['id' => $user->current_organization_id]);
+        $this->assertModelExists($execution);
     }
 }
