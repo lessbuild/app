@@ -16,6 +16,7 @@ use App\Models\Organization;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Recipe;
+use App\Models\RecipeReport;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\StatusIncident;
@@ -38,6 +39,7 @@ use App\Policies\PersonalAccessTokenPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\RecipePolicy;
+use App\Policies\RecipeReportPolicy;
 use App\Policies\RepositoryPolicy;
 use App\Policies\ServerPolicy;
 use App\Policies\StatusIncidentPolicy;
@@ -74,6 +76,7 @@ class AuthServiceProvider extends ServiceProvider
         PersonalAccessToken::class => PersonalAccessTokenPolicy::class,
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,
+        RecipeReport::class => RecipeReportPolicy::class,
         Server::class => ServerPolicy::class,
         StatusPage::class => StatusPagePolicy::class,
         StatusIncident::class => StatusIncidentPolicy::class,

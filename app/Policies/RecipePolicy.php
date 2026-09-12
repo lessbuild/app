@@ -47,4 +47,16 @@ class RecipePolicy
         return $this->view($user, $recipe)
             && ($recipe->organization?->permits($user, 'manage') ?? true);
     }
+
+    /**
+     * Allow a user to report another user's recipe after publication is checked by the HTTP boundary.
+     *
+     * @param  User  $user  The account submitting the report.
+     * @param  Recipe  $recipe  The published gallery recipe being reported.
+     * @return bool Whether the account is not the recipe owner.
+     */
+    public function report(User $user, Recipe $recipe): bool
+    {
+        return (int) $recipe->user_id !== (int) $user->id;
+    }
 }

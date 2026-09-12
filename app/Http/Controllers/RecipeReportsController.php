@@ -6,6 +6,7 @@ use App\Actions\Recipe\ReopenRecipeReportAction;
 use App\Actions\Recipe\ReopenRecipeReportsAction;
 use App\Actions\Recipe\ResolveRecipeReportAction;
 use App\Actions\Recipe\ResolveRecipeReportsAction;
+use App\Actions\Recipe\ReviewRecipeReportUpdatesAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
 use App\Actions\Recipe\WithdrawRecipeReportAction;
@@ -30,6 +31,7 @@ class RecipeReportsController extends Controller
         private readonly RecipeReportHistoryExporter $historyExporter,
         private readonly RecipeReportInboxExporter $inboxExporter,
         private readonly RecipeReportQuery $reportQuery,
+        private readonly ReviewRecipeReportUpdatesAction $reviewUpdates,
     ) {}
 
     /**
@@ -71,7 +73,7 @@ class RecipeReportsController extends Controller
      */
     public function reviewUpdates(Request $request): RedirectResponse
     {
-        $reviewed = $this->reportQuery->unreadUpdates($request->user())->update(['read_at' => now()]);
+        $reviewed = $this->reviewUpdates->handle($request->user());
 
         return back()->with('status', $reviewed > 0
             ? trans_choice(':count report update was marked as reviewed.|:count report updates were marked as reviewed.', $reviewed, ['count' => $reviewed])
@@ -95,7 +97,7 @@ class RecipeReportsController extends Controller
      */
     public function status(Request $request, RecipeReport $report): View
     {
-        abort_unless((int) $report->user_id === (int) $request->user()->id, 404);
+        $this->authorize('view', $report);
         $report->load('recipe:id,user_id,name,category,is_published,published_at');
 
         return view('scenes.gallery.report-status', [
@@ -150,7 +152,7 @@ class RecipeReportsController extends Controller
     public function store(StoreRecipeReportRequest $request, Recipe $recipe, SubmitRecipeReportAction $submitReport): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
-        abort_if((int) $recipe->user_id === (int) $request->user()->id, 403);
+        $this->authorize('report', $recipe);
 
         $data = $request->validated();
         $data['details'] = $request->details();
@@ -166,7 +168,7 @@ class RecipeReportsController extends Controller
      */
     public function resolve(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ResolveRecipeReportAction $resolveReport): RedirectResponse
     {
-        $this->authorizeContributorReport($request, $recipe, $report);
+        $this->authorize('review', [$report, $recipe]);
         $resolutionNote = $request->resolutionNote();
 
         $resolveReport->handle($recipe, $report, $request->user(), $resolutionNote);
@@ -181,7 +183,7 @@ class RecipeReportsController extends Controller
      */
     public function updateResolutionNote(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, UpdateRecipeReportResolutionNoteAction $updateResolutionNote): RedirectResponse
     {
-        $this->authorizeContributorReport($request, $recipe, $report);
+        $this->authorize('review', [$report, $recipe]);
 
         $resolutionNote = $request->resolutionNote();
         $updated = $updateResolutionNote->handle($recipe, $report, $request->user(), $resolutionNote);
@@ -216,7 +218,7 @@ class RecipeReportsController extends Controller
      */
     public function reopen(Request $request, Recipe $recipe, RecipeReport $report, ReopenRecipeReportAction $reopenReport): RedirectResponse
     {
-        $this->authorizeContributorReport($request, $recipe, $report);
+        $this->authorize('review', [$report, $recipe]);
 
         $reopenReport->handle($recipe, $report, $request->user());
 
@@ -289,18 +291,6 @@ class RecipeReportsController extends Controller
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
 
         return $date && $date->format('Y-m-d') === $value ? $value : null;
-    }
-
-    /**
-     * Return 404 unless the request user contributed the recipe and the report belongs to that recipe.
-     */
-    private function authorizeContributorReport(Request $request, Recipe $recipe, RecipeReport $report): void
-    {
-        abort_unless(
-            (int) $recipe->user_id === (int) $request->user()->id
-                && (int) $report->recipe_id === (int) $recipe->id,
-            404,
-        );
     }
 
     /** @return array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} */
