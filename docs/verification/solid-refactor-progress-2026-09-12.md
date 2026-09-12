@@ -515,6 +515,23 @@ Verification after the slice:
 - `RepositoryInventoryFilterTest`, `RepositoryInventoryInsightsTest` and `RepositoryInventoryExportTest`: 11 passed (90 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3C — repository inventory export slice
+
+Responsibility problem: after query extraction, `RepositoriesController::export()` still owned the inventory CSV protocol, provider/website/server/latest-build projection, lazy iteration and spreadsheet-safe serialization.
+
+Boundary used: `RepositoryInventoryExporter` now owns the streamed repository inventory response and consumes `RepositoryInventoryQuery`. The controller retains filter normalization and delegates after the existing authenticated route boundary. The exporter is concrete and constructor-injected; no generic export framework was introduced.
+
+Preserved guarantees:
+
+- Filename, private/no-store/nosniff headers, UTF-8 BOM, header/row order, repository ordering, lazy batch size and eager-loaded relationship context remain unchanged.
+- Latest deployment status/revision, webhook flag, nullable timestamps, formula escaping and sensitive-field exclusion remain unchanged.
+- Organization scoping and all inventory filters continue to come from the shared query collaborator.
+
+Verification after the slice:
+
+- `RepositoryInventoryExportTest`: 3 passed (35 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
 Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.

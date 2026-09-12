@@ -10,6 +10,7 @@ use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
 use App\Services\DeploymentRequest;
+use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
@@ -23,7 +24,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RepositoriesController extends Controller
 {
-    public function __construct(private readonly RepositoryInventoryQuery $repositoryInventory) {}
+    public function __construct(
+        private readonly RepositoryInventoryExporter $repositoryInventoryExporter,
+        private readonly RepositoryInventoryQuery $repositoryInventory,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -58,63 +62,8 @@ class RepositoriesController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
-        $filename = 'lessbuild-repositories-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Repository ID',
-                'Name',
-                'URL',
-                'Branch',
-                'Description',
-                'Provider',
-                'Provider type',
-                'Website',
-                'Website domain',
-                'Server',
-                'Latest deployment status',
-                'Latest revision',
-                'Latest deployment at',
-                'Webhook enabled',
-                'Created at',
-            ], ',', '"', '');
-
-            $this->repositoryInventory->for($request->user(), $filters)
-                ->with(['provider', 'website.server', 'latestBuild'])
-                ->latest('repositories.id')
-                ->lazy(250)
-                ->each(function (Repository $repository) use ($output): void {
-                    fputcsv($output, [
-                        $repository->id,
-                        $this->csvCell($repository->name),
-                        $this->csvCell($repository->url),
-                        $this->csvCell($repository->branch),
-                        $this->csvCell($repository->description),
-                        $this->csvCell($repository->provider?->name),
-                        $this->csvCell($repository->provider?->provider),
-                        $this->csvCell($repository->website?->name),
-                        $this->csvCell($repository->website?->url),
-                        $this->csvCell($repository->website?->server?->label),
-                        $this->csvCell($repository->latestBuild?->status),
-                        $this->csvCell($repository->latestBuild?->revision),
-                        $repository->latestBuild?->created_at?->toIso8601String(),
-                        $repository->webhook_enabled ? 'yes' : 'no',
-                        $repository->created_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->repositoryInventoryExporter->stream($request->user(), $filters);
     }
 
     /** @return array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string} */
