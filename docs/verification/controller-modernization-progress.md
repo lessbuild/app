@@ -1805,6 +1805,67 @@ create/update validation, kind/status compatibility, resolution timestamps,
 page scoping and subscriber notification timing, then extract requests and
 actions without changing notification ordering.
 
+## Phase 5D — status-incident operations
+
+### Responsibility problem
+
+`ObservabilityController` mixed status-incident validation, kind/status
+compatibility, status-page ownership checks, resolution timestamp transitions,
+direct persistence and subscriber notification calls. Create and update share a
+real validation contract but have different route/resource authorization and
+status-page-ID requirements.
+
+### Boundaries applied
+
+- `StatusIncidentRequest` is a concrete shared validation boundary for incident
+  and maintenance fields, chronology and kind/status compatibility.
+- `StoreStatusIncidentRequest` and `UpdateStatusIncidentRequest` own their
+  distinct authorization, entitlement ordering and required-versus-optional
+  page ID behavior.
+- `StatusIncidentPolicy` owns create and update actor decisions for the current
+  workspace.
+- `CreateStatusIncidentAction` and `UpdateStatusIncidentAction` own scoped
+  persistence, resolution timestamp rules, entitlement rechecks and the
+  immediate post-persistence `StatusSubscriberNotifier` call.
+- The controller now coordinates requests/actions and keeps the existing flash
+  responses; public status rendering and subscriber routes remain unchanged.
+
+This applies single responsibility, dependency inversion and interface
+segregation using a shared contract only where create/update semantics truly
+match.
+
+### Preserved contracts and safety guarantees
+
+- Incident/maintenance field names, accepted statuses, chronology rules,
+  exact kind/status validation message, page scoping, redirects and flash text
+  remain unchanged.
+- Resolved/completed creates receive a resolution timestamp; updates retain an
+  existing timestamp while resolved and clear it when returning to a live
+  status. Notification dispatch still occurs after the write through the same
+  notifier, with no remote call or transaction-order change.
+- Foreign pages/incidents and non-managers still receive 403 before malformed
+  input and cannot create/update rows. No schema, route, notification payload
+  or dependency lockfile changed.
+
+### Verification
+
+- Observability, public-status, entitlement, incident-notification and
+  operational-incident regression set: **30 passed, 231 assertions** using an
+  in-memory cache to avoid persistent unique-job locks.
+- Added coverage for compatibility validation, resolution transitions,
+  notification ordering, scoped pages and no-write authorization denial.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `c91bd15` — `refactor: extract status incident operations`
+
+**Phase 5D exit gate: complete.** Exact next task: audit the remaining
+`ObservabilityController` read-side query and export boundaries, then begin
+organization operations with invitation creation/acceptance while preserving
+token/email identity, locks, seat limits and billing synchronization timing.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1835,3 +1896,4 @@ actions without changing notification ordering.
 | Phase 5A-metric-rules | Observability metric-rule endpoints mixed workspace permission, alert entitlement, scoped server validation and direct persistence/deletion. | 22 observability/entitlement/incident tests passed, 172 assertions; Pint and diff checks passed. | `ca9d515` — `refactor: extract metric alert rule operations` | Characterize alert destination creation, endpoint-type validation, encrypted credentials, test delivery and deletion, then extract its request/policy/action boundaries while preserving sanitized feedback and queued webhook behavior. |
 | Phase 5B-alert-destinations | Alert-destination endpoints mixed authorization, entitlement, type-specific endpoint validation, encrypted credential creation, test dispatch and deletion. | 32 observability/entitlement/failure-notification tests passed, 273 assertions; Pint and diff checks passed. | `43334b5` — `refactor: extract alert destination operations` | Characterize status-page creation/update/deletion, slug collision handling, website pivot membership and published-page behavior, then extract status-page requests, policy and transaction-aware actions without changing public status responses. |
 | Phase 5C-status-pages | Status-page endpoints mixed authorization, entitlement, scoped website validation, slug collision handling, pivot synchronization, transactions and direct writes. | 27 observability/public-status/entitlement/operational-incident tests passed, 200 assertions; Pint and diff checks passed. | `d84fb6f` — `refactor: extract status page operations` | Characterize status-incident create/update validation, kind/status compatibility, resolution timestamps, page scoping and subscriber notification timing, then extract requests and actions without changing notification ordering. |
+| Phase 5D-status-incidents | Status-incident endpoints mixed shared validation, kind/status rules, page scoping, resolution transitions, direct writes and subscriber notification timing. | 30 observability/public-status/entitlement/incident-notification/operational-incident tests passed, 231 assertions; Pint and diff checks passed. | `c91bd15` — `refactor: extract status incident operations` | Audit remaining `ObservabilityController` read/export boundaries, then begin organization invitation operations while preserving token/email identity, locks, seat limits and billing synchronization timing. |
