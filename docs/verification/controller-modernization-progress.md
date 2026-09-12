@@ -4152,6 +4152,59 @@ session staging/logout and email-verification resend/link transitions, then
 choose the smallest protocol-safe authentication/session operation boundary
 before handling GitHub App and enterprise SSO callbacks.
 
+## Phase 7AJ — password login completion
+
+### Responsibility problem
+
+`AuthenticatedSessionController::store()` combined request-authenticated
+credentials with session regeneration, two-factor staging, web-guard logout,
+sign-in recording and redirect selection. The post-authentication workflow was
+not reusable independently of the HTTP response.
+
+### Boundary and principles
+
+`LoginRequest` remains responsible for input validation, throttle-key
+normalization, lockout events and credential verification because those rules
+depend on the original HTTP request. `CompletePasswordLoginAction` now owns
+the post-authentication session workflow and returns `PasswordLoginResult` for
+the controller's response mapping. The controller records request client
+metadata and returns the existing redirect. This applies single
+responsibility, dependency inversion and an explicit outcome boundary without
+creating a generic authentication abstraction.
+
+### Preserved guarantees
+
+- Login routes, guest/throttle middleware, validation keys, rate-limit and
+  lockout behavior, failed-login intended URLs and all response destinations
+  remain unchanged.
+- Successful sessions still regenerate before any two-factor decision. Enabled
+  accounts retain the user ID, remember flag and password method in the same
+  pending session keys, are logged out of the web guard, and are redirected to
+  the challenge without a sign-in-history entry.
+- Accounts without two-factor authentication remain authenticated, are
+  recorded with the password method, and use the same intended/dashboard
+  redirect. Logout behavior remains the existing controller-level HTTP session
+  operation.
+- No routes, persisted values, serialized jobs, provider behavior,
+  dependency lockfiles or external acceptance state changed.
+
+### Verification
+
+- Authentication redirect, two-factor, email-verification and social-auth
+  regression set: **48 passed, 302 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `eddb4e8` — `refactor: extract password login completion`
+
+**Phase 7AJ exit gate: complete.** Exact next task: characterize the signed
+email-verification transition and resend behavior, extracting only the
+meaningful verification state change while leaving straightforward prompt and
+notification coordination at the HTTP boundary; then audit GitHub App and
+enterprise SSO callback protocols.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4225,3 +4278,4 @@ before handling GitHub App and enterprise SSO callbacks.
 | Phase 7AG-registration | RegisteredUserController mixed availability ordering, registration validation, invitation consumption, synchronized creation, password hashing, workspace provisioning and auth/session coordination. | 39 registration/invitation/social-auth/password-confirmation tests passed, 305 assertions; Pint, syntax and diff checks passed. | `5ebbccd` — `refactor: extract registration operation` | Extract the social OAuth callback's guest resolution and authenticated connection mutation, preserving provider verification, session intent, identity locks, 2FA handoff, sign-in recording and failure responses. |
 | Phase 7AH-social-auth-callback | SocialAuthController mixed provider verification, callback intent, guest identity resolution/creation, locked connection mutation, workspace recovery, 2FA handoff and sign-in recording. | 41 social-auth/password-confirmation/account/security/2FA tests passed, 323 assertions; Pint, syntax and diff checks passed. | `1784e6a` — `refactor: extract social auth operations` | Characterize remaining authentication/session controllers and GitHub App/SSO callbacks before protocol-safe operation extraction. |
 | Phase 7AI-two-factor-login | TwoFactorChallengeController mixed challenge validation, pending-user lookup, recovery verification/consumption, session cleanup, authentication and sign-in transition wiring. | 30 authentication redirect/two-factor/email-verification tests passed, 168 assertions; Pint, syntax and diff checks passed. | `410d9e2` — `refactor: extract two-factor login operation` | Characterize password-login session staging/logout and email-verification resend/link transitions, then choose the smallest protocol-safe authentication/session operation boundary before GitHub App and enterprise SSO callbacks. |
+| Phase 7AJ-password-login | AuthenticatedSessionController mixed request-authenticated credentials with session regeneration, two-factor staging, web-guard logout, sign-in recording and redirect selection. | 48 authentication redirect/two-factor/email-verification/social-auth tests passed, 302 assertions; Pint, syntax and diff checks passed. | `eddb4e8` — `refactor: extract password login completion` | Characterize signed email verification and resend behavior, extracting only the meaningful verification state change before auditing GitHub App and enterprise SSO callback protocols. |
