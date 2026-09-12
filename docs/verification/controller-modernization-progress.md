@@ -687,6 +687,74 @@ infrastructure operations with Load balancers and domains; inventory resource
 policies, requests, writes, remote apply/delete dispatch, organization-scoped
 IDs and response semantics before extracting the smallest cohesive slice.
 
+## Phase 3C — load-balancer operation boundary
+
+### Responsibility problem
+
+`LoadBalancerController` combined workspace and entitlement checks with
+validation, environment/server resolution, dedicated-server safety, direct
+balancer/node writes, and Caddy apply/removal dispatch. Its private `manage()`
+helper also used the request service locator, making authorization harder to
+reuse and test independently.
+
+### Boundaries applied
+
+- `LoadBalancerPolicy` owns create/manage decisions for the current workspace.
+  StoreLoadBalancerRequest and StoreLoadBalancerNodeRequest own their scoped
+  validation and retain manager/entitlement checks before malformed input.
+- CreateLoadBalancerAction owns environment/server resolution inputs and the
+  dedicated-server invariant. AddLoadBalancerNodeAction owns self-routing
+  protection, node persistence and the existing apply dispatch.
+- QueueLoadBalancerApplyAction owns explicit apply dispatch.
+  DeleteLoadBalancerNodeAction owns delete-then-apply ordering.
+  DeleteLoadBalancerAction owns remove-job dispatch before balancer deletion,
+  preserving the identifiers required after the row is gone.
+- The controller now authorizes, consumes validated input, resolves scoped
+  models, invokes the focused operation and returns the existing response.
+  Existing Caddy jobs continue to own remote rendering, validation, reload,
+  status, retry and failure behavior.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization using concrete Laravel requests, policy mapping and actions.
+The dedicated-server and self-routing checks remain business rules in the
+actions, while no generic CRUD abstraction was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Load-balancer routes, redirects, success messages, validation keys,
+  workspace scoping, high-availability entitlement checks and 403 behavior
+  remain unchanged.
+- Environment placement and server IDs remain organization-scoped;
+  dedicated-server and self-routing violations remain HTTP 422 with their
+  existing messages.
+- Node creation still queues apply after persistence; node deletion still
+  deletes before queuing apply; balancer deletion still queues remote removal
+  before deleting the local record.
+- Denied and entitlement-blocked requests create no rows and queue no jobs.
+  Existing unique apply-job behavior, Caddy command generation, cleanup and
+  failure handling were not changed.
+- No routes, migrations, schemas, serialized job payloads, dependency
+  lockfiles or remote commands changed.
+
+### Verification
+
+- Load-balancer operation, platform expansion, removal-job and entitlement
+  suite: **20 passed, 116 assertions**.
+- Added coverage for creation and full node/balancer lifecycle, dedicated and
+  self-routing rejection, viewer denial before malformed input, entitlement
+  denial and no-write/no-job behavior.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `d5835bd` — `refactor: extract load balancer operations`
+
+**Phase 3C exit gate: complete.** Exact next task: continue Phase 3
+infrastructure operations with Domains; characterize website lookup,
+hostname normalization, DNS provider validation, Cloudflare sync failure
+fallback, primary-domain protection and Caddy dispatch before extracting
+domain operations.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -699,3 +767,4 @@ IDs and response semantics before extracting the smallest cohesive slice.
 | Phase 2D | Environment lifecycle validation, entitlement checks, field mapping and direct deletes remained in EnvironmentController. | 132 affected tests passed, 1,105 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `23de929` — `refactor: extract environment lifecycle operations` | Begin Phase 3 with Backups: inventory policies, requests, actions, jobs, entitlements and credential safety. |
 | Phase 3A | Backup destination, schedule, run and restore endpoints mixed validation, authorization, encrypted writes, duplicate detection, transactions and job dispatch in `BackupController`. | 25 focused regression tests passed, 189 assertions; broader infrastructure set 34/256; Pint and diff checks passed. | `2253bc2` — `refactor: extract backup operations` | Begin Phase 3 with Database management: inventory inspect/user/clone operations and preserve command safety, ownership, entitlements and dispatch behavior. |
 | Phase 3B | Database inspection, credential, removal and clone endpoints mixed resource lookup/permission, validation, encrypted writes, safety rules and job dispatch in `DatabaseController`. | 5 new database-operation tests passed, 27 assertions; combined database/platform/entitlement/safety set 18/111; Pint and diff checks passed. | `b66e1f5` — `refactor: extract database operations` | Continue Phase 3 with Load balancers and domains: inventory resource policies, requests, operations, remote dispatch and scoped IDs. |
+| Phase 3C | Load-balancer validation, authorization, placement invariants, direct node/balancer writes and Caddy dispatch remained in `LoadBalancerController`. | 20 focused tests passed, 116 assertions; Pint and diff checks passed. | `d5835bd` — `refactor: extract load balancer operations` | Continue Phase 3 with Domains: preserve website lookup, hostname normalization, Cloudflare outcomes, primary protection and Caddy dispatch. |
