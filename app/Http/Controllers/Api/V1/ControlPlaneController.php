@@ -14,6 +14,7 @@ use App\Http\Requests\Api\V1\ApplyConfigurationRequest;
 use App\Http\Requests\Api\V1\ApplyWorkflowRequest;
 use App\Http\Requests\Api\V1\CancelConfigurationRequest;
 use App\Http\Requests\Api\V1\ConfigurationInputRequest;
+use App\Http\Requests\Api\V1\PromoteBuildRequest;
 use App\Http\Requests\Api\V1\ReplaceEnvironmentVariablesRequest;
 use App\Http\Requests\Api\V1\RetryConfigurationRequest;
 use App\Http\Requests\Api\V1\RuntimeEnvironmentRequest;
@@ -137,15 +138,12 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse HTTP 202 when promotion is queued, or HTTP 409 with its rejection status.
      */
-    public function promote(Request $request, Build $build, PromoteBuildAction $promote): JsonResponse
+    public function promote(PromoteBuildRequest $request, Build $build, PromoteBuildAction $promote): JsonResponse
     {
-        $this->api($request, 'deploy');
-        $this->authorize('view', $build);
-        $data = $request->validate(['target_environment_id' => ['required', 'integer'], 'promotion_note' => ['nullable', 'string', 'max:2000']]);
-        $target = Environment::query()->whereKey($data['target_environment_id'])
+        $target = Environment::query()->whereKey($request->targetEnvironmentId())
             ->whereHas('project', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
             ->firstOrFail();
-        $result = $promote->handle($build, $target, $request->user(), $data['promotion_note'] ?? null);
+        $result = $promote->handle($build, $target, $request->user(), $request->promotionNote());
 
         return response()->json([
             'data' => ['status' => $result->status, 'deployment' => $result->build ? $this->buildData($result->build) : null],

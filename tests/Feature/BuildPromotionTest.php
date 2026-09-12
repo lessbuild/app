@@ -134,6 +134,32 @@ class BuildPromotionTest extends TestCase
             ->assertJsonPath('data.deployment.revision', $source->revision);
     }
 
+    public function test_api_promotion_denies_missing_deploy_ability_before_malformed_input(): void
+    {
+        Queue::fake();
+        [$owner, , , $production, $source] = $this->pipeline();
+        Sanctum::actingAs($owner, ['read']);
+
+        $this->postJson('/api/v1/deployments/'.$source->id.'/promote', [
+            'target_environment_id' => 'not-an-integer',
+        ])->assertForbidden();
+
+        $this->assertSame(0, Build::query()->where('trigger_source', Build::TRIGGER_PROMOTION)->count());
+    }
+
+    public function test_api_promotion_keeps_target_lookup_scoped_and_returns_not_found(): void
+    {
+        Queue::fake();
+        [$owner, , , , $source] = $this->pipeline();
+        Sanctum::actingAs($owner, ['deploy']);
+
+        $this->postJson('/api/v1/deployments/'.$source->id.'/promote', [
+            'target_environment_id' => 999999,
+        ])->assertNotFound();
+
+        $this->assertSame(0, Build::query()->where('trigger_source', Build::TRIGGER_PROMOTION)->count());
+    }
+
     private function pipeline(): array
     {
         $owner = User::factory()->create();
