@@ -2398,6 +2398,62 @@ filter contract where the two shapes differ), preserving silent invalid-value
 defaults, date-range swapping, query-string pagination and export semantics
 before reviewing any remaining controller reads.
 
+## Phase 7B — recipe report filter requests
+
+### Responsibility problem
+
+`RecipeReportsController` still normalized two substantial families of GET
+filters itself: the contributor inbox and the reporter's private history. This
+made HTTP input handling part of the controller's query orchestration and
+allowed raw request data to cross into `RecipeReportQuery` and the exporters.
+
+### Boundaries applied
+
+- `RecipeReportInboxRequest` owns contributor-inbox filter defaults, trimming
+  and length bounds, finite-value normalization, positive focus IDs and exact
+  date-range normalization through `DateRange`.
+- `RecipeReportHistoryRequest` owns reporter-history filter defaults, trimming,
+  finite-value normalization and length bounds.
+- Both requests expose typed filter arrays through `filters()`. Their
+  `validationData()` validates normalized values without mutating the original
+  query parameter bag, so Laravel pagination links and export URLs retain the
+  existing query-string behavior.
+- `RecipeReportsController` now consumes only `filters()` for the four GET
+  report/history endpoints; `RecipeReportQuery` and the two existing exporters
+  remain shared business/read collaborators.
+
+This applies single responsibility and dependency inversion while keeping the
+two request contracts separate because their filter shapes and defaults differ.
+It does not introduce a generic request base class or change invalid filters
+into user-facing validation errors.
+
+### Preserved contracts and safety guarantees
+
+- Invalid status, availability, update, reason, age, sort, date and focus
+  values continue to fall back silently to the previous defaults. Search is
+  trimmed and bounded identically, valid reversed dates are swapped, and
+  omitted values remain equivalent to the prior request behavior.
+- Report ownership scopes, encrypted-field projections, metrics, ordering,
+  pagination query strings, CSV headers/escaping, download headers, routes and
+  authentication behavior remain unchanged.
+
+### Verification
+
+- Recipe report, report-history, feedback-inbox and report-notification
+  regression set: **60 passed, 608 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `7b845e0` — `refactor: move recipe report filters to requests`
+
+**Phase 7A recipe-report boundary: complete.** Exact next task: audit
+`RecipeReportsController` and adjacent gallery/report controllers for any
+remaining direct writes, inline permission guards, unclassified resource
+lookups or query/export duplication; then begin the next product slice only
+after classifying those findings.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2437,3 +2493,4 @@ before reviewing any remaining controller reads.
 | Phase 6A-provider-operations | Provider CRUD mixed entitlement checks, credential-preserving updates, attachment safeguards, health resets and direct writes; cloud catalog access used a combined inline guard. | 75 provider/entitlement/monitoring/history/inventory/export/cloud-catalog tests passed, 688 assertions; Pint and diff checks passed. | `d257128` — `refactor: extract provider operations` | Characterize manual/automatic connection-check and adapter contracts, idempotent cloud deletion and DigitalOcean droplets probing; strengthen contract coverage and extract only a justified integration boundary. |
 | Phase 6B-provider-contracts | Real provider adapters shared an idempotent deletion contract without a common test proving 404-success versus other-failure behavior. | 38 provider/integration/deletion tests passed, 258 assertions; Pint and diff checks passed. | `0e1379a` — `test: codify server provider contract` | Begin Phase 7A recipe reports: inventory report/history queries, filters, CSV, authorization, mutations, locks and notification timing before extracting justified boundaries. |
 | Phase 7A-report-auth-and-review | RecipeReportsController retained a notification bulk write and actor guards alongside already-extracted report queries, exporters and lifecycle actions. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `a5c99fd` — `refactor: move recipe report permissions and review` | Extract the reporter and contributor GET-filter normalization boundaries into Form Requests or immutable filter contracts without changing silent defaults or export/pagination behavior. |
+| Phase 7B-report-filter-requests | RecipeReportsController normalized contributor-inbox and reporter-history GET filters alongside query and export orchestration. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `7b845e0` — `refactor: move recipe report filters to requests` | Audit recipe/gallery/report controllers for remaining direct writes, inline permission guards, unclassified lookups and query/export duplication before the next product slice. |
