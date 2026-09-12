@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Repository\ApproveBuildAction;
-use App\Actions\Repository\CancelDeploymentAction;
 use App\Actions\Repository\CancelQueuedDeploymentAction;
+use App\Actions\Repository\CancelRunningDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
 use App\Actions\Repository\RejectBuildAction;
 use App\Actions\Repository\RollbackBuildAction;
@@ -15,13 +15,11 @@ use App\Services\ActivityRecorder;
 use App\Services\BuildInventoryExporter;
 use App\Services\BuildInventoryQuery;
 use App\Services\DeploymentRequest;
-use App\Services\Runner;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
 
@@ -127,8 +125,8 @@ class BuildsController extends Controller
      */
     public function cancel(
         Build $build,
-        Runner $runner,
         CancelQueuedDeploymentAction $cancelQueued,
+        CancelRunningDeploymentAction $cancelRunning,
     ): RedirectResponse {
         $this->authorize('cancel', $build);
 
@@ -143,43 +141,12 @@ class BuildsController extends Controller
         }
 
         try {
-            $partialLog = (new CancelDeploymentAction($build, $runner))->handle();
+            $canceled = $cancelRunning->handle($build);
         } catch (Throwable $exception) {
             report($exception);
 
             return back()->with('error', __('The deployment could not be canceled. Please try again.'));
         }
-
-        $canceled = DB::transaction(function () use ($build, $partialLog): bool {
-            $locked = Build::query()
-                ->whereKey($build->id)
-                ->where('status', Build::STATUS_RUNNING)
-                ->where('remote_process_id', $build->remote_process_id)
-                ->where('remote_process_path', $build->remote_process_path)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $locked) {
-                return false;
-            }
-
-            if ($partialLog !== null) {
-                $locked->logs()->updateOrCreate(
-                    ['type' => Build::DEPLOYMENT_LOG_TYPE],
-                    ['log' => $partialLog],
-                );
-            }
-
-            $locked->update([
-                'status' => Build::STATUS_CANCELED,
-                'remote_process_id' => null,
-                'remote_process_path' => null,
-                'finished_at' => now(),
-                'failure_message' => null,
-            ]);
-
-            return true;
-        });
 
         return $canceled
             ? back()->with('success', __('Deployment canceled.'))

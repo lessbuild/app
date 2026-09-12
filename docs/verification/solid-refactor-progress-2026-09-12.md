@@ -583,6 +583,23 @@ Verification after the slice:
 - RepositoryWebhookDeliveryHistoryTest: 4 passed (68 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — running deployment cancellation action slice
+
+Responsibility problem: BuildsController combined running-deployment HTTP coordination with remote process cancellation, partial-log persistence and the final compare-and-set transition.
+
+Boundary used: CancelRunningDeploymentAction now owns the running cancellation workflow and receives Runner through its constructor. The controller retains policy authorization, the queued-deployment branch, simple eligibility messaging and remote-failure flash mapping. Existing CancelDeploymentAction remains the remote command operation, and the watchdog continues to use its distinct lease/retry flow.
+
+Preserved guarantees:
+
+- The remote call still occurs before the database transaction; the saved process ID and script path still guard finalization against a late callback or another worker.
+- Partial output is still upserted only after a matching running row is locked, then status, process metadata, finish time and failure message are updated identically.
+- Queued and awaiting-approval cancellation, remote failure behavior, callback/worker stale protection, and watchdog retry semantics remain unchanged.
+
+Verification after the slice:
+
+- DeploymentCancellationTest and DeploymentWatchdogTest: 15 passed (138 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Review and extract the next justified build/repository lifecycle mutation boundary, starting with cancellation and preserving remote-call, compare-and-set, logging and idempotency behavior.
+Review repository update, deletion and deployment request mutations, extracting only cohesive action boundaries while preserving validation, entitlement, lock, queue and webhook behavior.
