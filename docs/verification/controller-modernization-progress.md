@@ -2985,6 +2985,51 @@ Commit: 0aabe54 — refactor: extract product feedback operations
 request administration, preserving platform-admin denial, accepted-request
 immutability, invitation token lifecycle, notification timing and CSV output.
 
+## Phase 7M — platform access-request review boundary
+
+### Responsibility problem
+
+AdminAccessRequestController combined a platform-only permission guard, review
+payload validation, accepted-request lifecycle invariants, invitation-token
+mutation, notification delivery and response mapping.
+
+### Boundary and principles
+
+The platform-admin gate now owns the non-resource administration decision, and
+UpdateAccessRequestRequest owns review validation. ReviewAccessRequestAction
+owns review persistence, accepted-record safeguards, invitation issuance and
+notification dispatch. The controller retains filtered listing/export reads
+and maps the action's business exception to the existing 422 response. This
+keeps protocol-independent workflow rules reusable while preserving the
+existing controller contract.
+
+### Preserved guarantees
+
+- Platform-admin requests still receive 403 before review validation; accepted
+  records remain immutable and unaccepted records cannot be marked accepted.
+- Invitation tokens are still hashed, rotated only on first invitation or an
+  explicit resend, expired through the existing service, and cleared when
+  leaving invited status.
+- Invitation email routing, queued notification type, expiry period, review
+  attribution, filtered ordering, private export headers and CSV escaping are
+  unchanged.
+
+### Verification
+
+- Access-request administration and invitation regression set: **13 passed, 97
+  assertions**.
+- Targeted Pint test and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: b4905c5 — refactor: extract access request review operation
+
+**Phase 7M exit gate: complete.** Exact next task: extract the public
+access-request intake boundary, preserving honeypot no-op behavior, normalized
+email deduplication, pending-only updates, encrypted persistence and applicant
+and administrator notification timing.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3035,3 +3080,4 @@ immutability, invitation token lifecycle, notification timing and CSV output.
 | Phase 7J-recipe-inventory | Recipe inventory controller mixed filter normalization, repeated workspace queries/metrics and private CSV rendering. | 18 recipe inventory/filter/export/insight/management tests passed, 134 assertions; Pint and diff checks passed. | `5852cea` — `refactor: extract recipe inventory queries` | Extract gallery filter normalization and the shared published-gallery query/metrics boundary, preserving personal scopes, aggregate ordering, eager-loaded state, pagination and public 404 behavior. |
 | Phase 7K-gallery-query | RecipeGalleryController mixed filter normalization, published-gallery scope composition and aggregate metrics with HTTP response orchestration. | 40 gallery/favorite/rating/report/history tests passed, 478 assertions; Pint and diff checks passed. | `b3985f2` — `refactor: extract gallery inventory queries` | Audit remaining feedback and access-administration controllers for direct writes, inline validation, permission guards, named error bags and notification/history side effects. |
 | Phase 7L-product-feedback | ProductFeedbackController mixed validation, workspace-role/ownership checks and encrypted feedback writes. | 5 product-feedback authorization/validation/persistence tests passed, 31 assertions; Pint and diff checks passed. | `0aabe54` — `refactor: extract product feedback operations` | Extract platform access-request administration, preserving platform-admin denial, accepted-request immutability, invitation token lifecycle, notification timing and CSV output. |
+| Phase 7M-access-review | AdminAccessRequestController mixed platform-admin authorization, review validation, accepted-state invariants, invitation mutation and notification dispatch. | 13 access-request/invitation administration tests passed, 97 assertions; Pint and diff checks passed. | `b4905c5` — `refactor: extract access request review operation` | Extract public access-request intake, preserving honeypot no-op behavior, normalized email deduplication, pending-only updates, encrypted persistence and notification timing. |
