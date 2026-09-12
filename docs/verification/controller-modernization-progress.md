@@ -4739,6 +4739,59 @@ App webhook and repository webhook delegation for remaining responsibility
 duplication, preserving payload-size/signature/JSON ordering, deliberate 404
 concealment, verifier behavior and downstream webhook response envelopes.
 
+## Phase 7AU — GitHub App webhook protocol verification
+
+### Responsibility problem
+
+`GitHubAppWebhookController` still performed raw-body size checks, global App
+signature verification, JSON decoding, ping handling and installation metadata
+validation before resolving the installation-owned repository. Those checks are
+protocol concerns rather than user authorization, but they were coupled to
+controller orchestration. The downstream `RepositoryWebhookController`,
+`RepositoryWebhookVerifier` and `HandleRepositoryWebhookAction` already formed
+the correct shared repository-webhook boundary and were not duplicated.
+
+### Boundary and principles
+
+`GitHubAppWebhookVerifier` now owns the raw protocol checks and returns the
+typed `GitHubAppWebhookData` outcome. The controller retains the simple
+installation/provider-scoped repository lookup, then delegates the original
+request to the existing repository webhook verifier/action pipeline. This
+applies single responsibility and dependency inversion without treating
+signature, payload or resource-concealment guards as policies.
+
+### Preserved guarantees
+
+- Payload-size rejection remains 413 before signature work; invalid signatures
+  remain 401 before JSON decoding; validly signed invalid JSON and missing
+  installation metadata remain 422.
+- Valid ping payloads still return `{"status":"ok"}` without repository
+  lookup. Installation-owned matching accepts the same URL forms and App
+  provider identity, while missing matches retain the existing 404 behavior.
+- The original raw request still reaches `RepositoryWebhookVerifier`, so its
+  provider signature, delivery replay, branch/revision validation, preview
+  routing and response envelopes remain unchanged. No routes, persistence,
+  serialized jobs, provider behavior, dependency lockfiles or external
+  acceptance state changed.
+
+### Verification
+
+- GitHub App installation/raw-webhook, repository webhook, revision-attestation
+  and callback-integrity regression set: **25 passed, 184 assertions**.
+- Added coverage for 413-before-signature, 401-before-JSON,
+  422-after-valid-signature, ping short-circuiting and missing identity.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `63d8c56` — `refactor: extract GitHub App webhook verification`
+
+**Phase 7AU exit gate: complete.** Exact next task: audit remaining OAuth/SSO
+and callback controllers for raw-protocol validation, then run the complete
+controller write/validation/authorization inventory and classify any remaining
+exceptions before final verification.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4823,3 +4876,4 @@ concealment, verifier behavior and downstream webhook response envelopes.
 | Phase 7AR-server-log | ServerCallbackController mixed attempt-only lock-point validation, provisioning snapshot replacement and transaction handling. | 48 server provisioning/log/callback-integrity/concurrency/retry tests passed, 384 assertions; Pint, syntax and diff checks passed. | `143b3e4` — `refactor: extract server provisioning log callback` | Extract website status and failure operations, preserving preview bookkeeping, after-commit cleanup, lifecycle ordering and stale-attempt checks. |
 | Phase 7AS-website-status-failure | WebsiteCallbackController mixed lock-point attempt/lifecycle checks, validation, placement transitions, preview bookkeeping and failure persistence. | 61 website provisioning/log/retry/relocation/placement/security/lifecycle/preview/callback-integrity/concurrency tests passed, 498 assertions; Pint, syntax and diff checks passed. | `291b132` — `refactor: extract website provisioning callbacks` | Extract the website log callback with attempt-only lock-point validation and tokenless/post-completion compatibility, then audit the raw-body GitHub App webhook. |
 | Phase 7AT-website-log | WebsiteCallbackController mixed attempt-only lock-point validation, post-completion log acceptance and provisioning-log replacement. | 51 website provisioning/log/retry/relocation/lifecycle/preview/callback-integrity/concurrency tests passed, 426 assertions; Pint, syntax and diff checks passed. | `9d1ac9b` — `refactor: extract website provisioning log callback` | Audit raw-body GitHub App webhook and repository webhook delegation, preserving payload-size/signature/JSON ordering, deliberate 404 concealment and response envelopes. |
+| Phase 7AU-github-app-webhook | GitHubAppWebhookController mixed raw-body protocol verification, ping/metadata validation and installation lookup before reusing the existing repository webhook pipeline. | 25 GitHub App/raw-webhook/repository-webhook/revision-attestation/callback-integrity tests passed, 184 assertions; Pint, syntax and diff checks passed. | `63d8c56` — `refactor: extract GitHub App webhook verification` | Audit remaining OAuth/SSO and callback controllers, then classify the remaining controller writes, validation and authorization exceptions before final verification. |
