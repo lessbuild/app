@@ -79,6 +79,22 @@ class EmailVerificationTest extends TestCase
         $this->assertFalse($user->fresh()->hasVerifiedEmail());
     }
 
+    public function test_repeated_signed_verification_link_skips_the_success_transition_for_verified_users(): void
+    {
+        Event::fake([Verified::class]);
+        $user = User::factory()->create();
+        $url = URL::temporarySignedRoute('verification.verify', now()->addHour(), [
+            'id' => $user->id,
+            'hash' => sha1($user->getEmailForVerification()),
+        ]);
+
+        $this->actingAs($user)->get($url)
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionMissing('success');
+
+        Event::assertNotDispatched(Verified::class);
+    }
+
     public function test_changing_email_requires_reverification_but_keeps_account_settings_available(): void
     {
         Notification::fake();
