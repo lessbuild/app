@@ -5116,6 +5116,56 @@ classification for portal/cancel/resume external calls, global admin gates,
 resource/protocol guards and all remaining inline validation/direct writes, then
 run the final verification gate.
 
+## Phase 7BC — residual authorization boundaries
+
+### Responsibility problem
+
+Three controllers still implemented actor-permission decisions with inline
+`abort_unless`/model-permission checks after the substantive operations had
+already been separated: platform analytics, system-health management and
+billing portal/subscription management. This duplicated authorization policy
+semantics at HTTP entry points and made the final controller audit less
+consistent.
+
+### Boundary and principles
+
+`AdminAnalyticsController` now uses the existing `platform-admin` gate;
+`SystemHealthController` uses `OrganizationPolicy::manage`; and the remaining
+billing endpoints use `OrganizationPolicy::manageBilling`. Missing current
+workspaces remain explicit 403 availability guards, while Stripe
+configuration, subscription state, resource lookup, workflow and protocol
+guards remain at their original HTTP/integration boundaries. This applies
+dependency inversion and policy/gate authorization without introducing new
+interfaces or changing external billing ordering.
+
+### Preserved guarantees
+
+- Platform-admin, workspace-manager and billing-member decisions retain the
+  same 403 behavior and current-workspace scoping.
+- Billing portal configuration is still checked before authorization, and
+  cancel/resume still authorize before subscription-state checks or remote
+  calls.
+- No controller Eloquent writes or inline request validation remain in the
+  audited HTTP/Livewire paths; existing service/action collaborators continue
+  to own those writes.
+
+### Verification
+
+- Admin analytics, system health and billing authorization regression set:
+  **18 passed, 97 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency, route, persistence, credential or external acceptance state
+  changed.
+
+### Commit and next task
+
+Commit: `94d361c` — `refactor: route residual permissions through policies`
+
+**Phase 7BC exit gate: complete.** Exact next task: run the repository-wide
+static audit, complete PHP/Pint/dependency/assets/browser/runtime checks in the
+isolated configuration, then record the final verification and remaining
+external acceptance work.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -5208,3 +5258,4 @@ run the final verification gate.
 | Phase 7AZ-status-subscriptions | StatusSubscriptionController mixed published-page lookup, email validation, token protocol checks, encrypted upsert/deletion and notification dispatch. | 18 observability/status subscription tests passed, 145 assertions; Pint, syntax and diff checks passed. | `06aa6a6` — `refactor: extract status subscription operations` | Extract substantive server command history deletion and server log refresh queuing, then classify billing external guards and residual protocol/resource exceptions. |
 | Phase 7BA-server-operational-writes | Server command history and Livewire server-log refresh mixed authorization, workflow state, direct persistence and job dispatch. | 20 server command/log snapshot tests passed, 183 assertions; Pint, syntax and diff checks passed. | `b1842a8` — `refactor: extract server operational writes` | Classify BillingController’s external checkout/portal and subscription-state guards, then finish the controller inventory and final verification without changing Stripe ordering or making live billing calls. |
 | Phase 7BB-billing-checkout | BillingController mixed plan/access guards, interval validation, Stripe availability and Cashier checkout composition. | 9 billing regression tests passed, 25 assertions; Pint, syntax and diff checks passed. | `078839e` — `refactor: extract billing checkout operation` | Complete static audit classification for portal/cancel/resume external calls, global admin gates, resource/protocol guards and all remaining inline validation/direct writes, then run final verification. |
+| Phase 7BC-residual-authorization | Admin analytics, system health and billing management still made actor-permission decisions inline instead of using the existing gate/policy boundaries. | 18 authorization regression tests passed, 97 assertions; Pint, syntax and diff checks passed. | `94d361c` — `refactor: route residual permissions through policies` | Run the repository-wide final audit and verification gate; document any remaining resource/protocol/external guards and outstanding live acceptance. |
