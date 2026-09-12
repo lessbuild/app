@@ -203,6 +203,22 @@ Verification after the slice:
 - `RecipeReportTest`: 14 passed (168 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — bulk report validation slice
+
+Responsibility problem: the two bulk review endpoints embedded identical bounded-selection validation in the controller and selected their error bags through `validateWithBag`, alongside the atomic review workflows.
+
+Boundary used: `ResolveRecipeReportsRequest` and `ReopenRecipeReportsRequest` now own the required array, cardinality, integer and strict-distinct rules. Each request retains its route-specific `bulkResolve` or `bulkReopen` error bag. The controller consumes only validated IDs and continues to own sorting, organization/recipe ownership checks, row locks, atomic state changes, notifications and audit events.
+
+Preserved guarantees:
+
+- Empty, oversized, duplicate and malformed selections produce the same validation keys and action-specific error bags.
+- Missing/foreign report handling, transaction rollback, notification scope, audit timing, status messages and HTTP routes remain unchanged.
+
+Verification after the slice:
+
+- Bulk selection validation gate: 3 passed (15 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Move the two bulk report-selection rule sets into Form Requests, preserving the `bulkResolve` and `bulkReopen` error bags before evaluating mutation action boundaries.
+Evaluate extracting single-report report submission and resolution transitions into cohesive actions, preserving their existing transaction, lock, notification and audit sequencing; leave bulk transitions together until their shared workflow is characterized.

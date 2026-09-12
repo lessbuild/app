@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\RecipeReportResolutionRequest;
+use App\Http\Requests\ReopenRecipeReportsRequest;
+use App\Http\Requests\ResolveRecipeReportsRequest;
 use App\Http\Requests\StoreRecipeReportRequest;
 use App\Models\Recipe;
 use App\Models\RecipeReport;
@@ -273,13 +275,9 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The count newly resolved after atomic updates and report notifications.
      */
-    public function resolveMany(Request $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function resolveMany(ResolveRecipeReportsRequest $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
-        $data = $request->validateWithBag('bulkResolve', [
-            'reports' => ['required', 'array', 'min:1', 'max:20'],
-            'reports.*' => ['required', 'integer', 'distinct:strict'],
-        ]);
-        $reportIds = collect($data['reports'])->map(fn ($id): int => (int) $id)->sort()->values()->all();
+        $reportIds = collect($request->validated('reports'))->map(fn ($id): int => (int) $id)->sort()->values()->all();
 
         $resolvedCount = DB::transaction(function () use ($activity, $notifications, $request, $reportIds): int {
             $reports = RecipeReport::query()
@@ -373,13 +371,9 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The reopened count; any missing or foreign report aborts the operation with 404.
      */
-    public function reopenMany(Request $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function reopenMany(ReopenRecipeReportsRequest $request, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
     {
-        $data = $request->validateWithBag('bulkReopen', [
-            'reports' => ['required', 'array', 'min:1', 'max:20'],
-            'reports.*' => ['required', 'integer', 'distinct:strict'],
-        ]);
-        $reportIds = collect($data['reports'])->map(fn ($id): int => (int) $id)->sort()->values()->all();
+        $reportIds = collect($request->validated('reports'))->map(fn ($id): int => (int) $id)->sort()->values()->all();
 
         $reopenedCount = DB::transaction(function () use ($activity, $notifications, $request, $reportIds): int {
             $reports = RecipeReport::query()
