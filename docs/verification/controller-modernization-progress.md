@@ -1218,6 +1218,58 @@ Exact next task: extract manual scheduled-task runs, preserving the
 `without_overlapping` queued/running guard, run creation, `last_queued_at`
 update, job dispatch timing, entitlement and task-environment authorization.
 
+## Phase 4D — manual scheduled-task run operation
+
+### Responsibility problem
+
+`AutomationController::runScheduledTask` combined task-environment policy
+authorization, entitlement checks, non-overlap business rules, queued-run
+persistence, task timestamp mutation and job dispatch. The controller also had
+to translate the null-versus-run outcome into the existing redirect and flash
+responses.
+
+### Boundaries applied
+
+- `QueueScheduledTaskRunAction` injects `Entitlements`, checks the task's
+  queued/running overlap state, creates the queued run, updates
+  `last_queued_at` and dispatches the existing `RunScheduledTaskJob`.
+- The controller retains the resource policy check and maps the action's null
+  result to the existing already-running validation response.
+- The action intentionally preserves the existing non-transactional write and
+  dispatch order; the unique worker job remains responsible for execution
+  locking, retries and remote failure handling.
+
+This applies single responsibility and dependency inversion without moving
+worker lifecycle logic into the HTTP request or introducing a generic queue
+abstraction.
+
+### Preserved contracts and safety guarantees
+
+- Task routes, redirects, status codes, success/error messages, queued status,
+  timestamp behavior and job payload (`runId`) are unchanged.
+- Policy denial occurs before the active-run query, so denied actors cannot
+  create runs or dispatch jobs. The non-overlap guard still blocks both queued
+  and running runs and leaves existing state unchanged.
+- `RunScheduledTaskJob`'s unique lock, encrypted output, bounded history,
+  incident notifications and remote command behavior are untouched.
+
+### Verification
+
+- Automation, API, workflow, runtime, tenancy and entitlement regression set:
+  **43 passed, 250 assertions**.
+- Added owner queueing/job-payload, active-run rejection and viewer-denial
+  no-side-effect tests.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `9c5edf3` — `refactor: extract scheduled task runs`
+
+Exact next task: extract scheduled-task deletion and then the paired deployment
+and scaling schedule deletion actions, preserving policy ordering and current
+404/redirect behavior; keep scheduled-run output as a read-only controller
+response unless characterization shows a separate query boundary is needed.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1238,3 +1290,4 @@ update, job dispatch timing, entitlement and task-environment authorization.
 | Phase 4A-deployment-schedule | Deployment-schedule creation mixed policy, entitlement ordering, cron validation and persistence in `AutomationController`; API has no separate schedule-create route and continues to use workflow YAML for that contract. | 36 automation/API/runtime/tenancy/entitlement/configuration regression tests passed, 247 assertions; Pint and diff checks passed. | `936fa7c` — `refactor: extract deployment schedule operation` | Characterize scaling-schedule replica bounds and scheduled-scaling entitlement, then extract its separate request/action and no-write denial tests. |
 | Phase 4B-scaling-schedule | Scaling-schedule creation mixed policy, entitlement ordering, cron/timezone validation, environment replica bounds and persistence in `AutomationController`; API runtime scaling remains a distinct JSON operation. | 38 automation/API/runtime/tenancy/entitlement regression tests passed, 231 assertions; Pint and diff checks passed. | `b4323c2` — `refactor: extract scaling schedule operation` | Characterize scheduled-task creation, overlap guards, encrypted commands, deletion and output authorization, then extract its request/action boundary. |
 | Phase 4C-scheduled-task | Scheduled-task creation mixed policy, entitlement ordering, cron/task validation, encrypted command persistence and actor attribution in `AutomationController`; manual runs and output remain separate operations. | 40 automation/API/runtime/tenancy/entitlement regression tests passed, 236 assertions; Pint and diff checks passed. | `f6878ed` — `refactor: extract scheduled task operation` | Extract manual scheduled-task runs while preserving overlap guards, run timestamps, job dispatch and task authorization. |
+| Phase 4D-task-run | Manual scheduled-task execution mixed policy, entitlement, overlap checks, queued-run persistence, timestamp mutation and job dispatch in `AutomationController`. | 43 automation/API/runtime/tenancy/entitlement regression tests passed, 250 assertions; Pint and diff checks passed. | `9c5edf3` — `refactor: extract scheduled task runs` | Extract scheduled-task deletion, then paired deployment/scaling schedule deletion actions, preserving policy ordering and existing responses. |
