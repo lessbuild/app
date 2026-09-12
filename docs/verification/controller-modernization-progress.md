@@ -3730,6 +3730,53 @@ account/security controllers and Form Requests—account deletion, sign-in
 history clearing, password confirmation, authentication callbacks and any
 remaining direct writes—before extracting the next cohesive boundary.
 
+## Phase 7AB — sign-in history clearing operation boundary
+
+### Responsibility problem
+
+`SignInHistoryController` mixed the named `signIns` password validation bag,
+owner-scoped deletion, the transaction that contains the activity side effect,
+deleted-count response selection and redirect mapping.
+
+### Boundary and principles
+
+`ClearSignInHistoryRequest` owns the existing current-password validation and
+named bag. `ClearSignInHistoryAction` owns the account-scoped delete and keeps
+activity recording inside the existing database transaction. The controller
+now consumes the authenticated user, invokes the action and retains the
+existing `trans_choice`/empty-state response mapping. This applies single
+responsibility and dependency inversion without changing the existing
+relationship-based query semantics.
+
+### Preserved guarantees
+
+- The `signIns` error bag, current-password rule and `current_password`
+  non-flash behavior remain unchanged.
+- Only the authenticated user's history is deleted. Activity is recorded only
+  when at least one record is removed and remains in the same transaction as
+  the delete; empty history produces the original message without activity.
+- Owner notifications, count pluralization, redirect, authentication
+  middleware and rate limiting remain unchanged.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or external integrations changed.
+
+### Verification
+
+- Sign-in history management/recorder/account-security/rate-limit regression
+  set: **16 passed, 179 assertions**.
+- Added coverage for empty-history response and no-activity behavior.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `10e1d02` — `refactor: extract sign-in history clearing`
+
+**Phase 7AB exit gate: complete.** Exact next task: extract account deletion
+validation and lifecycle orchestration, preserving the `deleteAccount` bag,
+password/2FA ordering, shared-workspace and active-operation safeguards,
+transactional cleanup, session invalidation and exact status/HTTP responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3795,3 +3842,4 @@ remaining direct writes—before extracting the next cohesive boundary.
 | Phase 7Y-two-factor-confirmation | TwoFactorAuthenticationController mixed code validation, pending-secret verification, recovery-code hashing, confirmation persistence, activity and plaintext flashing. | 22 two-factor/authentication/security tests passed, 163 assertions; Pint, syntax and diff checks passed. | `abf499d` — `refactor: extract two-factor confirmation operation` | Extract two-factor disable, preserving conditional password validation, authenticator/recovery verification and consumption, credential clearing, activity and exact responses. |
 | Phase 7Z-two-factor-disable | TwoFactorAuthenticationController mixed conditional password/code validation, authenticator/recovery verification, credential clearing, recovery consumption and activity. | 27 two-factor/authentication/security/rate-limit tests passed, 232 assertions; Pint, syntax and diff checks passed. | `bddd879` — `refactor: extract two-factor disable operation` | Extract recovery-code regeneration, preserving enabled-state ordering, non-consuming verification, replacement hashes, plaintext flash behavior and exact status. |
 | Phase 7AA-two-factor-recovery | TwoFactorAuthenticationController mixed enabled-state ordering, conditional challenge validation, non-consuming verification, recovery replacement and plaintext flashing. | 31 two-factor/authentication/security/rate-limit tests passed, 245 assertions; Pint, syntax and diff checks passed. | `3216aa9` — `refactor: extract two-factor recovery code operation` | Characterize remaining account/security controllers and requests, including account deletion, sign-in history clearing, password confirmation, callbacks and direct writes, before the next cohesive extraction. |
+| Phase 7AB-sign-in-history-clear | SignInHistoryController mixed `signIns` validation, owner-scoped deletion, transactional activity, count/empty-state mapping and redirect response. | 16 sign-in history/recorder/account-security/rate-limit tests passed, 179 assertions; Pint, syntax and diff checks passed. | `10e1d02` — `refactor: extract sign-in history clearing` | Extract account deletion validation and lifecycle orchestration, preserving `deleteAccount`, password/2FA ordering, safeguards, cleanup transaction, session invalidation and exact responses. |
