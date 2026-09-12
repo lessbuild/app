@@ -2896,6 +2896,51 @@ filter normalization and the shared published-gallery query/metrics boundary,
 preserving personal scopes, aggregate ordering, eager-loaded user state,
 pagination and public-resource 404 behavior.
 
+## Phase 7K — gallery query and filter boundaries
+
+### Responsibility problem
+
+RecipeGalleryController still normalized gallery query parameters and owned the
+published-gallery query, personal collection scopes and aggregate metrics. That
+made the HTTP controller responsible for reusable read composition in addition
+to response orchestration.
+
+### Boundary and principles
+
+RecipeGalleryIndexRequest now owns the existing silent defaults and normalized
+search, category, scope and sort values. RecipeGalleryQuery owns the published
+gallery query and metrics; the controller retains eager loading, presentation
+ordering, pagination and resource response behavior. This applies single
+responsibility and dependency inversion without introducing a generic
+repository or changing the existing Eloquent semantics.
+
+### Preserved guarantees
+
+- SQL wildcard escaping, category/scope/sort defaults and authentication
+  behavior remain unchanged.
+- Mine, favorites, reported, open/resolved, installed and updates scopes keep
+  their existing user and publication boundaries.
+- Aggregate counts, sort inputs, eager-loaded state, pagination and public
+  resource 404 behavior remain unchanged.
+- Install, refresh, compare and publication operations remain on their
+  previously verified actions and controller response mappings.
+
+### Verification
+
+- Gallery regression set: **11 passed, 123 assertions**.
+- Related favorites, ratings, reports and history set: **29 passed, 355
+  assertions**.
+- Targeted Pint test and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: b3985f2 — refactor: extract gallery inventory queries
+
+**Phase 7K exit gate: complete.** Exact next task: audit remaining feedback and
+access-administration controllers for direct writes, inline validation,
+permission guards, named error bags and notification/history side effects.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2944,3 +2989,4 @@ pagination and public-resource 404 behavior.
 | Phase 7H-gallery-install-refresh | Gallery install/refresh transactions and activity recording remained inside `RecipeGalleryController`. | 21 gallery/activity/favorite/rating tests passed, 214 assertions; Pint and diff checks passed. | `72c9355` — `refactor: extract gallery install operations` | Extract recipe create/update publication persistence, duplicate creation and locked deletion, preserving timestamps, revisions, encrypted scripts, notification cleanup, activity timing and responses. |
 | Phase 7I-recipe-lifecycle | Recipe controller mixed publication metadata rules, direct create/update/duplicate writes, locked deletion, report-notification cleanup and activity recording. | 56 recipe management/duplication/activity/gallery/report tests passed, 507 assertions; Pint and diff checks passed. | `8f594ac` — `refactor: extract recipe lifecycle operations` | Extract recipe inventory and gallery filter normalization/CSV/query boundaries, preserving silent defaults, pagination, ordering, metrics, eager loading and spreadsheet-safe output. |
 | Phase 7J-recipe-inventory | Recipe inventory controller mixed filter normalization, repeated workspace queries/metrics and private CSV rendering. | 18 recipe inventory/filter/export/insight/management tests passed, 134 assertions; Pint and diff checks passed. | `5852cea` — `refactor: extract recipe inventory queries` | Extract gallery filter normalization and the shared published-gallery query/metrics boundary, preserving personal scopes, aggregate ordering, eager-loaded state, pagination and public 404 behavior. |
+| Phase 7K-gallery-query | RecipeGalleryController mixed filter normalization, published-gallery scope composition and aggregate metrics with HTTP response orchestration. | 40 gallery/favorite/rating/report/history tests passed, 478 assertions; Pint and diff checks passed. | `b3985f2` — `refactor: extract gallery inventory queries` | Audit remaining feedback and access-administration controllers for direct writes, inline validation, permission guards, named error bags and notification/history side effects. |
