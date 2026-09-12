@@ -481,6 +481,23 @@ Verification after the slice:
 - `BuildHistoryFilterTest`, `BuildHistoryInsightsTest` and `BuildHistoryExportTest`: 21 passed (188 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3C — build inventory export slice
+
+Responsibility problem: after query extraction, `BuildsController::export()` still owned the deployment-history CSV protocol, relationship projection, lazy iteration and spreadsheet-safe serialization.
+
+Boundary used: `BuildInventoryExporter` now owns the streamed build-history response and consumes `BuildInventoryQuery`. The controller retains filter normalization and delegates after the authenticated route boundary. The exporter is concrete and constructor-injected; no generic export framework was introduced.
+
+Preserved guarantees:
+
+- Filename, private/no-store/nosniff headers, UTF-8 BOM, header/row order, build ordering, lazy batch size and eager-loaded repository/website/server context remain unchanged.
+- Revision, commit message, operator note, promotion metadata, nullable timestamps, duration calculation and formula escaping remain unchanged.
+- Organization scoping and all build-history filter semantics continue to come from the shared query collaborator.
+
+Verification after the slice:
+
+- `BuildHistoryExportTest`: 7 passed (52 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
 Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.

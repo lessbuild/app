@@ -11,11 +11,11 @@ use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
 use App\Notifications\NotificationInbox;
 use App\Services\ActivityRecorder;
+use App\Services\BuildInventoryExporter;
 use App\Services\BuildInventoryQuery;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentRequest;
 use App\Services\Runner;
-use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -28,7 +28,10 @@ use Throwable;
 
 class BuildsController extends Controller
 {
-    public function __construct(private readonly BuildInventoryQuery $buildInventory) {}
+    public function __construct(
+        private readonly BuildInventoryExporter $buildInventoryExporter,
+        private readonly BuildInventoryQuery $buildInventory,
+    ) {}
 
     /**
      * Show resources in storage
@@ -61,64 +64,8 @@ class BuildsController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
-        $filename = 'lessbuild-builds-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Build ID',
-                'Repository',
-                'Website',
-                'Server',
-                'Status',
-                'Trigger',
-                'Revision',
-                'Commit message',
-                'Operator note',
-                'Promoted from build',
-                'Promotion note',
-                'Created at',
-                'Started at',
-                'Finished at',
-                'Duration seconds',
-            ], ',', '"', '');
-
-            $this->buildInventory->for($request->user(), $filters)
-                ->latest('builds.id')
-                ->lazy(250)
-                ->each(function (Build $build) use ($output): void {
-                    $repository = $build->repository;
-                    $website = $repository->website;
-                    fputcsv($output, [
-                        $build->id,
-                        $this->csvCell($repository->name),
-                        $this->csvCell($website?->name),
-                        $this->csvCell($website?->server?->label),
-                        $build->status,
-                        $build->trigger_source,
-                        $build->revision,
-                        $this->csvCell($build->commit_message),
-                        $this->csvCell($build->operator_note),
-                        $build->promoted_from_build_id,
-                        $this->csvCell($build->promotion_note),
-                        $build->created_at?->toIso8601String(),
-                        $build->started_at?->toIso8601String(),
-                        $build->finished_at?->toIso8601String(),
-                        $build->durationSeconds(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->buildInventoryExporter->stream($request->user(), $filters);
     }
 
     /**
@@ -468,13 +415,5 @@ class BuildsController extends Controller
             ->where('data->resource_id', $build->id)
             ->where('data->status', NotificationInbox::STATUS_INFO)
             ->update(['read_at' => now()]);
-    }
-
-    /**
-     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
-     */
-    private function csvCell(?string $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }
