@@ -8,6 +8,14 @@ use App\Models\User;
 class OrganizationPolicy
 {
     /**
+     * Allow an account to view a workspace in which it has membership access.
+     */
+    public function view(User $user, Organization $organization): bool
+    {
+        return $organization->permits($user, 'view');
+    }
+
+    /**
      * Allow a manager to invite members only to the currently selected workspace.
      */
     public function invite(User $user, Organization $organization): bool

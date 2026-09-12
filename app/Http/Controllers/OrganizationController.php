@@ -36,7 +36,7 @@ class OrganizationController extends Controller
     public function index(Request $request, PersonalOrganization $personal, PlanLimits $limits): View
     {
         $organization = $personal->ensure($request->user());
-        abort_unless($organization->permits($request->user(), 'view'), 403);
+        $this->authorize('view', $organization);
 
         return view('scenes.organizations.index', [
             'organization' => $organization->load('members'),
