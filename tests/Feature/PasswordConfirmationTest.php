@@ -75,6 +75,9 @@ class PasswordConfirmationTest extends TestCase
         $this->get(route('password.confirm'))
             ->assertRedirect(route('account.index'))
             ->assertSessionHas('social_error', 'This account does not have a local password to confirm.');
+        $this->post(route('password.confirm'))
+            ->assertRedirect(route('account.index'))
+            ->assertSessionHas('social_error', 'This account does not have a local password to confirm.');
     }
 
     public function test_confirmation_routes_require_authentication(): void
