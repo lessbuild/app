@@ -697,6 +697,23 @@ Verification after the slice:
 - ServerInventoryExportTest and ServerInventoryInsightsTest: 6 passed (59 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3D — server creation and cloud-provisioning action slice
+
+Responsibility problem: ServersController combined validated server creation with plan-limit locking, recipe assignment and encrypted snapshotting, SSH-key registration, cloud-instance creation, cleanup, failure recording and initialization dispatch.
+
+Boundary used: CreateServerAction now owns that cohesive provisioning workflow. It injects PlanLimits, ServerProviderResolver, SshKeyPair and the existing CreateCloudServerAction. The controller retains Form Request/provider lookup, input normalization and exact success/failure redirects. The existing ServerProvider contract remains the external boundary.
+
+Preserved guarantees:
+
+- Workspace limit and permission checks, server naming/type values, recipe order and encrypted recipe snapshots remain unchanged.
+- Provider SSH-key ownership is persisted before cloud creation; failed cloud resources are cleaned up, failed cleanup retains retryable fingerprints, and creation failures preserve the creation phase and bounded error.
+- Cloud metadata, server credentials, initialization tokens, type-specific provisioning plans and InitialiseServerJob dispatch remain unchanged.
+
+Verification after the slice:
+
+- ServerProviderLifecycleTest, ServerCreationFailureTest, ServerTypeProvisioningTest and ResourceAuthorizationTest: 15 passed (166 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Review server provisioning creation/failure cleanup and retry boundaries, preserving provider calls, SSH-key ownership, attempts, callbacks and after-commit queue timing.
+Review server deletion/display-name updates and the separate imported-server assessment workflow, preserving cleanup, ownership, session-token and retry semantics.

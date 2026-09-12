@@ -3,14 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\CollectServerLogAction;
-use App\Actions\Server\CreateCloudServerAction;
+use App\Actions\Server\CreateServerAction;
 use App\Actions\Server\QueueRemoteServerProvisioningRetryAction;
 use App\Actions\Server\RetryServerInitializationAction;
-use App\Contracts\ServerProvider;
 use App\Http\Requests\ServerDisplayNameRequest;
 use App\Http\Requests\ServerRequest;
 use App\Http\Responses\PlainTextLogDownload;
-use App\Jobs\Server\InitialiseServerJob;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\Region;
 use App\Models\Server;
@@ -19,8 +17,6 @@ use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
 use App\Services\ServerInventoryExporter;
 use App\Services\ServerInventoryQuery;
-use App\Services\ServerProviderResolver;
-use App\Services\SshKeyPair;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -136,110 +132,34 @@ class ServersController extends Controller
     }
 
     /**
-     * Store the resource in storage
+     * Validate the server request, invoke provisioning, and map its final state to the server page.
      */
     public function store(
         ServerRequest $request,
-        SshKeyPair $keypair,
-        ServerProviderResolver $providers,
-        CreateCloudServerAction $createCloudServer,
-        PlanLimits $limits,
+        CreateServerAction $create,
     ): RedirectResponse {
-        $provider = $request->user()->workspaceProviders()->forServers()->findOrFail($request->integer('provider_id'));
-        $cloudProvider = $providers->resolve($provider);
+        $data = $request->validated();
+        $provider = $request->user()->workspaceProviders()->forServers()->findOrFail($data['provider_id']);
+        $server = $create->handle(
+            $request->user(),
+            $provider,
+            $request->enum('type', ServerTypeEnum::class),
+            $data['name'],
+            [
+                'region' => $data['region'],
+                'size' => $data['size'],
+                'image' => $data['image'],
+            ],
+            $data['recipes'] ?? [],
+        );
 
-        $server = $limits->withinLimit($request->user(), 'servers', fn ($organization) => $organization->servers()->create([
-            'user_id' => $request->user()->id,
-            'provider_id' => $provider->id,
-            'type' => $request->enum('type', ServerTypeEnum::class),
-            'name' => str($request->input('name'))->slug()->limit(31, ''),
-            'provisioning_status' => Server::STATUS_QUEUED,
-            'ssh_public_key' => $keypair->publicKey(),
-            'ssh_private_key' => $keypair->privateKey(),
-        ]));
-
-        $recipeAssignments = collect($request->input('recipes', []))
-            ->values()
-            ->mapWithKeys(fn ($recipeId, $position) => [
-                (int) $recipeId => ['position' => $position],
-            ]);
-        $server->recipes()->sync($recipeAssignments);
-        $server->captureProvisioningRecipes();
-
-        $cloudServer = null;
-
-        try {
-            $sshKey = $cloudProvider->createSshKey((string) $request->string('name'), $server->ssh_public_key);
-
-            // Persist this immediately so a failed cleanup can be retried when the
-            // failed server record is deleted.
-            $server->update([
-                'ssh_fingerprint' => $sshKey->fingerprint,
-                'ssh_key_owned' => $sshKey->created,
-            ]);
-
-            $cloudServer = $createCloudServer->handle($server, $cloudProvider, [
-                'region' => $request->input('region'),
-                'size' => $request->input('size'),
-                'image' => $request->input('image'),
-                'name' => str()->slug($request->input('name')),
-                'ssh_keys' => [$sshKey->fingerprint],
-            ]);
-
-            $server->update([
-                'identifier' => $cloudServer->identifier,
-                'name' => $cloudServer->name,
-                'region' => $cloudServer->region,
-                'size' => $cloudServer->size,
-                'image' => $cloudServer->image,
-            ]);
-
-            InitialiseServerJob::dispatch($server);
-        } catch (Throwable $exception) {
-            report($exception);
-
-            if ($cloudServer !== null) {
-                try {
-                    $cloudProvider->deleteServer($cloudServer->identifier);
-                } catch (Throwable $cleanupException) {
-                    report($cleanupException);
-                }
-            }
-
-            $this->cleanUpSshKey($server, $cloudProvider);
-
-            $server->update([
-                'provisioning_status' => Server::STATUS_FAILED,
-                'provisioning_error' => str($exception->getMessage())->limit(2000),
-                'provisioning_failure_phase' => Server::FAILURE_CREATION,
-            ]);
-
+        if ($server->provisioning_status === Server::STATUS_FAILED) {
             return redirect()
                 ->route('servers.show', $server)
                 ->with('error', __('The cloud server could not be created. Review the error below and try again.'));
         }
 
         return redirect()->route('servers.show', $server);
-    }
-
-    /**
-     * Attempt deletion of an application-owned provider SSH key and clear its fingerprint only on success.
-     *
-     * Missing or externally owned keys are ignored; provider exceptions are reported without propagating.
-     */
-    private function cleanUpSshKey(Server $server, ServerProvider $provider): void
-    {
-        if (! $server->ssh_fingerprint || ! $server->ssh_key_owned) {
-            return;
-        }
-
-        try {
-            if ($provider->deleteSshKey($server->ssh_fingerprint)) {
-                $server->update(['ssh_fingerprint' => null]);
-            }
-        } catch (Throwable $exception) {
-            report($exception);
-        }
     }
 
     /**
