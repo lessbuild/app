@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\UpdatePasswordAction;
 use App\Actions\Account\UpdateProfileAction;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\SignInEvent;
 use App\Models\User;
@@ -15,9 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class UsersController extends Controller
@@ -94,29 +94,9 @@ class UsersController extends Controller
     /**
      * Validate a confirmed replacement password and any existing local password, then revoke other sessions and redirect back.
      */
-    public function updatePassword(
-        Request $request,
-        ActivityRecorder $activity,
-        BrowserSessionManager $browserSessions,
-    ): RedirectResponse {
-        $currentPasswordRules = $request->user()->hasLocalPassword()
-            ? ['required', 'current_password']
-            : ['nullable'];
-
-        $validated = $request->validateWithBag('password', [
-            'current_password' => $currentPasswordRules,
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
-
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-            'password_set_at' => now(),
-        ]);
-        Auth::guard('web')->logoutOtherDevices($validated['password']);
-        $browserSessions->revokeOthers($request->user(), $request->session()->getId());
-
-        $request->session()->regenerate(true);
-        $activity->recordAccount($request->user(), 'Account password was changed.');
+    public function updatePassword(UpdatePasswordRequest $request, UpdatePasswordAction $update): RedirectResponse
+    {
+        $update->handle($request->user(), $request->passwordData(), $request->session()->getId());
 
         return back()->with('password_status', __('Password updated.'));
     }
