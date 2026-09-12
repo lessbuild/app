@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Actions\Organization\AcceptOrganizationInvitationAction;
 use App\Actions\Organization\InviteOrganizationMemberAction;
+use App\Actions\Organization\RemoveOrganizationMemberAction;
+use App\Actions\Organization\SwitchOrganizationAction;
+use App\Actions\Organization\UpdateOrganizationMemberAction;
 use App\Exceptions\OrganizationInvitationOperationException;
+use App\Exceptions\OrganizationMemberOperationException;
 use App\Http\Requests\AcceptOrganizationInvitationRequest;
 use App\Http\Requests\StoreOrganizationInvitationRequest;
+use App\Http\Requests\UpdateOrganizationMemberRequest;
 use App\Models\Build;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
@@ -74,10 +79,10 @@ class OrganizationController extends Controller
     /**
      * Require visibility of the bound workspace, select it as current, and redirect to its dashboard.
      */
-    public function switch(Request $request, Organization $organization): RedirectResponse
+    public function switch(Request $request, Organization $organization, SwitchOrganizationAction $switch): RedirectResponse
     {
-        abort_unless($organization->permits($request->user(), 'view'), 403);
-        $request->user()->update(['current_organization_id' => $organization->id]);
+        $this->authorize('switch', $organization);
+        $switch->handle($request->user(), $organization);
 
         return redirect()->route('dashboard')->with('success', __('Workspace changed to :name.', ['name' => $organization->name]));
     }
@@ -85,14 +90,14 @@ class OrganizationController extends Controller
     /**
      * Validate a role for an existing non-owner member of the managed workspace, update the membership, and redirect back.
      */
-    public function updateMember(Request $request, User $member): RedirectResponse
+    public function updateMember(UpdateOrganizationMemberRequest $request, User $member, UpdateOrganizationMemberAction $updateMember): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'manage'), 403);
-        abort_if((int) $organization->owner_id === (int) $member->id, 422, 'The owner role cannot be changed.');
-        abort_unless($organization->members()->whereKey($member->id)->exists(), 404);
-        $data = $request->validate(['role' => ['required', Rule::in(Organization::ROLES)]]);
-        $organization->members()->updateExistingPivot($member->id, ['role' => $data['role']]);
+        try {
+            $updateMember->handle($organization, $member, $request->role());
+        } catch (OrganizationMemberOperationException $exception) {
+            abort(422, $exception->getMessage());
+        }
 
         return back()->with('success', __('Member role updated.'));
     }
@@ -205,14 +210,15 @@ class OrganizationController extends Controller
     /**
      * Require workspace management access and an existing non-owner member, remove them, and queue billing-seat synchronization.
      */
-    public function removeMember(Request $request, User $member): RedirectResponse
+    public function removeMember(Request $request, User $member, RemoveOrganizationMemberAction $removeMember): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'manage'), 403);
-        abort_if((int) $organization->owner_id === (int) $member->id, 422, 'The workspace owner cannot be removed.');
-        abort_unless($organization->members()->whereKey($member->id)->exists(), 404);
-        $organization->members()->detach($member->id);
-        SyncOrganizationSeatQuantityJob::dispatch($organization->id);
+        $this->authorize('manageMembers', $organization);
+        try {
+            $removeMember->handle($organization, $member);
+        } catch (OrganizationMemberOperationException $exception) {
+            abort(422, $exception->getMessage());
+        }
 
         return back()->with('success', __('Member removed.'));
     }

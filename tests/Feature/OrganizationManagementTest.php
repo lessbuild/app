@@ -137,10 +137,19 @@ class OrganizationManagementTest extends TestCase
     {
         $owner = User::factory()->create();
         $outsider = User::factory()->create();
+        $member = User::factory()->create();
         $organization = app(PersonalOrganization::class)->ensure($owner);
         app(PersonalOrganization::class)->ensure($outsider);
+        app(PersonalOrganization::class)->ensure($member);
+        $organization->members()->attach($member, ['role' => 'developer']);
 
         $this->actingAs($outsider)->post(route('organizations.switch', $organization))->assertForbidden();
+
+        $this->actingAs($member)
+            ->post(route('organizations.switch', $organization))
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionHas('success');
+        $this->assertSame($organization->id, $member->fresh()->current_organization_id);
     }
 
     public function test_viewer_cannot_manage_members(): void
@@ -155,6 +164,55 @@ class OrganizationManagementTest extends TestCase
 
         $this->actingAs($viewer)->patch(route('organizations.members.update', $target), ['role' => 'admin'])->assertForbidden();
         $this->assertSame('developer', $organization->roleFor($target));
+    }
+
+    public function test_manager_member_updates_preserve_owner_protection_and_scoped_not_found_behavior(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $foreign = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($member, ['role' => 'developer']);
+
+        $this->actingAs($owner)
+            ->patch(route('organizations.members.update', $owner), ['role' => 'admin'])
+            ->assertStatus(422)
+            ->assertSee('The owner role cannot be changed.');
+        $this->actingAs($owner)
+            ->patch(route('organizations.members.update', $foreign), ['role' => 'admin'])
+            ->assertNotFound();
+        $this->actingAs($owner)
+            ->patch(route('organizations.members.update', $member), ['role' => 'admin'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertSame('admin', $organization->fresh()->roleFor($member));
+    }
+
+    public function test_manager_member_removal_updates_the_pivot_and_queues_seat_sync(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $foreign = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($member, ['role' => 'developer']);
+
+        $this->actingAs($owner)
+            ->delete(route('organizations.members.destroy', $member))
+            ->assertRedirect()
+            ->assertSessionHas('success');
+        $this->assertFalse($organization->fresh()->members()->whereKey($member->id)->exists());
+        Queue::assertPushed(SyncOrganizationSeatQuantityJob::class, 1);
+
+        $this->actingAs($owner)
+            ->delete(route('organizations.members.destroy', $owner))
+            ->assertStatus(422)
+            ->assertSee('The workspace owner cannot be removed.');
+        $this->actingAs($owner)
+            ->delete(route('organizations.members.destroy', $foreign))
+            ->assertNotFound();
+        Queue::assertPushed(SyncOrganizationSeatQuantityJob::class, 1);
     }
 
     public function test_admin_can_set_workspace_notification_preferences_but_viewer_cannot(): void
