@@ -3573,6 +3573,57 @@ confirmation, preserving code validation in the `twoFactor` bag, pending
 secret verification, invalid-code response, recovery-code hashing and
 one-time plaintext flash behavior, activity timing and encrypted persistence.
 
+## Phase 7Y — two-factor confirmation operation boundary
+
+### Responsibility problem
+
+`TwoFactorAuthenticationController` mixed `twoFactor` code-shape
+validation, pending-secret verification, recovery-code generation and hashing,
+confirmation persistence, activity recording and one-time response flashing.
+
+### Boundary and principles
+
+`ConfirmTwoFactorRequest` owns the bounded code rules and named error bag.
+`ConfirmTwoFactorAction` owns verification against the pending secret,
+recovery-code generation/hash persistence and the account activity event.
+`TwoFactorConfirmationResult` carries only the newly generated plaintext
+codes back to the HTTP boundary for one-time flashing. Invalid-code
+`ValidationException` behavior remains in the operation because it is an
+application rule, not an HTTP redirect concern. This applies single
+responsibility and dependency inversion without moving TOTP/recovery
+algorithms out of the existing service.
+
+### Preserved guarantees
+
+- Missing or invalid pending-secret codes still fail in the `twoFactor` bag
+  with the exact message and leave pending setup untouched.
+- Confirmation still stores only recovery-code hashes, sets the confirmation
+  timestamp, records the same activity event and flashes the eight plaintext
+  codes only after successful persistence.
+- Authenticator verification behavior, recovery-code single-use semantics,
+  login challenge behavior, secret/recovery serialization hiding and existing
+  status text remain unchanged.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Two-factor/authentication/security regression set: **22 passed, 163
+  assertions**.
+- Added coverage for invalid-code and missing-pending-secret no-mutation
+  behavior and confirmation activity recording.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `abf499d` — `refactor: extract two-factor confirmation operation`
+
+**Phase 7Y exit gate: complete.** Exact next task: extract two-factor disable,
+preserving conditional password validation, authenticator/recovery verification
+and recovery-code consumption, the `twoFactor` bag, credential clearing,
+activity timing and exact status/error responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3635,3 +3686,4 @@ one-time plaintext flash behavior, activity timing and encrypted persistence.
 | Phase 7V-individual-session | UsersController mixed route/form ID attestation, `sessions` validation, ownership-scoped deletion, current-session protection, availability outcomes and activity mapping. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `8fb11fe` — `refactor: extract individual session revocation` | Extract social-account disconnect validation and locked provider mutation, preserving the `social` bag, missing/last-method outcomes, provider fallback, activity and exact responses. |
 | Phase 7W-social-account | UsersController mixed conditional `social` validation, locked provider mutation, last-method protection, auth-type fallback, activity and response mapping. | 30 account profile/password/social/session/security/rate-limit tests passed, 279 assertions; Pint, syntax and diff checks passed. | `f0adf6f` — `refactor: extract social account disconnect operation` | Modernize two-factor setup/enable/confirm/cancel/disable operations, preserving the `twoFactor` bag, secret/recovery handling, ordering and security side effects. |
 | Phase 7X-two-factor-setup | TwoFactorAuthenticationController mixed setup-state guards, conditional password validation, pending secret/recovery writes and cancellation. | 16 two-factor/authentication/security tests passed, 123 assertions; Pint, syntax and diff checks passed. | `aa27ffa` — `refactor: extract two-factor setup operations` | Extract two-factor confirmation, preserving `twoFactor` validation, pending-secret verification, recovery-code hashing, plaintext flash behavior and activity timing. |
+| Phase 7Y-two-factor-confirmation | TwoFactorAuthenticationController mixed code validation, pending-secret verification, recovery-code hashing, confirmation persistence, activity and plaintext flashing. | 22 two-factor/authentication/security tests passed, 163 assertions; Pint, syntax and diff checks passed. | `abf499d` — `refactor: extract two-factor confirmation operation` | Extract two-factor disable, preserving conditional password validation, authenticator/recovery verification and consumption, credential clearing, activity and exact responses. |
