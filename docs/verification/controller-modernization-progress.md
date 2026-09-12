@@ -4099,6 +4099,59 @@ Commit: `1784e6a` — `refactor: extract social auth operations`
 verification controllers and GitHub App/SSO callbacks before extracting their
 protocol-safe authentication/session operations.
 
+## Phase 7AI — two-factor login completion
+
+### Responsibility problem
+
+`TwoFactorChallengeController` mixed challenge validation, pending-user
+lookup, authenticator/recovery-code verification, recovery-code consumption,
+challenge-session cleanup, authentication completion and session regeneration
+with sign-in recording and redirect handling.
+
+### Boundary and principles
+
+`TwoFactorChallengeRequest` owns the existing challenge input rules and
+`CompleteTwoFactorLoginAction` owns the pending-login workflow. The action
+uses `AccountAuthentication` for the web-guard login and returns
+`TwoFactorLoginResult` so the controller can record request-specific client
+metadata and return the existing redirect. This applies single
+responsibility, dependency inversion and explicit data boundaries without
+moving HTTP response handling into the operation.
+
+### Preserved guarantees
+
+- The route, guest/throttle middleware, `code` validation shape, default error
+  bag and invalid-code message remain unchanged.
+- Pending-user lookup still precedes verification; disabled or missing users
+  fail identically. Recovery codes are still consumed atomically by the
+  existing two-factor service, and invalid submissions leave all pending
+  challenge session values available for another attempt.
+- Remember-device state and the originating sign-in method (including social
+  methods) are pulled with the same defaults and only after successful
+  verification. The pending user ID is cleared, the web guard logs in, the
+  session regenerates, sign-in history is recorded, and intended/dashboard
+  redirects remain unchanged.
+- No routes, persisted values, serialized jobs, provider behavior,
+  dependency lockfiles or external acceptance state changed.
+
+### Verification
+
+- Authentication redirect, two-factor and email-verification regression set:
+  **30 passed, 168 assertions**.
+- Added coverage for social-method preservation and invalid-challenge session
+  retention.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `410d9e2` — `refactor: extract two-factor login operation`
+
+**Phase 7AI exit gate: complete.** Exact next task: characterize password-login
+session staging/logout and email-verification resend/link transitions, then
+choose the smallest protocol-safe authentication/session operation boundary
+before handling GitHub App and enterprise SSO callbacks.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4171,3 +4224,4 @@ protocol-safe authentication/session operations.
 | Phase 7AF-password-reset | NewPasswordController mixed reset validation, broker callback persistence, password/remember-token updates, security activity/event dispatch and failure mapping. | 25 password-reset/privacy/throttling/account-security tests passed, 215 assertions; Pint, syntax and diff checks passed. | `2089c05` — `refactor: extract password reset operation` | Characterize registration creation and invitation/access-token protocol behavior, then extract its request/data/action boundaries before social OAuth callback transitions. |
 | Phase 7AG-registration | RegisteredUserController mixed availability ordering, registration validation, invitation consumption, synchronized creation, password hashing, workspace provisioning and auth/session coordination. | 39 registration/invitation/social-auth/password-confirmation tests passed, 305 assertions; Pint, syntax and diff checks passed. | `5ebbccd` — `refactor: extract registration operation` | Extract the social OAuth callback's guest resolution and authenticated connection mutation, preserving provider verification, session intent, identity locks, 2FA handoff, sign-in recording and failure responses. |
 | Phase 7AH-social-auth-callback | SocialAuthController mixed provider verification, callback intent, guest identity resolution/creation, locked connection mutation, workspace recovery, 2FA handoff and sign-in recording. | 41 social-auth/password-confirmation/account/security/2FA tests passed, 323 assertions; Pint, syntax and diff checks passed. | `1784e6a` — `refactor: extract social auth operations` | Characterize remaining authentication/session controllers and GitHub App/SSO callbacks before protocol-safe operation extraction. |
+| Phase 7AI-two-factor-login | TwoFactorChallengeController mixed challenge validation, pending-user lookup, recovery verification/consumption, session cleanup, authentication and sign-in transition wiring. | 30 authentication redirect/two-factor/email-verification tests passed, 168 assertions; Pint, syntax and diff checks passed. | `410d9e2` — `refactor: extract two-factor login operation` | Characterize password-login session staging/logout and email-verification resend/link transitions, then choose the smallest protocol-safe authentication/session operation boundary before GitHub App and enterprise SSO callbacks. |
