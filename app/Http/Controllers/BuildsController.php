@@ -11,15 +11,13 @@ use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
 use App\Notifications\NotificationInbox;
 use App\Services\ActivityRecorder;
+use App\Services\BuildInventoryQuery;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentRequest;
 use App\Services\Runner;
 use App\Support\CsvCell;
 use App\Support\DateRange;
-use App\Support\SqlLike;
-use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -30,6 +28,8 @@ use Throwable;
 
 class BuildsController extends Controller
 {
+    public function __construct(private readonly BuildInventoryQuery $buildInventory) {}
+
     /**
      * Show resources in storage
      */
@@ -37,7 +37,7 @@ class BuildsController extends Controller
     {
         $filters = $this->filters($request);
 
-        $builds = $this->filteredBuilds($request, $filters)
+        $builds = $this->buildInventory->for($request->user(), $filters)
             ->latest('builds.created_at')
             ->simplePaginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -45,7 +45,7 @@ class BuildsController extends Controller
         return view('scenes.builds.index', [
             'builds' => $builds,
             'filters' => $filters,
-            'metrics' => $this->metrics($request, $filters),
+            'metrics' => $this->buildInventory->metrics($request->user(), $filters),
             'repositories' => $request->user()->workspaceRepositories()->orderBy('name')->get(['id', 'name']),
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(['id', 'name']),
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(['id', 'name', 'display_name']),
@@ -53,38 +53,6 @@ class BuildsController extends Controller
             'statuses' => $this->statuses(),
             'triggers' => $this->triggers(),
         ]);
-    }
-
-    /**
-     * @param  array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string}  $filters
-     * @return array{total: int, active: int, succeeded: int, failed: int, success_rate: ?int, latest_at: CarbonInterface|null}
-     */
-    private function metrics(Request $request, array $filters): array
-    {
-        $succeeded = $this->filteredBuilds($request, $filters)
-            ->where('builds.status', Build::STATUS_SUCCEEDED)
-            ->count();
-        $failed = $this->filteredBuilds($request, $filters)
-            ->where('builds.status', Build::STATUS_FAILED)
-            ->count();
-        $completed = $succeeded + $failed;
-        $latest = $this->filteredBuilds($request, $filters)
-            ->withoutEagerLoads()
-            ->select(['builds.id', 'builds.created_at'])
-            ->latest('builds.created_at')
-            ->latest('builds.id')
-            ->first();
-
-        return [
-            'total' => $this->filteredBuilds($request, $filters)->count(),
-            'active' => $this->filteredBuilds($request, $filters)
-                ->whereIn('builds.status', Build::ACTIVE_STATUSES)
-                ->count(),
-            'succeeded' => $succeeded,
-            'failed' => $failed,
-            'success_rate' => $completed > 0 ? (int) round(($succeeded / $completed) * 100) : null,
-            'latest_at' => $latest?->created_at,
-        ];
     }
 
     /**
@@ -120,7 +88,7 @@ class BuildsController extends Controller
                 'Duration seconds',
             ], ',', '"', '');
 
-            $this->filteredBuilds($request, $filters)
+            $this->buildInventory->for($request->user(), $filters)
                 ->latest('builds.id')
                 ->lazy(250)
                 ->each(function (Build $build) use ($output): void {
@@ -465,47 +433,6 @@ class BuildsController extends Controller
             'date_from' => $dateFrom,
             'date_to' => $dateTo,
         ];
-    }
-
-    /** @param array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string} $filters */
-    private function filteredBuilds(Request $request, array $filters): Builder
-    {
-        return Build::query()
-            ->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
-            ->with('repository.website.server')
-            ->when($filters['repository_id'], fn ($query, int $id) => $query
-                ->where('builds.repository_id', $id))
-            ->when($filters['website_id'], fn ($query, int $id) => $query
-                ->whereHas('repository', fn ($query) => $query->where('website_id', $id)))
-            ->when($filters['server_id'], fn ($query, int $id) => $query
-                ->whereHas('repository.website', fn ($query) => $query->where('server_id', $id)))
-            ->when($filters['provider_id'], fn ($query, int $id) => $query
-                ->whereHas('repository', fn ($query) => $query->where('provider_id', $id)))
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('builds.status', $value))
-            ->when($filters['trigger'], fn ($query, string $value) => $query
-                ->where('builds.trigger_source', $value))
-            ->when($filters['active'], fn ($query) => $query
-                ->whereIn('builds.status', Build::ACTIVE_STATUSES))
-            ->when($filters['latest'], fn ($query) => $query
-                ->whereIn('builds.id', Build::query()
-                    ->selectRaw('MAX(id)')
-                    ->groupBy('repository_id')))
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("builds.revision LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("builds.commit_message LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("builds.operator_note LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereHas('repository', fn ($query) => $query
-                            ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]));
-                });
-            })
-            ->when($filters['date_from'], fn ($query, string $date) => $query
-                ->whereDate('builds.created_at', '>=', $date))
-            ->when($filters['date_to'], fn ($query, string $date) => $query
-                ->whereDate('builds.created_at', '<=', $date));
     }
 
     /**

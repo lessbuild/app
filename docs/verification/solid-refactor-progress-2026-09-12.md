@@ -464,6 +464,23 @@ Verification after the phase:
 - Targeted Pint, PHP syntax checks and `git diff --check`: passed. Full Pint remains part of Phase 4.
 - Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3C — build inventory query slice
+
+Responsibility problem: `BuildsController` combined HTTP filter normalization, pagination and view coordination with the organization-scoped deployment-history query and six filter-aware metrics. The same query construction also fed the CSV export.
+
+Boundary used: `BuildInventoryQuery` now owns the typed, organization-scoped build query and metrics. The controller retains request filter normalization, pagination, authorization and response/CSV coordination. The collaborator is concrete and constructor-injected; no generic build repository or speculative interface was added.
+
+Preserved guarantees:
+
+- Organization scoping through repository ownership, repository/website/server/provider filters, latest-per-repository selection, SQL wildcard escaping and date normalization remain unchanged.
+- Eager loading, metric query order, active/succeeded/failed meanings, success-rate calculation, latest timestamp selection, pagination ordering and export filtering remain unchanged.
+- Deployment actions, approval/rejection transitions, webhook handling, revision attestation, cancellation, promotion, rollback, queue timing and idempotency were not changed.
+
+Verification after the slice:
+
+- `BuildHistoryFilterTest`, `BuildHistoryInsightsTest` and `BuildHistoryExportTest`: 21 passed (188 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Begin Phase 3C: map `BuildsController` and `RepositoriesController`, existing `app/Actions/Repository`, deployment/reporting queries, webhooks, approvals, promotion, rollback, cancellation and concurrency before selecting the smallest justified extraction.
+Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.
