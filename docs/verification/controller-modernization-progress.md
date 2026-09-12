@@ -3172,6 +3172,49 @@ Commit: 2f47a7f — refactor: extract notification state operations
 sign-in history reads/exports, preserving user scoping, named `signIns` errors,
 pagination/filter defaults, CSV redaction and session/security side effects.
 
+## Phase 7Q — activity feed query and export boundaries
+
+### Responsibility problem
+
+ActivityController mixed silent filter normalization, repeated account-scoped
+activity queries for metrics, CSV formatting and the audit entitlement check.
+
+### Boundary and principles
+
+ActivityIndexRequest now owns normalized feed/export filters. ActivityQuery owns
+the reusable account-scoped listing and metric queries, and ActivityExporter
+owns the private bounded CSV representation. The controller retains the audit
+entitlement decision, view data and response coordination. This applies single
+responsibility and dependency inversion while keeping billing entitlement
+handling separate from account data scoping.
+
+### Preserved guarantees
+
+- Guest redirects, audit-plan enforcement and the existing entitlement error
+  behavior remain unchanged.
+- Search trimming/bounding, category/date fallback, wildcard escaping,
+  account-only filtering, metric categories, ordering and pagination parameters
+  remain unchanged.
+- Eager loading of deleted-safe polymorphic subjects remains on the page query;
+  CSV headers, BOM, lazy batch size, resource metadata and formula escaping
+  remain unchanged.
+
+### Verification
+
+- Activity feed/insight regression set: **13 passed, 86 assertions**.
+- Entitlement regression set: **7 passed, 38 assertions**.
+- Targeted Pint test, PHP syntax checks and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: e3a630d — refactor: extract activity feed queries
+
+**Phase 7Q exit gate: complete.** Exact next task: extract sign-in history
+filter normalization/query/metrics/export boundaries, preserving account
+scoping, client metadata derivation, pagination defaults, CSV redaction and
+the separate named `signIns` history-clear contract.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3226,3 +3269,4 @@ pagination/filter defaults, CSV redaction and session/security side effects.
 | Phase 7N-access-intake | AccessRequestController mixed registration availability, honeypot handling, applicant validation/normalization, deduplication, encrypted persistence and notifications. | 13 public/administration access-request tests passed, 97 assertions; Pint and diff checks passed. | `fa31c24` — `refactor: extract access request intake operation` | Extract notification inbox filters/query/export and state operations, preserving ownership concealment, bulk counts, saved preferences, payload redaction and redirects. |
 | Phase 7O-notification-inbox | NotificationsController mixed filter validation, recipient-scoped query/metrics, CSV serialization and saved-filter preference writes with state endpoints. | 23 notification inbox/export/saved-filter/bulk/ownership/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `142b5b1` — `refactor: extract notification inbox operations` | Extract notification state operations and a policy-compatible ownership boundary, preserving deliberate 404 concealment, bulk counts, state messages, scoping and no-write denial. |
 | Phase 7P-notification-state | NotificationsController mixed state writes, bulk validation and foreign-recipient ownership concealment. | 23 notification state/bulk/ownership/inbox/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `2f47a7f` — `refactor: extract notification state operations` | Audit account activity and sign-in history reads/exports, preserving user scoping, named `signIns` errors, pagination/filter defaults, CSV redaction and security side effects. |
+| Phase 7Q-activity | ActivityController mixed filter normalization, repeated account-scoped metrics queries, CSV rendering and audit-entitlement coordination. | 13 activity/insight tests passed, 86 assertions; 7 entitlement tests passed, 38 assertions; Pint, syntax and diff checks passed. | `e3a630d` — `refactor: extract activity feed queries` | Extract sign-in history filter/query/metrics/export boundaries, preserving account scoping, client metadata derivation, pagination defaults, CSV redaction and the named `signIns` history-clear contract. |
