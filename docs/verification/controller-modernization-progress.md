@@ -1938,6 +1938,78 @@ invitation creation and acceptance, including token/email identity, expiry and
 single-use locking, seat limits, membership pivot behavior and billing
 synchronization timing, then extract the smallest policy/request/action slice.
 
+## Phase 5F — organization invitation operations
+
+### Responsibility problem
+
+`OrganizationController` mixed manager authorization, team entitlement
+ordering, invite-email normalization and validation, domain/member business
+rules, seat-limit locking, hashed-token persistence, notification delivery and
+invitation acceptance. Acceptance also performed token/email checks twice,
+locked the organization and invitation, changed the membership pivot, changed
+the user's current workspace and dispatched billing-seat reconciliation. These
+boundaries could not be exercised cleanly outside a controller.
+
+### Boundaries applied
+
+- `OrganizationPolicy::invite` owns the manager decision for the selected
+  current workspace. `StoreOrganizationInvitationRequest` performs that
+  policy check and the existing team entitlement check before validation, then
+  normalizes the email and owns the invite input rules.
+- `InviteOrganizationMemberAction` owns domain and existing-member safeguards,
+  the existing `PlanLimits::withinLimit` organization lock, invitation
+  upsert/token hashing and on-demand notification. The
+  `OrganizationInvitationResult` keeps the plaintext token explicit at the
+  notification boundary and never persists or flashes it.
+- `AcceptOrganizationInvitationRequest` preserves the existing initial 403
+  checks for expiry, token hash and invited-email identity. Its token accessor
+  supplies only validated query input to `AcceptOrganizationInvitationAction`.
+- `AcceptOrganizationInvitationAction` retains the initial check and the
+  transaction-time recheck, organization/invitation `lockForUpdate` ordering,
+  seat enforcement, `syncWithoutDetaching`, acceptance timestamp, user
+  workspace update and post-transaction `SyncOrganizationSeatQuantityJob`.
+
+This applies single responsibility and dependency inversion without turning
+token identity into a policy or moving seat/business invariants into a policy.
+The notification dispatcher is injected, and the existing PlanLimits service
+remains the lock/limit collaborator.
+
+### Preserved contracts and safety guarantees
+
+- Invitation routes, redirects, success flash text, validation keys and
+  existing 403/422 behavior remain unchanged. Uppercase invite addresses are
+  normalized to the same lowercase persisted identity as before.
+- Domain restrictions and existing-member checks reject before invitation
+  persistence or notification. Unauthorized managers receive 403 before
+  malformed invite input is evaluated and cannot create rows or send mail.
+- Only the invited normalized email with the matching hashed token can join.
+  Expired, accepted, wrong-email and wrong-token attempts remain denied.
+  Acceptance still revalidates under locks, rolls back on seat denial, avoids
+  duplicate pivots and queues billing reconciliation only after the membership
+  transaction and workspace switch.
+- No route, schema, dependency lockfile, notification payload or production
+  billing call changed. The queued seat job remains the existing compatible
+  class and payload.
+
+### Verification
+
+- Organization, invitation, entitlement, plan-limit and billing-listener set:
+  **28 passed, 122 assertions**.
+- Added coverage for policy-before-validation ordering, normalized email,
+  domain/member rejection without writes or notifications, invited identity,
+  one-time acceptance, seat-limit rollback and post-transaction seat-job
+  dispatch.
+- Full Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `be7d410` — `refactor: extract organization invitation operations`
+
+**Phase 5F exit gate: complete.** Exact next task: characterize organization
+member role updates, member removal and workspace switching, preserving owner
+protection, scoped-member 404 behavior, pivot writes, current-workspace
+selection and seat synchronization timing.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1970,3 +2042,4 @@ synchronization timing, then extract the smallest policy/request/action slice.
 | Phase 5C-status-pages | Status-page endpoints mixed authorization, entitlement, scoped website validation, slug collision handling, pivot synchronization, transactions and direct writes. | 27 observability/public-status/entitlement/operational-incident tests passed, 200 assertions; Pint and diff checks passed. | `d84fb6f` — `refactor: extract status page operations` | Characterize status-incident create/update validation, kind/status compatibility, resolution timestamps, page scoping and subscriber notification timing, then extract requests and actions without changing notification ordering. |
 | Phase 5D-status-incidents | Status-incident endpoints mixed shared validation, kind/status rules, page scoping, resolution transitions, direct writes and subscriber notification timing. | 30 observability/public-status/entitlement/incident-notification/operational-incident tests passed, 231 assertions; Pint and diff checks passed. | `c91bd15` — `refactor: extract status incident operations` | Audit remaining `ObservabilityController` read/export boundaries, then begin organization invitation operations while preserving token/email identity, locks, seat limits and billing synchronization timing. |
 | Phase 5E-observability-incidents | The observability dashboard and operational-incident controller mixed bounded reads, policy decisions, validation, workflow guards, timeline writes, transactions and CSV formatting. | 31 observability/public-status/incident/entitlement tests passed, 243 assertions; Pint and diff checks passed. | `26e0879` — `refactor: extract operational incident operations` | Characterize organization invitation creation and acceptance, including token/email identity, expiry and single-use locks, seat limits, membership pivots and billing synchronization timing. |
+| Phase 5F-organization-invitations | Organization invitation endpoints mixed policy, entitlement, normalization, validation, domain/member rules, seat locking, hashed-token persistence, notifications and locked acceptance. | 28 organization/invitation/entitlement/plan-limit/billing tests passed, 122 assertions; Pint and diff checks passed. | `be7d410` — `refactor: extract organization invitation operations` | Characterize member role updates, member removal and workspace switching, preserving owner protection, scoped-member 404 behavior, pivot writes, current-workspace selection and seat synchronization timing. |
