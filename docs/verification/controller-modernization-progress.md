@@ -1747,6 +1747,64 @@ creation/update/deletion, slug collision handling, website pivot membership and
 published-page behavior, then extract status-page requests, policy and
 transaction-aware actions without changing public status responses.
 
+## Phase 5C — status-page operations
+
+### Responsibility problem
+
+`ObservabilityController` combined status-page authorization, status-page
+entitlements, website-ID validation, global slug collision handling, pivot
+membership synchronization, transactional create/update writes and deletion.
+Public status rendering is a separate read/integration boundary and was left
+unchanged.
+
+### Boundaries applied
+
+- `StatusPagePolicy` owns create/update/delete decisions for managers in the
+  selected workspace.
+- `StoreStatusPageRequest` and `UpdateStatusPageRequest` own page validation
+  and organization-scoped website component validation. Separate requests keep
+  the original nullable-on-create versus sometimes-on-update slug contracts.
+- `CreateStatusPageAction` owns entitlement enforcement, slug collision
+  selection and atomic page/pivot creation. `UpdateStatusPageAction` owns
+  atomic details/pivot synchronization, and `DeleteStatusPageAction` owns
+  entitlement-aware deletion.
+- The controller now coordinates these operations and retains the existing
+  public-status URL and flash responses.
+
+This applies single responsibility, dependency inversion and interface
+segregation without changing public query or serialization code.
+
+### Preserved contracts and safety guarantees
+
+- Status-page routes, field names, slug rules, optional update slug behavior,
+  workspace website scoping, global unique-slug fallback, redirects and flash
+  text remain unchanged.
+- Website pivot synchronization and page detail updates remain in their
+  original transactions; foreign pages and component websites cannot be
+  modified, and denied requests perform no pivot or page writes.
+- Published/private behavior and public status-page responses, health
+  aggregation and query-count guarantees remain unchanged. No schema, job,
+  route or dependency lockfile changed.
+
+### Verification
+
+- Observability, public-status, entitlement and operational-incident
+  regression set: **27 passed, 200 assertions**.
+- Added coverage for slug collisions, atomic membership/update behavior,
+  unchanged slugs, cross-workspace component rejection and policy denial with
+  no mutation.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `d84fb6f` — `refactor: extract status page operations`
+
+**Phase 5C exit gate: complete.** Exact next task: characterize status-incident
+create/update validation, kind/status compatibility, resolution timestamps,
+page scoping and subscriber notification timing, then extract requests and
+actions without changing notification ordering.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1776,3 +1834,4 @@ transaction-aware actions without changing public status responses.
 | Phase 4J-api-promotion | API promotion mixed capability/policy checks, validation, tenant-scoped target lookup and response mapping around `PromoteBuildAction`. | 48 build-promotion/automation/API tests passed, 220 assertions; Pint and diff checks passed. | `92cc670` — `refactor: extract API promotion request` | Begin Phase 5 with metric alert-rule creation and deletion, introducing resource authorization, a validated request and a cohesive operation while preserving alert entitlements, workspace-scoped server IDs and no-write denial behavior. |
 | Phase 5A-metric-rules | Observability metric-rule endpoints mixed workspace permission, alert entitlement, scoped server validation and direct persistence/deletion. | 22 observability/entitlement/incident tests passed, 172 assertions; Pint and diff checks passed. | `ca9d515` — `refactor: extract metric alert rule operations` | Characterize alert destination creation, endpoint-type validation, encrypted credentials, test delivery and deletion, then extract its request/policy/action boundaries while preserving sanitized feedback and queued webhook behavior. |
 | Phase 5B-alert-destinations | Alert-destination endpoints mixed authorization, entitlement, type-specific endpoint validation, encrypted credential creation, test dispatch and deletion. | 32 observability/entitlement/failure-notification tests passed, 273 assertions; Pint and diff checks passed. | `43334b5` — `refactor: extract alert destination operations` | Characterize status-page creation/update/deletion, slug collision handling, website pivot membership and published-page behavior, then extract status-page requests, policy and transaction-aware actions without changing public status responses. |
+| Phase 5C-status-pages | Status-page endpoints mixed authorization, entitlement, scoped website validation, slug collision handling, pivot synchronization, transactions and direct writes. | 27 observability/public-status/entitlement/operational-incident tests passed, 200 assertions; Pint and diff checks passed. | `d84fb6f` — `refactor: extract status page operations` | Characterize status-incident create/update validation, kind/status compatibility, resolution timestamps, page scoping and subscriber notification timing, then extract requests and actions without changing notification ordering. |
