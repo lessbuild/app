@@ -5067,6 +5067,55 @@ external checkout/portal and subscription-state guards, then finish the
 controller inventory and final verification without changing Stripe ordering or
 making live billing calls.
 
+## Phase 7BB — billing checkout operation
+
+### Responsibility problem
+
+`BillingController::checkout` mixed paid-plan and billing authorization checks,
+interval validation, Stripe availability handling, subscription-state mapping
+and Cashier checkout construction. Plan/configuration/subscription-state guards
+are HTTP/external availability decisions, while builder composition and seat
+metadata are a cohesive billing operation.
+
+### Boundary and principles
+
+`BillingCheckoutRequest` preserves the existing plan-404 and billing-403
+ordering and owns interval validation/defaulting. `OrganizationPolicy::manageBilling`
+expresses the workspace billing ability. `CreateBillingCheckoutAction` owns
+Cashier subscription-builder configuration, metadata, extra-seat pricing, trial
+eligibility and checkout creation. The controller retains only the Stripe
+configuration 503, already-subscribed redirect and response handoff. This
+applies single responsibility, policy authorization and dependency inversion
+without changing Cashier integration semantics.
+
+### Preserved guarantees
+
+- Unknown plans remain 404; non-billing members remain 403 before malformed
+  interval validation; unavailable Stripe remains 503; existing subscribers
+  retain the billing-settings redirect.
+- Monthly default/yearly selection, plan/interval metadata, included and extra
+  seat pricing, promotion codes, trial eligibility and success/cancel URLs are
+  unchanged.
+- No live Stripe call was made, and no routes, subscription schema, webhook
+  listener, persisted values, dependency lockfiles or external acceptance state
+  changed.
+
+### Verification
+
+- Full billing regression set: **9 passed, 25 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes; Stripe remained unconfigured/faked for
+  these checks.
+
+### Commit and next task
+
+Commit: `078839e` — `refactor: extract billing checkout operation`
+
+**Phase 7BB exit gate: complete.** Exact next task: complete the static audit
+classification for portal/cancel/resume external calls, global admin gates,
+resource/protocol guards and all remaining inline validation/direct writes, then
+run the final verification gate.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -5158,3 +5207,4 @@ making live billing calls.
 | Phase 7AY-dashboard-preferences | DashboardController mixed widget validation, preference merging and direct user persistence with HTTP coordination. | 22 dashboard regression tests passed, 223 assertions; Pint, syntax and diff checks passed. | `461d154` — `refactor: extract dashboard preferences operation` | Classify public status subscription validation, token protocol checks and writes; extract only safe request/verifier/operation boundaries without changing token ordering, notification timing or 404 behavior. |
 | Phase 7AZ-status-subscriptions | StatusSubscriptionController mixed published-page lookup, email validation, token protocol checks, encrypted upsert/deletion and notification dispatch. | 18 observability/status subscription tests passed, 145 assertions; Pint, syntax and diff checks passed. | `06aa6a6` — `refactor: extract status subscription operations` | Extract substantive server command history deletion and server log refresh queuing, then classify billing external guards and residual protocol/resource exceptions. |
 | Phase 7BA-server-operational-writes | Server command history and Livewire server-log refresh mixed authorization, workflow state, direct persistence and job dispatch. | 20 server command/log snapshot tests passed, 183 assertions; Pint, syntax and diff checks passed. | `b1842a8` — `refactor: extract server operational writes` | Classify BillingController’s external checkout/portal and subscription-state guards, then finish the controller inventory and final verification without changing Stripe ordering or making live billing calls. |
+| Phase 7BB-billing-checkout | BillingController mixed plan/access guards, interval validation, Stripe availability and Cashier checkout composition. | 9 billing regression tests passed, 25 assertions; Pint, syntax and diff checks passed. | `078839e` — `refactor: extract billing checkout operation` | Complete static audit classification for portal/cancel/resume external calls, global admin gates, resource/protocol guards and all remaining inline validation/direct writes, then run final verification. |
