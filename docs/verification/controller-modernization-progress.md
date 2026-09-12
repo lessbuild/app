@@ -2072,6 +2072,72 @@ notification/security settings, including normalization, IP self-lockout
 protection, SSO entitlement/configuration rules and named validation behavior,
 then extract request/action boundaries without changing security ordering.
 
+## Phase 5H — organization notification and security settings
+
+### Responsibility problem
+
+The two settings endpoints still combined request structure validation,
+workspace-manager authorization, network and email-domain normalization and
+validation, SSO entitlement/configuration rules, encrypted persistence, and a
+shared IP-range predicate inside `OrganizationController` and the security
+middleware. That made the controller responsible for both HTTP input handling
+and security-policy business invariants.
+
+### Boundaries applied
+
+- `UpdateOrganizationNotificationPreferencesRequest` and
+  `UpdateOrganizationSecurityPolicyRequest` authorize through
+  `OrganizationPolicy::manageSettings` before validation and expose only
+  validated fields to their actions. The security request normalizes
+  case-insensitive email-domain input before validation.
+- `UpdateOrganizationNotificationPreferencesAction` owns the normalized
+  preference write. `UpdateOrganizationSecurityPolicyAction` owns CIDR/domain
+  checks, current-IP self-lockout protection, SSO entitlement enforcement,
+  SSO completeness validation, and the encrypted policy update.
+- `IpRangeMatcher` is the shared, dependency-injected value collaborator for
+  the middleware, control-plane access service, and security action. The
+  middleware's public compatibility helper remains available to
+  `ControlPlaneAccess`.
+
+This applies single responsibility, interface restraint, and dependency
+inversion without adding a generic settings repository or moving protocol
+checks into a policy. The custom CIDR/domain and SSO checks remain operation
+invariants rather than being mislabeled as actor permissions.
+
+### Preserved contracts and safety guarantees
+
+- Existing settings routes, redirects, success flashes, validation keys,
+  boolean/default behavior, allowed category/domain/IP formats, current-IP
+  protection, and SSO issuer trimming remain unchanged.
+- Manager access remains limited to the authenticated user's current
+  workspace. Denied malformed requests return 403 before validation and do not
+  write workspace settings.
+- SSO changes still require the `sso` entitlement, enforcement still requires
+  a complete issuer/client ID/secret configuration, and SSO secrets/IP ranges
+  remain encrypted at rest and absent from persisted plaintext.
+- The existing middleware and control-plane network checks use the same
+  matching semantics. No route, schema, lockfile, queue payload, or remote
+  call changed.
+
+### Verification
+
+- Organization and platform regression set: **21 passed, 112 assertions**.
+- Coverage includes manager/viewer authorization ordering, no-write denial,
+  IP self-lockout prevention, encrypted IP persistence, SSO completeness,
+  free-plan entitlement denial, normalized SSO configuration and encrypted
+  secret persistence.
+- Full Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `a1be9af` — `refactor: extract organization settings operations`
+
+**Phase 5H exit gate: complete.** Exact next task: characterize workspace
+deletion's named `deleteWorkspace` validation bag, owner/current-workspace
+authorization, two-factor/password ordering, teammate and active-workflow
+guards, transaction and personal-workspace recovery, then extract the
+request/action boundary while preserving 403/409/422 behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2106,3 +2172,4 @@ then extract request/action boundaries without changing security ordering.
 | Phase 5E-observability-incidents | The observability dashboard and operational-incident controller mixed bounded reads, policy decisions, validation, workflow guards, timeline writes, transactions and CSV formatting. | 31 observability/public-status/incident/entitlement tests passed, 243 assertions; Pint and diff checks passed. | `26e0879` — `refactor: extract operational incident operations` | Characterize organization invitation creation and acceptance, including token/email identity, expiry and single-use locks, seat limits, membership pivots and billing synchronization timing. |
 | Phase 5F-organization-invitations | Organization invitation endpoints mixed policy, entitlement, normalization, validation, domain/member rules, seat locking, hashed-token persistence, notifications and locked acceptance. | 28 organization/invitation/entitlement/plan-limit/billing tests passed, 122 assertions; Pint and diff checks passed. | `be7d410` — `refactor: extract organization invitation operations` | Characterize member role updates, member removal and workspace switching, preserving owner protection, scoped-member 404 behavior, pivot writes, current-workspace selection and seat synchronization timing. |
 | Phase 5G-organization-membership | Member role/removal and workspace switch endpoints mixed policy checks, scoped member lookup, owner safeguards, pivot/current-workspace writes and seat dispatch in `OrganizationController`. | 30 organization/invitation/entitlement/plan-limit/billing tests passed, 140 assertions; Pint and diff checks passed. | `39f2830` — `refactor: extract organization membership operations` | Characterize notification/security settings, including normalization, IP self-lockout protection, SSO entitlement/configuration rules and named validation behavior. |
+| Phase 5H-organization-settings | Organization settings endpoints mixed manager authorization, request validation/normalization, IP/domain/SSO invariants, encrypted persistence and shared IP matching in the controller and middleware. | 21 organization/platform regression tests passed, 112 assertions; Pint and diff checks passed. | `a1be9af` — `refactor: extract organization settings operations` | Characterize workspace deletion's named `deleteWorkspace` validation bag, owner/current-workspace authorization, two-factor/password ordering, teammate and active-workflow guards, transaction and personal-workspace recovery, then extract the request/action boundary. |
