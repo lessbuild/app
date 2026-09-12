@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\UpdateProfileAction;
 use App\Http\Controllers\Auth\SocialAuthController;
+use App\Http\Requests\UpdateProfileRequest;
 use App\Models\SignInEvent;
 use App\Models\User;
 use App\Services\ActivityRecorder;
@@ -14,11 +16,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
-use Throwable;
 
 class UsersController extends Controller
 {
@@ -78,70 +78,17 @@ class UsersController extends Controller
      *
      * @return RedirectResponse The saved profile result and any verification-email error; local-password email changes revoke other sessions.
      */
-    public function updateProfile(
-        Request $request,
-        ActivityRecorder $activity,
-        BrowserSessionManager $browserSessions,
-    ): RedirectResponse {
-        $request->merge([
-            'email' => Str::lower((string) $request->input('email')),
-        ]);
-        $emailChanged = $request->user()->email !== $request->input('email');
-        $currentPasswordRules = $emailChanged && $request->user()->hasLocalPassword()
-            ? ['required', 'current_password']
-            : ['exclude'];
-
-        $validated = $request->validateWithBag('profile', [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique('users', 'email')->ignore($request->user()->id),
-            ],
-            'current_password' => $currentPasswordRules,
-        ]);
-
-        if ($emailChanged) {
-            $request->user()->email_verified_at = null;
-        }
-
-        $request->user()->fill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ])->save();
-
-        if ($emailChanged && $request->user()->hasLocalPassword()) {
-            Auth::guard('web')->logoutOtherDevices($validated['current_password']);
-            $browserSessions->revokeOthers($request->user(), $request->session()->getId());
-            $request->session()->regenerate(true);
-        }
-
-        $activity->recordAccount(
-            $request->user(),
-            $emailChanged
-                ? 'Account email address was changed and requires verification.'
-                : 'Account profile was updated.',
-        );
-
+    public function updateProfile(UpdateProfileRequest $request, UpdateProfileAction $update): RedirectResponse
+    {
+        $result = $update->handle($request->user(), $request->profileData(), $request->session()->getId());
         $response = back()->with('profile_status', __('Profile updated.'));
-        if (! $emailChanged) {
+        if (! $result->emailChanged) {
             return $response;
         }
 
-        try {
-            $request->user()->sendEmailVerificationNotification();
-
-            return $response->with('status', 'verification-link-sent');
-        } catch (Throwable $exception) {
-            report($exception);
-
-            return $response->with('verification_error', __(
-                'The email address was updated, but the verification message could not be sent. Try sending it again below.',
-            ));
-        }
+        return $result->verificationSent
+            ? $response->with('status', 'verification-link-sent')
+            : $response->with('verification_error', __('The email address was updated, but the verification message could not be sent. Try sending it again below.'));
     }
 
     /**
