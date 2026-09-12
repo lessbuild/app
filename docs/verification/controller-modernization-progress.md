@@ -605,6 +605,88 @@ database-user, clone and backup-related routes, then extract the smallest
 request/policy/action slice while preserving command safety, ownership,
 entitlements, remote dispatch and response semantics.
 
+## Phase 3B — database management operation boundary
+
+### Responsibility problem
+
+`DatabaseController` mixed the shared environment-resource authorization
+lookup with database availability checks, credential validation and password
+generation, database-user persistence, clone target checks, clone creation,
+and inspection/user/clone job dispatch. Its private helper also used the
+request service locator and combined a deliberate missing-parent 404 with an
+actor permission decision.
+
+### Boundaries applied
+
+- `EnvironmentResourcePolicy` owns view and manage decisions for a resource's
+  current workspace. `DatabaseController::loadResource()` now performs only
+  the existing relationship lookup and deliberate missing-parent 404; it no
+  longer reads the current request or decides permissions.
+- StoreDatabaseUserRequest and CloneDatabaseRequest own their concrete input
+  contracts. Their authorization preserves the old source/resource lookup,
+  manager, entitlement and validation ordering. The user request retains the
+  unsupported-resource 422 before field validation; clone retains the
+  existing later target compatibility checks.
+- QueueDatabaseInspectionAction owns inspection dispatch.
+  CreateDatabaseUserAction owns password generation, encrypted credential
+  persistence and apply-job dispatch; DatabaseUserCreationResult carries the
+  one-time plaintext password without exposing it from the model.
+  QueueDatabaseUserRemovalAction owns removal dispatch.
+- QueueDatabaseCloneAction owns workspace revalidation, same-type/non-self
+  checks, production-target rejection, exact confirmation and clone row/job
+  creation. DatabaseCloneResult distinguishes queued from confirmation
+  rejection, while the controller maps domain failures to the existing 422
+  or validation response.
+- Existing CollectDatabaseSnapshotJob, ManageDatabaseUserJob and
+  CloneDatabaseJob remain the remote execution and retry/idempotency
+  boundaries. No new transaction was added around remote work.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization with concrete Laravel policies, Form Requests, data objects and
+actions. It avoids a generic resource repository or universal database
+service.
+
+### Preserved contracts and safety guarantees
+
+- Database routes, redirects, response status codes, validation keys,
+  confirmation messages and entitlement behavior remain unchanged.
+- Viewers can inspect but cannot issue credentials; managers retain create,
+  revoke and clone access. Foreign resources remain denied, unsupported
+  resources retain HTTP 422, missing resource parents retain HTTP 404, and
+  denied requests create neither rows nor jobs.
+- Database-user username uniqueness, privilege/expiry values, encrypted
+  passwords, one-time flash behavior and apply/remove job payloads remain
+  unchanged.
+- Clone requests still reject foreign, incompatible and production targets,
+  require exact target-name confirmation, avoid creating a row on rejection,
+  and dispatch the existing queued clone job only after creation.
+- Inspection remains a unique-job dispatch, and the existing database jobs'
+  identifier validation, remote command safety, status transitions, retries
+  and sanitized failure handling are untouched.
+- No routes, migrations, schemas, serialized job payloads, dependency
+  lockfiles or remote commands changed.
+
+### Verification
+
+- New database operation authorization/workflow suite: **5 passed, 27
+  assertions**.
+- Database operation, platform expansion, entitlement and command-safety
+  suite: **18 passed, 111 assertions**.
+- Existing platform expansion and tenancy checks passed; PHP syntax checks,
+  Pint test and `git diff --check` passed.
+- The unique inspection-job test clears only the isolated test cache between
+  cases because database refresh reuses IDs while Laravel's unique-job lock
+  intentionally outlives a test case.
+
+### Commit and next task
+
+Commit: `b66e1f5` — `refactor: extract database operations`
+
+**Phase 3B exit gate: complete.** Exact next task: continue Phase 3
+infrastructure operations with Load balancers and domains; inventory resource
+policies, requests, writes, remote apply/delete dispatch, organization-scoped
+IDs and response semantics before extracting the smallest cohesive slice.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -616,3 +698,4 @@ entitlements, remote dispatch and response semantics.
 | Phase 2C | Environment child endpoints mixed validation, entitlement order, parsing, normalization and direct child writes. | 30 focused tests passed, 167 assertions; Pint and diff checks passed. | `2434f0c` — `refactor: extract environment child operations` | Characterize lifecycle writes and deletion safeguards before extracting cohesive environment actions. |
 | Phase 2D | Environment lifecycle validation, entitlement checks, field mapping and direct deletes remained in EnvironmentController. | 132 affected tests passed, 1,105 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `23de929` — `refactor: extract environment lifecycle operations` | Begin Phase 3 with Backups: inventory policies, requests, actions, jobs, entitlements and credential safety. |
 | Phase 3A | Backup destination, schedule, run and restore endpoints mixed validation, authorization, encrypted writes, duplicate detection, transactions and job dispatch in `BackupController`. | 25 focused regression tests passed, 189 assertions; broader infrastructure set 34/256; Pint and diff checks passed. | `2253bc2` — `refactor: extract backup operations` | Begin Phase 3 with Database management: inventory inspect/user/clone operations and preserve command safety, ownership, entitlements and dispatch behavior. |
+| Phase 3B | Database inspection, credential, removal and clone endpoints mixed resource lookup/permission, validation, encrypted writes, safety rules and job dispatch in `DatabaseController`. | 5 new database-operation tests passed, 27 assertions; combined database/platform/entitlement/safety set 18/111; Pint and diff checks passed. | `b66e1f5` — `refactor: extract database operations` | Continue Phase 3 with Load balancers and domains: inventory resource policies, requests, operations, remote dispatch and scoped IDs. |
