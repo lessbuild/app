@@ -3676,6 +3676,60 @@ regeneration, preserving enabled-state 422 ordering before validation,
 conditional password/code checks, non-consuming verification, replacement
 hashes, one-time plaintext flash behavior, activity timing and exact status.
 
+## Phase 7AA — two-factor recovery-code regeneration boundary
+
+### Responsibility problem
+
+`TwoFactorAuthenticationController` mixed enabled-state guards, conditional
+password/code validation, non-consuming authenticator/recovery verification,
+recovery-code generation and hashing, replacement persistence, activity and
+one-time plaintext response flashing.
+
+### Boundary and principles
+
+`RegenerateTwoFactorRecoveryCodesRequest` owns the `twoFactor` bag and
+conditional challenge rules. Its pre-validation check intentionally preserves
+the old 422-before-validation response for accounts without enabled two-factor
+authentication; this is a workflow-state exception, not an actor permission.
+`RegenerateTwoFactorRecoveryCodesAction` repeats that invariant for a race,
+verifies with `consumeRecoveryCode: false`, replaces persisted hashes and
+records activity. `TwoFactorRecoveryCodesResult` carries plaintext codes only
+to the HTTP flash boundary. The controller coordinates and maps the existing
+response. This applies single responsibility and dependency inversion while
+reusing the existing verification service.
+
+### Preserved guarantees
+
+- Disabled accounts still receive 422 before password/code validation;
+  enabled local accounts require the current password while social-only
+  accounts do not, and the `twoFactor` bag remains unchanged.
+- Authenticator and recovery-code verification is non-consuming for this
+  regeneration operation. Existing codes are replaced only after successful
+  verification, and only their hashes are persisted.
+- Eight plaintext replacement codes are flashed once, the same activity event
+  is recorded after persistence, and status/error messages remain unchanged.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Two-factor/authentication/security/rate-limit regression set: **31 passed,
+  245 assertions**.
+- Added coverage for disabled-state ordering, invalid-code no-replacement,
+  local/social-only challenge rules, non-consuming TOTP verification and
+  replacement activity.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `3216aa9` — `refactor: extract two-factor recovery code operation`
+
+**Phase 7AA exit gate: complete.** Exact next task: characterize the remaining
+account/security controllers and Form Requests—account deletion, sign-in
+history clearing, password confirmation, authentication callbacks and any
+remaining direct writes—before extracting the next cohesive boundary.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3740,3 +3794,4 @@ hashes, one-time plaintext flash behavior, activity timing and exact status.
 | Phase 7X-two-factor-setup | TwoFactorAuthenticationController mixed setup-state guards, conditional password validation, pending secret/recovery writes and cancellation. | 16 two-factor/authentication/security tests passed, 123 assertions; Pint, syntax and diff checks passed. | `aa27ffa` — `refactor: extract two-factor setup operations` | Extract two-factor confirmation, preserving `twoFactor` validation, pending-secret verification, recovery-code hashing, plaintext flash behavior and activity timing. |
 | Phase 7Y-two-factor-confirmation | TwoFactorAuthenticationController mixed code validation, pending-secret verification, recovery-code hashing, confirmation persistence, activity and plaintext flashing. | 22 two-factor/authentication/security tests passed, 163 assertions; Pint, syntax and diff checks passed. | `abf499d` — `refactor: extract two-factor confirmation operation` | Extract two-factor disable, preserving conditional password validation, authenticator/recovery verification and consumption, credential clearing, activity and exact responses. |
 | Phase 7Z-two-factor-disable | TwoFactorAuthenticationController mixed conditional password/code validation, authenticator/recovery verification, credential clearing, recovery consumption and activity. | 27 two-factor/authentication/security/rate-limit tests passed, 232 assertions; Pint, syntax and diff checks passed. | `bddd879` — `refactor: extract two-factor disable operation` | Extract recovery-code regeneration, preserving enabled-state ordering, non-consuming verification, replacement hashes, plaintext flash behavior and exact status. |
+| Phase 7AA-two-factor-recovery | TwoFactorAuthenticationController mixed enabled-state ordering, conditional challenge validation, non-consuming verification, recovery replacement and plaintext flashing. | 31 two-factor/authentication/security/rate-limit tests passed, 245 assertions; Pint, syntax and diff checks passed. | `3216aa9` — `refactor: extract two-factor recovery code operation` | Characterize remaining account/security controllers and requests, including account deletion, sign-in history clearing, password confirmation, callbacks and direct writes, before the next cohesive extraction. |
