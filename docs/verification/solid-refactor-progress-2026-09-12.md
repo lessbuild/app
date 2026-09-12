@@ -136,18 +136,21 @@ Verification after the slice:
 - Provider history, insight and inventory-export suite: 12 passed (158 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 2 — provider-management exit review
+
+The provider read boundaries are complete. The existing `ProviderConnectionTester`, `ProviderHealthMonitor`, `ServerProviderResolver` and cloud adapters were reviewed against the provider requirements. No common adapter extraction was justified: DigitalOcean, Hetzner and Vultr use materially different endpoints, authentication/payload shapes, response normalization and idempotent-delete details. The existing `ServerProvider` contract and resolver already provide the useful dependency-inversion boundary, and the adapter tests cover the shared lifecycle expectations plus provider-specific behavior. The DigitalOcean connection probe remains the droplets endpoint rather than an account read.
+
+Provider creation/update actions were also intentionally left in the controller. They are short HTTP-coordinating operations whose entitlement exceptions, policy authorization, validated request data and token-safe redirect/flash behavior are coupled to the Form Request boundary; extracting them would add an abstraction without separating a stable reusable business operation. Monitoring state transitions remain in `ProviderHealthMonitor`.
+
+Verification after the complete read refactor:
+
+- Exact provider-management regression command (`Provider*Test.php`, server lifecycle and source deployment): 61 passed, 4 failed (553 assertions). The four failures are in `ProviderConnectionTest`; the original `a137739` checkout reproduces the isolated first-test 429, and the remaining failures are the documented rate-limiter/manual-feedback baseline cluster.
+- Expanded provider/cloud command including automatic monitoring, cloud adapter and DigitalOcean contract tests: 85 passed, 4 failed (704 assertions), with the same `ProviderConnectionTest` cluster.
+- Full Pint: passed.
+- The inventory/history focused gates remain green: 19 inventory/capability tests, 9 history/insight tests, 11 inventory/export tests, and 12 combined history/inventory export tests as recorded above.
+
+Phase 2 exit conclusion: provider organization scoping, pagination, ordering, filters, metrics, CSV behavior, entitlements, encrypted credentials, manual monitoring, health leases/CAS, DigitalOcean droplets probing and cloud adapter behavior remain covered without public-contract changes. The separate live paid-provider acceptance remains outstanding.
+
 ## Next task
 
-Run the complete provider-management regression set after the four read-boundary slices. Then review `ProviderConnectionTester`, `ProviderHealthMonitor`, `ServerProviderResolver`, the DigitalOcean droplets probe and cloud adapter contract expectations before deciding whether any integration extraction is justified.
-
-## Next task
-
-Extract the connection-history CSV writer with the same care for retained-sample bounds, filter semantics, row ordering, headers, escaping and private response behavior. Then run the complete provider-management regression set and inspect adapter contract expectations.
-
-## Next task
-
-Extract the provider inventory and connection-history CSV response writers into focused export collaborators, preserving streamed headers, filenames, UTF-8 BOM, row order, CSV escaping, bounded/lazy loading and secret exclusion. Then run the complete provider-management gate before reviewing adapter contracts.
-
-## Next task
-
-Commit the shared provider inventory query slice, then extract connection-history filtering and metrics as the next cohesive provider read boundary. Preserve the bounded retained sample, filter normalization, pagination, ordering and export semantics before reviewing provider adapter contract coverage.
+Begin Phase 3A: map `RecipeReportsController` and its report query/filter/CSV/mutation/notification responsibilities, then select the smallest justified report read extraction before changing websites, builds, repositories, servers or environments.
