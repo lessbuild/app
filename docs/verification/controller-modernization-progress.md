@@ -3215,6 +3215,52 @@ filter normalization/query/metrics/export boundaries, preserving account
 scoping, client metadata derivation, pagination defaults, CSV redaction and
 the separate named `signIns` history-clear contract.
 
+## Phase 7R — sign-in history query and export boundaries
+
+### Responsibility problem
+
+SignInHistoryController mixed silent filter normalization, account-scoped query
+construction, repeated metrics reads, client metadata presentation, CSV
+serialization and the separate password-protected history-clear transaction.
+
+### Boundary and principles
+
+SignInHistoryIndexRequest now owns normalized method/date filters.
+SignInHistoryQuery owns the reusable account-scoped history and metrics queries,
+including known-IP normalization. SignInHistoryExporter owns derived client
+metadata and private CSV serialization. The controller retains page mapping,
+the named `signIns` clear validation/transaction and response coordination.
+This applies single responsibility and dependency inversion without moving the
+security-sensitive clear workflow before its dedicated slice.
+
+### Preserved guarantees
+
+- Guest redirects, account scoping, method/date silent fallbacks, reversed-date
+  normalization and pagination query parameters remain unchanged.
+- Method labels, browser/device and IP derivation, metrics categories and
+  ordering remain unchanged, including unknown historical methods.
+- Export filename, headers, BOM, ordering, derived metadata, formula escaping
+  and raw-user-agent redaction remain unchanged.
+- The `signIns` named error bag, current-password validation, owner-scoped
+  delete, transaction and account activity/notification side effects remain in
+  their original controller path.
+
+### Verification
+
+- Sign-in recorder, history, filter, insight and management regression set:
+  **16 passed, 129 assertions**.
+- Targeted Pint test, PHP syntax checks and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: 0fd6212 — refactor: extract sign-in history queries
+
+**Phase 7R exit gate: complete.** Exact next task: modernize account profile,
+password, browser-session and social-account writes with dedicated requests,
+policies/actions where justified, while preserving `profile`, `password`,
+`sessions` and `social` error bags and security ordering.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3270,3 +3316,4 @@ the separate named `signIns` history-clear contract.
 | Phase 7O-notification-inbox | NotificationsController mixed filter validation, recipient-scoped query/metrics, CSV serialization and saved-filter preference writes with state endpoints. | 23 notification inbox/export/saved-filter/bulk/ownership/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `142b5b1` — `refactor: extract notification inbox operations` | Extract notification state operations and a policy-compatible ownership boundary, preserving deliberate 404 concealment, bulk counts, state messages, scoping and no-write denial. |
 | Phase 7P-notification-state | NotificationsController mixed state writes, bulk validation and foreign-recipient ownership concealment. | 23 notification state/bulk/ownership/inbox/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `2f47a7f` — `refactor: extract notification state operations` | Audit account activity and sign-in history reads/exports, preserving user scoping, named `signIns` errors, pagination/filter defaults, CSV redaction and security side effects. |
 | Phase 7Q-activity | ActivityController mixed filter normalization, repeated account-scoped metrics queries, CSV rendering and audit-entitlement coordination. | 13 activity/insight tests passed, 86 assertions; 7 entitlement tests passed, 38 assertions; Pint, syntax and diff checks passed. | `e3a630d` — `refactor: extract activity feed queries` | Extract sign-in history filter/query/metrics/export boundaries, preserving account scoping, client metadata derivation, pagination defaults, CSV redaction and the named `signIns` history-clear contract. |
+| Phase 7R-sign-in-history | SignInHistoryController mixed filter normalization, account-scoped queries/metrics, client metadata/CSV rendering and the password-protected clear workflow. | 16 sign-in recorder/history/filter/insight/management tests passed, 129 assertions; Pint, syntax and diff checks passed. | `0fd6212` — `refactor: extract sign-in history queries` | Modernize account profile, password, browser-session and social-account writes with dedicated requests and justified policies/actions, preserving `profile`, `password`, `sessions` and `social` error bags and security ordering. |
