@@ -255,6 +255,24 @@ Verification after the slice:
 - Resolution rollback/idempotency notification checks: 2 passed (18 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — resolution-note update action slice
+
+Responsibility problem: `RecipeReportsController::updateResolutionNote()` combined locked ownership verification, the resolved-state precondition, unchanged-note detection, encrypted persistence, reporter notification replacement and audit recording.
+
+Boundary used: `UpdateRecipeReportResolutionNoteAction` now owns that state transition and returns whether the note changed. The controller retains the immediate relationship guard, validated-note request boundary and existing flash-message mapping; the action receives typed models and the normalized note and injects notification/activity collaborators.
+
+Preserved guarantees:
+
+- Recipe/report lock order, stale ownership protection, 409 behavior for unresolved reports and unchanged-note no-op behavior remain unchanged.
+- Encrypted note persistence, reporter notification replacement, activity wording/timing, transaction rollback and redirect flash messages remain unchanged.
+- No route, validation key, persisted field, serialized value, YAML schema or queue behavior changed.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- Resolution-note rollback regression: 1 passed (5 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Extract the resolution-note update transition into a cohesive action, preserving the resolved-state precondition, unchanged-note no-op, encrypted note persistence, notification replacement and audit timing.
+Evaluate extracting the single-report reopen transition into a cohesive action, preserving resolved-state idempotency, notification ordering, ownership checks and audit timing.

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Recipe\ResolveRecipeReportAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
+use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
 use App\Http\Requests\RecipeReportResolutionRequest;
 use App\Http\Requests\ReopenRecipeReportsRequest;
 use App\Http\Requests\ResolveRecipeReportsRequest;
@@ -177,35 +178,12 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse The changed or unchanged note result; an unresolved report yields HTTP 409.
      */
-    public function updateResolutionNote(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function updateResolutionNote(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, UpdateRecipeReportResolutionNoteAction $updateResolutionNote): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
 
         $resolutionNote = $request->resolutionNote();
-        $updated = DB::transaction(function () use ($activity, $notifications, $recipe, $report, $request, $resolutionNote): bool {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            $lockedReport = RecipeReport::query()
-                ->whereKey($report->id)
-                ->where('recipe_id', $lockedRecipe->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $this->authorizeContributorReport($request, $lockedRecipe, $lockedReport);
-            abort_if($lockedReport->resolved_at === null, 409);
-            if ($lockedReport->resolution_note === $resolutionNote) {
-                return false;
-            }
-
-            $lockedReport->update(['resolution_note' => $resolutionNote]);
-            $notifications->resolved([$lockedReport->id]);
-            $activity->record(
-                $lockedRecipe,
-                $request->user()->id,
-                'recipe',
-                "A community report resolution note for gallery recipe \"{$lockedRecipe->name}\" was updated.",
-            );
-
-            return true;
-        });
+        $updated = $updateResolutionNote->handle($recipe, $report, $request->user(), $resolutionNote);
 
         if (! $updated) {
             return back()->with('status', __('The resolution note is unchanged.'));
