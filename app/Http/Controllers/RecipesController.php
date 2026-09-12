@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Recipe\CreateRecipeAction;
+use App\Actions\Recipe\DeleteRecipeAction;
+use App\Actions\Recipe\DuplicateRecipeAction;
+use App\Actions\Recipe\UpdateRecipeAction;
 use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
 use App\Models\Server;
-use App\Services\ActivityRecorder;
-use App\Services\RecipeReportNotifier;
 use App\Support\CsvCell;
 use App\Support\SqlLike;
 use Carbon\CarbonInterface;
@@ -14,7 +16,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -172,18 +173,9 @@ class RecipesController extends Controller
     /**
      * Create a workspace recipe from validated script and publication settings, record its publication state, and redirect to the list.
      */
-    public function store(RecipeRequest $request, ActivityRecorder $activity): RedirectResponse
+    public function store(RecipeRequest $request, CreateRecipeAction $create): RedirectResponse
     {
-        $data = $this->recipeData($request);
-        $recipe = $request->user()->workspaceRecipes()->create($data);
-        $activity->record(
-            $recipe,
-            $request->user()->id,
-            'recipe',
-            $recipe->is_published
-                ? "Recipe \"{$recipe->name}\" was created and published."
-                : "Recipe \"{$recipe->name}\" was created.",
-        );
+        $create->handle($request->user(), $request->validated());
 
         return redirect()->route('recipes.index')->with('status', __('Recipe created.'));
     }
@@ -204,17 +196,10 @@ class RecipesController extends Controller
     /**
      * Save validated recipe and publication settings after authorization, recording the resulting publication transition.
      */
-    public function update(RecipeRequest $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
+    public function update(RecipeRequest $request, Recipe $recipe, UpdateRecipeAction $update): RedirectResponse
     {
         $this->authorize('update', $recipe);
-        $wasPublished = $recipe->is_published;
-        $recipe->update($this->recipeData($request, $recipe));
-        $message = match (true) {
-            ! $wasPublished && $recipe->is_published => "Recipe \"{$recipe->name}\" was published.",
-            $wasPublished && ! $recipe->is_published => "Recipe \"{$recipe->name}\" was unpublished.",
-            default => "Recipe \"{$recipe->name}\" was updated.",
-        };
-        $activity->record($recipe, $request->user()->id, 'recipe', $message);
+        $update->handle($request->user(), $recipe, $request->validated());
 
         return redirect()->route('recipes.index')->with('status', __('Recipe updated.'));
     }
@@ -222,15 +207,10 @@ class RecipesController extends Controller
     /**
      * Authorize recipe deletion, remove its report notifications under a recipe lock, and redirect after deletion and activity recording.
      */
-    public function destroy(Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function destroy(Recipe $recipe, DeleteRecipeAction $delete): RedirectResponse
     {
         $this->authorize('delete', $recipe);
-        DB::transaction(function () use ($activity, $notifications, $recipe): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            $notifications->forgetRecipe($lockedRecipe);
-            $lockedRecipe->delete();
-            $activity->record($lockedRecipe, $lockedRecipe->user_id, 'recipe', "Recipe \"{$lockedRecipe->name}\" was deleted.");
-        });
+        $delete->handle($recipe);
 
         return redirect()->route('recipes.index')->with('status', __('Recipe deleted.'));
     }
@@ -238,21 +218,10 @@ class RecipesController extends Controller
     /**
      * Authorize the source recipe and create a workspace copy of its name, description, and script for review in the editor.
      */
-    public function duplicate(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
+    public function duplicate(Request $request, Recipe $recipe, DuplicateRecipeAction $duplicate): RedirectResponse
     {
         $this->authorize('update', $recipe);
-
-        $copy = $request->user()->workspaceRecipes()->create([
-            'name' => Str::of("Copy of {$recipe->name}")->limit(255, '')->toString(),
-            'description' => $recipe->description,
-            'script' => $recipe->script,
-        ]);
-        $activity->record(
-            $copy,
-            $request->user()->id,
-            'recipe',
-            "Recipe \"{$recipe->name}\" was duplicated as \"{$copy->name}\".",
-        );
+        $copy = $duplicate->handle($request->user(), $recipe);
 
         return redirect()
             ->route('recipes.edit', $copy)
@@ -293,45 +262,5 @@ class RecipesController extends Controller
     private function csvCell(?string $value): ?string
     {
         return CsvCell::escape($value);
-    }
-
-    /** @return array<string, mixed> */
-    private function recipeData(RecipeRequest $request, ?Recipe $recipe = null): array
-    {
-        $data = $request->validated();
-        $published = (bool) $data['is_published'];
-        $data['category'] = $published ? ($data['category'] ?? null) : null;
-        if (! $published) {
-            $data['published_at'] = null;
-            $data['gallery_revision_at'] = null;
-
-            return $data;
-        }
-
-        $newPublication = ! $recipe?->is_published || $recipe->published_at === null;
-        $contentChanged = $recipe === null
-            || $recipe->name !== $data['name']
-            || $recipe->description !== ($data['description'] ?? null)
-            || $recipe->script !== $data['script']
-            || $recipe->category !== $data['category'];
-
-        $data['published_at'] = $newPublication ? now() : $recipe->published_at;
-        $data['gallery_revision_at'] = $newPublication || $contentChanged
-            ? now()
-            : ($recipe->gallery_revision_at ?? $recipe->published_at ?? now());
-
-        return $data;
-    }
-
-    /**
-     * Load a recipe by ID under a transaction lock, taking a SQLite write lock when needed; missing IDs return 404.
-     */
-    private function lockedRecipe(int $recipeId): Recipe
-    {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
-        }
-
-        return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
     }
 }
