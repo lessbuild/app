@@ -238,6 +238,53 @@ class AutomationTest extends TestCase
         Queue::assertNotPushed(RunScheduledTaskJob::class);
     }
 
+    public function test_owner_can_delete_automation_schedule_and_task_records(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Automation', 'slug' => 'automation', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $deploymentSchedule = $environment->deploymentSchedules()->create(['created_by' => $user->id, 'name' => 'Deploy', 'cron_expression' => '0 3 * * *', 'timezone' => 'UTC', 'is_enabled' => true]);
+        $scalingSchedule = $environment->scalingSchedules()->create(['created_by' => $user->id, 'name' => 'Scale', 'cron_expression' => '0 8 * * *', 'timezone' => 'UTC', 'replicas' => 2, 'is_enabled' => true]);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $user->id, 'name' => 'Task', 'cron_expression' => '0 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+
+        $this->actingAs($user)->delete(route('automation.deployment-schedules.destroy', $deploymentSchedule))->assertRedirect()->assertSessionHas('success', 'Deployment schedule deleted.');
+        $this->actingAs($user)->delete(route('automation.scaling-schedules.destroy', $scalingSchedule))->assertRedirect()->assertSessionHas('success', 'Scaling schedule deleted.');
+        $this->actingAs($user)->delete(route('automation.tasks.destroy', $task))->assertRedirect()->assertSessionHas('success', 'Scheduled task deleted.');
+
+        $this->assertDatabaseCount('deployment_schedules', 0);
+        $this->assertDatabaseCount('scaling_schedules', 0);
+        $this->assertDatabaseCount('scheduled_tasks', 0);
+    }
+
+    public function test_viewer_cannot_delete_automation_records(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Automation', 'slug' => 'automation', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $deploymentSchedule = $environment->deploymentSchedules()->create(['created_by' => $owner->id, 'name' => 'Deploy', 'cron_expression' => '0 3 * * *', 'timezone' => 'UTC', 'is_enabled' => true]);
+        $scalingSchedule = $environment->scalingSchedules()->create(['created_by' => $owner->id, 'name' => 'Scale', 'cron_expression' => '0 8 * * *', 'timezone' => 'UTC', 'replicas' => 2, 'is_enabled' => true]);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $owner->id, 'name' => 'Task', 'cron_expression' => '0 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+
+        $this->actingAs($viewer)->delete(route('automation.deployment-schedules.destroy', $deploymentSchedule))->assertForbidden();
+        $this->actingAs($viewer)->delete(route('automation.scaling-schedules.destroy', $scalingSchedule))->assertForbidden();
+        $this->actingAs($viewer)->delete(route('automation.tasks.destroy', $task))->assertForbidden();
+
+        $this->assertDatabaseCount('deployment_schedules', 1);
+        $this->assertDatabaseCount('scaling_schedules', 1);
+        $this->assertDatabaseCount('scheduled_tasks', 1);
+    }
+
     public function test_workflow_yaml_applies_schedules_scaling_and_processes_atomically(): void
     {
         $user = User::factory()->create();

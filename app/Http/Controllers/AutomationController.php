@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\Automation\CreateDeploymentScheduleAction;
 use App\Actions\Automation\CreateScalingScheduleAction;
 use App\Actions\Automation\CreateScheduledTaskAction;
+use App\Actions\Automation\DeleteDeploymentScheduleAction;
+use App\Actions\Automation\DeleteScalingScheduleAction;
+use App\Actions\Automation\DeleteScheduledTaskAction;
 use App\Actions\Automation\QueueScheduledTaskRunAction;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
 use App\Http\Requests\StoreScalingScheduleRequest;
@@ -72,10 +75,10 @@ class AutomationController extends Controller
     /**
      * Authorize updates to the schedule's environment, delete the schedule, and redirect back.
      */
-    public function destroyDeploymentSchedule(Request $request, DeploymentSchedule $schedule): RedirectResponse
+    public function destroyDeploymentSchedule(DeploymentSchedule $schedule, DeleteDeploymentScheduleAction $deleteSchedule): RedirectResponse
     {
         $this->authorize('update', $schedule->environment);
-        $schedule->delete();
+        $deleteSchedule->handle($schedule);
 
         return back()->with('success', __('Deployment schedule deleted.'));
     }
@@ -93,10 +96,10 @@ class AutomationController extends Controller
     /**
      * Authorize updates to the schedule's environment, delete the scaling schedule, and redirect back.
      */
-    public function destroyScalingSchedule(Request $request, ScalingSchedule $schedule): RedirectResponse
+    public function destroyScalingSchedule(ScalingSchedule $schedule, DeleteScalingScheduleAction $deleteSchedule): RedirectResponse
     {
         $this->authorize('update', $schedule->environment);
-        $schedule->delete();
+        $deleteSchedule->handle($schedule);
 
         return back()->with('success', __('Scaling schedule deleted.'));
     }
@@ -163,10 +166,10 @@ class AutomationController extends Controller
     /**
      * Authorize updates to the task's environment, delete the task, and redirect back.
      */
-    public function destroyScheduledTask(ScheduledTask $task): RedirectResponse
+    public function destroyScheduledTask(ScheduledTask $task, DeleteScheduledTaskAction $deleteTask): RedirectResponse
     {
         $this->authorize('update', $task->environment);
-        $task->delete();
+        $deleteTask->handle($task);
 
         return back()->with('success', __('Scheduled task deleted.'));
     }
