@@ -2331,6 +2331,73 @@ validation, authorization, report/history queries, CSV output, mutations and
 notification timing before extracting only the justified request/query/action
 boundaries.
 
+## Phase 7A — recipe report authorization and review updates
+
+### Responsibility problem
+
+The report feature already had cohesive query, CSV-export and lifecycle-action
+boundaries from earlier work. The remaining controller responsibility issues
+were a bulk notification write in `reviewUpdates()`, a private-report ownership
+abort, a self-reporting permission abort, and a repeated contributor/report
+relationship guard. The controller also needed to preserve the distinction
+between a resource that is not available for reporting and an actor who is not
+allowed to report or review it.
+
+### Boundaries applied
+
+- `ReviewRecipeReportUpdatesAction` owns the authenticated reporter's bulk
+  notification update and depends on the existing `RecipeReportQuery` rather
+  than taking an HTTP request or returning a response.
+- `RecipeReportPolicy::view` owns private status-page ownership and uses
+  `denyAsNotFound()` to preserve the existing 404 concealment. Its `review`
+  ability owns contributor/report/recipe actor authorization and the same
+  route-scoped 404 behavior.
+- `RecipePolicy::report` owns the actor's authorship decision. The controller
+  retains the publication check as a resource-availability guard, then invokes
+  the policy. Existing lifecycle actions retain transaction-time ownership and
+  relationship revalidation under locks.
+- `RecipeReportsController` now coordinates policy checks, the review action,
+  existing validated requests, existing queries/exporters and existing report
+  actions. No report persistence write remains in the controller.
+
+This applies single responsibility, dependency inversion and the guard
+classification rule without moving publication/state/lock rules into policies
+or introducing a generic report service.
+
+### Preserved contracts and safety guarantees
+
+- Private foreign report status and contributor operations remain 404, a recipe
+  owner attempting to report remains 403, and an unpublished recipe remains
+  404. Request validation still runs at the same boundary before the relevant
+  controller authorization, preserving malformed-input behavior and error
+  keys.
+- Review-update notifications remain scoped to the authenticated reporter's
+  unread gallery report updates, retain the existing count and flash messages,
+  and do not mark unrelated notifications read.
+- Existing report locks, transaction rollback, stale ownership checks,
+  encryption/privacy projections, notification timing, pagination, filters,
+  CSV headers/escaping, routes and status responses remain unchanged.
+
+### Verification
+
+- Recipe report, report-history, feedback-inbox and report-notification
+  regression set: **60 passed, 608 assertions**.
+- The controller write audit reports no direct create/update/save/delete or
+  relationship mutation; the remaining `abort_unless` is the intentional
+  unpublished-resource availability safeguard.
+- Targeted Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `a5c99fd` — `refactor: move recipe report permissions and review`
+
+**Phase 7A authorization/write sub-slice: complete.** Exact next task:
+extract the two substantial GET-filter normalization boundaries from
+`RecipeReportsController` into dedicated Form Requests (or a shared immutable
+filter contract where the two shapes differ), preserving silent invalid-value
+defaults, date-range swapping, query-string pagination and export semantics
+before reviewing any remaining controller reads.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2369,3 +2436,4 @@ boundaries.
 | Phase 5I-organization-deletion | Workspace deletion and organization-index visibility mixed policy decisions, dynamic named-bag validation, 2FA verification, workflow safety guards, transactional deletion/recovery and HTTP status mapping in `OrganizationController`. | 28 deletion/account/2FA tests passed, 163 assertions; 25 organization/tenancy tests passed, 131 assertions; Pint and diff checks passed. | `d253ca0` + `35719ac` — `refactor: extract organization deletion operation`; `refactor: authorize organization workspace page` | Begin Phase 6 provider management: inventory provider reads/exports, connection testing/monitoring, request validation, policies, adapters, entitlements and encrypted credential safety. |
 | Phase 6A-provider-operations | Provider CRUD mixed entitlement checks, credential-preserving updates, attachment safeguards, health resets and direct writes; cloud catalog access used a combined inline guard. | 75 provider/entitlement/monitoring/history/inventory/export/cloud-catalog tests passed, 688 assertions; Pint and diff checks passed. | `d257128` — `refactor: extract provider operations` | Characterize manual/automatic connection-check and adapter contracts, idempotent cloud deletion and DigitalOcean droplets probing; strengthen contract coverage and extract only a justified integration boundary. |
 | Phase 6B-provider-contracts | Real provider adapters shared an idempotent deletion contract without a common test proving 404-success versus other-failure behavior. | 38 provider/integration/deletion tests passed, 258 assertions; Pint and diff checks passed. | `0e1379a` — `test: codify server provider contract` | Begin Phase 7A recipe reports: inventory report/history queries, filters, CSV, authorization, mutations, locks and notification timing before extracting justified boundaries. |
+| Phase 7A-report-auth-and-review | RecipeReportsController retained a notification bulk write and actor guards alongside already-extracted report queries, exporters and lifecycle actions. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `a5c99fd` — `refactor: move recipe report permissions and review` | Extract the reporter and contributor GET-filter normalization boundaries into Form Requests or immutable filter contracts without changing silent defaults or export/pagination behavior. |
