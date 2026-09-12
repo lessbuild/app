@@ -4929,6 +4929,49 @@ Commit: `28d33ce` — `refactor: extract infrastructure budget operation`
 preference validation and persistence, preserving the existing widget list,
 preference JSON shape, omitted-field behavior and success response.
 
+## Phase 7AY — dashboard preference operation
+
+### Responsibility problem
+
+`DashboardController::updatePreferences` mixed widget-list validation,
+preference-array merging and direct user persistence with redirect
+coordination. The finite widget contract and the user preference mutation were
+application concerns that could be tested independently of the dashboard read
+model.
+
+### Boundary and principles
+
+`UpdateDashboardPreferencesRequest` now owns authenticated-request validation
+for the existing widget names and `UpdateDashboardPreferencesAction` replaces
+only `dashboard_widgets` while preserving unrelated preference keys. The
+controller passes validated data and returns the existing response. This
+applies single responsibility and dependency inversion without extracting the
+large dashboard reporting query or adding a generic user repository.
+
+### Preserved guarantees
+
+- Supported widget names, duplicate rejection, input ordering, omitted/empty
+  selection behavior and the preference JSON shape remain unchanged.
+- Invalid input does not replace existing preferences; valid requests retain
+  the existing success flash and redirect.
+- Dashboard read queries, authorization middleware, routes, persisted values,
+  dependency lockfiles and external acceptance state remain unchanged.
+
+### Verification
+
+- Full dashboard regression set: **22 passed, 223 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `461d154` — `refactor: extract dashboard preferences operation`
+
+**Phase 7AY exit gate: complete.** Exact next task: classify public status
+subscription validation, token protocol checks and subscription writes; extract
+only the safe request/verifier/operation boundaries without changing token
+ordering, notification timing or 404 behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -5017,3 +5060,4 @@ preference JSON shape, omitted-field behavior and success response.
 | Phase 7AV-project-lifecycle | ProjectController mixed preview normalization/validation/entitlement checks and direct project update/deletion with HTTP coordination. | 8 preview/project creation/environment/lifecycle tests passed, 52 assertions; Pint, syntax and diff checks passed. | `30d4832` — `refactor: extract project lifecycle operations` | Finish the controller audit by classifying cost/dashboard/subscription writes, global admin gates, Livewire writes and remaining inline validation/authorization before final verification. |
 | Phase 7AW-web-build-promotion | BuildPromotionController duplicated visibility/deploy authorization and validation around the existing promotion action. | 7 build-promotion web/API/tenancy/concurrency/workflow tests passed, 57 assertions; Pint, syntax and diff checks passed. | `407c914` — `refactor: extract web build promotion request` | Classify and, where justified, extract cost-budget and dashboard-preference request/action boundaries while preserving entitlement/authorization ordering and user preference values. |
 | Phase 7AX-infrastructure-budget | CostController mixed manager authorization, entitlement ordering, budget validation and direct organization persistence. | 4 cost/infrastructure/entitlement/product tests passed, 16 assertions; Pint, syntax and diff checks passed. | `28d33ce` — `refactor: extract infrastructure budget operation` | Extract dashboard widget preference validation and persistence, preserving the existing widget list, preference JSON shape, omitted-field behavior and success response. |
+| Phase 7AY-dashboard-preferences | DashboardController mixed widget validation, preference merging and direct user persistence with HTTP coordination. | 22 dashboard regression tests passed, 223 assertions; Pint, syntax and diff checks passed. | `461d154` — `refactor: extract dashboard preferences operation` | Classify public status subscription validation, token protocol checks and writes; extract only safe request/verifier/operation boundaries without changing token ordering, notification timing or 404 behavior. |
