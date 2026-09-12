@@ -2,29 +2,34 @@
 
 namespace App\Services;
 
+use App\Data\EnterpriseSsoCallbackData;
 use App\Models\Organization;
+use App\Models\User;
+use App\Support\PublicDnsResolver;
 use App\Support\PublicIpAddress;
-use Illuminate\Http\Request;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 class EnterpriseOidc
 {
+    public function __construct(private readonly PublicDnsResolver $dns) {}
+
     /**
      * Begin a workspace SSO attempt with session-bound state and an S256 PKCE challenge.
      *
-     * @param  Request  $request  The current browser request whose session stores the attempt.
+     * @param  Session  $session  The current browser session whose state stores the attempt.
      * @param  Organization  $organization  The workspace supplying the identity-provider configuration.
      * @return string The discovered authorization URL with client, callback, state and PKCE parameters.
      */
-    public function authorizationUrl(Request $request, Organization $organization): string
+    public function authorizationUrl(Session $session, Organization $organization): string
     {
         $configuration = $this->configuration($organization);
         $metadata = $this->metadata($configuration['issuer']);
         $state = Str::random(64);
         $verifier = Str::random(96);
-        $request->session()->put('oidc.'.$organization->id, ['state' => hash('sha256', $state), 'verifier' => $verifier]);
+        $session->put('oidc.'.$organization->id, ['state' => hash('sha256', $state), 'verifier' => $verifier]);
 
         return $metadata['authorization_endpoint'].'?'.http_build_query([
             'client_id' => $configuration['client_id'], 'redirect_uri' => route('organizations.sso.callback'),
@@ -36,22 +41,24 @@ class EnterpriseOidc
     /**
      * Consume the SSO state, exchange the code and match userinfo to the signed-in account.
      *
-     * @param  Request  $request  The callback request containing state/code and the authenticated user.
+     * @param  EnterpriseSsoCallbackData  $data  The validated callback code and state.
      * @param  Organization  $organization  The workspace supplying SSO configuration and allowed email domains.
+     * @param  User  $user  The authenticated account whose verified email must match the provider profile.
+     * @param  Session  $session  The browser session storing one-time state and the verified marker.
      * @return void No value; records the workspace verification timestamp only after all checks pass.
      *
      * @throws RuntimeException If state, provider profile, email or domain verification fails.
      */
-    public function verify(Request $request, Organization $organization): void
+    public function verify(EnterpriseSsoCallbackData $data, Organization $organization, User $user, Session $session): void
     {
-        $attempt = $request->session()->pull('oidc.'.$organization->id);
-        if (! is_array($attempt) || ! hash_equals((string) ($attempt['state'] ?? ''), hash('sha256', (string) $request->query('state')))) {
+        $attempt = $session->pull('oidc.'.$organization->id);
+        if (! is_array($attempt) || ! hash_equals((string) ($attempt['state'] ?? ''), hash('sha256', $data->state))) {
             throw new RuntimeException('The SSO state could not be verified.');
         }
         $configuration = $this->configuration($organization);
         $metadata = $this->metadata($configuration['issuer']);
         $token = Http::asForm()->acceptJson()->timeout(15)->post($metadata['token_endpoint'], [
-            'grant_type' => 'authorization_code', 'code' => (string) $request->query('code'),
+            'grant_type' => 'authorization_code', 'code' => $data->code,
             'redirect_uri' => route('organizations.sso.callback'), 'client_id' => $configuration['client_id'],
             'client_secret' => $configuration['client_secret'], 'code_verifier' => $attempt['verifier'],
         ])->throw()->json('access_token');
@@ -60,14 +67,14 @@ class EnterpriseOidc
         }
         $profile = Http::acceptJson()->withToken($token)->timeout(15)->get($metadata['userinfo_endpoint'])->throw()->json();
         $email = Str::lower((string) ($profile['email'] ?? ''));
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL) || ! hash_equals(Str::lower($request->user()->email), $email) || ($profile['email_verified'] ?? true) === false) {
+        if (! filter_var($email, FILTER_VALIDATE_EMAIL) || ! hash_equals(Str::lower($user->email), $email) || ($profile['email_verified'] ?? true) === false) {
             throw new RuntimeException('The SSO identity does not match your verified BuildPusher email.');
         }
         $domains = $organization->allowed_email_domains ?? [];
         if ($domains !== [] && ! in_array(Str::afterLast($email, '@'), $domains, true)) {
             throw new RuntimeException('The SSO email domain is not allowed.');
         }
-        $request->session()->put('organization_sso_verified.'.$organization->id, time());
+        $session->put('organization_sso_verified.'.$organization->id, time());
     }
 
     /**
@@ -126,8 +133,7 @@ class EnterpriseOidc
         if (($parts['scheme'] ?? '') !== 'https' || $host === '' || isset($parts['user']) || isset($parts['pass'])) {
             throw new RuntimeException('The SSO issuer must be a public HTTPS URL.');
         }
-        $records = dns_get_record($host, DNS_A | DNS_AAAA) ?: [];
-        $addresses = collect($records)->map(fn ($record) => $record['ip'] ?? $record['ipv6'] ?? null)->filter();
+        $addresses = collect($this->dns->addresses($host));
         if ($addresses->isEmpty() || $addresses->contains(fn (string $ip): bool => ! PublicIpAddress::isValid($ip))) {
             throw new RuntimeException('The SSO issuer must resolve only to public addresses.');
         }
