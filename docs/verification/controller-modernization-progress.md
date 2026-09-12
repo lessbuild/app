@@ -2685,6 +2685,62 @@ gallery, ratings/favorites, feedback and notification controllers for direct
 writes, inline actor guards, named validation bags and duplicated report/query
 semantics before extracting the smallest justified product slice.
 
+## Phase 7G — recipe ratings and favorites
+
+### Responsibility problem
+
+`RecipeRatingsController` and `RecipeFavoritesController` mixed gallery
+availability checks, actor eligibility, validation, relation-scoped writes,
+idempotency and activity recording. Rating authorization also remained as
+inline owner/installation guards, while the actual rating value was validated
+inside the controller.
+
+### Boundaries applied
+
+- `RecipePolicy::rate` owns the actor decision that a user is not the recipe
+  contributor and has an installed copy in the current workspace.
+- `StoreRecipeRatingRequest` preserves the published-recipe 404, invokes the
+  rating policy before validation and owns the 1–5 rating rules and explicit
+  typed value. Publication is intentionally an availability check, not a
+  policy permission.
+- `SaveRecipeRatingAction` and `RemoveRecipeRatingAction` own the actor-scoped
+  rating upsert/removal and activity wording.
+- `SaveRecipeFavoriteAction` and `RemoveRecipeFavoriteAction` own the
+  idempotent actor-scoped favorite writes and activity recording. The
+  controller retains only the published-resource availability guard because
+  favorites have no independent actor capability beyond the scoped relation.
+- Controllers now map action outcomes to the existing back redirects and
+  status messages; no rating/favorite persistence write remains in them.
+
+This applies single responsibility, dependency inversion and the guard
+classification rule without inventing separate policies for user-owned pivot
+records.
+
+### Preserved contracts and safety guarantees
+
+- Unauthenticated, unpublished, author, uninstalled and foreign-user cases
+  retain their existing redirect/404/403 behavior and validation ordering.
+- Rating upsert idempotency, 1–5 rules, favorite idempotency, relation scoping,
+  cascade cleanup, activity text/timing, gallery filters, route responses and
+  status flashes remain unchanged.
+
+### Verification
+
+- Recipe rating/favorite/activity/gallery/report regression set: **59 passed,
+  611 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `bb9d3e1` — `refactor: extract recipe rating and favorite operations`
+
+**Phase 7G exit gate: complete.** Exact next task: characterize
+`RecipeGalleryController` install/refresh transactions and `RecipesController`
+create/update/duplicate/delete lifecycle, preserving publication timestamps,
+source-revision identity, install-count concurrency, encrypted scripts,
+activity timing and existing 404/redirect outcomes.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2729,3 +2785,4 @@ semantics before extracting the smallest justified product slice.
 | Phase 7D-build-repository-filters | Build and repository controllers normalized inventory and webhook-delivery filters alongside query/export orchestration. | 38 build/repository filter, export, insight, webhook and safety tests passed, 375 assertions; Pint and diff checks passed. | `8938e7d` — `refactor: extract build repository filter requests` | Extract the repository creation/configuration boundary shared by create and update, preserving tenant-scoped provider selection, webhook-secret availability, validation ordering, encrypted-secret behavior and the 503 response. |
 | Phase 7E-repository-creation | Repository create/update duplicated tenant provider lookup and GitHub App webhook configuration around direct creation and an existing locked update action. | 57 repository/GitHub App/webhook/deployment/provider/inventory/safety tests passed, 486 assertions; Pint and diff checks passed. | `2263941` — `refactor: extract repository creation operation` | Extract repository webhook-settings request and enable/disable operations, preserving GitLab token validation, one-time secret flash, encrypted persistence, pending cleanup and redirect behavior. |
 | Phase 7F-repository-webhook-settings | Repository webhook settings mixed GitLab protocol validation, generated-secret disclosure, encrypted enable/disable writes and pending-state cleanup in the controller. | 19 repository webhook/GitHub App/authorization tests passed, 151 assertions; Pint and diff checks passed. | `12e7927` — `refactor: extract repository webhook settings operations` | Audit recipe, gallery, ratings/favorites, feedback and notification controllers for remaining direct writes, inline actor guards, named bags and duplicated report/query semantics. |
+| Phase 7G-recipe-ratings-favorites | Rating/favorite controllers mixed availability/actor guards, validation, relation-scoped persistence, idempotency and activity recording. | 59 recipe rating/favorite/activity/gallery/report tests passed, 611 assertions; Pint and diff checks passed. | `bb9d3e1` — `refactor: extract recipe rating and favorite operations` | Extract gallery install/refresh and recipe lifecycle operations, preserving publication timestamps, source revisions, install-count concurrency, encrypted scripts, activity timing and response outcomes. |
