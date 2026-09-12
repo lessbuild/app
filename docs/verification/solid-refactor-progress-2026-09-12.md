@@ -237,6 +237,24 @@ Verification after the slice:
 - New-report notification regression: 1 passed (11 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — single report resolution action slice
+
+Responsibility problem: `RecipeReportsController::resolve()` combined immediate relationship authorization with a second locked authorization check, the resolve/no-op state machine, notification acknowledgement, reporter notification and audit recording.
+
+Boundary used: `ResolveRecipeReportAction` now owns the locked resolve operation and receives the recipe, report, contributor and normalized note explicitly. The controller retains the immediate HTTP 404 relationship guard, Form Request validation and redirect response; the action rechecks ownership after locking and injects the notifier and activity recorder.
+
+Preserved guarantees:
+
+- Recipe lock then report lock ordering, stale relationship protection, idempotent repeated resolution, resolution-note persistence and transaction rollback remain unchanged.
+- Contributor unread acknowledgement, reporter status notification, anonymous activity message, notification timing and flash text remain unchanged.
+- No route, validation key, persisted field, serialized value, YAML schema or queue behavior changed.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- Resolution rollback/idempotency notification checks: 2 passed (18 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Extract the single-report resolve transition into a cohesive action, preserving contributor/report ownership checks, lock order, idempotent repeated resolution, reporter notification and audit timing.
+Extract the resolution-note update transition into a cohesive action, preserving the resolved-state precondition, unchanged-note no-op, encrypted note persistence, notification replacement and audit timing.

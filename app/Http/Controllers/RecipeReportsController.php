@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Recipe\ResolveRecipeReportAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Http\Requests\RecipeReportResolutionRequest;
 use App\Http\Requests\ReopenRecipeReportsRequest;
@@ -161,38 +162,12 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse An acknowledgement; repeated resolution does not replace the existing note.
      */
-    public function resolve(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function resolve(RecipeReportResolutionRequest $request, Recipe $recipe, RecipeReport $report, ResolveRecipeReportAction $resolveReport): RedirectResponse
     {
         $this->authorizeContributorReport($request, $recipe, $report);
         $resolutionNote = $request->resolutionNote();
 
-        DB::transaction(function () use ($activity, $notifications, $recipe, $report, $request, $resolutionNote): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            $lockedReport = RecipeReport::query()
-                ->whereKey($report->id)
-                ->where('recipe_id', $lockedRecipe->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $this->authorizeContributorReport($request, $lockedRecipe, $lockedReport);
-            $wasResolved = $lockedReport->resolved_at === null;
-
-            if ($wasResolved) {
-                $lockedReport->update([
-                    'resolved_at' => now(),
-                    'resolution_note' => $resolutionNote,
-                ]);
-            }
-            $notifications->resolve($request->user(), [$lockedReport->id]);
-            if ($wasResolved) {
-                $notifications->resolved([$lockedReport->id]);
-                $activity->record(
-                    $lockedRecipe,
-                    $request->user()->id,
-                    'recipe',
-                    "A community report for gallery recipe \"{$lockedRecipe->name}\" was resolved.",
-                );
-            }
-        });
+        $resolveReport->handle($recipe, $report, $request->user(), $resolutionNote);
 
         return back()->with('status', __('The community report was marked as resolved.'));
     }
