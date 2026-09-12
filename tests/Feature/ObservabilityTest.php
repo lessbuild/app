@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\DeliverAlertWebhookJob;
 use App\Jobs\Server\CollectServerMetricsJob;
 use App\Jobs\Web\RefreshWebsiteLogJob;
+use App\Models\AlertDestination;
 use App\Models\MetricAlertRule;
 use App\Models\Provider;
 use App\Models\Server;
@@ -140,6 +141,51 @@ class ObservabilityTest extends TestCase
 
         $this->actingAs($intruder)->delete(route('observability.metric-rules.destroy', $rule))->assertForbidden();
         $this->assertNotNull($rule->fresh());
+    }
+
+    public function test_alert_destination_validation_preserves_type_messages_and_queues_a_test_without_exposing_credentials(): void
+    {
+        Queue::fake();
+        [$owner] = $this->infrastructure();
+
+        $this->actingAs($owner)->post(route('observability.destinations.store'), [
+            'name' => 'Slack', 'type' => 'slack', 'endpoint' => 'https://example.com/hook',
+            'events' => ['failure'],
+        ])->assertSessionHasErrors(['endpoint' => 'Slack destinations must use hooks.slack.com.'])
+            ->assertSessionHas('_old_input.endpoint', 'https://example.com/hook');
+        $this->assertDatabaseCount('alert_destinations', 0);
+
+        $endpoint = 'https://alerts.example.com/buildpusher';
+        $this->actingAs($owner)->post(route('observability.destinations.store'), [
+            'name' => 'Engineering', 'type' => 'webhook', 'endpoint' => $endpoint,
+            'events' => ['failure', 'recovery'],
+        ])->assertRedirect();
+        $destination = AlertDestination::query()->sole();
+        $this->assertNotSame($endpoint, DB::table('alert_destinations')->value('endpoint'));
+
+        $this->actingAs($owner)->post(route('observability.destinations.test', $destination))
+            ->assertRedirect()->assertSessionHas('success', 'Test alert queued.');
+        Queue::assertPushed(DeliverAlertWebhookJob::class, fn (DeliverAlertWebhookJob $job): bool => $job->destinationId === $destination->id
+            && $job->payload['category'] === 'test'
+            && ! str_contains(json_encode($job->payload), $endpoint));
+    }
+
+    public function test_alert_destination_policy_prevents_foreign_test_and_delete_without_side_effects(): void
+    {
+        Queue::fake();
+        [$owner] = $this->infrastructure();
+        $destination = $owner->currentOrganization->alertDestinations()->create([
+            'created_by' => $owner->id, 'name' => 'Engineering', 'type' => 'webhook',
+            'endpoint' => 'https://alerts.example.com/buildpusher', 'signing_secret' => 'secret',
+            'events' => ['failure'], 'is_active' => true,
+        ]);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)->post(route('observability.destinations.test', $destination))->assertForbidden();
+        $this->actingAs($intruder)->delete(route('observability.destinations.destroy', $destination))->assertForbidden();
+
+        Queue::assertNothingPushed();
+        $this->assertNotNull($destination->fresh());
     }
 
     public function test_public_status_page_exposes_health_without_infrastructure_secrets(): void

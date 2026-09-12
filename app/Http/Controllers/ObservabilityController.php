@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Observability\CreateAlertDestinationAction;
 use App\Actions\Observability\CreateMetricAlertRuleAction;
+use App\Actions\Observability\DeleteAlertDestinationAction;
 use App\Actions\Observability\DeleteMetricAlertRuleAction;
+use App\Actions\Observability\QueueAlertDestinationTestAction;
+use App\Http\Requests\StoreAlertDestinationRequest;
 use App\Http\Requests\StoreMetricAlertRuleRequest;
-use App\Jobs\DeliverAlertWebhookJob;
 use App\Models\AlertDestination;
 use App\Models\Build;
 use App\Models\MetricAlertRule;
@@ -81,42 +84,10 @@ class ObservabilityController extends Controller
      *
      * @return RedirectResponse A saved destination or a provider-host validation error.
      */
-    public function storeDestination(Request $request): RedirectResponse
+    public function storeDestination(StoreAlertDestinationRequest $request, CreateAlertDestinationAction $createDestination): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'alerts');
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'type' => ['required', Rule::in(AlertDestination::TYPES)],
-            'endpoint' => ['required', 'string', 'max:2000'],
-            'events' => ['required', 'array', 'min:1'],
-            'events.*' => [Rule::in(AlertDestination::EVENTS)],
-        ]);
-        if ($data['type'] === 'email' && ! filter_var($data['endpoint'], FILTER_VALIDATE_EMAIL)) {
-            throw ValidationException::withMessages(['endpoint' => __('Enter a valid email address.')]);
-        }
-        if ($data['type'] === 'pagerduty' && ! preg_match('/\A[a-zA-Z0-9_-]{20,100}\z/D', $data['endpoint'])) {
-            throw ValidationException::withMessages(['endpoint' => __('Enter a valid PagerDuty Events API routing key.')]);
-        }
-        $usesWebhookUrl = ! in_array($data['type'], ['email', 'pagerduty'], true);
-        if ($usesWebhookUrl && (! filter_var($data['endpoint'], FILTER_VALIDATE_URL)
-            || parse_url($data['endpoint'], PHP_URL_SCHEME) !== 'https')) {
-            throw ValidationException::withMessages(['endpoint' => __('Webhook destinations must use a valid HTTPS URL.')]);
-        }
-        $host = parse_url($data['endpoint'], PHP_URL_HOST);
-        if ($data['type'] === 'slack' && $host !== 'hooks.slack.com') {
-            return back()->withErrors(['endpoint' => __('Slack destinations must use hooks.slack.com.')])->withInput();
-        }
-        if ($data['type'] === 'discord' && ! in_array($host, ['discord.com', 'discordapp.com'], true)) {
-            return back()->withErrors(['endpoint' => __('Discord destinations must use a Discord webhook URL.')])->withInput();
-        }
-        $organization->alertDestinations()->create([
-            ...$data,
-            'created_by' => $request->user()->id,
-            'signing_secret' => bin2hex(random_bytes(32)),
-            'is_active' => true,
-        ]);
+        $createDestination->handle($organization, $request->user(), $request->validated());
 
         return back()->with('success', __('Alert destination created.'));
     }
@@ -124,19 +95,10 @@ class ObservabilityController extends Controller
     /**
      * Require management access to an entitled workspace alert destination, queue a test delivery, and redirect back.
      */
-    public function testDestination(Request $request, AlertDestination $destination): RedirectResponse
+    public function testDestination(AlertDestination $destination, QueueAlertDestinationTestAction $queueTest): RedirectResponse
     {
-        $this->assertDestination($request, $destination);
-        $this->entitlements->enforce($destination->organization, 'alerts');
-        DeliverAlertWebhookJob::dispatch($destination->id, [
-            'id' => (string) Str::uuid(),
-            'event' => 'failure',
-            'category' => 'test',
-            'resource_id' => 0,
-            'title' => 'BuildPusher test alert',
-            'message' => 'Your alert destination is connected.',
-            'occurred_at' => now()->toIso8601String(),
-        ]);
+        $this->authorize('test', $destination);
+        $queueTest->handle($destination);
 
         return back()->with('success', __('Test alert queued.'));
     }
@@ -144,11 +106,10 @@ class ObservabilityController extends Controller
     /**
      * Require management access to an entitled workspace alert destination, delete it, and redirect back.
      */
-    public function destroyDestination(Request $request, AlertDestination $destination): RedirectResponse
+    public function destroyDestination(AlertDestination $destination, DeleteAlertDestinationAction $deleteDestination): RedirectResponse
     {
-        $this->assertDestination($request, $destination);
-        $this->entitlements->enforce($destination->organization, 'alerts');
-        $destination->delete();
+        $this->authorize('delete', $destination);
+        $deleteDestination->handle($destination);
 
         return back()->with('success', __('Alert destination deleted.'));
     }
@@ -251,15 +212,6 @@ class ObservabilityController extends Controller
         $notifier->send($incident->fresh());
 
         return back()->with('success', __('Status update saved and subscribers notified.'));
-    }
-
-    /**
-     * Abort with 403 unless the alert destination belongs to the current workspace and the user can manage it.
-     */
-    private function assertDestination(Request $request, AlertDestination $destination): void
-    {
-        abort_unless($destination->organization_id === $request->user()->current_organization_id
-            && $destination->organization->permits($request->user(), 'manage'), 403);
     }
 
     /**

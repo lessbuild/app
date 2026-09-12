@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\AlertDestination;
 use App\Models\BackupDestination;
 use App\Models\Build;
 use App\Models\ConfigurationApplication;
@@ -18,6 +19,7 @@ use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
+use App\Policies\AlertDestinationPolicy;
 use App\Policies\BackupDestinationPolicy;
 use App\Policies\BuildPolicy;
 use App\Policies\ConfigurationApplicationPolicy;
@@ -48,6 +50,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        AlertDestination::class => AlertDestinationPolicy::class,
         Build::class => BuildPolicy::class,
         BackupDestination::class => BackupDestinationPolicy::class,
         ConfigurationApplication::class => ConfigurationApplicationPolicy::class,
