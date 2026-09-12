@@ -521,6 +521,90 @@ Phase 3 infrastructure operations with Backups, characterizing destination,
 schedule, run and restore validation, policies, entitlements, queued jobs and
 credential-safety behavior before extracting a cohesive action.
 
+Phase 2 documentation close commit: `270335f` — `docs: close configuration and environment phase`.
+
+## Phase 3A — backup operation boundary
+
+### Responsibility problem
+
+`BackupController` mixed workspace authorization and entitlement checks with
+destination and schedule validation, encrypted destination creation, schedule
+upserts, backup queue creation, duplicate detection, restore confirmation,
+restore transactions and job dispatch. That made controller behavior the only
+place where these writes and workflow safeguards could be exercised, and the
+private destination guard duplicated a resource authorization rule.
+
+### Boundaries applied
+
+- `BackupDestinationPolicy` owns create/delete management decisions,
+  `WebsiteBackupSchedulePolicy` owns create/delete schedule decisions,
+  `WebsiteBackupPolicy` owns restore access, and `WebsitePolicy::backup` owns
+  manual-backup access. Each preserves current-workspace scoping and the
+  existing 403 behavior; policies perform no writes or remote calls.
+- StoreBackupDestinationRequest, StoreBackupScheduleRequest,
+  RunWebsiteBackupRequest and RestoreWebsiteBackupRequest own the existing
+  validation rules and scoped IDs. Their `authorize()` methods preserve the
+  old manager-then-entitlement-then-validation ordering, including the
+  restore relation load before authorization and confirmation validation.
+- CreateBackupDestinationAction owns encrypted destination persistence and
+  generated repository-password setup.
+- SaveBackupScheduleAction owns the existing website/destination keyed
+  upsert. QueueWebsiteBackupAction owns active-backup detection, queued-row
+  creation and immediate CreateWebsiteBackupJob dispatch.
+- RequestWebsiteBackupRestoreAction owns completed-snapshot and active-
+  deployment safeguards, the existing restore transaction and immediate
+  RestoreWebsiteBackupJob dispatch. DeleteBackupDestinationAction and
+  DeleteBackupScheduleAction own the remaining deletes; domain exceptions
+  let the controller retain the original flash messages and statuses.
+- `BackupController` now authorizes, consumes validated input, resolves the
+  already-validated workspace resources, invokes an action and returns the
+  existing response. The index read remains unchanged. Existing backup jobs,
+  Restic integration and encrypted model casts were not duplicated.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization with concrete Laravel Form Requests, policies and actions. It
+does not add a generic repository, base action or provider abstraction.
+
+### Preserved contracts and safety guarantees
+
+- Backup routes, redirects, success/info/error flash text, validation keys,
+  exact website-name confirmation and current-workspace/role behavior remain
+  unchanged.
+- Organization-scoped destination and website IDs remain enforced. Foreign
+  managers and non-managers receive the existing denial response without a
+  row or queued job. Active queued/running backups still produce the info
+  response without a duplicate row or job.
+- Encrypted access/secret credentials, generated repository passwords,
+  schedule defaults/persisted values and backup status fields remain
+  unchanged.
+- In-use destinations still cannot be deleted and retain the existing error
+  flash. Restore requests still require a completed snapshot, reject active
+  deployments before creating a restore, create the restore in a transaction,
+  and dispatch only after that transaction returns. The remote jobs and their
+  retry/failure behavior are untouched.
+- No routes, migrations, schemas, serialized job payloads, dependency
+  lockfiles or remote calls changed.
+
+### Verification
+
+- Backup, entitlement, database-backup, database-safety and release-audit
+  regression set: **25 passed, 189 assertions**.
+- Broader backup/infrastructure safety set including domain, load-balancer
+  removal, import and tenancy coverage: **34 passed, 256 assertions**.
+- Added coverage proving a non-manager cannot create or queue a backup and
+  that active-backup duplicate detection creates neither a row nor a job.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `2253bc2` — `refactor: extract backup operations`
+
+**Phase 3A exit gate: complete.** Exact next task: begin Phase 3
+infrastructure operations with Database management; inventory inspect,
+database-user, clone and backup-related routes, then extract the smallest
+request/policy/action slice while preserving command safety, ownership,
+entitlements, remote dispatch and response semantics.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -531,3 +615,4 @@ credential-safety behavior before extracting a cohesive action.
 | Phase 2B | Configuration operation bodies and receipt abilities remained inline around relationship lookups and transaction-aware services. | 43 focused tests passed, 318 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `f269fdf` — `refactor: extract configuration operation boundaries` | Inspect remaining environment request/action boundaries for processes, variables, resources, deployment controls and deletion safeguards. |
 | Phase 2C | Environment child endpoints mixed validation, entitlement order, parsing, normalization and direct child writes. | 30 focused tests passed, 167 assertions; Pint and diff checks passed. | `2434f0c` — `refactor: extract environment child operations` | Characterize lifecycle writes and deletion safeguards before extracting cohesive environment actions. |
 | Phase 2D | Environment lifecycle validation, entitlement checks, field mapping and direct deletes remained in EnvironmentController. | 132 affected tests passed, 1,105 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `23de929` — `refactor: extract environment lifecycle operations` | Begin Phase 3 with Backups: inventory policies, requests, actions, jobs, entitlements and credential safety. |
+| Phase 3A | Backup destination, schedule, run and restore endpoints mixed validation, authorization, encrypted writes, duplicate detection, transactions and job dispatch in `BackupController`. | 25 focused regression tests passed, 189 assertions; broader infrastructure set 34/256; Pint and diff checks passed. | `2253bc2` — `refactor: extract backup operations` | Begin Phase 3 with Database management: inventory inspect/user/clone operations and preserve command safety, ownership, entitlements and dispatch behavior. |
