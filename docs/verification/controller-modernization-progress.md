@@ -4312,6 +4312,70 @@ protocol-safe verification/session boundary while preserving entitlement
 enforcement, state/PKCE consumption, sanitized failures, remote timeouts and
 the verified-session marker.
 
+## Phase 7AM — enterprise SSO verification
+
+### Responsibility problem
+
+`EnterpriseSsoController` mixed entitlement enforcement, callback validation,
+OIDC state/PKCE exchange, identity/domain checks, remote failure reporting and
+verified-session marking. `EnterpriseOidc` also depended on the full HTTP
+Request for query, user and session access, which made the protocol boundary
+harder to exercise independently.
+
+### Boundary and principles
+
+`EnterpriseSsoCallbackRequest` owns the exact callback fields and performs the
+existing entitlement check before field validation. `EnterpriseSsoCallbackData`
+is the explicit validated protocol input. `VerifyEnterpriseSsoAction` owns
+entitlement revalidation and sanitized failure mapping, while `EnterpriseOidc`
+now receives explicit callback data, authenticated user, and session
+collaborators. `PublicDnsResolver` isolates DNS lookup for deterministic
+adapter testing without introducing an unnecessary interface. Controllers
+retain only entitlement-gated connect/callback coordination and redirects.
+This applies single responsibility, dependency inversion and protocol-safe
+request boundaries.
+
+### Preserved guarantees
+
+- SSO routes, entitlement error/status behavior, callback keys and limits,
+  validation ordering, generic failure message and dashboard success response
+  remain unchanged.
+- OIDC state is still pulled once before remote work; issuer and every
+  discovered endpoint must be HTTPS and resolve only to public addresses.
+  Token exchange retains its 15-second timeout, authorization code, client
+  credentials and PKCE verifier; userinfo retains its timeout and bearer token.
+- Verified email identity, optional allowed-domain enforcement and the
+  `organization_sso_verified.{id}` session marker occur in the same order and
+  only after all checks pass. Remote/protocol details remain reported but are
+  not exposed to the user.
+- Connect still generates and stores the same state/verifier shape and returns
+  the provider authorization URL. No routes, persisted schemas, serialized
+  jobs, dependency lockfiles, production credentials, cloud resources or
+  external acceptance state changed.
+
+### Verification
+
+- Enterprise SSO, platform-expansion, organization-management and shared-
+  tenancy regression set: **35 passed, 186 assertions**.
+- Direct adapter coverage verifies state consumption, public DNS checks, PKCE
+  exchange, bearer userinfo, email normalization and session marking; feature
+  coverage verifies entitlement ordering and sanitized failures.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- The organization-management assertions that inspect `abort(422, message)`
+  rendering were run with isolated `APP_DEBUG=true`; no production runtime was
+  used.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `53ff5d3` — `refactor: extract enterprise SSO verification`
+
+**Phase 7AM exit gate: complete.** Exact next task: inventory the remaining
+GitHub App webhook, build/server/website/revision provisioning callbacks and
+any OAuth/SSO protocol handlers, preserving raw-body verification, stale
+attempt ordering, status limits, replay protection, tokenless compatibility
+and transaction boundaries before extracting another callback operation.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4388,3 +4452,4 @@ the verified-session marker.
 | Phase 7AJ-password-login | AuthenticatedSessionController mixed request-authenticated credentials with session regeneration, two-factor staging, web-guard logout, sign-in recording and redirect selection. | 48 authentication redirect/two-factor/email-verification/social-auth tests passed, 302 assertions; Pint, syntax and diff checks passed. | `eddb4e8` — `refactor: extract password login completion` | Characterize signed email verification and resend behavior, extracting only the meaningful verification state change before auditing GitHub App and enterprise SSO callback protocols. |
 | Phase 7AK-email-verification | VerifyEmailController mixed signed Laravel verification with the account state transition and `Verified` event dispatch; prompt/resend endpoints remained straightforward coordination. | 49 email-verification/authentication redirect/two-factor/social-auth tests passed, 306 assertions; Pint, syntax and diff checks passed. | `cc82c16` — `refactor: extract email verification operation` | Characterize GitHub App installation and enterprise SSO callback protocols, including state, PKCE, entitlements, remote verification and session marking. |
 | Phase 7AL-github-app-installation | GitHubAppController mixed current-workspace manager authorization, callback validation, one-time state, remote discovery, account labeling and direct provider upsert; picker scope retained deliberate 404 concealment. | 29 GitHub App/platform-expansion/shared-tenancy/provider inventory/history tests passed, 227 assertions; Pint, syntax and diff checks passed. | `196e3a8` — `refactor: extract GitHub App installation operation` | Characterize enterprise SSO entitlement, validation, state/PKCE consumption, remote verification, sanitized failures and session marking. |
+| Phase 7AM-enterprise-sso | EnterpriseSsoController/EnterpriseOidc mixed entitlement, callback validation, OIDC state/PKCE exchange, identity/domain checks, remote failure mapping and verified-session marking. | 35 enterprise SSO/platform-expansion/organization-management/shared-tenancy tests passed, 186 assertions; Pint, syntax and diff checks passed. | `53ff5d3` — `refactor: extract enterprise SSO verification` | Inventory remaining GitHub App webhook and provisioning callbacks plus OAuth/SSO protocol handlers, preserving verifier and stale-attempt ordering. |
