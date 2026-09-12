@@ -3887,6 +3887,52 @@ password-reset and social OAuth callback writes, including invitation/access
 token identity, synchronized creation, organization provisioning, two-factor
 handoff, session regeneration and exact failure responses.
 
+## Phase 7AE — password reset-link request and broker operation
+
+### Responsibility problem
+
+`PasswordResetLinkController` mixed public email validation with direct
+password-broker dispatch, while deliberately suppressing broker results to
+avoid account enumeration.
+
+### Boundary and principles
+
+`SendPasswordResetLinkRequest` owns the public email rule and exposes only the
+validated address. `SendPasswordResetLinkAction` owns the password-broker side
+effect through Laravel's `PasswordBroker` contract. The controller retains the
+existing uniform response and redirect. This applies single responsibility and
+dependency inversion without adding a repository or exposing broker details to
+the HTTP boundary.
+
+### Preserved guarantees
+
+- Registered and unregistered addresses receive the same success message and
+  redirect; broker status remains intentionally ignored.
+- Invalid email input still redirects with the same validation error and does
+  not attempt delivery. Guest middleware, throttling, input redaction, routes,
+  response text and password-broker configuration remain unchanged.
+- No schemas, persisted values, serialized jobs, dependency lockfiles or
+  external provider behavior changed.
+
+### Verification
+
+- Password-reset privacy/throttling regression set: **8 passed, 97
+  assertions**.
+- Coverage retained public-form rendering, known/unknown email parity,
+  malformed-input no-delivery, invalid-token privacy and successful reset
+  integration.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `4084e46` — `refactor: extract password reset link operation`
+
+**Phase 7AE exit gate: complete.** Exact next task: extract token-based password
+replacement validation and broker operation, preserving invalid-token privacy,
+password hashing/timestamps, remember-token rotation, activity/event timing,
+email-only failure input and exact status responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3955,3 +4001,4 @@ handoff, session regeneration and exact failure responses.
 | Phase 7AB-sign-in-history-clear | SignInHistoryController mixed `signIns` validation, owner-scoped deletion, transactional activity, count/empty-state mapping and redirect response. | 16 sign-in history/recorder/account-security/rate-limit tests passed, 179 assertions; Pint, syntax and diff checks passed. | `10e1d02` — `refactor: extract sign-in history clearing` | Extract account deletion validation and lifecycle orchestration, preserving `deleteAccount`, password/2FA ordering, safeguards, cleanup transaction, session invalidation and exact responses. |
 | Phase 7AC-account-deletion | AccountDeletionController mixed dynamic security validation, account/workspace safety guards, cleanup transaction, logout and session invalidation. | 7 account-lifecycle tests passed, 48 assertions; adjacent account/security set 48/360; Pint, syntax and diff checks passed. | `326c938` — `refactor: extract account deletion operation` | Characterize password confirmation and authentication callback writes, preserving protocol ordering, session timestamps, OAuth/SSO state checks and exact validation/response behavior. |
 | Phase 7AD-password-confirmation | ConfirmablePasswordController mixed local-password state handling, validation, credential verification, confirmation-session mutation and redirect mapping. | 23 password-confirmation/social-auth/rate-limit tests passed, 212 assertions; Pint, syntax and diff checks passed. | `4a2a1fc` — `refactor: extract password confirmation operation` | Characterize registration, password-reset and social OAuth callback writes, preserving invitation/access identity, synchronization, organization provisioning, 2FA handoff, session regeneration and failure responses. |
+| Phase 7AE-password-reset-link | PasswordResetLinkController mixed public email validation, broker dispatch and account-enumeration-safe response mapping. | 8 password-reset privacy/throttling tests passed, 97 assertions; Pint, syntax and diff checks passed. | `4084e46` — `refactor: extract password reset link operation` | Extract token-based password replacement validation and broker operation, preserving invalid-token privacy, password hashing/timestamps, remember-token rotation, activity/event timing, email-only failure input and exact status responses. |
