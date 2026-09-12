@@ -1,5 +1,43 @@
 # BuildPusher chat handoff
 
+## Controller modernization current checkpoint — 2026-09-12
+
+The controller modernization plan was executed through its local completion
+gate on `main`. The implementation slices were merged fast-forward from the
+temporary refactor branch and pushed after each commit. The current source
+checkpoint is `94d361c`, followed by the verification-ledger documentation
+commit `969e254`; this handoff update is the next documentation commit. The
+user's untracked `docs/controller-modernization-luna-max-plan.md` remains
+preserved and unstaged.
+
+The refactor now uses concrete Form Requests, policies/gates, cohesive actions
+and existing query/provider/service collaborators across the inventoried
+controller areas. Direct controller writes and inline controller validation
+were removed where a concrete responsibility boundary existed. Protocol-safe
+callback validation, resource lookup guards, workflow-state checks and
+integration availability checks remain at their required execution points.
+
+Final local verification on isolated runtime settings:
+
+- Full PHP suite: **1,320 passed / 11,411 assertions**.
+- Full Pint, Composer validation/platform checks, Vite build and
+  `git diff --check`: passed.
+- `npm audit --audit-level=high`: **0 vulnerabilities**.
+- Built-asset browser suite: **9 passed**, including no-JavaScript provider
+  submission.
+- Cached-route/seeded disposable HTTP runtime and versioned Livewire asset:
+  **1 passed**.
+- Accessibility browser check: **2 passed, 1 failed** on the unchanged tablet
+  focus expectation for the absent `Search and navigate` button at 768px;
+  mobile and desktop passed. The broad visual audit remains outstanding for
+  the unchanged missing mobile Settings link.
+
+The live paid-provider/cloud drill, deployment and external acceptance remain
+separate outstanding work. No production resources, billing, credentials or
+the acceptance-drill checkout were modified. See the [controller modernization
+ledger](verification/controller-modernization-progress.md) for the per-slice
+boundaries, contracts, commits and exact verification record.
+
 ## SOLID refactoring current checkpoint — 2026-09-12
 
 The ordered BuildPusher SOLID/Laravel refactor is complete through the local Phase 4 verification gate in the isolated worktree `/root/Documents/Codex/2026-09-12/buildpusher-solid-and-laravel-refactoring-plan`, branch `refactor/solid-laravel-20260912`, based on commit `a137739`. The live checkout and the separate acceptance-drill checkout were not modified.

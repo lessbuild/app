@@ -1,13 +1,15 @@
 # BuildPusher controller modernization progress
 
 Started: 2026-09-12  
-Base: `main` / `a0b090798022483933ac28af4ad5a7134deac85b`  
-Working branch: `refactor/controller-modernization-20260912`  
-Working tree: `/root/Documents/Codex/2026-09-12/buildpusher-controller-modernization`
+Base: `main` / `a0b090798022483933ac28af4ad5a7134deac85b`
+Historical implementation branch: `refactor/controller-modernization-20260912`
+Historical isolated worktree: `/root/Documents/Codex/2026-09-12/buildpusher-controller-modernization`
+Integration branch and current checkout: `main` / `/root/Documents/Codex/2026-08-30/clone-my-repo-work-on-it/deployer`
 
 This ledger records the controller modernization slices independently from the
 completed SOLID refactor recorded in `docs/verification/solid-refactor-progress-2026-09-12.md`.
-The integration branch remains `main`; no integration has been performed yet.
+The cohesive source slices were integrated fast-forward into `main` and pushed
+after each commit. The separate acceptance-drill checkout remains untouched.
 
 ## Phase 0 — isolation, inventory and baseline
 
@@ -5161,10 +5163,76 @@ interfaces or changing external billing ordering.
 
 Commit: `94d361c` — `refactor: route residual permissions through policies`
 
-**Phase 7BC exit gate: complete.** Exact next task: run the repository-wide
-static audit, complete PHP/Pint/dependency/assets/browser/runtime checks in the
-isolated configuration, then record the final verification and remaining
-external acceptance work.
+**Phase 7BC exit gate: complete.** The repository-wide audit and local final
+verification are recorded below. No further source extraction is justified by
+this plan; the remaining work is separate live/provider acceptance.
+
+## Phase 8 — final verification
+
+### Repository-wide audit
+
+The final audit covered controller and Livewire validation, authorization
+guards, Eloquent/query-builder writes, relationship/pivot mutations and
+private controller helpers.
+
+- No direct Eloquent, query-builder or pivot writes remain in the audited
+  controllers or Livewire paths. The remaining write-looking calls are
+  intentional collaborators: `NotificationState::delete()` and the existing
+  configuration review services' `create()` methods.
+- No controller or Livewire path uses inline `$request->validate()`,
+  `validateWithBag()` or `Validator::`. `ServerCommand`'s component-level
+  `$this->validate()` remains at the Livewire boundary.
+- Raw `$request->input()` usage remains only in protocol-sensitive callback
+  paths where validation occurs after locked attempt/stale-state checks; these
+  are documented exceptions rather than ordinary request-validation gaps.
+- Remaining `abort*()` calls are classified as scoped resource lookup,
+  business/workflow state, integration availability, OAuth/webhook/signature
+  verification or callback-ordering guards. Actor permissions moved to the
+  existing policies/gate where the semantics matched, preserving deliberate
+  404 concealment and existing 403/409/422/503 responses.
+
+### Local verification
+
+All application commands used
+`/root/.local/share/buildpusher/php-8.5.10/bin/php` and isolated runtime
+overrides. The full suite used `APP_DEBUG=true` because existing
+`OrganizationManagementTest` assertions inspect the text of an `abort(422, ...)`
+response; this does not change production configuration.
+
+- Full PHP suite: **1,320 passed, 11,411 assertions** in 486.08 seconds, with
+  no failures, skips, warnings, risky tests or deprecations.
+- Full Pint: **passed**.
+- Composer manifest validation and `check-platform-reqs --no-dev`: **passed**.
+  The system Composer process emitted PHP 8.5 deprecation notices from its
+  bundled libraries, but both commands exited successfully.
+- Vite production build: **passed**.
+- `npm audit --audit-level=high`: **0 vulnerabilities**.
+- Built-asset browser suite: **9 passed**, including the no-JavaScript
+  provider-submission coverage.
+- A disposable detached runtime based on pushed `main` was migrated and
+  seeded independently, then checked with cached config/routes/views. The
+  actual HTTP smoke and versioned Livewire asset check passed: **1 test**;
+  the versioned Livewire JavaScript asset returned HTTP 200. No credentials,
+  production storage, application key or live database were used.
+- Accessibility browser check: **2 passed, 1 failed**. The unchanged tablet
+  expectation at 768px still cannot find the `Search and navigate` button after
+  Escape, so focus restoration cannot be asserted. Mobile and desktop passed.
+  The prior broad visual audit remains outstanding because its unchanged
+  mobile `Settings`-link expectation is absent.
+- `git diff --check` passed, and `composer.lock` and `package-lock.json` have
+  no changes.
+
+### Completion and remaining acceptance
+
+The source modernization is integrated on `main` through
+`94d361c` (`refactor: route residual permissions through policies`) and each
+source/documentation commit was pushed to `origin/main`. This verification
+record is the documentation follow-up to `969e254`.
+
+The local completion gate is satisfied for the controller modernization. The
+separate live acceptance drill, paid provider/cloud acceptance and deployment
+remain outstanding. No production infrastructure, billing, credentials, cloud
+resources or acceptance-drill files were modified.
 
 ## Slice ledger
 
@@ -5258,4 +5326,4 @@ external acceptance work.
 | Phase 7AZ-status-subscriptions | StatusSubscriptionController mixed published-page lookup, email validation, token protocol checks, encrypted upsert/deletion and notification dispatch. | 18 observability/status subscription tests passed, 145 assertions; Pint, syntax and diff checks passed. | `06aa6a6` — `refactor: extract status subscription operations` | Extract substantive server command history deletion and server log refresh queuing, then classify billing external guards and residual protocol/resource exceptions. |
 | Phase 7BA-server-operational-writes | Server command history and Livewire server-log refresh mixed authorization, workflow state, direct persistence and job dispatch. | 20 server command/log snapshot tests passed, 183 assertions; Pint, syntax and diff checks passed. | `b1842a8` — `refactor: extract server operational writes` | Classify BillingController’s external checkout/portal and subscription-state guards, then finish the controller inventory and final verification without changing Stripe ordering or making live billing calls. |
 | Phase 7BB-billing-checkout | BillingController mixed plan/access guards, interval validation, Stripe availability and Cashier checkout composition. | 9 billing regression tests passed, 25 assertions; Pint, syntax and diff checks passed. | `078839e` — `refactor: extract billing checkout operation` | Complete static audit classification for portal/cancel/resume external calls, global admin gates, resource/protocol guards and all remaining inline validation/direct writes, then run final verification. |
-| Phase 7BC-residual-authorization | Admin analytics, system health and billing management still made actor-permission decisions inline instead of using the existing gate/policy boundaries. | 18 authorization regression tests passed, 97 assertions; Pint, syntax and diff checks passed. | `94d361c` — `refactor: route residual permissions through policies` | Run the repository-wide final audit and verification gate; document any remaining resource/protocol/external guards and outstanding live acceptance. |
+| Phase 7BC-residual-authorization | Admin analytics, system health and billing management still made actor-permission decisions inline instead of using the existing gate/policy boundaries. | 18 authorization regression tests passed, 97 assertions; Pint, syntax and diff checks passed. | `94d361c` — `refactor: route residual permissions through policies` | Local final verification is complete; only the separately authorized live/provider acceptance and the documented browser UI defects remain. |
