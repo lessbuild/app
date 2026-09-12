@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\AccessRequest\ReviewAccessRequestAction;
+use App\Exceptions\AccessRequestReviewException;
+use App\Http\Requests\UpdateAccessRequestRequest;
 use App\Models\AccessRequest;
-use App\Notifications\AccessInvitationNotification;
-use App\Services\AccessInvitation;
 use App\Support\CsvCell;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -20,7 +19,7 @@ class AdminAccessRequestController extends Controller
      */
     public function index(Request $request): View
     {
-        abort_unless($request->user()->isPlatformAdmin(), 403);
+        $this->authorize('platform-admin');
         $status = in_array($request->query('status'), AccessRequest::STATUSES, true) ? $request->query('status') : null;
 
         return view('admin.access-requests', [
@@ -35,32 +34,16 @@ class AdminAccessRequestController extends Controller
      *
      * @return RedirectResponse The saved result after issuing or invalidating invitation credentials as needed.
      */
-    public function update(Request $request, AccessRequest $accessRequest, AccessInvitation $invitations): RedirectResponse
+    public function update(UpdateAccessRequestRequest $request, AccessRequest $accessRequest, ReviewAccessRequestAction $review): RedirectResponse
     {
-        abort_unless($request->user()->isPlatformAdmin(), 403);
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(AccessRequest::STATUSES)],
-            'review_notes' => ['nullable', 'string', 'max:2000'],
-            'resend_invitation' => ['nullable', 'boolean'],
-        ]);
-        abort_if($accessRequest->accepted_at !== null && $validated['status'] !== 'accepted', 422, __('Accepted requests are immutable onboarding records until retention removes them.'));
-        abort_if($accessRequest->accepted_at === null && $validated['status'] === 'accepted', 422, __('Only successful invitation registration can accept a request.'));
-        $previousStatus = $accessRequest->status;
-        $accessRequest->update([
-            'status' => $validated['status'],
-            'review_notes' => $validated['review_notes'] ?? null,
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
-
-        if ($validated['status'] === 'invited' && ($previousStatus !== 'invited' || ($validated['resend_invitation'] ?? false))) {
-            $token = $invitations->issue($accessRequest);
-            Notification::route('mail', $accessRequest->email)->notify(new AccessInvitationNotification(
-                route('register', ['invite' => $token]),
-                (int) config('lessbuild.registration.invitation_days', 7),
-            ));
-        } elseif ($validated['status'] !== 'invited' && $accessRequest->invitation_token_hash !== null) {
-            $accessRequest->update(['invitation_token_hash' => null, 'invitation_expires_at' => null]);
+        try {
+            $review->handle($accessRequest, $request->user(), [
+                'status' => $request->validated('status'),
+                'review_notes' => $request->validated('review_notes'),
+                'resend_invitation' => (bool) ($request->validated('resend_invitation') ?? false),
+            ]);
+        } catch (AccessRequestReviewException $exception) {
+            abort(422, $exception->getMessage());
         }
 
         return back()->with('success', __('Access request updated.'));
@@ -71,7 +54,7 @@ class AdminAccessRequestController extends Controller
      */
     public function export(Request $request): StreamedResponse
     {
-        abort_unless($request->user()->isPlatformAdmin(), 403);
+        $this->authorize('platform-admin');
         $status = in_array($request->query('status'), AccessRequest::STATUSES, true) ? $request->query('status') : null;
 
         return response()->streamDownload(function () use ($status): void {

@@ -22,6 +22,7 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\StatusIncident;
 use App\Models\StatusPage;
+use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
@@ -52,6 +53,7 @@ use App\Policies\WebsitePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Support\Facades\Gate;
 use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthServiceProvider extends ServiceProvider
@@ -96,6 +98,8 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->registerPolicies();
+
+        Gate::define('platform-admin', fn (User $user): bool => $user->isPlatformAdmin());
 
         AuthenticateSession::redirectUsing($this->sessionLoginRedirect(...));
 

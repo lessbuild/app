@@ -189,6 +189,31 @@ class AccessRequestTest extends TestCase
         Notification::assertSentOnDemand(AccessInvitationNotification::class);
     }
 
+    public function test_admin_cannot_change_accepted_requests_or_accept_unregistered_requests(): void
+    {
+        config(['lessbuild.platform_admin_emails' => ['admin@example.com']]);
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $accepted = AccessRequest::query()->create([
+            'email_hash' => hash('sha256', 'accepted@example.com'), 'email' => 'accepted@example.com', 'name' => 'Accepted',
+            'use_case' => 'A sufficiently detailed deployment use case.', 'status' => 'accepted', 'accepted_at' => now(),
+        ]);
+        $pending = AccessRequest::query()->create([
+            'email_hash' => hash('sha256', 'pending@example.com'), 'email' => 'pending@example.com', 'name' => 'Pending',
+            'use_case' => 'A sufficiently detailed deployment use case.', 'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin)->patch(route('admin.access-requests.update', $accepted), [
+            'status' => 'declined', 'review_notes' => 'Should not change.',
+        ])->assertStatus(422);
+        $this->actingAs($admin)->patch(route('admin.access-requests.update', $pending), [
+            'status' => 'accepted',
+        ])->assertStatus(422);
+
+        $this->assertSame('accepted', $accepted->fresh()->status);
+        $this->assertSame('pending', $pending->fresh()->status);
+        $this->assertNull($pending->fresh()->reviewed_by);
+    }
+
     public function test_invalid_request_returns_safe_validation_errors(): void
     {
         $this->from(route('access-request.create'))->post(route('access-request.store'), [
