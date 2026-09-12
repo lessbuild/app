@@ -2207,6 +2207,72 @@ with provider management by inventorying `ProviderController`, its request,
 provider policies/adapters, connection testing/monitoring, inventory queries
 and exports before separating shared reads and provider operations.
 
+## Phase 6A — provider write operations and cloud catalog authorization
+
+### Responsibility problem
+
+The provider inventory, connection-history queries, metrics, and exporters
+were already separate collaborators in the starting branch, so those reads
+were retained rather than re-extracted. The remaining `ProviderController`
+write endpoints still performed monitoring entitlement checks, workspace
+creation, credential-preserving updates, provider-type attachment safeguards,
+health resets, and soft deletion directly. The cloud server catalog also
+combined provider authorization and supported-type classification in one
+inline guard.
+
+### Boundaries applied
+
+- `ProviderPolicy::create` formalizes the existing pre-validation deployment
+  gate used by `ProviderRequest`; the update endpoint retains its later
+  `update` policy check so deployment-capable but non-manager actors preserve
+  the established validation/authorization ordering. `ProviderPolicy::deploy`
+  owns current-workspace cloud-provider access for the server catalog.
+- `CreateProviderAction`, `UpdateProviderAction`, and `DeleteProviderAction`
+  own provider persistence, monitoring entitlement checks, token omission,
+  provider-type and attached-resource rules, health reset behavior, and soft
+  deletion. `ProviderOperationException` carries an operation field and the
+  existing input-preservation choice for controller response mapping.
+- `ProviderServerCatalogController` now uses the provider policy for actor
+  access and leaves unsupported provider classification as its existing 403
+  resource-capability response. Existing `ProviderConnectionController`,
+  `ProviderHealthMonitor`, adapters, history services, and probe semantics
+  remain reusable integration boundaries.
+
+This applies single responsibility and dependency inversion without creating
+generic provider repositories or changing provider adapter contracts.
+
+### Preserved contracts and safety guarantees
+
+- Provider create/update/delete routes, redirects, validation keys, success
+  feedback, provider-type normalization, monitoring defaults and entitlements,
+  attached-resource errors, credential omission, health reset behavior and
+  soft deletion remain unchanged.
+- Encrypted provider tokens remain outside logs, exports and flashed token
+  input. Denied create/update attempts return 403 before their relevant
+  writes; no provider records are created or changed.
+- Provider inventory/history pagination, ordering, filters, CSV escaping,
+  connection-test rate limits, sanitized failures, monitoring leases/guards,
+  failure thresholds, and DigitalOcean droplets-based probing remain in the
+  existing services and adapters. No route, schema, lockfile, queue payload,
+  or remote request contract changed.
+
+### Verification
+
+- Provider CRUD, entitlement, monitoring, connection, history, inventory,
+  export, tenancy and cloud-catalog regression set: **75 passed, 688
+  assertions**.
+- Full Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `d257128` — `refactor: extract provider operations`
+
+**Phase 6A exit gate: complete.** Exact next task: characterize the remaining
+provider integration boundary—manual and automatic connection checks,
+provider adapter result/failure contracts, idempotent cloud deletion, and
+DigitalOcean droplets probing—then add/strengthen contract coverage and make
+only a justified adapter or tester extraction if the semantics require it.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2243,3 +2309,4 @@ and exports before separating shared reads and provider operations.
 | Phase 5G-organization-membership | Member role/removal and workspace switch endpoints mixed policy checks, scoped member lookup, owner safeguards, pivot/current-workspace writes and seat dispatch in `OrganizationController`. | 30 organization/invitation/entitlement/plan-limit/billing tests passed, 140 assertions; Pint and diff checks passed. | `39f2830` — `refactor: extract organization membership operations` | Characterize notification/security settings, including normalization, IP self-lockout protection, SSO entitlement/configuration rules and named validation behavior. |
 | Phase 5H-organization-settings | Organization settings endpoints mixed manager authorization, request validation/normalization, IP/domain/SSO invariants, encrypted persistence and shared IP matching in the controller and middleware. | 21 organization/platform regression tests passed, 112 assertions; Pint and diff checks passed. | `a1be9af` — `refactor: extract organization settings operations` | Characterize workspace deletion's named `deleteWorkspace` validation bag, owner/current-workspace authorization, two-factor/password ordering, teammate and active-workflow guards, transaction and personal-workspace recovery, then extract the request/action boundary. |
 | Phase 5I-organization-deletion | Workspace deletion and organization-index visibility mixed policy decisions, dynamic named-bag validation, 2FA verification, workflow safety guards, transactional deletion/recovery and HTTP status mapping in `OrganizationController`. | 28 deletion/account/2FA tests passed, 163 assertions; 25 organization/tenancy tests passed, 131 assertions; Pint and diff checks passed. | `d253ca0` + `35719ac` — `refactor: extract organization deletion operation`; `refactor: authorize organization workspace page` | Begin Phase 6 provider management: inventory provider reads/exports, connection testing/monitoring, request validation, policies, adapters, entitlements and encrypted credential safety. |
+| Phase 6A-provider-operations | Provider CRUD mixed entitlement checks, credential-preserving updates, attachment safeguards, health resets and direct writes; cloud catalog access used a combined inline guard. | 75 provider/entitlement/monitoring/history/inventory/export/cloud-catalog tests passed, 688 assertions; Pint and diff checks passed. | `d257128` — `refactor: extract provider operations` | Characterize manual/automatic connection-check and adapter contracts, idempotent cloud deletion and DigitalOcean droplets probing; strengthen contract coverage and extract only a justified integration boundary. |
