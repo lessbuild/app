@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
+use App\Jobs\RunScheduledTaskJob;
 use App\Jobs\WakeHibernatedEnvironmentJob;
 use App\Models\Provider;
 use App\Models\Server;
@@ -171,6 +172,70 @@ class AutomationTest extends TestCase
         ])->assertSessionHasErrors('plan');
 
         $this->assertDatabaseCount('scheduled_tasks', 0);
+    }
+
+    public function test_owner_can_queue_a_manual_scheduled_task_run(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $user->id, 'name' => 'Warm cache', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+
+        $this->actingAs($user)->post(route('automation.tasks.run', $task))
+            ->assertRedirect()->assertSessionHas('success', 'Task queued.');
+
+        $run = $task->runs()->sole();
+        $this->assertSame('queued', $run->status);
+        $this->assertNotNull($task->fresh()->last_queued_at);
+        Queue::assertPushed(RunScheduledTaskJob::class, fn (RunScheduledTaskJob $job): bool => $job->runId === $run->id);
+    }
+
+    public function test_manual_task_run_preserves_the_non_overlap_guard(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $user->id, 'name' => 'Warm cache', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+        $existing = $task->runs()->create(['status' => 'running']);
+
+        $this->actingAs($user)->post(route('automation.tasks.run', $task))
+            ->assertRedirect()->assertSessionHasErrors('task');
+
+        $this->assertDatabaseCount('scheduled_task_runs', 1);
+        $this->assertSame($existing->id, $task->runs()->sole()->id);
+        Queue::assertNotPushed(RunScheduledTaskJob::class);
+    }
+
+    public function test_manual_task_run_denial_precedes_an_active_run_check(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $owner->id, 'name' => 'Warm cache', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+        $task->runs()->create(['status' => 'running']);
+
+        $this->actingAs($viewer)->post(route('automation.tasks.run', $task))->assertForbidden();
+
+        $this->assertDatabaseCount('scheduled_task_runs', 1);
+        Queue::assertNotPushed(RunScheduledTaskJob::class);
     }
 
     public function test_workflow_yaml_applies_schedules_scaling_and_processes_atomically(): void

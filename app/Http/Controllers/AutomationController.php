@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Actions\Automation\CreateDeploymentScheduleAction;
 use App\Actions\Automation\CreateScalingScheduleAction;
 use App\Actions\Automation\CreateScheduledTaskAction;
+use App\Actions\Automation\QueueScheduledTaskRunAction;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
 use App\Http\Requests\StoreScalingScheduleRequest;
 use App\Http\Requests\StoreScheduledTaskRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
-use App\Jobs\RunScheduledTaskJob;
 use App\Models\DeploymentSchedule;
 use App\Models\Environment;
 use App\Models\Project;
@@ -150,16 +150,12 @@ class AutomationController extends Controller
      *
      * @return RedirectResponse A queued acknowledgement or an already-running validation error.
      */
-    public function runScheduledTask(ScheduledTask $task): RedirectResponse
+    public function runScheduledTask(ScheduledTask $task, QueueScheduledTaskRunAction $queueRun): RedirectResponse
     {
         $this->authorize('update', $task->environment);
-        $this->entitlements->enforce($task->environment->project->organization, 'scheduled_deployments');
-        if ($task->without_overlapping && $task->runs()->whereIn('status', ['queued', 'running'])->exists()) {
+        if ($queueRun->handle($task) === null) {
             return back()->withErrors(['task' => __('This task is already running.')]);
         }
-        $run = $task->runs()->create(['status' => 'queued']);
-        $task->update(['last_queued_at' => now()]);
-        RunScheduledTaskJob::dispatch($run->id);
 
         return back()->with('success', __('Task queued.'));
     }
