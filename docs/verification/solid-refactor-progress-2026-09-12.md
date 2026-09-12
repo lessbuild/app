@@ -219,6 +219,24 @@ Verification after the slice:
 - Bulk selection validation gate: 3 passed (15 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — single report submission action slice
+
+Responsibility problem: `RecipeReportsController::store()` combined HTTP eligibility checks, SQLite writer reservation, locked create-or-update persistence, report lifecycle reset, contributor notification and audit recording.
+
+Boundary used: `SubmitRecipeReportAction` now owns the reusable report submission operation and receives the reporter, recipe and validated attributes explicitly. The controller retains the pre-validation published/non-authorship HTTP guards and response flash; the action revalidates the locked recipe state and owns the transaction plus injected notifier/activity collaborators.
+
+Preserved guarantees:
+
+- The pre-validation 404/403 behavior, SQLite writer reservation, recipe/report lock order, create-versus-update semantics, resolved-state reset and notification deduplication remain unchanged.
+- Notification and activity writes remain inside the existing transaction, with the same anonymous metadata and message wording.
+- No route, validation key, persisted field, serialized value, YAML schema or queue behavior changed.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- New-report notification regression: 1 passed (11 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Evaluate extracting single-report report submission and resolution transitions into cohesive actions, preserving their existing transaction, lock, notification and audit sequencing; leave bulk transitions together until their shared workflow is characterized.
+Extract the single-report resolve transition into a cohesive action, preserving contributor/report ownership checks, lock order, idempotent repeated resolution, reporter notification and audit timing.

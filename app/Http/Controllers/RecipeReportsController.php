@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Http\Requests\RecipeReportResolutionRequest;
 use App\Http\Requests\ReopenRecipeReportsRequest;
 use App\Http\Requests\ResolveRecipeReportsRequest;
@@ -143,44 +144,14 @@ class RecipeReportsController extends Controller
      *
      * @return RedirectResponse A private-report acknowledgement after locked persistence, notification, and activity recording.
      */
-    public function store(StoreRecipeReportRequest $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function store(StoreRecipeReportRequest $request, Recipe $recipe, SubmitRecipeReportAction $submitReport): RedirectResponse
     {
         abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
         abort_if((int) $recipe->user_id === (int) $request->user()->id, 403);
 
         $data = $request->validated();
         $data['details'] = $request->details();
-        $data['resolved_at'] = null;
-        $data['resolution_note'] = null;
-
-        DB::transaction(function () use ($activity, $data, $notifications, $recipe, $request): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            abort_unless($lockedRecipe->is_published && $lockedRecipe->published_at !== null, 404);
-            abort_if((int) $lockedRecipe->user_id === (int) $request->user()->id, 403);
-
-            $report = $request->user()->recipeReports()
-                ->where('recipe_id', $lockedRecipe->id)
-                ->lockForUpdate()
-                ->first();
-            if ($report === null) {
-                $report = $request->user()->recipeReports()->create([
-                    'recipe_id' => $lockedRecipe->id,
-                    ...$data,
-                ]);
-            } else {
-                $report->fill($data)->save();
-            }
-
-            $notifications->open($lockedRecipe, $report);
-            $activity->record(
-                $lockedRecipe,
-                $request->user()->id,
-                'recipe',
-                $report->wasRecentlyCreated
-                    ? "Gallery recipe \"{$lockedRecipe->name}\" was reported as {$report->reason}."
-                    : "Gallery recipe \"{$lockedRecipe->name}\" report was updated to {$report->reason}.",
-            );
-        });
+        $submitReport->handle($recipe, $request->user(), $data);
 
         return back()->with('status', __('Your private gallery report was saved.'));
     }
