@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Repository\CreateRepositoryAction;
 use App\Actions\Repository\DeleteRepositoryAction;
 use App\Actions\Repository\DeployRepositoryAction;
 use App\Actions\Repository\UpdateRepositoryAction;
+use App\Exceptions\RepositoryWebhookConfigurationException;
 use App\Http\Requests\RepositoryIndexRequest;
 use App\Http\Requests\RepositoryRequest;
 use App\Http\Requests\RepositoryWebhookDeliveryRequest;
@@ -132,16 +134,14 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function store(RepositoryRequest $request): RedirectResponse
+    public function store(RepositoryRequest $request, CreateRepositoryAction $create): RedirectResponse
     {
         $attributes = $request->validated();
-        $provider = $request->user()->workspaceProviders()->findOrFail($attributes['provider_id']);
-        if ($provider->isGitHubApp()) {
-            abort_unless(filled(config('github-app.webhook_secret')), 503, 'GitHub App webhook delivery is not configured.');
-            $attributes['webhook_enabled'] = true;
-            $attributes['webhook_secret'] = config('github-app.webhook_secret');
+        try {
+            $repository = $create->handle($request->user(), $attributes);
+        } catch (RepositoryWebhookConfigurationException $exception) {
+            abort(503, $exception->getMessage());
         }
-        $repository = $request->user()->workspaceRepositories()->create($attributes);
 
         return redirect()->route('repositories.show', $repository);
     }
@@ -173,16 +173,12 @@ class RepositoriesController extends Controller
         $this->authorize('update', $repository);
 
         $validated = $request->validated();
-        $provider = $request->user()->workspaceProviders()->findOrFail($validated['provider_id']);
-        if ($provider->isGitHubApp()) {
-            abort_unless(filled(config('github-app.webhook_secret')), 503, 'GitHub App webhook delivery is not configured.');
-            $validated['webhook_enabled'] = true;
-            $validated['webhook_secret'] = config('github-app.webhook_secret');
-        } elseif ($repository->provider?->isGitHubApp()) {
-            $validated['webhook_enabled'] = false;
-            $validated['webhook_secret'] = null;
+        try {
+            $updated = $update->handle($repository, $request->user(), $validated);
+        } catch (RepositoryWebhookConfigurationException $exception) {
+            abort(503, $exception->getMessage());
         }
-        if (! $update->handle($repository, $validated)) {
+        if (! $updated) {
             throw ValidationException::withMessages([
                 'website_id' => __('Wait for the current website deployment to finish before editing this repository.'),
             ]);

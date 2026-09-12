@@ -93,6 +93,69 @@ class GitHubAppIntegrationTest extends TestCase
         $this->assertDatabaseHas('builds', ['repository_id' => $repository->id, 'status' => Build::STATUS_QUEUED]);
     }
 
+    public function test_app_repository_creation_fails_without_a_webhook_secret_before_persisting(): void
+    {
+        Queue::fake();
+        config(['github-app.webhook_secret' => null]);
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $provider = $user->workspaceProviders()->create([
+            'user_id' => $user->id, 'name' => 'GitHub App', 'description' => 'Installation', 'provider' => Provider::TYPE_GITHUB,
+            'credential_type' => 'app', 'external_id' => '777', 'token' => 'placeholder',
+        ]);
+        $server = $user->workspaceServers()->create([
+            'user_id' => $user->id, 'name' => 'server', 'display_name' => 'Server', 'region' => 'test', 'image' => 'ubuntu', 'size' => 'small',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $website = $user->workspaceWebsites()->create([
+            'user_id' => $user->id, 'server_id' => $server->id, 'name' => 'App', 'description' => 'App', 'environment' => '',
+            'url' => 'app.example.test', 'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($user)->post(route('repositories.store'), [
+            'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'Example',
+            'url' => 'github.com/buildpusher/example.git', 'branch' => 'main', 'description' => 'Example app',
+        ])->assertStatus(503);
+
+        $this->assertDatabaseCount('repositories', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_switching_to_an_app_provider_fails_without_a_webhook_secret_before_updating(): void
+    {
+        config(['github-app.webhook_secret' => null]);
+        $user = User::factory()->create();
+        $this->actingAs($user);
+        $provider = $user->workspaceProviders()->create([
+            'user_id' => $user->id, 'name' => 'GitHub', 'description' => 'Source provider', 'provider' => Provider::TYPE_GITHUB,
+            'token' => 'placeholder',
+        ]);
+        $appProvider = $user->workspaceProviders()->create([
+            'user_id' => $user->id, 'name' => 'GitHub App', 'description' => 'Installation', 'provider' => Provider::TYPE_GITHUB,
+            'credential_type' => 'app', 'external_id' => '777', 'token' => 'placeholder',
+        ]);
+        $server = $user->workspaceServers()->create([
+            'user_id' => $user->id, 'name' => 'server', 'display_name' => 'Server', 'region' => 'test', 'image' => 'ubuntu', 'size' => 'small',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $website = $user->workspaceWebsites()->create([
+            'user_id' => $user->id, 'server_id' => $server->id, 'name' => 'App', 'description' => 'App', 'environment' => '',
+            'url' => 'app.example.test', 'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $repository = $user->repositories()->create([
+            'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'Example',
+            'url' => 'github.com/buildpusher/example.git', 'branch' => 'main', 'description' => 'Example app',
+        ]);
+
+        $this->actingAs($user)->patch(route('repositories.update', $repository), [
+            'provider_id' => $appProvider->id, 'website_id' => $website->id, 'name' => 'Changed',
+            'url' => 'github.com/buildpusher/example.git', 'branch' => 'main', 'description' => 'Changed app',
+        ])->assertStatus(503);
+
+        $this->assertSame($provider->id, $repository->fresh()->provider_id);
+        $this->assertSame('Example', $repository->fresh()->name);
+    }
+
     private function privateKey(): string
     {
         $key = openssl_pkey_new(['private_key_bits' => 2048]);
