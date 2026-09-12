@@ -1270,6 +1270,53 @@ and scaling schedule deletion actions, preserving policy ordering and current
 404/redirect behavior; keep scheduled-run output as a read-only controller
 response unless characterization shows a separate query boundary is needed.
 
+## Phase 4E — automation deletion operations
+
+### Responsibility problem
+
+The three automation deletion endpoints still performed direct Eloquent
+deletes in `AutomationController`, even after their resource-policy checks.
+This left the project convention inconsistent across creation, execution and
+deletion while coupling the controller to each model's persistence operation.
+
+### Boundaries applied
+
+- `DeleteScheduledTaskAction`, `DeleteDeploymentScheduleAction` and
+  `DeleteScalingScheduleAction` own their concrete persisted-record deletes.
+- The controller continues to authorize the schedule/task environment and
+  returns the existing success response. No shared generic delete abstraction
+  was introduced because the three model lifecycles are separate operations.
+- Scheduled-task output remains a read-only response boundary with its existing
+  view policy and no action extraction.
+
+This applies single responsibility and keeps authorization in policies while
+avoiding speculative interfaces or repositories.
+
+### Preserved contracts and safety guarantees
+
+- Delete routes, implicit bindings, authorization status, redirects and exact
+  success messages are unchanged.
+- Viewer denial occurs before any action invocation; owner deletion retains
+  existing cascade behavior for task runs. No entitlement, job, output,
+  workflow or schedule-run semantics changed.
+
+### Verification
+
+- Automation, API, workflow, runtime, tenancy and entitlement regression set:
+  **45 passed, 265 assertions**.
+- Added owner deletion and viewer/no-write coverage for all three automation
+  record types.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `7ad26fa` — `refactor: extract automation deletion operations`
+
+Exact next task: characterize web scaling changes and API scale/runtime
+contracts together, then extract the smallest shared runtime transition
+operation only where semantics match; preserve distinct request validation,
+token abilities, entitlements, status envelopes and dispatch behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1291,3 +1338,4 @@ response unless characterization shows a separate query boundary is needed.
 | Phase 4B-scaling-schedule | Scaling-schedule creation mixed policy, entitlement ordering, cron/timezone validation, environment replica bounds and persistence in `AutomationController`; API runtime scaling remains a distinct JSON operation. | 38 automation/API/runtime/tenancy/entitlement regression tests passed, 231 assertions; Pint and diff checks passed. | `b4323c2` — `refactor: extract scaling schedule operation` | Characterize scheduled-task creation, overlap guards, encrypted commands, deletion and output authorization, then extract its request/action boundary. |
 | Phase 4C-scheduled-task | Scheduled-task creation mixed policy, entitlement ordering, cron/task validation, encrypted command persistence and actor attribution in `AutomationController`; manual runs and output remain separate operations. | 40 automation/API/runtime/tenancy/entitlement regression tests passed, 236 assertions; Pint and diff checks passed. | `f6878ed` — `refactor: extract scheduled task operation` | Extract manual scheduled-task runs while preserving overlap guards, run timestamps, job dispatch and task authorization. |
 | Phase 4D-task-run | Manual scheduled-task execution mixed policy, entitlement, overlap checks, queued-run persistence, timestamp mutation and job dispatch in `AutomationController`. | 43 automation/API/runtime/tenancy/entitlement regression tests passed, 250 assertions; Pint and diff checks passed. | `9c5edf3` — `refactor: extract scheduled task runs` | Extract scheduled-task deletion, then paired deployment/scaling schedule deletion actions, preserving policy ordering and existing responses. |
+| Phase 4E-automation-deletions | Three automation controllers directly deleted scheduled-task, deployment-schedule and scaling-schedule records after authorization. | 45 automation/API/runtime/tenancy/entitlement regression tests passed, 265 assertions; Pint and diff checks passed. | `7ad26fa` — `refactor: extract automation deletion operations` | Characterize web scale and API scale/runtime contracts, then extract only matching runtime transition logic. |
