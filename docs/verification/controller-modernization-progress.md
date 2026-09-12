@@ -2794,6 +2794,60 @@ Commit: `72c9355` — `refactor: extract gallery install operations`
 and locked deletion, preserving timestamp/revision rules, encrypted script
 handling, notification cleanup, activity timing and existing responses.
 
+## Phase 7I — recipe lifecycle operations
+
+### Responsibility problem
+
+`RecipesController` still combined validated recipe input with publication
+timestamp/revision calculation, direct create/update/duplicate writes, report
+notification cleanup, SQLite lock preparation and activity recording. Those
+rules were cohesive application operations but were only reachable through
+the controller.
+
+### Boundaries applied
+
+- `RecipePublication` owns the shared publication/category normalization and
+  `published_at`/`gallery_revision_at` identity rules used by create and update.
+- `CreateRecipeAction` and `UpdateRecipeAction` own recipe persistence and
+  actor-attributed lifecycle activity for their respective operations.
+- `DuplicateRecipeAction` owns bounded copy naming, encrypted-script copying
+  and duplication activity.
+- `DeleteRecipeAction` owns the existing SQLite writer reservation, recipe lock,
+  report-notification cleanup, deletion and deletion activity inside the same
+  transaction.
+- `RecipesController` now coordinates policy checks, validated input, actions
+  and existing redirects. Its inventory reads/filters/CSV remain separate for
+  a later query/request slice.
+
+This applies single responsibility and dependency inversion to real recipe
+lifecycle boundaries without adding a universal save service or repository.
+
+### Preserved contracts and safety guarantees
+
+- Omitted publication fields, category clearing, publication timestamp reuse,
+  gallery revision changes, name truncation, encrypted script persistence,
+  duplicate semantics, ownership/authorization, notification cleanup, lock
+  ordering, activity text/timing, routes and status flashes remain unchanged.
+- Recipe deletion still rolls back notification and audit changes if the
+  transaction fails; server recipe snapshots remain independent of lifecycle
+  edits/deletion.
+
+### Verification
+
+- Recipe management, duplication, activity, gallery, report and report-
+  notification regression set: **56 passed, 507 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `8f594ac` — `refactor: extract recipe lifecycle operations`
+
+**Phase 7I exit gate: complete.** Exact next task: move the remaining recipe
+inventory and gallery filter normalization/CSV responsibilities into dedicated
+request/query/export boundaries, preserving silent defaults, pagination,
+ordering, metrics, eager loading and spreadsheet-safe output.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2840,3 +2894,4 @@ handling, notification cleanup, activity timing and existing responses.
 | Phase 7F-repository-webhook-settings | Repository webhook settings mixed GitLab protocol validation, generated-secret disclosure, encrypted enable/disable writes and pending-state cleanup in the controller. | 19 repository webhook/GitHub App/authorization tests passed, 151 assertions; Pint and diff checks passed. | `12e7927` — `refactor: extract repository webhook settings operations` | Audit recipe, gallery, ratings/favorites, feedback and notification controllers for remaining direct writes, inline actor guards, named bags and duplicated report/query semantics. |
 | Phase 7G-recipe-ratings-favorites | Rating/favorite controllers mixed availability/actor guards, validation, relation-scoped persistence, idempotency and activity recording. | 59 recipe rating/favorite/activity/gallery/report tests passed, 611 assertions; Pint and diff checks passed. | `bb9d3e1` — `refactor: extract recipe rating and favorite operations` | Extract gallery install/refresh and recipe lifecycle operations, preserving publication timestamps, source revisions, install-count concurrency, encrypted scripts, activity timing and response outcomes. |
 | Phase 7H-gallery-install-refresh | Gallery install/refresh transactions and activity recording remained inside `RecipeGalleryController`. | 21 gallery/activity/favorite/rating tests passed, 214 assertions; Pint and diff checks passed. | `72c9355` — `refactor: extract gallery install operations` | Extract recipe create/update publication persistence, duplicate creation and locked deletion, preserving timestamps, revisions, encrypted scripts, notification cleanup, activity timing and responses. |
+| Phase 7I-recipe-lifecycle | Recipe controller mixed publication metadata rules, direct create/update/duplicate writes, locked deletion, report-notification cleanup and activity recording. | 56 recipe management/duplication/activity/gallery/report tests passed, 507 assertions; Pint and diff checks passed. | `8f594ac` — `refactor: extract recipe lifecycle operations` | Extract recipe inventory and gallery filter normalization/CSV/query boundaries, preserving silent defaults, pagination, ordering, metrics, eager loading and spreadsheet-safe output. |
