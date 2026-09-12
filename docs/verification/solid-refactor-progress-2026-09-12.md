@@ -453,6 +453,17 @@ Verification after the slice:
 - Website deletion, relocation, deployment-serialization and security suite: 19 passed (178 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — Websites exit review
+
+The Websites slice is complete. Inventory filtering/metrics, inventory CSV, health-history queries/metrics, health CSV, update state transitions and logical deletion now have explicit boundaries. Existing provisioning, failed-retry, remote-placement cleanup and health-monitoring actions/jobs were reused because they already isolate their responsibilities; remaining create, manual-check and placement-retry methods are straightforward HTTP-to-job coordination and do not justify another abstraction.
+
+Verification after the phase:
+
+- All 14 `Website*Test.php` classes plus `InfrastructureListFilterTest`: 80 passed (803 assertions).
+- The gate covered inventory/export, health history/monitoring, encrypted environments, provisioning logs/retries, relocation/cleanup, deletion, retention, deployment serialization, security and authorization.
+- Targeted Pint, PHP syntax checks and `git diff --check`: passed. Full Pint remains part of Phase 4.
+- Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Run the complete Phase 3B website regression gate, review the remaining straightforward CRUD/queue coordination against the existing Web actions, and close the Websites slice if no further stable boundary is justified.
+Begin Phase 3C: map `BuildsController` and `RepositoriesController`, existing `app/Actions/Repository`, deployment/reporting queries, webhooks, approvals, promotion, rollback, cancellation and concurrency before selecting the smallest justified extraction.
