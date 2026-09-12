@@ -3520,6 +3520,59 @@ account operations, first characterizing setup/enable/confirm/cancel/disable
 ordering, the `twoFactor` bag, secret/recovery-code handling, session
 regeneration, activity/notification timing and verification-code behavior.
 
+## Phase 7X — two-factor setup operation boundaries
+
+### Responsibility problem
+
+`TwoFactorAuthenticationController` mixed setup-state guards, conditional
+password validation, authenticator-secret generation, pending-state cleanup,
+direct account writes and setup response mapping for both start and cancel
+operations.
+
+### Boundary and principles
+
+`EnableTwoFactorRequest` owns the `twoFactor` bag and conditional local
+password validation. Its pre-validation state check intentionally preserves
+the existing 422-before-validation behavior when two-factor is already
+active; this is a workflow-state exception, not an actor permission.
+`BeginTwoFactorSetupAction` owns secret generation and pending recovery-state
+replacement. `CancelTwoFactorSetupAction` owns unfinished-setup cleanup and
+the active-state invariant. The controller coordinates the request/action and
+maps the existing flash response. This applies single responsibility and
+dependency inversion without turning workflow state into a policy.
+
+### Preserved guarantees
+
+- Active two-factor setup still returns 422 before password validation; a
+  second action-level check protects against a state change between request
+  validation and persistence.
+- Local accounts still require the current password, social-only accounts can
+  begin setup without one, and the `twoFactor` error bag remains unchanged.
+- Setup still generates an encrypted pending secret, clears stale recovery
+  codes/confirmation state and preserves the existing status message.
+  Cancellation still clears all pending fields, leaves active credentials
+  untouched and returns the original status message.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Two-factor setup/authentication/security regression set: **16 passed, 123
+  assertions**.
+- Added coverage for active-state ordering, passwordless social setup,
+  pending cancellation and active cancellation protection.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `aa27ffa` — `refactor: extract two-factor setup operations`
+
+**Phase 7X exit gate: complete.** Exact next task: extract two-factor
+confirmation, preserving code validation in the `twoFactor` bag, pending
+secret verification, invalid-code response, recovery-code hashing and
+one-time plaintext flash behavior, activity timing and encrypted persistence.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3581,3 +3634,4 @@ regeneration, activity/notification timing and verification-code behavior.
 | Phase 7U-session-revocation | UsersController mixed `sessions` validation, authentication-device invalidation, stored-session cleanup, regeneration and activity recording. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `1b2954d` — `refactor: extract session revocation operation` | Extract individual browser-session revocation, preserving route/form ID attestation, ownership-scoped outcomes, current-session protection, unavailable-driver behavior and exact responses. |
 | Phase 7V-individual-session | UsersController mixed route/form ID attestation, `sessions` validation, ownership-scoped deletion, current-session protection, availability outcomes and activity mapping. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `8fb11fe` — `refactor: extract individual session revocation` | Extract social-account disconnect validation and locked provider mutation, preserving the `social` bag, missing/last-method outcomes, provider fallback, activity and exact responses. |
 | Phase 7W-social-account | UsersController mixed conditional `social` validation, locked provider mutation, last-method protection, auth-type fallback, activity and response mapping. | 30 account profile/password/social/session/security/rate-limit tests passed, 279 assertions; Pint, syntax and diff checks passed. | `f0adf6f` — `refactor: extract social account disconnect operation` | Modernize two-factor setup/enable/confirm/cancel/disable operations, preserving the `twoFactor` bag, secret/recovery handling, ordering and security side effects. |
+| Phase 7X-two-factor-setup | TwoFactorAuthenticationController mixed setup-state guards, conditional password validation, pending secret/recovery writes and cancellation. | 16 two-factor/authentication/security tests passed, 123 assertions; Pint, syntax and diff checks passed. | `aa27ffa` — `refactor: extract two-factor setup operations` | Extract two-factor confirmation, preserving `twoFactor` validation, pending-secret verification, recovery-code hashing, plaintext flash behavior and activity timing. |
