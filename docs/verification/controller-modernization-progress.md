@@ -4972,6 +4972,53 @@ subscription validation, token protocol checks and subscription writes; extract
 only the safe request/verifier/operation boundaries without changing token
 ordering, notification timing or 404 behavior.
 
+## Phase 7AZ — public status subscription operations
+
+### Responsibility problem
+
+`StatusSubscriptionController` mixed published-page lookup, email validation,
+encrypted subscription upsert, confirmation notification dispatch, token
+comparison and subscription writes. The token checks are protocol identity
+checks rather than user permissions and must retain their existing 404
+concealment.
+
+### Boundary and principles
+
+`SubscribeToStatusPageRequest` resolves the published page before validation
+and owns the email rules/normalization boundary. `SubscribeToStatusPageAction`
+owns the upsert and confirmation notification. A
+`StatusSubscriptionTokenVerifier` supplies explicit token semantics to the
+confirmation and unsubscribe actions, which own their respective writes. The
+controller maps failed protocol outcomes to the existing 404s and redirects.
+This applies single responsibility and dependency inversion without creating a
+policy for an unauthenticated public protocol.
+
+### Preserved guarantees
+
+- Published-page lookup remains ahead of email validation; malformed email
+  creates no row, and the existing email hash/encrypted storage is preserved.
+- Confirmation tokens remain one-time and clear their digest; wrong or reused
+  confirmation/unsubscribe tokens remain 404 and cannot mutate the record.
+- Notification dispatch remains after the update-or-create, routes, throttle
+  middleware, flash messages, redirects, persisted values, dependency
+  lockfiles and external acceptance state remain unchanged.
+
+### Verification
+
+- Full observability/status subscription regression set: **18 passed, 145
+  assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `06aa6a6` — `refactor: extract status subscription operations`
+
+**Phase 7AZ exit gate: complete.** Exact next task: extract the remaining
+controller/Livewire direct writes that are substantive—server command history
+deletion and server log refresh queuing—then classify billing’s external
+checkout/portal guards and any residual protocol or resource guards.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -5061,3 +5108,4 @@ ordering, notification timing or 404 behavior.
 | Phase 7AW-web-build-promotion | BuildPromotionController duplicated visibility/deploy authorization and validation around the existing promotion action. | 7 build-promotion web/API/tenancy/concurrency/workflow tests passed, 57 assertions; Pint, syntax and diff checks passed. | `407c914` — `refactor: extract web build promotion request` | Classify and, where justified, extract cost-budget and dashboard-preference request/action boundaries while preserving entitlement/authorization ordering and user preference values. |
 | Phase 7AX-infrastructure-budget | CostController mixed manager authorization, entitlement ordering, budget validation and direct organization persistence. | 4 cost/infrastructure/entitlement/product tests passed, 16 assertions; Pint, syntax and diff checks passed. | `28d33ce` — `refactor: extract infrastructure budget operation` | Extract dashboard widget preference validation and persistence, preserving the existing widget list, preference JSON shape, omitted-field behavior and success response. |
 | Phase 7AY-dashboard-preferences | DashboardController mixed widget validation, preference merging and direct user persistence with HTTP coordination. | 22 dashboard regression tests passed, 223 assertions; Pint, syntax and diff checks passed. | `461d154` — `refactor: extract dashboard preferences operation` | Classify public status subscription validation, token protocol checks and writes; extract only safe request/verifier/operation boundaries without changing token ordering, notification timing or 404 behavior. |
+| Phase 7AZ-status-subscriptions | StatusSubscriptionController mixed published-page lookup, email validation, token protocol checks, encrypted upsert/deletion and notification dispatch. | 18 observability/status subscription tests passed, 145 assertions; Pint, syntax and diff checks passed. | `06aa6a6` — `refactor: extract status subscription operations` | Extract substantive server command history deletion and server log refresh queuing, then classify billing external guards and residual protocol/resource exceptions. |
