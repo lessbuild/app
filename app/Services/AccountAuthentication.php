@@ -15,6 +15,12 @@ class AccountAuthentication
         $this->auth->guard('web')->logout();
     }
 
+    /** Authenticate a user on the existing web guard while preserving the remember-device option. */
+    public function login(User $user, bool $remember = false): void
+    {
+        $this->auth->guard('web')->login($user, $remember);
+    }
+
     /** Validate a local password using Laravel's existing web guard credentials. */
     public function validatePassword(User $user, string $password): bool
     {

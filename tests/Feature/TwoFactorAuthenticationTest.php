@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\SignInMethod;
+use App\Models\SignInEvent;
 use App\Models\User;
 use App\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -148,6 +150,43 @@ class TwoFactorAuthenticationTest extends TestCase
             ->assertRedirect(route('dashboard'));
         $this->assertAuthenticatedAs($user);
         $this->assertDatabaseCount('sign_in_events', 1);
+    }
+
+    public function test_two_factor_challenge_preserves_the_original_social_sign_in_method(): void
+    {
+        $user = $this->enabledUser();
+
+        $this->withSession([
+            'two_factor_login_user_id' => $user->id,
+            'two_factor_login_remember' => false,
+            'two_factor_login_method' => SignInMethod::GitHub->value,
+        ])->post(route('two-factor.login'), [
+            'code' => $this->totp($user->two_factor_secret),
+        ])->assertRedirect(route('dashboard'));
+
+        $this->assertAuthenticatedAs($user);
+        $this->assertDatabaseHas('sign_in_events', [
+            'user_id' => $user->id,
+            'method' => SignInMethod::GitHub->value,
+        ]);
+    }
+
+    public function test_invalid_two_factor_challenge_keeps_pending_session_state(): void
+    {
+        $user = $this->enabledUser();
+
+        $this->withSession([
+            'two_factor_login_user_id' => $user->id,
+            'two_factor_login_remember' => true,
+            'two_factor_login_method' => SignInEvent::METHOD_PASSWORD,
+        ])->post(route('two-factor.login'), [
+            'code' => '000000',
+        ])->assertSessionHasErrors('code');
+
+        $this->assertGuest();
+        $this->assertSame($user->id, session('two_factor_login_user_id'));
+        $this->assertTrue(session('two_factor_login_remember'));
+        $this->assertSame(SignInEvent::METHOD_PASSWORD, session('two_factor_login_method'));
     }
 
     public function test_recovery_codes_are_single_use(): void

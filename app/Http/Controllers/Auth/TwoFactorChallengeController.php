@@ -2,15 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Account\CompleteTwoFactorLoginAction;
 use App\Http\Controllers\Controller;
-use App\Models\SignInEvent;
-use App\Models\User;
+use App\Http\Requests\TwoFactorChallengeRequest;
 use App\Services\SignInRecorder;
-use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TwoFactorChallengeController extends Controller
@@ -31,22 +28,12 @@ class TwoFactorChallengeController extends Controller
      * @return RedirectResponse The intended page after session regeneration and sign-in recording.
      */
     public function store(
-        Request $request,
-        TwoFactorAuthentication $twoFactor,
+        TwoFactorChallengeRequest $request,
+        CompleteTwoFactorLoginAction $complete,
         SignInRecorder $signIns,
     ): RedirectResponse {
-        $data = $request->validate(['code' => ['required', 'string', 'max:64']]);
-        $user = User::query()->find($request->session()->get('two_factor_login_user_id'));
-        if (! $user || ! $user->twoFactorEnabled() || ! $twoFactor->verifyUser($user, $data['code'])) {
-            throw ValidationException::withMessages(['code' => __('The authentication or recovery code is invalid.')]);
-        }
-
-        $remember = (bool) $request->session()->pull('two_factor_login_remember', false);
-        $method = (string) $request->session()->pull('two_factor_login_method', SignInEvent::METHOD_PASSWORD);
-        $request->session()->forget('two_factor_login_user_id');
-        Auth::login($user, $remember);
-        $request->session()->regenerate();
-        $signIns->record($user, $method, $request);
+        $result = $complete->handle($request->code());
+        $signIns->record($result->user, $result->method, $request);
 
         return redirect()->intended(route('dashboard'));
     }
