@@ -3370,6 +3370,55 @@ browser sessions” operation, preserving the `sessions` bag, current-password
 validation, authentication-device invalidation, stored-session cleanup,
 session regeneration, activity recording and exact status response.
 
+## Phase 7U — revoke-other-sessions request and operation boundary
+
+### Responsibility problem
+
+`UsersController` mixed the named `sessions` validation bag and current-password
+challenge with authentication-device invalidation, stored-session cleanup,
+session regeneration, activity recording and response mapping.
+
+### Boundary and principles
+
+`RevokeOtherSessionsRequest` owns the existing `sessions` validation bag and
+returns only the validated current-password challenge.
+`RevokeOtherSessionsAction` owns the cohesive security operation, reusing
+`AccountAuthentication`, `BrowserSessionManager` and `ActivityRecorder`. The
+controller now consumes validated input, passes the current session ID
+explicitly and returns the existing redirect. This applies single
+responsibility and dependency inversion without adding a generic session
+repository or authorization layer to a route already protected by
+authentication middleware.
+
+### Preserved guarantees
+
+- The `sessions` bag and exact `required|current_password` validation behavior
+  remain unchanged, including secret-safe failed-input handling.
+- `logoutOtherDevices`, deletion of every stored session except the current
+  one, session regeneration, the account activity message and their existing
+  order remain unchanged.
+- Social-only accounts continue to fail at the same validation boundary, and
+  the `sessions_status` success message/redirect remain unchanged. Individual
+  session revocation remains a separate operation for a later slice.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Account/session/browser-session/security/rate-limit regression set: **35
+  passed, 310 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `1b2954d` — `refactor: extract session revocation operation`
+
+**Phase 7U exit gate: complete.** Exact next task: extract individual browser
+session revocation, preserving route/form ID attestation, the `sessions` bag,
+ownership-scoped outcomes, current-session protection, unavailable-driver
+behavior, activity timing and exact status/error responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3428,3 +3477,4 @@ session regeneration, activity recording and exact status response.
 | Phase 7R-sign-in-history | SignInHistoryController mixed filter normalization, account-scoped queries/metrics, client metadata/CSV rendering and the password-protected clear workflow. | 16 sign-in recorder/history/filter/insight/management tests passed, 129 assertions; Pint, syntax and diff checks passed. | `0fd6212` — `refactor: extract sign-in history queries` | Modernize account profile, password, browser-session and social-account writes with dedicated requests and justified policies/actions, preserving `profile`, `password`, `sessions` and `social` error bags and security ordering. |
 | Phase 7S-profile | UsersController mixed profile validation/normalization, email-verification reset, device/session invalidation, activity and verification delivery. | 25 account profile/password/session/social tests passed, 179 assertions; Pint, syntax and diff checks passed. | `d54146d` — `refactor: extract profile update operation` | Extract the password update operation, preserving the `password` bag, hashing, device/session revocation, social-account behavior, activity and exact flash responses. |
 | Phase 7T-password | UsersController mixed password validation, hashing/timestamp persistence, device/session invalidation, regeneration and activity recording. | 27 account profile/password/session/social/security-activity tests passed, 219 assertions; Pint, syntax and diff checks passed. | `c470200` — `refactor: extract password update operation` | Extract the revoke-other-browser-sessions operation, preserving the `sessions` bag, authentication/session invalidation, regeneration, activity and exact status response. |
+| Phase 7U-session-revocation | UsersController mixed `sessions` validation, authentication-device invalidation, stored-session cleanup, regeneration and activity recording. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `1b2954d` — `refactor: extract session revocation operation` | Extract individual browser-session revocation, preserving route/form ID attestation, ownership-scoped outcomes, current-session protection, unavailable-driver behavior and exact responses. |
