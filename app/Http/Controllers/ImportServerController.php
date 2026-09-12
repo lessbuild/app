@@ -3,17 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\ConfirmServerImportAction;
+use App\Actions\Server\InspectServerImportAction;
+use App\Http\Requests\ConfirmServerImportRequest;
 use App\Http\Requests\ImportServerRequest;
 use App\Models\Enums\Server\ServerTypeEnum;
 use App\Models\ServerImportAssessment;
-use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
-use App\Services\ServerDiscovery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class ImportServerController extends Controller
 {
@@ -35,33 +33,12 @@ class ImportServerController extends Controller
      */
     public function store(
         ImportServerRequest $request,
-        PlanLimits $limits,
-        ServerDiscovery $discovery,
+        InspectServerImportAction $inspect,
     ): RedirectResponse {
-        $limits->usage($request->user(), 'servers')['allowed'] || throw ValidationException::withMessages(['plan' => __('Your plan’s server limit has been reached.')]);
-        $configuration = [
-            'name' => $request->validated('name'), 'type' => $request->validated('type'),
-            'public_ip' => $request->validated('public_ip'), 'ssh_port' => $request->integer('ssh_port'),
-            'ssh_private_key' => trim($request->validated('ssh_private_key')),
-        ];
-        try {
-            $report = $discovery->inspect($configuration);
-        } catch (\Throwable $exception) {
-            report($exception);
-            throw ValidationException::withMessages(['connection' => str($exception->getMessage())->limit(1000)->toString()]);
-        }
-        $token = Str::random(64);
-        $assessment = ServerImportAssessment::query()->create([
-            'organization_id' => $request->user()->current_organization_id,
-            'user_id' => $request->user()->id,
-            'token_hash' => hash('sha256', $token),
-            'configuration' => $configuration,
-            'report' => $report,
-            'expires_at' => now()->addMinutes(30),
-        ]);
-        $request->session()->put("server_import_assessment.{$assessment->id}", $token);
+        $result = $inspect->handle($request->user(), $request->validated());
+        $request->session()->put("server_import_assessment.{$result->assessment->id}", $result->token);
 
-        return redirect()->route('servers.import.review', $assessment);
+        return redirect()->route('servers.import.review', $result->assessment);
     }
 
     /**
@@ -80,23 +57,12 @@ class ImportServerController extends Controller
      * @return RedirectResponse The imported server page after provisioning is queued following commit.
      */
     public function confirm(
-        Request $request,
+        ConfirmServerImportRequest $request,
         ServerImportAssessment $assessment,
         ConfirmServerImportAction $confirm,
-        ActivityRecorder $activity,
     ): RedirectResponse {
-        $this->authorizeAssessment($request, $assessment);
-        $configuration = $assessment->configuration;
-        $request->validate([
-            'confirmation' => ['required', 'string', 'in:'.$configuration['name']],
-            'backup_confirmed' => ['accepted'],
-            'host_fingerprint_confirmed' => ['accepted'],
-        ]);
-
-        $token = (string) $request->session()->get("server_import_assessment.{$assessment->id}");
-        $server = $confirm->handle($request->user(), $assessment, $token);
+        $server = $confirm->handle($request->user(), $assessment, $request->token());
         $request->session()->forget("server_import_assessment.{$assessment->id}");
-        $activity->record($server, $request->user()->id, 'server', 'Existing server imported and provisioning queued.');
 
         return redirect()->route('servers.show', $server)
             ->with('success', __('Server imported. BuildPusher is securely connecting and applying the selected runtime.'));

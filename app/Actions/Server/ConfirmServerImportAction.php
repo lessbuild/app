@@ -8,6 +8,7 @@ use App\Models\Server;
 use App\Models\ServerImportAssessment;
 use App\Models\ServerLogSnapshot;
 use App\Models\User;
+use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
 use Illuminate\Validation\ValidationException;
 use phpseclib4\Crypt\PublicKeyLoader;
@@ -17,6 +18,7 @@ class ConfirmServerImportAction
     public function __construct(
         private readonly PlanLimits $limits,
         private readonly PrepareServerProvisioningAction $prepare,
+        private readonly ActivityRecorder $activity,
     ) {}
 
     /**
@@ -31,7 +33,8 @@ class ConfirmServerImportAction
      */
     public function handle(User $user, ServerImportAssessment $assessment, string $token): Server
     {
-        return $this->limits->withinLimit($user, 'servers', function ($organization) use ($user, $assessment, $token): Server {
+        /** @var Server $server */
+        $server = $this->limits->withinLimit($user, 'servers', function ($organization) use ($user, $assessment, $token): Server {
             $lockedAssessment = ServerImportAssessment::query()->lockForUpdate()->findOrFail($assessment->id);
             if (! $lockedAssessment->isUsableBy($user, $token)) {
                 throw ValidationException::withMessages([
@@ -67,5 +70,9 @@ class ConfirmServerImportAction
 
             return $server;
         });
+
+        $this->activity->record($server, $user->id, 'server', 'Existing server imported and provisioning queued.');
+
+        return $server;
     }
 }

@@ -22,6 +22,21 @@ class ImportWebsiteTest extends TestCase
         config(['billing.enforce_limits' => false]);
     }
 
+    public function test_viewer_cannot_start_a_website_import_before_input_validation(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $runner = Mockery::mock(Runner::class);
+        $runner->shouldReceive('server')->never();
+        $this->app->instance(Runner::class, $runner);
+
+        $this->actingAs($viewer)->post(route('websites.import.store'), [])->assertForbidden();
+
+        $this->assertDatabaseCount('websites', 0);
+    }
+
     public function test_existing_application_directory_is_verified_and_imported_without_provisioning(): void
     {
         $user = User::factory()->create();

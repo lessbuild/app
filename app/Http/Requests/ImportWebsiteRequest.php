@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Server;
+use App\Models\Website;
 use App\Rules\Hostname;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,7 +16,7 @@ class ImportWebsiteRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
+        return $this->user()?->can('create', Website::class) ?? false;
     }
 
     /**

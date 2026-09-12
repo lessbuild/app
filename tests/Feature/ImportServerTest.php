@@ -8,6 +8,7 @@ use App\Models\ServerImportAssessment;
 use App\Models\User;
 use App\Services\ServerDiscovery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
@@ -17,6 +18,29 @@ use Tests\TestCase;
 class ImportServerTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
+
+    public function test_viewer_cannot_start_a_server_import_before_input_validation(): void
+    {
+        config()->set('billing.enforce_limits', false);
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $discovery = Mockery::mock(ServerDiscovery::class);
+        $discovery->shouldReceive('inspect')->never();
+        $this->app->instance(ServerDiscovery::class, $discovery);
+
+        $this->actingAs($viewer)->post(route('servers.import.store'), [])->assertForbidden();
+
+        $this->assertDatabaseCount('servers', 0);
+        $this->assertDatabaseCount('server_import_assessments', 0);
+    }
 
     public function test_owner_can_import_an_existing_server_for_remote_provisioning(): void
     {
