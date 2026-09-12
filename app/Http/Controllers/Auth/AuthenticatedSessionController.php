@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Account\CompletePasswordLoginAction;
+use App\Data\PasswordLoginResult;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\LoginRequest;
 use App\Models\SignInEvent;
+use App\Models\User;
 use App\Services\SignInRecorder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,22 +34,21 @@ class AuthenticatedSessionController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(LoginRequest $request, SignInRecorder $signIns): RedirectResponse
-    {
+    public function store(
+        LoginRequest $request,
+        CompletePasswordLoginAction $complete,
+        SignInRecorder $signIns,
+    ): RedirectResponse {
         $request->authenticate();
 
-        $request->session()->regenerate();
-        if ($request->user()->twoFactorEnabled()) {
-            $request->session()->put([
-                'two_factor_login_user_id' => $request->user()->id,
-                'two_factor_login_remember' => $request->boolean('remember'),
-                'two_factor_login_method' => SignInEvent::METHOD_PASSWORD,
-            ]);
-            Auth::guard('web')->logout();
-
+        /** @var User $user */
+        $user = $request->user();
+        $result = $complete->handle($user, $request->boolean('remember'));
+        if ($result->status === PasswordLoginResult::TWO_FACTOR_REQUIRED) {
             return redirect()->route('two-factor.login');
         }
-        $signIns->record($request->user(), SignInEvent::METHOD_PASSWORD, $request);
+
+        $signIns->record($result->user, SignInEvent::METHOD_PASSWORD, $request);
 
         return redirect()->intended(route('dashboard'));
     }
