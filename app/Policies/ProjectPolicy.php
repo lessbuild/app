@@ -8,6 +8,14 @@ use App\Models\User;
 class ProjectPolicy
 {
     /**
+     * Require deployment permission in the user's currently selected organization.
+     */
+    public function create(User $user): bool
+    {
+        return $user->currentOrganization?->permits($user, 'deploy') ?? false;
+    }
+
+    /**
      * Require viewing permission in the project's currently selected organization.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

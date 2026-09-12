@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Project\CreateProjectAction;
+use App\Http\Requests\StoreProjectRequest;
+use App\Models\Organization;
 use App\Models\Project;
 use App\Rules\Hostname;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
@@ -29,7 +29,7 @@ class ProjectController extends Controller
      */
     public function create(Request $request): View
     {
-        abort_unless($request->user()->currentOrganization->permits($request->user(), 'deploy'), 403);
+        $this->authorize('create', Project::class);
 
         return view('scenes.projects.create', ['templates' => config('application-templates')]);
     }
@@ -39,48 +39,11 @@ class ProjectController extends Controller
      *
      * @return RedirectResponse The created application page with any entitled template processes configured.
      */
-    public function store(Request $request, Entitlements $entitlements): RedirectResponse
+    public function store(StoreProjectRequest $request, CreateProjectAction $createProject): RedirectResponse
     {
+        /** @var Organization $organization */
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'deploy'), 403);
-        $request->merge(['preset' => $request->input('preset', 'laravel')]);
-        $templates = config('application-templates', []);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'preset' => ['required', Rule::in(array_keys($templates))],
-        ]);
-        $template = $templates[$data['preset']];
-        $slug = $this->uniqueSlug($organization->id, $data['name']);
-        $project = DB::transaction(function () use ($organization, $request, $data, $template, $slug, $entitlements): Project {
-            $project = $organization->projects()->create([
-                ...$data,
-                'slug' => $slug,
-                'created_by' => $request->user()->id,
-            ]);
-            $environment = $project->environments()->create([
-                'name' => 'Production',
-                'slug' => 'production',
-                'type' => 'production',
-                'branch' => 'main',
-                'runtime_type' => $template['runtime_type'],
-                'build_command' => $template['build_command'],
-                'start_command' => $template['start_command'],
-                'container_port' => $template['container_port'],
-                'dockerfile_path' => $template['dockerfile_path'],
-                'is_protected' => true,
-                'requires_deployment_approval' => true,
-            ]);
-            if ($entitlements->allows($organization, 'workers')) {
-                foreach ($template['processes'] as $process) {
-                    $environment->processes()->create([
-                        ...$process, 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true,
-                    ]);
-                }
-            }
-
-            return $project;
-        });
+        $project = $createProject->handle($organization, $request->user(), $request->validated());
 
         return redirect()->route('projects.show', $project)->with('success', __('Application created with a protected production environment.'));
     }
@@ -145,20 +108,5 @@ class ProjectController extends Controller
         $project->update($data);
 
         return back()->with('success', __('Preview environment settings saved.'));
-    }
-
-    /**
-     * Find an available application slug within the given workspace, adding numeric suffixes when the name collides.
-     */
-    private function uniqueSlug(int $organizationId, string $name): string
-    {
-        $base = Str::slug($name) ?: 'application';
-        $slug = $base;
-        $suffix = 2;
-        while (Project::query()->where('organization_id', $organizationId)->where('slug', $slug)->exists()) {
-            $slug = $base.'-'.$suffix++;
-        }
-
-        return $slug;
     }
 }
