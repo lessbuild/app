@@ -3261,6 +3261,62 @@ password, browser-session and social-account writes with dedicated requests,
 policies/actions where justified, while preserving `profile`, `password`,
 `sessions` and `social` error bags and security ordering.
 
+## Phase 7S — profile update request and operation boundary
+
+### Responsibility problem
+
+`UsersController` mixed named-bag profile validation and normalization,
+conditional password requirements, email-verification reset, password-based
+device invalidation, session regeneration, activity recording, verification
+delivery and HTTP response mapping.
+
+### Boundary and principles
+
+`UpdateProfileRequest` owns the existing `profile` validation bag, email
+normalization, unique-email rules and the conditional current-password
+challenge. `ProfileUpdateData` and `ProfileUpdateResult` provide immutable
+boundaries for validated input and the email/verification outcome.
+`UpdateProfileAction` owns profile persistence and the related security,
+activity and verification side effects. `AccountAuthentication` isolates the
+injected web-guard device invalidation used by the operation. The controller
+now consumes validated data, invokes the action and maps its result to the
+existing response. This applies single responsibility and dependency
+inversion without introducing a generic account service.
+
+### Preserved guarantees
+
+- The `profile` error bag, lowercasing, exact name/email rules, unique-email
+  behavior and conditional `current_password` requirement remain unchanged;
+  only validated fields reach the action.
+- `profile_status`, verification-link success and verification-delivery error
+  flash values remain unchanged. Email changes still clear verification,
+  invalidate other local-password devices, revoke other browser sessions,
+  regenerate the current session and record the same activity in the same
+  order.
+- Social-only email changes still work without a local password. Delivery
+  failures remain non-fatal after persistence and expose the existing retry
+  message. Password, browser-session and social-account endpoints remain in
+  their original controller paths for later slices.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Account profile/password/session/social regression set: **25 passed, 179
+  assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `d54146d` — `refactor: extract profile update operation`
+
+**Phase 7S exit gate: complete.** Exact next task: extract password update
+operation, preserving the `password` bag, password hashing/timestamp,
+authentication-device revocation, browser-session cleanup, session
+regeneration, activity recording, social-account behavior and exact flash
+responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3317,3 +3373,4 @@ policies/actions where justified, while preserving `profile`, `password`,
 | Phase 7P-notification-state | NotificationsController mixed state writes, bulk validation and foreign-recipient ownership concealment. | 23 notification state/bulk/ownership/inbox/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `2f47a7f` — `refactor: extract notification state operations` | Audit account activity and sign-in history reads/exports, preserving user scoping, named `signIns` errors, pagination/filter defaults, CSV redaction and security side effects. |
 | Phase 7Q-activity | ActivityController mixed filter normalization, repeated account-scoped metrics queries, CSV rendering and audit-entitlement coordination. | 13 activity/insight tests passed, 86 assertions; 7 entitlement tests passed, 38 assertions; Pint, syntax and diff checks passed. | `e3a630d` — `refactor: extract activity feed queries` | Extract sign-in history filter/query/metrics/export boundaries, preserving account scoping, client metadata derivation, pagination defaults, CSV redaction and the named `signIns` history-clear contract. |
 | Phase 7R-sign-in-history | SignInHistoryController mixed filter normalization, account-scoped queries/metrics, client metadata/CSV rendering and the password-protected clear workflow. | 16 sign-in recorder/history/filter/insight/management tests passed, 129 assertions; Pint, syntax and diff checks passed. | `0fd6212` — `refactor: extract sign-in history queries` | Modernize account profile, password, browser-session and social-account writes with dedicated requests and justified policies/actions, preserving `profile`, `password`, `sessions` and `social` error bags and security ordering. |
+| Phase 7S-profile | UsersController mixed profile validation/normalization, email-verification reset, device/session invalidation, activity and verification delivery. | 25 account profile/password/session/social tests passed, 179 assertions; Pint, syntax and diff checks passed. | `d54146d` — `refactor: extract profile update operation` | Extract the password update operation, preserving the `password` bag, hashing, device/session revocation, social-account behavior, activity and exact flash responses. |
