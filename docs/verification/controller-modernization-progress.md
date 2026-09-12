@@ -4038,6 +4038,67 @@ mutation while preserving provider verification, connection-intent/session
 consumption, identity locks, 2FA handoff, sign-in recording and exact failure
 responses.
 
+## Phase 7AH — social OAuth callback operations
+
+### Responsibility problem
+
+`SocialAuthController` mixed OAuth provider verification, callback-intent
+session consumption, identity normalization, guest registration resolution,
+social-account creation, authenticated provider attachment under a user lock,
+activity recording, organization recovery, login/2FA staging and response
+mapping.
+
+### Boundary and principles
+
+`SocialIdentityData`, `SocialLoginResolution` and
+`SocialAccountConnectionResult` make the callback's normalized inputs and
+ambiguous outcomes explicit. `ResolveSocialLoginAction` owns synchronized
+provider/email lookup and account creation, including password hashing and
+personal-workspace recovery. `ConnectSocialAccountAction` owns the existing
+locked provider attachment, ownership conflict and account activity. The
+controller retains remote OAuth verification, protocol-specific validation,
+connection-intent/session ordering, authentication/2FA handoff, sign-in
+recording and redirects. This applies single responsibility, dependency
+inversion and named outcomes without moving callback-order-sensitive checks
+into a Form Request.
+
+### Preserved guarantees
+
+- Supported-provider routing, OAuth exceptions, missing identity fields,
+  normalized email/provider IDs and all login/connection error messages remain
+  unchanged. Authenticated callbacks still require a consumed connection intent
+  before any provider request.
+- Guest identity resolution remains registration-lock synchronized; existing
+  provider identities sign in, email collisions do not link accounts, closed
+  registration rejects unknown identities, and new accounts use the same
+  verified email/social fields and generated password semantics.
+- Provider attachment retains current-user locking, cross-account ownership
+  protection, encrypted/persisted model behavior and account activity/
+  notification timing. Existing users still recover a missing personal
+  workspace.
+- Session regeneration, two-factor challenge handoff, no sign-in-history entry
+  before 2FA completion, sign-in recording, intended redirects, routes,
+  schemas, serialized jobs, dependency lockfiles and external provider
+  behavior are unchanged.
+
+### Verification
+
+- Social-auth/password-confirmation/account/security/2FA regression set: **41
+  passed, 323 assertions**.
+- Added coverage for enabled-account 2FA handoff and existing-account workspace
+  recovery.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `1784e6a` — `refactor: extract social auth operations`
+
+**Phase 7AH exit gate: complete.** Exact next task: characterize the remaining
+`AuthenticatedSessionController`, `TwoFactorChallengeController`, email
+verification controllers and GitHub App/SSO callbacks before extracting their
+protocol-safe authentication/session operations.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4109,3 +4170,4 @@ responses.
 | Phase 7AE-password-reset-link | PasswordResetLinkController mixed public email validation, broker dispatch and account-enumeration-safe response mapping. | 8 password-reset privacy/throttling tests passed, 97 assertions; Pint, syntax and diff checks passed. | `4084e46` — `refactor: extract password reset link operation` | Extract token-based password replacement validation and broker operation, preserving invalid-token privacy, password hashing/timestamps, remember-token rotation, activity/event timing, email-only failure input and exact status responses. |
 | Phase 7AF-password-reset | NewPasswordController mixed reset validation, broker callback persistence, password/remember-token updates, security activity/event dispatch and failure mapping. | 25 password-reset/privacy/throttling/account-security tests passed, 215 assertions; Pint, syntax and diff checks passed. | `2089c05` — `refactor: extract password reset operation` | Characterize registration creation and invitation/access-token protocol behavior, then extract its request/data/action boundaries before social OAuth callback transitions. |
 | Phase 7AG-registration | RegisteredUserController mixed availability ordering, registration validation, invitation consumption, synchronized creation, password hashing, workspace provisioning and auth/session coordination. | 39 registration/invitation/social-auth/password-confirmation tests passed, 305 assertions; Pint, syntax and diff checks passed. | `5ebbccd` — `refactor: extract registration operation` | Extract the social OAuth callback's guest resolution and authenticated connection mutation, preserving provider verification, session intent, identity locks, 2FA handoff, sign-in recording and failure responses. |
+| Phase 7AH-social-auth-callback | SocialAuthController mixed provider verification, callback intent, guest identity resolution/creation, locked connection mutation, workspace recovery, 2FA handoff and sign-in recording. | 41 social-auth/password-confirmation/account/security/2FA tests passed, 323 assertions; Pint, syntax and diff checks passed. | `1784e6a` — `refactor: extract social auth operations` | Characterize remaining authentication/session controllers and GitHub App/SSO callbacks before protocol-safe operation extraction. |
