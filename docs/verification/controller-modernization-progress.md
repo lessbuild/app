@@ -2941,6 +2941,50 @@ Commit: b3985f2 — refactor: extract gallery inventory queries
 access-administration controllers for direct writes, inline validation,
 permission guards, named error bags and notification/history side effects.
 
+## Phase 7L — product feedback operations
+
+### Responsibility problem
+
+ProductFeedbackController mixed feedback validation, selected-workspace role
+checks, ownership decisions and encrypted feedback writes across store, update
+and destroy endpoints.
+
+### Boundary and principles
+
+StoreProductFeedbackRequest and UpdateProductFeedbackRequest now own the exact
+write validation rules. ProductFeedbackPolicy owns member submission, manager
+review and submitter/manager deletion decisions. CreateProductFeedbackAction,
+UpdateProductFeedbackAction and DeleteProductFeedbackAction own persistence and
+the resolved-at transition. The controller keeps filtering, presentation and
+existing redirects. This applies single responsibility and dependency
+inversion while reusing the model's encrypted casts.
+
+### Preserved guarantees
+
+- Feedback remains private and workspace-scoped, with the existing 403 denial
+  behavior for foreign reviewers and deletions.
+- Validation keys, page URL restrictions, payload limits, status values,
+  success messages and redirects remain unchanged.
+- Review attribution, encrypted response storage and resolved/closed timestamp
+  behavior remain unchanged.
+- Policy authorization runs before review validation, so denied actors do not
+  receive a different validation response or cause a write.
+
+### Verification
+
+- Product feedback regression and authorization-ordering set: **5 passed, 31
+  assertions**.
+- Targeted Pint test and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: 0aabe54 — refactor: extract product feedback operations
+
+**Phase 7L exit gate: complete.** Exact next task: extract platform access
+request administration, preserving platform-admin denial, accepted-request
+immutability, invitation token lifecycle, notification timing and CSV output.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2990,3 +3034,4 @@ permission guards, named error bags and notification/history side effects.
 | Phase 7I-recipe-lifecycle | Recipe controller mixed publication metadata rules, direct create/update/duplicate writes, locked deletion, report-notification cleanup and activity recording. | 56 recipe management/duplication/activity/gallery/report tests passed, 507 assertions; Pint and diff checks passed. | `8f594ac` — `refactor: extract recipe lifecycle operations` | Extract recipe inventory and gallery filter normalization/CSV/query boundaries, preserving silent defaults, pagination, ordering, metrics, eager loading and spreadsheet-safe output. |
 | Phase 7J-recipe-inventory | Recipe inventory controller mixed filter normalization, repeated workspace queries/metrics and private CSV rendering. | 18 recipe inventory/filter/export/insight/management tests passed, 134 assertions; Pint and diff checks passed. | `5852cea` — `refactor: extract recipe inventory queries` | Extract gallery filter normalization and the shared published-gallery query/metrics boundary, preserving personal scopes, aggregate ordering, eager-loaded state, pagination and public 404 behavior. |
 | Phase 7K-gallery-query | RecipeGalleryController mixed filter normalization, published-gallery scope composition and aggregate metrics with HTTP response orchestration. | 40 gallery/favorite/rating/report/history tests passed, 478 assertions; Pint and diff checks passed. | `b3985f2` — `refactor: extract gallery inventory queries` | Audit remaining feedback and access-administration controllers for direct writes, inline validation, permission guards, named error bags and notification/history side effects. |
+| Phase 7L-product-feedback | ProductFeedbackController mixed validation, workspace-role/ownership checks and encrypted feedback writes. | 5 product-feedback authorization/validation/persistence tests passed, 31 assertions; Pint and diff checks passed. | `0aabe54` — `refactor: extract product feedback operations` | Extract platform access-request administration, preserving platform-admin denial, accepted-request immutability, invitation token lifecycle, notification timing and CSV output. |
