@@ -498,6 +498,23 @@ Verification after the slice:
 - `BuildHistoryExportTest`: 7 passed (52 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3C — repository inventory query slice
+
+Responsibility problem: `RepositoriesController` combined HTTP pagination and response coordination with organization-scoped repository search/status filtering and six latest-build/webhook inventory metrics. The same filter construction also fed the inventory export.
+
+Boundary used: `RepositoryInventoryQuery` now owns the typed, organization-scoped repository query and metrics. The controller retains filter normalization, pagination, authorization and response/CSV coordination. The collaborator is concrete and constructor-injected; no generic repository wrapper was added.
+
+Preserved guarantees:
+
+- Workspace scoping, wildcard-safe search, provider/website filters, `none`/latest-build status semantics and all six metric meanings remain unchanged.
+- Eager loading, ordering, pagination state, empty metrics, export filtering, webhook fields, encrypted credentials and deployment action behavior remain unchanged.
+- Webhook delivery history and deployment lifecycle transitions remain at their existing boundaries for separate review.
+
+Verification after the slice:
+
+- `RepositoryInventoryFilterTest`, `RepositoryInventoryInsightsTest` and `RepositoryInventoryExportTest`: 11 passed (90 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
 Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.

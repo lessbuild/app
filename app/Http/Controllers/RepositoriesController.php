@@ -10,9 +10,9 @@ use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
 use App\Services\DeploymentRequest;
+use App\Services\RepositoryInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
-use App\Support\SqlLike;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
@@ -23,13 +23,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RepositoriesController extends Controller
 {
+    public function __construct(private readonly RepositoryInventoryQuery $repositoryInventory) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $repositories = $this->filteredRepositories($request, $filters)
+        $repositories = $this->repositoryInventory->for($request->user(), $filters)
             ->with(['provider', 'website.server', 'latestBuild'])
             ->latest()
             ->paginate()
@@ -38,7 +40,7 @@ class RepositoriesController extends Controller
         return view('scenes.repositories.index', [
             'repositories' => $repositories,
             'filters' => $filters,
-            'metrics' => $this->indexMetrics($request, $filters),
+            'metrics' => $this->repositoryInventory->metrics($request->user(), $filters),
             'providers' => $request->user()->workspaceProviders()
                 ->forRepositories()
                 ->orderBy('name')
@@ -48,30 +50,6 @@ class RepositoriesController extends Controller
                 ->get(['id', 'name']),
             'statuses' => $this->repositoryStatuses(),
         ]);
-    }
-
-    /**
-     * @param  array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string}  $filters
-     * @return array{total: int, never_deployed: int, active: int, succeeded: int, failed: int, webhooks: int}
-     */
-    private function indexMetrics(Request $request, array $filters): array
-    {
-        return [
-            'total' => $this->filteredRepositories($request, $filters)->count(),
-            'never_deployed' => $this->filteredRepositories($request, $filters)->neverDeployed()->count(),
-            'active' => $this->filteredRepositories($request, $filters)
-                ->latestBuildStatus(Build::ACTIVE_STATUSES)
-                ->count(),
-            'succeeded' => $this->filteredRepositories($request, $filters)
-                ->latestBuildStatus(Build::STATUS_SUCCEEDED)
-                ->count(),
-            'failed' => $this->filteredRepositories($request, $filters)
-                ->latestBuildStatus(Build::STATUS_FAILED)
-                ->count(),
-            'webhooks' => $this->filteredRepositories($request, $filters)
-                ->where('webhook_enabled', true)
-                ->count(),
-        ];
     }
 
     /**
@@ -107,7 +85,7 @@ class RepositoriesController extends Controller
                 'Created at',
             ], ',', '"', '');
 
-            $this->filteredRepositories($request, $filters)
+            $this->repositoryInventory->for($request->user(), $filters)
                 ->with(['provider', 'website.server', 'latestBuild'])
                 ->latest('repositories.id')
                 ->lazy(250)
@@ -151,30 +129,6 @@ class RepositoriesController extends Controller
             'website_id' => $this->positiveInteger($request->query('website_id')),
             'status' => in_array($status, $this->repositoryStatuses(), true) ? $status : null,
         ];
-    }
-
-    /**
-     * @param  array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string}  $filters
-     */
-    private function filteredRepositories(Request $request, array $filters): HasMany
-    {
-        return $request->user()->workspaceRepositories()
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("url LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['provider_id'], fn ($query, int $id) => $query
-                ->where('provider_id', $id))
-            ->when($filters['website_id'], fn ($query, int $id) => $query
-                ->where('website_id', $id))
-            ->when($filters['status'] === 'none', fn ($query) => $query->neverDeployed())
-            ->when($filters['status'] && $filters['status'] !== 'none', fn ($query) => $query
-                ->latestBuildStatus($filters['status']));
     }
 
     /**
