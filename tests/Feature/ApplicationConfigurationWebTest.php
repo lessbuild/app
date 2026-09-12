@@ -65,7 +65,7 @@ class ApplicationConfigurationWebTest extends TestCase
         $review->update(['expires_at' => now()->subMinute()]);
         $this->get($reviewUrl)->assertUnprocessable()->assertSee('This review cannot be applied')->assertDontSee('Apply reviewed configuration');
         $this->from($reviewUrl)->post(route('projects.configuration.apply', [$project, $review]))
-            ->assertRedirect($url)->assertSessionHasErrors('review');
+            ->assertRedirect($url)->assertSessionHasErrors('review')->assertSessionMissing('_old_input');
         $this->assertDatabaseCount('configuration_applications', 0);
         $review->update(['expires_at' => now()->addMinutes(15)]);
         $this->post(route('projects.configuration.apply', [$project, $review]))->assertRedirect($reviewUrl);

@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Models\Build;
+use App\Models\ConfigurationApplication;
+use App\Models\ConfigurationReview;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Provider;
@@ -11,6 +13,8 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\Website;
 use App\Policies\BuildPolicy;
+use App\Policies\ConfigurationApplicationPolicy;
+use App\Policies\ConfigurationReviewPolicy;
 use App\Policies\EnvironmentPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
@@ -31,6 +35,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Build::class => BuildPolicy::class,
+        ConfigurationApplication::class => ConfigurationApplicationPolicy::class,
+        ConfigurationReview::class => ConfigurationReviewPolicy::class,
         Provider::class => ProviderPolicy::class,
         Project::class => ProjectPolicy::class,
         Environment::class => EnvironmentPolicy::class,

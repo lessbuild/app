@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ApplyApplicationConfigurationRequest;
+use App\Http\Requests\CancelApplicationConfigurationRequest;
+use App\Http\Requests\RetryApplicationConfigurationRequest;
 use App\Http\Requests\StoreApplicationConfigurationRequest;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
@@ -23,6 +26,8 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationController extends Controller
 {
+    public function __construct(private readonly ApplicationConfigurationResults $results) {}
+
     /**
      * @param  Request  $request  The authenticated workspace member.
      * @param  Project  $project  The route-bound project.
@@ -91,7 +96,8 @@ class ApplicationConfigurationController extends Controller
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->with('operations')->first();
         abort_unless($application || (int) $review->requested_by === (int) $request->user()->id, 404);
         if ($application) {
-            $application = app(ApplicationConfigurationResults::class)->refresh($application);
+            $this->authorize('view', $review);
+            $application = $this->results->refresh($application);
         }
         try {
             $plan = $application ? $review->summary : $reviews->inspect($review, $request->user());
@@ -113,15 +119,13 @@ class ApplicationConfigurationController extends Controller
      * @param  ApplicationConfigurationCancellation  $cancellation  Rechecks state and cancels pending work.
      * @return RedirectResponse The current receipt or an explanation why cancellation was rejected.
      */
-    public function cancel(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): RedirectResponse
+    public function cancel(CancelApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): RedirectResponse
     {
         $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
-        if ($request->except('_token') !== []) {
-            return back()->withErrors(['operation' => 'Cancel accepts only the operation identity.']);
-        }
+        $this->authorize('cancel', $application);
         try {
             $cancellation->cancel($operation, $request->user());
         } catch (ValidationException $exception) {
@@ -139,15 +143,13 @@ class ApplicationConfigurationController extends Controller
      * @param  ApplicationConfigurationRetries  $retries  Revalidates and reserves an idempotent retry.
      * @return RedirectResponse The updated receipt or retry validation feedback.
      */
-    public function retry(Request $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): RedirectResponse
+    public function retry(RetryApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): RedirectResponse
     {
         $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id && (int) $review->requested_by === (int) $request->user()->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
-        if ($request->except('_token') !== []) {
-            return back()->withErrors(['operation' => 'Retry accepts only the failed operation identity.']);
-        }
+        $this->authorize('retry', $application);
         try {
             $retries->retry($operation, $request->user());
         } catch (ValidationException $exception) {
@@ -164,13 +166,11 @@ class ApplicationConfigurationController extends Controller
      * @param  ApplicationConfigurationReconciler  $reconciler  Applies the reviewed local configuration atomically.
      * @return RedirectResponse The durable receipt or validation feedback requiring a new review.
      */
-    public function apply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): RedirectResponse
+    public function apply(ApplyApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): RedirectResponse
     {
         $this->access($project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
-        if ($request->except('_token') !== []) {
-            return back()->withErrors(['review' => 'Apply accepts only the saved review.']);
-        }
+        $this->authorize('apply', $review);
         try {
             $reconciler->apply($review, $request->user());
         } catch (ValidationException $exception) {

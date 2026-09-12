@@ -8,7 +8,10 @@ use App\Data\BuildPromotionResult;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnforceOrganizationSecurity;
+use App\Http\Requests\Api\V1\ApplyConfigurationRequest;
+use App\Http\Requests\Api\V1\CancelConfigurationRequest;
 use App\Http\Requests\Api\V1\ConfigurationInputRequest;
+use App\Http\Requests\Api\V1\RetryConfigurationRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Models\Build;
 use App\Models\ConfigurationApplication;
@@ -36,7 +39,10 @@ class ControlPlaneController extends Controller
     /**
      * Use subscription entitlements to guard API access and paid runtime features.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly Entitlements $entitlements,
+        private readonly ApplicationConfigurationResults $configurationResults,
+    ) {}
 
     /**
      * Require read ability and return the authenticated user plus their current workspace and billing plan.
@@ -239,13 +245,11 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse The application receipt including current remote-operation outcomes.
      */
-    public function configurationApply(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): JsonResponse
+    public function configurationApply(ApplyConfigurationRequest $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): JsonResponse
     {
         $this->authorize('manageConfiguration', $project);
         abort_unless((int) $review->project_id === (int) $project->id, 404);
-        if ($request->all() !== []) {
-            throw ValidationException::withMessages(['review' => 'Apply accepts only the saved review identity, with no replacement inputs.']);
-        }
+        $this->authorize('apply', $review);
         $application = $reconciler->apply($review, $request->user());
 
         return response()->json(['data' => $this->configurationApplicationData($application)]);
@@ -254,11 +258,11 @@ class ControlPlaneController extends Controller
     /**
      * Require management access and project ownership of the receipt, then return refreshed application outcomes.
      */
-    public function configurationApplication(Request $request, Project $project, ConfigurationApplication $application): JsonResponse
+    public function configurationApplication(Project $project, ConfigurationApplication $application): JsonResponse
     {
         $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
-        abort_unless($project->organization->permits($request->user(), 'manage'), 403);
+        $this->authorize('view', $application);
 
         return response()->json(['data' => $this->configurationApplicationData($application)]);
     }
@@ -268,14 +272,12 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse The refreshed receipt after cancellation is requested.
      */
-    public function configurationCancel(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): JsonResponse
+    public function configurationCancel(CancelConfigurationRequest $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): JsonResponse
     {
         $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
-        if ($request->all() !== []) {
-            throw ValidationException::withMessages(['operation' => 'Cancel accepts only the operation identity.']);
-        }
+        $this->authorize('cancel', $application);
         $cancellation->cancel($operation, $request->user());
 
         return response()->json(['data' => $this->configurationApplicationData($application)]);
@@ -286,14 +288,12 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse The refreshed receipt and the new retry operation identity.
      */
-    public function configurationRetry(Request $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): JsonResponse
+    public function configurationRetry(RetryConfigurationRequest $request, Project $project, ConfigurationApplication $application, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): JsonResponse
     {
         $this->authorize('viewConfiguration', $project);
         abort_unless((int) $application->review->project_id === (int) $project->id, 404);
         abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
-        if ($request->all() !== []) {
-            throw ValidationException::withMessages(['operation' => 'Retry accepts only the failed operation identity, with no replacement inputs.']);
-        }
+        $this->authorize('retry', $application);
         $retry = $retries->retry($operation, $request->user());
 
         return response()->json(['data' => $this->configurationApplicationData($application), 'retry_operation_id' => $retry->id]);
@@ -306,7 +306,7 @@ class ControlPlaneController extends Controller
      */
     private function configurationApplicationData(ConfigurationApplication $application): array
     {
-        $application = app(ApplicationConfigurationResults::class)->refresh($application);
+        $application = $this->configurationResults->refresh($application);
 
         return ['id' => $application->id, 'review_id' => $application->configuration_review_id,
             'status' => $application->status, 'locally_applied_at' => $application->locally_applied_at?->toIso8601String(),
