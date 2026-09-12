@@ -11,13 +11,13 @@ use App\Actions\Repository\RollbackBuildAction;
 use App\Actions\Repository\UpdateBuildNoteAction;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Requests\BuildApprovalRequest;
+use App\Http\Requests\BuildIndexRequest;
 use App\Http\Requests\BuildNoteRequest;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
 use App\Services\BuildInventoryExporter;
 use App\Services\BuildInventoryQuery;
 use App\Services\DeploymentRequest;
-use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,9 +37,9 @@ class BuildsController extends Controller
     /**
      * Show resources in storage
      */
-    public function index(Request $request): View
+    public function index(BuildIndexRequest $request): View
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
 
         $builds = $this->buildInventory->for($request->user(), $filters)
             ->latest('builds.created_at')
@@ -62,9 +62,9 @@ class BuildsController extends Controller
     /**
      * Stream filtered workspace deployment history, release provenance, and operator notes as private, spreadsheet-safe CSV.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(BuildIndexRequest $request): StreamedResponse
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
 
         return $this->buildInventoryExporter->stream($request->user(), $filters);
     }
@@ -244,54 +244,6 @@ class BuildsController extends Controller
         return back()->with('success', $note === null
             ? __('Deployment note cleared.')
             : __('Deployment note saved.'));
-    }
-
-    /** @return array{repository_id: ?int, website_id: ?int, server_id: ?int, provider_id: ?int, status: ?string, trigger: ?string, search: ?string, active: ?string, latest: ?string, date_from: ?string, date_to: ?string} */
-    private function filters(Request $request): array
-    {
-        $status = $request->string('status')->toString();
-        $trigger = $request->string('trigger')->toString();
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $repositoryId = filter_var($request->query('repository_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        $websiteId = filter_var($request->query('website_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        $serverId = filter_var($request->query('server_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        $providerId = filter_var($request->query('provider_id'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        [$dateFrom, $dateTo] = DateRange::normalize(
-            $request->string('date_from')->toString(),
-            $request->string('date_to')->toString(),
-        );
-
-        return [
-            'repository_id' => $repositoryId ?: null,
-            'website_id' => $websiteId ?: null,
-            'server_id' => $serverId ?: null,
-            'provider_id' => $providerId ?: null,
-            'status' => in_array($status, $this->statuses(), true) ? $status : null,
-            'trigger' => in_array($trigger, $this->triggers(), true) ? $trigger : null,
-            'search' => $search !== '' ? $search : null,
-            'active' => $request->boolean('active') ? '1' : null,
-            'latest' => $request->boolean('latest') ? '1' : null,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-        ];
-    }
-
-    /**
-     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
-     */
-    private function date(string $value): ?string
-    {
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /** @return list<string> */

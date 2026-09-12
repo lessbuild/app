@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Actions\Repository\DeleteRepositoryAction;
 use App\Actions\Repository\DeployRepositoryAction;
 use App\Actions\Repository\UpdateRepositoryAction;
+use App\Http\Requests\RepositoryIndexRequest;
 use App\Http\Requests\RepositoryRequest;
+use App\Http\Requests\RepositoryWebhookDeliveryRequest;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
@@ -16,7 +18,6 @@ use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
 use App\Services\RepositoryWebhookDeliveryHistoryExporter;
 use App\Services\RepositoryWebhookDeliveryHistoryQuery;
-use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -35,9 +36,9 @@ class RepositoriesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request): View
+    public function index(RepositoryIndexRequest $request): View
     {
-        $filters = $this->indexFilters($request);
+        $filters = $request->filters();
         $repositories = $this->repositoryInventory->for($request->user(), $filters)
             ->with(['provider', 'website.server', 'latestBuild'])
             ->latest()
@@ -55,67 +56,32 @@ class RepositoriesController extends Controller
             'websites' => $request->user()->workspaceWebsites()
                 ->orderBy('name')
                 ->get(['id', 'name']),
-            'statuses' => $this->repositoryStatuses(),
+            'statuses' => $request->statuses(),
         ]);
     }
 
     /**
      * Stream filtered workspace repositories with provider, placement, latest-deployment, and webhook metadata as private CSV.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(RepositoryIndexRequest $request): StreamedResponse
     {
-        $filters = $this->indexFilters($request);
+        $filters = $request->filters();
 
         return $this->repositoryInventoryExporter->stream($request->user(), $filters);
-    }
-
-    /** @return array{search: ?string, provider_id: ?int, website_id: ?int, status: ?string} */
-    private function indexFilters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $status = $request->string('status')->toString();
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'provider_id' => $this->positiveInteger($request->query('provider_id')),
-            'website_id' => $this->positiveInteger($request->query('website_id')),
-            'status' => in_array($status, $this->repositoryStatuses(), true) ? $status : null,
-        ];
-    }
-
-    /**
-     * Normalize untrusted identifier input into a positive integer, returning null for invalid or non-positive values.
-     */
-    private function positiveInteger(mixed $value): ?int
-    {
-        $integer = filter_var($value, FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-
-        return $integer ?: null;
-    }
-
-    /** @return list<string> */
-    private function repositoryStatuses(): array
-    {
-        return [
-            'none',
-            ...array_values(array_unique(array_merge(Build::ACTIVE_STATUSES, Build::TERMINAL_STATUSES))),
-        ];
     }
 
     /**
      * Show the resource
      */
     public function show(
-        Request $request,
+        RepositoryWebhookDeliveryRequest $request,
         Repository $repository,
         DeploymentGate $gate,
         DeploymentPreflight $preflight,
         RepositoryDeploymentInsightsQuery $deploymentInsights,
     ): View {
         $this->authorize('view', $repository);
-        $deliveryFilters = $this->deliveryFilters($request);
+        $deliveryFilters = $request->filters();
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
@@ -139,38 +105,12 @@ class RepositoriesController extends Controller
     /**
      * Authorize repository visibility and stream its filtered webhook delivery and build outcomes as private CSV.
      */
-    public function exportWebhookDeliveries(Request $request, Repository $repository): StreamedResponse
+    public function exportWebhookDeliveries(RepositoryWebhookDeliveryRequest $request, Repository $repository): StreamedResponse
     {
         $this->authorize('view', $repository);
-        $deliveryFilters = $this->deliveryFilters($request);
+        $deliveryFilters = $request->filters();
 
         return $this->webhookDeliveryHistoryExporter->stream($repository, $deliveryFilters);
-    }
-
-    /** @return array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string} */
-    private function deliveryFilters(Request $request): array
-    {
-        $status = $request->string('delivery_status')->toString();
-        [$dateFrom, $dateTo] = DateRange::normalize(
-            $request->string('delivery_date_from')->toString(),
-            $request->string('delivery_date_to')->toString(),
-        );
-
-        return [
-            'delivery_status' => in_array($status, RepositoryWebhookDelivery::STATUSES, true) ? $status : null,
-            'delivery_date_from' => $dateFrom,
-            'delivery_date_to' => $dateTo,
-        ];
-    }
-
-    /**
-     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
-     */
-    private function date(string $value): ?string
-    {
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value ? $value : null;
     }
 
     /**
