@@ -47,4 +47,13 @@ class WebsitePolicy
         return $this->view($user, $website)
             && ($website->organization?->permits($user, 'manage') ?? true);
     }
+
+    /**
+     * Allow only a manager in the website's selected workspace to run an offsite backup.
+     */
+    public function backup(User $user, Website $website): bool
+    {
+        return (int) $website->organization_id === (int) $user->current_organization_id
+            && ($website->organization?->permits($user, 'manage') ?? false);
+    }
 }

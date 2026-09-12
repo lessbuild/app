@@ -53,6 +53,43 @@ class ManagedBackupTest extends TestCase
         $this->actingAs($outsider)->delete(route('backups.schedules.destroy', $schedule))->assertForbidden();
     }
 
+    public function test_non_manager_cannot_create_or_queue_backups(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+        $destination = $this->destination($owner);
+        $developer = User::factory()->create(['current_organization_id' => $owner->current_organization_id]);
+        $owner->currentOrganization->members()->attach($developer->id, ['role' => 'developer']);
+        Queue::fake();
+
+        $this->actingAs($developer)->post(route('backups.destinations.store'), $this->destinationPayload())
+            ->assertForbidden();
+        $this->actingAs($developer)->post(route('backups.run', $website), [
+            'backup_destination_id' => $destination->id,
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('backup_destinations', 1);
+        $this->assertDatabaseCount('website_backups', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_manual_backup_does_not_duplicate_an_active_backup_or_job(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+        $destination = $this->destination($owner);
+        $website->backups()->create([
+            'backup_destination_id' => $destination->id,
+            'status' => WebsiteBackup::STATUS_RUNNING,
+        ]);
+        Queue::fake();
+
+        $this->actingAs($owner)->post(route('backups.run', $website), [
+            'backup_destination_id' => $destination->id,
+        ])->assertSessionHas('info', 'A backup is already in progress for this website.');
+
+        $this->assertDatabaseCount('website_backups', 1);
+        Queue::assertNothingPushed();
+    }
+
     public function test_remote_backup_records_restic_snapshot_and_size(): void
     {
         [$owner, $website] = $this->infrastructure();
