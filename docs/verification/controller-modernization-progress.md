@@ -4692,6 +4692,53 @@ preserving post-completion log acceptance, tokenless compatibility and the
 website log schema; then audit the raw-body GitHub App webhook for any
 remaining justified boundary.
 
+## Phase 7AT — website provisioning log callback
+
+### Responsibility problem
+
+`WebsiteCallbackController::log()` still owned row locking, attempt-only
+acceptance, configured log validation and provisioning-log replacement. The
+endpoint has a distinct contract from lifecycle status/failure because valid
+callbacks can append the final output after the website becomes active.
+
+### Boundary and principles
+
+`RecordWebsiteProvisioningLogAction` now owns the transaction, locked lookup,
+attempt-only guard and website log upsert. It reuses
+`ProvisioningCallbackValidator` only after acceptance, with the website-specific
+configured limit. The controller passes explicit attempt/log fields and returns
+the same empty response. This applies single responsibility and dependency
+inversion without changing lock-point validation order.
+
+### Preserved guarantees
+
+- Signed middleware, tokenless compatibility, matching-attempt checks and
+  post-completion log acceptance remain unchanged.
+- The configured website-log bound, required string validation, provisioning
+  log type, replacement behavior, row lock, transaction rollback and response
+  remain unchanged.
+- Stale callbacks still skip validation and writes; malformed current callbacks
+  still use Laravel’s normal validation response. No routes, persisted values,
+  serialized jobs, provider behavior, dependency lockfiles or external
+  acceptance state changed.
+
+### Verification
+
+- Website provisioning log/retry, relocation, lifecycle, preview,
+  callback-integrity and provisioning-concurrency regression set: **51 passed,
+  426 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `9d1ac9b` — `refactor: extract website provisioning log callback`
+
+**Phase 7AT exit gate: complete.** Exact next task: audit the raw-body GitHub
+App webhook and repository webhook delegation for remaining responsibility
+duplication, preserving payload-size/signature/JSON ordering, deliberate 404
+concealment, verifier behavior and downstream webhook response envelopes.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4775,3 +4822,4 @@ remaining justified boundary.
 | Phase 7AQ-server-status-failure | ServerCallbackController mixed lock-point attempt/lifecycle checks, dynamic validation, status/failure persistence and failed snapshot writes. | 53 server provisioning/log/retry/authorization/callback-integrity/concurrency tests passed, 418 assertions; Pint, syntax and diff checks passed. | `d57b15f` — `refactor: extract server provisioning callbacks` | Extract the server log callback with attempt-only lock-point validation and tokenless compatibility, then handle website callbacks separately. |
 | Phase 7AR-server-log | ServerCallbackController mixed attempt-only lock-point validation, provisioning snapshot replacement and transaction handling. | 48 server provisioning/log/callback-integrity/concurrency/retry tests passed, 384 assertions; Pint, syntax and diff checks passed. | `143b3e4` — `refactor: extract server provisioning log callback` | Extract website status and failure operations, preserving preview bookkeeping, after-commit cleanup, lifecycle ordering and stale-attempt checks. |
 | Phase 7AS-website-status-failure | WebsiteCallbackController mixed lock-point attempt/lifecycle checks, validation, placement transitions, preview bookkeeping and failure persistence. | 61 website provisioning/log/retry/relocation/placement/security/lifecycle/preview/callback-integrity/concurrency tests passed, 498 assertions; Pint, syntax and diff checks passed. | `291b132` — `refactor: extract website provisioning callbacks` | Extract the website log callback with attempt-only lock-point validation and tokenless/post-completion compatibility, then audit the raw-body GitHub App webhook. |
+| Phase 7AT-website-log | WebsiteCallbackController mixed attempt-only lock-point validation, post-completion log acceptance and provisioning-log replacement. | 51 website provisioning/log/retry/relocation/lifecycle/preview/callback-integrity/concurrency tests passed, 426 assertions; Pint, syntax and diff checks passed. | `9d1ac9b` — `refactor: extract website provisioning log callback` | Audit raw-body GitHub App webhook and repository webhook delegation, preserving payload-size/signature/JSON ordering, deliberate 404 concealment and response envelopes. |
