@@ -16,6 +16,7 @@ use App\Models\Website;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Testing\TestResponse;
@@ -50,6 +51,22 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame('preview', $preview->environment->type);
         $this->assertSame('feature/checkout', $preview->repository->branch);
         $this->assertNotSame($source->website_id, $preview->website_id);
+        $previewWebsite = $preview->website->fresh();
+        $previewEnvironment = (string) $previewWebsite->environment;
+        $this->assertStringContainsString('APP_ENV="preview"', $previewEnvironment);
+        $this->assertStringContainsString('APP_DEBUG="false"', $previewEnvironment);
+        $this->assertStringContainsString('APP_URL="https://pr-17-storefront.previews.example.com"', $previewEnvironment);
+        $this->assertStringContainsString('BUILDPUSHER_PREVIEW="17"', $previewEnvironment);
+        $this->assertStringContainsString('DB_DATABASE="'.$previewWebsite->databaseIdentifier().'"', $previewEnvironment);
+        $this->assertStringContainsString('DB_USERNAME="'.$previewWebsite->databaseIdentifier().'"', $previewEnvironment);
+        $this->assertStringContainsString('DB_PASSWORD="'.$previewWebsite->database_password.'"', $previewEnvironment);
+        $this->assertStringContainsString('APP_KEY="base64:', $previewEnvironment);
+        $this->assertStringNotContainsString('base64:source-production-key', $previewEnvironment);
+        $this->assertStringNotContainsString('production-api-secret', $previewEnvironment);
+        $this->assertStringNotContainsString('production-mail-secret', $previewEnvironment);
+        $this->assertNotSame('source-database-secret', $previewWebsite->database_password);
+        $this->assertStringNotContainsString('production-api-secret', (string) DB::table('websites')->whereKey($previewWebsite->id)->value('environment'));
+        $this->assertStringNotContainsString('production-api-secret', $previewWebsite->toJson());
         Queue::assertPushed(AddWebsiteJob::class, fn (AddWebsiteJob $job): bool => $job->website->is($preview->website));
 
         $preview->website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
@@ -93,6 +110,30 @@ class PreviewDeploymentTest extends TestCase
         $this->assertTrue($project->preview_enabled);
         $this->assertSame('previews.example.com', $project->preview_domain);
         $this->assertSame(48, $project->preview_ttl_hours);
+    }
+
+    public function test_existing_preview_is_sanitized_before_a_revised_revision_is_queued(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('a', 40)), $secret, 'preview-open')
+            ->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $preview->website->update([
+            'environment' => "APP_ENV=production\nAPP_KEY=base64:legacy-preview-key\nAPI_TOKEN=legacy-preview-secret",
+        ]);
+
+        $this->send($source, $this->payload('synchronize', str_repeat('b', 40)), $secret, 'preview-update')
+            ->assertAccepted();
+
+        $environment = (string) $preview->website->fresh()->environment;
+        $this->assertStringContainsString('APP_ENV="preview"', $environment);
+        $this->assertStringNotContainsString('base64:legacy-preview-key', $environment);
+        $this->assertStringNotContainsString('legacy-preview-secret', $environment);
     }
 
     public function test_preview_settings_entitlement_is_checked_before_validation_and_writes(): void
@@ -143,7 +184,8 @@ class PreviewDeploymentTest extends TestCase
         $server = $owner->servers()->create(['name' => 'Production', 'provisioning_status' => Server::STATUS_ACTIVE]);
         $website = $owner->websites()->create([
             'server_id' => $server->id, 'name' => 'Storefront', 'description' => 'Website',
-            'environment' => 'APP_ENV=production', 'url' => 'store.example.com',
+            'environment' => "APP_ENV=production\nAPP_KEY=base64:source-production-key\nAPI_TOKEN=production-api-secret\nMAIL_PASSWORD=production-mail-secret",
+            'database_password' => 'source-database-secret', 'url' => 'store.example.com',
             'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
         $repository = $owner->repositories()->create([

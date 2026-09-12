@@ -27,6 +27,7 @@ class PreviewDeploymentLifecycle
         private readonly PlanLimits $limits,
         private readonly DeploymentRequest $deployments,
         private readonly Entitlements $entitlements,
+        private readonly PreviewEnvironmentConfiguration $previewEnvironment,
     ) {}
 
     /**
@@ -84,6 +85,9 @@ class PreviewDeploymentLifecycle
             if (! $preview || ! $preview->website || $preview->website->trashed()) {
                 $preview = $this->create($project, $baseEnvironment, $source, $webhook, $preview);
             } else {
+                $preview->website->update([
+                    'environment' => $this->previewEnvironment->for($preview->website, $webhook->pullRequestNumber),
+                ]);
                 $preview->update([
                     'title' => $webhook->pullRequestTitle,
                     'source_branch' => $webhook->sourceBranch,
@@ -204,12 +208,12 @@ class PreviewDeploymentLifecycle
         $baseWebsite = $source->website;
         $label = "PR #{$webhook->pullRequestNumber}";
         $hostname = 'pr-'.$webhook->pullRequestNumber.'-'.$project->slug.'.'.$project->preview_domain;
-        $website = $project->organization->websites()->create([
+        $website = $project->organization->websites()->make([
             'user_id' => $project->organization->owner_id,
             'server_id' => $baseEnvironment->server_id ?: $baseWebsite->server_id,
             'name' => "{$project->name} {$label}",
             'description' => "Ephemeral preview for {$label}",
-            'environment' => rtrim((string) $baseWebsite->environment)."\nAPP_ENV=preview\nBUILDPUSHER_PREVIEW={$webhook->pullRequestNumber}",
+            'environment' => '',
             'url' => Str::lower($hostname),
             'database_password' => Str::random(32),
             'provisioning_status' => Website::STATUS_QUEUED,
@@ -219,6 +223,10 @@ class PreviewDeploymentLifecycle
             'health_failure_threshold' => $baseWebsite->health_failure_threshold,
             'health_check_path' => $baseWebsite->health_check_path,
             'release_retention' => min(3, $baseWebsite->release_retention),
+        ]);
+        $website->save();
+        $website->update([
+            'environment' => $this->previewEnvironment->for($website, $webhook->pullRequestNumber),
         ]);
         $repository = $project->organization->repositories()->create([
             'user_id' => $project->organization->owner_id,

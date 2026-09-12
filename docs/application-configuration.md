@@ -38,6 +38,12 @@ environments:
 
 Bindings resolve `staging_site` and `application_api_token` within the target workspace. A secret reference names an existing secret source; applying it must preserve encrypted storage and normal variable-version history. No implicit production-to-preview secret copying is allowed.
 
+### Preview configuration safety
+
+New pull-request previews use an explicit, preview-owned baseline configuration. It includes a fresh application key, a preview URL and marker, `APP_DEBUG=false`, and independent local database credentials derived from the preview website's generated identity. The source website's encrypted environment text is not a fallback and is never copied into a new preview. This keeps source application keys, provider credentials, mail credentials and other source values unavailable unless a later, separately reviewed preview-secret workflow explicitly approves them.
+
+Preview websites created before this boundary are not rewritten by a migration. The next non-close preview event rewrites the website environment with the safe baseline before the revision is queued; closing and reopening also reaches that safe path. A legacy preview that receives no lifecycle event must be closed and recreated before it is used with untrusted code. Preview configuration is encrypted at rest, and the existing provisioning scripts continue to receive only the preview-owned values. This initial boundary does not yet implement fork trust policy, secret-scope approvals or dependent-resource provisioning; those remain later preview slices.
+
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 
 Changing an existing resource's type or management mode requires detaching it in a separate reviewed apply before attaching the replacement. This workflow does not migrate remote data or reuse old credentials across incompatible resource types.
