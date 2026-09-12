@@ -16,6 +16,22 @@ class ProjectPolicy
     }
 
     /**
+     * Require deployment permission, with management permission for protected environment features.
+     *
+     * @param  array<string, mixed>  $attributes  Validated environment attributes.
+     */
+    public function createEnvironment(User $user, Project $project, array $attributes = []): bool
+    {
+        if ((int) $project->organization_id !== (int) $user->current_organization_id
+            || ! $project->organization->permits($user, 'deploy')) {
+            return false;
+        }
+
+        return (! ($attributes['is_protected'] ?? false) && ! ($attributes['requires_deployment_approval'] ?? false))
+            || $project->organization->permits($user, 'manage');
+    }
+
+    /**
      * Require workspace management permission to view configuration reviews and receipts.
      */
     public function viewConfiguration(User $user, Project $project): bool
