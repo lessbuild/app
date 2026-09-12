@@ -2741,6 +2741,59 @@ create/update/duplicate/delete lifecycle, preserving publication timestamps,
 source-revision identity, install-count concurrency, encrypted scripts,
 activity timing and existing 404/redirect outcomes.
 
+## Phase 7H — gallery install and refresh operations
+
+### Responsibility problem
+
+`RecipeGalleryController` contained two transaction-heavy lifecycle workflows:
+installing a published source as a private copy while preventing duplicates
+and incrementing the source count, and refreshing an unpublished copy under
+copy/source locks. It also recorded activity after those state transitions.
+The controller therefore owned persistence, lock ordering and workflow state
+alongside redirect mapping.
+
+### Boundaries applied
+
+- `InstallGalleryRecipeAction` owns the published-source lock, workspace-scoped
+  duplicate lookup, private snapshot creation and one-time install-count
+  increment. It records activity only after a new copy is committed and
+  returns the existing or new copy.
+- `RefreshGalleryRecipeAction` owns the copy/source lock order, published-copy
+  rejection, snapshot replacement and post-commit activity. It returns the
+  existing boolean outcome so the controller can preserve its status branch.
+- `RecipeGalleryController` now supplies the authenticated actor and route
+  model, invokes the action and retains only policy/availability checks and
+  redirect/status mapping.
+
+This applies single responsibility and dependency inversion to actual
+transactional operations without changing the public gallery query boundary.
+
+### Preserved contracts and safety guarantees
+
+- Published-source 404 behavior, duplicate-install idempotency, source
+  revision identity, encrypted script copy, install-count behavior, copy/source
+  lock ordering, published-copy refresh rejection, activity timing/text,
+  routes and status flashes remain unchanged.
+- Refresh failures still leave the copy and activity state unchanged; public
+  gallery availability and copy authorization remain outside the action as
+  their classified HTTP/policy boundaries.
+
+### Verification
+
+- Gallery, activity, favorite and rating regression set: **21 passed, 214
+  assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `72c9355` — `refactor: extract gallery install operations`
+
+**Phase 7H exit gate: complete.** Exact next task: extract
+`RecipesController` create/update publication persistence, duplicate creation
+and locked deletion, preserving timestamp/revision rules, encrypted script
+handling, notification cleanup, activity timing and existing responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2786,3 +2839,4 @@ activity timing and existing 404/redirect outcomes.
 | Phase 7E-repository-creation | Repository create/update duplicated tenant provider lookup and GitHub App webhook configuration around direct creation and an existing locked update action. | 57 repository/GitHub App/webhook/deployment/provider/inventory/safety tests passed, 486 assertions; Pint and diff checks passed. | `2263941` — `refactor: extract repository creation operation` | Extract repository webhook-settings request and enable/disable operations, preserving GitLab token validation, one-time secret flash, encrypted persistence, pending cleanup and redirect behavior. |
 | Phase 7F-repository-webhook-settings | Repository webhook settings mixed GitLab protocol validation, generated-secret disclosure, encrypted enable/disable writes and pending-state cleanup in the controller. | 19 repository webhook/GitHub App/authorization tests passed, 151 assertions; Pint and diff checks passed. | `12e7927` — `refactor: extract repository webhook settings operations` | Audit recipe, gallery, ratings/favorites, feedback and notification controllers for remaining direct writes, inline actor guards, named bags and duplicated report/query semantics. |
 | Phase 7G-recipe-ratings-favorites | Rating/favorite controllers mixed availability/actor guards, validation, relation-scoped persistence, idempotency and activity recording. | 59 recipe rating/favorite/activity/gallery/report tests passed, 611 assertions; Pint and diff checks passed. | `bb9d3e1` — `refactor: extract recipe rating and favorite operations` | Extract gallery install/refresh and recipe lifecycle operations, preserving publication timestamps, source revisions, install-count concurrency, encrypted scripts, activity timing and response outcomes. |
+| Phase 7H-gallery-install-refresh | Gallery install/refresh transactions and activity recording remained inside `RecipeGalleryController`. | 21 gallery/activity/favorite/rating tests passed, 214 assertions; Pint and diff checks passed. | `72c9355` — `refactor: extract gallery install operations` | Extract recipe create/update publication persistence, duplicate creation and locked deletion, preserving timestamps, revisions, encrypted scripts, notification cleanup, activity timing and responses. |
