@@ -262,7 +262,7 @@ refactoring.
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
-| Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | This ledger commit on `main` (exact SHA recorded in the handoff after commit). | Pending at ledger creation; must be pushed immediately after verification. | Trace preview configuration sources and add the smallest characterization test for `PreviewDeploymentLifecycle::create()` before selecting the explicit safe configuration boundary. |
+| Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline` | Pushed to GitHub `origin/main` on 2026-09-12. | Trace preview configuration sources and add the smallest characterization test for `PreviewDeploymentLifecycle::create()` before selecting the explicit safe configuration boundary. |
 
 ## External acceptance still outstanding
 
