@@ -6,6 +6,7 @@ use App\Models\Recipe;
 use App\Models\RecipeReport;
 use App\Models\User;
 use App\Services\ActivityRecorder;
+use App\Services\RecipeReportLocks;
 use App\Services\RecipeReportNotifier;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ class ResolveRecipeReportAction
 {
     public function __construct(
         private readonly ActivityRecorder $activity,
+        private readonly RecipeReportLocks $locks,
         private readonly RecipeReportNotifier $notifications,
     ) {}
 
@@ -30,7 +32,7 @@ class ResolveRecipeReportAction
     public function handle(Recipe $recipe, RecipeReport $report, User $contributor, ?string $resolutionNote): void
     {
         DB::transaction(function () use ($contributor, $recipe, $report, $resolutionNote): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
+            $lockedRecipe = $this->locks->recipe($recipe->id);
             $lockedReport = RecipeReport::query()
                 ->whereKey($report->id)
                 ->where('recipe_id', $lockedRecipe->id)
@@ -59,17 +61,5 @@ class ResolveRecipeReportAction
                 );
             }
         });
-    }
-
-    /**
-     * Take the same row lock used by the controller workflow.
-     */
-    private function lockedRecipe(int $recipeId): Recipe
-    {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
-        }
-
-        return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
     }
 }

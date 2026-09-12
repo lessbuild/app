@@ -309,6 +309,22 @@ Verification after the slice:
 - Full `RecipeFeedbackInboxTest`: 21 passed, 1 failed (208 assertions); the single failure was the existing route throttle returning 429 before a later foreign-selection assertion. The same foreign-selection and rollback tests pass in isolation.
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — shared recipe-report lock collaborator slice
+
+Responsibility problem: the individual report actions each carried a copy of the SQLite writer-reservation and recipe-row-lock implementation. That duplicated a concurrency-sensitive guarantee and made future mutation changes liable to diverge.
+
+Boundary used: `RecipeReportLocks` now owns the concrete recipe lock protocol and is constructor-injected into the single-report actions. It deliberately has no interface because there is one persistence strategy and no alternate implementation; bulk actions continue to lock their selected report rows directly.
+
+Preserved guarantees:
+
+- The SQLite self-update reservation occurs before the recipe snapshot read, followed by the same `lockForUpdate()` query; no lock order or transaction boundary changed.
+- Report create/update, resolve, note update, reopen, notification, audit, rollback and public HTTP behavior remain unchanged.
+
+Verification after the slice:
+
+- With `DB_CONNECTION=sqlite DB_DATABASE=:memory: CACHE_STORE=array CACHE_DRIVER=array SESSION_DRIVER=array QUEUE_CONNECTION=sync`, the report regression classes passed separately: `RecipeReportTest` 14 (168 assertions), `RecipeFeedbackInboxTest` 22 (211), `RecipeReportHistoryTest` 7 (112), and `RecipeReportNotificationTest` 17 (117), for 60 passed (608 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Extract the reporter's withdraw operation into a cohesive action, preserving recipe/report locks, notification deletion, cascade safety, activity timing and rollback behavior.
+Extract the reporter's withdraw operation into a cohesive action using `RecipeReportLocks`, preserving recipe/report locks, notification deletion, cascade safety, activity timing and rollback behavior.

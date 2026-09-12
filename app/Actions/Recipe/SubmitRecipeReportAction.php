@@ -5,6 +5,7 @@ namespace App\Actions\Recipe;
 use App\Models\Recipe;
 use App\Models\User;
 use App\Services\ActivityRecorder;
+use App\Services\RecipeReportLocks;
 use App\Services\RecipeReportNotifier;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -14,6 +15,7 @@ class SubmitRecipeReportAction
 {
     public function __construct(
         private readonly ActivityRecorder $activity,
+        private readonly RecipeReportLocks $locks,
         private readonly RecipeReportNotifier $notifications,
     ) {}
 
@@ -30,7 +32,7 @@ class SubmitRecipeReportAction
     public function handle(Recipe $recipe, User $reporter, array $data): void
     {
         DB::transaction(function () use ($data, $recipe, $reporter): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
+            $lockedRecipe = $this->locks->recipe($recipe->id);
             if (! $lockedRecipe->is_published || $lockedRecipe->published_at === null) {
                 throw (new ModelNotFoundException)->setModel(Recipe::class, [$lockedRecipe->id]);
             }
@@ -69,17 +71,5 @@ class SubmitRecipeReportAction
                     : "Gallery recipe \"{$lockedRecipe->name}\" report was updated to {$report->reason}.",
             );
         });
-    }
-
-    /**
-     * Reserve the SQLite writer before reading the recipe snapshot, then take the database row lock.
-     */
-    private function lockedRecipe(int $recipeId): Recipe
-    {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
-        }
-
-        return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
     }
 }
