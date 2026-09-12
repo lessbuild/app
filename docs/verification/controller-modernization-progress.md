@@ -3624,6 +3624,58 @@ preserving conditional password validation, authenticator/recovery verification
 and recovery-code consumption, the `twoFactor` bag, credential clearing,
 activity timing and exact status/error responses.
 
+## Phase 7Z — two-factor disable operation boundary
+
+### Responsibility problem
+
+`TwoFactorAuthenticationController` mixed conditional `twoFactor` password/code
+validation, authenticator or recovery-code verification, recovery-code
+consumption, direct credential clearing, activity recording and response
+mapping for disablement.
+
+### Boundary and principles
+
+`DisableTwoFactorRequest` owns the named `twoFactor` bag, the conditional local
+password challenge and bounded code rules. `DisableTwoFactorAction` owns
+authentication/recovery verification, credential clearing and activity; an
+invalid code remains a validation exception at the application boundary.
+The controller now consumes the validated code, invokes the action and returns
+the existing status response. This applies single responsibility and
+dependency inversion while reusing the existing TOTP/recovery service and its
+atomic recovery-code consumption.
+
+### Preserved guarantees
+
+- Local accounts still require the current password, social-only accounts do
+  not, and every disable request still requires the same bounded code in the
+  `twoFactor` bag.
+- TOTP verification does not consume recovery codes; valid recovery codes are
+  consumed under the existing user-row lock before credentials are cleared.
+  Invalid verification leaves all two-factor state unchanged.
+- Secret/recovery fields are cleared together, the same account activity event
+  is recorded after persistence, and the exact success/error messages remain
+  unchanged.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Two-factor/authentication/security/rate-limit regression set: **27 passed,
+  232 assertions**.
+- Added coverage for invalid-code no-mutation and passwordless social-only
+  recovery-code disablement.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `bddd879` — `refactor: extract two-factor disable operation`
+
+**Phase 7Z exit gate: complete.** Exact next task: extract recovery-code
+regeneration, preserving enabled-state 422 ordering before validation,
+conditional password/code checks, non-consuming verification, replacement
+hashes, one-time plaintext flash behavior, activity timing and exact status.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3687,3 +3739,4 @@ activity timing and exact status/error responses.
 | Phase 7W-social-account | UsersController mixed conditional `social` validation, locked provider mutation, last-method protection, auth-type fallback, activity and response mapping. | 30 account profile/password/social/session/security/rate-limit tests passed, 279 assertions; Pint, syntax and diff checks passed. | `f0adf6f` — `refactor: extract social account disconnect operation` | Modernize two-factor setup/enable/confirm/cancel/disable operations, preserving the `twoFactor` bag, secret/recovery handling, ordering and security side effects. |
 | Phase 7X-two-factor-setup | TwoFactorAuthenticationController mixed setup-state guards, conditional password validation, pending secret/recovery writes and cancellation. | 16 two-factor/authentication/security tests passed, 123 assertions; Pint, syntax and diff checks passed. | `aa27ffa` — `refactor: extract two-factor setup operations` | Extract two-factor confirmation, preserving `twoFactor` validation, pending-secret verification, recovery-code hashing, plaintext flash behavior and activity timing. |
 | Phase 7Y-two-factor-confirmation | TwoFactorAuthenticationController mixed code validation, pending-secret verification, recovery-code hashing, confirmation persistence, activity and plaintext flashing. | 22 two-factor/authentication/security tests passed, 163 assertions; Pint, syntax and diff checks passed. | `abf499d` — `refactor: extract two-factor confirmation operation` | Extract two-factor disable, preserving conditional password validation, authenticator/recovery verification and consumption, credential clearing, activity and exact responses. |
+| Phase 7Z-two-factor-disable | TwoFactorAuthenticationController mixed conditional password/code validation, authenticator/recovery verification, credential clearing, recovery consumption and activity. | 27 two-factor/authentication/security/rate-limit tests passed, 232 assertions; Pint, syntax and diff checks passed. | `bddd879` — `refactor: extract two-factor disable operation` | Extract recovery-code regeneration, preserving enabled-state ordering, non-consuming verification, replacement hashes, plaintext flash behavior and exact status. |
