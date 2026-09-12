@@ -3777,6 +3777,64 @@ validation and lifecycle orchestration, preserving the `deleteAccount` bag,
 password/2FA ordering, shared-workspace and active-operation safeguards,
 transactional cleanup, session invalidation and exact status/HTTP responses.
 
+## Phase 7AC — account deletion request and lifecycle operation
+
+### Responsibility problem
+
+`AccountDeletionController` mixed dynamic confirmation/password/two-factor
+validation, recovery-code consumption, workspace membership and active-operation
+safeguards, authentication logout, transactional deletion of workspaces/tokens/
+the user, session invalidation and response mapping.
+
+### Boundary and principles
+
+`DeleteAccountRequest` owns the existing `deleteAccount` bag, dynamic challenge
+rules and explicit extraction of the optional two-factor code into
+`AccountDeletionData`. `DeleteAccountAction` owns the self-account lifecycle,
+including the unchanged guard ordering, cleanup transaction and session
+invalidation. `AccountAuthentication` now also encapsulates the existing web
+guard logout. Workflow failures use a focused operation exception so the
+controller only maps their established HTTP status and message. No policy was
+introduced because this is an authenticated self-account operation rather than
+organization-resource authorization. This applies single responsibility and
+dependency inversion while preserving the existing Eloquent relationships and
+transaction boundary.
+
+### Preserved guarantees
+
+- Exact email confirmation, conditional local-password validation, conditional
+  two-factor validation and the `deleteAccount` error bag remain unchanged.
+  Invalid validation still occurs before two-factor verification; valid recovery
+  codes retain their existing consumption timing before workspace safeguards.
+- Shared-workspace membership, teammate ownership and active deployment/command
+  safeguards retain their original 422/409 responses and prevent all deletion
+  writes. The organization-scoped queries are unchanged.
+- Logout still occurs immediately before the existing deletion transaction;
+  owned workspaces, personal tokens and the user are deleted with the same
+  model events/cascades, followed by session invalidation and token regeneration.
+- Redirect location, success flash, authentication middleware, routes, schemas,
+  persisted values, serialized jobs, dependency lockfiles and external
+  integrations are unchanged.
+
+### Verification
+
+- Account lifecycle coverage: **7 passed, 48 assertions**.
+- Adjacent account/profile/password/session/social/2FA/security/rate-limit
+  regression set: **48 passed, 360 assertions**.
+- Added coverage for shared memberships, active commands, two-factor recovery
+  validation/consumption and no-deletion safeguards.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `326c938` — `refactor: extract account deletion operation`
+
+**Phase 7AC exit gate: complete.** Exact next task: characterize password
+confirmation and authentication callback writes, preserving protocol ordering,
+session timestamps, OAuth/SSO state checks and exact validation/response
+behavior before extracting the next cohesive boundary.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3843,3 +3901,4 @@ transactional cleanup, session invalidation and exact status/HTTP responses.
 | Phase 7Z-two-factor-disable | TwoFactorAuthenticationController mixed conditional password/code validation, authenticator/recovery verification, credential clearing, recovery consumption and activity. | 27 two-factor/authentication/security/rate-limit tests passed, 232 assertions; Pint, syntax and diff checks passed. | `bddd879` — `refactor: extract two-factor disable operation` | Extract recovery-code regeneration, preserving enabled-state ordering, non-consuming verification, replacement hashes, plaintext flash behavior and exact status. |
 | Phase 7AA-two-factor-recovery | TwoFactorAuthenticationController mixed enabled-state ordering, conditional challenge validation, non-consuming verification, recovery replacement and plaintext flashing. | 31 two-factor/authentication/security/rate-limit tests passed, 245 assertions; Pint, syntax and diff checks passed. | `3216aa9` — `refactor: extract two-factor recovery code operation` | Characterize remaining account/security controllers and requests, including account deletion, sign-in history clearing, password confirmation, callbacks and direct writes, before the next cohesive extraction. |
 | Phase 7AB-sign-in-history-clear | SignInHistoryController mixed `signIns` validation, owner-scoped deletion, transactional activity, count/empty-state mapping and redirect response. | 16 sign-in history/recorder/account-security/rate-limit tests passed, 179 assertions; Pint, syntax and diff checks passed. | `10e1d02` — `refactor: extract sign-in history clearing` | Extract account deletion validation and lifecycle orchestration, preserving `deleteAccount`, password/2FA ordering, safeguards, cleanup transaction, session invalidation and exact responses. |
+| Phase 7AC-account-deletion | AccountDeletionController mixed dynamic security validation, account/workspace safety guards, cleanup transaction, logout and session invalidation. | 7 account-lifecycle tests passed, 48 assertions; adjacent account/security set 48/360; Pint, syntax and diff checks passed. | `326c938` — `refactor: extract account deletion operation` | Characterize password confirmation and authentication callback writes, preserving protocol ordering, session timestamps, OAuth/SSO state checks and exact validation/response behavior. |
