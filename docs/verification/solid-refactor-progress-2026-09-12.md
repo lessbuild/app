@@ -794,6 +794,25 @@ Verification after the slice:
 
 Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3D — servers and environments exit review
+
+Phase 3D is complete. Server inventory reporting and creation provisioning are separated from HTTP coordination; imported-server confirmation is an explicit session-bound action; environment variable/resource writes have cohesive action boundaries; and substantial environment/deployment-control validation uses Form Requests. Existing observer-owned cloud cleanup, display-name CRUD, callback controllers, retry jobs, environment child deletion and project bootstrap transaction were reviewed and left in place because they are already focused or are straightforward coordination without a safer independent boundary.
+
+Preserved guarantees:
+
+- Server ownership, provider capability checks, encrypted credentials, provisioning attempts, leases, callbacks, stale-attempt protection, retry behavior, cleanup idempotency and deletion safeguards remain unchanged.
+- Environment organization scoping, protected/production removal rules, entitlement checks, encrypted variable/resource configuration, maintenance windows and deployment controls remain unchanged.
+- No routes, validation keys, response formats, flash messages, YAML schemas, persisted values or queued-job payloads were changed by Phase 3D.
+
+Verification after the phase:
+
+- Comprehensive server/environment gate: 297 passed (2,442 assertions).
+- ApplicationConfigurationRemovalWorkflowTest: 2 passed (37 assertions).
+- Prior focused import, resource, environment and request-validation gates also passed; all commands used the isolated SQLite database, array cache/session and sync queue overrides.
+- Pint, PHP syntax checks and git diff --check: passed for the phase slices.
+
+Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Run the complete Phase 3D server/environment regression gate, including deletion cleanup, provisioning callbacks/retries, environment removal safeguards, ownership and authorization; then close Phase 3D if all contracts remain green.
+Begin Phase 4 final verification: audit authorization/transactions/query bounds, run the complete PHP suite and full Pint, perform dependency/platform/diff checks, build assets, verify route caching and served Livewire assets in the isolated runtime, and record browser coverage and remaining external acceptance work.
