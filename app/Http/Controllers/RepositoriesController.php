@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Repository\DeleteRepositoryAction;
 use App\Actions\Repository\DeployRepositoryAction;
 use App\Actions\Repository\UpdateRepositoryAction;
 use App\Http\Requests\RepositoryRequest;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
-use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
 use App\Services\RepositoryInventoryExporter;
@@ -19,7 +19,6 @@ use App\Support\DateRange;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -295,19 +294,11 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function destroy(Repository $repository): RedirectResponse
+    public function destroy(Repository $repository, DeleteRepositoryAction $delete): RedirectResponse
     {
         $this->authorize('delete', $repository);
 
-        $deleted = DB::transaction(function () use ($repository): bool {
-            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
-            $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
-                return false;
-            }
-
-            return (bool) $locked->delete();
-        });
+        $deleted = $delete->handle($repository);
 
         if (! $deleted) {
             return back()->with('error', __('Wait for the current website deployment to finish before deleting this repository.'));

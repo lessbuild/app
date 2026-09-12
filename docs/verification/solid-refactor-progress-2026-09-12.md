@@ -634,6 +634,23 @@ Verification after the slice:
 - DeploymentHooksTest, WebsiteDeploymentSerializationTest, ProviderCapabilityTest and ResourceAuthorizationTest: 22 passed (172 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — repository deletion safety action slice
+
+Responsibility problem: RepositoriesController combined the delete endpoint with website/repository lock ordering, active-deployment protection and soft deletion.
+
+Boundary used: DeleteRepositoryAction now owns the transactional deletion safety rule. The controller retains policy authorization and the existing blocked-deletion flash response or index redirect.
+
+Preserved guarantees:
+
+- Website-before-repository lock order, current-placement verification and active-deployment rejection remain unchanged.
+- Deletion remains Eloquent soft deletion with the same route, authorization boundary and response behavior.
+- The action returns a blocked outcome without mutating either resource, preserving concurrent deployment safety.
+
+Verification after the slice:
+
+- WebsiteDeploymentSerializationTest and ResourceAuthorizationTest: 9 passed (66 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Extract the repository deletion safety transaction, preserving soft deletion, website lock ordering, active-deployment rejection and exact flash behavior.
+Extract the repository detail deployment-insights query, preserving its bounded duration sample, outcome counters and empty-state values.
