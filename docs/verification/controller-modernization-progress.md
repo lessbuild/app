@@ -4205,6 +4205,56 @@ meaningful verification state change while leaving straightforward prompt and
 notification coordination at the HTTP boundary; then audit GitHub App and
 enterprise SSO callback protocols.
 
+## Phase 7AK — signed email verification
+
+### Responsibility problem
+
+`VerifyEmailController` combined the signed Laravel verification boundary with
+the account state change and `Verified` event dispatch. The prompt and resend
+controllers only select a view/redirect or invoke Laravel's existing
+notification contract, so they remain straightforward HTTP coordination.
+
+### Boundary and principles
+
+`VerifyEmailAction` owns the idempotent verification transition and receives
+Laravel's event dispatcher through dependency injection. It returns whether
+the account was unverified when the operation began so the controller can
+preserve the existing success-flash distinction. The controller retains
+`EmailVerificationRequest`, signed-route middleware and response mapping. This
+applies single responsibility and dependency inversion without wrapping a
+trivial notification call in an unnecessary abstraction.
+
+### Preserved guarantees
+
+- The route, `auth`/`signed`/throttle middleware, URL identity/hash checks and
+  denial responses remain unchanged.
+- Already-verified accounts still redirect directly to the dashboard without a
+  success flash or duplicate `Verified` event. An initially unverified
+  account still attempts the existing model transition, dispatches `Verified`
+  only when Laravel reports a successful mark, and receives the exact success
+  message.
+- Verification resend, prompt behavior, email-change reverification,
+  notification timing, persisted values, routes, serialized jobs, dependency
+  lockfiles and external acceptance state remain unchanged.
+
+### Verification
+
+- Email-verification, authentication redirect, two-factor and social-auth
+  regression set: **49 passed, 306 assertions**.
+- Added coverage for repeated signed links on already-verified accounts.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `cc82c16` — `refactor: extract email verification operation`
+
+**Phase 7AK exit gate: complete.** Exact next task: characterize GitHub App
+installation state, provider creation, repository discovery and current-
+workspace concealment alongside enterprise SSO entitlement, signed state,
+PKCE, remote verification and session marking before extracting protocol-safe
+integration operations.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4279,3 +4329,4 @@ enterprise SSO callback protocols.
 | Phase 7AH-social-auth-callback | SocialAuthController mixed provider verification, callback intent, guest identity resolution/creation, locked connection mutation, workspace recovery, 2FA handoff and sign-in recording. | 41 social-auth/password-confirmation/account/security/2FA tests passed, 323 assertions; Pint, syntax and diff checks passed. | `1784e6a` — `refactor: extract social auth operations` | Characterize remaining authentication/session controllers and GitHub App/SSO callbacks before protocol-safe operation extraction. |
 | Phase 7AI-two-factor-login | TwoFactorChallengeController mixed challenge validation, pending-user lookup, recovery verification/consumption, session cleanup, authentication and sign-in transition wiring. | 30 authentication redirect/two-factor/email-verification tests passed, 168 assertions; Pint, syntax and diff checks passed. | `410d9e2` — `refactor: extract two-factor login operation` | Characterize password-login session staging/logout and email-verification resend/link transitions, then choose the smallest protocol-safe authentication/session operation boundary before GitHub App and enterprise SSO callbacks. |
 | Phase 7AJ-password-login | AuthenticatedSessionController mixed request-authenticated credentials with session regeneration, two-factor staging, web-guard logout, sign-in recording and redirect selection. | 48 authentication redirect/two-factor/email-verification/social-auth tests passed, 302 assertions; Pint, syntax and diff checks passed. | `eddb4e8` — `refactor: extract password login completion` | Characterize signed email verification and resend behavior, extracting only the meaningful verification state change before auditing GitHub App and enterprise SSO callback protocols. |
+| Phase 7AK-email-verification | VerifyEmailController mixed signed Laravel verification with the account state transition and `Verified` event dispatch; prompt/resend endpoints remained straightforward coordination. | 49 email-verification/authentication redirect/two-factor/social-auth tests passed, 306 assertions; Pint, syntax and diff checks passed. | `cc82c16` — `refactor: extract email verification operation` | Characterize GitHub App installation and enterprise SSO callback protocols, including state, PKCE, entitlements, remote verification and session marking. |
