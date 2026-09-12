@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Account\RevokeOtherSessionsAction;
+use App\Actions\Account\RevokeSessionAction;
 use App\Actions\Account\UpdatePasswordAction;
 use App\Actions\Account\UpdateProfileAction;
 use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Requests\RevokeOtherSessionsRequest;
+use App\Http\Requests\RevokeSessionRequest;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Models\SignInEvent;
@@ -117,26 +119,13 @@ class UsersController extends Controller
      *
      * @return RedirectResponse The revoked, current-session, unavailable, or already-inactive outcome.
      */
-    public function revokeSession(
-        Request $request,
-        string $session,
-        ActivityRecorder $activity,
-        BrowserSessionManager $browserSessions,
-    ): RedirectResponse {
-        $request->validateWithBag('sessions', [
-            'session_id' => ['required', 'string', 'max:255', Rule::in([$session])],
-            'current_password' => ['required', 'current_password'],
-        ]);
-
-        $result = $browserSessions->revoke(
+    public function revokeSession(RevokeSessionRequest $request, RevokeSessionAction $revoke): RedirectResponse
+    {
+        $result = $revoke->handle(
             $request->user(),
-            $session,
+            $request->sessionId(),
             $request->session()->getId(),
         );
-
-        if ($result === 'revoked') {
-            $activity->recordAccount($request->user(), 'A browser session was logged out.');
-        }
 
         return match ($result) {
             'revoked' => back()->with('sessions_status', __('Browser session logged out.')),
