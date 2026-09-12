@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Environment\SaveEnvironmentResourceAction;
 use App\Actions\Environment\SaveEnvironmentVariableAction;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
@@ -162,7 +163,7 @@ class EnvironmentController extends Controller
      *
      * @return RedirectResponse The attachment result, or an unsupported managed-resource validation error.
      */
-    public function storeResource(Request $request, Environment $environment): RedirectResponse
+    public function storeResource(Request $request, Environment $environment, SaveEnvironmentResourceAction $saveResource): RedirectResponse
     {
         $this->authorize('update', $environment);
         $this->entitlements->enforce($environment->project->organization, 'resources');
@@ -180,35 +181,8 @@ class EnvironmentController extends Controller
             if (! $environment->website) {
                 return back()->withErrors(['type' => __('Attach a website before adding its managed database.')])->withInput();
             }
-            $postgresql = $data['type'] === 'postgresql';
-            $variables = [
-                'DB_CONNECTION' => $postgresql ? 'pgsql' : 'mysql',
-                'DB_HOST' => $postgresql ? '127.0.0.1' : $environment->website->server->public_ip,
-                'DB_PORT' => $postgresql ? '5432' : '3306',
-                'DB_DATABASE' => $environment->website->databaseIdentifier(),
-                'DB_USERNAME' => $environment->website->databaseIdentifier(),
-                'DB_PASSWORD' => $environment->website->database_password,
-            ];
-        } elseif ($data['is_managed'] && $data['type'] === 'redis') {
-            $variables = ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => '6379'];
-        } elseif ($data['is_managed'] && $data['type'] === 'valkey') {
-            $port = 16379 + ($environment->id % 10000);
-            $variables = [
-                'REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => (string) $port,
-                'VALKEY_HOST' => '127.0.0.1', 'VALKEY_PORT' => (string) $port,
-            ];
         }
-        $environment->resources()->updateOrCreate(['name' => $data['name']], [
-            'type' => $data['type'],
-            'is_managed' => $data['is_managed'],
-            'configuration' => [
-                'variables' => $variables,
-                'container_name' => $data['is_managed'] && $data['type'] === 'valkey'
-                    ? 'buildpusher-valkey-'.$environment->id.'-'.Str::slug($data['name'])
-                    : null,
-            ],
-            'status' => 'ready',
-        ]);
+        $saveResource->handle($environment, $data, $variables);
 
         return back()->with('success', __('Resource attached. Its variables will be snapshotted into future deployments.'));
     }

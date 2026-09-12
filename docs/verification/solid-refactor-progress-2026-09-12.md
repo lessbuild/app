@@ -754,6 +754,26 @@ Verification after the slice:
 
 Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3D — environment-resource configuration action slice
+
+Responsibility problem: EnvironmentController combined resource request handling with external `KEY=value` input normalization, managed database/Redis/Valkey configuration construction, deterministic container naming and resource persistence.
+
+Boundary used: SaveEnvironmentResourceAction now owns the type-specific configuration and update-or-create operation. The controller retains policy authorization, the resources entitlement, validation, unsupported object-storage guard, malformed-variable handling, missing-website response and success response. The action is concrete and reuses the existing encrypted model cast rather than adding a repository or speculative provider abstraction.
+
+Preserved guarantees:
+
+- External resource variables remain unchanged; managed MySQL/PostgreSQL, Redis and Valkey variables retain their exact hosts, ports, database identifiers, credentials and deterministic Valkey container names.
+- Existing resources continue to update by logical name, with `ready` status and the same encrypted configuration shape.
+- Object-storage restrictions, missing managed-database websites, malformed variable messages, entitlements, authorization, routes, flash text and redirects remain unchanged.
+- Deployment snapshots and downstream database/resource jobs still consume the same persisted configuration.
+
+Verification after the slice:
+
+- EnvironmentRuntimeTest, PostgreSqlResourceTest and ProjectEnvironmentTest: 14 passed (90 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
+Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Review EnvironmentController’s resource attachment branch and extract only its type-specific configuration construction if the managed database, Redis/Valkey and external-variable semantics can remain exact.
+Review environment creation/update and deployment-control validation for a justified Form Request or action boundary, while preserving feature entitlements, protected-production rules, ownership checks and maintenance-window errors.
