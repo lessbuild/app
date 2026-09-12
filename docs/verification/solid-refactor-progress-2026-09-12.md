@@ -169,6 +169,23 @@ Verification after the slice:
 - The focused aggregate command: 43 passed, 17 failed (498 assertions). The failures are the existing rate-limit cluster: two bulk-validation requests lacked the expected error bag after throttling, history review returned 429, and notification tests began with 429s causing dependent missing-record assertions. The extracted read paths themselves passed; no mutation code changed in this slice.
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — recipe-report export slice
+
+Responsibility problem: the controller still mixed authenticated HTTP coordination with two sizable streamed CSV protocols, including headers, BOM handling, selected relationship columns, lazy iteration and spreadsheet-safe serialization.
+
+Boundary used: `RecipeReportHistoryExporter` owns reporter-history CSV output and `RecipeReportInboxExporter` owns contributor-inbox CSV output. Both consume `RecipeReportQuery`; the controller retains request filter normalization and delegates after the existing authenticated route boundary. They remain separate because the two exports have different columns, visibility semantics and query projections.
+
+Preserved guarantees:
+
+- Filenames, response headers, UTF-8 BOM, header/row order, lazy batch size, query ordering, selected columns and relationship eager loading remain unchanged.
+- Reporter ownership and unpublished-history visibility, contributor recipe scoping, formula escaping, null handling, timestamps, status labels and sensitive-field exclusion remain unchanged.
+- No route, validation key, flash message, persistence, notification, transaction or provider behavior changed.
+
+Verification after the slice:
+
+- Export-focused report/history gate: 5 passed (85 assertions).
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Extract the two recipe-report CSV responsibilities into focused exporters, preserving the existing streamed response protocol and consuming `RecipeReportQuery`; then run the report/history/inbox export gates before considering validation or mutation boundaries.
+Evaluate Form Requests for substantial report mutation validation, starting with the single-report submission and resolution-note inputs while preserving existing authorization guards, validation keys and redirect/error behavior.

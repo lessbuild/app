@@ -5,9 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Recipe;
 use App\Models\RecipeReport;
 use App\Services\ActivityRecorder;
+use App\Services\RecipeReportHistoryExporter;
+use App\Services\RecipeReportInboxExporter;
 use App\Services\RecipeReportNotifier;
 use App\Services\RecipeReportQuery;
-use App\Support\CsvCell;
 use App\Support\DateRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecipeReportsController extends Controller
 {
-    public function __construct(private readonly RecipeReportQuery $reportQuery) {}
+    public function __construct(
+        private readonly RecipeReportHistoryExporter $historyExporter,
+        private readonly RecipeReportInboxExporter $inboxExporter,
+        private readonly RecipeReportQuery $reportQuery,
+    ) {}
 
     /**
      * Render the request user's filtered recipe reports with pagination, availability counts, and unread report updates.
@@ -72,70 +77,8 @@ class RecipeReportsController extends Controller
     public function exportMine(Request $request): StreamedResponse
     {
         $filters = $this->reporterFilters($request);
-        $filename = 'lessbuild-my-community-reports-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Report ID',
-                'Recipe ID',
-                'Recipe',
-                'Category',
-                'Recipe availability',
-                'Issue type',
-                'Report status',
-                'Details',
-                'Resolution note',
-                'Reported at',
-                'Resolved at',
-                'Updated at',
-            ], ',', '"', '');
-
-            $this->reportQuery->orderedReporter(
-                $this->reportQuery->forReporter($request->user(), $filters)
-                    ->select([
-                        'id',
-                        'user_id',
-                        'recipe_id',
-                        'reason',
-                        'details',
-                        'resolved_at',
-                        'resolution_note',
-                        'created_at',
-                        'updated_at',
-                    ])
-                    ->with('recipe:id,name,category,is_published,published_at'),
-                $filters,
-            )
-                ->lazy(250)
-                ->each(function (RecipeReport $report) use ($output): void {
-                    fputcsv($output, [
-                        $report->id,
-                        $report->recipe_id,
-                        $this->csvCell($report->recipe->name),
-                        $this->csvCell($report->recipe->category),
-                        $report->recipe->is_published && $report->recipe->published_at !== null ? 'published' : 'unpublished',
-                        $this->csvCell($report->reason),
-                        $report->resolved_at === null ? 'needs_review' : 'resolved',
-                        $this->csvCell($report->details),
-                        $this->csvCell($report->resolution_note),
-                        $report->created_at?->toIso8601String(),
-                        $report->resolved_at?->toIso8601String(),
-                        $report->updated_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->historyExporter->stream($request->user(), $filters);
     }
 
     /**
@@ -188,56 +131,8 @@ class RecipeReportsController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->filters($request);
-        $filename = 'lessbuild-community-feedback-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Report ID',
-                'Recipe ID',
-                'Recipe',
-                'Category',
-                'Issue type',
-                'Review status',
-                'Details',
-                'Reported at',
-                'Resolved at',
-                'Resolution note',
-            ], ',', '"', '');
-
-            $this->reportQuery->ordered(
-                $this->reportQuery->forContributor($request->user(), $filters)
-                    ->select(['id', 'recipe_id', 'reason', 'details', 'resolved_at', 'resolution_note', 'created_at', 'updated_at'])
-                    ->with('recipe:id,name,category'),
-                $filters,
-            )
-                ->lazy(250)
-                ->each(function (RecipeReport $report) use ($output): void {
-                    fputcsv($output, [
-                        $report->id,
-                        $report->recipe_id,
-                        $this->csvCell($report->recipe->name),
-                        $this->csvCell($report->recipe->category),
-                        $this->csvCell($report->reason),
-                        $report->resolved_at === null ? 'needs_review' : 'resolved',
-                        $this->csvCell($report->details),
-                        $report->created_at?->toIso8601String(),
-                        $report->resolved_at?->toIso8601String(),
-                        $this->csvCell($report->resolution_note),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->inboxExporter->stream($request->user(), $filters);
     }
 
     /**
@@ -636,14 +531,6 @@ class RecipeReportsController extends Controller
                 && (int) $report->recipe_id === (int) $recipe->id,
             404,
         );
-    }
-
-    /**
-     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
-     */
-    private function csvCell(?string $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 
     /** @return array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} */
