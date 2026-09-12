@@ -1,5 +1,21 @@
 # BuildPusher chat handoff
 
+## SOLID refactoring current checkpoint — 2026-09-12
+
+The ordered BuildPusher SOLID/Laravel refactor is complete through the local Phase 4 verification gate in the isolated worktree `/root/Documents/Codex/2026-09-12/buildpusher-solid-and-laravel-refactoring-plan`, branch `refactor/solid-laravel-20260912`, based on commit `a137739`. The live checkout and the separate acceptance-drill checkout were not modified.
+
+Completed cohesive slices cover configuration-as-code, provider management, recipe reports, websites, builds/repositories, and servers/environments. Controllers now coordinate HTTP boundaries while concrete query/export collaborators, actions and Form Requests own the extracted cohesive responsibilities. Existing policies, organization scoping, locks, transactions, leases, after-commit dispatches, provider contracts and queue semantics remain in place. See the [SOLID progress ledger](verification/solid-refactor-progress-2026-09-12.md) and [final verification record](verification/solid-refactor-verification-2026-09-12.md).
+
+Final local verification:
+
+- Full PHP suite with isolated SQLite/array overrides: **1,185 passed / 10,743 assertions**.
+- Pint, changed-file PHP syntax, `git diff --check`, Composer validation and platform requirements: passed.
+- Production Vite build and isolated asset browser suite: **9 passed** across light/dark mobile/tablet/desktop layouts, keyboard navigation, focus/Escape behavior and no-JavaScript provider submission.
+- Cached Laravel runtime and real Livewire browser smoke: **1 passed**; the versioned Livewire asset returned HTTP 200 with JavaScript content type.
+- Accessibility smoke: mobile and desktop passed; the unchanged tablet test still expects a `Search and navigate` button at 768px where the current UI does not render it. The broad visual audit was also not claimed as passed because its unchanged mobile `Settings`-link expectation was absent and the crawl was stopped.
+
+Remaining work is external acceptance: the paid-provider/cloud drill and deployment have not been run. Do not treat this local verification as live acceptance, and do not copy credentials or alter production/billing/cloud state. The older handoff entries below are historical context.
+
 ## Isolated live-drill preparation — 2026-09-08
 
 DigitalOcean provider ID 6 works for the required read preflight. The £10 total cap and deletion of all drill-created resources remain authorized. Fresh source-control checks returned HTTP 401 for GitHub IDs 2/5, GitLab ID 3 and Bitbucket ID 4. The user has been asked to connect one working source-control credential and name a disposable repository; never request the token in chat.

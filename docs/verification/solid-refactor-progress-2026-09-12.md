@@ -813,6 +813,31 @@ Verification after the phase:
 
 Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 4 — final verification
+
+Date: 2026-09-12 UTC
+
+Phase 4 is complete for the isolated local refactor checkout. The final authorization, transaction and query-bound audit found no new service-location calls in the extracted PHP files. Controllers retain policy checks and HTTP response mapping; extracted actions retain the existing locks, compare-and-set transitions, after-commit dispatches and remote-call placement; query collaborators retain organization/resource scoping, eager loading and bounded samples/exports.
+
+Verification results:
+
+- Complete PHP suite with explicit isolated overrides (`DB_CONNECTION=sqlite DB_DATABASE=:memory: CACHE_STORE=array CACHE_DRIVER=array SESSION_DRIVER=array QUEUE_CONNECTION=sync`): **1,185 passed / 10,743 assertions**, 280.04 seconds.
+- Full Pint: passed.
+- PHP syntax check for every changed PHP file: passed.
+- `git diff --check`: passed.
+- `composer validate --strict`: passed. The system Composer libraries emit legacy PHP 8.5 deprecation notices; no dependency changes were made.
+- `composer check-platform-reqs`: passed for PHP 8.5.10 and all locked extensions.
+- `npm run build`: passed with the isolated production asset manifest.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php npm run test:assets`: **9 passed**. This covers light/dark layouts at 320/390/768/1440px, mobile navigation, Escape/focus restoration, scroll locking and provider submission with JavaScript disabled.
+- `BROWSER_LIVE_ORIGIN=http://127.0.0.1:8092 npx playwright test tests/Browser/live-runtime.spec.js`: **1 passed** after route/config/view caching. The versioned Livewire route returned HTTP 200 with `application/javascript` and the real mobile public navigation opened and closed without page errors.
+- `BROWSER_BASE_URL=http://127.0.0.1:8092 BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php npx playwright test tests/Browser/accessibility.spec.js`: **2 passed, 1 failed**. Mobile and desktop passed; the unchanged tablet assertion still expects a `Search and navigate` control at 768px where the current UI does not render it.
+- The broad `visual-audit.spec.js` crawl was started with the correct isolated origin, then stopped after 13.5 minutes at its unchanged mobile expectation for a `Settings` link absent from the current menu. No broad visual-audit pass is claimed; the bounded asset and live-runtime checks above are the completed browser evidence.
+- `artisan optimize:clear`, `config:cache`, `route:cache` and `view:cache`: passed using only the worktree's absolute cache paths. The served `/login` page emitted `/livewire-959bb3fe/livewire.js?id=b7ac2fb1`; that asset returned HTTP 200 with `application/javascript`.
+
+The isolated worktree and its generated SQLite/cache/storage artifacts remain separate from the live checkout and the acceptance-drill checkout. No production credentials, infrastructure, billing state or cloud resources were changed.
+
+The separate paid-provider/cloud acceptance and live acceptance drill remain outstanding. The local tablet accessibility expectation and broad mobile `Settings` expectation also remain existing browser-test follow-ups; neither is silently reported as passed.
+
 ## Next task
 
-Begin Phase 4 final verification: audit authorization/transactions/query bounds, run the complete PHP suite and full Pint, perform dependency/platform/diff checks, build assets, verify route caching and served Livewire assets in the isolated runtime, and record browser coverage and remaining external acceptance work.
+Review the cohesive commits and, if desired, schedule the separate live acceptance work with the required disposable credentials and explicit cloud limits. Do not treat this local verification record as live acceptance.
