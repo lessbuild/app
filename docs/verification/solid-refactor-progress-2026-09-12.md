@@ -29,6 +29,25 @@ Source checkout at start: `/root/Documents/Codex/2026-08-30/clone-my-repo-work-o
 
 The full PHP suite and focused browser failures are recorded as pre-refactor baseline findings. They are not silently attributed to the refactor. The separate live acceptance drill and paid/cloud acceptance remain outstanding and were not modified or reused.
 
+## Phase 1 — resource configuration slice
+
+Responsibility problem: `ApplicationConfigurationReconciler::apply()` coordinated the transaction and ownership workflow while also constructing persisted resource configuration. That construction included organization-scoped, version-checked secret reads for external resources and managed MySQL/PostgreSQL/Redis/Valkey connection details for deployment snapshots.
+
+Boundary used: `ApplicationConfigurationResourceConfiguration` now owns only that translation. `ApplicationConfigurationReconciler` still owns the reviewed environment loop, local writes, ownership claims, removal ordering, deployment intent identity, and transaction callback. The collaborator is concrete and constructor-injected; no speculative interface was added because there is one consumer and no real implementation variant.
+
+Preserved guarantees:
+
+- Secret version and scope checks still execute under the existing transaction and row locks.
+- Existing encrypted resource configuration remains preserved when no replacement variables are declared.
+- Managed credentials, deterministic Valkey ports/container names, deployment snapshots, no-op intent reuse, ownership recording, removal safeguards, queue timing and stale-attempt protection remain in the original orchestration path.
+- No routes, validation keys, flash messages, YAML schema, persisted field or serialized payload changed.
+
+Verification after the extraction:
+
+- Configuration, operation and ownership suite: 178 passed (1,743 assertions).
+- Pint: passed.
+- The full-suite baseline remains 1,132 passed and 53 failed; the failures are recorded above and are unrelated to this slice.
+
 ## Next task
 
-Finish the Phase 1 configuration-as-code map, run the focused configuration regression set, and document the smallest justified extraction from `ApplicationConfigurationReconciler::apply()` before editing production code.
+Review the remaining `ApplicationConfigurationReconciler::apply()` environment/process/resource/variable orchestration and determine whether a second extraction has a distinct responsibility and an independently testable boundary. Do not begin provider management until Phase 1 contracts and execution guarantees are reviewed.

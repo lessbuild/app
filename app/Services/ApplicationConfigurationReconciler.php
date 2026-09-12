@@ -6,7 +6,6 @@ use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
 use App\Models\ConfigurationOwnership;
 use App\Models\ConfigurationReview;
-use App\Models\EnvironmentVariable;
 use App\Models\Repository;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -19,6 +18,7 @@ class ApplicationConfigurationReconciler
      * @param  ApplicationConfigurationTransaction  $transactions  Locks and revalidates review/project state around local changes.
      * @param  ApplicationConfigurationDocument  $documents  Parses the review's saved configuration.
      * @param  ApplicationConfigurationBindings  $bindings  Resolves and verifies the saved binding identities.
+     * @param  ApplicationConfigurationResourceConfiguration  $resourceConfiguration  Builds encrypted external or managed resource configuration.
      * @param  ApplicationConfigurationVariables  $variables  Applies encrypted variables and their version history.
      * @param  DeploymentRequest  $deployments  Builds deployment attributes for durable operation intents.
      */
@@ -26,6 +26,7 @@ class ApplicationConfigurationReconciler
         private readonly ApplicationConfigurationTransaction $transactions,
         private readonly ApplicationConfigurationDocument $documents,
         private readonly ApplicationConfigurationBindings $bindings,
+        private readonly ApplicationConfigurationResourceConfiguration $resourceConfiguration,
         private readonly ApplicationConfigurationVariables $variables,
         private readonly DeploymentRequest $deployments,
     ) {}
@@ -69,37 +70,7 @@ class ApplicationConfigurationReconciler
                 }
                 foreach ($desired['resources'] ?? [] as $name => $settings) {
                     $resource = $environment->resources()->firstOrNew(['name' => $name]);
-                    $configuration = $resource->configuration ?? ['variables' => [], 'container_name' => null];
-                    if (! $settings['managed'] && array_key_exists('variable_refs', $settings)) {
-                        $resourceVariables = [];
-                        foreach ($settings['variable_refs'] as $key => $reference) {
-                            $source = $resolved['secrets'][$reference];
-                            $variable = EnvironmentVariable::query()->whereKey($source['variable_id'])->where('current_version', $source['version'])
-                                ->where('is_secret', true)->whereIn('scope', ['runtime', 'all'])
-                                ->whereHas('environment.project', fn ($query) => $query->where('organization_id', $project->organization_id))
-                                ->lockForUpdate()->firstOrFail();
-                            $resourceVariables[$key] = $variable->value;
-                        }
-                        $configuration = ['variables' => $resourceVariables, 'container_name' => null];
-                    }
-                    if ($settings['managed']) {
-                        $type = $settings['type'];
-                        $variables = [];
-                        if (in_array($type, ['mysql', 'postgresql'], true)) {
-                            $website = $environment->website;
-                            $variables = ['DB_CONNECTION' => $type === 'postgresql' ? 'pgsql' : 'mysql',
-                                'DB_HOST' => $type === 'postgresql' ? '127.0.0.1' : $website->server->public_ip,
-                                'DB_PORT' => $type === 'postgresql' ? '5432' : '3306',
-                                'DB_DATABASE' => $website->databaseIdentifier(), 'DB_USERNAME' => $website->databaseIdentifier(),
-                                'DB_PASSWORD' => $website->database_password];
-                        } elseif ($type === 'redis') {
-                            $variables = ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => '6379'];
-                        } elseif ($type === 'valkey') {
-                            $port = (string) (16379 + ($environment->id % 10000));
-                            $variables = ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => $port, 'VALKEY_HOST' => '127.0.0.1', 'VALKEY_PORT' => $port];
-                        }
-                        $configuration = ['variables' => $variables, 'container_name' => $type === 'valkey' ? 'buildpusher-valkey-'.$environment->id.'-'.Str::slug($name) : null];
-                    }
+                    $configuration = $this->resourceConfiguration->build($resource, $environment, $project, $name, $settings, $resolved['secrets']);
                     $resource->fill(['type' => $settings['type'], 'is_managed' => $settings['managed']]);
                     if ($resource->configuration !== $configuration) {
                         $resource->configuration = $configuration;
