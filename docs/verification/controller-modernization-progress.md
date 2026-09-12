@@ -4886,6 +4886,49 @@ justified, extract cost-budget and dashboard-preference request/action
 boundaries while preserving entitlement/authorization ordering and user
 preference values.
 
+## Phase 7AX — infrastructure budget operation
+
+### Responsibility problem
+
+`CostController::update` mixed current-workspace manager authorization,
+cost-control entitlement ordering, inline budget validation and direct
+organization persistence. Its read-side entitlement dependency remains in the
+controller because it is presentation data; the write-side operation had a
+separate application boundary.
+
+### Boundary and principles
+
+`UpdateInfrastructureBudgetRequest` now owns the organization policy boundary
+and preserves entitlement-before-validation behavior. The validated nullable
+budget is passed to `UpdateInfrastructureBudgetAction`, which rechecks the
+entitlement and performs the single organization update. This applies single
+responsibility, policy-based authorization and dependency inversion without a
+generic organization repository.
+
+### Preserved guarantees
+
+- Manager denial remains 403 before malformed input and performs no write.
+- Free-plan entitlement denial remains a plan validation failure before field
+  validation; valid numeric and omitted/null budget values retain their
+  existing persistence behavior and success response.
+- Cost inventory queries, page entitlements, routes, persisted budget values,
+  dependency lockfiles and external acceptance state remain unchanged.
+
+### Verification
+
+- Cost, infrastructure inventory, entitlement and product regression set:
+  **4 passed, 16 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `28d33ce` — `refactor: extract infrastructure budget operation`
+
+**Phase 7AX exit gate: complete.** Exact next task: extract dashboard widget
+preference validation and persistence, preserving the existing widget list,
+preference JSON shape, omitted-field behavior and success response.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4973,3 +5016,4 @@ preference values.
 | Phase 7AU-github-app-webhook | GitHubAppWebhookController mixed raw-body protocol verification, ping/metadata validation and installation lookup before reusing the existing repository webhook pipeline. | 25 GitHub App/raw-webhook/repository-webhook/revision-attestation/callback-integrity tests passed, 184 assertions; Pint, syntax and diff checks passed. | `63d8c56` — `refactor: extract GitHub App webhook verification` | Audit remaining OAuth/SSO and callback controllers, then classify the remaining controller writes, validation and authorization exceptions before final verification. |
 | Phase 7AV-project-lifecycle | ProjectController mixed preview normalization/validation/entitlement checks and direct project update/deletion with HTTP coordination. | 8 preview/project creation/environment/lifecycle tests passed, 52 assertions; Pint, syntax and diff checks passed. | `30d4832` — `refactor: extract project lifecycle operations` | Finish the controller audit by classifying cost/dashboard/subscription writes, global admin gates, Livewire writes and remaining inline validation/authorization before final verification. |
 | Phase 7AW-web-build-promotion | BuildPromotionController duplicated visibility/deploy authorization and validation around the existing promotion action. | 7 build-promotion web/API/tenancy/concurrency/workflow tests passed, 57 assertions; Pint, syntax and diff checks passed. | `407c914` — `refactor: extract web build promotion request` | Classify and, where justified, extract cost-budget and dashboard-preference request/action boundaries while preserving entitlement/authorization ordering and user preference values. |
+| Phase 7AX-infrastructure-budget | CostController mixed manager authorization, entitlement ordering, budget validation and direct organization persistence. | 4 cost/infrastructure/entitlement/product tests passed, 16 assertions; Pint, syntax and diff checks passed. | `28d33ce` — `refactor: extract infrastructure budget operation` | Extract dashboard widget preference validation and persistence, preserving the existing widget list, preference JSON shape, omitted-field behavior and success response. |
