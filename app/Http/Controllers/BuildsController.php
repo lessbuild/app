@@ -8,10 +8,12 @@ use App\Actions\Repository\CancelRunningDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
 use App\Actions\Repository\RejectBuildAction;
 use App\Actions\Repository\RollbackBuildAction;
+use App\Actions\Repository\UpdateBuildNoteAction;
 use App\Data\BuildRedeploymentResult;
+use App\Http\Requests\BuildApprovalRequest;
+use App\Http\Requests\BuildNoteRequest;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
-use App\Services\ActivityRecorder;
 use App\Services\BuildInventoryExporter;
 use App\Services\BuildInventoryQuery;
 use App\Services\DeploymentRequest;
@@ -180,14 +182,9 @@ class BuildsController extends Controller
      *
      * @return RedirectResponse The dispatched deployment result or its current eligibility failure.
      */
-    public function approve(Request $request, Build $build, DeploymentRequest $deployments): RedirectResponse
+    public function approve(BuildApprovalRequest $request, Build $build, DeploymentRequest $deployments): RedirectResponse
     {
-        $this->authorize('approve', $build);
-        $validated = $request->validateWithBag('approval', [
-            'approval_note' => ['nullable', 'string', 'max:2000'],
-        ]);
-
-        $approved = $this->approveBuild->handle($build, $request->user(), $validated['approval_note'] ?? null);
+        $approved = $this->approveBuild->handle($build, $request->user(), $request->approvalNote());
 
         if (! $approved) {
             return back()->with('info', __('This deployment is no longer awaiting approval, its infrastructure is unavailable, or an environment policy blocks it.'));
@@ -224,14 +221,9 @@ class BuildsController extends Controller
      *
      * @return RedirectResponse The rejection acknowledgement or a concurrent-state notice.
      */
-    public function reject(Request $request, Build $build): RedirectResponse
+    public function reject(BuildApprovalRequest $request, Build $build): RedirectResponse
     {
-        $this->authorize('approve', $build);
-        $validated = $request->validateWithBag('approval', [
-            'approval_note' => ['nullable', 'string', 'max:2000'],
-        ]);
-
-        $rejected = $this->rejectBuild->handle($build, $request->user(), $validated['approval_note'] ?? null);
+        $rejected = $this->rejectBuild->handle($build, $request->user(), $request->approvalNote());
 
         return $rejected
             ? back()->with('success', __('Deployment rejected.'))
@@ -241,26 +233,13 @@ class BuildsController extends Controller
     /**
      * Validate and normalize the authorized build's operator note, recording activity only when its value changes.
      */
-    public function updateNote(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
+    public function updateNote(BuildNoteRequest $request, Build $build, UpdateBuildNoteAction $updateNote): RedirectResponse
     {
-        $this->authorize('updateNote', $build);
-        $validated = $request->validateWithBag('buildNote', [
-            'operator_note' => ['nullable', 'string', 'max:2000'],
-        ]);
-        $note = trim($validated['operator_note'] ?? '');
-        $note = $note === '' ? null : $note;
+        $note = $request->note();
 
-        if ($build->operator_note === $note) {
+        if (! $updateNote->handle($build, $request->user(), $note)) {
             return back()->with('info', __('Deployment note is unchanged.'));
         }
-
-        $build->update(['operator_note' => $note]);
-        $activity->record(
-            $build,
-            $request->user()->id,
-            'deployment',
-            $note === null ? 'Deployment note was cleared.' : 'Deployment note was updated.',
-        );
 
         return back()->with('success', $note === null
             ? __('Deployment note cleared.')
