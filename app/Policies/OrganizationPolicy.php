@@ -15,6 +15,13 @@ class OrganizationPolicy
         return $organization->permits($user, 'view');
     }
 
+    /** Allow a manager to perform a current-workspace management operation. */
+    public function manage(User $user, Organization $organization): bool
+    {
+        return (int) $organization->id === (int) $user->current_organization_id
+            && $organization->permits($user, 'manage');
+    }
+
     /**
      * Allow a manager to invite members only to the currently selected workspace.
      */

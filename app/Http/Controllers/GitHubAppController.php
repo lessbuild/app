@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Provider\InstallGitHubAppAction;
+use App\Http\Requests\GitHubAppCallbackRequest;
+use App\Models\Organization;
 use App\Models\Provider;
+use App\Models\User;
 use App\Services\GitHubApp;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +20,11 @@ class GitHubAppController extends Controller
      */
     public function connect(Request $request, GitHubApp $github): RedirectResponse
     {
-        abort_unless($request->user()->currentOrganization->permits($request->user(), 'manage'), 403);
+        /** @var User $user */
+        $user = $request->user();
+        /** @var Organization $organization */
+        $organization = $user->currentOrganization;
+        $this->authorize('manage', $organization);
         abort_unless($github->configured(), 503, 'GitHub App installation is not configured yet.');
         $state = Str::random(64);
         $request->session()->put('github_app_installation_state', hash('sha256', $state));
@@ -29,30 +37,11 @@ class GitHubAppController extends Controller
      *
      * @return RedirectResponse The installation's repository picker after remote repository access succeeds.
      */
-    public function callback(Request $request, GitHubApp $github): RedirectResponse
+    public function callback(GitHubAppCallbackRequest $request, InstallGitHubAppAction $install): RedirectResponse
     {
-        abort_unless($request->user()->currentOrganization->permits($request->user(), 'manage'), 403);
-        $data = $request->validate([
-            'installation_id' => ['required', 'integer', 'min:1'],
-            'setup_action' => ['nullable', 'string', 'in:install,update'],
-            'state' => ['required', 'string', 'size:64'],
-        ]);
-        $expected = $request->session()->pull('github_app_installation_state');
-        abort_unless(is_string($expected) && hash_equals($expected, hash('sha256', $data['state'])), 403);
-        $repositories = $github->repositories($data['installation_id']);
-        $account = str($repositories[0]['full_name'] ?? 'GitHub')->before('/')->toString();
-        $provider = $request->user()->workspaceProviders()->updateOrCreate([
-            'provider' => Provider::TYPE_GITHUB,
-            'credential_type' => 'app',
-            'external_id' => (string) $data['installation_id'],
-        ], [
-            'user_id' => $request->user()->id,
-            'name' => __('GitHub App · :account', ['account' => $account]),
-            'description' => __('Repositories installed through the BuildPusher GitHub App.'),
-            'token' => 'github-app-installation',
-            'connection_status' => Provider::CONNECTION_HEALTHY,
-            'connection_checked_at' => now(),
-        ]);
+        /** @var User $user */
+        $user = $request->user();
+        $provider = $install->handle($user, $request->installationId(), $request->state());
 
         return redirect()->route('github-app.repositories', $provider)->with('success', __('GitHub App installed. Choose a repository to connect.'));
     }

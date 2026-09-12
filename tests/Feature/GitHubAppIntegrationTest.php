@@ -44,11 +44,33 @@ class GitHubAppIntegrationTest extends TestCase
             'state' => $query['state'],
         ]))->assertRedirect()->assertSessionHas('success');
 
+        $this->get(route('github-app.callback', [
+            'installation_id' => 777,
+            'setup_action' => 'install',
+            'state' => $query['state'],
+        ]))->assertForbidden();
+
         $provider = Provider::query()->sole();
         $this->assertTrue($provider->isGitHubApp());
         $this->assertSame('777', $provider->external_id);
         $this->assertSame(Provider::CONNECTION_HEALTHY, $provider->connection_status);
         Http::assertSentCount(2);
+    }
+
+    public function test_non_manager_cannot_start_or_complete_an_installation_before_validation_or_remote_calls(): void
+    {
+        Http::fake();
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->get(route('github-app.connect'))->assertForbidden();
+        $this->actingAs($viewer)->get(route('github-app.callback'))->assertForbidden();
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('providers', 0);
     }
 
     public function test_app_repository_is_auto_subscribed_and_signed_push_queues_deployment(): void
