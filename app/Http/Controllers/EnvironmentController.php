@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Environment\SaveEnvironmentVariableAction;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentResource;
@@ -11,7 +12,6 @@ use App\Services\Entitlements;
 use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -92,7 +92,7 @@ class EnvironmentController extends Controller
     /**
      * Validate a key, value, scope, and optional rotation date for an editable environment and append an encrypted version.
      */
-    public function variables(Request $request, Environment $environment): RedirectResponse
+    public function variables(Request $request, Environment $environment, SaveEnvironmentVariableAction $saveVariable): RedirectResponse
     {
         $this->authorize('update', $environment);
         $request->mergeIfMissing(['scope' => 'runtime']);
@@ -103,29 +103,7 @@ class EnvironmentController extends Controller
             'scope' => ['required', Rule::in(EnvironmentVariable::SCOPES)],
             'rotation_due_at' => ['nullable', 'date', 'after:today'],
         ]);
-        DB::transaction(function () use ($environment, $data, $request): void {
-            $variable = $environment->variables()->where('key', $data['key'])->lockForUpdate()->first();
-            $version = ($variable?->current_version ?? 0) + 1;
-            $attributes = [
-                'value' => $data['value'],
-                'is_secret' => $request->boolean('is_secret', true),
-                'scope' => $data['scope'],
-                'current_version' => $version,
-                'rotated_at' => $variable ? now() : null,
-                'rotation_due_at' => $data['rotation_due_at'] ?? null,
-                'updated_by' => $request->user()->id,
-            ];
-            if ($variable) {
-                $variable->update($attributes);
-            } else {
-                $variable = $environment->variables()->create(['key' => $data['key'], ...$attributes]);
-            }
-            $variable->versions()->create([
-                'created_by' => $request->user()->id,
-                'version' => $version,
-                'value' => $data['value'],
-            ]);
-        });
+        $saveVariable->handle($environment, $request->user(), $data, $request->boolean('is_secret', true));
 
         return back()->with('success', __('Environment variable saved securely.'));
     }

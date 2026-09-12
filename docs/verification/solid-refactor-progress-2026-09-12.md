@@ -734,6 +734,26 @@ Verification after the slice:
 
 Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3D — environment-variable versioning action slice
+
+Responsibility problem: EnvironmentController combined validated HTTP input with transaction-time variable lookup, concurrent version allocation, encrypted persistence and immutable version-history creation.
+
+Boundary used: SaveEnvironmentVariableAction now owns the lock-protected variable write and version append. The controller retains the environment policy check, validation rules, default scope, checkbox normalization, success message and redirect. The action is concrete and constructor-resolved, with no new interface or repository wrapper.
+
+Preserved guarantees:
+
+- Existing variables are locked by environment/key before incrementing `current_version`; new variables start at version one.
+- Current values and version-history values continue to use the model encryption casts, and rotation timestamps, scopes, updated/created actors and due dates remain unchanged.
+- The write and history append remain one database transaction, preserving atomicity under concurrent updates and preventing partial version records.
+- Routes, validation keys, authorization behavior, flash text, response shape and deployment snapshots remain unchanged.
+
+Verification after the slice:
+
+- EnvironmentRuntimeTest and ProjectEnvironmentTest: 12 passed (81 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
+Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Review EnvironmentController and ProjectController for one small, justified environment-management boundary, beginning with transactionally versioned environment-variable persistence and preserving removal safeguards, ownership checks and deployment-control validation.
+Review EnvironmentController’s resource attachment branch and extract only its type-specific configuration construction if the managed database, Redis/Valkey and external-variable semantics can remain exact.
