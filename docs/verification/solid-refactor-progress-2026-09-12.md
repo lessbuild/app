@@ -367,6 +367,24 @@ Verification after the slice:
 - `WebsiteInventoryExportTest`: 3 passed (44 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — website inventory export slice
+
+Responsibility problem: after the query boundary was extracted, `WebsitesController::export()` still owned the CSV protocol, relationship/count projection, lazy iteration and spreadsheet-safe serialization for website inventory.
+
+Boundary used: `WebsiteInventoryExporter` now owns the streamed inventory response and consumes `WebsiteInventoryQuery`. The controller retains filter normalization and delegates after the existing authenticated route boundary. The exporter is concrete and constructor-injected; no generic export framework was introduced.
+
+Preserved guarantees:
+
+- Filename, private/no-store/nosniff headers, UTF-8 BOM, header order, website ordering, lazy batch size, server eager loading and repository count projection remain unchanged.
+- CSV formula escaping, null handling, monitoring/health display values and exclusion of encrypted environments, database passwords, provisioning tokens and health errors remain unchanged.
+- The HTML listing and CSV export continue to share the same organization-scoped filters, including invalid-filter normalization at the controller boundary.
+
+Verification after the slice:
+
+- `WebsiteInventoryExportTest`: 3 passed (44 assertions).
+- Combined `WebsiteInventoryInsightsTest` and `InfrastructureListFilterTest`: 11 passed (78 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Complete the remaining Phase 3B website read boundaries, starting with a dedicated inventory CSV exporter if its protocol remains sufficiently cohesive, then assess health-history reporting before touching lifecycle orchestration.
+Complete the remaining Phase 3B website read boundaries by assessing health-history reporting and export responsibilities before touching lifecycle orchestration.

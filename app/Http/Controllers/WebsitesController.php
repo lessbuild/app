@@ -15,6 +15,7 @@ use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use App\Services\Entitlements;
 use App\Services\PlanLimits;
+use App\Services\WebsiteInventoryExporter;
 use App\Services\WebsiteInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
@@ -39,6 +40,7 @@ class WebsitesController extends Controller
      */
     public function __construct(
         private readonly Entitlements $entitlements,
+        private readonly WebsiteInventoryExporter $websiteInventoryExporter,
         private readonly WebsiteInventoryQuery $websiteInventory,
     ) {}
 
@@ -69,70 +71,8 @@ class WebsitesController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
-        $filename = 'lessbuild-websites-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Website ID',
-                'Name',
-                'Domain',
-                'Description',
-                'Server',
-                'Provisioning status',
-                'Health check',
-                'Automatic monitoring',
-                'Automatic check interval minutes',
-                'Outage confirmation failures',
-                'Health status',
-                'Health failure count',
-                'Last health check at',
-                'Release retention',
-                'Repository count',
-                'Provisioned at',
-                'Created at',
-            ], ',', '"', '');
-
-            $this->websiteInventory->for($request->user(), $filters)
-                ->with('server')
-                ->withCount('repositories')
-                ->latest('websites.id')
-                ->lazy(250)
-                ->each(function (Website $website) use ($output): void {
-                    fputcsv($output, [
-                        $website->id,
-                        $this->csvCell($website->name),
-                        $this->csvCell($website->url),
-                        $this->csvCell($website->description),
-                        $this->csvCell($website->server?->label),
-                        $this->csvCell($website->provisioning_status),
-                        $website->health_check_enabled ? 'enabled' : 'disabled',
-                        $website->health_check_enabled
-                            ? ($website->health_monitoring_enabled ? 'enabled' : 'paused')
-                            : 'disabled',
-                        $website->health_check_interval_minutes,
-                        $website->health_failure_threshold,
-                        $this->csvCell($website->health_check_enabled ? $website->health_status : 'disabled'),
-                        $website->health_failure_count,
-                        $website->health_last_checked_at?->toIso8601String(),
-                        $website->release_retention,
-                        $website->repositories_count,
-                        $website->provisioned_at?->toIso8601String(),
-                        $website->created_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->websiteInventoryExporter->stream($request->user(), $filters);
     }
 
     /**
