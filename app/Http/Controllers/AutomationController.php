@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Actions\Automation\CreateDeploymentScheduleAction;
 use App\Actions\Automation\CreateScalingScheduleAction;
+use App\Actions\Automation\CreateScheduledTaskAction;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
 use App\Http\Requests\StoreScalingScheduleRequest;
+use App\Http\Requests\StoreScheduledTaskRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Jobs\RunScheduledTaskJob;
 use App\Models\DeploymentSchedule;
@@ -16,7 +18,6 @@ use App\Models\ScheduledTask;
 use App\Models\ScheduledTaskRun;
 use App\Services\Entitlements;
 use App\Services\WorkflowConfiguration;
-use Cron\CronExpression;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -137,21 +138,9 @@ class AutomationController extends Controller
     /**
      * Validate cron timing, command, timeout, overlap, and alert options before saving an entitled environment task.
      */
-    public function scheduledTask(Request $request, Environment $environment): RedirectResponse
+    public function scheduledTask(StoreScheduledTaskRequest $request, Environment $environment, CreateScheduledTaskAction $createTask): RedirectResponse
     {
-        $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'scheduled_deployments');
-        $data = $this->scheduleData($request) + $request->validate([
-            'command' => ['required', 'string', 'max:4000'],
-            'timeout_seconds' => ['required', 'integer', 'between:10,3600'],
-            'without_overlapping' => ['required', 'boolean'],
-            'alert_on_failure' => ['required', 'boolean'],
-        ]);
-        $environment->scheduledTasks()->create([
-            ...$data,
-            'created_by' => $request->user()->id,
-            'is_enabled' => true,
-        ]);
+        $createTask->handle($environment, $request->user(), $request->validated());
 
         return back()->with('success', __('Scheduled task created.'));
     }
@@ -268,18 +257,5 @@ class AutomationController extends Controller
                 && $token->tokenable_type === $user->getMorphClass(),
             404,
         );
-    }
-
-    /**
-     * @param  Request  $request  Submitted schedule name, cron expression and timezone.
-     * @return array{name: string, cron_expression: string, timezone: string} Validated schedule attributes.
-     */
-    private function scheduleData(Request $request): array
-    {
-        return $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'cron_expression' => ['required', 'string', 'max:100', fn ($attribute, $value, $fail) => CronExpression::isValidExpression($value) ?: $fail(__('Enter a valid five-part cron expression.'))],
-            'timezone' => ['required', Rule::in(timezone_identifiers_list())],
-        ]);
     }
 }

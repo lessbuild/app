@@ -143,6 +143,36 @@ class AutomationTest extends TestCase
         $this->assertDatabaseCount('scaling_schedules', 0);
     }
 
+    public function test_scheduled_task_denial_precedes_malformed_input_and_writes_nothing(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($viewer)->post(route('automation.tasks.store', $environment), [])->assertForbidden();
+
+        $this->assertDatabaseCount('scheduled_tasks', 0);
+    }
+
+    public function test_free_plan_rejects_scheduled_task_before_persistence(): void
+    {
+        config(['billing.enforce_entitlements' => true]);
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($user)->post(route('automation.tasks.store', $environment), [
+            'name' => 'Warm cache', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => '1', 'alert_on_failure' => '1',
+        ])->assertSessionHasErrors('plan');
+
+        $this->assertDatabaseCount('scheduled_tasks', 0);
+    }
+
     public function test_workflow_yaml_applies_schedules_scaling_and_processes_atomically(): void
     {
         $user = User::factory()->create();
