@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Automation\CreateDeploymentScheduleAction;
+use App\Actions\Automation\CreateScalingScheduleAction;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
+use App\Http\Requests\StoreScalingScheduleRequest;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Jobs\RunScheduledTaskJob;
 use App\Models\DeploymentSchedule;
@@ -80,12 +82,9 @@ class AutomationController extends Controller
     /**
      * Validate cron timing and replicas within an entitled environment's limits, then save an enabled schedule.
      */
-    public function scalingSchedule(Request $request, Environment $environment): RedirectResponse
+    public function scalingSchedule(StoreScalingScheduleRequest $request, Environment $environment, CreateScalingScheduleAction $createSchedule): RedirectResponse
     {
-        $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'scheduled_scaling');
-        $data = $this->scheduleData($request) + $request->validate(['replicas' => ['required', 'integer', 'gte:'.$environment->minimum_replicas, 'lte:'.$environment->maximum_replicas]]);
-        $environment->scalingSchedules()->create([...$data, 'created_by' => $request->user()->id, 'is_enabled' => true]);
+        $createSchedule->handle($environment, $request->user(), $request->validated());
 
         return back()->with('success', __('Scaling schedule created.'));
     }
