@@ -85,6 +85,27 @@ Verification after the slice:
 - `git diff --check`: passed.
 - The broader provider baseline remains 62 passed and 3 failed in the pre-existing manual connection feedback/rate-limit tests; this slice does not alter that path.
 
+## Phase 2 — provider connection-history query slice
+
+Responsibility problem: `ProviderController` also combined provider-history filtering, retained-sample ordering and two different metric projections for the detail and history pages. Those semantics were duplicated around pagination and export queries.
+
+Boundary used: `ProviderConnectionHistoryQuery` now owns provider-scoped history filtering, newest-retained sampling and observation metrics. The controller keeps request filter normalization, authorization, pagination and response/CSV rendering. The collaborator is concrete and constructor-injected because there is no real alternate history implementation.
+
+Preserved guarantees:
+
+- Provider relationship scoping, accepted result/source/date filters and `DateRange` behavior are unchanged.
+- Newest-first ordering, `MAX_PER_PROVIDER` retention bounds, median/failure-streak calculations, empty-state values and latest timestamps remain unchanged.
+- Authorization, route names, pagination parameters, CSV query bounds and sanitized cell formatting remain at their existing HTTP boundary.
+
+Verification after the slice:
+
+- Provider connection-history and insight suite: 9 passed (110 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
+## Next task
+
+Extract the provider inventory and connection-history CSV response writers into focused export collaborators, preserving streamed headers, filenames, UTF-8 BOM, row order, CSV escaping, bounded/lazy loading and secret exclusion. Then run the complete provider-management gate before reviewing adapter contracts.
+
 ## Next task
 
 Commit the shared provider inventory query slice, then extract connection-history filtering and metrics as the next cohesive provider read boundary. Preserve the bounded retained sample, filter normalization, pagination, ordering and export semantics before reviewing provider adapter contract coverage.
