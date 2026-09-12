@@ -4255,6 +4255,63 @@ workspace concealment alongside enterprise SSO entitlement, signed state,
 PKCE, remote verification and session marking before extracting protocol-safe
 integration operations.
 
+## Phase 7AL — GitHub App installation
+
+### Responsibility problem
+
+`GitHubAppController` mixed current-workspace management authorization, callback
+validation, one-time state consumption, GitHub repository discovery, account
+label derivation and direct provider upsert. The repository picker also
+contained a deliberate 404 concealment check for foreign or non-app providers.
+
+### Boundary and principles
+
+`OrganizationPolicy::manage` now expresses current-workspace manager access.
+`GitHubAppCallbackRequest` performs that policy authorization before validating
+callback fields, preserving the previous 403-before-validation ordering.
+`InstallGitHubAppAction` owns one-time state verification, the existing
+remote-adapter call and provider upsert. The controller retains redirect
+coordination and the repository picker’s resource-lookup guard. This applies
+single responsibility, dependency inversion and Laravel Form Request/policy
+boundaries without treating protocol state or deliberate 404 concealment as a
+generic permission check.
+
+### Preserved guarantees
+
+- GitHub App routes, manager denial status, configured-app 503 behavior,
+  callback validation keys/values, one-time session key, hashed state
+  comparison, remote repository discovery and provider field values remain
+  unchanged.
+- Installation state is consumed before remote discovery, so replayed or
+  missing callbacks return 403 without another provider request or write.
+  Unauthorized managers are rejected before malformed callback validation,
+  remote calls or persistence.
+- Account-name fallback, encrypted provider token behavior, healthy status and
+  timestamp persistence, repository-picker routing, current-workspace scope,
+  foreign-provider 404 concealment, webhook behavior and downstream repository
+  deployment semantics remain unchanged.
+- No routes, serialized jobs, dependency lockfiles, production credentials,
+  cloud resources or external acceptance state changed.
+
+### Verification
+
+- GitHub App, platform-expansion, shared-tenancy, provider inventory and
+  connection-history regression set: **29 passed, 227 assertions**.
+- Added coverage for callback replay and non-manager denial before validation,
+  remote calls and writes.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `196e3a8` — `refactor: extract GitHub App installation operation`
+
+**Phase 7AL exit gate: complete.** Exact next task: characterize enterprise
+SSO connect/callback ordering and extract its request validation and
+protocol-safe verification/session boundary while preserving entitlement
+enforcement, state/PKCE consumption, sanitized failures, remote timeouts and
+the verified-session marker.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4330,3 +4387,4 @@ integration operations.
 | Phase 7AI-two-factor-login | TwoFactorChallengeController mixed challenge validation, pending-user lookup, recovery verification/consumption, session cleanup, authentication and sign-in transition wiring. | 30 authentication redirect/two-factor/email-verification tests passed, 168 assertions; Pint, syntax and diff checks passed. | `410d9e2` — `refactor: extract two-factor login operation` | Characterize password-login session staging/logout and email-verification resend/link transitions, then choose the smallest protocol-safe authentication/session operation boundary before GitHub App and enterprise SSO callbacks. |
 | Phase 7AJ-password-login | AuthenticatedSessionController mixed request-authenticated credentials with session regeneration, two-factor staging, web-guard logout, sign-in recording and redirect selection. | 48 authentication redirect/two-factor/email-verification/social-auth tests passed, 302 assertions; Pint, syntax and diff checks passed. | `eddb4e8` — `refactor: extract password login completion` | Characterize signed email verification and resend behavior, extracting only the meaningful verification state change before auditing GitHub App and enterprise SSO callback protocols. |
 | Phase 7AK-email-verification | VerifyEmailController mixed signed Laravel verification with the account state transition and `Verified` event dispatch; prompt/resend endpoints remained straightforward coordination. | 49 email-verification/authentication redirect/two-factor/social-auth tests passed, 306 assertions; Pint, syntax and diff checks passed. | `cc82c16` — `refactor: extract email verification operation` | Characterize GitHub App installation and enterprise SSO callback protocols, including state, PKCE, entitlements, remote verification and session marking. |
+| Phase 7AL-github-app-installation | GitHubAppController mixed current-workspace manager authorization, callback validation, one-time state, remote discovery, account labeling and direct provider upsert; picker scope retained deliberate 404 concealment. | 29 GitHub App/platform-expansion/shared-tenancy/provider inventory/history tests passed, 227 assertions; Pint, syntax and diff checks passed. | `196e3a8` — `refactor: extract GitHub App installation operation` | Characterize enterprise SSO entitlement, validation, state/PKCE consumption, remote verification, sanitized failures and session marking. |
