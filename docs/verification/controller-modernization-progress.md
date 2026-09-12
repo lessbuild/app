@@ -1518,6 +1518,65 @@ variables endpoint's parser, secret-safe failure behavior, organization
 scoping and transaction/lock semantics, then extract its request and
 transaction-aware action without flashing or serializing submitted secrets.
 
+## Phase 4I — API variable replacement operation
+
+### Responsibility problem
+
+`ControlPlaneController::variables()` combined control-plane access,
+environment authorization, replacement-text validation, KEY=value parsing,
+secret persistence, version creation, deletion of omitted variables and the
+JSON response. The parser and transaction were cohesive application behavior,
+but the controller was also the HTTP validation boundary and received the
+unrestricted request.
+
+### Boundaries applied
+
+- `ReplaceEnvironmentVariablesRequest` preserves API control-plane access and
+  environment update authorization before the existing bounded text rules,
+  and exposes only the validated replacement text.
+- `ReplaceEnvironmentVariablesAction` owns secret-safe line parsing and the
+  existing atomic replacement operation, including row locks, current-version
+  increments, actor attribution, encrypted variable writes and historical
+  versions.
+- The controller now coordinates the request, action and unchanged JSON
+  envelope. No new generic repository or speculative variable abstraction was
+  introduced.
+
+This applies single responsibility and dependency inversion while preserving
+the API-specific authorization/validation ordering and the existing
+transaction semantics.
+
+### Preserved contracts and safety guarantees
+
+- The existing route, `manage` token ability, environment policy, 422
+  `variables` key, parser message, 50 KB bound, 200 response envelope,
+  `status=applied` value and count remain unchanged.
+- Parsing still occurs before the transaction, so malformed input cannot
+  delete or change existing values and submitted values are not included in
+  validation responses. Valid values remain encrypted at rest.
+- Omitted keys are deleted; retained rows keep `all` scope and secret status,
+  increment their versions, record the actor and create version history. The
+  existing relationship-scoped deletes, row locks and transaction boundary
+  remain in place.
+
+### Verification
+
+- Automation, platform, environment-runtime and shared-tenancy regression
+  set: **52 passed, 296 assertions**.
+- Added coverage for encrypted-at-rest storage and malformed parser input
+  leaving existing variables unchanged without exposing the submitted secret.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `28ab03e` — `refactor: extract API variables operation`
+
+**Phase 4I exit gate: complete.** Exact next task: extract the remaining API
+promotion request boundary, preserving deploy-token and build-policy ordering,
+current-workspace target lookup, validation keys, 404 target behavior and the
+existing queued/conflict response envelope.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1543,3 +1602,4 @@ transaction-aware action without flashing or serializing submitted secrets.
 | Phase 4F-runtime-api | Web/API scale and runtime controllers mixed validation, policy/entitlement ordering, persistence, dispatch and response mapping; API access checks were duplicated. | 53 automation/API/runtime/configuration/tenancy/entitlement/platform tests passed, 334 assertions; Pint and diff checks passed. | `49bd49a` — `refactor: extract runtime operations` | Characterize token creation/rotation/deletion ownership, abilities, expiry, entitlement and plaintext feedback before extracting request/action boundaries. |
 | Phase 4G-automation-tokens | Token creation, rotation and revocation mixed validation, owner checks, hashed credential creation, replacement ordering and direct deletes in `AutomationController`. | 44 automation/token/API/platform/tenancy tests passed, 261 assertions; Pint and diff checks passed. | `c87e230` — `refactor: extract automation token operations` | Characterize web/API workflow validation and authorization ordering before extracting separate workflow requests around `WorkflowConfiguration`. |
 | Phase 4H-workflow | Web/API workflow controllers mixed basic YAML validation with policy/capability checks before invoking the existing transaction-aware `WorkflowConfiguration` service. | 67 automation/workflow/API/configuration/environment/tenancy/entitlement/platform tests passed, 453 assertions; Pint and diff checks passed. | `dc57901` — `refactor: extract workflow request boundaries` | Characterize API variables parsing, secret-safe failures, scoping and transaction/lock behavior before extracting its request/action boundary. |
+| Phase 4I-api-variables | API variable replacement mixed control-plane access, environment authorization, bounded text validation, secret-safe parsing, versioned persistence and the JSON response in `ControlPlaneController`. | 52 automation/platform/environment-runtime/shared-tenancy tests passed, 296 assertions; Pint and diff checks passed. | `28ab03e` — `refactor: extract API variables operation` | Extract the remaining API promotion request boundary, preserving deploy-token and build-policy ordering, current-workspace target lookup, validation keys, 404 target behavior and the existing queued/conflict response envelope. |
