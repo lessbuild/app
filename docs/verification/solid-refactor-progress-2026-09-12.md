@@ -668,6 +668,18 @@ Verification after the slice:
 - RepositoryDeploymentInsightsTest, WebsiteDeploymentSerializationTest and RepositoryDeploymentTest: 16 passed (106 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — builds and repositories exit review
+
+Phase 3C is complete. Reporting queries and exports are separated from the build/repository HTTP boundaries, and the non-trivial deployment mutations now reuse cohesive actions while existing promotion, redeployment, rollback, webhook, revision-attestation and queued-job actions remain in place.
+
+The final review found no justified extraction for straightforward repository store CRUD, build comparison/log download, build operator-note editing, or the controller branches that only authorize, normalize input and map existing operation outcomes to responses. No route, validation key, response format, flash message, persisted value, webhook schema or queued-job payload was changed.
+
+Verification after the phase:
+
+- Comprehensive builds/repositories gate: 173 passed (1,404 assertions).
+- Pint, PHP syntax checks and git diff --check: passed for every Phase 3C slice.
+- Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Run the complete Phase 3C builds/repositories regression gate, review remaining methods for unjustified extraction, then close the slice before starting Servers and Environments.
+Begin Phase 3D by mapping remaining server/environment controllers, actions, callbacks, provisioning attempts, ownership checks and environment-removal safeguards before selecting the smallest justified extraction.
