@@ -565,6 +565,24 @@ Verification after the slice:
 - `RepositoryWebhookDeliveryHistoryTest`: 4 passed (68 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3C — build approval and rejection action slice
+
+Responsibility problem: BuildsController combined policy-protected HTTP handling with locked approval/rejection state transitions, note normalization, approval-notification acknowledgement and decision activity recording.
+
+Boundary used: ApproveBuildAction and RejectBuildAction now own their respective cohesive review workflows, while BuildApprovalNotifications owns the shared notification update. The controller retains request validation, policy authorization, deployment dispatch, redirect responses and flash messages. These are concrete, constructor-injected collaborators; existing DeploymentGate and ActivityRecorder services are reused.
+
+Preserved guarantees:
+
+- Approval and rejection still lock only builds awaiting approval, preserve transaction boundaries and return the same concurrent-state outcomes.
+- Approval still checks deployment readiness and environment policy under the transaction before setting queued state; rejection still records terminal timestamps and both decisions retain the exact actor, trimmed note and promotion-specific activity messages.
+- Only unread informational deployment notifications for the decided build are acknowledged. Dispatch remains after the approval transaction and all routes, validation bags and flash messages remain unchanged.
+
+Verification after the slice:
+
+- DeploymentApprovalTest and BuildPromotionTest: 9 passed (83 assertions).
+- RepositoryWebhookDeliveryHistoryTest: 4 passed (68 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Extract the build-history CSV protocol, then map repository inventory and webhook-history query boundaries before changing deployment lifecycle actions.
+Review and extract the next justified build/repository lifecycle mutation boundary, starting with cancellation and preserving remote-call, compare-and-set, logging and idempotency behavior.

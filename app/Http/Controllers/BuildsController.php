@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Repository\ApproveBuildAction;
 use App\Actions\Repository\CancelDeploymentAction;
 use App\Actions\Repository\CancelQueuedDeploymentAction;
 use App\Actions\Repository\RedeployBuildAction;
+use App\Actions\Repository\RejectBuildAction;
 use App\Actions\Repository\RollbackBuildAction;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Build;
-use App\Notifications\NotificationInbox;
 use App\Services\ActivityRecorder;
 use App\Services\BuildInventoryExporter;
 use App\Services\BuildInventoryQuery;
-use App\Services\DeploymentGate;
 use App\Services\DeploymentRequest;
 use App\Services\Runner;
 use App\Support\DateRange;
@@ -21,7 +21,6 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -31,6 +30,8 @@ class BuildsController extends Controller
     public function __construct(
         private readonly BuildInventoryExporter $buildInventoryExporter,
         private readonly BuildInventoryQuery $buildInventory,
+        private readonly ApproveBuildAction $approveBuild,
+        private readonly RejectBuildAction $rejectBuild,
     ) {}
 
     /**
@@ -212,39 +213,14 @@ class BuildsController extends Controller
      *
      * @return RedirectResponse The dispatched deployment result or its current eligibility failure.
      */
-    public function approve(Request $request, Build $build, DeploymentRequest $deployments, DeploymentGate $gate, ActivityRecorder $activity): RedirectResponse
+    public function approve(Request $request, Build $build, DeploymentRequest $deployments): RedirectResponse
     {
         $this->authorize('approve', $build);
         $validated = $request->validateWithBag('approval', [
             'approval_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $approved = DB::transaction(function () use ($build, $request, $validated, $gate, $activity): ?Build {
-            $locked = Build::query()
-                ->whereKey($build->id)
-                ->where('status', Build::STATUS_AWAITING_APPROVAL)
-                ->lockForUpdate()
-                ->first();
-
-            if (! $locked || ! $locked->repository->isDeploymentReady() || $gate->blockReason($locked->repository)) {
-                return null;
-            }
-
-            $locked->update([
-                'status' => Build::STATUS_QUEUED,
-                'approved_by' => $request->user()->id,
-                'approved_at' => now(),
-                'approval_note' => filled($validated['approval_note'] ?? null)
-                    ? trim($validated['approval_note'])
-                    : null,
-            ]);
-            $this->acknowledgeApprovalNotifications($locked);
-            $activity->record($locked, $request->user()->id, 'deployment', $locked->trigger_source === Build::TRIGGER_PROMOTION
-                ? 'Release promotion was approved.'
-                : 'Deployment was approved.');
-
-            return $locked;
-        });
+        $approved = $this->approveBuild->handle($build, $request->user(), $validated['approval_note'] ?? null);
 
         if (! $approved) {
             return back()->with('info', __('This deployment is no longer awaiting approval, its infrastructure is unavailable, or an environment policy blocks it.'));
@@ -281,34 +257,14 @@ class BuildsController extends Controller
      *
      * @return RedirectResponse The rejection acknowledgement or a concurrent-state notice.
      */
-    public function reject(Request $request, Build $build, ActivityRecorder $activity): RedirectResponse
+    public function reject(Request $request, Build $build): RedirectResponse
     {
         $this->authorize('approve', $build);
         $validated = $request->validateWithBag('approval', [
             'approval_note' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $rejected = DB::transaction(function () use ($build, $request, $validated, $activity): bool {
-            $locked = Build::query()->whereKey($build->id)->where('status', Build::STATUS_AWAITING_APPROVAL)->lockForUpdate()->first();
-            if (! $locked) {
-                return false;
-            }
-            $locked->update([
-                'status' => Build::STATUS_REJECTED,
-                'rejected_by' => $request->user()->id,
-                'rejected_at' => now(),
-                'finished_at' => now(),
-                'approval_note' => filled($validated['approval_note'] ?? null)
-                    ? trim($validated['approval_note'])
-                    : null,
-            ]);
-            $this->acknowledgeApprovalNotifications($locked);
-            $activity->record($locked, $request->user()->id, 'deployment', $locked->trigger_source === Build::TRIGGER_PROMOTION
-                ? 'Release promotion was rejected.'
-                : 'Deployment was rejected.');
-
-            return true;
-        });
+        $rejected = $this->rejectBuild->handle($build, $request->user(), $validated['approval_note'] ?? null);
 
         return $rejected
             ? back()->with('success', __('Deployment rejected.'))
@@ -402,18 +358,5 @@ class BuildsController extends Controller
     private function triggers(): array
     {
         return [Build::TRIGGER_MANUAL, Build::TRIGGER_WEBHOOK, Build::TRIGGER_REDEPLOY, Build::TRIGGER_ROLLBACK, Build::TRIGGER_SCHEDULED, Build::TRIGGER_API, Build::TRIGGER_PROMOTION];
-    }
-
-    /**
-     * Mark unread informational approval notifications for the supplied build as read after a review decision.
-     */
-    private function acknowledgeApprovalNotifications(Build $build): void
-    {
-        DatabaseNotification::query()
-            ->whereNull('read_at')
-            ->where('data->category', 'deployment')
-            ->where('data->resource_id', $build->id)
-            ->where('data->status', NotificationInbox::STATUS_INFO)
-            ->update(['read_at' => now()]);
     }
 }
