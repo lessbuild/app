@@ -897,6 +897,92 @@ retention, website creation, placement-cleanup retry and health-check
 queueing—then extract only the cohesive operations not already covered by
 the existing website actions.
 
+## Phase 3F — website operation boundary
+
+### Responsibility problem
+
+`WebsitesController` already reused actions for website updates, deletion and
+provisioning retry, but still mixed website creation, runtime-log snapshot
+upserts, retention persistence, placement-cleanup retry state and manual
+health-check eligibility/dispatch with HTTP response mapping. WebsiteRequest
+also made the deployment permission decision directly instead of using the
+registered website policy.
+
+### Boundaries applied
+
+- `WebsitePolicy::create` owns creation permission. WebsiteRequest now uses
+  the create policy for POST and the update policy for resource updates;
+  UpdateWebsiteLogRetentionRequest owns the retention contract and update
+  authorization. Existing normalization/defaults and controller policy calls
+  remain intact.
+- `CreateWebsiteAction` owns monitoring entitlement enforcement, the existing
+  plan-limit transaction, encrypted website creation/password generation and
+  provisioning-job dispatch. WebsiteCreationResult carries the one-time
+  plaintext password only to the HTTP session boundary; it is not logged or
+  persisted in plaintext.
+- QueueWebsiteLogRefreshAction owns active-state checking, snapshot
+  `updateOrCreate` and unique refresh-job dispatch. UpdateWebsiteLogRetentionAction
+  owns the validated setting write. QueueWebsitePlacementCleanupAction owns
+  clearing the prior error and dispatching the captured placement job.
+- QueueWebsiteHealthCheckAction owns server loading, eligibility outcomes and
+  unique health-job dispatch. WebsiteHealthCheckResult keeps the disabled,
+  inactive and queued outcomes explicit while the controller retains the
+  original messages.
+- Existing UpdateWebsiteAction now owns its monitoring entitlement check along
+  with its existing lock, placement, health-reset and after-commit provisioning
+  behavior. Existing provisioning/deletion actions and all remote jobs remain
+  unchanged.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization with concrete Laravel requests/actions/data objects. It avoids
+generic CRUD services; route-constrained unsupported log types remain HTTP
+resource guards.
+
+### Preserved contracts and safety guarantees
+
+- Website routes, redirects, validation keys, omitted-field defaults,
+  hostname/path normalization, entitlement/plan errors and resource policy
+  behavior remain unchanged.
+- Viewer creation attempts are forbidden before malformed validation and
+  create neither rows nor jobs. Free-plan monitoring requests retain the plan
+  error and no-write/no-job behavior.
+- Website creation still records the actor, stores encrypted environment and
+  database values, flashes the generated password under the same session key,
+  and queues `AddWebsiteJob` outside the plan-limit transaction.
+- Runtime-log retention, snapshot status/error reset, unique refresh dispatch,
+  active-website guard, health-check messages, unique health dispatch and
+  previous-placement cleanup payload/order remain unchanged.
+- Existing update transaction locks, active-deployment/provisioning guards,
+  relocation state, cleanup retries, encrypted environment handling, stale
+  callback protection and website deletion observer/job behavior remain in
+  their existing operations.
+- No routes, migrations, schemas, serialized job payloads, dependency
+  lockfiles or remote commands changed.
+
+### Verification
+
+- Website placement, health/monitoring, observability, relocation, deletion,
+  environment encryption, deployment serialization, shared tenancy and
+  entitlement regression set: **55 passed, 563 assertions**.
+- Added coverage for viewer denial before malformed website creation,
+  monitoring entitlement denial, active/inactive runtime-log refresh behavior
+  and no-write/no-job denial.
+- Explicitly cleared the isolated test cache for unique health-job tests; this
+  prevents refreshed database IDs from colliding with an intentional unique
+  job lock across test cases.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `a35360a` — `refactor: extract website operations`
+
+**Phase 3F website exit gate: complete.** Exact next task: refactor the
+remaining import writes. Characterize session-bound server assessment
+ownership/token/expiry/consumption, inspection failure handling, host
+fingerprint confirmations, active-server directory probes, plan limits,
+encrypted credentials, activity timing and cross-workspace denial before
+extracting import operations.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -912,3 +998,4 @@ the existing website actions.
 | Phase 3C | Load-balancer validation, authorization, placement invariants, direct node/balancer writes and Caddy dispatch remained in `LoadBalancerController`. | 20 focused tests passed, 116 assertions; Pint and diff checks passed. | `d5835bd` — `refactor: extract load balancer operations` | Continue Phase 3 with Domains: preserve website lookup, hostname normalization, Cloudflare outcomes, primary protection and Caddy dispatch. |
 | Phase 3D | Domain validation, website authorization, DNS synchronization/deletion, primary protection and Caddy dispatch remained in `DomainController`. | 24 adjacent domain/website/tenancy tests passed, 219 assertions; Pint and diff checks passed. | `7d12a23` — `refactor: extract domain operations` | Inventory remaining server, website and import writes; separate reporting from lifecycle operations while preserving provisioning, relocation, encryption, callback and import semantics. |
 | Phase 3E-server | Server display-label and deletion persistence remained in `ServersController`, and create permission was duplicated in `ServerRequest`. | 36 server/provider/retry/deletion/tenancy tests passed, 308 assertions; Pint and diff checks passed. | `306ff7e` — `refactor: extract server lifecycle operations` | Characterize remaining `WebsitesController` direct writes and extract cohesive runtime-log, retention, creation, cleanup-retry and health-check operations not already covered by existing actions. |
+| Phase 3F-website | Website creation, runtime-log writes, retention, placement-cleanup state and health dispatch remained in `WebsitesController`; `WebsiteRequest` duplicated deploy permission. | 55 website/observability/relocation/deletion/tenancy/entitlement tests passed, 563 assertions; Pint and diff checks passed. | `a35360a` — `refactor: extract website operations` | Characterize and extract remaining server/website import assessment and import-write operations, preserving session token, expiry, locks, probes, encryption and activity timing. |
