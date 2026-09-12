@@ -2,13 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\Server\PrepareServerProvisioningAction;
+use App\Actions\Server\ConfirmServerImportAction;
 use App\Http\Requests\ImportServerRequest;
-use App\Jobs\Server\RetryRemoteServerProvisioningJob;
 use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
 use App\Models\ServerImportAssessment;
-use App\Models\ServerLogSnapshot;
 use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
 use App\Services\ServerDiscovery;
@@ -17,7 +14,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use phpseclib4\Crypt\PublicKeyLoader;
 
 class ImportServerController extends Controller
 {
@@ -86,8 +82,7 @@ class ImportServerController extends Controller
     public function confirm(
         Request $request,
         ServerImportAssessment $assessment,
-        PlanLimits $limits,
-        PrepareServerProvisioningAction $prepare,
+        ConfirmServerImportAction $confirm,
         ActivityRecorder $activity,
     ): RedirectResponse {
         $this->authorizeAssessment($request, $assessment);
@@ -98,40 +93,8 @@ class ImportServerController extends Controller
             'host_fingerprint_confirmed' => ['accepted'],
         ]);
 
-        $server = $limits->withinLimit($request->user(), 'servers', function ($organization) use ($request, $prepare): Server {
-            $assessment = ServerImportAssessment::query()->lockForUpdate()->findOrFail($request->route('assessment')->id);
-            $token = (string) $request->session()->get("server_import_assessment.{$assessment->id}");
-            if (! $assessment->isUsableBy($request->user(), $token)) {
-                throw ValidationException::withMessages(['confirmation' => __('This import assessment expired or was already used. Run the inspection again.')]);
-            }
-            $configuration = $assessment->configuration;
-            $server = $organization->servers()->create([
-                'user_id' => $request->user()->id,
-                'type' => ServerTypeEnum::from($configuration['type']),
-                'name' => str($configuration['name'])->slug()->limit(31, ''),
-                'region' => 'External',
-                'image' => 'Existing Ubuntu',
-                'size' => 'Custom',
-                'public_ip' => $configuration['public_ip'],
-                'ssh_port' => $configuration['ssh_port'],
-                'ssh_private_key' => $configuration['ssh_private_key'],
-                'ssh_public_key' => PublicKeyLoader::loadPrivateKey($configuration['ssh_private_key'])->getPublicKey()->toString('OpenSSH'),
-                'ssh_host_key' => $assessment->report['known_host'],
-                'ssh_host_fingerprint' => $assessment->report['fingerprint'],
-                'ssh_key_owned' => false,
-                'provisioning_status' => Server::STATUS_QUEUED,
-            ]);
-            $prepare->handle($server);
-            $server->update(['password' => $server->provisioningRootPassword()]);
-            $server->logSnapshots()->create([
-                'type' => 'provisioning',
-                'status' => ServerLogSnapshot::STATUS_QUEUED,
-            ]);
-            RetryRemoteServerProvisioningJob::dispatch($server->id, $server->provisioning_token)->afterCommit();
-            $assessment->update(['consumed_at' => now()]);
-
-            return $server;
-        });
+        $token = (string) $request->session()->get("server_import_assessment.{$assessment->id}");
+        $server = $confirm->handle($request->user(), $assessment, $token);
         $request->session()->forget("server_import_assessment.{$assessment->id}");
         $activity->record($server, $request->user()->id, 'server', 'Existing server imported and provisioning queued.');
 

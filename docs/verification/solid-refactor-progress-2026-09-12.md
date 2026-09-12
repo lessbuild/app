@@ -714,6 +714,26 @@ Verification after the slice:
 - ServerProviderLifecycleTest, ServerCreationFailureTest, ServerTypeProvisioningTest and ResourceAuthorizationTest: 15 passed (166 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3D — imported-server assessment confirmation action slice
+
+Responsibility problem: ImportServerController combined HTTP confirmation validation with the session-bound assessment recheck, organization limit locking, encrypted imported-server creation, provisioning preparation, queued snapshot creation and single-use consumption.
+
+Boundary used: ConfirmServerImportAction now owns the transaction-time import confirmation workflow. The controller retains assessment authorization, confirmation-field validation, session-token retrieval/forgetting, activity recording and redirect/flash responses. The action reuses PlanLimits and PrepareServerProvisioningAction and keeps the existing retry job as the queued remote boundary.
+
+Preserved guarantees:
+
+- The assessment is reloaded with a row lock and revalidated against the current user and session token before any server is created.
+- Server type/name, external metadata, host keys, encrypted private-key persistence, provisioning password preparation and queued log snapshot values remain unchanged.
+- RetryRemoteServerProvisioningJob is still dispatched after commit, consumed assessments remain single-use, and session cleanup occurs only after successful confirmation.
+- Confirmation validation keys, expired-assessment messaging, activity text, route, redirect and success flash remain unchanged.
+
+Verification after the slice:
+
+- ImportServerTest and ServerRemoteProvisioningRetryTest: 13 passed (124 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
+Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Review server deletion/display-name updates and the separate imported-server assessment workflow, preserving cleanup, ownership, session-token and retry semantics.
+Review EnvironmentController and ProjectController for one small, justified environment-management boundary, beginning with transactionally versioned environment-variable persistence and preserving removal safeguards, ownership checks and deployment-control validation.
