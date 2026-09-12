@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\Callbacks;
 
 use App\Actions\Web\RecordWebsiteProvisioningFailureAction;
+use App\Actions\Web\RecordWebsiteProvisioningLogAction;
 use App\Actions\Web\RecordWebsiteProvisioningStatusAction;
 use App\Http\Controllers\Controller;
 use App\Models\Website;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 
 class WebsiteCallbackController extends Controller
 {
@@ -62,22 +62,16 @@ class WebsiteCallbackController extends Controller
      * @param  Website  $website  The route-bound lifecycle target.
      * @return Response Empty acknowledgement, including ignored stale callbacks.
      */
-    public function log(Request $request, Website $website): Response
-    {
-        DB::transaction(function () use ($request, $website): void {
-            $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
-            if ($locked->provisioning_token && ! hash_equals($locked->provisioning_token, (string) $request->input('attempt'))) {
-                return;
-            }
-
-            $data = $request->validate([
-                'log' => ['required', 'string', 'max:'.max(1, (int) config('lessbuild.website_log_max_characters'))],
-            ]);
-            $locked->logs()->updateOrCreate(
-                ['type' => Website::PROVISIONING_LOG_TYPE],
-                ['log' => $data['log']],
-            );
-        });
+    public function log(
+        Request $request,
+        Website $website,
+        RecordWebsiteProvisioningLogAction $record,
+    ): Response {
+        $record->handle(
+            $website,
+            $request->input('attempt'),
+            $request->input('log'),
+        );
 
         return response()->noContent();
     }
