@@ -4792,6 +4792,52 @@ and callback controllers for raw-protocol validation, then run the complete
 controller write/validation/authorization inventory and classify any remaining
 exceptions before final verification.
 
+## Phase 7AV — project lifecycle operations
+
+### Responsibility problem
+
+`ProjectController` still normalized and validated preview settings, enforced
+the preview entitlement, and updated the project directly. Its destroy method
+also performed the project delete directly after authorization. These were
+application operations rather than response construction responsibilities.
+
+### Boundary and principles
+
+`UpdateProjectPreviewsRequest` now owns the existing boolean/domain
+normalization, validation and policy/entitlement ordering. The request passes
+only validated attributes to `UpdateProjectPreviewsAction`, which rechecks the
+entitlement at the application boundary before persisting. `DeleteProjectAction`
+owns the existing project deletion call, while `ProjectPolicy::delete` remains
+the authorization boundary. This applies single responsibility and dependency
+inversion without introducing a generic CRUD abstraction.
+
+### Preserved guarantees
+
+- Preview URL protocol-prefix and trailing-slash normalization, validation
+  keys, entitlement-before-validation behavior, secret-safe failed input,
+  policy denial and success flash/redirect remain unchanged.
+- Project deletion still requires the existing management policy, uses the
+  same hard-delete/cascade behavior, preserves the success response and does
+  not execute for a foreign actor.
+- No routes, persisted values, serialized jobs, provider behavior, dependency
+  lockfiles or external acceptance state changed.
+
+### Verification
+
+- Preview, project creation/environment and lifecycle regression set: **8
+  passed, 52 assertions**.
+- Targeted Pint, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `30d4832` — `refactor: extract project lifecycle operations`
+
+**Phase 7AV exit gate: complete.** Exact next task: finish the remaining
+controller audit by classifying cost/dashboard/subscription writes, global
+admin gates, Livewire writes and any other inline validation or authorization;
+extract only justified boundaries before running final verification.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4877,3 +4923,4 @@ exceptions before final verification.
 | Phase 7AS-website-status-failure | WebsiteCallbackController mixed lock-point attempt/lifecycle checks, validation, placement transitions, preview bookkeeping and failure persistence. | 61 website provisioning/log/retry/relocation/placement/security/lifecycle/preview/callback-integrity/concurrency tests passed, 498 assertions; Pint, syntax and diff checks passed. | `291b132` — `refactor: extract website provisioning callbacks` | Extract the website log callback with attempt-only lock-point validation and tokenless/post-completion compatibility, then audit the raw-body GitHub App webhook. |
 | Phase 7AT-website-log | WebsiteCallbackController mixed attempt-only lock-point validation, post-completion log acceptance and provisioning-log replacement. | 51 website provisioning/log/retry/relocation/lifecycle/preview/callback-integrity/concurrency tests passed, 426 assertions; Pint, syntax and diff checks passed. | `9d1ac9b` — `refactor: extract website provisioning log callback` | Audit raw-body GitHub App webhook and repository webhook delegation, preserving payload-size/signature/JSON ordering, deliberate 404 concealment and response envelopes. |
 | Phase 7AU-github-app-webhook | GitHubAppWebhookController mixed raw-body protocol verification, ping/metadata validation and installation lookup before reusing the existing repository webhook pipeline. | 25 GitHub App/raw-webhook/repository-webhook/revision-attestation/callback-integrity tests passed, 184 assertions; Pint, syntax and diff checks passed. | `63d8c56` — `refactor: extract GitHub App webhook verification` | Audit remaining OAuth/SSO and callback controllers, then classify the remaining controller writes, validation and authorization exceptions before final verification. |
+| Phase 7AV-project-lifecycle | ProjectController mixed preview normalization/validation/entitlement checks and direct project update/deletion with HTTP coordination. | 8 preview/project creation/environment/lifecycle tests passed, 52 assertions; Pint, syntax and diff checks passed. | `30d4832` — `refactor: extract project lifecycle operations` | Finish the controller audit by classifying cost/dashboard/subscription writes, global admin gates, Livewire writes and remaining inline validation/authorization before final verification. |
