@@ -1866,6 +1866,78 @@ Commit: `c91bd15` — `refactor: extract status incident operations`
 organization operations with invitation creation/acceptance while preserving
 token/email identity, locks, seat limits and billing synchronization timing.
 
+## Phase 5E — observability dashboard and operational incidents
+
+### Responsibility problem
+
+The observability dashboard assembled several bounded workspace queries directly
+in `ObservabilityController`, while `OperationalIncidentController` combined
+incident authorization, request validation, workflow-state checks, responder
+membership, timeline writes, a transaction and CSV formatting. That left the
+operational incident lifecycle difficult to invoke outside HTTP and made the
+read/export boundaries inconsistent with the other inventory areas.
+
+### Boundaries applied
+
+- `ObservabilityDashboardQuery` owns the dashboard's existing workspace-scoped
+  collections, eager loads and limits. The controller retains only the
+  actor-facing permission flags and view response.
+- `OperationalIncidentPolicy` owns current-workspace operations permission for
+  acknowledge, assign, note and resolve, plus audit/operations permission for
+  export. It is registered in `AuthServiceProvider`.
+- `AssignOperationalIncidentRequest`,
+  `StoreOperationalIncidentNoteRequest` and
+  `ResolveOperationalIncidentRequest` own input rules and authorize before
+  validation. Validated accessors keep unrestricted request data out of the
+  actions.
+- `AcknowledgeOperationalIncidentAction`,
+  `AssignOperationalIncidentAction`, `AddOperationalIncidentNoteAction` and
+  `ResolveOperationalIncidentAction` own the corresponding state/event writes.
+  `OperationalIncidentOperationException` keeps business-state and responder
+  membership failures out of policies while the controller maps them to the
+  existing 422 responses.
+- `OperationalIncidentQuery` and `OperationalIncidentExporter` own the scoped
+  evidence query and its existing CSV stream. No generic repository or
+  speculative abstraction was added.
+
+This applies single responsibility and dependency inversion at both the HTTP
+and read/reporting boundaries, while keeping policy decisions separate from
+workflow invariants and persistence.
+
+### Preserved contracts and safety guarantees
+
+- Operational incident routes, redirects, success flashes, 403 authorization
+  behavior, 422 messages, event types/messages, actor attribution and the
+  resolution transaction remain unchanged.
+- Authorization still precedes malformed assignment/note input, denied
+  actors cannot write incident rows/events or queue work, invalid responders
+  do not mutate the incident, and resolved incidents cannot be acknowledged.
+- The dashboard keeps its original organization scoping, eager loads, ordering
+  and result limits. The evidence export keeps its filename, CSV header,
+  ordering, formula-prefix behavior, null conversion and private cache/type
+  headers.
+- No route, schema, serialized job payload, remote call, notification timing
+  or dependency lockfile changed.
+
+### Verification
+
+- Focused observability regression set: **31 passed, 243 assertions** across
+  `OperationalIncidentTest`, `ObservabilityTest`, `PublicStatusQueryTest`,
+  `IncidentNotificationTest` and `EntitlementTest`.
+- Added coverage for malformed unauthorized requests, no-write denial,
+  invalid workspace responders, resolved-incident rejection and unauthorized
+  evidence export.
+- Edited-file PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `26e0879` — `refactor: extract operational incident operations`
+
+**Phase 5E exit gate: complete.** Exact next task: characterize organization
+invitation creation and acceptance, including token/email identity, expiry and
+single-use locking, seat limits, membership pivot behavior and billing
+synchronization timing, then extract the smallest policy/request/action slice.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1897,3 +1969,4 @@ token/email identity, locks, seat limits and billing synchronization timing.
 | Phase 5B-alert-destinations | Alert-destination endpoints mixed authorization, entitlement, type-specific endpoint validation, encrypted credential creation, test dispatch and deletion. | 32 observability/entitlement/failure-notification tests passed, 273 assertions; Pint and diff checks passed. | `43334b5` — `refactor: extract alert destination operations` | Characterize status-page creation/update/deletion, slug collision handling, website pivot membership and published-page behavior, then extract status-page requests, policy and transaction-aware actions without changing public status responses. |
 | Phase 5C-status-pages | Status-page endpoints mixed authorization, entitlement, scoped website validation, slug collision handling, pivot synchronization, transactions and direct writes. | 27 observability/public-status/entitlement/operational-incident tests passed, 200 assertions; Pint and diff checks passed. | `d84fb6f` — `refactor: extract status page operations` | Characterize status-incident create/update validation, kind/status compatibility, resolution timestamps, page scoping and subscriber notification timing, then extract requests and actions without changing notification ordering. |
 | Phase 5D-status-incidents | Status-incident endpoints mixed shared validation, kind/status rules, page scoping, resolution transitions, direct writes and subscriber notification timing. | 30 observability/public-status/entitlement/incident-notification/operational-incident tests passed, 231 assertions; Pint and diff checks passed. | `c91bd15` — `refactor: extract status incident operations` | Audit remaining `ObservabilityController` read/export boundaries, then begin organization invitation operations while preserving token/email identity, locks, seat limits and billing synchronization timing. |
+| Phase 5E-observability-incidents | The observability dashboard and operational-incident controller mixed bounded reads, policy decisions, validation, workflow guards, timeline writes, transactions and CSV formatting. | 31 observability/public-status/incident/entitlement tests passed, 243 assertions; Pint and diff checks passed. | `26e0879` — `refactor: extract operational incident operations` | Characterize organization invitation creation and acceptance, including token/email identity, expiry and single-use locks, seat limits, membership pivots and billing synchronization timing. |
