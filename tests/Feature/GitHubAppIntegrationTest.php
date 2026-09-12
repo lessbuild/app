@@ -143,6 +143,44 @@ class GitHubAppIntegrationTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_app_webhook_preserves_raw_protocol_validation_ordering_and_ping_short_circuit(): void
+    {
+        config(['lessbuild.webhook_max_payload_bytes' => 16]);
+        $oversized = str_repeat('x', 17);
+
+        $this->call('POST', route('github-app.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+        ], $oversized)->assertStatus(413);
+
+        config(['lessbuild.webhook_max_payload_bytes' => 1048576]);
+        $invalidJson = '{"installation":';
+        $this->call('POST', route('github-app.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_GITHUB_EVENT' => 'push',
+            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.str_repeat('0', 64),
+        ], $invalidJson)->assertStatus(401);
+
+        $this->call('POST', route('github-app.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_GITHUB_EVENT' => 'push',
+            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $invalidJson, 'github-app-secret'),
+        ], $invalidJson)->assertStatus(422);
+
+        $ping = json_encode(['zen' => 'Keep it logically awesome.'], JSON_THROW_ON_ERROR);
+        $this->call('POST', route('github-app.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_GITHUB_EVENT' => 'ping',
+            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $ping, 'github-app-secret'),
+        ], $ping)->assertOk()->assertJson(['status' => 'ok']);
+
+        $missingIdentity = json_encode(['repository' => []], JSON_THROW_ON_ERROR);
+        $this->call('POST', route('github-app.webhook'), [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_GITHUB_EVENT' => 'push',
+            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $missingIdentity, 'github-app-secret'),
+        ], $missingIdentity)->assertStatus(422);
+    }
+
     public function test_switching_to_an_app_provider_fails_without_a_webhook_secret_before_updating(): void
     {
         config(['github-app.webhook_secret' => null]);
