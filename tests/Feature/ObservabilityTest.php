@@ -466,6 +466,10 @@ class ObservabilityTest extends TestCase
         ]);
         $page->websites()->attach($website);
 
+        $this->post(route('status.subscriptions.store', $page->slug), ['email' => 'not-an-email'])
+            ->assertSessionHasErrors('email');
+        $this->assertDatabaseCount('status_subscriptions', 0);
+
         $this->post(route('status.subscriptions.store', $page->slug), ['email' => 'Ops@Example.com'])
             ->assertRedirect()
             ->assertSessionHas('status_subscription');
@@ -500,6 +504,9 @@ class ObservabilityTest extends TestCase
         $this->getJson(route('status.report', $page->slug))
             ->assertOk()->assertJsonPath('incidents.0.status', 'investigating');
 
+        $this->get(route('status.subscriptions.unsubscribe', [$subscription, 'wrong']))
+            ->assertNotFound();
+        $this->assertDatabaseHas('status_subscriptions', ['id' => $subscription->id]);
         $this->get(route('status.subscriptions.unsubscribe', [$subscription, $unsubscribeToken]))
             ->assertRedirect(route('status.show', $page->slug));
         $this->assertDatabaseMissing('status_subscriptions', ['id' => $subscription->id]);

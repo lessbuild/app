@@ -2,34 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StatusPage;
+use App\Actions\Status\ConfirmStatusSubscriptionAction;
+use App\Actions\Status\SubscribeToStatusPageAction;
+use App\Actions\Status\UnsubscribeStatusSubscriptionAction;
+use App\Http\Requests\SubscribeToStatusPageRequest;
 use App\Models\StatusSubscription;
-use App\Notifications\ConfirmStatusSubscriptionNotification;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 
 class StatusSubscriptionController extends Controller
 {
     /**
      * Validate an email for a published status-page slug, reset its subscription verification, and send a confirmation link.
      */
-    public function store(Request $request, string $slug): RedirectResponse
-    {
-        $page = StatusPage::query()->where('slug', $slug)->where('is_published', true)->firstOrFail();
-        $email = strtolower($request->validate(['email' => ['required', 'email', 'max:254']])['email']);
-        $token = Str::random(64);
-        $subscription = $page->subscriptions()->updateOrCreate(
-            ['email_hash' => hash('sha256', $email)],
-            [
-                'email' => $email,
-                'verification_token_hash' => hash('sha256', $token),
-                'unsubscribe_token' => Str::random(64),
-                'verified_at' => null,
-            ],
-        );
-        Notification::route('mail', $email)->notify(new ConfirmStatusSubscriptionNotification($subscription, $token));
+    public function store(
+        SubscribeToStatusPageRequest $request,
+        SubscribeToStatusPageAction $subscribe,
+    ): RedirectResponse {
+        $subscribe->handle($request->statusPage(), $request->email());
 
         return back()->with('status_subscription', __('Check your email to confirm status updates.'));
     }
@@ -39,11 +28,12 @@ class StatusSubscriptionController extends Controller
      *
      * Invalid or already-used tokens return 404.
      */
-    public function confirm(StatusSubscription $subscription, string $token): RedirectResponse
-    {
-        abort_unless($subscription->verification_token_hash
-            && hash_equals($subscription->verification_token_hash, hash('sha256', $token)), 404);
-        $subscription->update(['verified_at' => now(), 'verification_token_hash' => null]);
+    public function confirm(
+        StatusSubscription $subscription,
+        string $token,
+        ConfirmStatusSubscriptionAction $confirm,
+    ): RedirectResponse {
+        abort_unless($confirm->handle($subscription, $token), 404);
 
         return redirect()->route('status.show', $subscription->statusPage->slug)
             ->with('status_subscription', __('Status updates are now enabled.'));
@@ -54,11 +44,13 @@ class StatusSubscriptionController extends Controller
      *
      * Invalid tokens return 404.
      */
-    public function unsubscribe(StatusSubscription $subscription, string $token): RedirectResponse
-    {
-        abort_unless(hash_equals($subscription->unsubscribe_token, $token), 404);
-        $slug = $subscription->statusPage->slug;
-        $subscription->delete();
+    public function unsubscribe(
+        StatusSubscription $subscription,
+        string $token,
+        UnsubscribeStatusSubscriptionAction $unsubscribe,
+    ): RedirectResponse {
+        $slug = $unsubscribe->handle($subscription, $token);
+        abort_unless($slug !== null, 404);
 
         return redirect()->route('status.show', $slug)
             ->with('status_subscription', __('You have been unsubscribed.'));
