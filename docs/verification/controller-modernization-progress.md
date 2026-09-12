@@ -1167,6 +1167,57 @@ guards, encrypted command handling, task deletion and output authorization;
 then extract the smallest scheduled-task request/action while preserving its
 run and job semantics.
 
+## Phase 4C — scheduled-task creation operation
+
+### Responsibility problem
+
+`AutomationController::scheduledTask` repeated schedule validation beside task
+specific validation, entitlement checks, encrypted-command persistence and
+creator attribution. That left a substantial write operation in the HTTP
+controller while manual runs, deletion and output remained separate concerns.
+
+### Boundaries applied
+
+- `StoreScheduledTaskRequest` owns environment policy authorization, the
+  `scheduled_deployments` entitlement ordering, cron/timezone rules, command
+  limits, timeout bounds and required overlap/alert booleans.
+- `CreateScheduledTaskAction` injects `Entitlements`, rechecks the feature for
+  non-HTTP callers, and owns enabled task persistence and creator attribution.
+  The existing encrypted `ScheduledTask::command` cast remains the persistence
+  boundary.
+- `AutomationController` now passes validated attributes to the action. Its
+  manual-run overlap guard, run creation/job dispatch, deletion, output
+  response and authorization remain untouched for the next focused slices.
+
+This applies single responsibility, dependency inversion and explicit Laravel
+request boundaries without changing scheduled-task lifecycle semantics.
+
+### Preserved contracts and safety guarantees
+
+- Task routes, redirects, status codes, validation keys, cron/timezone rules,
+  command and timeout limits, boolean requirements, enabled default, creator
+  identity and success flash remain unchanged.
+- Environment policy denial still precedes entitlement and malformed input;
+  free-plan entitlement denial still precedes validation and creates no task.
+- Commands remain encrypted at rest and hidden from the automation response;
+  no run, retry, overlap, notification or job payload behavior changed.
+
+### Verification
+
+- Automation, API, workflow, runtime, tenancy and entitlement regression set:
+  **40 passed, 236 assertions**.
+- Added viewer-denial/no-write and free-plan/no-write coverage for task
+  creation; existing encrypted-command coverage remains green.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `f6878ed` — `refactor: extract scheduled task operation`
+
+Exact next task: extract manual scheduled-task runs, preserving the
+`without_overlapping` queued/running guard, run creation, `last_queued_at`
+update, job dispatch timing, entitlement and task-environment authorization.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1186,3 +1237,4 @@ run and job semantics.
 | Phase 3G-imports | Server and website import controllers mixed protocol validation, remote inspection/probes, assessment/website persistence, plan limits and activity side effects; import requests duplicated deploy permission. | 82 import/server/website/infrastructure regression tests passed, 694 assertions; Pint and diff checks passed. | `70f2d57` — `refactor: extract import operations` | Inventory AutomationController and API/V1/ControlPlaneController schedule, workflow, runtime and token contracts, then extract the smallest schedule operation with separate web/API request boundaries. |
 | Phase 4A-deployment-schedule | Deployment-schedule creation mixed policy, entitlement ordering, cron validation and persistence in `AutomationController`; API has no separate schedule-create route and continues to use workflow YAML for that contract. | 36 automation/API/runtime/tenancy/entitlement/configuration regression tests passed, 247 assertions; Pint and diff checks passed. | `936fa7c` — `refactor: extract deployment schedule operation` | Characterize scaling-schedule replica bounds and scheduled-scaling entitlement, then extract its separate request/action and no-write denial tests. |
 | Phase 4B-scaling-schedule | Scaling-schedule creation mixed policy, entitlement ordering, cron/timezone validation, environment replica bounds and persistence in `AutomationController`; API runtime scaling remains a distinct JSON operation. | 38 automation/API/runtime/tenancy/entitlement regression tests passed, 231 assertions; Pint and diff checks passed. | `b4323c2` — `refactor: extract scaling schedule operation` | Characterize scheduled-task creation, overlap guards, encrypted commands, deletion and output authorization, then extract its request/action boundary. |
+| Phase 4C-scheduled-task | Scheduled-task creation mixed policy, entitlement ordering, cron/task validation, encrypted command persistence and actor attribution in `AutomationController`; manual runs and output remain separate operations. | 40 automation/API/runtime/tenancy/entitlement regression tests passed, 236 assertions; Pint and diff checks passed. | `f6878ed` — `refactor: extract scheduled task operation` | Extract manual scheduled-task runs while preserving overlap guards, run timestamps, job dispatch and task authorization. |
