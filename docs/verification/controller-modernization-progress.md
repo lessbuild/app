@@ -388,6 +388,69 @@ resources, deployment controls, child deletion and environment deletion;
 reuse existing Environment actions and preserve encryption, version history,
 nested-resource 404s and production/removal safeguards.
 
+## Phase 2C — environment child-operation input boundary
+
+### Responsibility problem
+
+The environment controller still owned variable, process and resource rules,
+defaults, resource-variable parsing and managed-resource safeguards beside
+direct child upserts. That coupled the HTTP boundary to encrypted/versioned
+persistence and made entitlement denial ordering dependent on controller
+execution.
+
+### Boundaries applied
+
+- StoreEnvironmentVariableRequest owns variable structure, scope defaults and
+  the existing secret default.
+- StoreEnvironmentProcessRequest owns process validation/defaults and retains
+  worker entitlement denial before malformed input is evaluated.
+- StoreEnvironmentResourceRequest owns resource input validation and retains
+  resource entitlement denial before malformed input is evaluated.
+- SaveEnvironmentProcessAction owns scheduler replica normalization and the
+  process upsert.
+- SaveEnvironmentResourceAction now owns resource-variable parsing, managed
+  database prerequisites, object-storage restrictions and the resource
+  upsert. Its optional pre-parsed argument preserves existing non-HTTP
+  callers.
+- Existing SaveEnvironmentVariableAction remains the persistence boundary for
+  encrypted values, version rows and lock-protected updates.
+
+This applies single responsibility and dependency inversion with concrete
+operations. It does not duplicate the existing EnvironmentRequest,
+DeploymentControlsRequest or EnvironmentPolicy, and it leaves route-scoped
+child lookups and lifecycle-state rules in their current categories.
+
+### Preserved contracts and safety guarantees
+
+- Variable, process and resource validation keys, defaults, redirects,
+  entitlement messages and persisted values remain unchanged.
+- Scheduler definitions still use one replica; resource parser failures,
+  managed database prerequisites and object-storage restrictions still return
+  their existing validation feedback without a write.
+- Encrypted variable/version persistence, resource credential encryption,
+  runtime snapshots and deployment-control behavior are unchanged.
+- No route, schema, job, remote call, serialized payload or dependency
+  lockfile changed.
+
+### Verification
+
+- Focused environment child/runtime suite: **30 passed, 167 assertions**.
+- Covered entitlement denial before malformed process/resource input,
+  scheduler defaults, resource validation rollback, environment creation and
+  update authorization, encrypted variable versioning, runtime snapshots,
+  managed PostgreSQL resources and deployment controls.
+- PHP syntax checks, Pint test and git diff --check passed.
+
+### Commit and next task
+
+Commit: 2434f0c — refactor: extract environment child operations
+
+**Phase 2C exit gate: complete.** Exact next task: characterize the remaining
+environment/project lifecycle writes, including environment creation/update,
+deployment-control persistence and environment/child deletion. Extract only
+cohesive actions that preserve protected-production, duplicate-production,
+runtime-entitlement, scoped-child 404 and deletion response behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -396,3 +459,4 @@ nested-resource 404s and production/removal safeguards.
 | Phase 1 | Project creation mixed permission, validation, template selection and transactional writes in `ProjectController`. | 26 focused tests passed, 166 assertions; Pint and diff checks passed. | `5c055ff` — `refactor: extract project creation operation` | Characterize configuration web/API ordering and extract the smallest configuration request/operation boundary; preserve secret-safe validation, receipt relationships, claims, leases and stale callbacks. |
 | Phase 2A | Configuration web/API document and binding validation mixed with project deployment permission and controller API capability checks. | 177 configuration tests passed, 1,736 assertions; Pint and diff checks passed. | `bd68cdf` — `refactor: extract configuration input boundaries` | Characterize no-input apply/cancel/retry and receipt visibility, then extract only operation-specific policies/requests that preserve 404, requester and recovery semantics. |
 | Phase 2B | Configuration operation bodies and receipt abilities remained inline around relationship lookups and transaction-aware services. | 43 focused tests passed, 318 assertions; complete configuration family 177/1,736; Pint and diff checks passed. | `f269fdf` — `refactor: extract configuration operation boundaries` | Inspect remaining environment request/action boundaries for processes, variables, resources, deployment controls and deletion safeguards. |
+| Phase 2C | Environment child endpoints mixed validation, entitlement order, parsing, normalization and direct child writes. | 30 focused tests passed, 167 assertions; Pint and diff checks passed. | `2434f0c` — `refactor: extract environment child operations` | Characterize lifecycle writes and deletion safeguards before extracting cohesive environment actions. |
