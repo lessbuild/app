@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Server\CancelServerCommandAction;
+use App\Actions\Server\DeleteServerCommandHistoryAction;
 use App\Actions\Server\QueueServerCommandAction;
 use App\Http\Responses\PlainTextLogDownload;
 use App\Models\Server;
@@ -164,16 +165,15 @@ class ServerCommandsController extends Controller
      *
      * @return RedirectResponse The deletion acknowledgement or an active-command refusal.
      */
-    public function destroy(Server $server, ServerCommandExecution $execution): RedirectResponse
-    {
+    public function destroy(
+        Server $server,
+        ServerCommandExecution $execution,
+        DeleteServerCommandHistoryAction $deleteHistory,
+    ): RedirectResponse {
         $this->authorize('delete', $server);
         $this->ensureBelongsToServer($execution, $server);
-        $deleted = $server->commandExecutions()
-            ->whereKey($execution->id)
-            ->whereIn('status', ServerCommandExecution::TERMINAL_STATUSES)
-            ->delete();
 
-        return $deleted === 1
+        return $deleteHistory->handle($server, $execution)
             ? back()->with('success', __('Command history record deleted.'))
             : back()->with('info', __('Queued or running commands cannot be deleted.'));
     }

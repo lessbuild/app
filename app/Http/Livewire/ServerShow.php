@@ -3,8 +3,8 @@
 namespace App\Http\Livewire;
 
 use App\Actions\Server\CollectServerLogAction;
+use App\Actions\Server\QueueServerLogRefreshAction;
 use App\Jobs\Server\CollectServerMetricsJob;
-use App\Jobs\Server\RefreshServerLogJob;
 use App\Models\Server;
 use App\Models\ServerLogSnapshot;
 use Illuminate\Contracts\View\View;
@@ -39,27 +39,16 @@ class ServerShow extends Component
      *
      * An inactive server adds a component validation error and queues no collection job.
      */
-    public function refreshLogs(): void
+    public function refreshLogs(QueueServerLogRefreshAction $queueLogRefresh): void
     {
         Gate::authorize('update', $this->server);
-        $this->server->refresh();
         $this->log = $this->selectedLogType();
 
-        if ($this->server->provisioning_status !== Server::STATUS_ACTIVE) {
+        if (! $queueLogRefresh->handle($this->server, $this->log)) {
             $this->addError('logs', __('Logs are only available after provisioning finishes.'));
 
             return;
         }
-
-        $this->server->logSnapshots()->updateOrCreate(
-            ['type' => $this->log],
-            [
-                'status' => ServerLogSnapshot::STATUS_QUEUED,
-                'error' => null,
-            ],
-        );
-
-        RefreshServerLogJob::dispatch($this->server->id, $this->log);
     }
 
     /**

@@ -77,6 +77,21 @@ class ServerLogSnapshotTest extends TestCase
         Queue::assertPushed(RefreshServerLogJob::class, fn (RefreshServerLogJob $job): bool => $job->type === 'apt');
     }
 
+    public function test_inactive_server_cannot_queue_a_log_refresh(): void
+    {
+        Queue::fake();
+        [$user, $server] = $this->server();
+        $server->update(['provisioning_status' => Server::STATUS_FAILED]);
+
+        Livewire::actingAs($user)
+            ->test(ServerShow::class, ['server' => $server])
+            ->call('refreshLogs')
+            ->assertHasErrors('logs');
+
+        $this->assertDatabaseMissing('server_log_snapshots', ['server_id' => $server->id]);
+        Queue::assertNothingPushed();
+    }
+
     public function test_refresh_job_runs_a_fixed_command_and_bounds_the_saved_output(): void
     {
         [, $server] = $this->server();
