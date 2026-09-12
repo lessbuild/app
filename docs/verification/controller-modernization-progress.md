@@ -1392,6 +1392,75 @@ entitlement, plaintext-token flash behavior and no-secret logging—then extract
 the smallest request/action boundaries without changing token serialization or
 feedback.
 
+## Phase 4G — automation token operations
+
+### Responsibility problem
+
+`AutomationController` still validated token creation, decided workspace-owner
+access, normalized duplicate abilities, generated expiry values and directly
+created the credential. Rotation and revocation also performed direct deletes,
+while owner checks and deliberate foreign-token 404 concealment lived in a
+private controller helper. That left credential lifecycle writes outside the
+project's action/policy convention and made the one-time plaintext boundary
+harder to test independently.
+
+### Boundaries applied
+
+- `PersonalAccessTokenPolicy` owns owner-only issuance and the token-owner
+  decisions for rotation/revocation. Its resource denials use
+  `Response::denyAsNotFound()` so unrelated or wrong-morph tokens retain the
+  existing 404 concealment; the class-level create decision retains the
+  existing owner 403 for issuance and rotation.
+- `StorePersonalAccessTokenRequest` owns token name, ability, expiry and
+  one-year default validation. It invokes the policy and retains API
+  entitlement denial before malformed input.
+- `CreatePersonalAccessTokenAction` owns entitlement revalidation, ability
+  de-duplication, expiry calculation and Sanctum token creation.
+  `RotatePersonalAccessTokenAction` owns create-before-revoke replacement with
+  the existing one-year expiry. `RevokePersonalAccessTokenAction` owns the
+  already-authorized delete.
+- The controller now passes validated fields to the creation action, invokes
+  policy abilities for rotate/revoke and flashes the `NewAccessToken` plaintext
+  only in the existing session response. AuthServiceProvider explicitly maps
+  the Sanctum token model to the policy.
+
+This applies single responsibility, policy-based authorization and dependency
+inversion with concrete credential operations. It keeps token lifecycle
+semantics specific rather than introducing a generic account repository.
+
+### Preserved contracts and safety guarantees
+
+- Token routes, redirects, validation keys, default/explicit-null expiry
+  behavior, allowed abilities, duplicate normalization, flash messages and
+  one-time plaintext display remain unchanged.
+- Owner-only create/rotate still returns 403 before malformed input;
+  foreign-owner and wrong-morph tokens still return 404 without mutation.
+  Revocation remains available to the token owner without changing the
+  workspace-owner rule for create/rotate.
+- Rotation still creates the replacement before deleting the old token, keeps
+  matching abilities and uses a one-year expiry. Stored token values remain
+  hashed; plaintext is neither persisted nor logged by the actions.
+- No route, schema, serialized token/API value, dependency lockfile or
+  external integration changed.
+
+### Verification
+
+- Automation, bound-token, API configuration, platform and shared-tenancy
+  regression set: **44 passed, 261 assertions**.
+- Added coverage for default expiry, ability de-duplication, plaintext
+  non-persistence, malformed-input denial ordering, free-plan denial, owned
+  revocation and existing foreign/wrong-morph 404 behavior.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `c87e230` — `refactor: extract automation token operations`
+
+**Phase 4G exit gate: complete.** Exact next task: characterize web and API
+workflow application validation and authorization ordering, then introduce
+separate workflow requests that reuse `WorkflowConfiguration` without changing
+YAML parsing, atomic application, response envelopes or flash messages.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1415,3 +1484,4 @@ feedback.
 | Phase 4D-task-run | Manual scheduled-task execution mixed policy, entitlement, overlap checks, queued-run persistence, timestamp mutation and job dispatch in `AutomationController`. | 43 automation/API/runtime/tenancy/entitlement regression tests passed, 250 assertions; Pint and diff checks passed. | `9c5edf3` — `refactor: extract scheduled task runs` | Extract scheduled-task deletion, then paired deployment/scaling schedule deletion actions, preserving policy ordering and existing responses. |
 | Phase 4E-automation-deletions | Three automation controllers directly deleted scheduled-task, deployment-schedule and scaling-schedule records after authorization. | 45 automation/API/runtime/tenancy/entitlement regression tests passed, 265 assertions; Pint and diff checks passed. | `7ad26fa` — `refactor: extract automation deletion operations` | Characterize web scale and API scale/runtime contracts, then extract only matching runtime transition logic. |
 | Phase 4F-runtime-api | Web/API scale and runtime controllers mixed validation, policy/entitlement ordering, persistence, dispatch and response mapping; API access checks were duplicated. | 53 automation/API/runtime/configuration/tenancy/entitlement/platform tests passed, 334 assertions; Pint and diff checks passed. | `49bd49a` — `refactor: extract runtime operations` | Characterize token creation/rotation/deletion ownership, abilities, expiry, entitlement and plaintext feedback before extracting request/action boundaries. |
+| Phase 4G-automation-tokens | Token creation, rotation and revocation mixed validation, owner checks, hashed credential creation, replacement ordering and direct deletes in `AutomationController`. | 44 automation/token/API/platform/tenancy tests passed, 261 assertions; Pint and diff checks passed. | `c87e230` — `refactor: extract automation token operations` | Characterize web/API workflow validation and authorization ordering before extracting separate workflow requests around `WorkflowConfiguration`. |
