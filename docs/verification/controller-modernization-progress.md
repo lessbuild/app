@@ -3981,6 +3981,63 @@ creation and invitation/access-token protocol behavior before extracting its
 request/data/action boundaries; then handle the higher-risk social OAuth
 callback transitions with their existing session and 2FA ordering.
 
+## Phase 7AG — registration request and account-creation operation
+
+### Responsibility problem
+
+`RegisteredUserController` mixed registration-availability checks, email
+normalization and validation, invitation identity checks/consumption, locked
+bootstrap creation, password hashing, personal-workspace provisioning and
+authentication/verification response coordination.
+
+### Boundary and principles
+
+`RegisterUserRequest` normalizes the email and owns the registration field
+rules. It deliberately skips field rules for a closed/no-invitation path and
+exposes the availability check so the controller can preserve the existing
+registration-closed response before attempting to read validated fields; this
+is a protocol/state ordering exception, not an authorization policy.
+`RegistrationData` carries the validated account fields plus the invitation
+token. `RegisterUserAction` owns synchronized open registration, invitation
+email identity/locked consumption, password hashing and personal-workspace
+provisioning through existing services. The controller retains session
+cleanup, login, `Registered` event dispatch, session regeneration and the
+verification redirect. This applies single responsibility and dependency
+inversion without changing invitation or bootstrap service semantics.
+
+### Preserved guarantees
+
+- Closed registration still redirects before validating malformed fields;
+  open registration retains the same lowercasing, visible rules and password
+  defaults. Invitation email mismatch remains a validation error before token
+  consumption.
+- Invitation acceptance still uses the existing token hash, expiry and locked
+  single-use transaction. Bootstrap creation remains synchronized, and users
+  still receive the same personal workspace before authentication.
+- Invitation session cleanup, authentication, `Registered` verification
+  notification, session regeneration, redirects, error messages, routes,
+  persisted values, serialized jobs, dependency lockfiles and external
+  integrations are unchanged.
+
+### Verification
+
+- Registration/invitation/access-request/social-auth/password-confirmation
+  regression set: **39 passed, 305 assertions**.
+- Added coverage proving closed registration rejects malformed fields before
+  normal validation.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `5ebbccd` — `refactor: extract registration operation`
+
+**Phase 7AG exit gate: complete.** Exact next task: extract the social OAuth
+callback's guest registration/sign-in resolution and authenticated connection
+mutation while preserving provider verification, connection-intent/session
+consumption, identity locks, 2FA handoff, sign-in recording and exact failure
+responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4051,3 +4108,4 @@ callback transitions with their existing session and 2FA ordering.
 | Phase 7AD-password-confirmation | ConfirmablePasswordController mixed local-password state handling, validation, credential verification, confirmation-session mutation and redirect mapping. | 23 password-confirmation/social-auth/rate-limit tests passed, 212 assertions; Pint, syntax and diff checks passed. | `4a2a1fc` — `refactor: extract password confirmation operation` | Characterize registration, password-reset and social OAuth callback writes, preserving invitation/access identity, synchronization, organization provisioning, 2FA handoff, session regeneration and failure responses. |
 | Phase 7AE-password-reset-link | PasswordResetLinkController mixed public email validation, broker dispatch and account-enumeration-safe response mapping. | 8 password-reset privacy/throttling tests passed, 97 assertions; Pint, syntax and diff checks passed. | `4084e46` — `refactor: extract password reset link operation` | Extract token-based password replacement validation and broker operation, preserving invalid-token privacy, password hashing/timestamps, remember-token rotation, activity/event timing, email-only failure input and exact status responses. |
 | Phase 7AF-password-reset | NewPasswordController mixed reset validation, broker callback persistence, password/remember-token updates, security activity/event dispatch and failure mapping. | 25 password-reset/privacy/throttling/account-security tests passed, 215 assertions; Pint, syntax and diff checks passed. | `2089c05` — `refactor: extract password reset operation` | Characterize registration creation and invitation/access-token protocol behavior, then extract its request/data/action boundaries before social OAuth callback transitions. |
+| Phase 7AG-registration | RegisteredUserController mixed availability ordering, registration validation, invitation consumption, synchronized creation, password hashing, workspace provisioning and auth/session coordination. | 39 registration/invitation/social-auth/password-confirmation tests passed, 305 assertions; Pint, syntax and diff checks passed. | `5ebbccd` — `refactor: extract registration operation` | Extract the social OAuth callback's guest resolution and authenticated connection mutation, preserving provider verification, session intent, identity locks, 2FA handoff, sign-in recording and failure responses. |
