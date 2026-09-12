@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ProductFeedback\CreateProductFeedbackAction;
+use App\Actions\ProductFeedback\DeleteProductFeedbackAction;
+use App\Actions\ProductFeedback\UpdateProductFeedbackAction;
+use App\Http\Requests\StoreProductFeedbackRequest;
+use App\Http\Requests\UpdateProductFeedbackRequest;
 use App\Models\ProductFeedback;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProductFeedbackController extends Controller
@@ -16,7 +20,7 @@ class ProductFeedbackController extends Controller
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
-        $canReview = $organization->permits($request->user(), 'manage');
+        $canReview = $request->user()->can('reviewAny', ProductFeedback::class);
         $status = in_array($request->query('status'), ProductFeedback::STATUSES, true) ? $request->query('status') : null;
         $category = in_array($request->query('category'), ProductFeedback::CATEGORIES, true) ? $request->query('category') : null;
         $feedback = ProductFeedback::query()->where('organization_id', $organization->id)
@@ -31,17 +35,9 @@ class ProductFeedbackController extends Controller
     /**
      * Validate feedback category, severity, description, and optional reproduction context, then save it privately.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreProductFeedbackRequest $request, CreateProductFeedbackAction $createFeedback): RedirectResponse
     {
-        $data = $request->validate([
-            'category' => ['required', Rule::in(ProductFeedback::CATEGORIES)],
-            'severity' => ['required', Rule::in(ProductFeedback::SEVERITIES)],
-            'title' => ['required', 'string', 'max:160'],
-            'description' => ['required', 'string', 'max:10000'],
-            'reproduction_steps' => ['nullable', 'string', 'max:10000'],
-            'page' => ['nullable', 'string', 'max:500', 'regex:/\A\/(?!\/)[^?#\r\n]*\z/'],
-        ]);
-        $request->user()->currentOrganization->productFeedback()->create([...$data, 'user_id' => $request->user()->id, 'status' => 'open']);
+        $createFeedback->handle($request->user()->currentOrganization, $request->user(), $request->validated());
 
         return back()->with('success', __('Feedback submitted privately to your workspace.'));
     }
@@ -49,12 +45,9 @@ class ProductFeedbackController extends Controller
     /**
      * Require workspace management access and save the review status and response before redirecting back.
      */
-    public function update(Request $request, ProductFeedback $feedback): RedirectResponse
+    public function update(UpdateProductFeedbackRequest $request, ProductFeedback $feedback, UpdateProductFeedbackAction $updateFeedback): RedirectResponse
     {
-        $organization = $request->user()->currentOrganization;
-        abort_unless($feedback->organization_id === $organization->id && $organization->permits($request->user(), 'manage'), 403);
-        $data = $request->validate(['status' => ['required', Rule::in(ProductFeedback::STATUSES)], 'review_response' => ['nullable', 'string', 'max:10000']]);
-        $feedback->update([...$data, 'reviewed_by' => $request->user()->id, 'resolved_at' => in_array($data['status'], ['resolved', 'closed'], true) ? ($feedback->resolved_at ?? now()) : null]);
+        $updateFeedback->handle($feedback, $request->user(), $request->validated());
 
         return back()->with('success', __('Feedback review updated.'));
     }
@@ -62,11 +55,10 @@ class ProductFeedbackController extends Controller
     /**
      * Delete current-workspace feedback belonging to the user or managed by them, then redirect back.
      */
-    public function destroy(Request $request, ProductFeedback $feedback): RedirectResponse
+    public function destroy(Request $request, ProductFeedback $feedback, DeleteProductFeedbackAction $deleteFeedback): RedirectResponse
     {
-        abort_unless($feedback->organization_id === $request->user()->current_organization_id
-            && ($feedback->user_id === $request->user()->id || $feedback->organization->permits($request->user(), 'manage')), 403);
-        $feedback->delete();
+        $this->authorize('delete', $feedback);
+        $deleteFeedback->handle($feedback);
 
         return back()->with('success', __('Feedback removed.'));
     }

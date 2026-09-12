@@ -58,6 +58,44 @@ class ProductFeedbackTest extends TestCase
         $this->assertSame($owner->id, $feedback->reviewed_by);
     }
 
+    public function test_review_denial_precedes_validation_and_does_not_write(): void
+    {
+        $owner = User::factory()->create();
+        $feedback = $owner->currentOrganization->productFeedback()->create([
+            'user_id' => $owner->id, 'category' => 'bug', 'severity' => 'high', 'status' => 'open',
+            'title' => 'Unchanged report', 'description' => 'The original description.',
+        ]);
+        $member = User::factory()->create();
+        $owner->currentOrganization->members()->attach($member, ['role' => 'developer']);
+        $member->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($member)->patch(route('feedback.update', $feedback), [
+            'status' => 'not-a-status',
+            'review_response' => str_repeat('x', 10001),
+        ])->assertForbidden();
+
+        $this->assertSame('open', $feedback->fresh()->status);
+        $this->assertNull($feedback->fresh()->reviewed_by);
+    }
+
+    public function test_submitter_can_delete_feedback_but_foreign_workspace_cannot(): void
+    {
+        $owner = User::factory()->create();
+        $feedback = $owner->currentOrganization->productFeedback()->create([
+            'user_id' => $owner->id, 'category' => 'idea', 'severity' => 'low', 'status' => 'open',
+            'title' => 'Removable report', 'description' => 'Remove this report.',
+        ]);
+        $outsider = User::factory()->create();
+
+        $this->actingAs($outsider)->delete(route('feedback.destroy', $feedback))->assertForbidden();
+        $this->assertDatabaseHas('product_feedback', ['id' => $feedback->id]);
+
+        $this->actingAs($owner)->delete(route('feedback.destroy', $feedback))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Feedback removed.');
+        $this->assertDatabaseMissing('product_feedback', ['id' => $feedback->id]);
+    }
+
     public function test_feedback_rejects_external_context_and_secret_sized_payloads(): void
     {
         $owner = User::factory()->create();
