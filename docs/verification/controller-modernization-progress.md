@@ -3030,6 +3030,55 @@ access-request intake boundary, preserving honeypot no-op behavior, normalized
 email deduplication, pending-only updates, encrypted persistence and applicant
 and administrator notification timing.
 
+## Phase 7N — public access-request intake boundary
+
+### Responsibility problem
+
+AccessRequestController mixed public registration availability checks, honeypot
+handling, applicant validation and normalization, email deduplication, pending
+record updates, encrypted persistence and notification delivery.
+
+### Boundary and principles
+
+StoreAccessRequestRequest now owns the applicant rules and normalization, with
+an explicit Laravel lifecycle exception to preserve the existing pre-validation
+redirect for open registration and successful honeypot no-ops. The request's
+applicant accessor exposes only validated fields. SubmitAccessRequestAction owns
+deduplication, pending-only updates and applicant/administrator notifications;
+the controller retains the public response and honeypot redirect. This applies
+single responsibility and dependency inversion without changing anonymous
+registration semantics.
+
+### Preserved guarantees
+
+- Open registration still redirects to account creation before validating the
+  access form; closed-registration validation keeps its existing keys and
+  errors.
+- Honeypot submissions remain successful no-ops without persistence or
+  notification side effects.
+- Email lowercasing, trimming, SHA-256 deduplication, encrypted fields,
+  pending-only replacement and accepted/declined decision preservation remain
+  unchanged.
+- New-record applicant/admin notifications retain their recipients, types and
+  timing; duplicate and decided requests remain non-disclosing.
+
+### Verification
+
+- Public and administration access-request regression set: **13 passed, 97
+  assertions**.
+- Targeted Pint test and git diff --check passed on the isolated test
+  configuration using in-memory SQLite, array cache/session and sync queue.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: fa31c24 — refactor: extract access request intake operation
+
+**Phase 7N exit gate: complete.** Exact next task: extract notification inbox
+filter normalization/query/export responsibilities and notification state
+operations, preserving ownership concealment, bulk counts, saved preferences,
+CSV payload redaction and redirect messages.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3081,3 +3130,4 @@ and administrator notification timing.
 | Phase 7K-gallery-query | RecipeGalleryController mixed filter normalization, published-gallery scope composition and aggregate metrics with HTTP response orchestration. | 40 gallery/favorite/rating/report/history tests passed, 478 assertions; Pint and diff checks passed. | `b3985f2` — `refactor: extract gallery inventory queries` | Audit remaining feedback and access-administration controllers for direct writes, inline validation, permission guards, named error bags and notification/history side effects. |
 | Phase 7L-product-feedback | ProductFeedbackController mixed validation, workspace-role/ownership checks and encrypted feedback writes. | 5 product-feedback authorization/validation/persistence tests passed, 31 assertions; Pint and diff checks passed. | `0aabe54` — `refactor: extract product feedback operations` | Extract platform access-request administration, preserving platform-admin denial, accepted-request immutability, invitation token lifecycle, notification timing and CSV output. |
 | Phase 7M-access-review | AdminAccessRequestController mixed platform-admin authorization, review validation, accepted-state invariants, invitation mutation and notification dispatch. | 13 access-request/invitation administration tests passed, 97 assertions; Pint and diff checks passed. | `b4905c5` — `refactor: extract access request review operation` | Extract public access-request intake, preserving honeypot no-op behavior, normalized email deduplication, pending-only updates, encrypted persistence and notification timing. |
+| Phase 7N-access-intake | AccessRequestController mixed registration availability, honeypot handling, applicant validation/normalization, deduplication, encrypted persistence and notifications. | 13 public/administration access-request tests passed, 97 assertions; Pint and diff checks passed. | `fa31c24` — `refactor: extract access request intake operation` | Extract notification inbox filters/query/export and state operations, preserving ownership concealment, bulk counts, saved preferences, payload redaction and redirects. |
