@@ -1114,6 +1114,59 @@ distinct replica-bound validation, then extract a separate request/action
 while preserving the `scheduled_scaling` entitlement and no-write denial
 behavior.
 
+## Phase 4B — scaling schedule operation
+
+### Responsibility problem
+
+`AutomationController::scalingSchedule` duplicated the deployment schedule's
+HTTP concerns while adding environment-specific replica bounds. It performed
+policy authorization, entitlement enforcement, two-stage schedule/replica
+validation, persistence and creator attribution in one method.
+
+### Boundaries applied
+
+- `StoreScalingScheduleRequest` owns environment-policy authorization, the
+  `scheduled_scaling` entitlement ordering, cron/timezone validation and
+  replica validation against the bound environment's current minimum and
+  maximum values.
+- `CreateScalingScheduleAction` injects `Entitlements`, rechecks the feature
+  for non-HTTP callers, and owns enabled scaling-schedule persistence and actor
+  attribution.
+- `AutomationController` now passes validated input to the action. The API
+  runtime scaling endpoint remains a separate contract because it accepts a
+  replica count and returns a JSON 202 envelope rather than creating a schedule.
+
+This applies single responsibility, interface discipline through distinct
+request contracts and dependency inversion without sharing abstractions where
+the web schedule and API runtime semantics differ.
+
+### Preserved contracts and safety guarantees
+
+- Scaling-schedule routes, redirects, status codes, flash text, validation keys,
+  cron/timezone rules, enabled defaults and `created_by` values are unchanged.
+- Policy denial still precedes entitlement and malformed input; the free-plan
+  entitlement denial still precedes validation and creates no schedule.
+- Replica values remain bounded by the environment's persisted minimum and
+  maximum. Scheduled-run claiming and `ApplyEnvironmentRuntimeStateJob`
+  behavior are untouched.
+
+### Verification
+
+- Automation, API, workflow, runtime, tenancy and entitlement regression set:
+  **38 passed, 231 assertions**.
+- Added valid bounded schedule, out-of-range replica, viewer-denial/no-write
+  and free-plan/no-write tests.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `b4323c2` — `refactor: extract scaling schedule operation`
+
+Exact next task: characterize scheduled-task creation, manual run overlap
+guards, encrypted command handling, task deletion and output authorization;
+then extract the smallest scheduled-task request/action while preserving its
+run and job semantics.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1132,3 +1185,4 @@ behavior.
 | Phase 3F-website | Website creation, runtime-log writes, retention, placement-cleanup state and health dispatch remained in `WebsitesController`; `WebsiteRequest` duplicated deploy permission. | 55 website/observability/relocation/deletion/tenancy/entitlement tests passed, 563 assertions; Pint and diff checks passed. | `a35360a` — `refactor: extract website operations` | Characterize and extract remaining server/website import assessment and import-write operations, preserving session token, expiry, locks, probes, encryption and activity timing. |
 | Phase 3G-imports | Server and website import controllers mixed protocol validation, remote inspection/probes, assessment/website persistence, plan limits and activity side effects; import requests duplicated deploy permission. | 82 import/server/website/infrastructure regression tests passed, 694 assertions; Pint and diff checks passed. | `70f2d57` — `refactor: extract import operations` | Inventory AutomationController and API/V1/ControlPlaneController schedule, workflow, runtime and token contracts, then extract the smallest schedule operation with separate web/API request boundaries. |
 | Phase 4A-deployment-schedule | Deployment-schedule creation mixed policy, entitlement ordering, cron validation and persistence in `AutomationController`; API has no separate schedule-create route and continues to use workflow YAML for that contract. | 36 automation/API/runtime/tenancy/entitlement/configuration regression tests passed, 247 assertions; Pint and diff checks passed. | `936fa7c` — `refactor: extract deployment schedule operation` | Characterize scaling-schedule replica bounds and scheduled-scaling entitlement, then extract its separate request/action and no-write denial tests. |
+| Phase 4B-scaling-schedule | Scaling-schedule creation mixed policy, entitlement ordering, cron/timezone validation, environment replica bounds and persistence in `AutomationController`; API runtime scaling remains a distinct JSON operation. | 38 automation/API/runtime/tenancy/entitlement regression tests passed, 231 assertions; Pint and diff checks passed. | `b4323c2` — `refactor: extract scaling schedule operation` | Characterize scheduled-task creation, overlap guards, encrypted commands, deletion and output authorization, then extract its request/action boundary. |
