@@ -3835,6 +3835,58 @@ confirmation and authentication callback writes, preserving protocol ordering,
 session timestamps, OAuth/SSO state checks and exact validation/response
 behavior before extracting the next cohesive boundary.
 
+## Phase 7AD — password confirmation request and operation
+
+### Responsibility problem
+
+`ConfirmablePasswordController` mixed the local-password state redirect,
+password validation, direct auth-guard credential checking, confirmation-session
+mutation and intended redirect mapping.
+
+### Boundary and principles
+
+`ConfirmPasswordRequest` owns the password rules for local accounts while
+deliberately returning no rules for social-only accounts so the controller can
+preserve their existing account-settings redirect before validation. Its
+validated accessor prevents unrestricted request input from crossing the HTTP
+boundary. `ConfirmPasswordAction` owns credential verification and the
+`auth.password_confirmed_at` session timestamp; `AccountAuthentication` wraps
+the existing web-guard validation. The controller retains only the
+state-specific response and intended redirect. This applies single
+responsibility and dependency inversion without turning a protocol/state guard
+into a policy.
+
+### Preserved guarantees
+
+- Local accounts still require a string password, receive the same
+  `auth.password` validation error, and store the same integer confirmation
+  timestamp in the session.
+- Social-only accounts still bypass local-password confirmation and redirect to
+  account settings with the existing `social_error`, including POSTs with
+  missing input. Unauthenticated routes retain their existing middleware
+  redirects.
+- Password-confirmation middleware, OAuth connection intent, intended redirect,
+  routes, session keys, response messages, persisted values, serialized jobs and
+  dependency lockfiles are unchanged.
+
+### Verification
+
+- Password-confirmation/social-auth/rate-limit regression set: **23 passed,
+  212 assertions**.
+- Added coverage for social-only POST ordering and retained wrong-password,
+  successful timestamp, expiry and unauthenticated-route behavior.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `4a2a1fc` — `refactor: extract password confirmation operation`
+
+**Phase 7AD exit gate: complete.** Exact next task: characterize registration,
+password-reset and social OAuth callback writes, including invitation/access
+token identity, synchronized creation, organization provisioning, two-factor
+handoff, session regeneration and exact failure responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3902,3 +3954,4 @@ behavior before extracting the next cohesive boundary.
 | Phase 7AA-two-factor-recovery | TwoFactorAuthenticationController mixed enabled-state ordering, conditional challenge validation, non-consuming verification, recovery replacement and plaintext flashing. | 31 two-factor/authentication/security/rate-limit tests passed, 245 assertions; Pint, syntax and diff checks passed. | `3216aa9` — `refactor: extract two-factor recovery code operation` | Characterize remaining account/security controllers and requests, including account deletion, sign-in history clearing, password confirmation, callbacks and direct writes, before the next cohesive extraction. |
 | Phase 7AB-sign-in-history-clear | SignInHistoryController mixed `signIns` validation, owner-scoped deletion, transactional activity, count/empty-state mapping and redirect response. | 16 sign-in history/recorder/account-security/rate-limit tests passed, 179 assertions; Pint, syntax and diff checks passed. | `10e1d02` — `refactor: extract sign-in history clearing` | Extract account deletion validation and lifecycle orchestration, preserving `deleteAccount`, password/2FA ordering, safeguards, cleanup transaction, session invalidation and exact responses. |
 | Phase 7AC-account-deletion | AccountDeletionController mixed dynamic security validation, account/workspace safety guards, cleanup transaction, logout and session invalidation. | 7 account-lifecycle tests passed, 48 assertions; adjacent account/security set 48/360; Pint, syntax and diff checks passed. | `326c938` — `refactor: extract account deletion operation` | Characterize password confirmation and authentication callback writes, preserving protocol ordering, session timestamps, OAuth/SSO state checks and exact validation/response behavior. |
+| Phase 7AD-password-confirmation | ConfirmablePasswordController mixed local-password state handling, validation, credential verification, confirmation-session mutation and redirect mapping. | 23 password-confirmation/social-auth/rate-limit tests passed, 212 assertions; Pint, syntax and diff checks passed. | `4a2a1fc` — `refactor: extract password confirmation operation` | Characterize registration, password-reset and social OAuth callback writes, preserving invitation/access identity, synchronization, organization provisioning, 2FA handoff, session regeneration and failure responses. |
