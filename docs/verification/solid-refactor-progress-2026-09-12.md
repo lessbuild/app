@@ -325,6 +325,29 @@ Verification after the slice:
 - With `DB_CONNECTION=sqlite DB_DATABASE=:memory: CACHE_STORE=array CACHE_DRIVER=array SESSION_DRIVER=array QUEUE_CONNECTION=sync`, the report regression classes passed separately: `RecipeReportTest` 14 (168 assertions), `RecipeFeedbackInboxTest` 22 (211), `RecipeReportHistoryTest` 7 (112), and `RecipeReportNotificationTest` 17 (117), for 60 passed (608 assertions).
 - PHP syntax checks, Pint and `git diff --check`: passed.
 
+## Phase 3A — report withdrawal action slice
+
+Responsibility problem: `RecipeReportsController::destroy()` still combined the reporter-scoped locked lookup, notification cleanup, deletion and audit recording with HTTP response coordination.
+
+Boundary used: `WithdrawRecipeReportAction` now owns the atomic withdrawal operation and receives the recipe and reporter explicitly. It reuses `RecipeReportLocks` and injected notification/activity collaborators; the controller only supplies the authenticated route models and returns the existing flash response.
+
+Preserved guarantees:
+
+- Recipe/report lock order, reporter scoping, notification deletion before report deletion, cascade-safe behavior, audit wording/timing and transaction rollback remain unchanged.
+- Unpublished-report withdrawal, authentication behavior, route names, response status and flash text remain unchanged.
+
+Verification after the slice:
+
+- `RecipeReportTest`: 14 passed (168 assertions).
+- `RecipeReportNotificationTest`: 17 passed (117 assertions), including withdrawal and rollback coverage.
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
+## Phase 3A — recipe-reports exit review
+
+Recipe Reports now has explicit query, export, validation, lock and mutation boundaries. The controller retains HTTP filter normalization, immediate relationship guards and response/flash mapping; extracted actions own cohesive transactions and continue to use the existing notifier/activity services. No generic repository, provider-style interface or speculative report abstraction was added.
+
+The local report regression gates are green when run with the isolated PHPUnit-style in-memory database and array cache. The earlier aggregate failures caused by the cached disposable file and shared rate limiter are documented above; no production or acceptance-drill checkout was used. Live paid-provider acceptance remains outstanding and is unrelated to this slice.
+
 ## Next task
 
-Extract the reporter's withdraw operation into a cohesive action using `RecipeReportLocks`, preserving recipe/report locks, notification deletion, cascade safety, activity timing and rollback behavior.
+Begin Phase 3B: map `WebsitesController` and its existing `app/Actions/Web`, placement, relocation, retry, deletion, encrypted-environment, inventory and export responsibilities before selecting the smallest justified extraction.

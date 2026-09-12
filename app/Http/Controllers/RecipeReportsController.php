@@ -8,21 +8,19 @@ use App\Actions\Recipe\ResolveRecipeReportAction;
 use App\Actions\Recipe\ResolveRecipeReportsAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
+use App\Actions\Recipe\WithdrawRecipeReportAction;
 use App\Http\Requests\RecipeReportResolutionRequest;
 use App\Http\Requests\ReopenRecipeReportsRequest;
 use App\Http\Requests\ResolveRecipeReportsRequest;
 use App\Http\Requests\StoreRecipeReportRequest;
 use App\Models\Recipe;
 use App\Models\RecipeReport;
-use App\Services\ActivityRecorder;
 use App\Services\RecipeReportHistoryExporter;
 use App\Services\RecipeReportInboxExporter;
-use App\Services\RecipeReportNotifier;
 use App\Services\RecipeReportQuery;
 use App\Support\DateRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -244,23 +242,9 @@ class RecipeReportsController extends Controller
     /**
      * Withdraw the request user's report for the bound recipe under a lock and remove its notifications before redirecting back.
      */
-    public function destroy(Request $request, Recipe $recipe, ActivityRecorder $activity, RecipeReportNotifier $notifications): RedirectResponse
+    public function destroy(Request $request, Recipe $recipe, WithdrawRecipeReportAction $withdrawReport): RedirectResponse
     {
-        DB::transaction(function () use ($activity, $notifications, $recipe, $request): void {
-            $lockedRecipe = $this->lockedRecipe($recipe->id);
-            $lockedReport = $request->user()->recipeReports()
-                ->where('recipe_id', $lockedRecipe->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-            $notifications->forget($lockedRecipe, $lockedReport);
-            $lockedReport->delete();
-            $activity->record(
-                $lockedRecipe,
-                $request->user()->id,
-                'recipe',
-                "Gallery recipe \"{$lockedRecipe->name}\" report was withdrawn.",
-            );
-        });
+        $withdrawReport->handle($recipe, $request->user());
 
         return back()->with('status', __('Your gallery report was withdrawn.'));
     }
@@ -337,17 +321,5 @@ class RecipeReportsController extends Controller
             'reason' => in_array($reason, RecipeReport::REASONS, true) ? $reason : null,
             'sort' => in_array($sort, ['newest', 'oldest', 'updated'], true) ? $sort : 'newest',
         ];
-    }
-
-    /**
-     * Load a recipe by ID under a transaction lock, taking a SQLite write lock when needed; missing IDs return 404.
-     */
-    private function lockedRecipe(int $recipeId): Recipe
-    {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
-        }
-
-        return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
     }
 }
