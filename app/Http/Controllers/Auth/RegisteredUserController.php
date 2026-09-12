@@ -2,18 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Account\RegisterUserAction;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Http\Requests\RegisterUserRequest;
 use App\Services\AccessInvitation;
-use App\Services\PersonalOrganization;
 use App\Services\RegistrationAccess;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -52,48 +49,19 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request, RegistrationAccess $registration, PersonalOrganization $organizations, AccessInvitation $invitations): RedirectResponse
+    public function store(RegisterUserRequest $request, RegisterUserAction $register): RedirectResponse
     {
-        $invitationToken = (string) $request->input('invite');
-        $invitation = $invitations->find($invitationToken);
-        if (! $registration->allowsNewUser() && ! $invitation) {
+        if (! $request->registrationIsAvailable()) {
             return $this->closedResponse();
         }
 
-        $request->merge([
-            'email' => Str::lower((string) $request->input('email')),
-        ]);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::defaults()],
-        ]);
-
-        if ($invitation && ! hash_equals($invitation->email, $validated['email'])) {
-            throw ValidationException::withMessages(['email' => __('Use the email address that received this invitation.')]);
-        }
-
-        $createUser = fn (): User => User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'password_set_at' => now(),
-        ]);
-
-        $user = $invitation
-            ? $invitations->consume($invitationToken, fn ($lockedInvitation) => hash_equals($lockedInvitation->email, $validated['email']) ? $createUser() : null)
-            : $registration->synchronized(function () use ($registration, $createUser): ?User {
-                return $registration->allowsNewUser() ? $createUser() : null;
-            });
+        $user = $register->handle($request->registrationData());
 
         if (! $user) {
             return $this->closedResponse();
         }
 
         $request->session()->forget('access_invitation_token');
-
-        $organizations->ensure($user);
 
         Auth::login($user);
 

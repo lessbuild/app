@@ -78,6 +78,22 @@ class RegistrationTest extends TestCase
             ->assertSee('Sign in');
     }
 
+    public function test_closed_registration_rejects_before_validating_submitted_fields(): void
+    {
+        User::factory()->create();
+
+        $this->from(route('register'))->post(route('register'), [
+            'name' => '',
+            'email' => 'not-an-email',
+            'password' => 'short',
+            'password_confirmation' => 'different',
+        ])->assertRedirect(route('login'))
+            ->assertSessionHasErrors('registration')
+            ->assertSessionDoesntHaveErrors(['name', 'email', 'password']);
+
+        $this->assertDatabaseCount('users', 1);
+    }
+
     public function test_operator_can_explicitly_enable_additional_registration(): void
     {
         Notification::fake();
