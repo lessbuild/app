@@ -4425,6 +4425,64 @@ callbacks, then extract only protocol-safe operations while preserving
 signature/payload ordering, stale-attempt outcomes, transaction boundaries and
 after-commit effects.
 
+## Phase 7AO — build callback operations
+
+### Responsibility problem
+
+`BuildCallbackController` still mixed Form Request-equivalent validation,
+locked build status/failure transitions, preview reconciliation, automatic
+rollback coordination and direct persistence. Its log endpoint was different:
+it deliberately validates only after locking and rejecting terminal builds.
+
+### Boundary and principles
+
+`BuildStatusCallbackRequest` and `BuildFailureCallbackRequest` now own the
+status/failure input rules and explicit typed accessors. `RecordBuildStatusAction`
+owns the locked monotonic status transition and post-transaction preview
+reconciliation. `RecordBuildFailureAction` owns the locked failure transition,
+then invokes preview reconciliation followed by automatic rollback in the same
+order as before. The controller coordinates those requests/actions and retains
+the log callback because its validation ordering is part of the stale-callback
+contract. This applies single responsibility, dependency inversion and Laravel
+Form Request/action boundaries without creating a generic callback framework.
+
+### Preserved guarantees
+
+- Signed middleware remains the protocol authorization. Status bounds continue
+  to use the current deployment plan, and string status values are converted to
+  the same integer before persistence.
+- Build locks, active-state checks, monotonic repository/build stages,
+  activation/completion timestamps, remote-process cleanup, heartbeat,
+  transaction behavior, stale/terminal no-ops and response status remain
+  unchanged.
+- Failure messages retain the optional exit-code suffix and the existing
+  2,000-character bound. Preview completion runs after the transaction and
+  automatic rollback is evaluated afterward, preserving failure behavior.
+- Build log validation remains inside the lock after the terminal check, so a
+  late malformed callback still receives the existing no-op behavior for a
+  terminal build. Server and website callbacks remain unextracted for the same
+  ordering reason.
+- No routes, persisted values, serialized jobs, provider behavior, dependency
+  lockfiles or external acceptance state changed.
+
+### Verification
+
+- Repository deployment, deployment log, preview, callback integrity,
+  provisioning concurrency, cancellation, watchdog, revision attestation and
+  rollback regression set: **68 passed, 549 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `bb30e43` — `refactor: extract build callback operations`
+
+**Phase 7AO exit gate: complete.** Exact next task: characterize the raw-body
+GitHub App webhook and server/website callback contracts in detail, then choose
+the smallest protocol-safe extraction that preserves signature verification,
+validation-after-lock ordering, stale-attempt outcomes, transaction semantics
+and website after-commit cleanup.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4503,3 +4561,4 @@ after-commit effects.
 | Phase 7AL-github-app-installation | GitHubAppController mixed current-workspace manager authorization, callback validation, one-time state, remote discovery, account labeling and direct provider upsert; picker scope retained deliberate 404 concealment. | 29 GitHub App/platform-expansion/shared-tenancy/provider inventory/history tests passed, 227 assertions; Pint, syntax and diff checks passed. | `196e3a8` — `refactor: extract GitHub App installation operation` | Characterize enterprise SSO entitlement, validation, state/PKCE consumption, remote verification, sanitized failures and session marking. |
 | Phase 7AM-enterprise-sso | EnterpriseSsoController/EnterpriseOidc mixed entitlement, callback validation, OIDC state/PKCE exchange, identity/domain checks, remote failure mapping and verified-session marking. | 35 enterprise SSO/platform-expansion/organization-management/shared-tenancy tests passed, 186 assertions; Pint, syntax and diff checks passed. | `53ff5d3` — `refactor: extract enterprise SSO verification` | Inventory remaining GitHub App webhook and provisioning callbacks plus OAuth/SSO protocol handlers, preserving verifier and stale-attempt ordering. |
 | Phase 7AN-build-revision | BuildRevisionCallbackController mixed signed callback validation with an already-extracted lock-aware revision action. | 47 build-revision/callback-integrity/concurrency/repository-webhook/GitHub-App tests passed, 373 assertions; Pint, syntax and diff checks passed. | `0512e65` — `refactor: extract build revision callback request` | Characterize raw-body GitHub App webhook and locked server/website/build status/failure/log callbacks, preserving protocol and stale-attempt ordering. |
+| Phase 7AO-build-callbacks | BuildCallbackController mixed status/failure validation, locked persistence, preview reconciliation and automatic rollback; lock-sensitive log validation remained inline. | 68 repository-deployment/log/preview/callback-integrity/concurrency/cancellation/watchdog/revision/rollback tests passed, 549 assertions; Pint, syntax and diff checks passed. | `bb30e43` — `refactor: extract build callback operations` | Characterize raw-body GitHub App webhook and server/website callback contracts, preserving signature and validation-after-lock ordering before the next protocol-safe extraction. |
