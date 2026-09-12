@@ -4,20 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Recipe;
 use App\Models\RecipeReport;
-use App\Models\User;
 use App\Services\ActivityRecorder;
 use App\Services\RecipeReportNotifier;
+use App\Services\RecipeReportQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
-use App\Support\SqlLike;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Notifications\DatabaseNotification;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -25,14 +18,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecipeReportsController extends Controller
 {
+    public function __construct(private readonly RecipeReportQuery $reportQuery) {}
+
     /**
      * Render the request user's filtered recipe reports with pagination, availability counts, and unread report updates.
      */
     public function mine(Request $request): View
     {
         $filters = $this->reporterFilters($request);
-        $query = $this->reportsForReporter($request, $filters);
-        $reports = $this->orderedReporterReports(
+        $query = $this->reportQuery->forReporter($request->user(), $filters);
+        $reports = $this->reportQuery->orderedReporter(
             (clone $query)
                 ->select(['id', 'user_id', 'recipe_id', 'reason', 'resolved_at', 'created_at', 'updated_at'])
                 ->with('recipe:id,name,category,is_published,published_at'),
@@ -43,7 +38,7 @@ class RecipeReportsController extends Controller
 
         return view('scenes.gallery.my-reports', [
             'reports' => $reports,
-            'unreadUpdates' => $this->unreadReportUpdates($request, $reports->getCollection()->modelKeys()),
+            'unreadUpdates' => $this->reportQuery->unread($request->user(), $reports->getCollection()->modelKeys()),
             'filters' => $filters,
             'metrics' => [
                 'matching' => (clone $query)->count(),
@@ -54,7 +49,7 @@ class RecipeReportsController extends Controller
                         ->where('is_published', false)
                         ->orWhereNull('published_at')))
                     ->count(),
-                'unread_updates' => $this->unreadReportUpdateQuery($request)->count(),
+                'unread_updates' => $this->reportQuery->unreadUpdates($request->user())->count(),
             ],
         ]);
     }
@@ -64,7 +59,7 @@ class RecipeReportsController extends Controller
      */
     public function reviewUpdates(Request $request): RedirectResponse
     {
-        $reviewed = $this->unreadReportUpdateQuery($request)->update(['read_at' => now()]);
+        $reviewed = $this->reportQuery->unreadUpdates($request->user())->update(['read_at' => now()]);
 
         return back()->with('status', $reviewed > 0
             ? trans_choice(':count report update was marked as reviewed.|:count report updates were marked as reviewed.', $reviewed, ['count' => $reviewed])
@@ -101,8 +96,8 @@ class RecipeReportsController extends Controller
                 'Updated at',
             ], ',', '"', '');
 
-            $this->orderedReporterReports(
-                $this->reportsForReporter($request, $filters)
+            $this->reportQuery->orderedReporter(
+                $this->reportQuery->forReporter($request->user(), $filters)
                     ->select([
                         'id',
                         'user_id',
@@ -155,7 +150,7 @@ class RecipeReportsController extends Controller
 
         return view('scenes.gallery.report-status', [
             'report' => $report,
-            'unreadUpdate' => $this->unreadReportUpdates($request, [$report->id])->get($report->id),
+            'unreadUpdate' => $this->reportQuery->unread($request->user(), [$report->id])->get($report->id),
         ]);
     }
 
@@ -165,10 +160,10 @@ class RecipeReportsController extends Controller
     public function index(Request $request): View
     {
         $filters = $this->filters($request);
-        $query = $this->reportsForContributor($request, $filters);
+        $query = $this->reportQuery->forContributor($request->user(), $filters);
 
         return view('scenes.gallery.reports', [
-            'reports' => $this->orderedReports(
+            'reports' => $this->reportQuery->ordered(
                 (clone $query)
                     ->select(['id', 'recipe_id', 'reason', 'details', 'resolved_at', 'resolution_note', 'created_at', 'updated_at'])
                     ->with('recipe:id,user_id,name,category,is_published,published_at'),
@@ -215,8 +210,8 @@ class RecipeReportsController extends Controller
                 'Resolution note',
             ], ',', '"', '');
 
-            $this->orderedReports(
-                $this->reportsForContributor($request, $filters)
+            $this->reportQuery->ordered(
+                $this->reportQuery->forContributor($request->user(), $filters)
                     ->select(['id', 'recipe_id', 'reason', 'details', 'resolved_at', 'resolution_note', 'created_at', 'updated_at'])
                     ->with('recipe:id,name,category'),
                 $filters,
@@ -607,62 +602,6 @@ class RecipeReportsController extends Controller
         ];
     }
 
-    /** @param array{search: ?string, status: string, reason: ?string, date_from: ?string, date_to: ?string, age: ?string, sort: string, recipe: ?int, report: ?int} $filters */
-    private function reportsForContributor(Request $request, array $filters): Builder
-    {
-        return RecipeReport::query()
-            ->whereHas('recipe', fn ($query) => $query
-                ->where('user_id', $request->user()->id)
-                ->when($filters['search'], fn ($query, string $search) => $query
-                    ->whereRaw("name LIKE ? ESCAPE '!'", [SqlLike::contains($search)])))
-            ->when($filters['status'] === 'unresolved', fn ($query) => $query->whereNull('resolved_at'))
-            ->when($filters['status'] === 'resolved', fn ($query) => $query->whereNotNull('resolved_at'))
-            ->when($filters['reason'], fn ($query, string $reason) => $query->where('reason', $reason))
-            ->when($filters['date_from'], fn ($query, string $date) => $query->whereDate('created_at', '>=', $date))
-            ->when($filters['date_to'], fn ($query, string $date) => $query->whereDate('created_at', '<=', $date))
-            ->when($filters['age'], fn ($query, string $age) => $query->where('created_at', '<=', match ($age) {
-                '24h' => now()->subDay(),
-                '7d' => now()->subDays(7),
-                '30d' => now()->subDays(30),
-            }))
-            ->when($filters['recipe'], fn ($query, int $recipeId) => $query->where('recipe_id', $recipeId))
-            ->when($filters['report'], fn ($query, int $reportId) => $query->whereKey($reportId));
-    }
-
-    /** @param array{search: ?string, status: string, reason: ?string, date_from: ?string, date_to: ?string, age: ?string, sort: string, recipe: ?int, report: ?int} $filters */
-    private function orderedReports(Builder $query, array $filters): Builder
-    {
-        $query->orderByRaw('resolved_at IS NULL DESC');
-
-        return match ($filters['sort']) {
-            'oldest' => $query->oldest('created_at')->oldest('id'),
-            'updated' => $query->latest('updated_at')->latest('id'),
-            'priority' => $this->orderReportsByPriority($query),
-            default => $query->latest('created_at')->latest('id'),
-        };
-    }
-
-    /**
-     * Order the supplied report query by configured reason priority, then newest report and ID.
-     *
-     * @param  Builder<RecipeReport>  $query  The already-scoped report query.
-     * @return Builder<RecipeReport> The same builder with deterministic priority ordering.
-     */
-    private function orderReportsByPriority(Builder $query): Builder
-    {
-        $cases = collect(RecipeReport::REASONS)
-            ->map(fn (string $reason, int $priority): string => "WHEN ? THEN {$priority}")
-            ->implode(' ');
-
-        return $query
-            ->orderByRaw(
-                "CASE recipe_reports.reason {$cases} ELSE ".count(RecipeReport::REASONS).' END',
-                RecipeReport::REASONS,
-            )
-            ->latest('created_at')
-            ->latest('id');
-    }
-
     /**
      * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
      */
@@ -727,41 +666,6 @@ class RecipeReportsController extends Controller
         ];
     }
 
-    /** @param array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} $filters */
-    private function reportsForReporter(Request $request, array $filters): HasMany
-    {
-        return $request->user()->recipeReports()
-            ->whereHas('recipe', fn ($recipe) => $recipe
-                ->when($filters['search'], fn ($recipe, string $search) => $recipe
-                    ->whereRaw("name LIKE ? ESCAPE '!'", [SqlLike::contains($search)]))
-                ->when($filters['availability'] === 'published', fn ($recipe) => $recipe
-                    ->where('is_published', true)
-                    ->whereNotNull('published_at'))
-                ->when($filters['availability'] === 'unpublished', fn ($recipe) => $recipe
-                    ->where(fn ($recipe) => $recipe
-                        ->where('is_published', false)
-                        ->orWhereNull('published_at'))))
-            ->when($filters['status'] === 'open', fn ($reports) => $reports->whereNull('resolved_at'))
-            ->when($filters['status'] === 'resolved', fn ($reports) => $reports->whereNotNull('resolved_at'))
-            ->when($filters['updates'] === 'unread', fn ($reports) => $reports->whereExists(
-                fn (QueryBuilder $notifications) => $this->unreadReportUpdateExists($notifications, (int) $request->user()->id),
-            ))
-            ->when($filters['updates'] === 'reviewed', fn ($reports) => $reports->whereNotExists(
-                fn (QueryBuilder $notifications) => $this->unreadReportUpdateExists($notifications, (int) $request->user()->id),
-            ))
-            ->when($filters['reason'], fn ($reports, string $reason) => $reports->where('reason', $reason));
-    }
-
-    /** @param array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} $filters */
-    private function orderedReporterReports(HasMany $query, array $filters): HasMany
-    {
-        return match ($filters['sort']) {
-            'oldest' => $query->oldest('created_at')->oldest('id'),
-            'updated' => $query->latest('updated_at')->latest('id'),
-            default => $query->latest('created_at')->latest('id'),
-        };
-    }
-
     /**
      * Load a recipe by ID under a transaction lock, taking a SQLite write lock when needed; missing IDs return 404.
      */
@@ -772,52 +676,5 @@ class RecipeReportsController extends Controller
         }
 
         return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();
-    }
-
-    /**
-     * @param  list<int>  $reportIds
-     * @return Collection<int, DatabaseNotification>
-     */
-    private function unreadReportUpdates(Request $request, array $reportIds): Collection
-    {
-        if ($reportIds === []) {
-            return collect();
-        }
-
-        return $this->unreadReportUpdateQuery($request)
-            ->whereIn('data->report_id', $reportIds)
-            ->select(['id', 'data', 'created_at'])
-            ->latest('created_at')
-            ->get()
-            ->keyBy(fn ($notification): int => (int) $notification->data['report_id']);
-    }
-
-    /**
-     * Build the request user's unread gallery notification query restricted to report updates.
-     *
-     * @return MorphMany<DatabaseNotification, User>
-     */
-    private function unreadReportUpdateQuery(Request $request): MorphMany
-    {
-        return $request->user()->unreadNotifications()
-            ->where('data->category', 'gallery')
-            ->whereNotNull('data->report_id');
-    }
-
-    /**
-     * Configure an EXISTS subquery matching unread gallery updates for the user and outer recipe-report row.
-     *
-     * The supplied query builder is mutated; no query is executed here.
-     */
-    private function unreadReportUpdateExists(QueryBuilder $notifications, int $userId): void
-    {
-        $notifications
-            ->selectRaw('1')
-            ->from('notifications')
-            ->where('notifications.notifiable_type', User::class)
-            ->where('notifications.notifiable_id', $userId)
-            ->whereNull('notifications.read_at')
-            ->where('notifications.data->category', 'gallery')
-            ->whereColumn('notifications.data->report_id', 'recipe_reports.id');
     }
 }

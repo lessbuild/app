@@ -151,6 +151,24 @@ Verification after the complete read refactor:
 
 Phase 2 exit conclusion: provider organization scoping, pagination, ordering, filters, metrics, CSV behavior, entitlements, encrypted credentials, manual monitoring, health leases/CAS, DigitalOcean droplets probing and cloud adapter behavior remain covered without public-contract changes. The separate live paid-provider acceptance remains outstanding.
 
+## Phase 3A — recipe-report query slice
+
+Responsibility problem: `RecipeReportsController` combined contributor/reporter's organization and ownership-scoped filtering, notification-backed unread predicates, ordering rules and report-history metrics with HTTP response coordination. The same report query semantics fed HTML, pagination and CSV paths.
+
+Boundary used: `RecipeReportQuery` now owns contributor and reporter query construction, deterministic ordering, unread-update selection and the unread notification EXISTS predicate. The controller retains request normalization, authorization, pagination and response formatting. The collaborator is concrete and constructor-injected because the application has one report store and no alternate query implementation.
+
+Preserved guarantees:
+
+- Contributor ownership and reporter identity scoping, unpublished-history visibility, SQL-wildcard escaping, status/reason/date/age/focus/update filters and deterministic ordering remain unchanged.
+- Unread notification category, notifiable identity, report-reference correlation, newest-per-report selection and review-update mutation scope remain unchanged.
+- Eager-loaded columns, pagination, CSV filters, authorization, flash messages, notification timing, transactions and encrypted report fields remain at their existing boundaries.
+
+Verification after the slice:
+
+- `RecipeReportTest`: passed (14 tests).
+- The focused aggregate command: 43 passed, 17 failed (498 assertions). The failures are the existing rate-limit cluster: two bulk-validation requests lacked the expected error bag after throttling, history review returned 429, and notification tests began with 429s causing dependent missing-record assertions. The extracted read paths themselves passed; no mutation code changed in this slice.
+- PHP syntax checks, Pint and `git diff --check`: passed.
+
 ## Next task
 
-Begin Phase 3A: map `RecipeReportsController` and its report query/filter/CSV/mutation/notification responsibilities, then select the smallest justified report read extraction before changing websites, builds, repositories, servers or environments.
+Extract the two recipe-report CSV responsibilities into focused exporters, preserving the existing streamed response protocol and consuming `RecipeReportQuery`; then run the report/history/inbox export gates before considering validation or mutation boundaries.
