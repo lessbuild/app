@@ -385,6 +385,23 @@ Verification after the slice:
 - Combined `WebsiteInventoryInsightsTest` and `InfrastructureListFilterTest`: 11 passed (78 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — website health-history query slice
+
+Responsibility problem: `WebsitesController` combined health-history filtering, retained-sample loading, median/failure-streak calculations and filtered summary projection with HTTP response coordination. The same semantics fed the website detail metrics, paginated history and CSV export.
+
+Boundary used: `WebsiteHealthHistoryQuery` now owns website-scoped history queries, newest retained sampling and health metrics. The controller retains filter normalization, policy authorization, pagination and response/CSV coordination. The collaborator is concrete and constructor-injected because there is one health-check store and no alternate implementation.
+
+Preserved guarantees:
+
+- Website relationship scoping, accepted result/source/date filters and `DateRange` normalization remain unchanged.
+- Newest-first ordering, `MAX_PER_WEBSITE` bounds, successful-duration selection, median rounding, failure-streak calculation, empty-state values and latest timestamps remain unchanged.
+- Health-check creation, remote probing, retention deletion, authorization, response headers and CSV serialization remain at their existing boundaries.
+
+Verification after the slice:
+
+- `WebsiteHealthHistoryTest` and `WebsiteHealthInsightsTest`: 12 passed (117 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Complete the remaining Phase 3B website read boundaries by assessing health-history reporting and export responsibilities before touching lifecycle orchestration.
+Extract the website health-history CSV protocol, then assess whether any lifecycle operation has a clear reusable boundary before changing provisioning, relocation or deletion behavior.
