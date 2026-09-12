@@ -2,15 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ApplyLoadBalancerJob;
-use App\Jobs\RemoveLoadBalancerJob;
+use App\Actions\LoadBalancer\AddLoadBalancerNodeAction;
+use App\Actions\LoadBalancer\CreateLoadBalancerAction;
+use App\Actions\LoadBalancer\DeleteLoadBalancerAction;
+use App\Actions\LoadBalancer\DeleteLoadBalancerNodeAction;
+use App\Actions\LoadBalancer\QueueLoadBalancerApplyAction;
+use App\Exceptions\LoadBalancerOperationException;
+use App\Http\Requests\StoreLoadBalancerNodeRequest;
+use App\Http\Requests\StoreLoadBalancerRequest;
 use App\Models\Environment;
 use App\Models\LoadBalancer;
 use App\Models\LoadBalancerNode;
+use App\Models\Organization;
+use App\Models\Server;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class LoadBalancerController extends Controller
@@ -42,20 +49,19 @@ class LoadBalancerController extends Controller
      *
      * @return RedirectResponse A prompt to add application nodes after the balancer is created.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreLoadBalancerRequest $request, CreateLoadBalancerAction $createLoadBalancer): RedirectResponse
     {
+        $this->authorize('create', LoadBalancer::class);
+        /** @var Organization $organization */
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'high_availability');
-        $data = $request->validate([
-            'environment_id' => ['required', Rule::exists('environments', 'id')->whereIn('project_id', $organization->projects()->pluck('id'))],
-            'server_id' => ['required', Rule::exists('servers', 'id')->where('organization_id', $organization->id)],
-            'hostname' => ['required', 'string', 'max:253', 'lowercase', 'regex:/\A(?=.{1,253}\z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/', 'unique:load_balancers,hostname'],
-            'health_path' => ['required', 'string', 'max:255', 'regex:#\A/[A-Za-z0-9._~!$&\'()*+,;=:@%/-]*\z#'],
-        ]);
+        $data = $request->validated();
         $environment = Environment::findOrFail($data['environment_id']);
-        abort_if((int) $environment->server_id === (int) $data['server_id'], 422, 'Use a dedicated server for the load balancer.');
-        $balancer = $organization->loadBalancers()->create([...$data, 'created_by' => $request->user()->id]);
+        $server = Server::findOrFail($data['server_id']);
+        try {
+            $createLoadBalancer->handle($organization, $request->user(), $environment, $server, $data);
+        } catch (LoadBalancerOperationException $exception) {
+            abort(422, $exception->getMessage());
+        }
 
         return back()->with('success', __('Load balancer created. Add at least two application nodes.'));
     }
@@ -63,17 +69,16 @@ class LoadBalancerController extends Controller
     /**
      * Validate a distinct workspace server, port, and weight, then add its node and queue balancer configuration.
      */
-    public function storeNode(Request $request, LoadBalancer $loadBalancer): RedirectResponse
+    public function storeNode(StoreLoadBalancerNodeRequest $request, LoadBalancer $loadBalancer, AddLoadBalancerNodeAction $addNode): RedirectResponse
     {
-        $this->manage($loadBalancer);
-        $data = $request->validate([
-            'server_id' => ['required', Rule::exists('servers', 'id')->where('organization_id', $loadBalancer->organization_id), Rule::unique('load_balancer_nodes')->where('load_balancer_id', $loadBalancer->id)],
-            'upstream_port' => ['required', 'integer', 'between:1,65535'],
-            'weight' => ['required', 'integer', 'between:1,10'],
-        ]);
-        abort_if((int) $loadBalancer->server_id === (int) $data['server_id'], 422, 'The load balancer cannot route to itself.');
-        $loadBalancer->nodes()->create([...$data, 'is_enabled' => true]);
-        ApplyLoadBalancerJob::dispatch($loadBalancer->id);
+        $this->authorize('manage', $loadBalancer);
+        $data = $request->validated();
+        $server = $loadBalancer->organization->servers()->findOrFail($data['server_id']);
+        try {
+            $addNode->handle($loadBalancer, $server, $data);
+        } catch (LoadBalancerOperationException $exception) {
+            abort(422, $exception->getMessage());
+        }
 
         return back()->with('success', __('Application node added and configuration queued.'));
     }
@@ -81,10 +86,10 @@ class LoadBalancerController extends Controller
     /**
      * Authorize the bound balancer and queue configuration generation, then redirect with an acknowledgement.
      */
-    public function apply(LoadBalancer $loadBalancer): RedirectResponse
+    public function apply(LoadBalancer $loadBalancer, QueueLoadBalancerApplyAction $queueApply): RedirectResponse
     {
         $this->manage($loadBalancer);
-        ApplyLoadBalancerJob::dispatch($loadBalancer->id);
+        $queueApply->handle($loadBalancer);
 
         return back()->with('success', __('Load-balancer configuration queued.'));
     }
@@ -92,12 +97,11 @@ class LoadBalancerController extends Controller
     /**
      * Authorize the node's workspace balancer, remove the node, and queue the updated configuration.
      */
-    public function destroyNode(LoadBalancerNode $node): RedirectResponse
+    public function destroyNode(LoadBalancerNode $node, DeleteLoadBalancerNodeAction $deleteNode): RedirectResponse
     {
         $balancer = $node->loadBalancer;
         $this->manage($balancer);
-        $node->delete();
-        ApplyLoadBalancerJob::dispatch($balancer->id);
+        $deleteNode->handle($node);
 
         return back()->with('success', __('Node removed.'));
     }
@@ -105,11 +109,10 @@ class LoadBalancerController extends Controller
     /**
      * Authorize the bound balancer, queue remote removal, delete its record, and redirect with DNS cleanup guidance.
      */
-    public function destroy(LoadBalancer $loadBalancer): RedirectResponse
+    public function destroy(LoadBalancer $loadBalancer, DeleteLoadBalancerAction $deleteLoadBalancer): RedirectResponse
     {
         $this->manage($loadBalancer);
-        RemoveLoadBalancerJob::dispatch($loadBalancer->server_id, $loadBalancer->id);
-        $loadBalancer->delete();
+        $deleteLoadBalancer->handle($loadBalancer);
 
         return back()->with('success', __('Load balancer removed. Remove its DNS record if it is no longer used.'));
     }
@@ -119,8 +122,7 @@ class LoadBalancerController extends Controller
      */
     private function manage(LoadBalancer $loadBalancer): void
     {
-        abort_unless($loadBalancer->organization_id === request()->user()->current_organization_id
-            && $loadBalancer->organization->permits(request()->user(), 'manage'), 403);
+        $this->authorize('manage', $loadBalancer);
         $this->entitlements->enforce($loadBalancer->organization, 'high_availability');
     }
 }

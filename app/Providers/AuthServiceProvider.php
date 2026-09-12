@@ -8,6 +8,7 @@ use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationReview;
 use App\Models\Environment;
 use App\Models\EnvironmentResource;
+use App\Models\LoadBalancer;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Recipe;
@@ -22,6 +23,7 @@ use App\Policies\ConfigurationApplicationPolicy;
 use App\Policies\ConfigurationReviewPolicy;
 use App\Policies\EnvironmentPolicy;
 use App\Policies\EnvironmentResourcePolicy;
+use App\Policies\LoadBalancerPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\RecipePolicy;
@@ -50,6 +52,7 @@ class AuthServiceProvider extends ServiceProvider
         Project::class => ProjectPolicy::class,
         Environment::class => EnvironmentPolicy::class,
         EnvironmentResource::class => EnvironmentResourcePolicy::class,
+        LoadBalancer::class => LoadBalancerPolicy::class,
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,
         Server::class => ServerPolicy::class,
