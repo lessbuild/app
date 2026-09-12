@@ -371,7 +371,7 @@ generic CRUD services or moving business-state rules into policies.
 
 - Focused web/API, recovery, retry and removal suite: 43 passed, 318
   assertions.
-- Complete configuration suite: 177 passed, 1,736 assertions.
+- Complete configuration suite: 177 passed, 1,737 assertions.
 - Added coverage confirming operation-validation failures do not flash
   _old_input; existing API/OpenAPI, authorization, receipt-performance,
   concurrency, ownership, environment-removal and retry tests passed.
@@ -451,6 +451,76 @@ deployment-control persistence and environment/child deletion. Extract only
 cohesive actions that preserve protected-production, duplicate-production,
 runtime-entitlement, scoped-child 404 and deletion response behavior.
 
+## Phase 2D — environment lifecycle operation boundary
+
+### Responsibility problem
+
+After child input extraction, the environment controller still contained
+runtime entitlement calculations, protected-environment permission checks,
+production uniqueness checks, slug generation, deployment-control field
+mapping and direct deletes. Those responsibilities made lifecycle behavior
+hard to exercise outside HTTP and left persistence in the controller.
+
+### Boundaries applied
+
+- EnvironmentRuntimeEntitlements is a narrowly scoped collaborator for the
+  shared create/update scaling and hibernation entitlement rules.
+- CreateEnvironmentAction owns runtime entitlement ordering, policy-backed
+  protected-environment permission, production uniqueness, slug generation and
+  creation.
+- UpdateEnvironmentAction owns update-time runtime entitlement checks,
+  production uniqueness and persistence.
+- UpdateDeploymentControlsAction owns the existing validated field mapping
+  and lock/window/rollout persistence.
+- DeleteEnvironmentAction owns the production deletion safeguard and
+  persistence, with the controller mapping its domain rejection back to the
+  existing HTTP 422 response.
+- DeleteEnvironmentChildAction owns persistence for route-scoped variables,
+  processes and resources. Existing scopeBindings() routes continue to
+  provide the parent/child 404 boundary.
+- ProjectPolicy::createEnvironment owns the actor decision for creating
+  protected or approval-gated environments. The controller still explicitly
+  authorizes the project update boundary before invoking the action.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization without adding a generic CRUD service. The action order keeps
+the old entitlement, permission, uniqueness and response behavior.
+
+### Preserved contracts and safety guarantees
+
+- Environment validation/defaults, redirects, flash messages, unique slugs,
+  protected-production defaults, duplicate-production errors and paid runtime
+  denial behavior remain unchanged.
+- Deployment-control lock ownership, maintenance windows, strategy fields and
+  timestamps are persisted exactly as before.
+- Production deletion remains HTTP 422 with its existing message; non-
+  production deletion succeeds, and route-scoped child mismatches remain
+  HTTP 404 without a delete.
+- No transaction, route, schema, observer, job, remote call or dependency
+  lockfile changed. Existing encryption, versioning and configuration
+  reconciliation safeguards remain in their established actions/services.
+
+### Verification
+
+- Environment/lifecycle, runtime, entitlement, deployment-control and
+  configuration-removal/concurrency suite: **132 passed, 1,105 assertions**.
+- Complete configuration suite after the lifecycle changes: **177 passed,
+  1,737 assertions**.
+- Added coverage for unique/protected environment creation, lifecycle and
+  control persistence, production deletion status and scoped child 404s.
+- PHP syntax checks, Pint test and git diff --check passed.
+
+### Commit and next task
+
+Commit: 23de929 — refactor: extract environment lifecycle operations
+
+**Phase 2 exit gate: complete.** Configuration web/API input, review/receipt
+authorization, environment child operations and environment lifecycle
+operations are verified in the isolated checkout. Exact next task: begin
+Phase 3 infrastructure operations with Backups, characterizing destination,
+schedule, run and restore validation, policies, entitlements, queued jobs and
+credential-safety behavior before extracting a cohesive action.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -458,5 +528,6 @@ runtime-entitlement, scoped-child 404 and deletion response behavior.
 | Phase 0 | Complete inventory and isolated baseline before source changes. | See baseline above. | `ea81610` — `docs: record controller modernization baseline` | Add the project creation pilot: characterize current tests, then introduce `StoreProjectRequest`, `ProjectPolicy::create` and `CreateProjectAction` without changing contracts. |
 | Phase 1 | Project creation mixed permission, validation, template selection and transactional writes in `ProjectController`. | 26 focused tests passed, 166 assertions; Pint and diff checks passed. | `5c055ff` — `refactor: extract project creation operation` | Characterize configuration web/API ordering and extract the smallest configuration request/operation boundary; preserve secret-safe validation, receipt relationships, claims, leases and stale callbacks. |
 | Phase 2A | Configuration web/API document and binding validation mixed with project deployment permission and controller API capability checks. | 177 configuration tests passed, 1,736 assertions; Pint and diff checks passed. | `bd68cdf` — `refactor: extract configuration input boundaries` | Characterize no-input apply/cancel/retry and receipt visibility, then extract only operation-specific policies/requests that preserve 404, requester and recovery semantics. |
-| Phase 2B | Configuration operation bodies and receipt abilities remained inline around relationship lookups and transaction-aware services. | 43 focused tests passed, 318 assertions; complete configuration family 177/1,736; Pint and diff checks passed. | `f269fdf` — `refactor: extract configuration operation boundaries` | Inspect remaining environment request/action boundaries for processes, variables, resources, deployment controls and deletion safeguards. |
+| Phase 2B | Configuration operation bodies and receipt abilities remained inline around relationship lookups and transaction-aware services. | 43 focused tests passed, 318 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `f269fdf` — `refactor: extract configuration operation boundaries` | Inspect remaining environment request/action boundaries for processes, variables, resources, deployment controls and deletion safeguards. |
 | Phase 2C | Environment child endpoints mixed validation, entitlement order, parsing, normalization and direct child writes. | 30 focused tests passed, 167 assertions; Pint and diff checks passed. | `2434f0c` — `refactor: extract environment child operations` | Characterize lifecycle writes and deletion safeguards before extracting cohesive environment actions. |
+| Phase 2D | Environment lifecycle validation, entitlement checks, field mapping and direct deletes remained in EnvironmentController. | 132 affected tests passed, 1,105 assertions; complete configuration family 177/1,737; Pint and diff checks passed. | `23de929` — `refactor: extract environment lifecycle operations` | Begin Phase 3 with Backups: inventory policies, requests, actions, jobs, entitlements and credential safety. |
