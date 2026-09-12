@@ -983,6 +983,82 @@ fingerprint confirmations, active-server directory probes, plan limits,
 encrypted credentials, activity timing and cross-workspace denial before
 extracting import operations.
 
+## Phase 3G — import operation boundary
+
+### Responsibility problem
+
+`ImportServerController` mixed server-limit validation, remote inspection,
+encrypted assessment persistence, session-token setup, confirmation validation,
+assessment consumption and activity recording. `ImportWebsiteController` mixed
+active-server lookup, remote directory probing, plan-limited website creation,
+encrypted credential generation and activity recording. Their import requests
+also duplicated deployment permission logic instead of using the resource
+policies.
+
+### Boundaries applied
+
+- `InspectServerImportAction` owns the server-limit check, validated SSH
+  configuration construction, remote discovery failure mapping and assessment
+  persistence. `ServerImportAssessmentResult` carries the one-time plaintext
+  session token only to the HTTP session boundary.
+- `ConfirmServerImportRequest` owns confirmation rules but deliberately checks
+  the assessment's session token, owner, expiry and consumed state in
+  `authorize()` and throws 404. This is a session protocol guard, not a normal
+  resource permission, and preserves the old concealment and validation order.
+  The controller retains the typed assessment parameter so Laravel performs
+  implicit route model binding before resolving the request.
+- `ConfirmServerImportAction` retains the locked assessment claim, encrypted
+  server creation, provisioning preparation, queued retry and consumed marker;
+  it now records the existing activity after the transaction completes.
+- `ImportWebsiteAction` owns the exact active-server directory probe, plan-limit
+  transaction, active website creation and activity record. The controller now
+  performs only scoped lookup, operation invocation and response mapping.
+- ImportServerRequest and ImportWebsiteRequest now delegate creation permission
+  to ServerPolicy and WebsitePolicy while preserving their validation and
+  normalization contracts.
+
+This applies single responsibility, policy-based authorization and dependency
+inversion without adding generic CRUD abstractions or changing remote protocol
+behavior.
+
+### Preserved contracts and safety guarantees
+
+- Import routes, redirects, statuses, validation keys, plan and connection
+  messages, confirmation values, session key format and success flash text are
+  unchanged.
+- Assessment ownership, workspace identity, expiry, single-use consumption,
+  404 concealment, locked claim ordering, stale-token rejection, encrypted
+  configuration, host-fingerprint confirmation, provisioning preparation,
+  after-commit retry dispatch and activity messages remain intact.
+- Confirmation validation runs only after a usable assessment is established,
+  so foreign, expired and consumed requests do not flash confirmation input.
+- Website imports still resolve only active servers in the current workspace,
+  execute the same shell-safe `/var/www` readability probe, enforce the same
+  limit, generate encrypted credentials and do not queue provisioning.
+- Viewer requests are denied before malformed validation and before discovery,
+  remote probes, database writes or queued jobs. No routes, schemas, job
+  payloads, persisted values or dependency lockfiles changed.
+
+### Verification
+
+- Import and adjacent server/website infrastructure regression set: **82
+  passed, 694 assertions**.
+- Added viewer-denial/no-side-effect coverage for both import endpoints.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+- `ImportServerTest` now flushes only the isolated test cache in `setUp()` so
+  the route's six-per-minute confirmation throttle cannot leak between test
+  runs; this addresses test isolation and does not alter production behavior.
+
+### Commit and next task
+
+Commit: `70f2d57` — `refactor: extract import operations`
+
+**Phase 3 infrastructure exit gate: complete.** Exact next task: begin Phase 4
+by inventorying `AutomationController` and `Api/V1/ControlPlaneController`
+deployment/scaling/scheduled-task/workflow/token endpoints, documenting their
+request, response, authorization, entitlement and dispatch contracts, then
+extract the smallest schedule operation with separate web/API input boundaries.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -999,3 +1075,4 @@ extracting import operations.
 | Phase 3D | Domain validation, website authorization, DNS synchronization/deletion, primary protection and Caddy dispatch remained in `DomainController`. | 24 adjacent domain/website/tenancy tests passed, 219 assertions; Pint and diff checks passed. | `7d12a23` — `refactor: extract domain operations` | Inventory remaining server, website and import writes; separate reporting from lifecycle operations while preserving provisioning, relocation, encryption, callback and import semantics. |
 | Phase 3E-server | Server display-label and deletion persistence remained in `ServersController`, and create permission was duplicated in `ServerRequest`. | 36 server/provider/retry/deletion/tenancy tests passed, 308 assertions; Pint and diff checks passed. | `306ff7e` — `refactor: extract server lifecycle operations` | Characterize remaining `WebsitesController` direct writes and extract cohesive runtime-log, retention, creation, cleanup-retry and health-check operations not already covered by existing actions. |
 | Phase 3F-website | Website creation, runtime-log writes, retention, placement-cleanup state and health dispatch remained in `WebsitesController`; `WebsiteRequest` duplicated deploy permission. | 55 website/observability/relocation/deletion/tenancy/entitlement tests passed, 563 assertions; Pint and diff checks passed. | `a35360a` — `refactor: extract website operations` | Characterize and extract remaining server/website import assessment and import-write operations, preserving session token, expiry, locks, probes, encryption and activity timing. |
+| Phase 3G-imports | Server and website import controllers mixed protocol validation, remote inspection/probes, assessment/website persistence, plan limits and activity side effects; import requests duplicated deploy permission. | 82 import/server/website/infrastructure regression tests passed, 694 assertions; Pint and diff checks passed. | `70f2d57` — `refactor: extract import operations` | Inventory AutomationController and API/V1/ControlPlaneController schedule, workflow, runtime and token contracts, then extract the smallest schedule operation with separate web/API request boundaries. |
