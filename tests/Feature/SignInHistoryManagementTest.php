@@ -99,6 +99,20 @@ class SignInHistoryManagementTest extends TestCase
         ]);
     }
 
+    public function test_clearing_empty_sign_in_history_returns_the_existing_empty_state_message(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->delete(route('account.sign-ins.destroy'), [
+            'current_password' => 'password',
+        ])->assertSessionHas('sign_ins_status', 'There was no sign-in history to clear.');
+
+        $this->assertDatabaseMissing('events', [
+            'user_id' => $user->id,
+            'event' => 'Successful sign-in history was cleared.',
+        ]);
+    }
+
     public function test_account_shows_export_and_local_password_clear_controls(): void
     {
         $local = User::factory()->create();

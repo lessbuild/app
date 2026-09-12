@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\ClearSignInHistoryAction;
+use App\Http\Requests\ClearSignInHistoryRequest;
 use App\Http\Requests\SignInHistoryIndexRequest;
 use App\Models\SignInEvent;
-use App\Services\ActivityRecorder;
 use App\Services\ClientMetadata;
 use App\Services\SignInHistoryExporter;
 use App\Services\SignInHistoryQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SignInHistoryController extends Controller
@@ -63,21 +62,9 @@ class SignInHistoryController extends Controller
     /**
      * Validate the current password, delete the user's sign-in history atomically, and redirect with the deleted count.
      */
-    public function destroy(Request $request, ActivityRecorder $activity): RedirectResponse
+    public function destroy(ClearSignInHistoryRequest $request, ClearSignInHistoryAction $clear): RedirectResponse
     {
-        $request->validateWithBag('signIns', [
-            'current_password' => ['required', 'current_password'],
-        ]);
-
-        $deleted = DB::transaction(function () use ($request, $activity): int {
-            $deleted = $request->user()->signIns()->delete();
-
-            if ($deleted > 0) {
-                $activity->recordAccount($request->user(), 'Successful sign-in history was cleared.');
-            }
-
-            return $deleted;
-        });
+        $deleted = $clear->handle($request->user());
 
         return back()->with('sign_ins_status', $deleted > 0
             ? trans_choice(
