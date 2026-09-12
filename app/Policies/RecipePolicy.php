@@ -59,4 +59,17 @@ class RecipePolicy
     {
         return (int) $recipe->user_id !== (int) $user->id;
     }
+
+    /**
+     * Allow an installed contributor's account to rate another user's published recipe.
+     *
+     * Publication availability is checked by the request before this actor decision.
+     */
+    public function rate(User $user, Recipe $recipe): bool
+    {
+        return (int) $recipe->user_id !== (int) $user->id
+            && $user->workspaceRecipes()
+                ->where('source_recipe_id', $recipe->id)
+                ->exists();
+    }
 }
