@@ -436,6 +436,23 @@ Verification after the slice:
 - Website lifecycle, relocation, retention, monitoring, deployment-serialization and security suite: 38 passed (451 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 3B — website logical deletion action slice
+
+Responsibility problem: `WebsitesController::destroy()` combined policy-protected HTTP response mapping with the atomic logical-deletion operation: row locking, active-deployment protection and soft deletion. Remote cleanup is already isolated in `DeleteWebsiteFromCaddyJob` and `DeleteWebsitePlacementAction`.
+
+Boundary used: `DeleteWebsiteAction` now owns the locked soft-delete operation and returns whether deletion was allowed. The controller retains policy authorization and the existing error/success redirects. Existing remote cleanup, retry and idempotency boundaries were reused without duplication.
+
+Preserved guarantees:
+
+- The website row lock, active-deployment check, transaction boundary and soft-delete result remain unchanged.
+- Remote current/previous placement cleanup, failure restoration, cleanup ordering, queue identifiers, authorization and flash messages remain unchanged.
+- No route, serialized job payload, persisted value, encrypted field or provider behavior changed.
+
+Verification after the slice:
+
+- Website deletion, relocation, deployment-serialization and security suite: 19 passed (178 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
 ## Next task
 
-Assess website lifecycle orchestration—provisioning, relocation, retry, cleanup and deletion—for a smallest justified action boundary before making lifecycle changes.
+Run the complete Phase 3B website regression gate, review the remaining straightforward CRUD/queue coordination against the existing Web actions, and close the Websites slice if no further stable boundary is justified.

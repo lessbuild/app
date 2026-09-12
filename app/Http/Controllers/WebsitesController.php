@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Web\DeleteWebsiteAction;
 use App\Actions\Web\RetryWebsiteProvisioningAction;
 use App\Actions\Web\UpdateWebsiteAction;
 use App\Http\Requests\WebsiteRequest;
@@ -26,7 +27,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -38,6 +38,7 @@ class WebsitesController extends Controller
      * Use workspace entitlements to guard website features that depend on a paid plan.
      */
     public function __construct(
+        private readonly DeleteWebsiteAction $deleteWebsite,
         private readonly Entitlements $entitlements,
         private readonly WebsiteHealthHistoryExporter $healthHistoryExporter,
         private readonly WebsiteHealthHistoryQuery $healthHistory,
@@ -377,14 +378,7 @@ class WebsitesController extends Controller
     {
         $this->authorize('delete', $website);
 
-        $deleted = DB::transaction(function () use ($website): bool {
-            $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
-            if ($locked->hasActiveDeployment()) {
-                return false;
-            }
-
-            return (bool) $locked->delete();
-        });
+        $deleted = $this->deleteWebsite->handle($website);
 
         if (! $deleted) {
             return back()->with('error', __('Wait for the current deployment to finish before deleting this website.'));
