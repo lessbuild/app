@@ -3466,6 +3466,60 @@ disconnect validation and the locked provider mutation, preserving the
 `social` bag, missing/last-method outcomes, provider fallback, activity timing,
 authorization ordering and exact status/error responses.
 
+## Phase 7W — social-account disconnect request and operation boundary
+
+### Responsibility problem
+
+`UsersController` mixed conditional `social` validation, provider lookup,
+account locking, provider-column mutation, sign-in-method fallback, activity
+recording and response mapping.
+
+### Boundary and principles
+
+`DisconnectSocialRequest` preserves the old ordering by requiring the
+`social_provider` attestation and current password only when a local-password
+user is disconnecting a provider that is currently connected. The request
+returns the route-constrained provider key without passing unrestricted input
+to the operation. `DisconnectSocialAccountAction` owns the transaction,
+row lock, missing/last-method invariants, provider mutation, auth-type
+fallback and activity side effect. `SocialAccountDisconnectResult` carries
+named outcomes and the provider label to the HTTP boundary. The controller
+now maps those outcomes to the existing messages. This applies single
+responsibility, dependency inversion and a concrete result boundary without
+introducing a provider interface or generic repository.
+
+### Preserved guarantees
+
+- Local users still require the existing `social` bag fields only for a
+  connected provider; social-only users retain password-free multi-provider
+  disconnect and last-method protection. Missing/unlinked requests remain
+  non-destructive and use the same status response.
+- The account row is still locked inside the transaction. Provider-column
+  clearing, `auth_type` fallback, activity text/timing and rollback behavior
+  remain unchanged.
+- Route provider constraints, ownership through the authenticated user,
+  social status/error keys, exact translated messages and sensitive-action
+  rate limiting remain unchanged. Credentials are neither accepted by the
+  operation nor written to logs/activity.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Account profile/password/social/session/security/rate-limit regression set:
+  **30 passed, 279 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `f0adf6f` — `refactor: extract social account disconnect operation`
+
+**Phase 7W exit gate: complete.** Exact next task: modernize two-factor
+account operations, first characterizing setup/enable/confirm/cancel/disable
+ordering, the `twoFactor` bag, secret/recovery-code handling, session
+regeneration, activity/notification timing and verification-code behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3526,3 +3580,4 @@ authorization ordering and exact status/error responses.
 | Phase 7T-password | UsersController mixed password validation, hashing/timestamp persistence, device/session invalidation, regeneration and activity recording. | 27 account profile/password/session/social/security-activity tests passed, 219 assertions; Pint, syntax and diff checks passed. | `c470200` — `refactor: extract password update operation` | Extract the revoke-other-browser-sessions operation, preserving the `sessions` bag, authentication/session invalidation, regeneration, activity and exact status response. |
 | Phase 7U-session-revocation | UsersController mixed `sessions` validation, authentication-device invalidation, stored-session cleanup, regeneration and activity recording. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `1b2954d` — `refactor: extract session revocation operation` | Extract individual browser-session revocation, preserving route/form ID attestation, ownership-scoped outcomes, current-session protection, unavailable-driver behavior and exact responses. |
 | Phase 7V-individual-session | UsersController mixed route/form ID attestation, `sessions` validation, ownership-scoped deletion, current-session protection, availability outcomes and activity mapping. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `8fb11fe` — `refactor: extract individual session revocation` | Extract social-account disconnect validation and locked provider mutation, preserving the `social` bag, missing/last-method outcomes, provider fallback, activity and exact responses. |
+| Phase 7W-social-account | UsersController mixed conditional `social` validation, locked provider mutation, last-method protection, auth-type fallback, activity and response mapping. | 30 account profile/password/social/session/security/rate-limit tests passed, 279 assertions; Pint, syntax and diff checks passed. | `f0adf6f` — `refactor: extract social account disconnect operation` | Modernize two-factor setup/enable/confirm/cancel/disable operations, preserving the `twoFactor` bag, secret/recovery handling, ordering and security side effects. |
