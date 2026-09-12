@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SyncOrganizationSeatQuantityJob;
+use App\Actions\Organization\AcceptOrganizationInvitationAction;
+use App\Actions\Organization\InviteOrganizationMemberAction;
+use App\Exceptions\OrganizationInvitationOperationException;
+use App\Http\Requests\AcceptOrganizationInvitationRequest;
+use App\Http\Requests\StoreOrganizationInvitationRequest;
 use App\Models\Build;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
-use App\Notifications\OrganizationInvitationNotification;
 use App\Services\Entitlements;
 use App\Services\PersonalOrganization;
 use App\Services\PlanLimits;
@@ -16,7 +19,6 @@ use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -45,33 +47,14 @@ class OrganizationController extends Controller
      *
      * @return RedirectResponse A sent acknowledgement after creating a seven-day hashed-token invitation.
      */
-    public function invite(Request $request, PlanLimits $limits, Entitlements $entitlements): RedirectResponse
+    public function invite(StoreOrganizationInvitationRequest $request, InviteOrganizationMemberAction $invite): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'manage'), 403);
-        $entitlements->enforce($organization, 'teams');
-        $data = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-            'role' => ['required', Rule::in(Organization::ROLES)],
-        ]);
-        $email = Str::lower($data['email']);
-        $allowedDomains = $organization->allowed_email_domains ?? [];
-        abort_if($allowedDomains !== [] && ! in_array(Str::afterLast($email, '@'), $allowedDomains, true), 422, 'This email domain is not allowed by the workspace security policy.');
-        abort_if($organization->members()->whereRaw('LOWER(email) = ?', [$email])->exists(), 422, 'This person is already a member.');
-        [$invitation, $token] = $limits->withinLimit($request->user(), 'members', function ($lockedOrganization) use ($request, $data, $email): array {
-            $token = Str::random(64);
-            $invitation = $lockedOrganization->invitations()->updateOrCreate(['email' => $email], [
-                'invited_by' => $request->user()->id,
-                'role' => $data['role'],
-                'token_hash' => hash('sha256', $token),
-                'expires_at' => now()->addDays(7),
-                'accepted_at' => null,
-            ]);
-
-            return [$invitation, $token];
-        });
-        $url = route('organizations.invitations.accept', ['invitation' => $invitation, 'token' => $token]);
-        Notification::route('mail', $email)->notify(new OrganizationInvitationNotification($organization->name, $url));
+        try {
+            $invite->handle($organization, $request->user(), $request->validated());
+        } catch (OrganizationInvitationOperationException $exception) {
+            abort(422, $exception->getMessage());
+        }
 
         return back()->with('success', __('Invitation sent.'));
     }
@@ -81,22 +64,9 @@ class OrganizationController extends Controller
      *
      * @return RedirectResponse Workspace settings after switching membership and queuing billing-seat synchronization.
      */
-    public function accept(Request $request, OrganizationInvitation $invitation, PlanLimits $limits): RedirectResponse
+    public function accept(AcceptOrganizationInvitationRequest $request, AcceptOrganizationInvitationAction $accept, OrganizationInvitation $invitation): RedirectResponse
     {
-        abort_unless($invitation->isUsable() && hash_equals($invitation->token_hash, hash('sha256', (string) $request->query('token'))), 403);
-        abort_unless(Str::lower($request->user()->email) === Str::lower($invitation->email), 403);
-        DB::transaction(function () use ($invitation, $limits, $request): void {
-            $organization = Organization::query()->lockForUpdate()->findOrFail($invitation->organization_id);
-            $lockedInvitation = OrganizationInvitation::query()->lockForUpdate()->findOrFail($invitation->id);
-            abort_unless($lockedInvitation->isUsable()
-                && hash_equals($lockedInvitation->token_hash, hash('sha256', (string) $request->query('token')))
-                && Str::lower($request->user()->email) === Str::lower($lockedInvitation->email), 403);
-            $limits->enforceForOrganization($organization, 'members');
-            $organization->members()->syncWithoutDetaching([$request->user()->id => ['role' => $lockedInvitation->role]]);
-            $lockedInvitation->update(['accepted_at' => now()]);
-        }, 3);
-        $request->user()->update(['current_organization_id' => $invitation->organization_id]);
-        SyncOrganizationSeatQuantityJob::dispatch($invitation->organization_id);
+        $accept->handle($request->user(), $invitation, $request->token());
 
         return redirect()->route('organizations.index')->with('success', __('Workspace invitation accepted.'));
     }

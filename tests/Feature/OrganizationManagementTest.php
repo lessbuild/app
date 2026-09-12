@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SyncOrganizationSeatQuantityJob;
 use App\Models\User;
 use App\Notifications\OrganizationInvitationNotification;
 use App\Services\PersonalOrganization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class OrganizationManagementTest extends TestCase
@@ -26,12 +28,109 @@ class OrganizationManagementTest extends TestCase
         app(PersonalOrganization::class)->ensure($owner);
 
         $this->actingAs($owner)->post(route('organizations.invitations.store'), [
-            'email' => 'developer@example.com',
+            'email' => 'Developer@Example.COM',
             'role' => 'developer',
         ])->assertRedirect()->assertSessionHas('success');
 
         $this->assertDatabaseHas('organization_invitations', ['email' => 'developer@example.com', 'role' => 'developer']);
         Notification::assertSentOnDemand(OrganizationInvitationNotification::class);
+    }
+
+    public function test_only_a_current_workspace_manager_can_invite_and_denial_precedes_malformed_input(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->post(route('organizations.invitations.store'), [
+            'email' => 'not-an-email',
+            'role' => 'not-a-role',
+        ])->assertForbidden();
+        $this->assertDatabaseCount('organization_invitations', 0);
+    }
+
+    public function test_invitation_domain_and_existing_member_rules_reject_without_writes(): void
+    {
+        Notification::fake();
+        $owner = User::factory()->create();
+        $existing = User::factory()->create(['email' => 'existing@example.com']);
+        $organization = $owner->currentOrganization;
+        $organization->update(['allowed_email_domains' => ['example.com']]);
+        $organization->members()->attach($existing, ['role' => 'developer']);
+
+        $this->actingAs($owner)->post(route('organizations.invitations.store'), [
+            'email' => 'person@other.example',
+            'role' => 'developer',
+        ])->assertStatus(422)->assertSee('This email domain is not allowed by the workspace security policy.');
+        $this->actingAs($owner)->post(route('organizations.invitations.store'), [
+            'email' => 'EXISTING@EXAMPLE.COM',
+            'role' => 'developer',
+        ])->assertStatus(422)->assertSee('This person is already a member.');
+        $this->assertDatabaseCount('organization_invitations', 0);
+        Notification::assertNothingSent();
+    }
+
+    public function test_invitation_acceptance_requires_email_and_token_identity_consumes_once_and_switches_workspace(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        $member = User::factory()->create(['email' => 'member@example.com']);
+        $organization = $owner->currentOrganization;
+        $token = 'organization-invitation-token';
+        $invitation = $organization->invitations()->create([
+            'invited_by' => $owner->id,
+            'email' => $member->email,
+            'role' => 'operator',
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addDays(7),
+        ]);
+        $other = User::factory()->create(['email' => 'other@example.com']);
+
+        $this->actingAs($other)
+            ->get(route('organizations.invitations.accept', ['invitation' => $invitation, 'token' => $token]))
+            ->assertForbidden();
+        $this->assertNull($invitation->fresh()->accepted_at);
+        $this->assertFalse($organization->members()->whereKey($other->id)->exists());
+
+        $this->actingAs($member)
+            ->get(route('organizations.invitations.accept', ['invitation' => $invitation, 'token' => $token]))
+            ->assertRedirect(route('organizations.index'))
+            ->assertSessionHas('success');
+        $this->assertNotNull($invitation->fresh()->accepted_at);
+        $this->assertSame('operator', $organization->roleFor($member));
+        $this->assertSame($organization->id, $member->fresh()->current_organization_id);
+        Queue::assertPushed(SyncOrganizationSeatQuantityJob::class, 1);
+
+        $this->actingAs($member)
+            ->get(route('organizations.invitations.accept', ['invitation' => $invitation, 'token' => $token]))
+            ->assertForbidden();
+        Queue::assertPushed(SyncOrganizationSeatQuantityJob::class, 1);
+    }
+
+    public function test_invitation_acceptance_rechecks_workspace_seats_before_membership_write(): void
+    {
+        Queue::fake();
+        config(['billing.plans.free.limits.members' => 1]);
+        $owner = User::factory()->create();
+        $member = User::factory()->create(['email' => 'member@example.com']);
+        $organization = $owner->currentOrganization;
+        $token = 'full-workspace-invitation-token';
+        $invitation = $organization->invitations()->create([
+            'invited_by' => $owner->id,
+            'email' => $member->email,
+            'role' => 'developer',
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        $this->actingAs($member)
+            ->get(route('organizations.invitations.accept', ['invitation' => $invitation, 'token' => $token]))
+            ->assertSessionHasErrors('plan');
+        $this->assertNull($invitation->fresh()->accepted_at);
+        $this->assertFalse($organization->members()->whereKey($member->id)->exists());
+        Queue::assertNothingPushed();
     }
 
     public function test_non_member_cannot_switch_to_another_workspace(): void
