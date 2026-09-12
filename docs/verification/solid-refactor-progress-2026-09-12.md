@@ -102,6 +102,27 @@ Verification after the slice:
 - Provider connection-history and insight suite: 9 passed (110 assertions).
 - Pint, PHP syntax checks and `git diff --check`: passed.
 
+## Phase 2 — provider inventory export slice
+
+Responsibility problem: even after query extraction, `ProviderController::export()` still owned CSV protocol details, relationship projection and lazy iteration. That made the controller responsible for both HTTP coordination and a sizable inventory serialization workflow.
+
+Boundary used: `ProviderInventoryExporter` now owns the streamed inventory response and consumes `ProviderInventoryQuery`. The controller retains filter normalization and delegates after the authenticated route boundary. The exporter is concrete and constructor-injected; no generic export framework was introduced.
+
+Preserved guarantees:
+
+- The filename, response headers, UTF-8 BOM, header order, provider ordering, lazy batch size, selected relationship columns and count aggregates are unchanged.
+- CSV formula escaping, null handling, resource labels/counts, monitoring fields and credential exclusion remain unchanged.
+- The export continues to use the same organization-scoped query as the HTML inventory page.
+
+Verification after the slice:
+
+- Provider inventory, filter and export suite: 11 passed (100 assertions).
+- Pint, PHP syntax checks and `git diff --check`: passed.
+
+## Next task
+
+Extract the connection-history CSV writer with the same care for retained-sample bounds, filter semantics, row ordering, headers, escaping and private response behavior. Then run the complete provider-management regression set and inspect adapter contract expectations.
+
 ## Next task
 
 Extract the provider inventory and connection-history CSV response writers into focused export collaborators, preserving streamed headers, filenames, UTF-8 BOM, row order, CSV escaping, bounded/lazy loading and secret exclusion. Then run the complete provider-management gate before reviewing adapter contracts.

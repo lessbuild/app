@@ -7,6 +7,7 @@ use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
 use App\Services\Entitlements;
 use App\Services\ProviderConnectionHistoryQuery;
+use App\Services\ProviderInventoryExporter;
 use App\Services\ProviderInventoryQuery;
 use App\Support\CsvCell;
 use App\Support\DateRange;
@@ -23,6 +24,7 @@ class ProviderController extends Controller
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly ProviderConnectionHistoryQuery $connectionHistory,
+        private readonly ProviderInventoryExporter $providerInventoryExporter,
         private readonly ProviderInventoryQuery $providerInventory,
     ) {}
 
@@ -54,73 +56,8 @@ class ProviderController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
-        $filename = 'lessbuild-providers-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Provider ID',
-                'Name',
-                'Type',
-                'Description',
-                'Servers',
-                'Server count',
-                'Repositories',
-                'Repository count',
-                'Connection status',
-                'Automatic monitoring',
-                'Automatic interval minutes',
-                'Failure threshold',
-                'Consecutive failures',
-                'Connection checked at',
-                'Created at',
-                'Updated at',
-            ], ',', '"', '');
-
-            $this->providerInventory->for($request->user(), $filters)
-                ->with([
-                    'servers' => fn ($query) => $query
-                        ->select(['id', 'provider_id', 'name', 'display_name'])
-                        ->orderBy('name'),
-                    'repositories' => fn ($query) => $query
-                        ->select(['id', 'provider_id', 'name'])
-                        ->orderBy('name'),
-                ])
-                ->withCount(['servers', 'repositories'])
-                ->latest('providers.id')
-                ->lazy(250)
-                ->each(function (Provider $provider) use ($output): void {
-                    fputcsv($output, [
-                        $provider->id,
-                        $this->csvCell($provider->name),
-                        $this->csvCell($provider->provider),
-                        $this->csvCell($provider->description),
-                        $this->csvCell($provider->servers->map->label->implode('; ')),
-                        $provider->servers_count,
-                        $this->csvCell($provider->repositories->pluck('name')->implode('; ')),
-                        $provider->repositories_count,
-                        $provider->connectionHealth(),
-                        $provider->connection_monitoring_enabled ? 'enabled' : 'paused',
-                        $provider->connection_check_interval_minutes,
-                        $provider->connection_failure_threshold,
-                        $provider->connection_failure_count,
-                        $provider->connection_checked_at?->toIso8601String(),
-                        $provider->created_at?->toIso8601String(),
-                        $provider->updated_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->providerInventoryExporter->stream($request->user(), $filters);
     }
 
     /**
