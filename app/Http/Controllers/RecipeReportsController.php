@@ -10,6 +10,8 @@ use App\Actions\Recipe\ReviewRecipeReportUpdatesAction;
 use App\Actions\Recipe\SubmitRecipeReportAction;
 use App\Actions\Recipe\UpdateRecipeReportResolutionNoteAction;
 use App\Actions\Recipe\WithdrawRecipeReportAction;
+use App\Http\Requests\RecipeReportHistoryRequest;
+use App\Http\Requests\RecipeReportInboxRequest;
 use App\Http\Requests\RecipeReportResolutionRequest;
 use App\Http\Requests\ReopenRecipeReportsRequest;
 use App\Http\Requests\ResolveRecipeReportsRequest;
@@ -19,7 +21,6 @@ use App\Models\RecipeReport;
 use App\Services\RecipeReportHistoryExporter;
 use App\Services\RecipeReportInboxExporter;
 use App\Services\RecipeReportQuery;
-use App\Support\DateRange;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -37,9 +38,9 @@ class RecipeReportsController extends Controller
     /**
      * Render the request user's filtered recipe reports with pagination, availability counts, and unread report updates.
      */
-    public function mine(Request $request): View
+    public function mine(RecipeReportHistoryRequest $request): View
     {
-        $filters = $this->reporterFilters($request);
+        $filters = $request->filters();
         $query = $this->reportQuery->forReporter($request->user(), $filters);
         $reports = $this->reportQuery->orderedReporter(
             (clone $query)
@@ -83,9 +84,9 @@ class RecipeReportsController extends Controller
     /**
      * Stream the reporter's filtered submissions, recipe availability, and resolution notes as private CSV.
      */
-    public function exportMine(Request $request): StreamedResponse
+    public function exportMine(RecipeReportHistoryRequest $request): StreamedResponse
     {
-        $filters = $this->reporterFilters($request);
+        $filters = $request->filters();
 
         return $this->historyExporter->stream($request->user(), $filters);
     }
@@ -109,9 +110,9 @@ class RecipeReportsController extends Controller
     /**
      * Render filtered reports about the request user's contributed recipes with review and recipe counts.
      */
-    public function index(Request $request): View
+    public function index(RecipeReportInboxRequest $request): View
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
         $query = $this->reportQuery->forContributor($request->user(), $filters);
 
         return view('scenes.gallery.reports', [
@@ -137,9 +138,9 @@ class RecipeReportsController extends Controller
     /**
      * Stream filtered community reports about the request user's contributed recipes as private, spreadsheet-safe CSV.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(RecipeReportInboxRequest $request): StreamedResponse
     {
-        $filters = $this->filters($request);
+        $filters = $request->filters();
 
         return $this->inboxExporter->stream($request->user(), $filters);
     }
@@ -249,67 +250,5 @@ class RecipeReportsController extends Controller
         $withdrawReport->handle($recipe, $request->user());
 
         return back()->with('status', __('Your gallery report was withdrawn.'));
-    }
-
-    /** @return array{search: ?string, status: string, reason: ?string, date_from: ?string, date_to: ?string, age: ?string, sort: string, recipe: ?int, report: ?int} */
-    private function filters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $status = $request->string('status')->toString();
-        $reason = $request->string('reason')->toString();
-        $age = $request->string('age')->toString();
-        $sort = $request->string('sort')->toString();
-        $report = filter_var($request->query('report'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        $recipe = filter_var($request->query('recipe'), FILTER_VALIDATE_INT, [
-            'options' => ['min_range' => 1],
-        ]);
-        [$dateFrom, $dateTo] = DateRange::normalize(
-            $request->string('date_from')->toString(),
-            $request->string('date_to')->toString(),
-        );
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'status' => in_array($status, ['all', 'unresolved', 'resolved'], true) ? $status : 'unresolved',
-            'reason' => in_array($reason, RecipeReport::REASONS, true) ? $reason : null,
-            'date_from' => $dateFrom,
-            'date_to' => $dateTo,
-            'age' => in_array($age, ['24h', '7d', '30d'], true) ? $age : null,
-            'sort' => in_array($sort, ['newest', 'oldest', 'updated', 'priority'], true) ? $sort : 'newest',
-            'recipe' => $recipe ?: null,
-            'report' => $report ?: null,
-        ];
-    }
-
-    /**
-     * Return an unchanged valid Y-m-d calendar date, or null for malformed or overflowing input.
-     */
-    private function date(string $value): ?string
-    {
-        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-
-        return $date && $date->format('Y-m-d') === $value ? $value : null;
-    }
-
-    /** @return array{search: ?string, status: string, availability: string, updates: string, reason: ?string, sort: string} */
-    private function reporterFilters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $status = $request->string('status')->toString();
-        $availability = $request->string('availability')->toString();
-        $updates = $request->string('updates')->toString();
-        $reason = $request->string('reason')->toString();
-        $sort = $request->string('sort')->toString();
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'status' => in_array($status, ['all', 'open', 'resolved'], true) ? $status : 'all',
-            'availability' => in_array($availability, ['all', 'published', 'unpublished'], true) ? $availability : 'all',
-            'updates' => in_array($updates, ['all', 'unread', 'reviewed'], true) ? $updates : 'all',
-            'reason' => in_array($reason, RecipeReport::REASONS, true) ? $reason : null,
-            'sort' => in_array($sort, ['newest', 'oldest', 'updated'], true) ? $sort : 'newest',
-        ];
     }
 }
