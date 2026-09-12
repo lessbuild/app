@@ -75,4 +75,25 @@ class BillingTest extends TestCase
 
         $this->actingAs($member)->post(route('billing.checkout', 'pro'), ['interval' => 'monthly'])->assertForbidden();
     }
+
+    public function test_billing_permission_is_checked_before_invalid_interval(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $owner->currentOrganization->members()->attach($member, ['role' => 'viewer']);
+        $member->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($member)->post(route('billing.checkout', 'pro'), ['interval' => 'weekly'])->assertForbidden();
+    }
+
+    public function test_invalid_billing_interval_is_rejected_without_a_stripe_request(): void
+    {
+        config(['cashier.secret' => 'sk_test', 'billing.plans.pro.monthly_price_id' => 'price_pro']);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->from(route('billing.index'))
+            ->post(route('billing.checkout', 'pro'), ['interval' => 'weekly'])
+            ->assertRedirect(route('billing.index'))
+            ->assertSessionHasErrors('interval');
+    }
 }

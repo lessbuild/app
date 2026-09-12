@@ -22,6 +22,13 @@ class OrganizationPolicy
             && $organization->permits($user, 'manage');
     }
 
+    /** Allow a billing member to manage billing only in the currently selected workspace. */
+    public function manageBilling(User $user, Organization $organization): bool
+    {
+        return (int) $organization->id === (int) $user->current_organization_id
+            && $organization->permits($user, 'billing');
+    }
+
     /**
      * Allow a manager to invite members only to the currently selected workspace.
      */

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Billing\CreateBillingCheckoutAction;
+use App\Http\Requests\BillingCheckoutRequest;
+use App\Models\Organization;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Laravel\Cashier\Checkout;
 
@@ -35,14 +37,14 @@ class BillingController extends Controller
      *
      * @return Checkout|RedirectResponse Stripe checkout, or billing settings when already subscribed.
      */
-    public function checkout(Request $request, string $plan): mixed
-    {
-        abort_unless(array_key_exists($plan, config('billing.plans')) && $plan !== 'free', 404);
-
+    public function checkout(
+        BillingCheckoutRequest $request,
+        string $plan,
+        CreateBillingCheckoutAction $createCheckout,
+    ): mixed {
+        /** @var Organization $organization */
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'billing'), 403);
-        $data = $request->validate(['interval' => ['sometimes', Rule::in(['monthly', 'yearly'])]]);
-        $interval = $data['interval'] ?? 'monthly';
+        $interval = $request->billingInterval();
         $price = config("billing.plans.{$plan}.{$interval}_price_id");
         abort_unless(filled(config('cashier.secret')) && filled($price), 503, 'Stripe billing is not configured yet.');
 
@@ -51,25 +53,7 @@ class BillingController extends Controller
             return redirect()->route('billing.index')->with('status', 'Use the billing portal to change your plan.');
         }
 
-        $builder = $billingUser->newSubscription('default', $price)
-            ->allowPromotionCodes()
-            ->withMetadata(['organization_id' => (string) $organization->id, 'plan' => $plan, 'interval' => $interval]);
-
-        $includedSeats = config("billing.plans.{$plan}.included_seats");
-        $extraSeats = is_null($includedSeats) ? 0 : max(0, $organization->members()->count() - $includedSeats);
-        $seatPrice = config("billing.plans.{$plan}.{$interval}_seat_price_id");
-        if ($extraSeats > 0 && filled($seatPrice)) {
-            $builder->price($seatPrice, $extraSeats);
-        }
-
-        if (! $billingUser->subscriptions()->exists() && config('billing.trial_days') > 0) {
-            $builder->trialDays(config('billing.trial_days'));
-        }
-
-        return $builder->checkout([
-            'success_url' => route('billing.index', ['checkout' => 'success']),
-            'cancel_url' => route('billing.index', ['checkout' => 'cancelled']),
-        ]);
+        return $createCheckout->handle($organization, $billingUser, $plan, $interval, $price);
     }
 
     /**
