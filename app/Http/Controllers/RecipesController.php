@@ -6,13 +6,12 @@ use App\Actions\Recipe\CreateRecipeAction;
 use App\Actions\Recipe\DeleteRecipeAction;
 use App\Actions\Recipe\DuplicateRecipeAction;
 use App\Actions\Recipe\UpdateRecipeAction;
+use App\Http\Requests\RecipeIndexRequest;
 use App\Http\Requests\RecipeRequest;
 use App\Models\Recipe;
 use App\Models\Server;
-use App\Support\CsvCell;
-use App\Support\SqlLike;
-use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Services\RecipeInventoryExporter;
+use App\Services\RecipeInventoryQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,13 +20,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RecipesController extends Controller
 {
+    public function __construct(
+        private readonly RecipeInventoryExporter $recipeInventoryExporter,
+        private readonly RecipeInventoryQuery $recipeInventory,
+    ) {}
+
     /**
      * Render filtered workspace recipes with server usage counts and published-source revision context.
      */
-    public function index(Request $request): View
+    public function index(RecipeIndexRequest $request): View
     {
-        $filters = $this->indexFilters($request);
-        $recipes = $this->filteredRecipes($request, $filters)
+        $filters = $request->filters();
+        $recipes = $this->recipeInventory->for($request->user(), $filters)
             ->with([
                 'source' => fn ($query) => $query->published()->select(['id', 'gallery_revision_at']),
             ])
@@ -39,85 +43,17 @@ class RecipesController extends Controller
         return view('scenes.recipes.index', [
             'recipes' => $recipes,
             'filters' => $filters,
-            'metrics' => $this->indexMetrics($request, $filters),
+            'metrics' => $this->recipeInventory->metrics($request->user(), $filters),
             'usages' => ['in_use', 'unused'],
         ]);
     }
 
     /**
-     * @param  array{search: ?string, usage: ?string}  $filters
-     * @return array{total: int, in_use: int, unused: int, assignments: int, servers: int, latest_at: CarbonInterface|null}
-     */
-    private function indexMetrics(Request $request, array $filters): array
-    {
-        $latest = $this->filteredRecipes($request, $filters)
-            ->select(['id', 'updated_at'])
-            ->latest('updated_at')
-            ->latest('id')
-            ->first();
-        $assignments = DB::table('recipe_server')->whereIn(
-            'recipe_id',
-            $this->filteredRecipes($request, $filters)->select('recipes.id'),
-        );
-
-        return [
-            'total' => $this->filteredRecipes($request, $filters)->count(),
-            'in_use' => $this->filteredRecipes($request, $filters)->inUse()->count(),
-            'unused' => $this->filteredRecipes($request, $filters)->unused()->count(),
-            'assignments' => (clone $assignments)->count(),
-            'servers' => $assignments->distinct()->count('server_id'),
-            'latest_at' => $latest?->updated_at,
-        ];
-    }
-
-    /**
      * Stream filtered workspace recipe metadata and assigned server labels as private CSV, excluding script bodies.
      */
-    public function export(Request $request): StreamedResponse
+    public function export(RecipeIndexRequest $request): StreamedResponse
     {
-        $filters = $this->indexFilters($request);
-        $filename = 'lessbuild-recipes-'.now()->utc()->format('Ymd-His').'.csv';
-
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Recipe ID',
-                'Name',
-                'Description',
-                'Assigned servers',
-                'Server count',
-                'Created at',
-                'Updated at',
-            ], ',', '"', '');
-
-            $this->filteredRecipes($request, $filters)
-                ->with(['servers:id,name,display_name'])
-                ->withCount('servers')
-                ->latest('recipes.id')
-                ->lazy(250)
-                ->each(function (Recipe $recipe) use ($output): void {
-                    fputcsv($output, [
-                        $recipe->id,
-                        $this->csvCell($recipe->name),
-                        $this->csvCell($recipe->description),
-                        $this->csvCell($recipe->servers->map->label->implode('; ')),
-                        $recipe->servers_count,
-                        $recipe->created_at?->toIso8601String(),
-                        $recipe->updated_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->recipeInventoryExporter->stream($request->user(), $request->filters());
     }
 
     /**
@@ -226,41 +162,5 @@ class RecipesController extends Controller
         return redirect()
             ->route('recipes.edit', $copy)
             ->with('status', __('Recipe duplicated. Review and rename the copy before using it.'));
-    }
-
-    /** @return array{search: ?string, usage: ?string} */
-    private function indexFilters(Request $request): array
-    {
-        $search = str($request->string('search')->toString())->trim()->limit(100, '')->toString();
-        $usage = $request->string('usage')->toString();
-
-        return [
-            'search' => $search !== '' ? $search : null,
-            'usage' => in_array($usage, ['in_use', 'unused'], true) ? $usage : null,
-        ];
-    }
-
-    /** @param array{search: ?string, usage: ?string} $filters */
-    private function filteredRecipes(Request $request, array $filters): HasMany
-    {
-        return $request->user()->workspaceRecipes()
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("description LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['usage'] === 'in_use', fn ($query) => $query->inUse())
-            ->when($filters['usage'] === 'unused', fn ($query) => $query->unused());
-    }
-
-    /**
-     * Preserve null values and escape text that could be interpreted as a spreadsheet formula.
-     */
-    private function csvCell(?string $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }
