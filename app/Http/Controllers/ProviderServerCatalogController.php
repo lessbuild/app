@@ -22,12 +22,8 @@ class ProviderServerCatalogController extends Controller
         ServerProviderResolver $resolver,
         ServerCatalog $catalog,
     ): JsonResponse {
-        abort_unless(
-            $provider->organization_id === $request->user()->current_organization_id
-                && ($provider->organization?->permits($request->user(), 'deploy') ?? false)
-                && in_array($provider->provider, Provider::SERVER_TYPES, true),
-            403,
-        );
+        $this->authorize('deploy', $provider);
+        abort_unless(in_array($provider->provider, Provider::SERVER_TYPES, true), 403);
 
         try {
             return response()->json($catalog->for($provider, $resolver->resolve($provider)));

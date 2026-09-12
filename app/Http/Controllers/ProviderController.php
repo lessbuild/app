@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Provider\CreateProviderAction;
+use App\Actions\Provider\DeleteProviderAction;
+use App\Actions\Provider\UpdateProviderAction;
+use App\Exceptions\ProviderOperationException;
 use App\Http\Requests\ProviderRequest;
 use App\Models\Provider;
 use App\Models\ProviderConnectionCheck;
-use App\Services\Entitlements;
 use App\Services\ProviderConnectionHistoryExporter;
 use App\Services\ProviderConnectionHistoryQuery;
 use App\Services\ProviderInventoryExporter;
@@ -19,10 +22,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class ProviderController extends Controller
 {
     /**
-     * Use workspace entitlements to guard provider features that depend on a paid plan.
+     * Bind the existing provider queries, exporters, and connection-history collaborators.
      */
     public function __construct(
-        private readonly Entitlements $entitlements,
         private readonly ProviderConnectionHistoryQuery $connectionHistory,
         private readonly ProviderConnectionHistoryExporter $connectionHistoryExporter,
         private readonly ProviderInventoryExporter $providerInventoryExporter,
@@ -164,15 +166,9 @@ class ProviderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(ProviderRequest $request): RedirectResponse
+    public function store(ProviderRequest $request, CreateProviderAction $create): RedirectResponse
     {
-        if ($request->boolean('connection_monitoring_enabled')) {
-            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
-        }
-
-        $provider = $request->user()->workspaceProviders()->create(array_merge($request->validated(), [
-            'provider' => str($request->input('provider'))->lower(),
-        ]));
+        $provider = $create->handle($request->user(), $request->validated());
 
         return redirect()->route('providers.show', $provider)->with('success', __('Provider created successfully.'));
     }
@@ -192,33 +188,18 @@ class ProviderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(ProviderRequest $request, Provider $provider): RedirectResponse
+    public function update(ProviderRequest $request, Provider $provider, UpdateProviderAction $update): RedirectResponse
     {
         $this->authorize('update', $provider);
-        if ($request->boolean('connection_monitoring_enabled')) {
-            $this->entitlements->enforce($request->user()->currentOrganization, 'monitoring');
-        }
+        try {
+            $update->handle($request->user(), $provider, $request->validated());
+        } catch (ProviderOperationException $exception) {
+            $response = back();
+            if ($exception->withInput) {
+                $response = $response->withInput();
+            }
 
-        $validated = $request->safe()->except('token');
-        $providerType = str($request->input('provider'))->lower()->toString();
-        $credentialChanged = $request->filled('token') || $provider->provider !== $providerType;
-
-        if ($provider->provider !== $request->input('provider') && $provider->hasAttachedResources()) {
-            return back()->withInput()->withErrors([
-                'provider' => __('A provider type cannot be changed while resources are attached.'),
-            ]);
-        }
-
-        if ($request->filled('token')) {
-            $validated['token'] = $request->input('token');
-        }
-
-        $provider->update(array_merge($validated, [
-            'provider' => $providerType,
-        ]));
-
-        if ($credentialChanged) {
-            $provider->resetConnectionHealth();
+            return $response->withErrors([$exception->field => $exception->getMessage()]);
         }
 
         return redirect()->route('providers.show', $provider)->with('success', __('Provider updated successfully.'));
@@ -227,17 +208,14 @@ class ProviderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Provider $provider): RedirectResponse
+    public function destroy(Provider $provider, DeleteProviderAction $delete): RedirectResponse
     {
         $this->authorize('delete', $provider);
-
-        if ($provider->hasAttachedResources()) {
-            return back()->withErrors([
-                'provider' => __('Detach or delete this provider’s servers and repositories first.'),
-            ]);
+        try {
+            $delete->handle($provider);
+        } catch (ProviderOperationException $exception) {
+            return back()->withErrors([$exception->field => $exception->getMessage()]);
         }
-
-        $provider->delete();
 
         return redirect()->route('providers.index');
     }

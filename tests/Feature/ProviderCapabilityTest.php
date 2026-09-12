@@ -166,6 +166,32 @@ class ProviderCapabilityTest extends TestCase
         $this->assertSoftDeleted($provider);
     }
 
+    public function test_provider_update_requires_workspace_management_without_writing(): void
+    {
+        $owner = User::factory()->create();
+        $operator = User::factory()->create();
+        $provider = $owner->providers()->create([
+            'name' => 'Owned provider',
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => 'original-secret',
+            'description' => 'Original description',
+        ]);
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($operator, ['role' => 'operator']);
+        $operator->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($operator)->patch(route('providers.update', $provider), [
+            'provider' => Provider::TYPE_GITHUB,
+            'name' => 'Changed provider',
+            'description' => 'Changed description',
+            'token' => 'replacement-secret',
+            'connection_monitoring_enabled' => '0',
+        ])->assertForbidden();
+
+        $this->assertSame('Owned provider', $provider->fresh()->name);
+        $this->assertSame('original-secret', $provider->fresh()->token);
+    }
+
     private function providers(): array
     {
         $user = User::factory()->create();

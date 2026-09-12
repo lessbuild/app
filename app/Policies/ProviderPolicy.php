@@ -45,8 +45,20 @@ class ProviderPolicy
      */
     public function create(User $user): bool
     {
-        //
-        return false;
+        return $user->currentOrganization?->permits($user, 'deploy') ?? false;
+    }
+
+    /**
+     * Determine whether the user can use this workspace provider for cloud provisioning.
+     *
+     * @param  User  $user  The account requesting access.
+     * @param  Provider  $provider  The selected cloud provider connection.
+     * @return bool Whether the current workspace grants deployment access.
+     */
+    public function deploy(User $user, Provider $provider): bool
+    {
+        return $this->view($user, $provider)
+            && ($provider->organization?->permits($user, 'deploy') ?? false);
     }
 
     /**

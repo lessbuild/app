@@ -26,6 +26,22 @@ class ProviderSubmissionFeedbackTest extends TestCase
             ->assertOk()->assertSee('Provider created successfully.')->assertDontSee('fixture-private-token');
     }
 
+    public function test_provider_creation_authorization_precedes_malformed_input_without_writes(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->post(route('providers.store'), [
+            'name' => '', 'provider' => 'unsupported', 'description' => null, 'token' => null,
+            'connection_monitoring_enabled' => 'not-a-boolean',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('providers', 0);
+    }
+
     public function test_paid_monitoring_is_not_selected_for_a_free_workspace(): void
     {
         config(['billing.enforce_entitlements' => true]);

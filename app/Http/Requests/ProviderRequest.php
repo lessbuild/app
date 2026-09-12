@@ -17,7 +17,7 @@ class ProviderRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->currentOrganization?->permits($this->user(), 'deploy') ?? false;
+        return $this->user()?->can('create', Provider::class) ?? false;
     }
 
     /**
