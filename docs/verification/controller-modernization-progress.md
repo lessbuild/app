@@ -755,6 +755,83 @@ hostname normalization, DNS provider validation, Cloudflare sync failure
 fallback, primary-domain protection and Caddy dispatch before extracting
 domain operations.
 
+## Phase 3D — domain operation boundary
+
+### Responsibility problem
+
+`DomainController` mixed current-workspace website lookup and website update
+authorization with hostname normalization, provider-scoped validation, domain
+persistence, optional Cloudflare synchronization, sanitized synchronization
+fallbacks, primary-domain protection, DNS deletion and Caddy dispatch. The
+controller's private helpers also made the synchronization and failure
+semantics unavailable to other application entry points.
+
+### Boundaries applied
+
+- `WebsiteDomainRequest` resolves the submitted website through the current
+  workspace relationship and delegates the existing `WebsitePolicy::update`
+  decision. StoreWebsiteDomainRequest preserves hostname normalization and
+  the exact hostname, redirect and organization/provider validation rules.
+- IssueTemporaryWebsiteDomainRequest preserves the old ordering: website
+  authorization and the missing `TEMPORARY_APP_DOMAIN` response occur before
+  provider validation. The request boundary raises the existing redirect
+  response for that configuration exception rather than changing it into a
+  validation or authorization response.
+- SaveWebsiteDomainAction owns domain persistence, actor identity, alias
+  redirect normalization, optional DNS synchronization and the existing
+  post-save Caddy dispatch. IssueTemporaryWebsiteDomainAction owns temporary
+  hostname generation and delegates the shared save behavior.
+- SynchronizeWebsiteDomainAction owns the existing sanitized DNS error status
+  persistence. DeleteWebsiteDomainAction owns primary-domain protection,
+  delete-before-local-removal ordering and post-delete Caddy dispatch. The
+  controller maps operation outcomes to the existing redirects, flash keys,
+  validation errors and 422 response.
+- The existing `CloudflareDns` service remains the provider adapter, and
+  ApplyWebsiteDomainsJob remains the remote Caddy rendering/reload boundary.
+  No provider abstraction or generic CRUD action was introduced.
+
+This applies single responsibility, dependency inversion and policy-based
+authorization while keeping the actual resource policy (`WebsitePolicy`)
+reusable. Primary protection and DNS failure handling remain business
+operation outcomes rather than being misclassified as actor permissions.
+
+### Preserved contracts and safety guarantees
+
+- Domain routes, workspace-scoped website lookup, website update policy,
+  validation keys, hostname normalization, provider organization/type scope,
+  redirect persistence and temporary hostname format remain unchanged.
+- Missing temporary-domain configuration still returns the original `domain`
+  session error before provider validation. Unauthorized malformed requests
+  remain forbidden and create neither rows nor jobs.
+- Cloudflare success/failure behavior, sanitized stored error text, manual-DNS
+  warning, encrypted credential handling, primary-domain 422 protection and
+  no-delete-on-DNS-failure behavior remain unchanged.
+- Domain deletion still removes the local row only after the provider delete
+  succeeds and dispatches `ApplyWebsiteDomainsJob` afterward. The unique job,
+  Caddy rendering, remote timeout/retry and failure behavior remain untouched.
+- No routes, migrations, schemas, serialized job payloads, dependency
+  lockfiles or provider requests changed.
+
+### Verification
+
+- Domain and adjacent website/tenancy regression set: **24 passed, 219
+  assertions**.
+- Added coverage for viewer denial before malformed validation, no-write and
+  no-job denial, sanitized sync failure persistence, primary-domain
+  protection, Cloudflare delete failure retention and successful deletion
+  dispatch.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `7d12a23` — `refactor: extract domain operations`
+
+**Phase 3D exit gate: complete.** Exact next task: inventory remaining
+`ServersController`, `WebsitesController` and import writes, separating
+resource reporting from lifecycle operations while preserving provisioning
+attempt ownership, placement/relocation cleanup, encrypted environment data,
+callback ordering and import assessment semantics.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -768,3 +845,4 @@ domain operations.
 | Phase 3A | Backup destination, schedule, run and restore endpoints mixed validation, authorization, encrypted writes, duplicate detection, transactions and job dispatch in `BackupController`. | 25 focused regression tests passed, 189 assertions; broader infrastructure set 34/256; Pint and diff checks passed. | `2253bc2` — `refactor: extract backup operations` | Begin Phase 3 with Database management: inventory inspect/user/clone operations and preserve command safety, ownership, entitlements and dispatch behavior. |
 | Phase 3B | Database inspection, credential, removal and clone endpoints mixed resource lookup/permission, validation, encrypted writes, safety rules and job dispatch in `DatabaseController`. | 5 new database-operation tests passed, 27 assertions; combined database/platform/entitlement/safety set 18/111; Pint and diff checks passed. | `b66e1f5` — `refactor: extract database operations` | Continue Phase 3 with Load balancers and domains: inventory resource policies, requests, operations, remote dispatch and scoped IDs. |
 | Phase 3C | Load-balancer validation, authorization, placement invariants, direct node/balancer writes and Caddy dispatch remained in `LoadBalancerController`. | 20 focused tests passed, 116 assertions; Pint and diff checks passed. | `d5835bd` — `refactor: extract load balancer operations` | Continue Phase 3 with Domains: preserve website lookup, hostname normalization, Cloudflare outcomes, primary protection and Caddy dispatch. |
+| Phase 3D | Domain validation, website authorization, DNS synchronization/deletion, primary protection and Caddy dispatch remained in `DomainController`. | 24 adjacent domain/website/tenancy tests passed, 219 assertions; Pint and diff checks passed. | `7d12a23` — `refactor: extract domain operations` | Inventory remaining server, website and import writes; separate reporting from lifecycle operations while preserving provisioning, relocation, encryption, callback and import semantics. |
