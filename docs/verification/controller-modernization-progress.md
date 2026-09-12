@@ -184,8 +184,71 @@ against its controller/policy boundary before authorization ordering changes.
 the route/guard/write inventory is captured, existing browser defects are
 explicit, and the exact next slice is the project-creation pilot.
 
+## Phase 1 — project creation pilot
+
+### Responsibility problem
+
+`ProjectController::create()` and `store()` both made the deployment-permission
+decision, while `store()` also defaulted and validated input, selected a
+template, generated a workspace-scoped slug, and created the project,
+production environment and entitled processes inside a transaction. That
+coupled HTTP concerns to a cohesive application operation and made the
+transaction difficult to exercise without a request.
+
+### Boundaries applied
+
+- `ProjectPolicy::create` owns the existing workspace `deploy` permission.
+- `StoreProjectRequest` owns the same field rules and the preset default. Its
+  `input('preset', 'laravel')` behavior intentionally keeps omitted and
+  explicit-null input distinct.
+- `CreateProjectAction` receives an organization, actor and validated
+  attributes. It owns template lookup, slug selection, persistence,
+  entitlement-gated process creation and the existing transaction. It does not
+  receive an HTTP request or return a redirect.
+- The controller now authorizes the create view, passes validated input to the
+  action and returns the existing redirect and flash message. Existing project
+  show, delete and preview behavior remains outside this pilot.
+
+This applies single responsibility and dependency inversion without adding a
+generic CRUD abstraction: the request/policy/action boundaries each have a
+concrete consumer and the existing `Entitlements` service remains injected.
+
+### Preserved contracts and safety guarantees
+
+- Existing deploy-role behavior, current-workspace tenancy and denial status
+  remain enforced before project validation or writes.
+- The configured preset allowlist, omitted `laravel` default, explicit-null
+  validation failure, persisted attributes, slug suffixing and actor identity
+  are unchanged.
+- The protected `Production` environment, runtime template fields,
+  entitlement-gated process defaults, transaction rollback, redirect target and
+  success flash are unchanged.
+- No jobs, events, remote calls or dependency lockfiles were changed.
+
+### Verification
+
+- Focused PHP suite: **26 passed, 166 assertions** across
+  `ProjectCreationTest`, `ProjectEnvironmentTest`, `EnvironmentRuntimeTest`,
+  `SharedOrganizationTenancyTest` and `EntitlementTest`.
+- Added coverage for denied viewer/developer authorization, no-write denial,
+  default/null/unknown preset behavior and transaction rollback.
+- PHP syntax checks passed for all edited PHP files.
+- Pint test passed and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `5c055ff` — `refactor: extract project creation operation`
+
+**Phase 1 exit gate: complete.** Exact next task: characterize the existing
+configuration web/API validation and authorization ordering, then extract the
+smallest request and operation boundaries while preserving secret-safe failed
+validation, string-versus-array bindings, `relatedOperations()` receipt
+lookups, claims, leases and stale-callback behavior. Do not begin environment
+extractions until the configuration slice is committed.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
 | --- | --- | --- | --- | --- |
-| Phase 0 | Complete inventory and isolated baseline before source changes. | See baseline above. | `bc0d98f` — `docs: record controller modernization baseline` | Add the project creation pilot: characterize current tests, then introduce `StoreProjectRequest`, `ProjectPolicy::create` and `CreateProjectAction` without changing contracts. |
+| Phase 0 | Complete inventory and isolated baseline before source changes. | See baseline above. | `ea81610` — `docs: record controller modernization baseline` | Add the project creation pilot: characterize current tests, then introduce `StoreProjectRequest`, `ProjectPolicy::create` and `CreateProjectAction` without changing contracts. |
+| Phase 1 | Project creation mixed permission, validation, template selection and transactional writes in `ProjectController`. | 26 focused tests passed, 166 assertions; Pint and diff checks passed. | `5c055ff` — `refactor: extract project creation operation` | Characterize configuration web/API ordering and extract the smallest configuration request/operation boundary; preserve secret-safe validation, receipt relationships, claims, leases and stale callbacks. |
