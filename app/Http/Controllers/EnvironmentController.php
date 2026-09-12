@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Actions\Environment\SaveEnvironmentResourceAction;
 use App\Actions\Environment\SaveEnvironmentVariableAction;
+use App\Http\Requests\DeploymentControlsRequest;
+use App\Http\Requests\EnvironmentRequest;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentResource;
 use App\Models\EnvironmentVariable;
 use App\Models\Project;
 use App\Services\Entitlements;
-use DateTimeZone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -29,20 +30,10 @@ class EnvironmentController extends Controller
      *
      * @return RedirectResponse The creation result, or a validation error for a second production environment.
      */
-    public function store(Request $request, Project $project): RedirectResponse
+    public function store(EnvironmentRequest $request, Project $project): RedirectResponse
     {
         $this->authorize('update', $project);
-        $request->mergeIfMissing([
-            'minimum_replicas' => 1,
-            'maximum_replicas' => 1,
-            'runtime_type' => 'php',
-            'runtime_version' => null,
-            'build_command' => null,
-            'start_command' => null,
-            'container_port' => null,
-            'dockerfile_path' => null,
-        ]);
-        $data = $this->validated($request, $project);
+        $data = $request->validated();
         $this->enforceRuntimeFeatures($project, $data);
         if (($data['is_protected'] || $data['requires_deployment_approval']) && ! $project->organization->permits($request->user(), 'manage')) {
             abort(403);
@@ -66,21 +57,10 @@ class EnvironmentController extends Controller
      *
      * @return RedirectResponse The saved result, or a validation error for a second production environment.
      */
-    public function update(Request $request, Environment $environment): RedirectResponse
+    public function update(EnvironmentRequest $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $request->mergeIfMissing([
-            'minimum_replicas' => $environment->minimum_replicas,
-            'maximum_replicas' => $environment->maximum_replicas,
-            'hibernate_after_minutes' => $environment->hibernate_after_minutes,
-            'runtime_type' => $environment->runtime_type ?: 'php',
-            'runtime_version' => $environment->runtime_version,
-            'build_command' => $environment->build_command,
-            'start_command' => $environment->start_command,
-            'container_port' => $environment->container_port,
-            'dockerfile_path' => $environment->dockerfile_path,
-        ]);
-        $data = $this->validated($request, $environment->project);
+        $data = $request->validated();
         $this->enforceRuntimeFeatures($environment->project, $data, $environment);
         if ($data['type'] === 'production' && $environment->project->environments()->where('type', 'production')->whereKeyNot($environment->id)->exists()) {
             return back()->withErrors(['type' => __('This application already has a production environment.')])->withInput();
@@ -202,34 +182,10 @@ class EnvironmentController extends Controller
     /**
      * Validate locks, deployment windows, strategy, and rollback settings for an editable environment, then save them.
      */
-    public function updateDeploymentControls(Request $request, Environment $environment): RedirectResponse
+    public function updateDeploymentControls(DeploymentControlsRequest $request, Environment $environment): RedirectResponse
     {
         $this->authorize('update', $environment);
-        $request->mergeIfMissing([
-            'deployment_strategy' => $environment->deployment_strategy ?: 'blue_green',
-            'rolling_pause_seconds' => $environment->rolling_pause_seconds ?? 2,
-            'automatic_rollback' => false,
-        ]);
-        $data = $request->validate([
-            'deployment_locked' => ['required', 'boolean'],
-            'deployment_lock_reason' => ['nullable', 'string', 'max:500'],
-            'deployment_window_enabled' => ['required', 'boolean'],
-            'deployment_window_days' => ['nullable', 'array', 'min:1'],
-            'deployment_window_days.*' => ['integer', 'between:1,7', 'distinct'],
-            'deployment_window_start' => ['nullable', 'date_format:H:i'],
-            'deployment_window_end' => ['nullable', 'date_format:H:i'],
-            'deployment_window_timezone' => ['nullable', 'string', Rule::in(DateTimeZone::listIdentifiers())],
-            'deployment_strategy' => ['required', Rule::in(Environment::DEPLOYMENT_STRATEGIES)],
-            'rolling_pause_seconds' => ['required', 'integer', Rule::in([0, 1, 2, 5, 10, 30])],
-            'automatic_rollback' => ['required', 'boolean'],
-        ]);
-        if ($data['deployment_window_enabled'] && (empty($data['deployment_window_days'])
-            || empty($data['deployment_window_start']) || empty($data['deployment_window_end'])
-            || empty($data['deployment_window_timezone']))) {
-            throw ValidationException::withMessages([
-                'deployment_window_days' => __('Choose days, start and end times, and a timezone for the window.'),
-            ]);
-        }
+        $data = $request->validated();
 
         $environment->update([
             'deployment_locked_at' => $data['deployment_locked'] ? ($environment->deployment_locked_at ?? now()) : null,
@@ -257,35 +213,6 @@ class EnvironmentController extends Controller
         $environment->delete();
 
         return back()->with('success', __('Environment deleted.'));
-    }
-
-    /**
-     * Validate runtime and deployment-protection fields with placements restricted to the project's workspace.
-     *
-     * @return array<string, mixed> Only validated environment attributes; optional fields may be absent.
-     */
-    private function validated(Request $request, Project $project): array
-    {
-        $organizationId = $project->organization_id;
-
-        return $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'type' => ['required', Rule::in(Environment::TYPES)],
-            'branch' => ['required', 'string', 'max:255'],
-            'runtime_type' => ['required', Rule::in(Environment::RUNTIME_TYPES)],
-            'runtime_version' => ['nullable', 'string', 'max:20', 'regex:/\A[0-9]+(?:\.[0-9]+){0,2}\z/'],
-            'build_command' => ['nullable', 'string', 'max:2000'],
-            'start_command' => ['nullable', 'string', 'max:2000', 'required_if:runtime_type,node,python'],
-            'container_port' => ['nullable', 'integer', 'between:1,65535', 'required_if:runtime_type,node,python,docker'],
-            'dockerfile_path' => ['nullable', 'string', 'max:255', 'regex:/\A(?!\/)(?!.*\.\.)(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\z/', 'required_if:runtime_type,docker'],
-            'server_id' => ['nullable', Rule::exists('servers', 'id')->where('organization_id', $organizationId)],
-            'website_id' => ['nullable', Rule::exists('websites', 'id')->where('organization_id', $organizationId)],
-            'is_protected' => ['required', 'boolean'],
-            'requires_deployment_approval' => ['required', 'boolean'],
-            'minimum_replicas' => ['required', 'integer', 'between:1,20'],
-            'maximum_replicas' => ['required', 'integer', 'between:1,20', 'gte:minimum_replicas'],
-            'hibernate_after_minutes' => ['nullable', 'integer', Rule::in([5, 15, 30, 60, 120, 1440])],
-        ]);
     }
 
     /**

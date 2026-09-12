@@ -774,6 +774,26 @@ Verification after the slice:
 
 Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3D — environment request-validation boundary slice
+
+Responsibility problem: EnvironmentController still contained substantial runtime/placement validation, update defaults, deployment-control rules and cross-field maintenance-window validation alongside authorization and persistence coordination.
+
+Boundary used: EnvironmentRequest now owns shared create/update validation and route-aware defaults. DeploymentControlsRequest owns deployment-control rules, defaults and the existing cross-field window check. Controllers retain policy authorization, entitlement enforcement, protected-production safeguards, slug allocation, persistence mapping and responses.
+
+Preserved guarantees:
+
+- Organization-scoped server/website existence rules, runtime requirements, replica bounds, protected flags and omitted update values remain unchanged.
+- Deployment lock/window fields, strategy values, default rollout settings, the maintenance-window error key/message and validated response behavior remain unchanged.
+- Policy checks still occur at the controller boundary, while Form Requests provide the same authorization result before validation for unauthorized requests.
+- No route, validation key, flash message, persisted value, entitlement decision or deployment-control evaluation changed.
+
+Verification after the slice:
+
+- EnvironmentRuntimeTest, ProjectEnvironmentTest, DeploymentControlsTest, DeploymentStrategyTest, EntitlementTest and AutomationTest: 32 passed (185 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
+Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
+
 ## Next task
 
-Review environment creation/update and deployment-control validation for a justified Form Request or action boundary, while preserving feature entitlements, protected-production rules, ownership checks and maintenance-window errors.
+Run the complete Phase 3D server/environment regression gate, including deletion cleanup, provisioning callbacks/retries, environment removal safeguards, ownership and authorization; then close Phase 3D if all contracts remain green.
