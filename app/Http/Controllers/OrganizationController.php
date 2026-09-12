@@ -3,32 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Organization\AcceptOrganizationInvitationAction;
+use App\Actions\Organization\DeleteOrganizationAction;
 use App\Actions\Organization\InviteOrganizationMemberAction;
 use App\Actions\Organization\RemoveOrganizationMemberAction;
 use App\Actions\Organization\SwitchOrganizationAction;
 use App\Actions\Organization\UpdateOrganizationMemberAction;
 use App\Actions\Organization\UpdateOrganizationNotificationPreferencesAction;
 use App\Actions\Organization\UpdateOrganizationSecurityPolicyAction;
+use App\Exceptions\OrganizationDeletionOperationException;
 use App\Exceptions\OrganizationInvitationOperationException;
 use App\Exceptions\OrganizationMemberOperationException;
 use App\Http\Requests\AcceptOrganizationInvitationRequest;
+use App\Http\Requests\DeleteOrganizationRequest;
 use App\Http\Requests\StoreOrganizationInvitationRequest;
 use App\Http\Requests\UpdateOrganizationMemberRequest;
 use App\Http\Requests\UpdateOrganizationNotificationPreferencesRequest;
 use App\Http\Requests\UpdateOrganizationSecurityPolicyRequest;
-use App\Models\Build;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
-use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Services\PersonalOrganization;
 use App\Services\PlanLimits;
-use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class OrganizationController extends Controller
@@ -150,38 +147,16 @@ class OrganizationController extends Controller
      * @return RedirectResponse Workspace settings after the user's personal workspace is ensured.
      */
     public function destroy(
-        Request $request,
+        DeleteOrganizationRequest $request,
         Organization $organization,
-        TwoFactorAuthentication $twoFactor,
-        PersonalOrganization $personal,
+        DeleteOrganizationAction $delete,
     ): RedirectResponse {
         $user = $request->user();
-        abort_unless($organization->id === $user->current_organization_id && $organization->owner->is($user), 403);
-        $rules = ['confirmation' => ['required', Rule::in([$organization->name])]];
-        if ($user->hasLocalPassword()) {
-            $rules['current_password'] = ['required', 'current_password'];
+        try {
+            $delete->handle($user, $organization, $request->validated());
+        } catch (OrganizationDeletionOperationException $exception) {
+            abort($exception->statusCode, $exception->getMessage());
         }
-        if ($user->twoFactorEnabled()) {
-            $rules['code'] = ['required', 'string', 'max:64'];
-        }
-        $data = $request->validateWithBag('deleteWorkspace', $rules);
-        if ($user->twoFactorEnabled() && ! $twoFactor->verifyUser($user, $data['code'])) {
-            throw ValidationException::withMessages(['code' => __('The authentication or recovery code is invalid.')])->errorBag('deleteWorkspace');
-        }
-
-        abort_if($organization->members()->where('users.id', '!=', $user->id)->exists(), 422, 'Remove every teammate before deleting this workspace.');
-        abort_if(
-            Build::query()->whereIn('status', Build::ACTIVE_STATUSES)->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id))->exists()
-                || ServerCommandExecution::query()->active()->whereHas('server', fn ($query) => $query->where('organization_id', $organization->id))->exists(),
-            409,
-            'Wait for active deployments and commands to finish before deleting this workspace.',
-        );
-
-        DB::transaction(function () use ($organization, $user): void {
-            $organization->delete();
-            $user->forceFill(['current_organization_id' => null])->save();
-        });
-        $personal->ensure($user->refresh());
 
         return redirect()->route('organizations.index')->with('success', __('Workspace deleted. A new empty personal workspace was created.'));
     }

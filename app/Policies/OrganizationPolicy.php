@@ -35,6 +35,15 @@ class OrganizationPolicy
     }
 
     /**
+     * Allow only the owner to delete the currently selected workspace.
+     */
+    public function delete(User $user, Organization $organization): bool
+    {
+        return (int) $organization->id === (int) $user->current_organization_id
+            && (int) $organization->owner_id === (int) $user->id;
+    }
+
+    /**
      * Allow an account to switch to any workspace in which it has view access.
      */
     public function switch(User $user, Organization $organization): bool

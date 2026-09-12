@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Jobs\SyncOrganizationSeatQuantityJob;
+use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Notifications\OrganizationInvitationNotification;
 use App\Services\PersonalOrganization;
+use App\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -278,6 +281,71 @@ class OrganizationManagementTest extends TestCase
         $this->assertNotNull($owner->current_organization_id);
         $this->assertNotSame($organization->id, $owner->current_organization_id);
         $this->assertSame($owner->id, $owner->currentOrganization->owner_id);
+    }
+
+    public function test_workspace_deletion_uses_its_named_error_bag_and_does_not_flash_password(): void
+    {
+        $owner = User::factory()->create();
+        $organization = $owner->currentOrganization;
+
+        $this->actingAs($owner)->delete(route('organizations.destroy', $organization), [
+            'confirmation' => 'not-the-workspace', 'current_password' => 'wrong-password',
+        ])->assertSessionHasErrorsIn('deleteWorkspace', ['confirmation', 'current_password'])
+            ->assertSessionMissing('_old_input.current_password');
+
+        $this->assertDatabaseHas('organizations', ['id' => $organization->id]);
+    }
+
+    public function test_workspace_deletion_authorization_precedes_named_validation(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($member, ['role' => 'admin']);
+        $member->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($member)->delete(route('organizations.destroy', $organization), [
+            'confirmation' => 'not-the-workspace', 'current_password' => 'wrong-password',
+        ])->assertForbidden();
+
+        $this->assertDatabaseHas('organizations', ['id' => $organization->id]);
+    }
+
+    public function test_workspace_deletion_rejects_an_invalid_two_factor_code_in_its_named_bag(): void
+    {
+        $owner = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $twoFactor = app(TwoFactorAuthentication::class);
+        $owner->forceFill([
+            'two_factor_secret' => $twoFactor->generateSecret(),
+            'two_factor_recovery_codes' => $twoFactor->recoveryCodeHashes($twoFactor->generateRecoveryCodes()),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($owner)->delete(route('organizations.destroy', $organization), [
+            'confirmation' => $organization->name, 'current_password' => 'password', 'code' => '000000',
+        ])->assertSessionHasErrorsIn('deleteWorkspace', 'code');
+
+        $this->assertDatabaseHas('organizations', ['id' => $organization->id]);
+    }
+
+    public function test_workspace_deletion_rejects_active_commands_without_deleting(): void
+    {
+        $owner = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $server = $owner->servers()->create([
+            'name' => 'Production', 'public_ip' => '192.0.2.10', 'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $execution = $server->commandExecutions()->create([
+            'user_id' => $owner->id, 'command' => 'uptime', 'status' => ServerCommandExecution::STATUS_RUNNING,
+        ]);
+
+        $this->actingAs($owner)->delete(route('organizations.destroy', $organization), [
+            'confirmation' => $organization->name, 'current_password' => 'password',
+        ])->assertStatus(409);
+
+        $this->assertDatabaseHas('organizations', ['id' => $organization->id]);
+        $this->assertModelExists($execution);
     }
 
     public function test_workspace_deletion_is_owner_only_and_refuses_to_remove_teammates(): void
