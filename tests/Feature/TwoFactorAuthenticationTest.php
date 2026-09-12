@@ -233,6 +233,47 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->assertNull($user->two_factor_recovery_codes);
     }
 
+    public function test_disable_rejects_an_invalid_code_without_changing_credentials(): void
+    {
+        $user = $this->enabledUser();
+        $secret = $user->two_factor_secret;
+        $recoveryCodes = $user->two_factor_recovery_codes;
+
+        $this->actingAs($user)->delete(route('account.two-factor.disable'), [
+            'current_password' => 'password',
+            'code' => '000000',
+        ])->assertSessionHasErrors(['code'], errorBag: 'twoFactor');
+
+        $user->refresh();
+        $this->assertSame($secret, $user->two_factor_secret);
+        $this->assertSame($recoveryCodes, $user->two_factor_recovery_codes);
+        $this->assertNotNull($user->two_factor_confirmed_at);
+    }
+
+    public function test_social_only_user_can_disable_two_factor_with_a_recovery_code(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'auth_type' => 'github',
+        ]);
+        $service = app(TwoFactorAuthentication::class);
+        $recoveryCode = 'ABCD-EFAB-CDEF';
+        $user->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => $service->recoveryCodeHashes([$recoveryCode]),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->actingAs($user)->delete(route('account.two-factor.disable'), [
+            'code' => strtolower($recoveryCode),
+        ])->assertSessionHas('two_factor_status', 'Two-factor authentication disabled.');
+
+        $user->refresh();
+        $this->assertFalse($user->twoFactorEnabled());
+        $this->assertNull($user->two_factor_secret);
+        $this->assertNull($user->two_factor_recovery_codes);
+    }
+
     private function enabledUser(): User
     {
         $user = User::factory()->create();

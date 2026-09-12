@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Actions\Account\BeginTwoFactorSetupAction;
 use App\Actions\Account\CancelTwoFactorSetupAction;
 use App\Actions\Account\ConfirmTwoFactorAction;
+use App\Actions\Account\DisableTwoFactorAction;
 use App\Exceptions\TwoFactorOperationException;
 use App\Http\Requests\ConfirmTwoFactorRequest;
+use App\Http\Requests\DisableTwoFactorRequest;
 use App\Http\Requests\EnableTwoFactorRequest;
 use App\Services\ActivityRecorder;
 use App\Services\TwoFactorAuthentication;
@@ -47,22 +49,9 @@ class TwoFactorAuthenticationController extends Controller
     /**
      * Validate applicable password and authentication/recovery-code challenges, clear two-factor credentials, and redirect back.
      */
-    public function disable(
-        Request $request,
-        TwoFactorAuthentication $twoFactor,
-        ActivityRecorder $activity,
-    ): RedirectResponse {
-        $this->validatePassword($request, withCode: true);
-        if (! $twoFactor->verifyUser($request->user(), (string) $request->input('code'))) {
-            throw ValidationException::withMessages(['code' => __('The authentication or recovery code is invalid.')])->errorBag('twoFactor');
-        }
-
-        $request->user()->forceFill([
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
-        ])->save();
-        $activity->recordAccount($request->user(), 'Two-factor authentication was disabled.');
+    public function disable(DisableTwoFactorRequest $request, DisableTwoFactorAction $disable): RedirectResponse
+    {
+        $disable->handle($request->user(), $request->code());
 
         return back()->with('two_factor_status', __('Two-factor authentication disabled.'));
     }
