@@ -14,6 +14,7 @@ use App\Actions\Automation\RevokePersonalAccessTokenAction;
 use App\Actions\Automation\RotatePersonalAccessTokenAction;
 use App\Actions\Environment\QueueEnvironmentRuntimeStateAction;
 use App\Actions\Environment\UpdateEnvironmentScalingAction;
+use App\Http\Requests\ApplyWorkflowRequest;
 use App\Http\Requests\RuntimeEnvironmentRequest;
 use App\Http\Requests\ScaleEnvironmentRequest;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
@@ -59,11 +60,9 @@ class AutomationController extends Controller
     /**
      * Validate workflow text for an editable project and redirect after its atomic application.
      */
-    public function workflow(Request $request, Project $project, WorkflowConfiguration $workflow): RedirectResponse
+    public function workflow(ApplyWorkflowRequest $request, Project $project, WorkflowConfiguration $workflow): RedirectResponse
     {
-        $this->authorize('update', $project);
-        $data = $request->validate(['workflow' => ['required', 'string', 'max:50000']]);
-        $workflow->apply($project, $data['workflow'], $request->user()->id);
+        $workflow->apply($project, $request->workflow(), $request->user()->id);
 
         return back()->with('success', __('Workflow applied atomically.'));
     }

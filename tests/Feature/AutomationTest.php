@@ -381,6 +381,44 @@ class AutomationTest extends TestCase
         $this->assertNotSame($yaml, DB::table('projects')->where('id', $project->id)->value('workflow_yaml'));
     }
 
+    public function test_web_workflow_request_preserves_policy_validation_and_flash_contract(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Workflow', 'slug' => 'workflow', 'preset' => 'custom']);
+        $yaml = "version: 1\nenvironments: {}";
+
+        $this->actingAs($user)->put(route('automation.workflow', $project), ['workflow' => $yaml])
+            ->assertRedirect()->assertSessionHas('success', 'Workflow applied atomically.');
+        $this->assertSame($yaml, $project->fresh()->workflow_yaml);
+    }
+
+    public function test_api_workflow_request_preserves_manage_token_and_json_contract(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Workflow', 'slug' => 'workflow', 'preset' => 'custom']);
+        $yaml = "version: 1\nenvironments: {}";
+        Sanctum::actingAs($user, ['manage']);
+
+        $this->putJson('/api/v1/projects/'.$project->id.'/workflow', ['workflow' => $yaml])
+            ->assertOk()->assertJson(['data' => ['status' => 'applied']]);
+        $this->assertSame($yaml, $project->fresh()->workflow_yaml);
+    }
+
+    public function test_workflow_access_denial_precedes_malformed_web_and_api_input(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Workflow', 'slug' => 'workflow', 'preset' => 'custom']);
+
+        $this->actingAs($viewer)->put(route('automation.workflow', $project), [])->assertForbidden();
+        Sanctum::actingAs($viewer, ['manage']);
+        $this->putJson('/api/v1/projects/'.$project->id.'/workflow', [])->assertForbidden();
+
+        $this->assertNull($project->fresh()->workflow_yaml);
+    }
+
     public function test_api_is_scoped_and_honors_token_abilities(): void
     {
         Queue::fake();

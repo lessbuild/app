@@ -10,6 +10,7 @@ use App\Data\BuildPromotionResult;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ApplyConfigurationRequest;
+use App\Http\Requests\Api\V1\ApplyWorkflowRequest;
 use App\Http\Requests\Api\V1\CancelConfigurationRequest;
 use App\Http\Requests\Api\V1\ConfigurationInputRequest;
 use App\Http\Requests\Api\V1\RetryConfigurationRequest;
@@ -198,12 +199,9 @@ class ControlPlaneController extends Controller
     /**
      * Require management ability, validate workflow text for an editable project, and return its atomic application result.
      */
-    public function workflow(Request $request, Project $project, WorkflowConfiguration $workflow): JsonResponse
+    public function workflow(ApplyWorkflowRequest $request, Project $project, WorkflowConfiguration $workflow): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $project);
-        $data = $request->validate(['workflow' => ['required', 'string', 'max:50000']]);
-        $workflow->apply($project, $data['workflow'], $request->user()->id);
+        $workflow->apply($project, $request->workflow(), $request->user()->id);
 
         return response()->json(['data' => ['status' => 'applied']]);
     }
