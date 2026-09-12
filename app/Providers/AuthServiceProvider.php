@@ -11,6 +11,7 @@ use App\Models\Environment;
 use App\Models\EnvironmentResource;
 use App\Models\LoadBalancer;
 use App\Models\MetricAlertRule;
+use App\Models\OperationalIncident;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Recipe;
@@ -30,6 +31,7 @@ use App\Policies\EnvironmentPolicy;
 use App\Policies\EnvironmentResourcePolicy;
 use App\Policies\LoadBalancerPolicy;
 use App\Policies\MetricAlertRulePolicy;
+use App\Policies\OperationalIncidentPolicy;
 use App\Policies\PersonalAccessTokenPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
@@ -65,6 +67,7 @@ class AuthServiceProvider extends ServiceProvider
         EnvironmentResource::class => EnvironmentResourcePolicy::class,
         LoadBalancer::class => LoadBalancerPolicy::class,
         MetricAlertRule::class => MetricAlertRulePolicy::class,
+        OperationalIncident::class => OperationalIncidentPolicy::class,
         PersonalAccessToken::class => PersonalAccessTokenPolicy::class,
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,

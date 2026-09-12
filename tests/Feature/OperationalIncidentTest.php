@@ -59,6 +59,51 @@ class OperationalIncidentTest extends TestCase
         $this->actingAs($intruder)->post(route('observability.operational-incidents.notes.store', $incident), ['message' => 'No access'])->assertForbidden();
     }
 
+    public function test_authorization_precedes_validation_and_business_rejections_do_not_write(): void
+    {
+        [$owner, $server] = $this->server();
+        app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Server failed', 'Connection refused');
+        $incident = OperationalIncident::query()->sole();
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)
+            ->patch(route('observability.operational-incidents.assign', $incident), ['assigned_to' => 'not-an-integer'])
+            ->assertForbidden();
+        $this->actingAs($intruder)
+            ->post(route('observability.operational-incidents.notes.store', $incident), ['message' => str_repeat('x', 5001)])
+            ->assertForbidden();
+        $this->assertSame(1, $incident->events()->count());
+
+        $operator = User::factory()->create();
+        $owner->currentOrganization->members()->attach($operator, ['role' => 'operator']);
+        $operator->update(['current_organization_id' => $owner->current_organization_id]);
+        $nonResponder = User::factory()->create();
+
+        $this->actingAs($operator)
+            ->patch(route('observability.operational-incidents.assign', $incident), ['assigned_to' => $nonResponder->id])
+            ->assertStatus(422)
+            ->assertSee('The selected responder is not a member of this workspace.');
+        $this->assertNull($incident->fresh()->assigned_to);
+        $this->assertSame(1, $incident->events()->count());
+
+        $incident->update([
+            'status' => OperationalIncident::STATUS_RESOLVED,
+            'active_key' => null,
+            'resolved_at' => now(),
+        ]);
+        $this->actingAs($operator)
+            ->post(route('observability.operational-incidents.acknowledge', $incident))
+            ->assertStatus(422)
+            ->assertSee('A resolved incident cannot be acknowledged.');
+        $this->assertSame(OperationalIncident::STATUS_RESOLVED, $incident->fresh()->status);
+        $this->assertSame(1, $incident->events()->count());
+
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+        $this->actingAs($viewer)->get(route('observability.operational-incidents.export'))->assertForbidden();
+    }
+
     public function test_auditor_can_export_workspace_evidence_and_pruning_only_removes_expired_resolved_incidents(): void
     {
         [$owner, $server] = $this->server();
