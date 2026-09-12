@@ -144,6 +144,62 @@ class AutomationTest extends TestCase
         $this->assertDatabaseCount('scaling_schedules', 0);
     }
 
+    public function test_owner_can_update_environment_scaling_and_queue_the_runtime_transition(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Scaling', 'slug' => 'scaling', 'preset' => 'custom']);
+        $environment = $project->environments()->create([
+            'name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main',
+            'minimum_replicas' => 1, 'maximum_replicas' => 6, 'desired_replicas' => 1,
+        ]);
+
+        $this->actingAs($user)->patch(route('automation.scale', $environment), [
+            'minimum_replicas' => 2,
+            'maximum_replicas' => 5,
+            'desired_replicas' => 4,
+            'hibernate_after_minutes' => 60,
+        ])->assertRedirect()->assertSessionHas('success', 'Scaling change queued.');
+
+        $environment->refresh();
+        $this->assertSame(2, $environment->minimum_replicas);
+        $this->assertSame(5, $environment->maximum_replicas);
+        $this->assertSame(4, $environment->desired_replicas);
+        $this->assertSame(60, $environment->hibernate_after_minutes);
+        $this->assertNull($environment->hibernated_at);
+        Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, fn (ApplyEnvironmentRuntimeStateJob $job): bool => $job->environmentId === $environment->id && $job->hibernate === false);
+    }
+
+    public function test_web_runtime_request_preserves_state_response_and_hibernation_entitlement(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Runtime', 'slug' => 'runtime', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($user)->patch(route('automation.runtime', $environment), ['state' => 'hibernated'])
+            ->assertRedirect()->assertSessionHas('success', 'Runtime state change queued.');
+
+        Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, fn (ApplyEnvironmentRuntimeStateJob $job): bool => $job->environmentId === $environment->id && $job->hibernate === true);
+    }
+
+    public function test_web_runtime_validation_precedes_hibernation_entitlement_and_dispatch(): void
+    {
+        config(['billing.enforce_entitlements' => true]);
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Runtime', 'slug' => 'runtime', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+
+        $this->actingAs($user)->patch(route('automation.runtime', $environment), ['state' => 'not-a-state'])
+            ->assertSessionHasErrors('state');
+        Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
+
+        $this->actingAs($user)->patch(route('automation.runtime', $environment), ['state' => 'hibernated'])
+            ->assertSessionHasErrors('plan');
+        Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
+    }
+
     public function test_scheduled_task_denial_precedes_malformed_input_and_writes_nothing(): void
     {
         $owner = User::factory()->create();
@@ -327,16 +383,81 @@ class AutomationTest extends TestCase
 
     public function test_api_is_scoped_and_honors_token_abilities(): void
     {
+        Queue::fake();
         $owner = User::factory()->create();
         $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'API App', 'slug' => 'api-app', 'preset' => 'custom']);
         $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main', 'minimum_replicas' => 1, 'maximum_replicas' => 3]);
         $outsider = User::factory()->create();
-        $outsider->currentOrganization->projects()->create(['created_by' => $outsider->id, 'name' => 'Private App', 'slug' => 'private', 'preset' => 'custom']);
+        $foreignProject = $outsider->currentOrganization->projects()->create(['created_by' => $outsider->id, 'name' => 'Private App', 'slug' => 'private', 'preset' => 'custom']);
+        $foreignEnvironment = $foreignProject->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main', 'minimum_replicas' => 1, 'maximum_replicas' => 3]);
         Sanctum::actingAs($owner, ['read']);
 
         $this->getJson('/api/v1/projects')->assertOk()->assertJsonFragment(['name' => 'API App'])->assertJsonMissing(['name' => 'Private App']);
         $this->getJson('/api/v1/projects/'.$project->id)->assertOk();
-        $this->patchJson('/api/v1/environments/'.$environment->id.'/scale', ['replicas' => 2])->assertForbidden();
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/scale', [])->assertForbidden();
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/runtime', [])->assertForbidden();
+
+        Sanctum::actingAs($owner, ['manage']);
+        $this->patchJson('/api/v1/environments/'.$foreignEnvironment->id.'/scale', ['replicas' => 2])->assertForbidden();
+        Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
+    }
+
+    public function test_api_scale_and_runtime_preserve_envelopes_and_queue_shared_operations(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'API Runtime', 'slug' => 'api-runtime', 'preset' => 'custom']);
+        $environment = $project->environments()->create([
+            'name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main',
+            'minimum_replicas' => 1, 'maximum_replicas' => 5, 'desired_replicas' => 1,
+        ]);
+        Sanctum::actingAs($user, ['manage']);
+
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/scale', ['replicas' => 3])
+            ->assertStatus(202)
+            ->assertJson(['data' => ['desired_replicas' => 3, 'status' => 'queued']]);
+        $this->assertSame(3, $environment->fresh()->desired_replicas);
+
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/runtime', ['state' => 'running'])
+            ->assertStatus(202)
+            ->assertJson(['data' => ['status' => 'queued', 'state' => 'running']]);
+
+        // The job remains unique per environment, so the second queued transition is coalesced.
+        Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, 1);
+        Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, fn (ApplyEnvironmentRuntimeStateJob $job): bool => $job->environmentId === $environment->id && $job->hibernate === false);
+    }
+
+    public function test_api_can_queue_hibernation_with_the_existing_response_contract(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'API Runtime', 'slug' => 'api-runtime', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        Sanctum::actingAs($user, ['manage']);
+
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/runtime', ['state' => 'hibernated'])
+            ->assertStatus(202)
+            ->assertJson(['data' => ['status' => 'queued', 'state' => 'hibernated']]);
+
+        Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, fn (ApplyEnvironmentRuntimeStateJob $job): bool => $job->environmentId === $environment->id && $job->hibernate === true);
+    }
+
+    public function test_api_runtime_validation_precedes_hibernation_entitlement(): void
+    {
+        config(['billing.enforce_entitlements' => true, 'billing.plans.free.entitlements' => ['api']]);
+        Queue::fake();
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'API Runtime', 'slug' => 'api-runtime', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        Sanctum::actingAs($user, ['manage']);
+
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/runtime', ['state' => 'invalid'])
+            ->assertUnprocessable()->assertJsonValidationErrors('state');
+        Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
+
+        $this->patchJson('/api/v1/environments/'.$environment->id.'/runtime', ['state' => 'hibernated'])
+            ->assertUnprocessable()->assertJsonValidationErrors('plan');
+        Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
     }
 
     public function test_due_scaling_schedule_is_claimed_once_and_queues_runtime_change(): void

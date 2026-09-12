@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Environment\QueueEnvironmentRuntimeStateAction;
+use App\Actions\Environment\UpdateEnvironmentScalingAction;
 use App\Actions\Repository\PromoteBuildAction;
 use App\Actions\Repository\RollbackBuildAction;
 use App\Data\BuildPromotionResult;
 use App\Data\BuildRedeploymentResult;
 use App\Http\Controllers\Controller;
-use App\Http\Middleware\EnforceOrganizationSecurity;
 use App\Http\Requests\Api\V1\ApplyConfigurationRequest;
 use App\Http\Requests\Api\V1\CancelConfigurationRequest;
 use App\Http\Requests\Api\V1\ConfigurationInputRequest;
 use App\Http\Requests\Api\V1\RetryConfigurationRequest;
-use App\Jobs\ApplyEnvironmentRuntimeStateJob;
+use App\Http\Requests\Api\V1\RuntimeEnvironmentRequest;
+use App\Http\Requests\Api\V1\ScaleEnvironmentRequest;
 use App\Models\Build;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
@@ -25,8 +27,8 @@ use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationResults;
 use App\Services\ApplicationConfigurationRetries;
 use App\Services\ApplicationConfigurationReviews;
+use App\Services\ControlPlaneAccess;
 use App\Services\DeploymentLauncher;
-use App\Services\Entitlements;
 use App\Services\WorkflowConfiguration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,7 +42,7 @@ class ControlPlaneController extends Controller
      * Use subscription entitlements to guard API access and paid runtime features.
      */
     public function __construct(
-        private readonly Entitlements $entitlements,
+        private readonly ControlPlaneAccess $controlPlaneAccess,
         private readonly ApplicationConfigurationResults $configurationResults,
     ) {}
 
@@ -172,14 +174,10 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse HTTP 202 with the desired replica count and queued status.
      */
-    public function scale(Request $request, Environment $environment): JsonResponse
+    public function scale(ScaleEnvironmentRequest $request, Environment $environment, UpdateEnvironmentScalingAction $updateScaling): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'scaling');
-        $data = $request->validate(['replicas' => ['required', 'integer', 'min:1', 'gte:'.$environment->minimum_replicas, 'lte:'.$environment->maximum_replicas]]);
-        $environment->update(['desired_replicas' => $data['replicas'], 'hibernated_at' => null]);
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, false);
+        $data = $request->validated();
+        $updateScaling->handle($environment, ['desired_replicas' => $data['replicas']]);
 
         return response()->json(['data' => ['desired_replicas' => $data['replicas'], 'status' => 'queued']], 202);
     }
@@ -189,15 +187,10 @@ class ControlPlaneController extends Controller
      *
      * @return JsonResponse HTTP 202 with the requested state after its runtime job is queued.
      */
-    public function runtime(Request $request, Environment $environment): JsonResponse
+    public function runtime(RuntimeEnvironmentRequest $request, Environment $environment, QueueEnvironmentRuntimeStateAction $queueRuntime): JsonResponse
     {
-        $this->api($request, 'manage');
-        $this->authorize('update', $environment);
-        $data = $request->validate(['state' => ['required', 'in:running,hibernated']]);
-        if ($data['state'] === 'hibernated') {
-            $this->entitlements->enforce($environment->project->organization, 'hibernation');
-        }
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, $data['state'] === 'hibernated');
+        $data = $request->validated();
+        $queueRuntime->handle($environment, $data['state']);
 
         return response()->json(['data' => ['status' => 'queued', 'state' => $data['state']]], 202);
     }
@@ -358,10 +351,7 @@ class ControlPlaneController extends Controller
      */
     private function api(Request $request, string $ability): void
     {
-        $this->entitlements->enforce($request->user(), 'api');
-        $ranges = $request->user()->currentOrganization?->allowed_ip_ranges ?? [];
-        abort_if($ranges !== [] && ! collect($ranges)->contains(fn (string $range): bool => app(EnforceOrganizationSecurity::class)->contains($range, (string) $request->ip())), 403, 'This network is not allowed by the workspace security policy.');
-        abort_unless($request->user()->tokenCan($ability), 403, "Token lacks the {$ability} ability.");
+        $this->controlPlaneAccess->enforce($request, $ability);
     }
 
     /**

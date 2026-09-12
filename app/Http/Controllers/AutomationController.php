@@ -9,10 +9,13 @@ use App\Actions\Automation\DeleteDeploymentScheduleAction;
 use App\Actions\Automation\DeleteScalingScheduleAction;
 use App\Actions\Automation\DeleteScheduledTaskAction;
 use App\Actions\Automation\QueueScheduledTaskRunAction;
+use App\Actions\Environment\QueueEnvironmentRuntimeStateAction;
+use App\Actions\Environment\UpdateEnvironmentScalingAction;
+use App\Http\Requests\RuntimeEnvironmentRequest;
+use App\Http\Requests\ScaleEnvironmentRequest;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
 use App\Http\Requests\StoreScalingScheduleRequest;
 use App\Http\Requests\StoreScheduledTaskRequest;
-use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Models\DeploymentSchedule;
 use App\Models\Environment;
 use App\Models\Project;
@@ -107,18 +110,9 @@ class AutomationController extends Controller
     /**
      * Validate replica bounds and optional idle timeout, update the authorized environment, and queue its running state.
      */
-    public function scale(Request $request, Environment $environment): RedirectResponse
+    public function scale(ScaleEnvironmentRequest $request, Environment $environment, UpdateEnvironmentScalingAction $updateScaling): RedirectResponse
     {
-        $this->authorize('update', $environment);
-        $this->entitlements->enforce($environment->project->organization, 'scaling');
-        $data = $request->validate([
-            'minimum_replicas' => ['required', 'integer', 'between:1,20'],
-            'maximum_replicas' => ['required', 'integer', 'between:1,20', 'gte:minimum_replicas'],
-            'desired_replicas' => ['required', 'integer', 'gte:minimum_replicas', 'lte:maximum_replicas'],
-            'hibernate_after_minutes' => ['nullable', 'integer', Rule::in([5, 15, 30, 60, 120, 1440])],
-        ]);
-        $environment->update([...$data, 'hibernated_at' => null]);
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, false);
+        $updateScaling->handle($environment, $request->validated());
 
         return back()->with('success', __('Scaling change queued.'));
     }
@@ -126,14 +120,10 @@ class AutomationController extends Controller
     /**
      * Validate running or hibernated state for an editable environment and redirect after queuing the transition.
      */
-    public function runtime(Request $request, Environment $environment): RedirectResponse
+    public function runtime(RuntimeEnvironmentRequest $request, Environment $environment, QueueEnvironmentRuntimeStateAction $queueRuntime): RedirectResponse
     {
-        $this->authorize('update', $environment);
-        $data = $request->validate(['state' => ['required', Rule::in(['running', 'hibernated'])]]);
-        if ($data['state'] === 'hibernated') {
-            $this->entitlements->enforce($environment->project->organization, 'hibernation');
-        }
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, $data['state'] === 'hibernated');
+        $state = (string) $request->validated('state');
+        $queueRuntime->handle($environment, $state);
 
         return back()->with('success', __('Runtime state change queued.'));
     }
