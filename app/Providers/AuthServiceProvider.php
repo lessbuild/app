@@ -24,6 +24,7 @@ use App\Policies\ConfigurationReviewPolicy;
 use App\Policies\EnvironmentPolicy;
 use App\Policies\EnvironmentResourcePolicy;
 use App\Policies\LoadBalancerPolicy;
+use App\Policies\PersonalAccessTokenPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
 use App\Policies\RecipePolicy;
@@ -35,6 +36,7 @@ use App\Policies\WebsitePolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -53,6 +55,7 @@ class AuthServiceProvider extends ServiceProvider
         Environment::class => EnvironmentPolicy::class,
         EnvironmentResource::class => EnvironmentResourcePolicy::class,
         LoadBalancer::class => LoadBalancerPolicy::class,
+        PersonalAccessToken::class => PersonalAccessTokenPolicy::class,
         Repository::class => RepositoryPolicy::class,
         Recipe::class => RecipePolicy::class,
         Server::class => ServerPolicy::class,

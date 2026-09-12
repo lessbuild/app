@@ -3,17 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Automation\CreateDeploymentScheduleAction;
+use App\Actions\Automation\CreatePersonalAccessTokenAction;
 use App\Actions\Automation\CreateScalingScheduleAction;
 use App\Actions\Automation\CreateScheduledTaskAction;
 use App\Actions\Automation\DeleteDeploymentScheduleAction;
 use App\Actions\Automation\DeleteScalingScheduleAction;
 use App\Actions\Automation\DeleteScheduledTaskAction;
 use App\Actions\Automation\QueueScheduledTaskRunAction;
+use App\Actions\Automation\RevokePersonalAccessTokenAction;
+use App\Actions\Automation\RotatePersonalAccessTokenAction;
 use App\Actions\Environment\QueueEnvironmentRuntimeStateAction;
 use App\Actions\Environment\UpdateEnvironmentScalingAction;
 use App\Http\Requests\RuntimeEnvironmentRequest;
 use App\Http\Requests\ScaleEnvironmentRequest;
 use App\Http\Requests\StoreDeploymentScheduleRequest;
+use App\Http\Requests\StorePersonalAccessTokenRequest;
 use App\Http\Requests\StoreScalingScheduleRequest;
 use App\Http\Requests\StoreScheduledTaskRequest;
 use App\Models\DeploymentSchedule;
@@ -27,7 +31,6 @@ use App\Services\WorkflowConfiguration;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -183,23 +186,9 @@ class AutomationController extends Controller
      *
      * @return RedirectResponse The new plaintext credential flashed for one-time display.
      */
-    public function token(Request $request): RedirectResponse
+    public function token(StorePersonalAccessTokenRequest $request, CreatePersonalAccessTokenAction $createToken): RedirectResponse
     {
-        $organization = $request->user()->currentOrganization;
-        abort_unless($organization->owner->is($request->user()), 403);
-        $this->entitlements->enforce($organization, 'api');
-        $request->mergeIfMissing(['expires_in_days' => 365]);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'abilities' => ['required', 'array', 'min:1'],
-            'abilities.*' => [Rule::in(['read', 'deploy', 'manage'])],
-            'expires_in_days' => ['required', 'integer', Rule::in([30, 90, 180, 365])],
-        ]);
-        $token = $request->user()->createToken(
-            $data['name'],
-            array_values(array_unique($data['abilities'])),
-            now()->addDays($data['expires_in_days']),
-        );
+        $token = $createToken->handle($request->user(), $request->validated());
 
         return back()->with('success', __('API token created. Copy it now; it will not be shown again.'))->with('plainTextToken', $token->plainTextToken);
     }
@@ -207,10 +196,10 @@ class AutomationController extends Controller
     /**
      * Require ownership of the route-bound personal token, revoke it, and redirect with an acknowledgement.
      */
-    public function destroyToken(Request $request, PersonalAccessToken $token): RedirectResponse
+    public function destroyToken(PersonalAccessToken $token, RevokePersonalAccessTokenAction $revokeToken): RedirectResponse
     {
-        $this->ensureOwnedToken($request, $token);
-        $token->delete();
+        $this->authorize('delete', $token);
+        $revokeToken->handle($token);
 
         return back()->with('success', __('API token revoked.'));
     }
@@ -220,31 +209,15 @@ class AutomationController extends Controller
      *
      * @return RedirectResponse The replacement plaintext token; the previous credential is revoked.
      */
-    public function rotateToken(Request $request, PersonalAccessToken $token): RedirectResponse
+    public function rotateToken(Request $request, PersonalAccessToken $token, RotatePersonalAccessTokenAction $rotateToken): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->owner->is($request->user()), 403);
+        $this->authorize('create', PersonalAccessToken::class);
         $this->entitlements->enforce($organization, 'api');
-        $this->ensureOwnedToken($request, $token);
-        $replacement = $request->user()->createToken($token->name, $token->abilities, now()->addYear());
-        $token->delete();
+        $this->authorize('rotate', $token);
+        $replacement = $rotateToken->handle($request->user(), $token);
 
         return back()->with('success', __('API token rotated. The previous token has been revoked.'))
             ->with('plainTextToken', $replacement->plainTextToken);
-    }
-
-    /**
-     * @param  Request  $request  The authenticated token owner's request.
-     * @param  PersonalAccessToken  $token  The route-bound Sanctum token.
-     * @return void Reject tokens owned by another user or authenticatable model with a 404.
-     */
-    private function ensureOwnedToken(Request $request, PersonalAccessToken $token): void
-    {
-        $user = $request->user();
-        abort_unless(
-            (string) $token->tokenable_id === (string) $user->getKey()
-                && $token->tokenable_type === $user->getMorphClass(),
-            404,
-        );
     }
 }

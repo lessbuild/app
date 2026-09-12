@@ -507,6 +507,57 @@ class AutomationTest extends TestCase
         $this->assertTrue($replacement->expires_at->isBetween(now()->addMonths(11), now()->addMonths(13)));
     }
 
+    public function test_token_request_preserves_default_expiry_deduplicates_abilities_and_flashes_plaintext_once(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Release bot',
+            'abilities' => ['read', 'read', 'deploy'],
+        ]);
+
+        $response->assertRedirect()->assertSessionHas('plainTextToken');
+        $plainTextToken = $response->getSession()->get('plainTextToken');
+        $token = $user->tokens()->sole();
+        $this->assertSame(['read', 'deploy'], $token->abilities);
+        $this->assertTrue($token->expires_at->isBetween(now()->addDays(364), now()->addDays(366)));
+        $this->assertIsString($plainTextToken);
+        $this->assertNotSame($plainTextToken, $token->token);
+        $this->assertStringNotContainsString($plainTextToken, (string) DB::table('personal_access_tokens')->whereKey($token->id)->value('token'));
+    }
+
+    public function test_token_creation_denies_non_owner_before_malformed_input_and_writes_nothing(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $owner->currentOrganization->members()->attach($member, ['role' => 'developer']);
+        $member->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($member)->post(route('automation.tokens.store'), [])->assertForbidden();
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_free_plan_rejects_token_creation_before_validation_and_persistence(): void
+    {
+        config(['billing.enforce_entitlements' => true]);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('automation.tokens.store'), [])->assertSessionHasErrors('plan');
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_token_revocation_uses_owner_policy_and_keeps_foreign_tokens_hidden(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('Release bot')->accessToken;
+
+        $this->actingAs($user)->delete(route('automation.tokens.destroy', $token))
+            ->assertRedirect()->assertSessionHas('success', 'API token revoked.');
+        $this->assertNull($token->fresh());
+    }
+
     public function test_api_reference_and_openapi_document_are_public(): void
     {
         $this->get(route('api-docs'))->assertOk()->assertSee('Control plane API')->assertSee('/openapi.json');
