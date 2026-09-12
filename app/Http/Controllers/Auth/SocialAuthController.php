@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Account\ConnectSocialAccountAction;
+use App\Actions\Account\ResolveSocialLoginAction;
+use App\Data\SocialAccountConnectionResult;
+use App\Data\SocialIdentityData;
+use App\Data\SocialLoginResolution;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\ActivityRecorder;
-use App\Services\PersonalOrganization;
-use App\Services\RegistrationAccess;
 use App\Services\SignInRecorder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
 use Throwable;
@@ -19,10 +20,9 @@ use Throwable;
 class SocialAuthController extends Controller
 {
     /**
-     * Record account-linking activity and completed provider sign-ins through shared audit services.
+     * Record completed provider sign-ins through the shared sign-in recorder.
      */
     public function __construct(
-        private readonly ActivityRecorder $activity,
         private readonly SignInRecorder $signIns,
     ) {}
 
@@ -80,10 +80,14 @@ class SocialAuthController extends Controller
      *
      * @return RedirectResponse Account settings, an authentication error, a two-factor challenge, or the intended page.
      */
-    public function callback(string $provider, RegistrationAccess $registration, PersonalOrganization $organizations): RedirectResponse
-    {
+    public function callback(
+        string $provider,
+        Request $request,
+        ResolveSocialLoginAction $resolve,
+        ConnectSocialAccountAction $connect,
+    ): RedirectResponse {
         $connecting = Auth::check()
-            && request()->session()->pull('social_connect_provider') === $provider;
+            && $request->session()->pull('social_connect_provider') === $provider;
 
         if (Auth::check() && ! $connecting) {
             return redirect()->route('account.index')->with(
@@ -117,45 +121,29 @@ class SocialAuthController extends Controller
             );
         }
 
-        $providerColumn = User::SOCIAL_PROVIDER_COLUMNS[$provider];
         if ($connecting) {
-            return $this->connectAuthenticatedUser($provider, $providerColumn, $providerId);
+            /** @var User $actor */
+            $actor = $request->user();
+            $result = $connect->handle($actor, $provider, $providerId);
+
+            return $result->status === SocialAccountConnectionResult::CONNECTED
+                ? redirect()->route('account.index')->with('social_status', __(':provider connected.', [
+                    'provider' => ucfirst($provider),
+                ]))
+                : redirect()->route('account.index')->with(
+                    'social_error',
+                    __('That social identity is already connected to another account.'),
+                );
         }
 
-        $resolution = $registration->synchronized(function () use (
-            $email,
-            $provider,
-            $providerColumn,
-            $providerId,
-            $registration,
-            $socialUser,
-        ): array {
-            $user = User::query()->where($providerColumn, $providerId)->first();
+        $resolution = $resolve->handle(new SocialIdentityData(
+            provider: $provider,
+            providerId: $providerId,
+            email: $email,
+            name: $socialUser->getName() ?: $socialUser->getNickname() ?: Str::before($email, '@'),
+        ));
 
-            if ($user) {
-                return ['status' => 'resolved', 'user' => $user];
-            }
-
-            if (User::query()->whereRaw('LOWER(email) = ?', [$email])->exists()) {
-                return ['status' => 'existing_email', 'user' => null];
-            }
-
-            if (! $registration->allowsNewUser()) {
-                return ['status' => 'closed', 'user' => null];
-            }
-
-            return ['status' => 'resolved', 'user' => User::create([
-                'name' => $socialUser->getName() ?: $socialUser->getNickname() ?: Str::before($email, '@'),
-                'email' => $email,
-                $providerColumn => $providerId,
-                'auth_type' => $provider,
-                'password' => Hash::make(Str::password(40)),
-                'password_set_at' => null,
-                'email_verified_at' => now(),
-            ])];
-        });
-
-        if ($resolution['status'] === 'existing_email') {
+        if ($resolution->status === SocialLoginResolution::EXISTING_EMAIL) {
             return redirect()->route('login')->withErrors([
                 'social_auth' => __('An account already uses this email. Sign in first, then connect :provider from account settings.', [
                     'provider' => ucfirst($provider),
@@ -163,7 +151,7 @@ class SocialAuthController extends Controller
             ]);
         }
 
-        if ($resolution['status'] === 'closed') {
+        if ($resolution->status === SocialLoginResolution::CLOSED) {
             return redirect()->route('login')->withErrors([
                 'social_auth' => __('No account matches this :provider identity, and registration is closed.', [
                     'provider' => ucfirst($provider),
@@ -171,12 +159,20 @@ class SocialAuthController extends Controller
             ]);
         }
 
-        $user = $resolution['user'];
-        $organizations->ensure($user);
+        $user = $resolution->user;
+        if (! $user) {
+            return $this->socialFailure(
+                false,
+                __('Unable to authenticate with :provider. Please try again.', [
+                    'provider' => ucfirst($provider),
+                ]),
+            );
+        }
+
         Auth::login($user);
-        request()->session()->regenerate();
+        $request->session()->regenerate();
         if ($user->twoFactorEnabled()) {
-            request()->session()->put([
+            $request->session()->put([
                 'two_factor_login_user_id' => $user->id,
                 'two_factor_login_remember' => false,
                 'two_factor_login_method' => $provider,
@@ -185,7 +181,7 @@ class SocialAuthController extends Controller
 
             return redirect()->route('two-factor.login');
         }
-        $this->signIns->record($user, $provider, request());
+        $this->signIns->record($user, $provider, $request);
 
         return redirect()->intended(route('dashboard'));
     }
@@ -198,44 +194,6 @@ class SocialAuthController extends Controller
         return filled(config("services.{$provider}.client_id"))
             && filled(config("services.{$provider}.client_secret"))
             && filled(config("services.{$provider}.redirect"));
-    }
-
-    /**
-     * Attach the verified provider identity under an account lock unless another user owns it.
-     *
-     * @param  string  $providerColumn  A trusted column from User::SOCIAL_PROVIDER_COLUMNS.
-     * @return RedirectResponse Account settings with the connection or ownership-conflict result.
-     */
-    private function connectAuthenticatedUser(
-        string $provider,
-        string $providerColumn,
-        string $providerId,
-    ): RedirectResponse {
-        $result = DB::transaction(function () use ($providerColumn, $providerId): string {
-            $user = User::query()->lockForUpdate()->findOrFail(Auth::id());
-            $owner = User::query()->where($providerColumn, $providerId)->first();
-
-            if ($owner && ! $owner->is($user)) {
-                return 'owned';
-            }
-
-            $user->forceFill([$providerColumn => $providerId])->save();
-
-            return 'connected';
-        });
-
-        if ($result === 'connected') {
-            $this->activity->recordAccount(Auth::user(), ucfirst($provider).' sign-in was connected.');
-        }
-
-        return $result === 'connected'
-            ? redirect()->route('account.index')->with('social_status', __(':provider connected.', [
-                'provider' => ucfirst($provider),
-            ]))
-            : redirect()->route('account.index')->with(
-                'social_error',
-                __('That social identity is already connected to another account.'),
-            );
     }
 
     /**

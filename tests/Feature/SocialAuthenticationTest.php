@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Notifications\AccountSecurityNotification;
+use App\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
@@ -91,6 +92,36 @@ class SocialAuthenticationTest extends TestCase
             'method' => 'gitlab',
         ]);
         $response->assertRedirect(route('dashboard'));
+    }
+
+    public function test_social_callback_hands_enabled_accounts_to_the_two_factor_challenge(): void
+    {
+        $user = User::factory()->create([
+            'github_id' => 'two-factor-github-account',
+        ]);
+        $service = app(TwoFactorAuthentication::class);
+        $user->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => $service->recoveryCodeHashes($service->generateRecoveryCodes()),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'two-factor-github-account',
+            email: $user->email,
+            name: $user->name,
+        ));
+
+        $this->get(route('social.callback', 'github'))
+            ->assertRedirect(route('two-factor.login'))
+            ->assertSessionHas([
+                'two_factor_login_user_id' => $user->id,
+                'two_factor_login_remember' => false,
+                'two_factor_login_method' => 'github',
+            ]);
+
+        $this->assertGuest();
+        $this->assertDatabaseCount('sign_in_events', 0);
     }
 
     public function test_guest_callback_refuses_to_link_an_existing_account_by_email(): void
@@ -247,6 +278,31 @@ class SocialAuthenticationTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
         $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_social_sign_in_recreates_a_missing_current_workspace_for_an_existing_account(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'workspace-recovery@example.com',
+            'github_id' => 'workspace-recovery-github-account',
+        ]);
+        $user->currentOrganization()->firstOrFail()->delete();
+        $user->forceFill(['current_organization_id' => null])->save();
+
+        $this->mockSocialUser('github', $this->socialUser(
+            id: 'workspace-recovery-github-account',
+            email: $user->email,
+            name: $user->name,
+        ));
+
+        $this->get(route('social.callback', 'github'))->assertRedirect(route('dashboard'));
+
+        $user->refresh();
+        $this->assertNotNull($user->current_organization_id);
+        $this->assertDatabaseHas('organizations', [
+            'id' => $user->current_organization_id,
+            'owner_id' => $user->id,
+        ]);
     }
 
     public function test_social_login_returns_to_the_original_filtered_page(): void
