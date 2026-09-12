@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Observability\CreateMetricAlertRuleAction;
+use App\Actions\Observability\DeleteMetricAlertRuleAction;
+use App\Http\Requests\StoreMetricAlertRuleRequest;
 use App\Jobs\DeliverAlertWebhookJob;
 use App\Models\AlertDestination;
 use App\Models\Build;
@@ -54,23 +57,10 @@ class ObservabilityController extends Controller
     /**
      * Require entitled workspace management access and validate a metric, threshold, breach count, cooldown, and optional owned server.
      */
-    public function storeMetricRule(Request $request): RedirectResponse
+    public function storeMetricRule(StoreMetricAlertRuleRequest $request, CreateMetricAlertRuleAction $createRule): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($organization, 'alerts');
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'server_id' => ['nullable', Rule::exists('servers', 'id')->where('organization_id', $organization->id)],
-            'metric' => ['required', Rule::in(MetricAlertRule::METRICS)],
-            'operator' => ['required', Rule::in(['gte', 'lte'])],
-            'threshold' => ['required', 'numeric', 'between:0,999999999'],
-            'consecutive_breaches' => ['required', 'integer', 'between:1,10'],
-            'cooldown_minutes' => ['required', 'integer', Rule::in([5, 15, 30, 60, 180, 1440])],
-        ]);
-        $organization->metricAlertRules()->create([
-            ...$data, 'created_by' => $request->user()->id, 'is_enabled' => true,
-        ]);
+        $createRule->handle($organization, $request->user(), $request->validated());
 
         return back()->with('success', __('Metric alert created.'));
     }
@@ -78,12 +68,10 @@ class ObservabilityController extends Controller
     /**
      * Require the metric rule's current-workspace ownership, management access, and alerts entitlement before deleting it.
      */
-    public function destroyMetricRule(Request $request, MetricAlertRule $rule): RedirectResponse
+    public function destroyMetricRule(MetricAlertRule $rule, DeleteMetricAlertRuleAction $deleteRule): RedirectResponse
     {
-        abort_unless($rule->organization_id === $request->user()->current_organization_id
-            && $rule->organization->permits($request->user(), 'manage'), 403);
-        $this->entitlements->enforce($rule->organization, 'alerts');
-        $rule->delete();
+        $this->authorize('delete', $rule);
+        $deleteRule->handle($rule);
 
         return back()->with('success', __('Metric alert deleted.'));
     }

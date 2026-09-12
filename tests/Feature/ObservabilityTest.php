@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Jobs\DeliverAlertWebhookJob;
 use App\Jobs\Server\CollectServerMetricsJob;
 use App\Jobs\Web\RefreshWebsiteLogJob;
+use App\Models\MetricAlertRule;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
@@ -56,6 +57,89 @@ class ObservabilityTest extends TestCase
         Queue::assertPushed(DeliverAlertWebhookJob::class, fn (DeliverAlertWebhookJob $job): bool => $job->destinationId === $destination->id
             && $job->payload['event'] === 'failure'
             && $job->payload['category'] === 'website');
+    }
+
+    public function test_metric_alert_rule_operations_use_workspace_policy_and_scoped_server_validation(): void
+    {
+        [$owner, $server] = $this->infrastructure();
+
+        $this->actingAs($owner)->post(route('observability.metric-rules.store'), [
+            'name' => 'High CPU',
+            'server_id' => $server->id,
+            'metric' => 'cpu_percent',
+            'operator' => 'gte',
+            'threshold' => '85.5',
+            'consecutive_breaches' => 3,
+            'cooldown_minutes' => 15,
+        ])->assertRedirect()->assertSessionHas('success', 'Metric alert created.');
+
+        $rule = MetricAlertRule::query()->sole();
+        $this->assertSame($owner->current_organization_id, $rule->organization_id);
+        $this->assertSame($owner->id, $rule->created_by);
+        $this->assertTrue($rule->is_enabled);
+        $this->assertSame(85.5, $rule->threshold);
+
+        $this->actingAs($owner)->delete(route('observability.metric-rules.destroy', $rule))
+            ->assertRedirect()->assertSessionHas('success', 'Metric alert deleted.');
+        $this->assertDatabaseMissing('metric_alert_rules', ['id' => $rule->id]);
+    }
+
+    public function test_metric_alert_rule_denial_precedes_malformed_input_and_does_not_write(): void
+    {
+        [$owner, $server] = $this->infrastructure();
+        $viewer = User::factory()->create();
+        $owner->currentOrganization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $owner->current_organization_id]);
+
+        $this->actingAs($viewer)->post(route('observability.metric-rules.store'), [
+            'name' => '',
+            'server_id' => $server->id,
+            'metric' => 'not-a-metric',
+        ])->assertForbidden();
+
+        $this->assertDatabaseCount('metric_alert_rules', 0);
+    }
+
+    public function test_metric_alert_rule_server_validation_cannot_cross_workspace(): void
+    {
+        [$owner, $server] = $this->infrastructure();
+        $other = User::factory()->create();
+        $otherServer = $other->servers()->create([
+            'name' => 'Other', 'public_ip' => '203.0.113.55', 'ssh_private_key' => 'key',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($owner)->post(route('observability.metric-rules.store'), [
+            'name' => 'Foreign server',
+            'server_id' => $otherServer->id,
+            'metric' => 'cpu_percent',
+            'operator' => 'gte',
+            'threshold' => 85,
+            'consecutive_breaches' => 3,
+            'cooldown_minutes' => 15,
+        ])->assertSessionHasErrors('server_id');
+
+        $this->assertDatabaseCount('metric_alert_rules', 0);
+        $this->assertNotNull($server->fresh());
+    }
+
+    public function test_metric_alert_rule_delete_requires_same_workspace_manager(): void
+    {
+        [$owner] = $this->infrastructure();
+        $rule = $owner->currentOrganization->metricAlertRules()->create([
+            'created_by' => $owner->id,
+            'name' => 'CPU',
+            'metric' => 'cpu_percent',
+            'operator' => 'gte',
+            'threshold' => 80,
+            'consecutive_breaches' => 2,
+            'cooldown_minutes' => 15,
+            'is_enabled' => true,
+        ]);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($intruder)->delete(route('observability.metric-rules.destroy', $rule))->assertForbidden();
+        $this->assertNotNull($rule->fresh());
     }
 
     public function test_public_status_page_exposes_health_without_infrastructure_secrets(): void
