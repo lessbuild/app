@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Repository\DeployRepositoryAction;
+use App\Actions\Repository\UpdateRepositoryAction;
 use App\Http\Requests\RepositoryRequest;
 use App\Models\Build;
 use App\Models\Repository;
@@ -266,7 +267,7 @@ class RepositoriesController extends Controller
      *
      * @return RedirectResponse
      */
-    public function update(RepositoryRequest $request, Repository $repository): RedirectResponse
+    public function update(RepositoryRequest $request, Repository $repository, UpdateRepositoryAction $update): RedirectResponse
     {
         $this->authorize('update', $repository);
 
@@ -280,17 +281,11 @@ class RepositoriesController extends Controller
             $validated['webhook_enabled'] = false;
             $validated['webhook_secret'] = null;
         }
-        DB::transaction(function () use ($repository, $validated): void {
-            $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
-            $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
-                throw ValidationException::withMessages([
-                    'website_id' => __('Wait for the current website deployment to finish before editing this repository.'),
-                ]);
-            }
-
-            $locked->update($validated);
-        });
+        if (! $update->handle($repository, $validated)) {
+            throw ValidationException::withMessages([
+                'website_id' => __('Wait for the current website deployment to finish before editing this repository.'),
+            ]);
+        }
 
         return redirect()->route('repositories.show', $repository);
     }

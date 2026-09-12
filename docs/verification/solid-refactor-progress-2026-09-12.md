@@ -617,6 +617,23 @@ Verification after the slice:
 - RepositoryDeploymentTest, DeploymentApprovalTest, DeploymentControlsTest and RepositorySafetyTest: 21 passed (146 assertions).
 - Pint, PHP syntax checks and git diff --check: passed.
 
+## Phase 3C — repository update safety action slice
+
+Responsibility problem: RepositoriesController combined request-specific provider/webhook normalization with transaction-time placement locking and the active-deployment edit safeguard.
+
+Boundary used: UpdateRepositoryAction now owns the locked repository persistence operation. The controller retains Form Request validation, workspace-provider resolution, GitHub App webhook configuration, policy authorization and the exact website_id validation message when the action reports a blocked update.
+
+Preserved guarantees:
+
+- Website-before-repository lock order, current-placement verification and active-deployment protection remain unchanged.
+- Validated normalized attributes, encrypted hooks, omitted-field behavior, provider capability enforcement and redirect/validation behavior remain unchanged.
+- No authorization or tenant boundary moved into the action; the controller still establishes the HTTP policy boundary before invoking it.
+
+Verification after the slice:
+
+- DeploymentHooksTest, WebsiteDeploymentSerializationTest, ProviderCapabilityTest and ResourceAuthorizationTest: 22 passed (172 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Review repository update and deletion safety mutations; keep straightforward store CRUD in the controller unless a transaction or security boundary makes an action materially useful.
+Extract the repository deletion safety transaction, preserving soft deletion, website lock ordering, active-deployment rejection and exact flash behavior.
