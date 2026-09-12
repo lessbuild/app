@@ -680,6 +680,23 @@ Verification after the phase:
 - Pint, PHP syntax checks and git diff --check: passed for every Phase 3C slice.
 - Live paid-provider/cloud acceptance and the separate acceptance drill remain outstanding and were not run or modified.
 
+## Phase 3D — server inventory query and export slice
+
+Responsibility problem: ServersController combined workspace-scoped server filtering, capacity metrics, CSV projection and spreadsheet-safe serialization with HTTP response coordination.
+
+Boundary used: ServerInventoryQuery now owns the filtered organization query and six related metrics. ServerInventoryExporter owns the streamed CSV response and consumes the shared query. The controller retains filter normalization, pagination, authentication boundary and view/response composition. Both collaborators are concrete and constructor-injected.
+
+Preserved guarantees:
+
+- Workspace scoping, search fields, status/provisioning filters, website counts, latest-server selection and metric meanings remain unchanged.
+- CSV filename, headers, BOM, ordering, lazy batch size, eager provider/count loading, formula escaping, null handling and credential exclusion remain unchanged.
+- Provisioning, retry, callback, ownership, cleanup and deletion behavior were not changed in this read-side slice.
+
+Verification after the slice:
+
+- ServerInventoryExportTest and ServerInventoryInsightsTest: 6 passed (59 assertions).
+- Pint, PHP syntax checks and git diff --check: passed.
+
 ## Next task
 
-Begin Phase 3D by mapping remaining server/environment controllers, actions, callbacks, provisioning attempts, ownership checks and environment-removal safeguards before selecting the smallest justified extraction.
+Review server provisioning creation/failure cleanup and retry boundaries, preserving provider calls, SSH-key ownership, attempts, callbacks and after-commit queue timing.

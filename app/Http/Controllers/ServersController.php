@@ -17,13 +17,11 @@ use App\Models\Server;
 use App\Models\Size;
 use App\Services\ActivityRecorder;
 use App\Services\PlanLimits;
+use App\Services\ServerInventoryExporter;
+use App\Services\ServerInventoryQuery;
 use App\Services\ServerProviderResolver;
 use App\Services\SshKeyPair;
-use App\Support\CsvCell;
-use App\Support\SqlLike;
-use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,13 +31,18 @@ use Throwable;
 
 class ServersController extends Controller
 {
+    public function __construct(
+        private readonly ServerInventoryExporter $serverInventoryExporter,
+        private readonly ServerInventoryQuery $serverInventory,
+    ) {}
+
     /**
      * List all servers.
      */
     public function index(Request $request): View
     {
         $filters = $this->indexFilters($request);
-        $servers = $this->filteredServers($request, $filters)
+        $servers = $this->serverInventory->for($request->user(), $filters)
             ->latest()
             ->paginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -47,38 +50,9 @@ class ServersController extends Controller
         return view('scenes.servers.index', [
             'servers' => $servers,
             'filters' => $filters,
-            'metrics' => $this->indexMetrics($request, $filters),
+            'metrics' => $this->serverInventory->metrics($request->user(), $filters),
             'statuses' => $this->serverStatuses(),
         ]);
-    }
-
-    /**
-     * @param  array{search: ?string, status: ?string, provisioning: ?string}  $filters
-     * @return array{total: int, ready: int, provisioning: int, failed: int, websites: int, latest_at: CarbonInterface|null}
-     */
-    private function indexMetrics(Request $request, array $filters): array
-    {
-        $latest = $this->filteredServers($request, $filters)
-            ->select(['id', 'created_at'])
-            ->latest('created_at')
-            ->latest('id')
-            ->first();
-        $serverIds = $this->filteredServers($request, $filters)->select('servers.id');
-
-        return [
-            'total' => $this->filteredServers($request, $filters)->count(),
-            'ready' => $this->filteredServers($request, $filters)
-                ->where('provisioning_status', Server::STATUS_ACTIVE)
-                ->count(),
-            'provisioning' => $this->filteredServers($request, $filters)
-                ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES)
-                ->count(),
-            'failed' => $this->filteredServers($request, $filters)
-                ->where('provisioning_status', Server::STATUS_FAILED)
-                ->count(),
-            'websites' => $request->user()->workspaceWebsites()->whereIn('server_id', $serverIds)->count(),
-            'latest_at' => $latest?->created_at,
-        ];
     }
 
     /**
@@ -87,66 +61,8 @@ class ServersController extends Controller
     public function export(Request $request): StreamedResponse
     {
         $filters = $this->indexFilters($request);
-        $filename = 'lessbuild-servers-'.now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($request, $filters): void {
-            $output = fopen('php://output', 'wb');
-            if ($output === false) {
-                throw new \RuntimeException('Unable to open the CSV output stream.');
-            }
-
-            fwrite($output, "\xEF\xBB\xBF");
-            fputcsv($output, [
-                'Server ID',
-                'Display name',
-                'Cloud hostname',
-                'Cloud identifier',
-                'Type',
-                'Region',
-                'Size',
-                'Image',
-                'Public IP',
-                'Private IP',
-                'Provider',
-                'Provider type',
-                'Status',
-                'Website count',
-                'Provisioned at',
-                'Created at',
-            ], ',', '"', '');
-
-            $this->filteredServers($request, $filters)
-                ->with('provider')
-                ->withCount('websites')
-                ->latest('servers.id')
-                ->lazy(250)
-                ->each(function (Server $server) use ($output): void {
-                    fputcsv($output, [
-                        $server->id,
-                        $this->csvCell($server->label),
-                        $this->csvCell($server->name),
-                        $this->csvCell($server->identifier),
-                        $this->csvCell($server->type?->value),
-                        $this->csvCell($server->region),
-                        $this->csvCell($server->size),
-                        $this->csvCell($server->image),
-                        $this->csvCell($server->public_ip),
-                        $this->csvCell($server->private_ip),
-                        $this->csvCell($server->provider?->name),
-                        $this->csvCell($server->provider?->provider),
-                        $this->csvCell($server->provisioning_status),
-                        $server->websites_count,
-                        $server->provisioned_at?->toIso8601String(),
-                        $server->created_at?->toIso8601String(),
-                    ], ',', '"', '');
-                });
-
-            fclose($output);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Cache-Control' => 'no-store, private',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+        return $this->serverInventoryExporter->stream($request->user(), $filters);
     }
 
     /**
@@ -415,27 +331,6 @@ class ServersController extends Controller
         ];
     }
 
-    /** @param array{search: ?string, status: ?string, provisioning: ?string} $filters */
-    private function filteredServers(Request $request, array $filters): HasMany
-    {
-        return $request->user()->workspaceServers()
-            ->when($filters['search'], function ($query, string $value): void {
-                $pattern = SqlLike::contains($value);
-                $query->where(function ($query) use ($pattern): void {
-                    $query
-                        ->whereRaw("display_name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("identifier LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("public_ip LIKE ? ESCAPE '!'", [$pattern])
-                        ->orWhereRaw("private_ip LIKE ? ESCAPE '!'", [$pattern]);
-                });
-            })
-            ->when($filters['status'], fn ($query, string $value) => $query
-                ->where('provisioning_status', $value))
-            ->when($filters['provisioning'], fn ($query) => $query
-                ->whereIn('provisioning_status', Server::ACTIVE_PROVISIONING_STATUSES));
-    }
-
     /** @return list<string> */
     private function serverStatuses(): array
     {
@@ -446,13 +341,5 @@ class ServersController extends Controller
             Server::STATUS_ACTIVE,
             Server::STATUS_FAILED,
         ];
-    }
-
-    /**
-     * Convert integer cells to text, preserve null, and escape values that could be interpreted as spreadsheet formulas.
-     */
-    private function csvCell(string|int|null $value): ?string
-    {
-        return CsvCell::escape($value);
     }
 }
