@@ -2632,6 +2632,59 @@ then extract the request and cohesive enable/disable operations while
 preserving policy ordering, GitLab `whsec_` validation, one-time secret flash,
 encrypted persistence, pending-revision cleanup and redirect fragments.
 
+## Phase 7F — repository webhook-settings operations
+
+### Responsibility problem
+
+`RepositoryWebhookSettingsController` correctly authorized the repository
+before branching on provider type, but then owned conditional signing-token
+validation, random secret generation, one-time secret disclosure and direct
+enable/disable writes. The disable path also cleared pending webhook state
+without a reusable operation boundary.
+
+### Boundaries applied
+
+- `RepositoryWebhookSettingsRequest` owns the request authorization call and
+  GitLab-only `whsec_` token validation. Its `authorize()` executes before
+  `rules()`, preserving the previous policy-before-validation behavior; other
+  providers continue to accept an empty payload.
+- `EnableRepositoryWebhookAction` loads the provider, selects the validated
+  GitLab token or generates the existing 64-character secret, persists the
+  enabled state and returns only the newly generated secret for presentation.
+- `DisableRepositoryWebhookAction` owns disabling the webhook, clearing its
+  encrypted secret and resetting all pending revision fields.
+- The controller now coordinates the request/action and retains only the
+  one-time session flash and existing redirect fragment/success response.
+
+This applies single responsibility and dependency inversion while keeping
+provider protocol validation separate from actor permission and HTTP response
+concerns.
+
+### Preserved contracts and safety guarantees
+
+- Foreign actors still receive the existing policy denial before signing-token
+  validation. GitLab token keys, `whsec_` decoding/length rules, provider
+  branching, encrypted storage, generated-secret session key, secret display
+  behavior, pending cleanup, redirect fragment and success text are unchanged.
+- Callback verification, replay protection, delivery history and deployment
+  queue behavior remain outside this settings operation.
+
+### Verification
+
+- Repository webhook, GitHub App and resource-authorization regression set:
+  **19 passed, 151 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `12e7927` — `refactor: extract repository webhook settings operations`
+
+**Phase 7F exit gate: complete.** Exact next task: audit remaining recipe,
+gallery, ratings/favorites, feedback and notification controllers for direct
+writes, inline actor guards, named validation bags and duplicated report/query
+semantics before extracting the smallest justified product slice.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2675,3 +2728,4 @@ encrypted persistence, pending-revision cleanup and redirect fragments.
 | Phase 7C-build-review | BuildsController validated approval/operator notes and directly wrote operator notes alongside already-extracted workflow actions. | 65 build/repository/deployment tests passed, 530 assertions; Pint and diff checks passed. | `ae1812d` — `refactor: extract build note and approval requests` | Characterize build/repository inventory filter requests and repository creation/configuration boundary, preserving scoped IDs, webhook-secret availability, validation ordering and exports. |
 | Phase 7D-build-repository-filters | Build and repository controllers normalized inventory and webhook-delivery filters alongside query/export orchestration. | 38 build/repository filter, export, insight, webhook and safety tests passed, 375 assertions; Pint and diff checks passed. | `8938e7d` — `refactor: extract build repository filter requests` | Extract the repository creation/configuration boundary shared by create and update, preserving tenant-scoped provider selection, webhook-secret availability, validation ordering, encrypted-secret behavior and the 503 response. |
 | Phase 7E-repository-creation | Repository create/update duplicated tenant provider lookup and GitHub App webhook configuration around direct creation and an existing locked update action. | 57 repository/GitHub App/webhook/deployment/provider/inventory/safety tests passed, 486 assertions; Pint and diff checks passed. | `2263941` — `refactor: extract repository creation operation` | Extract repository webhook-settings request and enable/disable operations, preserving GitLab token validation, one-time secret flash, encrypted persistence, pending cleanup and redirect behavior. |
+| Phase 7F-repository-webhook-settings | Repository webhook settings mixed GitLab protocol validation, generated-secret disclosure, encrypted enable/disable writes and pending-state cleanup in the controller. | 19 repository webhook/GitHub App/authorization tests passed, 151 assertions; Pint and diff checks passed. | `12e7927` — `refactor: extract repository webhook settings operations` | Audit recipe, gallery, ratings/favorites, feedback and notification controllers for remaining direct writes, inline actor guards, named bags and duplicated report/query semantics. |
