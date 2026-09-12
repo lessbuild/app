@@ -2848,6 +2848,54 @@ inventory and gallery filter normalization/CSV responsibilities into dedicated
 request/query/export boundaries, preserving silent defaults, pagination,
 ordering, metrics, eager loading and spreadsheet-safe output.
 
+## Phase 7J — recipe inventory query and export boundaries
+
+### Responsibility problem
+
+RecipesController still interpreted inventory query parameters, built the
+workspace-scoped recipe query repeatedly for listing metrics, and rendered the
+private CSV stream. Those read concerns were reusable between HTML and export
+but were coupled to the controller's HTTP methods.
+
+### Boundaries applied
+
+- RecipeIndexRequest owns normalized search/usage filter defaults and exposes
+  the explicit filters() contract. Its public validationData() preserves raw
+  query parameters for pagination links and exports while invalid filters
+  continue to fall back silently.
+- RecipeInventoryQuery owns current-workspace filtering and the related
+  usage/assignment/latest-update metrics.
+- RecipeInventoryExporter owns the CSV filename, headers, eager loading,
+  lazy batch size and spreadsheet-safe cell escaping.
+- RecipesController now coordinates the request, query collaborator and
+  exporter; recipe lifecycle actions remain separate.
+
+This applies single responsibility and dependency inversion to a real shared
+read boundary without adding a generic repository abstraction.
+
+### Preserved contracts and safety guarantees
+
+- Workspace scoping, search/usage defaults, SQL wildcard escaping, ordering,
+  pagination query strings, metrics, eager loading, lazy export batching,
+  UTF-8 BOM, CSV headers/escaping, script exclusion, response headers and
+  authentication behavior remain unchanged.
+
+### Verification
+
+- Recipe inventory filter/export/insight and management regression set:
+  **18 passed, 134 assertions**.
+- Targeted Pint test and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: 5852cea — refactor: extract recipe inventory queries
+
+**Phase 7J exit gate: complete.** Exact next task: extract gallery index
+filter normalization and the shared published-gallery query/metrics boundary,
+preserving personal scopes, aggregate ordering, eager-loaded user state,
+pagination and public-resource 404 behavior.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2895,3 +2943,4 @@ ordering, metrics, eager loading and spreadsheet-safe output.
 | Phase 7G-recipe-ratings-favorites | Rating/favorite controllers mixed availability/actor guards, validation, relation-scoped persistence, idempotency and activity recording. | 59 recipe rating/favorite/activity/gallery/report tests passed, 611 assertions; Pint and diff checks passed. | `bb9d3e1` — `refactor: extract recipe rating and favorite operations` | Extract gallery install/refresh and recipe lifecycle operations, preserving publication timestamps, source revisions, install-count concurrency, encrypted scripts, activity timing and response outcomes. |
 | Phase 7H-gallery-install-refresh | Gallery install/refresh transactions and activity recording remained inside `RecipeGalleryController`. | 21 gallery/activity/favorite/rating tests passed, 214 assertions; Pint and diff checks passed. | `72c9355` — `refactor: extract gallery install operations` | Extract recipe create/update publication persistence, duplicate creation and locked deletion, preserving timestamps, revisions, encrypted scripts, notification cleanup, activity timing and responses. |
 | Phase 7I-recipe-lifecycle | Recipe controller mixed publication metadata rules, direct create/update/duplicate writes, locked deletion, report-notification cleanup and activity recording. | 56 recipe management/duplication/activity/gallery/report tests passed, 507 assertions; Pint and diff checks passed. | `8f594ac` — `refactor: extract recipe lifecycle operations` | Extract recipe inventory and gallery filter normalization/CSV/query boundaries, preserving silent defaults, pagination, ordering, metrics, eager loading and spreadsheet-safe output. |
+| Phase 7J-recipe-inventory | Recipe inventory controller mixed filter normalization, repeated workspace queries/metrics and private CSV rendering. | 18 recipe inventory/filter/export/insight/management tests passed, 134 assertions; Pint and diff checks passed. | `5852cea` — `refactor: extract recipe inventory queries` | Extract gallery filter normalization and the shared published-gallery query/metrics boundary, preserving personal scopes, aggregate ordering, eager-loaded state, pagination and public 404 behavior. |
