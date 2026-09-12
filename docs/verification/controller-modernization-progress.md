@@ -4587,6 +4587,55 @@ tokenless compatibility, lock-point validation, snapshot replacement and
 heartbeat-equivalent response behavior, then handle website callbacks
 separately.
 
+## Phase 7AR — server provisioning log callback
+
+### Responsibility problem
+
+`ServerCallbackController::log()` still combined row locking, attempt-only
+acceptance, configured log validation, provisioning snapshot replacement and
+transaction handling. Its acceptance rule intentionally differed from status
+and failure: a matching or tokenless callback may record output regardless of
+the current provisioning state.
+
+### Boundary and principles
+
+`RecordServerProvisioningLogAction` now owns the transaction, locked lookup,
+attempt-only guard and snapshot upsert. The shared
+`ProvisioningCallbackValidator` owns the configured bounded log rule and is
+called only after the guard passes. The controller passes explicit attempt/log
+fields and returns the existing empty response. This applies single
+responsibility and dependency inversion while preserving the lock-point
+validation exception.
+
+### Preserved guarantees
+
+- Signed middleware, tokenless compatibility, attempt matching and acceptance
+  after completion remain unchanged.
+- Server log length configuration, required string validation, provisioning
+  snapshot type/status, replacement behavior, refreshed timestamp, row lock,
+  transaction rollback and response remain unchanged.
+- Stale callbacks still skip validation and writes; malformed current callbacks
+  still use Laravel’s normal validation response. No routes, persisted values,
+  serialized jobs, provider behavior, dependency lockfiles or external
+  acceptance state changed.
+
+### Verification
+
+- Server provisioning log, callback-integrity, provisioning-concurrency,
+  initialization and remote-provisioning retry regression set: **48 passed,
+  384 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `143b3e4` — `refactor: extract server provisioning log callback`
+
+**Phase 7AR exit gate: complete.** Exact next task: extract website status and
+failure operations, preserving preview bookkeeping inside the transaction,
+after-commit placement cleanup, lifecycle callback ordering, stale-attempt
+checks and the website provisioning plan boundary.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4668,3 +4717,4 @@ separately.
 | Phase 7AO-build-callbacks | BuildCallbackController mixed status/failure validation, locked persistence, preview reconciliation and automatic rollback; lock-sensitive log validation remained inline. | 68 repository-deployment/log/preview/callback-integrity/concurrency/cancellation/watchdog/revision/rollback tests passed, 549 assertions; Pint, syntax and diff checks passed. | `bb30e43` — `refactor: extract build callback operations` | Characterize raw-body GitHub App webhook and server/website callback contracts, preserving signature and validation-after-lock ordering before the next protocol-safe extraction. |
 | Phase 7AP-build-log | BuildCallbackController mixed lock-point validation, terminal-state filtering, log replacement and heartbeat persistence. | 50 deployment-log/watchdog/callback-integrity/provisioning-concurrency/cancellation tests passed, 438 assertions; Pint, syntax and diff checks passed. | `92cbc5d` — `refactor: extract build log callback operation` | Extract server provisioning callback operations with lock-point validation, preserving tokenless compatibility, attempt checks, transaction retries and snapshot behavior. |
 | Phase 7AQ-server-status-failure | ServerCallbackController mixed lock-point attempt/lifecycle checks, dynamic validation, status/failure persistence and failed snapshot writes. | 53 server provisioning/log/retry/authorization/callback-integrity/concurrency tests passed, 418 assertions; Pint, syntax and diff checks passed. | `d57b15f` — `refactor: extract server provisioning callbacks` | Extract the server log callback with attempt-only lock-point validation and tokenless compatibility, then handle website callbacks separately. |
+| Phase 7AR-server-log | ServerCallbackController mixed attempt-only lock-point validation, provisioning snapshot replacement and transaction handling. | 48 server provisioning/log/callback-integrity/concurrency/retry tests passed, 384 assertions; Pint, syntax and diff checks passed. | `143b3e4` — `refactor: extract server provisioning log callback` | Extract website status and failure operations, preserving preview bookkeeping, after-commit cleanup, lifecycle ordering and stale-attempt checks. |
