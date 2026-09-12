@@ -4636,6 +4636,62 @@ failure operations, preserving preview bookkeeping inside the transaction,
 after-commit placement cleanup, lifecycle callback ordering, stale-attempt
 checks and the website provisioning plan boundary.
 
+## Phase 7AS — website provisioning status and failure operations
+
+### Responsibility problem
+
+`WebsiteCallbackController` mixed locked attempt/lifecycle checks, dynamic
+status validation, placement state changes, preview lifecycle bookkeeping,
+after-commit cleanup dispatch and failure persistence. These transitions were
+not reusable outside the controller, despite their transaction-sensitive
+workflow semantics.
+
+### Boundary and principles
+
+`RecordWebsiteProvisioningStatusAction` and
+`RecordWebsiteProvisioningFailureAction` now own the respective locked
+transitions and five-attempt transactions. `WebsiteProvisioningCallbackGuard`
+owns the website-specific token and mutable-state acceptance rules. Both
+actions reuse `ProvisioningCallbackValidator` for validation after acceptance.
+The status action retains preview-ready bookkeeping inside the transaction and
+dispatches old-placement cleanup with `afterCommit()`. The controller only
+passes explicit raw callback fields because a normal Form Request would move
+validation before stale-attempt checks. This applies single responsibility,
+dependency inversion and a documented protocol-safe validation exception.
+
+### Preserved guarantees
+
+- Signed middleware, tokenless compatibility, attempt matching, queued /
+  provisioning acceptance, stale/terminal no-ops and accepted/no-content
+  response behavior remain unchanged.
+- Website plan bounds, integer status normalization, monotonic setup stages,
+  activation timestamps, provisioning errors and response mapping remain
+  unchanged.
+- Website completion still updates the row, calls `websiteReady` inside the
+  transaction, and schedules old-server placement cleanup after commit. Failure
+  still calls `websiteFailed` inside the transaction; synchronous bookkeeping
+  failures roll back the website transition.
+- No routes, persisted values, serialized jobs, provider behavior, dependency
+  lockfiles or external acceptance state changed.
+
+### Verification
+
+- Website provisioning log/retry, relocation, placement/security, lifecycle,
+  preview, callback-integrity and provisioning-concurrency regression set:
+  **61 passed, 498 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `291b132` — `refactor: extract website provisioning callbacks`
+
+**Phase 7AS exit gate: complete.** Exact next task: extract the website log
+callback with an attempt-only lock-point guard and the shared validator,
+preserving post-completion log acceptance, tokenless compatibility and the
+website log schema; then audit the raw-body GitHub App webhook for any
+remaining justified boundary.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -4718,3 +4774,4 @@ checks and the website provisioning plan boundary.
 | Phase 7AP-build-log | BuildCallbackController mixed lock-point validation, terminal-state filtering, log replacement and heartbeat persistence. | 50 deployment-log/watchdog/callback-integrity/provisioning-concurrency/cancellation tests passed, 438 assertions; Pint, syntax and diff checks passed. | `92cbc5d` — `refactor: extract build log callback operation` | Extract server provisioning callback operations with lock-point validation, preserving tokenless compatibility, attempt checks, transaction retries and snapshot behavior. |
 | Phase 7AQ-server-status-failure | ServerCallbackController mixed lock-point attempt/lifecycle checks, dynamic validation, status/failure persistence and failed snapshot writes. | 53 server provisioning/log/retry/authorization/callback-integrity/concurrency tests passed, 418 assertions; Pint, syntax and diff checks passed. | `d57b15f` — `refactor: extract server provisioning callbacks` | Extract the server log callback with attempt-only lock-point validation and tokenless compatibility, then handle website callbacks separately. |
 | Phase 7AR-server-log | ServerCallbackController mixed attempt-only lock-point validation, provisioning snapshot replacement and transaction handling. | 48 server provisioning/log/callback-integrity/concurrency/retry tests passed, 384 assertions; Pint, syntax and diff checks passed. | `143b3e4` — `refactor: extract server provisioning log callback` | Extract website status and failure operations, preserving preview bookkeeping, after-commit cleanup, lifecycle ordering and stale-attempt checks. |
+| Phase 7AS-website-status-failure | WebsiteCallbackController mixed lock-point attempt/lifecycle checks, validation, placement transitions, preview bookkeeping and failure persistence. | 61 website provisioning/log/retry/relocation/placement/security/lifecycle/preview/callback-integrity/concurrency tests passed, 498 assertions; Pint, syntax and diff checks passed. | `291b132` — `refactor: extract website provisioning callbacks` | Extract the website log callback with attempt-only lock-point validation and tokenless/post-completion compatibility, then audit the raw-body GitHub App webhook. |
