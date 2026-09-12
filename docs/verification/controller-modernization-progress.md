@@ -1687,6 +1687,66 @@ destination creation, endpoint-type validation, encrypted credentials, test
 delivery and deletion, then extract its request/policy/action boundaries while
 preserving sanitized feedback and queued webhook behavior.
 
+## Phase 5B — alert destination operations
+
+### Responsibility problem
+
+`ObservabilityController` mixed alert-destination authorization, paid-alert
+entitlement checks, type-specific endpoint validation, encrypted credential
+creation, test-payload construction/dispatch and deletion. The destination
+delivery job already owns remote delivery and remains an integration boundary;
+the controller should not construct that queued operation.
+
+### Boundaries applied
+
+- `AlertDestinationPolicy` owns create, test and delete decisions for a
+  manager of the selected workspace.
+- `StoreAlertDestinationRequest` owns common fields and the existing
+  email/PagerDuty/HTTPS/Slack/Discord endpoint validation messages while
+  preserving entitlement-before-validation ordering and redirect/input
+  feedback.
+- `CreateAlertDestinationAction`, `QueueAlertDestinationTestAction` and
+  `DeleteAlertDestinationAction` own encrypted record creation, bounded test
+  dispatch and entitlement-aware deletion respectively.
+- The controller now coordinates these boundaries and retains the existing
+  flash responses. `DeliverAlertWebhookJob` remains unchanged.
+
+This applies single responsibility, interface segregation and dependency
+inversion without introducing a provider strategy for validation variants or a
+generic integration repository.
+
+### Preserved contracts and safety guarantees
+
+- Destination routes, field names, supported types/events, endpoint limits,
+  provider-specific messages, redirects, queued payload shape and flash text
+  remain unchanged. Endpoint and signing-secret values remain encrypted and
+  hidden from serialized destination data.
+- Foreign or non-manager actors still receive 403 before writes or queued
+  delivery. Alert entitlements are checked before validation and rechecked by
+  each operation; the delivery job still performs public-HTTPS validation,
+  timeouts, signatures, retries and sanitized failure recording.
+- Existing custom Slack/Discord redirect-with-input behavior is retained and
+  no schema, job serialization, route or dependency lockfile changed.
+
+### Verification
+
+- Observability, entitlement and failure-notification regression set: **32
+  passed, 273 assertions**.
+- Added coverage for endpoint-type feedback, encrypted storage, test-delivery
+  queueing without endpoint leakage, and foreign test/delete denial with no
+  side effects.
+- PHP syntax checks, targeted Pint and `pint --test`, and `git diff --check`
+  passed.
+
+### Commit and next task
+
+Commit: `43334b5` — `refactor: extract alert destination operations`
+
+**Phase 5B exit gate: complete.** Exact next task: characterize status-page
+creation/update/deletion, slug collision handling, website pivot membership and
+published-page behavior, then extract status-page requests, policy and
+transaction-aware actions without changing public status responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1715,3 +1775,4 @@ preserving sanitized feedback and queued webhook behavior.
 | Phase 4I-api-variables | API variable replacement mixed control-plane access, environment authorization, bounded text validation, secret-safe parsing, versioned persistence and the JSON response in `ControlPlaneController`. | 52 automation/platform/environment-runtime/shared-tenancy tests passed, 296 assertions; Pint and diff checks passed. | `28ab03e` — `refactor: extract API variables operation` | Extract the remaining API promotion request boundary, preserving deploy-token and build-policy ordering, current-workspace target lookup, validation keys, 404 target behavior and the existing queued/conflict response envelope. |
 | Phase 4J-api-promotion | API promotion mixed capability/policy checks, validation, tenant-scoped target lookup and response mapping around `PromoteBuildAction`. | 48 build-promotion/automation/API tests passed, 220 assertions; Pint and diff checks passed. | `92cc670` — `refactor: extract API promotion request` | Begin Phase 5 with metric alert-rule creation and deletion, introducing resource authorization, a validated request and a cohesive operation while preserving alert entitlements, workspace-scoped server IDs and no-write denial behavior. |
 | Phase 5A-metric-rules | Observability metric-rule endpoints mixed workspace permission, alert entitlement, scoped server validation and direct persistence/deletion. | 22 observability/entitlement/incident tests passed, 172 assertions; Pint and diff checks passed. | `ca9d515` — `refactor: extract metric alert rule operations` | Characterize alert destination creation, endpoint-type validation, encrypted credentials, test delivery and deletion, then extract its request/policy/action boundaries while preserving sanitized feedback and queued webhook behavior. |
+| Phase 5B-alert-destinations | Alert-destination endpoints mixed authorization, entitlement, type-specific endpoint validation, encrypted credential creation, test dispatch and deletion. | 32 observability/entitlement/failure-notification tests passed, 273 assertions; Pint and diff checks passed. | `43334b5` — `refactor: extract alert destination operations` | Characterize status-page creation/update/deletion, slug collision handling, website pivot membership and published-page behavior, then extract status-page requests, policy and transaction-aware actions without changing public status responses. |
