@@ -1461,6 +1461,63 @@ workflow application validation and authorization ordering, then introduce
 separate workflow requests that reuse `WorkflowConfiguration` without changing
 YAML parsing, atomic application, response envelopes or flash messages.
 
+## Phase 4H — workflow request boundaries
+
+### Responsibility problem
+
+Both workflow endpoints still performed inline `required|string|max:50000`
+validation in their controllers before invoking the already cohesive,
+transaction-aware `WorkflowConfiguration` service. The web and API paths share
+the YAML field but have different authorization and response boundaries; the
+API path also needed control-plane entitlement/network/token checks before
+project policy and validation.
+
+### Boundaries applied
+
+- `ApplyWorkflowRequest` owns web workflow validation and the project update
+  policy, with an explicit accessor for the validated YAML.
+- API `ApplyWorkflowRequest` owns the same string/size contract but first uses
+  `ControlPlaneAccess` and then the project update policy, preserving API
+  access-before-validation ordering.
+- `AutomationController` and `ControlPlaneController` now pass validated YAML
+  and actor identity to the existing `WorkflowConfiguration` service. No
+  wrapper action was introduced because that service already owns the actual
+  version-1 YAML parsing, plan checks, cohesive transaction and persistence.
+
+This applies single responsibility and dependency inversion at the HTTP
+boundary while avoiding a rename-only action abstraction. Web/API requests
+remain separate because their authorization and response contracts differ.
+
+### Preserved contracts and safety guarantees
+
+- Web workflow routes retain redirects, flash text, validation keys and the
+  existing form transport behavior. API routes retain the 200 JSON envelope,
+  OpenAPI field name, 50 KB limit and control-plane token requirements.
+- Policy and API capability denial still precede malformed input. The existing
+  service continues to own YAML-specific validation, entitlement checks,
+  atomic schedule/scaling/process application, encrypted workflow persistence
+  and rollback behavior.
+- No route, schema, job, serialized payload, persisted workflow value or
+  dependency lockfile changed.
+
+### Verification
+
+- Automation, workflow, API configuration, configuration transaction and
+  concurrency, environment, tenancy, entitlement and platform regression set:
+  **67 passed, 453 assertions**.
+- Added web/API success coverage, explicit validated persistence checks and
+  malformed-input denial ordering for both request types.
+- PHP syntax checks, Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `dc57901` — `refactor: extract workflow request boundaries`
+
+**Phase 4H exit gate: complete.** Exact next task: characterize the API
+variables endpoint's parser, secret-safe failure behavior, organization
+scoping and transaction/lock semantics, then extract its request and
+transaction-aware action without flashing or serializing submitted secrets.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -1485,3 +1542,4 @@ YAML parsing, atomic application, response envelopes or flash messages.
 | Phase 4E-automation-deletions | Three automation controllers directly deleted scheduled-task, deployment-schedule and scaling-schedule records after authorization. | 45 automation/API/runtime/tenancy/entitlement regression tests passed, 265 assertions; Pint and diff checks passed. | `7ad26fa` — `refactor: extract automation deletion operations` | Characterize web scale and API scale/runtime contracts, then extract only matching runtime transition logic. |
 | Phase 4F-runtime-api | Web/API scale and runtime controllers mixed validation, policy/entitlement ordering, persistence, dispatch and response mapping; API access checks were duplicated. | 53 automation/API/runtime/configuration/tenancy/entitlement/platform tests passed, 334 assertions; Pint and diff checks passed. | `49bd49a` — `refactor: extract runtime operations` | Characterize token creation/rotation/deletion ownership, abilities, expiry, entitlement and plaintext feedback before extracting request/action boundaries. |
 | Phase 4G-automation-tokens | Token creation, rotation and revocation mixed validation, owner checks, hashed credential creation, replacement ordering and direct deletes in `AutomationController`. | 44 automation/token/API/platform/tenancy tests passed, 261 assertions; Pint and diff checks passed. | `c87e230` — `refactor: extract automation token operations` | Characterize web/API workflow validation and authorization ordering before extracting separate workflow requests around `WorkflowConfiguration`. |
+| Phase 4H-workflow | Web/API workflow controllers mixed basic YAML validation with policy/capability checks before invoking the existing transaction-aware `WorkflowConfiguration` service. | 67 automation/workflow/API/configuration/environment/tenancy/entitlement/platform tests passed, 453 assertions; Pint and diff checks passed. | `dc57901` — `refactor: extract workflow request boundaries` | Characterize API variables parsing, secret-safe failures, scoping and transaction/lock behavior before extracting its request/action boundary. |
