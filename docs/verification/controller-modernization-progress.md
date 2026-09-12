@@ -3419,6 +3419,53 @@ session revocation, preserving route/form ID attestation, the `sessions` bag,
 ownership-scoped outcomes, current-session protection, unavailable-driver
 behavior, activity timing and exact status/error responses.
 
+## Phase 7V — individual browser-session revocation boundary
+
+### Responsibility problem
+
+`UsersController` mixed route/form session-ID attestation and current-password
+validation with ownership-scoped session deletion, current-session protection,
+availability handling, conditional activity recording and response mapping.
+
+### Boundary and principles
+
+`RevokeSessionRequest` owns the existing `sessions` validation bag and verifies
+that the submitted form ID matches the route ID before the operation runs.
+`RevokeSessionAction` coordinates `BrowserSessionManager` and records activity
+only after a successful deletion, returning the manager's existing outcome
+strings. The controller now maps those outcomes to the existing redirects and
+messages. This applies single responsibility and dependency inversion while
+keeping ownership and lifecycle rules in the existing session service.
+
+### Preserved guarantees
+
+- Route/form ID attestation, the `sessions` bag, current-password validation
+  and secret-safe failed-input behavior remain unchanged.
+- Foreign-session requests remain non-destructive and non-disclosing;
+  current-session protection, unavailable-driver behavior, missing-session
+  status and successful deletion outcomes remain unchanged.
+- Account activity is still recorded only for a real revocation, with the
+  same event text and timing. Existing status/error flash keys and messages,
+  route constraints and rate limiting remain unchanged.
+- No routes, schemas, persisted values, serialized jobs, dependency lockfiles
+  or remote integrations changed.
+
+### Verification
+
+- Account/session/browser-session/security/rate-limit regression set: **35
+  passed, 310 assertions**.
+- Targeted Pint test, PHP syntax checks and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `8fb11fe` — `refactor: extract individual session revocation`
+
+**Phase 7V exit gate: complete.** Exact next task: extract social-account
+disconnect validation and the locked provider mutation, preserving the
+`social` bag, missing/last-method outcomes, provider fallback, activity timing,
+authorization ordering and exact status/error responses.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3478,3 +3525,4 @@ behavior, activity timing and exact status/error responses.
 | Phase 7S-profile | UsersController mixed profile validation/normalization, email-verification reset, device/session invalidation, activity and verification delivery. | 25 account profile/password/session/social tests passed, 179 assertions; Pint, syntax and diff checks passed. | `d54146d` — `refactor: extract profile update operation` | Extract the password update operation, preserving the `password` bag, hashing, device/session revocation, social-account behavior, activity and exact flash responses. |
 | Phase 7T-password | UsersController mixed password validation, hashing/timestamp persistence, device/session invalidation, regeneration and activity recording. | 27 account profile/password/session/social/security-activity tests passed, 219 assertions; Pint, syntax and diff checks passed. | `c470200` — `refactor: extract password update operation` | Extract the revoke-other-browser-sessions operation, preserving the `sessions` bag, authentication/session invalidation, regeneration, activity and exact status response. |
 | Phase 7U-session-revocation | UsersController mixed `sessions` validation, authentication-device invalidation, stored-session cleanup, regeneration and activity recording. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `1b2954d` — `refactor: extract session revocation operation` | Extract individual browser-session revocation, preserving route/form ID attestation, ownership-scoped outcomes, current-session protection, unavailable-driver behavior and exact responses. |
+| Phase 7V-individual-session | UsersController mixed route/form ID attestation, `sessions` validation, ownership-scoped deletion, current-session protection, availability outcomes and activity mapping. | 35 account/session/browser-session/security/rate-limit tests passed, 310 assertions; Pint, syntax and diff checks passed. | `8fb11fe` — `refactor: extract individual session revocation` | Extract social-account disconnect validation and locked provider mutation, preserving the `social` bag, missing/last-method outcomes, provider fallback, activity and exact responses. |
