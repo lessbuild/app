@@ -2010,6 +2010,68 @@ member role updates, member removal and workspace switching, preserving owner
 protection, scoped-member 404 behavior, pivot writes, current-workspace
 selection and seat synchronization timing.
 
+## Phase 5G — organization membership operations
+
+### Responsibility problem
+
+`OrganizationController` still made membership pivot changes and current
+workspace updates directly. Member-role and removal endpoints also combined
+manager checks with owner-protection and scoped-member lookup guards, while
+role validation remained inline. Workspace switching used a controller-local
+permission check and write.
+
+### Boundaries applied
+
+- `OrganizationPolicy::manageMembers` owns the current-workspace manager
+  decision for member management, and `OrganizationPolicy::switch` owns view
+  access to a switch target. The switch policy deliberately does not require
+  the target to differ from the current workspace.
+- `UpdateOrganizationMemberRequest` owns role validation and checks the
+  manager policy before validation.
+- `UpdateOrganizationMemberAction` and
+  `RemoveOrganizationMemberAction` own owner protection, organization-scoped
+  member existence, pivot mutation and (for removal) post-write seat-job
+  dispatch. Owner failures remain operation exceptions mapped to 422;
+  non-member targets remain model-not-found 404s.
+- `SwitchOrganizationAction` owns the authenticated user's current-workspace
+  write after policy authorization.
+
+This applies single responsibility and dependency inversion while keeping
+owner protection and child-scoped lookup out of permission policies. No
+generic membership repository or universal action base was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Switch, role-update and removal routes, redirects, success flashes and
+  authorization behavior remain unchanged. Authorized members can switch to a
+  different workspace; outsiders remain denied.
+- The workspace owner cannot be changed or removed and those operations still
+  return 422. A user that is not a member of the current workspace remains a
+  concealed 404 target. Denied requests do not change pivots, user workspace
+  selection or queue jobs.
+- Role pivot updates preserve the existing role values. Member removal still
+  detaches the pivot before dispatching the existing
+  `SyncOrganizationSeatQuantityJob`; no billing call occurs in the request.
+- No route, schema, lockfile or job payload changed.
+
+### Verification
+
+- Organization, invitation, entitlement, plan-limit and billing-listener set:
+  **30 passed, 140 assertions**.
+- Added coverage for authorized target switching, policy-before-malformed
+  input, owner protection, scoped-member 404s, pivot updates, removal queue
+  timing and no queue on rejected removal.
+- Full Pint test and `git diff --check` passed.
+
+### Commit and next task
+
+Commit: `39f2830` — `refactor: extract organization membership operations`
+
+**Phase 5G exit gate: complete.** Exact next task: characterize organization
+notification/security settings, including normalization, IP self-lockout
+protection, SSO entitlement/configuration rules and named validation behavior,
+then extract request/action boundaries without changing security ordering.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2043,3 +2105,4 @@ selection and seat synchronization timing.
 | Phase 5D-status-incidents | Status-incident endpoints mixed shared validation, kind/status rules, page scoping, resolution transitions, direct writes and subscriber notification timing. | 30 observability/public-status/entitlement/incident-notification/operational-incident tests passed, 231 assertions; Pint and diff checks passed. | `c91bd15` — `refactor: extract status incident operations` | Audit remaining `ObservabilityController` read/export boundaries, then begin organization invitation operations while preserving token/email identity, locks, seat limits and billing synchronization timing. |
 | Phase 5E-observability-incidents | The observability dashboard and operational-incident controller mixed bounded reads, policy decisions, validation, workflow guards, timeline writes, transactions and CSV formatting. | 31 observability/public-status/incident/entitlement tests passed, 243 assertions; Pint and diff checks passed. | `26e0879` — `refactor: extract operational incident operations` | Characterize organization invitation creation and acceptance, including token/email identity, expiry and single-use locks, seat limits, membership pivots and billing synchronization timing. |
 | Phase 5F-organization-invitations | Organization invitation endpoints mixed policy, entitlement, normalization, validation, domain/member rules, seat locking, hashed-token persistence, notifications and locked acceptance. | 28 organization/invitation/entitlement/plan-limit/billing tests passed, 122 assertions; Pint and diff checks passed. | `be7d410` — `refactor: extract organization invitation operations` | Characterize member role updates, member removal and workspace switching, preserving owner protection, scoped-member 404 behavior, pivot writes, current-workspace selection and seat synchronization timing. |
+| Phase 5G-organization-membership | Member role/removal and workspace switch endpoints mixed policy checks, scoped member lookup, owner safeguards, pivot/current-workspace writes and seat dispatch in `OrganizationController`. | 30 organization/invitation/entitlement/plan-limit/billing tests passed, 140 assertions; Pint and diff checks passed. | `39f2830` — `refactor: extract organization membership operations` | Characterize notification/security settings, including normalization, IP self-lockout protection, SSO entitlement/configuration rules and named validation behavior. |
