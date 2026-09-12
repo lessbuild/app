@@ -7,24 +7,26 @@ use App\Actions\Organization\InviteOrganizationMemberAction;
 use App\Actions\Organization\RemoveOrganizationMemberAction;
 use App\Actions\Organization\SwitchOrganizationAction;
 use App\Actions\Organization\UpdateOrganizationMemberAction;
+use App\Actions\Organization\UpdateOrganizationNotificationPreferencesAction;
+use App\Actions\Organization\UpdateOrganizationSecurityPolicyAction;
 use App\Exceptions\OrganizationInvitationOperationException;
 use App\Exceptions\OrganizationMemberOperationException;
 use App\Http\Requests\AcceptOrganizationInvitationRequest;
 use App\Http\Requests\StoreOrganizationInvitationRequest;
 use App\Http\Requests\UpdateOrganizationMemberRequest;
+use App\Http\Requests\UpdateOrganizationNotificationPreferencesRequest;
+use App\Http\Requests\UpdateOrganizationSecurityPolicyRequest;
 use App\Models\Build;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
-use App\Services\Entitlements;
 use App\Services\PersonalOrganization;
 use App\Services\PlanLimits;
 use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -105,19 +107,10 @@ class OrganizationController extends Controller
     /**
      * Require workspace management access, validate categories and recovery alerts, and save normalized notification preferences.
      */
-    public function updateNotificationPreferences(Request $request): RedirectResponse
+    public function updateNotificationPreferences(UpdateOrganizationNotificationPreferencesRequest $request, UpdateOrganizationNotificationPreferencesAction $updatePreferences): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'manage'), 403);
-        $data = $request->validate([
-            'categories' => ['nullable', 'array'],
-            'categories.*' => ['required', Rule::in(['website', 'server', 'deployment', 'provider', 'security', 'recipe']), 'distinct'],
-            'recoveries' => ['required', 'boolean'],
-        ]);
-        $organization->update(['notification_preferences' => [
-            'categories' => array_values($data['categories'] ?? []),
-            'recoveries' => (bool) $data['recoveries'],
-        ]]);
+        $updatePreferences->handle($organization, $request->validated());
 
         return back()->with('success', __('Workspace notification preferences updated.'));
     }
@@ -127,84 +120,12 @@ class OrganizationController extends Controller
      *
      * New IP restrictions must retain the current client address; changed SSO settings require the SSO entitlement.
      */
-    public function updateSecurityPolicy(Request $request, Entitlements $entitlements): RedirectResponse
+    public function updateSecurityPolicy(UpdateOrganizationSecurityPolicyRequest $request, UpdateOrganizationSecurityPolicyAction $updateSecurity): RedirectResponse
     {
         $organization = $request->user()->currentOrganization;
-        abort_unless($organization?->permits($request->user(), 'manage'), 403);
-        $data = $request->validate([
-            'allowed_ip_ranges' => ['nullable', 'string', 'max:5000'],
-            'allowed_email_domains' => ['nullable', 'string', 'max:2000'],
-            'require_two_factor' => ['required', 'boolean'],
-            'session_idle_minutes' => ['nullable', 'integer', Rule::in([15, 30, 60, 240, 720, 1440])],
-            'sso_issuer' => ['nullable', 'url:https', 'max:1000'],
-            'sso_client_id' => ['nullable', 'string', 'max:500'],
-            'sso_client_secret' => ['nullable', 'string', 'max:2000'],
-            'sso_enforced' => ['required', 'boolean'],
-        ]);
-        $ranges = collect(preg_split('/[\s,]+/', (string) ($data['allowed_ip_ranges'] ?? '')) ?: [])->filter()->values();
-        foreach ($ranges as $range) {
-            [$network, $prefix] = array_pad(explode('/', $range, 2), 2, null);
-            $packed = @inet_pton($network);
-            $bits = $prefix === null ? ($packed === false ? -1 : strlen($packed) * 8) : filter_var($prefix, FILTER_VALIDATE_INT);
-            if ($packed === false || $bits === false || $bits < 0 || $bits > strlen($packed) * 8) {
-                throw ValidationException::withMessages(['allowed_ip_ranges' => __('Enter valid IPv4 or IPv6 addresses and CIDR ranges.')]);
-            }
-        }
-        $domains = collect(preg_split('/[\s,]+/', Str::lower((string) ($data['allowed_email_domains'] ?? ''))) ?: [])->filter();
-        if ($domains->contains(fn ($domain) => ! preg_match('/\A[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,63}\z/D', $domain))) {
-            throw ValidationException::withMessages(['allowed_email_domains' => __('Enter valid email domains.')]);
-        }
-        if ($ranges->isNotEmpty() && ! $ranges->contains(fn (string $range): bool => $this->rangeContains($range, (string) $request->ip()))) {
-            throw ValidationException::withMessages(['allowed_ip_ranges' => __('Include your current IP address so you do not lock yourself out.')]);
-        }
-        $sso = $organization->sso_configuration ?? [];
-        if (filled($data['sso_issuer'] ?? null)) {
-            $sso['issuer'] = rtrim($data['sso_issuer'], '/');
-        }
-        if (filled($data['sso_client_id'] ?? null)) {
-            $sso['client_id'] = $data['sso_client_id'];
-        }
-        if (filled($data['sso_client_secret'] ?? null)) {
-            $sso['client_secret'] = $data['sso_client_secret'];
-        }
-        $ssoChanged = ($sso['issuer'] ?? null) !== data_get($organization->sso_configuration, 'issuer')
-            || ($sso['client_id'] ?? null) !== data_get($organization->sso_configuration, 'client_id')
-            || filled($data['sso_client_secret'] ?? null)
-            || (bool) $data['sso_enforced'] !== (bool) $organization->sso_enforced;
-        if ($ssoChanged) {
-            $entitlements->enforce($organization, 'sso');
-        }
-        if ($data['sso_enforced'] && (! filled($sso['issuer'] ?? null) || ! filled($sso['client_id'] ?? null) || ! filled($sso['client_secret'] ?? null))) {
-            throw ValidationException::withMessages(['sso_enforced' => __('Configure the issuer, client ID, and client secret before enforcing SSO.')]);
-        }
-        $organization->update([
-            'allowed_ip_ranges' => $ranges->all(), 'allowed_email_domains' => $domains->values()->all(),
-            'require_two_factor' => (bool) $data['require_two_factor'], 'session_idle_minutes' => $data['session_idle_minutes'] ?? null,
-            'sso_configuration' => $sso === [] ? null : $sso, 'sso_enforced' => (bool) $data['sso_enforced'],
-        ]);
+        $updateSecurity->handle($organization, $request->validated(), (string) $request->ip());
 
         return back()->with('success', __('Workspace security policy updated.'));
-    }
-
-    /**
-     * Test whether an IP address belongs to a previously validated same-family address or CIDR range.
-     */
-    private function rangeContains(string $range, string $ip): bool
-    {
-        [$network, $prefix] = array_pad(explode('/', $range, 2), 2, null);
-        $address = @inet_pton($ip);
-        $base = @inet_pton($network);
-        if ($address === false || $base === false || strlen($address) !== strlen($base)) {
-            return false;
-        }
-        $bits = $prefix === null ? strlen($address) * 8 : (int) $prefix;
-        $bytes = intdiv($bits, 8);
-        $remainder = $bits % 8;
-        if (substr($address, 0, $bytes) !== substr($base, 0, $bytes)) {
-            return false;
-        }
-
-        return $remainder === 0 || ((ord($address[$bytes]) & ((0xFF << (8 - $remainder)) & 0xFF)) === (ord($base[$bytes]) & ((0xFF << (8 - $remainder)) & 0xFF)));
     }
 
     /**

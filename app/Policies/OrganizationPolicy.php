@@ -26,6 +26,15 @@ class OrganizationPolicy
     }
 
     /**
+     * Allow a manager to update settings only in the currently selected workspace.
+     */
+    public function manageSettings(User $user, Organization $organization): bool
+    {
+        return (int) $organization->id === (int) $user->current_organization_id
+            && $organization->permits($user, 'manage');
+    }
+
+    /**
      * Allow an account to switch to any workspace in which it has view access.
      */
     public function switch(User $user, Organization $organization): bool

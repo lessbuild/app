@@ -2,12 +2,15 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\IpRangeMatcher;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnforceOrganizationSecurity
 {
+    public function __construct(private readonly IpRangeMatcher $ranges) {}
+
     /**
      * Enforce current-workspace network, two-factor, SSO, and idle-session policies before continuing.
      *
@@ -23,7 +26,7 @@ class EnforceOrganizationSecurity
         }
 
         $ranges = array_filter($organization->allowed_ip_ranges ?? []);
-        abort_if($ranges !== [] && ! collect($ranges)->contains(fn (string $range): bool => $this->contains($range, (string) $request->ip())), 403, 'This network is not allowed by the workspace security policy.');
+        abort_if($ranges !== [] && ! collect($ranges)->contains(fn (string $range): bool => $this->ranges->contains($range, (string) $request->ip())), 403, 'This network is not allowed by the workspace security policy.');
 
         if ($organization->require_two_factor && ! $user->twoFactorEnabled()
             && ! $request->routeIs('account.*', 'logout')) {
@@ -57,26 +60,6 @@ class EnforceOrganizationSecurity
      */
     public function contains(string $range, string $ip): bool
     {
-        [$network, $prefix] = array_pad(explode('/', trim($range), 2), 2, null);
-        $address = @inet_pton($ip);
-        $base = @inet_pton($network);
-        if ($address === false || $base === false || strlen($address) !== strlen($base)) {
-            return false;
-        }
-        $bits = $prefix === null ? strlen($address) * 8 : filter_var($prefix, FILTER_VALIDATE_INT);
-        if ($bits === false || $bits < 0 || $bits > strlen($address) * 8) {
-            return false;
-        }
-        $bytes = intdiv($bits, 8);
-        $remainder = $bits % 8;
-        if (substr($address, 0, $bytes) !== substr($base, 0, $bytes)) {
-            return false;
-        }
-        if ($remainder === 0) {
-            return true;
-        }
-        $mask = (0xFF << (8 - $remainder)) & 0xFF;
-
-        return (ord($address[$bytes]) & $mask) === (ord($base[$bytes]) & $mask);
+        return $this->ranges->contains($range, $ip);
     }
 }

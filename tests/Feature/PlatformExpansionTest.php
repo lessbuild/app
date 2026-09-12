@@ -78,6 +78,57 @@ class PlatformExpansionTest extends TestCase
         $this->assertStringNotContainsString('203.0.113.0', (string) DB::table('organizations')->where('id', $organization->id)->value('allowed_ip_ranges'));
     }
 
+    public function test_sso_enforcement_requires_complete_configuration_without_writing(): void
+    {
+        [$owner] = $this->infrastructure();
+
+        $this->actingAs($owner)->patch(route('organizations.security-policy.update'), [
+            'allowed_ip_ranges' => null, 'allowed_email_domains' => null,
+            'require_two_factor' => '0', 'sso_enforced' => '1', 'session_idle_minutes' => 30,
+        ])->assertSessionHasErrors('sso_enforced');
+
+        $organization = $owner->currentOrganization->fresh();
+        $this->assertNull($organization->sso_configuration);
+        $this->assertFalse($organization->sso_enforced);
+    }
+
+    public function test_sso_settings_require_the_workspace_entitlement_before_persisting(): void
+    {
+        [$owner] = $this->infrastructure();
+        config(['billing.enforce_entitlements' => true]);
+
+        $this->actingAs($owner)->patch(route('organizations.security-policy.update'), [
+            'allowed_ip_ranges' => null, 'allowed_email_domains' => null,
+            'require_two_factor' => '0', 'sso_enforced' => '0', 'session_idle_minutes' => 30,
+            'sso_issuer' => 'https://idp.example.com/', 'sso_client_id' => 'buildpusher',
+            'sso_client_secret' => 'secret-value',
+        ])->assertSessionHasErrors('plan');
+
+        $organization = $owner->currentOrganization->fresh();
+        $this->assertNull($organization->sso_configuration);
+        $this->assertFalse($organization->sso_enforced);
+    }
+
+    public function test_sso_configuration_is_normalized_and_encrypted_when_entitled(): void
+    {
+        [$owner] = $this->infrastructure();
+
+        $this->actingAs($owner)->patch(route('organizations.security-policy.update'), [
+            'allowed_ip_ranges' => null, 'allowed_email_domains' => 'EXAMPLE.COM',
+            'require_two_factor' => '0', 'sso_enforced' => '1', 'session_idle_minutes' => 30,
+            'sso_issuer' => 'https://idp.example.com/', 'sso_client_id' => 'buildpusher',
+            'sso_client_secret' => 'secret-value',
+        ])->assertRedirect();
+
+        $organization = $owner->currentOrganization->fresh();
+        $this->assertSame(['example.com'], $organization->allowed_email_domains);
+        $this->assertSame([
+            'issuer' => 'https://idp.example.com', 'client_id' => 'buildpusher', 'client_secret' => 'secret-value',
+        ], $organization->sso_configuration);
+        $this->assertTrue($organization->sso_enforced);
+        $this->assertStringNotContainsString('secret-value', (string) DB::table('organizations')->whereKey($organization->id)->value('sso_configuration'));
+    }
+
     public function test_scheduled_task_and_new_control_plane_endpoints_are_available(): void
     {
         Queue::fake();

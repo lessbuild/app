@@ -240,6 +240,29 @@ class OrganizationManagementTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_settings_authorization_precedes_malformed_input_without_writes(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+        $before = $organization->fresh()->only([
+            'notification_preferences', 'allowed_ip_ranges', 'allowed_email_domains',
+            'require_two_factor', 'session_idle_minutes', 'sso_configuration', 'sso_enforced',
+        ]);
+
+        $this->actingAs($viewer)->patch(route('organizations.notification-preferences.update'), [
+            'categories' => ['not-a-category'], 'recoveries' => 'not-a-boolean',
+        ])->assertForbidden();
+        $this->actingAs($viewer)->patch(route('organizations.security-policy.update'), [
+            'allowed_ip_ranges' => str_repeat('x', 5001), 'allowed_email_domains' => str_repeat('x', 2001),
+            'require_two_factor' => 'not-a-boolean', 'sso_enforced' => 'not-a-boolean',
+        ])->assertForbidden();
+
+        $this->assertSame($before, $organization->fresh()->only(array_keys($before)));
+    }
+
     public function test_owner_can_delete_an_empty_workspace_and_receives_a_new_personal_workspace(): void
     {
         $owner = User::factory()->create();
