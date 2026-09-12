@@ -3127,6 +3127,51 @@ operations and a policy-compatible ownership boundary, preserving deliberate
 404 concealment, bulk counts, read/unread/delete messages, query scoping and
 no-write behavior for foreign route-bound records.
 
+## Phase 7P — notification state and ownership boundary
+
+### Responsibility problem
+
+NotificationsController still performed all notification state writes, inline
+bulk validation and route-bound ownership checks. The ownership guard was a
+deliberate 404 concealment rule, but it was embedded in HTTP coordination.
+
+### Boundary and principles
+
+NotificationPolicy now owns recipient ownership decisions for read, unread and
+delete abilities and returns a not-found authorization response for foreign
+records. BulkNotificationRequest owns the exact bounded selection contract, and
+NotificationBulkOperation names its finite values without changing their wire
+strings. UpdateNotificationStateAction owns individual, all, selected and
+read-cleanup state mutations. The controller retains authorization ordering,
+redirects and exact flash messages. This applies dependency inversion and single
+responsibility while preserving the security classification of a concealed
+resource lookup.
+
+### Preserved guarantees
+
+- Foreign recipients and wrong morph types still receive 404 responses and
+  cannot mutate route-bound notifications.
+- Bulk validation keys, UUID/distinct/max-25 rules, owner scoping, affected
+  counts, operation strings, pluralized messages and redirects remain unchanged.
+- Idempotent model-level read/unread behavior, read-all updates and read-only
+  cleanup remain unchanged; no new transaction or event ordering was added.
+- Authentication and route-bound missing-record behavior remain unchanged.
+
+### Verification
+
+- Notification state, bulk, ownership, inbox and authentication regression set:
+  **23 passed, 198 assertions**.
+- Targeted Pint test, PHP syntax checks and git diff --check passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: 2f47a7f — refactor: extract notification state operations
+
+**Phase 7P exit gate: complete.** Exact next task: audit account activity and
+sign-in history reads/exports, preserving user scoping, named `signIns` errors,
+pagination/filter defaults, CSV redaction and session/security side effects.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -3180,3 +3225,4 @@ no-write behavior for foreign route-bound records.
 | Phase 7M-access-review | AdminAccessRequestController mixed platform-admin authorization, review validation, accepted-state invariants, invitation mutation and notification dispatch. | 13 access-request/invitation administration tests passed, 97 assertions; Pint and diff checks passed. | `b4905c5` — `refactor: extract access request review operation` | Extract public access-request intake, preserving honeypot no-op behavior, normalized email deduplication, pending-only updates, encrypted persistence and notification timing. |
 | Phase 7N-access-intake | AccessRequestController mixed registration availability, honeypot handling, applicant validation/normalization, deduplication, encrypted persistence and notifications. | 13 public/administration access-request tests passed, 97 assertions; Pint and diff checks passed. | `fa31c24` — `refactor: extract access request intake operation` | Extract notification inbox filters/query/export and state operations, preserving ownership concealment, bulk counts, saved preferences, payload redaction and redirects. |
 | Phase 7O-notification-inbox | NotificationsController mixed filter validation, recipient-scoped query/metrics, CSV serialization and saved-filter preference writes with state endpoints. | 23 notification inbox/export/saved-filter/bulk/ownership/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `142b5b1` — `refactor: extract notification inbox operations` | Extract notification state operations and a policy-compatible ownership boundary, preserving deliberate 404 concealment, bulk counts, state messages, scoping and no-write denial. |
+| Phase 7P-notification-state | NotificationsController mixed state writes, bulk validation and foreign-recipient ownership concealment. | 23 notification state/bulk/ownership/inbox/authentication tests passed, 198 assertions; Pint, syntax and diff checks passed. | `2f47a7f` — `refactor: extract notification state operations` | Audit account activity and sign-in history reads/exports, preserving user scoping, named `signIns` errors, pagination/filter defaults, CSV redaction and security side effects. |
