@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\BeginTwoFactorSetupAction;
+use App\Actions\Account\CancelTwoFactorSetupAction;
+use App\Exceptions\TwoFactorOperationException;
+use App\Http\Requests\EnableTwoFactorRequest;
 use App\Services\ActivityRecorder;
 use App\Services\TwoFactorAuthentication;
 use Illuminate\Http\RedirectResponse;
@@ -13,15 +17,13 @@ class TwoFactorAuthenticationController extends Controller
     /**
      * Require any existing local password and initialize an unconfirmed authenticator secret for an account without active two-factor authentication.
      */
-    public function enable(Request $request, TwoFactorAuthentication $twoFactor): RedirectResponse
+    public function enable(EnableTwoFactorRequest $request, BeginTwoFactorSetupAction $begin): RedirectResponse
     {
-        abort_if($request->user()->twoFactorEnabled(), 422);
-        $this->validatePassword($request);
-        $request->user()->forceFill([
-            'two_factor_secret' => $twoFactor->generateSecret(),
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
-        ])->save();
+        try {
+            $begin->handle($request->user());
+        } catch (TwoFactorOperationException) {
+            abort(422);
+        }
 
         return back()->with('two_factor_status', __('Enter a code from your authenticator app to finish setup.'));
     }
@@ -80,14 +82,13 @@ class TwoFactorAuthenticationController extends Controller
     /**
      * Clear an unfinished two-factor setup and redirect back; already-enabled accounts receive HTTP 422.
      */
-    public function cancel(Request $request): RedirectResponse
+    public function cancel(Request $request, CancelTwoFactorSetupAction $cancel): RedirectResponse
     {
-        abort_if($request->user()->twoFactorEnabled(), 422);
-        $request->user()->forceFill([
-            'two_factor_secret' => null,
-            'two_factor_recovery_codes' => null,
-            'two_factor_confirmed_at' => null,
-        ])->save();
+        try {
+            $cancel->handle($request->user());
+        } catch (TwoFactorOperationException) {
+            abort(422);
+        }
 
         return back()->with('two_factor_status', __('Two-factor setup cancelled.'));
     }

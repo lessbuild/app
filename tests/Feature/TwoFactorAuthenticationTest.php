@@ -39,6 +39,60 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->assertArrayNotHasKey('two_factor_recovery_codes', $user->toArray());
     }
 
+    public function test_enabled_two_factor_rejects_setup_before_password_validation(): void
+    {
+        $user = $this->enabledUser();
+        $secret = $user->two_factor_secret;
+        $recoveryCodes = $user->two_factor_recovery_codes;
+
+        $this->actingAs($user)->post(route('account.two-factor.enable'))->assertStatus(422);
+
+        $user->refresh();
+        $this->assertSame($secret, $user->two_factor_secret);
+        $this->assertSame($recoveryCodes, $user->two_factor_recovery_codes);
+    }
+
+    public function test_social_only_user_can_begin_two_factor_setup_without_a_password(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'auth_type' => 'github',
+        ]);
+
+        $this->actingAs($user)->post(route('account.two-factor.enable'), [])
+            ->assertSessionHas('two_factor_status', 'Enter a code from your authenticator app to finish setup.');
+
+        $this->assertNotNull($user->fresh()->two_factor_secret);
+    }
+
+    public function test_pending_two_factor_setup_can_be_cancelled(): void
+    {
+        $user = User::factory()->create();
+        $user->forceFill([
+            'two_factor_secret' => app(TwoFactorAuthentication::class)->generateSecret(),
+            'two_factor_recovery_codes' => ['stale-recovery-hash'],
+            'two_factor_confirmed_at' => null,
+        ])->save();
+
+        $this->actingAs($user)->delete(route('account.two-factor.cancel'))
+            ->assertSessionHas('two_factor_status', 'Two-factor setup cancelled.');
+
+        $user->refresh();
+        $this->assertNull($user->two_factor_secret);
+        $this->assertNull($user->two_factor_recovery_codes);
+        $this->assertNull($user->two_factor_confirmed_at);
+    }
+
+    public function test_enabled_two_factor_cannot_be_cancelled(): void
+    {
+        $user = $this->enabledUser();
+        $secret = $user->two_factor_secret;
+
+        $this->actingAs($user)->delete(route('account.two-factor.cancel'))->assertStatus(422);
+
+        $this->assertSame($secret, $user->fresh()->two_factor_secret);
+    }
+
     public function test_enabled_two_factor_is_required_after_password_login(): void
     {
         $user = $this->enabledUser();
