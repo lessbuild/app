@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\ApplyWebsiteDomainsJob;
+use App\Actions\Domain\DeleteWebsiteDomainAction;
+use App\Actions\Domain\IssueTemporaryWebsiteDomainAction;
+use App\Actions\Domain\SaveWebsiteDomainAction;
+use App\Actions\Domain\SynchronizeWebsiteDomainAction;
+use App\Exceptions\WebsiteDomainOperationException;
+use App\Http\Requests\IssueTemporaryWebsiteDomainRequest;
+use App\Http\Requests\StoreWebsiteDomainRequest;
 use App\Models\Provider;
-use App\Models\Website;
 use App\Models\WebsiteDomain;
-use App\Rules\Hostname;
-use App\Services\CloudflareDns;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
-use Throwable;
 
 class DomainController extends Controller
 {
@@ -37,28 +37,13 @@ class DomainController extends Controller
      *
      * @return RedirectResponse The saved domain result after DNS synchronization and queued proxy configuration.
      */
-    public function store(Request $request, CloudflareDns $cloudflare): RedirectResponse
+    public function store(StoreWebsiteDomainRequest $request, SaveWebsiteDomainAction $saveDomain): RedirectResponse
     {
-        $website = $this->website($request);
+        $website = $request->website();
         $this->authorize('update', $website);
-        $request->merge(['hostname' => strtolower(rtrim(trim((string) $request->input('hostname')), '.'))]);
-        $data = $request->validate([
-            'hostname' => ['required', 'string', 'max:253', new Hostname, Rule::unique('website_domains', 'hostname')],
-            'type' => ['required', Rule::in(['alias', 'redirect'])],
-            'redirect_url' => ['nullable', 'required_if:type,redirect', 'url:https', 'max:500'],
-            'dns_provider_id' => ['nullable', Rule::exists('providers', 'id')->where(fn ($query) => $query
-                ->where('organization_id', $website->organization_id)
-                ->where('provider', Provider::TYPE_CLOUDFLARE))],
-        ]);
-        $domain = $website->domains()->create([
-            ...$data,
-            'created_by' => $request->user()->id,
-            'redirect_url' => $data['type'] === 'redirect' ? $data['redirect_url'] : null,
-        ]);
-        $warning = $this->syncDns($domain, $cloudflare);
-        ApplyWebsiteDomainsJob::dispatch($website->id);
+        $result = $saveDomain->handle($website, $request->user(), $request->validated());
 
-        return back()->with($warning ? 'warning' : 'success', $warning ?: __('Domain added. Caddy will request its TLS certificate automatically.'));
+        return back()->with($result->warning ? 'warning' : 'success', $result->warning ?: __('Domain added. Caddy will request its TLS certificate automatically.'));
     }
 
     /**
@@ -66,43 +51,29 @@ class DomainController extends Controller
      *
      * @return RedirectResponse A DNS outcome or a missing-base-domain validation error.
      */
-    public function temporary(Request $request, CloudflareDns $cloudflare): RedirectResponse
+    public function temporary(IssueTemporaryWebsiteDomainRequest $request, IssueTemporaryWebsiteDomainAction $issueTemporary): RedirectResponse
     {
-        $website = $this->website($request);
+        $website = $request->website();
         $this->authorize('update', $website);
-        $base = strtolower(trim((string) config('domains.temporary_base_domain')));
-        if ($base === '') {
-            return back()->withErrors(['domain' => __('Set TEMPORARY_APP_DOMAIN before issuing temporary domains.')]);
+        try {
+            $result = $issueTemporary->handle($website, $request->user(), $request->validated()['dns_provider_id']);
+        } catch (WebsiteDomainOperationException $exception) {
+            return back()->withErrors(['domain' => __($exception->getMessage())]);
         }
-        $data = $request->validate([
-            'dns_provider_id' => ['required', Rule::exists('providers', 'id')->where(fn ($query) => $query
-                ->where('organization_id', $website->organization_id)
-                ->where('provider', Provider::TYPE_CLOUDFLARE))],
-        ]);
-        $prefix = Str::limit($website->deployment_slug, 40, '').'-'.Str::lower(Str::random(8));
-        $domain = $website->domains()->create([
-            'created_by' => $request->user()->id,
-            'dns_provider_id' => $data['dns_provider_id'],
-            'hostname' => $prefix.'.'.$base,
-            'type' => 'alias',
-            'is_temporary' => true,
-        ]);
-        $warning = $this->syncDns($domain, $cloudflare);
-        ApplyWebsiteDomainsJob::dispatch($website->id);
 
-        return back()->with($warning ? 'warning' : 'success', $warning ?: __('Temporary domain issued.'));
+        return back()->with($result->warning ? 'warning' : 'success', $result->warning ?: __('Temporary domain issued.'));
     }
 
     /**
      * Authorize the domain's website and redirect with the Cloudflare synchronization result or missing-provider error.
      */
-    public function sync(WebsiteDomain $domain, CloudflareDns $cloudflare): RedirectResponse
+    public function sync(WebsiteDomain $domain, SynchronizeWebsiteDomainAction $synchronizeDomain): RedirectResponse
     {
         $this->authorize('update', $domain->website);
         if (! $domain->dnsProvider) {
             return back()->withErrors(['domain' => __('Attach a Cloudflare provider before syncing DNS.')]);
         }
-        $warning = $this->syncDns($domain, $cloudflare);
+        $warning = $synchronizeDomain->handle($domain);
 
         return back()->with($warning ? 'warning' : 'success', $warning ?: __('DNS record synchronized.'));
     }
@@ -112,48 +83,17 @@ class DomainController extends Controller
      *
      * @return RedirectResponse The deletion result; a DNS failure preserves the domain record.
      */
-    public function destroy(WebsiteDomain $domain, CloudflareDns $cloudflare): RedirectResponse
+    public function destroy(WebsiteDomain $domain, DeleteWebsiteDomainAction $deleteDomain): RedirectResponse
     {
         $this->authorize('update', $domain->website);
-        abort_if($domain->type === 'primary', 422, 'The primary domain must be changed from website settings.');
         try {
-            $cloudflare->delete($domain);
-        } catch (Throwable) {
-            return back()->withErrors(['domain' => __('Cloudflare could not remove the DNS record. Nothing was deleted.')]);
+            if (! $deleteDomain->handle($domain)) {
+                return back()->withErrors(['domain' => __('Cloudflare could not remove the DNS record. Nothing was deleted.')]);
+            }
+        } catch (WebsiteDomainOperationException $exception) {
+            abort(422, $exception->getMessage());
         }
-        $websiteId = $domain->website_id;
-        $domain->delete();
-        ApplyWebsiteDomainsJob::dispatch($websiteId);
 
         return back()->with('success', __('Domain removed.'));
-    }
-
-    /**
-     * Resolve submitted website_id within the requesting user's workspace, or fail with 404.
-     */
-    private function website(Request $request): Website
-    {
-        return $request->user()->workspaceWebsites()->findOrFail((int) $request->input('website_id'));
-    }
-
-    /**
-     * Synchronize the domain's DNS record when a provider is attached.
-     *
-     * @return string|null A manual-DNS or failed-sync warning; null when synchronization succeeds.
-     */
-    private function syncDns(WebsiteDomain $domain, CloudflareDns $cloudflare): ?string
-    {
-        if (! $domain->dns_provider_id) {
-            return __('Domain saved. Point its DNS record to the attached server, then run the certificate check.');
-        }
-        try {
-            $cloudflare->sync($domain);
-
-            return null;
-        } catch (Throwable) {
-            $domain->forceFill(['dns_status' => 'error', 'last_error' => 'DNS synchronization failed.', 'last_checked_at' => now()])->save();
-
-            return __('Domain saved, but Cloudflare synchronization failed. Verify token permissions and zone access.');
-        }
     }
 }

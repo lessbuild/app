@@ -10,6 +10,8 @@ use App\Models\Website;
 use App\Services\ManagedSsh;
 use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Response;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
@@ -19,6 +21,12 @@ use Tests\TestCase;
 class DomainManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Cache::flush();
+    }
 
     public function test_cloudflare_alias_is_created_without_exposing_the_token(): void
     {
@@ -70,6 +78,92 @@ class DomainManagementTest extends TestCase
         ])->assertRedirect()->assertSessionHas('success');
         $domain = $website->domains()->where('is_temporary', true)->sole();
         $this->assertStringEndsWith('.apps.buildpusher.com', $domain->hostname);
+    }
+
+    public function test_viewer_cannot_manage_domains_before_validation_or_side_effects(): void
+    {
+        Queue::fake();
+        [$owner, $website, $provider] = $this->infrastructure();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+
+        $this->actingAs($viewer)->post(route('domains.store'), ['website_id' => $website->id])->assertForbidden();
+        $this->actingAs($viewer)->post(route('domains.temporary'), [
+            'website_id' => $website->id,
+            'dns_provider_id' => $provider->id,
+        ])->assertForbidden();
+
+        $this->assertSame(1, $website->domains()->count());
+        Queue::assertNothingPushed();
+    }
+
+    public function test_domain_sync_failure_is_sanitized_and_persisted_without_queueing_proxy_changes(): void
+    {
+        Queue::fake();
+        [$owner, $website, $provider] = $this->infrastructure();
+        $provider->update(['token' => '']);
+        $domain = $website->domains()->create([
+            'created_by' => $owner->id,
+            'hostname' => 'www.example.com',
+            'type' => 'alias',
+            'dns_provider_id' => $provider->id,
+        ]);
+
+        $this->actingAs($owner)->post(route('domains.sync', $domain))
+            ->assertRedirect()
+            ->assertSessionHas('warning', 'Cloudflare synchronization failed. Verify token permissions and zone access.');
+
+        $domain->refresh();
+        $this->assertSame('error', $domain->dns_status);
+        $this->assertSame('DNS synchronization failed.', $domain->getRawOriginal('last_error'));
+        Queue::assertNothingPushed();
+    }
+
+    public function test_primary_domain_cannot_be_deleted_and_cloudflare_failure_retains_the_domain(): void
+    {
+        Queue::fake();
+        [$owner, $website, $provider] = $this->infrastructure();
+        $primary = $website->domains()->where('type', 'primary')->sole();
+
+        $this->actingAs($owner)->delete(route('domains.destroy', $primary))->assertStatus(422);
+        $this->assertDatabaseHas('website_domains', ['id' => $primary->id]);
+        Queue::assertNothingPushed();
+
+        $domain = $website->domains()->create([
+            'created_by' => $owner->id,
+            'hostname' => 'api.example.com',
+            'type' => 'alias',
+            'dns_provider_id' => $provider->id,
+            'dns_record_id' => 'zone-1:record-1',
+        ]);
+        Http::fake(fn (): Response => Http::response(['success' => false], 500));
+
+        $this->actingAs($owner)->delete(route('domains.destroy', $domain))
+            ->assertRedirect()
+            ->assertSessionHasErrors('domain');
+
+        $this->assertDatabaseHas('website_domains', ['id' => $domain->id]);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_successful_domain_deletion_queues_proxy_configuration_after_removing_the_record(): void
+    {
+        Queue::fake();
+        [$owner, $website] = $this->infrastructure();
+        $domain = $website->domains()->create([
+            'created_by' => $owner->id,
+            'hostname' => 'api.example.com',
+            'type' => 'alias',
+        ]);
+
+        $this->actingAs($owner)->delete(route('domains.destroy', $domain))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Domain removed.');
+
+        $this->assertDatabaseMissing('website_domains', ['id' => $domain->id]);
+        Queue::assertPushed(ApplyWebsiteDomainsJob::class, fn ($job): bool => $job->websiteId === $website->id);
     }
 
     public function test_domain_routing_preserves_aliases_redirects_and_non_php_runtime(): void
