@@ -2512,6 +2512,62 @@ Commit: `ae1812d` — `refactor: extract build note and approval requests`
 the remaining repository-create/configuration boundary, preserving scoped
 IDs, webhook-secret availability, validation ordering and export semantics.
 
+## Phase 7D — build and repository inventory filter requests
+
+### Responsibility problem
+
+`BuildsController` and `RepositoriesController` still normalized substantial
+families of inventory and webhook-delivery GET filters beside query,
+pagination and CSV orchestration. The repository controller also used its
+private status catalog helper to prepare the create/edit view. This left raw
+request interpretation in controllers and made the shared inventory/query
+boundaries less explicit.
+
+### Boundaries applied
+
+- `BuildIndexRequest` owns build inventory filter defaults, trimming, bounded
+  search, finite status/trigger values, positive repository IDs and date-range
+  normalization.
+- `RepositoryIndexRequest` owns repository inventory filter defaults,
+  trimming, bounded search, finite status/provider/website values, positive
+  IDs and date-range normalization. Its public `statuses()` catalog keeps the
+  existing create/edit view contract explicit.
+- `RepositoryWebhookDeliveryRequest` owns delivery-history filter defaults,
+  trimming, bounded search, finite status values and date-range normalization.
+- Each request exposes a typed `filters()` array. Public `validationData()`
+  validates normalized values without changing the original query parameter
+  bag, preserving pagination and export query strings.
+- The controllers now pass only request-owned filters to the existing query
+  collaborators and exporters; no generic filter base class was introduced.
+
+This applies single responsibility and dependency inversion at the HTTP/read
+boundary while preserving the existing query and export collaborators.
+
+### Preserved contracts and safety guarantees
+
+- Invalid filter values continue to fall back silently to the prior defaults;
+  omitted values, trimming, date swapping, pagination names, ordering,
+  organization scoping and resource IDs remain unchanged.
+- Inventory metrics, eager loading, CSV headers/escaping, webhook-delivery
+  history, download responses, route names and authorization behavior remain
+  unchanged.
+
+### Verification
+
+- Build history/filter/export and repository inventory/insight/webhook/safety
+  regression set: **38 passed, 375 assertions**.
+- Targeted Pint test and `git diff --check` passed.
+- No dependency or lockfile changes.
+
+### Commit and next task
+
+Commit: `8938e7d` — `refactor: extract build repository filter requests`
+
+**Phase 7D exit gate: complete.** Exact next task: extract the repository
+creation/configuration boundary shared by create and update, preserving
+tenant-scoped provider selection, GitHub App webhook-secret availability,
+validation ordering, encrypted-secret behavior and the existing 503 response.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Verification | Commit | Exact next task |
@@ -2553,3 +2609,4 @@ IDs, webhook-secret availability, validation ordering and export semantics.
 | Phase 7A-report-auth-and-review | RecipeReportsController retained a notification bulk write and actor guards alongside already-extracted report queries, exporters and lifecycle actions. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `a5c99fd` — `refactor: move recipe report permissions and review` | Extract the reporter and contributor GET-filter normalization boundaries into Form Requests or immutable filter contracts without changing silent defaults or export/pagination behavior. |
 | Phase 7B-report-filter-requests | RecipeReportsController normalized contributor-inbox and reporter-history GET filters alongside query and export orchestration. | 60 recipe report/history/inbox/notification tests passed, 608 assertions; Pint and diff checks passed. | `7b845e0` — `refactor: move recipe report filters to requests` | Audit recipe/gallery/report controllers for remaining direct writes, inline permission guards, unclassified lookups and query/export duplication before the next product slice. |
 | Phase 7C-build-review | BuildsController validated approval/operator notes and directly wrote operator notes alongside already-extracted workflow actions. | 65 build/repository/deployment tests passed, 530 assertions; Pint and diff checks passed. | `ae1812d` — `refactor: extract build note and approval requests` | Characterize build/repository inventory filter requests and repository creation/configuration boundary, preserving scoped IDs, webhook-secret availability, validation ordering and exports. |
+| Phase 7D-build-repository-filters | Build and repository controllers normalized inventory and webhook-delivery filters alongside query/export orchestration. | 38 build/repository filter, export, insight, webhook and safety tests passed, 375 assertions; Pint and diff checks passed. | `8938e7d` — `refactor: extract build repository filter requests` | Extract the repository creation/configuration boundary shared by create and update, preserving tenant-scoped provider selection, webhook-secret availability, validation ordering, encrypted-secret behavior and the 503 response. |
