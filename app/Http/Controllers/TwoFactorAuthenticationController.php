@@ -6,15 +6,14 @@ use App\Actions\Account\BeginTwoFactorSetupAction;
 use App\Actions\Account\CancelTwoFactorSetupAction;
 use App\Actions\Account\ConfirmTwoFactorAction;
 use App\Actions\Account\DisableTwoFactorAction;
+use App\Actions\Account\RegenerateTwoFactorRecoveryCodesAction;
 use App\Exceptions\TwoFactorOperationException;
 use App\Http\Requests\ConfirmTwoFactorRequest;
 use App\Http\Requests\DisableTwoFactorRequest;
 use App\Http\Requests\EnableTwoFactorRequest;
-use App\Services\ActivityRecorder;
-use App\Services\TwoFactorAuthentication;
+use App\Http\Requests\RegenerateTwoFactorRecoveryCodesRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
 
 class TwoFactorAuthenticationController extends Controller
 {
@@ -75,42 +74,16 @@ class TwoFactorAuthenticationController extends Controller
      *
      * @return RedirectResponse The new plaintext recovery codes; previous codes cease to work.
      */
-    public function regenerateRecoveryCodes(
-        Request $request,
-        TwoFactorAuthentication $twoFactor,
-        ActivityRecorder $activity,
-    ): RedirectResponse {
-        abort_unless($request->user()->twoFactorEnabled(), 422);
-        $this->validatePassword($request, withCode: true);
-        if (! $twoFactor->verifyUser($request->user(), (string) $request->input('code'), consumeRecoveryCode: false)) {
-            throw ValidationException::withMessages(['code' => __('The authentication or recovery code is invalid.')])->errorBag('twoFactor');
+    public function regenerateRecoveryCodes(RegenerateTwoFactorRecoveryCodesRequest $request, RegenerateTwoFactorRecoveryCodesAction $regenerate): RedirectResponse
+    {
+        try {
+            $result = $regenerate->handle($request->user(), $request->code());
+        } catch (TwoFactorOperationException) {
+            abort(422);
         }
-
-        $recoveryCodes = $twoFactor->generateRecoveryCodes();
-        $request->user()->forceFill([
-            'two_factor_recovery_codes' => $twoFactor->recoveryCodeHashes($recoveryCodes),
-        ])->save();
-        $activity->recordAccount($request->user(), 'Two-factor recovery codes were regenerated.');
 
         return back()
             ->with('two_factor_status', __('New recovery codes created. Previous codes no longer work.'))
-            ->with('two_factor_recovery_codes', $recoveryCodes);
-    }
-
-    /**
-     * Validate the local-password challenge when present and optionally require a bounded authentication/recovery code.
-     *
-     * Validation errors use the twoFactor error bag; code verification is the caller's responsibility.
-     */
-    private function validatePassword(Request $request, bool $withCode = false): void
-    {
-        $rules = [];
-        if ($request->user()->hasLocalPassword()) {
-            $rules['current_password'] = ['required', 'current_password'];
-        }
-        if ($withCode) {
-            $rules['code'] = ['required', 'string', 'max:64'];
-        }
-        $request->validateWithBag('twoFactor', $rules);
+            ->with('two_factor_recovery_codes', $result->recoveryCodes);
     }
 }

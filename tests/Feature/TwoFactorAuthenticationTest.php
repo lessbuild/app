@@ -274,6 +274,76 @@ class TwoFactorAuthenticationTest extends TestCase
         $this->assertNull($user->two_factor_recovery_codes);
     }
 
+    public function test_enabled_user_can_regenerate_recovery_codes_without_consuming_the_authenticator_code(): void
+    {
+        $user = $this->enabledUser();
+        $oldRecoveryCodes = $user->two_factor_recovery_codes;
+        $totp = $this->totp($user->two_factor_secret);
+
+        $response = $this->actingAs($user)->post(route('account.two-factor.recovery-codes'), [
+            'current_password' => 'password',
+            'code' => $totp,
+        ])->assertSessionHas('two_factor_status', 'New recovery codes created. Previous codes no longer work.');
+
+        $newRecoveryCodes = $response->getSession()->get('two_factor_recovery_codes');
+        $user->refresh();
+        $this->assertCount(8, $newRecoveryCodes);
+        $this->assertCount(8, $user->two_factor_recovery_codes);
+        $this->assertNotSame($oldRecoveryCodes, $user->two_factor_recovery_codes);
+        $this->assertNotContains($newRecoveryCodes[0], $user->two_factor_recovery_codes);
+        $this->assertDatabaseHas('events', [
+            'user_id' => $user->id,
+            'category' => 'account',
+            'event' => 'Two-factor recovery codes were regenerated.',
+        ]);
+    }
+
+    public function test_recovery_code_regeneration_rejects_an_invalid_code_without_replacing_hashes(): void
+    {
+        $user = $this->enabledUser();
+        $oldRecoveryCodes = $user->two_factor_recovery_codes;
+
+        $this->actingAs($user)->post(route('account.two-factor.recovery-codes'), [
+            'current_password' => 'password',
+            'code' => '000000',
+        ])->assertSessionHasErrors(['code'], errorBag: 'twoFactor');
+
+        $this->assertSame($oldRecoveryCodes, $user->fresh()->two_factor_recovery_codes);
+    }
+
+    public function test_disabled_two_factor_rejects_recovery_code_regeneration_before_validation(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->post(route('account.two-factor.recovery-codes'))->assertStatus(422);
+
+        $this->assertDatabaseMissing('events', [
+            'user_id' => $user->id,
+            'event' => 'Two-factor recovery codes were regenerated.',
+        ]);
+    }
+
+    public function test_social_only_user_can_regenerate_recovery_codes_without_a_password(): void
+    {
+        $user = User::factory()->create([
+            'password_set_at' => null,
+            'auth_type' => 'github',
+        ]);
+        $service = app(TwoFactorAuthentication::class);
+        $user->forceFill([
+            'two_factor_secret' => $service->generateSecret(),
+            'two_factor_recovery_codes' => $service->recoveryCodeHashes($service->generateRecoveryCodes()),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+        $user->refresh();
+
+        $this->actingAs($user)->post(route('account.two-factor.recovery-codes'), [
+            'code' => $this->totp($user->two_factor_secret),
+        ])->assertSessionHas('two_factor_recovery_codes');
+
+        $this->assertCount(8, $user->fresh()->two_factor_recovery_codes);
+    }
+
     private function enabledUser(): User
     {
         $user = User::factory()->create();
