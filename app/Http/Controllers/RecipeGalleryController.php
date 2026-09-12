@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Recipe\InstallGalleryRecipeAction;
+use App\Actions\Recipe\RefreshGalleryRecipeAction;
 use App\Models\Recipe;
 use App\Models\RecipeRating;
-use App\Services\ActivityRecorder;
 use App\Support\SqlLike;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -154,44 +155,9 @@ class RecipeGalleryController extends Controller
      *
      * @return RedirectResponse The copy's editor with review guidance or an already-installed acknowledgement.
      */
-    public function install(Request $request, Recipe $recipe, ActivityRecorder $activity): RedirectResponse
+    public function install(Request $request, Recipe $recipe, InstallGalleryRecipeAction $install): RedirectResponse
     {
-        $copy = DB::transaction(function () use ($request, $recipe): Recipe {
-            $source = Recipe::query()
-                ->published()
-                ->lockForUpdate()
-                ->findOrFail($recipe->id);
-
-            $existing = $request->user()->workspaceRecipes()
-                ->where('source_recipe_id', $source->id)
-                ->latest('id')
-                ->first();
-            if ($existing !== null) {
-                return $existing;
-            }
-
-            $copy = $request->user()->workspaceRecipes()->create([
-                'name' => $source->name,
-                'description' => $source->description,
-                'script' => $source->script,
-                'source_recipe_id' => $source->id,
-                'source_revision_at' => $source->gallery_revision_at,
-                'is_published' => false,
-            ]);
-
-            $source->increment('install_count');
-
-            return $copy;
-        });
-
-        if ($copy->wasRecentlyCreated) {
-            $activity->record(
-                $copy,
-                $request->user()->id,
-                'recipe',
-                "Gallery recipe \"{$copy->name}\" was installed as a private copy.",
-            );
-        }
+        $copy = $install->handle($request->user(), $recipe);
 
         return redirect()
             ->route('recipes.edit', $copy)
@@ -205,44 +171,17 @@ class RecipeGalleryController extends Controller
      *
      * @return RedirectResponse The copy editor; published copies are returned unchanged with an explanation.
      */
-    public function refresh(Recipe $recipe, ActivityRecorder $activity): RedirectResponse
+    public function refresh(Recipe $recipe, RefreshGalleryRecipeAction $refresh): RedirectResponse
     {
         $this->authorize('update', $recipe);
 
-        $refreshed = DB::transaction(function () use ($recipe): bool {
-            $copy = Recipe::query()->lockForUpdate()->findOrFail($recipe->id);
-            if ($copy->is_published) {
-                return false;
-            }
-
-            $source = Recipe::query()
-                ->published()
-                ->lockForUpdate()
-                ->findOrFail($copy->source_recipe_id);
-
-            $copy->update([
-                'name' => $source->name,
-                'description' => $source->description,
-                'script' => $source->script,
-                'source_revision_at' => $source->gallery_revision_at,
-            ]);
-
-            return true;
-        });
+        $refreshed = $refresh->handle($recipe);
 
         if (! $refreshed) {
             return redirect()
                 ->route('recipes.edit', $recipe)
                 ->with('status', __('Unpublish your copy before refreshing it from the gallery.'));
         }
-
-        $recipe->refresh();
-        $activity->record(
-            $recipe,
-            $recipe->user_id,
-            'recipe',
-            "Private gallery recipe \"{$recipe->name}\" was refreshed.",
-        );
 
         return redirect()
             ->route('recipes.edit', $recipe)
