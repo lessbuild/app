@@ -1,10 +1,11 @@
 # BuildPusher product expansion progress
 
-Status: Phase 3A complete. Preview safety, trust/secret boundaries, responsive
+Status: Phase 3B complete. Preview safety, trust/secret boundaries, responsive
 navigation, first-deployment guidance, recorded configuration
-authoring/comparison, explicit provider observations and a template-driven
-preview stack manifest are complete; remote preview initialization, readiness,
-quotas and durable cleanup remain incomplete.
+authoring/comparison, explicit provider observations, a template-driven preview
+stack manifest and callback-backed local resource readiness are complete;
+explicit initialization secrets, atomic quotas and durable ownership-aware
+cleanup remain incomplete.
 
 Date: 2026-09-13
 
@@ -183,10 +184,11 @@ application defect or an outdated expectation and record the decision.
 3. **Phase 2 — configuration authoring and environment overview.** Add the
    reviewable authoring, summaries, dependency view, secret-safe comparison and
    read-only observable drift reporting described above.
-4. **Phase 3 — complete preview environments.** Phase 3A now declares the
-   representative Laravel worker/scheduler/PostgreSQL/Valkey stack locally.
-   Continue with remote initialization/readiness, quota, expiry and retryable
-   cleanup with concurrency evidence.
+4. **Phase 3 — complete preview environments.** Phases 3A and 3B now declare
+   the representative Laravel worker/scheduler/PostgreSQL/Valkey stack locally
+   and record callback-backed planned/provisioning/ready/failed resource states.
+   Continue with explicit initialization secrets, atomic quotas, expiry and
+   retryable ownership-aware cleanup with concurrency evidence.
 5. **Phase 4 — curated service templates.** Add only supported, versioned
    templates with installation, readiness, upgrade, restore and deletion evidence.
 6. **Phase 5 — deployment clarity and monorepo support.** Improve timeline and
@@ -585,13 +587,15 @@ environment text or source secret is copied. Unsupported presets remain
 unchanged, and worker/resource entitlements still gate their respective child
 records.
 
-This slice deliberately records a local **planned** resource declaration. It
-does not claim that PostgreSQL or Valkey is remotely provisioned or ready;
-Valkey remains the existing loopback-bound, unauthenticated managed-resource
-configuration. Remote initialization, readiness callbacks, generated resource
-credential policy, quotas and cleanup ownership are the next Phase 3 slices.
-No route, response, YAML schema, persisted existing value, queue timing or job
-serialization contract changed.
+This slice deliberately records the initial resource declaration as local
+**planned** state. Phase 3B subsequently adds durable **provisioning**,
+**ready** and **failed** states from the existing deployment callbacks; those
+states are lifecycle evidence and do not claim an independent provider health
+check. Valkey remains the existing loopback-bound, unauthenticated
+managed-resource configuration. Explicit initialization secrets, quotas and
+cleanup ownership remain the next Phase 3 slices. No route, response, YAML
+schema, persisted existing value, queue timing or job serialization contract
+changed.
 
 ### Verification and remaining work
 
@@ -604,6 +608,58 @@ the existing browser regression baseline remains separately recorded.
 
 Feature commit `290577c` is pushed to GitHub `origin/main`. Local tests do not
 establish cloud/provider acceptance or the separate live acceptance drill.
+
+## Phase 3B — preview resource readiness (completed slice)
+
+### Concrete responsibility problem
+
+Phase 3A persisted the supported preview stack, but every managed resource
+remained `planned` even after the deployment scripts had reached resource
+initialization or had failed. The lifecycle, callback actions and queued job
+needed a shared, monotonic status boundary without duplicating provider calls or
+changing the existing signed callback protocol.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `PreviewStackReadiness` owns preview-resource
+  status transitions; `RepositoryDeploymentPlan` exposes the existing resource
+  stage; `PreviewDeploymentLifecycle`, callback actions and the queued job keep
+  their coordination responsibilities.
+- **Dependency inversion:** readiness receives the deployment-plan collaborator
+  and is constructor-injected into lifecycle and callback actions. The queued
+  job resolves it only in its existing failure hook so its serialized
+  constructor payload remains compatible.
+- **Liskov/idempotency:** progress is monotonic, repeated callbacks are safe,
+  already-ready resources are not downgraded, and non-preview builds are
+  unaffected.
+
+### Implementation and preserved behavior
+
+Preview resources enter `provisioning` immediately before the existing build
+dispatch. A signed progress callback at the resource configuration stage marks
+planned/provisioning resources `ready`; a signed build failure or queued-job
+failure marks only resources still being initialized as `failed`. The update is
+scoped to the exact preview environment, uses single atomic updates and leaves
+manual/previously-ready resources intact. Existing deployment stage ordering,
+callback signature checks, stale-attempt guards, retry behavior, queue timing,
+routes, response formats, YAML schemas, persisted existing values and job
+serialization are unchanged. Remote cleanup and quota enforcement are not
+silently implied by these statuses.
+
+### Verification and remaining work
+
+The focused `PreviewDeploymentTest.php` and `PreviewStackReadinessTest.php`
+passed **21 tests and 170 assertions**. Adjacent deployment/resource coverage
+passed **24 tests and 157 assertions**. The authoritative isolated full PHP
+suite passed **1,351 tests and 11,652 assertions** with the required PHP 8.5
+runtime, `APP_DEBUG=true` and in-memory SQLite. Pint, changed-file linting and
+`git diff --check` passed. This is local callback evidence only; it does not
+establish cloud/provider acceptance or independent remote health verification.
+
+Feature commit `f780685` is pushed to GitHub `origin/main`. The exact next task
+is Phase 3C: define preview-stack ownership and implement retryable,
+stale-attempt-safe close/expiry cleanup before adding atomic concurrent-preview
+quotas.
 
 ## Slice ledger
 
@@ -620,8 +676,9 @@ establish cloud/provider acceptance or the separate live acceptance drill.
 | Phase 2A | The configuration authoring page had no bounded view of the application's recorded topology before a user prepared a review. Added an injected eager-loaded query collaborator and immutable secret-safe environment read model covering servers, websites, branch-matched repositories, latest build status, processes, resources and masked variable counts. | Focused overview/web coverage: 5 passed, 59 assertions. Full configuration/API/ownership batch: 183 passed, 1,775 assertions. The query-count regression proves eager-loaded reads remain constant as environments grow; sensitive command, resource configuration, variable value/ciphertext and foreign-project data are excluded. Full Pint, Vite build and `git diff --check` passed. No schema or review/apply behavior changed. | `1d5b571` — `feat: add configuration environment overview` | Pushed to GitHub `origin/main` on 2026-09-13. | Add the next smallest Phase 2 authoring slice: schema-aware starter guidance and review-safe authoring feedback using the existing version-2 parser, without flashing submitted commands or bindings. |
 | Phase 2B | The version-2 form exposed raw YAML and JSON fields without explaining the parser's required structure or safe binding workflow. Added an injected authoring-guide collaborator with a parser-verified starter document, illustrative bindings and safe field guidance; the editable form remains blank so placeholders cannot be submitted accidentally. | Authoring/web coverage: 4 passed, 47 assertions, including parser acceptance and absence of credential material. Full Pint, Vite build and `git diff --check` passed. Existing validation still rejects malformed input without flashing documents or bindings into session old input. No schema, API, persistence or review/apply behavior changed. | `f928653` — `feat: add configuration authoring guide` | Pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement secret-safe comparison of desired/recorded environment state, explicitly separating any future observable remote state from local comparisons. |
 | Phase 2C | Users could see one recorded environment at a time but had no safe way to compare environments. Added a manager-authorized GET comparison using the existing eager-loaded read model, project-scoped Form Request and immutable comparison result. The UI labels the result as recorded local metadata and excludes commands, variable keys/values, encrypted resource configuration and provider state. | Comparison/overview/web coverage: 7 passed, 81 assertions. This includes same-project validation, authorization before malformed input, invalid-ciphertext non-decryption and rendered secret/command exclusion. Full Pint, Vite build and `git diff --check` passed. No provider call, schema mutation, review/apply or remote-drift claim was introduced. | `6398087` — `feat: compare recorded environments safely` | Pushed to GitHub `origin/main` on 2026-09-13. | Define the smallest read-only observable-state adapter for supported provider fields, keeping it distinct from desired and recorded local configuration and documenting unavailable/unknown observations. |
-| Phase 2D | Recorded local state was clearly separated from provider state, but there was no explicit way to inspect supported remote server metadata. Added a manager-authorized, opt-in observation query and request around the existing `ServerProvider::server()` contract, with organization scoping, safe selected columns and observed/unavailable/unknown outcomes. | Observation, overview, comparison and configuration web regressions: 12 passed, 110 assertions. Missing placement, no-provider-call behavior, sanitized provider failure, malformed-input authorization order, same-project validation, normalized differences and no persistence are covered. Pint, Vite build, route registration and `git diff --check` passed. | `6ebadb8` — `feat: add read-only provider observations`; `f1553fd` — `docs: record provider observation slice` | Feature and documentation commits pushed to GitHub `origin/main` on 2026-09-13. | Start Phase 3B: characterize remote initialization/readiness and explicit cleanup ownership for the persisted preview stack. |
-| Phase 3A | Preview lifecycle records described only the website/repository/environment, despite existing process/resource persistence and deployment-snapshot support for dependent services. Added template-driven stack declarations and an injected action that idempotently persists queue/scheduler processes and planned managed PostgreSQL/Valkey children for supported Laravel presets inside the existing transaction. | Preview/catalog and adjacent environment suites: 30 passed, 236 assertions. Full isolated PHP suite: 1,347 passed, 11,633 assertions. Child names, commands, generated database credential use, loopback Valkey binding, unsupported-preset behavior and repeated revision idempotency are covered. Changed-file lint, Pint and `git diff --check` passed. | `290577c` — `feat: declare preview application stacks`; `7adf1f4` — `docs: record preview stack manifest slice` | Feature and documentation commits pushed to GitHub `origin/main` on 2026-09-13. | Implement Phase 3B: remotely initialize supported preview resources, record readiness/progress, enforce quotas atomically and make close/expiry cleanup owned, retryable and stale-attempt safe. |
+| Phase 2D | Recorded local state was clearly separated from provider state, but there was no explicit way to inspect supported remote server metadata. Added a manager-authorized, opt-in observation query and request around the existing `ServerProvider::server()` contract, with organization scoping, safe selected columns and observed/unavailable/unknown outcomes. | Observation, overview, comparison and configuration web regressions: 12 passed, 110 assertions. Missing placement, no-provider-call behavior, sanitized provider failure, malformed-input authorization order, same-project validation, normalized differences and no persistence are covered. Pint, Vite build, route registration and `git diff --check` passed. | `6ebadb8` — `feat: add read-only provider observations`; `f1553fd` — `docs: record provider observation slice` | Feature and documentation commits pushed to GitHub `origin/main` on 2026-09-13. | Start Phase 3C: characterize exact preview-stack ownership and stale-attempt-safe cleanup after Phase 3B readiness. |
+| Phase 3A | Preview lifecycle records described only the website/repository/environment, despite existing process/resource persistence and deployment-snapshot support for dependent services. Added template-driven stack declarations and an injected action that idempotently persists queue/scheduler processes and planned managed PostgreSQL/Valkey children for supported Laravel presets inside the existing transaction. | Preview/catalog and adjacent environment suites: 30 passed, 236 assertions. Full isolated PHP suite: 1,347 passed, 11,633 assertions. Child names, commands, generated database credential use, loopback Valkey binding, unsupported-preset behavior and repeated revision idempotency are covered. Changed-file lint, Pint and `git diff --check` passed. | `290577c` — `feat: declare preview application stacks`; `7adf1f4` — `docs: record preview stack manifest slice` | Feature and documentation commits pushed to GitHub `origin/main` on 2026-09-13. | Phase 3B readiness is now complete; continue with Phase 3C ownership-aware, retryable cleanup, then quotas. |
+| Phase 3B | Phase 3A resources remained `planned` after deployment progress or failure. Added injected `PreviewStackReadiness` and a deployment-plan resource-stage boundary so preview resources transition to `provisioning`, `ready` or `failed` through existing signed callbacks and queued-job failure handling. | Focused readiness coverage: 21 passed, 170 assertions. Adjacent deployment/resource coverage: 24 passed, 157 assertions. Full isolated PHP suite: 1,351 passed, 11,652 assertions. Pint, changed-file lint and `git diff --check` passed. | `f780685` — `feat: record preview resource readiness` | Feature commit pushed to GitHub `origin/main` on 2026-09-13. | Phase 3C: capture exact preview-stack ownership and implement retryable, stale-attempt-safe close/expiry cleanup; then enforce atomic concurrent-preview quotas. |
 
 ## Phase 1 exit verification
 
@@ -639,12 +696,12 @@ Phase 1 therefore met its local exit gate for the implemented scope:
 preview configuration is explicit and secret-safe, trusted preview admission
 and revision-bound secret approval are enforced, responsive navigation and
 focus restoration work at supported breakpoints, and first-deployment
-guidance distinguishes actionable provider and entitlement blockers. The
-Phase 3A has since added a local, template-driven manifest for the supported
-Laravel worker/scheduler/PostgreSQL/Valkey stack. Remote initialization,
-readiness, quota and durable partial-cleanup work remain Phase 3. Local
-evidence still does not establish the separate live acceptance drill or
-cloud/provider acceptance.
+guidance distinguishes actionable provider and entitlement blockers. Phases 3A
+and 3B have since added a local, template-driven manifest for the supported
+Laravel worker/scheduler/PostgreSQL/Valkey stack and callback-backed local
+resource readiness states. Explicit initialization secrets, atomic quotas and
+durable partial-cleanup work remain Phase 3. Local evidence still does not
+establish the separate live acceptance drill or cloud/provider acceptance.
 
 ## External acceptance still outstanding
 
