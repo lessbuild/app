@@ -1,5 +1,32 @@
 # BuildPusher chat handoff
 
+## Product expansion current checkpoint — 2026-09-13
+
+The product-expansion sequence is active on `main`. Phase 3A is complete and
+was integrated from the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`
+as `290577c`, then pushed to GitHub `origin/main`. It adds a template-driven
+local preview stack manifest for supported Laravel presets: queue and scheduler
+processes plus planned managed PostgreSQL and Valkey child resources. Existing
+preview configuration, trust, secret-approval, entitlement and webhook
+idempotency boundaries remain in force.
+
+The Phase 3A slice is intentionally not a full preview-environment release.
+The local records do not prove remote provisioning or readiness, and Valkey's
+current declaration remains loopback-bound without authentication. Remote
+initialization/progress, generated resource-credential policy, atomic preview
+quotas, expiry and stale-attempt-safe retryable cleanup are the exact next
+implementation tasks. Cloud/provider acceptance and the separate live drill
+remain outstanding.
+
+Phase 3A verification used the required PHP 8.5 runtime, `APP_DEBUG=true` and
+an isolated in-memory SQLite database: **1,347 tests passed / 11,633
+assertions**. Focused preview/catalog and adjacent environment coverage passed
+30 tests / 236 assertions; Pint, changed-file lint and `git diff --check`
+passed. The progress ledger is [here](verification/product-expansion-progress.md)
+and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are
+historical and are superseded by this checkpoint; their statements that preview
+backlog work had not started describe their earlier dates.
+
 ## Controller modernization current checkpoint — 2026-09-12
 
 The controller modernization plan was executed through its local completion

@@ -90,6 +90,18 @@ Preview provisioning now also requires provider pull-request metadata to identif
 
 Workspace managers may explicitly approve selected runtime/all secret-variable names for an existing preview. The approval records only the exact pull-request revision, source environment and current variable versions; it does not persist plaintext values. A subsequent verified event for that same revision resolves the encrypted values only when every identity, version and scope still matches. Rotation, reclassification, revision changes and preview closure fail closed and require a new approval. Preview-owned application/database credentials are reserved and cannot be overridden. Website environment text, provider access, build/post-deployment commands and dependent-resource configuration are never included in this workflow; dependent resources require their own preview-owned lifecycle boundary.
 
+Supported Laravel presets now declare a preview stack containing queue and
+scheduler processes plus managed PostgreSQL and Valkey resources. The preview
+lifecycle persists these declarations by stable child name in its existing
+transaction and reuses the normal process/resource actions, so repeated
+verified webhook events do not duplicate them. The database resource uses the
+preview website's generated encrypted password; the source website's
+environment and secret values remain excluded. These local declarations begin
+with status **planned**: they do not establish remote provisioning or
+readiness. The current Valkey declaration remains loopback-bound and without
+authentication. Remote initialization, readiness, quotas and retryable cleanup
+are separate preview-lifecycle work.
+
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 
 Changing an existing resource's type or management mode requires detaching it in a separate reviewed apply before attaching the replacement. This workflow does not migrate remote data or reuse old credentials across incompatible resource types.
