@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\DeliverAlertWebhookJob;
 use App\Models\OperationalIncident;
 use App\Models\Provider;
 use App\Models\User;
 use App\Services\IncidentNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class OperationalIncidentTest extends TestCase
@@ -34,6 +38,45 @@ class OperationalIncidentTest extends TestCase
         $this->assertSame(OperationalIncident::STATUS_RESOLVED, $incident->fresh()->status);
         $this->assertNull($incident->fresh()->active_key);
         $this->assertSame('Provisioning completed.', $incident->fresh()->resolution);
+    }
+
+    public function test_repeated_external_alerts_carry_one_incident_identity_and_occurrence_count(): void
+    {
+        Queue::fake();
+        [$owner, $server] = $this->server();
+        $destination = $owner->currentOrganization->alertDestinations()->create([
+            'created_by' => $owner->id,
+            'name' => 'Operations',
+            'type' => 'webhook',
+            'endpoint' => 'https://8.8.8.8/buildpusher',
+            'signing_secret' => 'secret',
+            'events' => ['failure'],
+            'is_active' => true,
+        ]);
+        $notifier = app(IncidentNotifier::class);
+
+        $notifier->fail($owner, 'server', $server->id, 'Server failed', 'First failure.');
+        $notifier->fail($owner, 'server', $server->id, 'Server still failed', 'Repeated failure.');
+
+        $alerts = Queue::pushed(DeliverAlertWebhookJob::class)
+            ->filter(fn (DeliverAlertWebhookJob $job): bool => $job->destinationId === $destination->id)
+            ->values();
+
+        $this->assertCount(2, $alerts);
+        $first = $alerts[0]->payload;
+        $second = $alerts[1]->payload;
+        $this->assertSame($first['incident_id'], $second['incident_id']);
+        $this->assertSame("server-{$server->id}", $first['dedup_key']);
+        $this->assertSame($first['dedup_key'], $second['dedup_key']);
+        $this->assertSame(1, $first['incident_occurrences']);
+        $this->assertSame(2, $second['incident_occurrences']);
+
+        Http::fake(['https://8.8.8.8/*' => Http::response([], 202)]);
+        (new DeliverAlertWebhookJob($destination->id, $second))->handle();
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://8.8.8.8/buildpusher'
+            && $request['incident_id'] === $second['incident_id']
+            && $request['incident_occurrences'] === 2
+            && $request['dedup_key'] === $second['dedup_key']);
     }
 
     public function test_responders_can_acknowledge_assign_note_and_resolve_while_other_workspaces_are_denied(): void

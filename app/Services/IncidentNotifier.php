@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\OperationalIncidentAlert;
 use App\Jobs\DeliverAlertWebhookJob;
 use App\Models\AlertDestination;
 use App\Models\Build;
@@ -38,9 +39,9 @@ class IncidentNotifier
         string $message,
     ): void {
         $organization = $this->organization($user, $category, $resourceId);
-        if ($organization) {
-            $this->recordFailure($organization, $category, $resourceId, $title, $message);
-        }
+        $incident = $organization
+            ? $this->recordFailure($organization, $category, $resourceId, $title, $message)
+            : null;
         if ($organization?->receivesNotification($category, 'failure') ?? true) {
             $user->notify(new FailureNotification(
                 $category,
@@ -49,7 +50,7 @@ class IncidentNotifier
                 $message,
             ));
         }
-        $this->fanOut($user, 'failure', $category, $resourceId, $title, $message);
+        $this->fanOut($user, 'failure', $category, $resourceId, $title, $message, $incident);
     }
 
     /**
@@ -159,10 +160,18 @@ class IncidentNotifier
      * @param  int  $resourceId  The resource identifier within that category.
      * @param  string  $title  The notification and incident title.
      * @param  string  $message  The diagnostic message recorded with the event.
+     * @param  OperationalIncidentAlert|null  $incident  Stable active-incident metadata for downstream grouping.
      * @return void No value; returns without dispatching when the resource has no workspace.
      */
-    private function fanOut(User $user, string $event, string $category, int $resourceId, string $title, string $message): void
-    {
+    private function fanOut(
+        User $user,
+        string $event,
+        string $category,
+        int $resourceId,
+        string $title,
+        string $message,
+        ?OperationalIncidentAlert $incident = null,
+    ): void {
         $organizationId = $this->organization($user, $category, $resourceId)?->id;
         if (! $organizationId) {
             return;
@@ -176,6 +185,9 @@ class IncidentNotifier
             'message' => str($message)->limit(2000)->toString(),
             'occurred_at' => now()->toIso8601String(),
         ];
+        if ($incident) {
+            $payload = [...$payload, ...$incident->deliveryMetadata()];
+        }
         AlertDestination::query()
             ->where('organization_id', $organizationId)
             ->where('is_active', true)
@@ -215,15 +227,15 @@ class IncidentNotifier
      * @param  int  $resourceId  The resource identifier within that category.
      * @param  string  $title  The notification and incident title.
      * @param  string  $message  The diagnostic message recorded with the event.
-     * @return void No value; appends to the winning incident after a uniqueness race.
+     * @return OperationalIncidentAlert Stable active-incident metadata after recording this failure occurrence.
      */
-    private function recordFailure(Organization $organization, string $category, int $resourceId, string $title, string $message): void
+    private function recordFailure(Organization $organization, string $category, int $resourceId, string $title, string $message): OperationalIncidentAlert
     {
         try {
-            $this->persistFailure($organization, $category, $resourceId, $title, $message);
+            return OperationalIncidentAlert::fromIncident($this->persistFailure($organization, $category, $resourceId, $title, $message));
         } catch (UniqueConstraintViolationException) {
             // Another worker opened this resource's incident first; append to it.
-            $this->persistFailure($organization, $category, $resourceId, $title, $message);
+            return OperationalIncidentAlert::fromIncident($this->persistFailure($organization, $category, $resourceId, $title, $message));
         }
     }
 
@@ -235,11 +247,11 @@ class IncidentNotifier
      * @param  int  $resourceId  The resource identifier within that category.
      * @param  string  $title  The notification and incident title.
      * @param  string  $message  The diagnostic message recorded with the event.
-     * @return void No value; records a detected or repeated event under a database transaction.
+     * @return OperationalIncident The active incident after recording a detected or repeated event.
      */
-    private function persistFailure(Organization $organization, string $category, int $resourceId, string $title, string $message): void
+    private function persistFailure(Organization $organization, string $category, int $resourceId, string $title, string $message): OperationalIncident
     {
-        DB::transaction(function () use ($organization, $category, $resourceId, $title, $message): void {
+        return DB::transaction(function () use ($organization, $category, $resourceId, $title, $message): OperationalIncident {
             $activeKey = $organization->id.':'.$category.':'.$resourceId;
             $incident = OperationalIncident::query()->where('active_key', $activeKey)
                 ->lockForUpdate()
@@ -262,11 +274,14 @@ class IncidentNotifier
                     'severity' => $category === 'metric' ? 'minor' : 'major',
                     'title' => str($title)->limit(255)->toString(),
                     'summary' => str($message)->limit(5000)->toString(),
+                    'occurrences' => 1,
                     'detected_at' => now(),
                     'last_seen_at' => now(),
                 ]);
             }
             $incident->events()->create(['type' => $eventType, 'message' => str($message)->limit(5000)->toString(), 'occurred_at' => now()]);
+
+            return $incident;
         });
     }
 

@@ -72,7 +72,7 @@ class DeliverAlertWebhookJob implements ShouldQueue
             'pagerduty' => [
                 'routing_key' => $destination->endpoint,
                 'event_action' => ($this->payload['event'] ?? null) === 'recovery' ? 'resolve' : 'trigger',
-                'dedup_key' => ($this->payload['category'] ?? 'event').'-'.($this->payload['resource_id'] ?? 0),
+                'dedup_key' => (string) ($this->payload['dedup_key'] ?? (($this->payload['category'] ?? 'event').'-'.($this->payload['resource_id'] ?? 0))),
                 'payload' => [
                     'summary' => (string) ($this->payload['title'] ?? 'BuildPusher alert'),
                     'source' => 'BuildPusher',
