@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Project;
+use App\Services\ApplicationTemplateCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -24,7 +25,7 @@ class StoreProjectRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string', 'max:1000'],
-            'preset' => ['required', Rule::in(array_keys(config('application-templates', [])))],
+            'preset' => ['required', Rule::in(app(ApplicationTemplateCatalog::class)->keys())],
         ];
     }
 

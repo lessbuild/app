@@ -15,6 +15,7 @@ use App\Models\PreviewDeployment;
 use App\Models\PreviewStackCleanup;
 use App\Models\Project;
 use App\Rules\Hostname;
+use App\Services\ApplicationTemplateCatalog;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,11 +37,11 @@ class ProjectController extends Controller
     /**
      * Require workspace deployment permission and render the configured application templates.
      */
-    public function create(Request $request): View
+    public function create(Request $request, ApplicationTemplateCatalog $templates): View
     {
         $this->authorize('create', Project::class);
 
-        return view('scenes.projects.create', ['templates' => config('application-templates')]);
+        return view('scenes.projects.create', ['templates' => $templates->all()]);
     }
 
     /**

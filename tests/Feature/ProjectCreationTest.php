@@ -63,6 +63,43 @@ class ProjectCreationTest extends TestCase
         $this->assertDatabaseCount('projects', 1);
     }
 
+    public function test_curated_template_version_is_recorded_without_versioning_unpublished_presets(): void
+    {
+        $owner = User::factory()->create();
+
+        $this->actingAs($owner)->post(route('projects.store'), [
+            'name' => 'Curated application', 'preset' => 'laravel',
+        ])->assertRedirect();
+        $this->actingAs($owner)->post(route('projects.store'), [
+            'name' => 'Unpublished application', 'preset' => 'nextjs',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Curated application',
+            'preset' => 'laravel',
+            'template_version' => '1.0.0',
+        ]);
+        $this->assertDatabaseHas('projects', [
+            'name' => 'Unpublished application',
+            'preset' => 'nextjs',
+            'template_version' => null,
+        ]);
+    }
+
+    public function test_application_creation_displays_non_secret_curated_template_guidance(): void
+    {
+        $owner = User::factory()->create();
+
+        $this->actingAs($owner)
+            ->get(route('projects.create'))
+            ->assertOk()
+            ->assertSee('Curated template 1.0.0')
+            ->assertSee('2 managed resources')
+            ->assertSee('5 readiness checks')
+            ->assertDontSee('DB_PASSWORD')
+            ->assertDontSee('REDIS_PASSWORD');
+    }
+
     public function test_application_creation_rolls_back_when_process_configuration_fails(): void
     {
         $owner = User::factory()->create();

@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
-use App\Data\PreviewInitialization;
 use App\Data\PreviewStack;
 use App\Models\Project;
 
 class PreviewStackCatalog
 {
+    public function __construct(
+        private readonly ApplicationTemplateCatalog $templates,
+    ) {}
+
     /**
      * Resolve a preview stack from the project's curated application template.
      *
@@ -19,16 +22,12 @@ class PreviewStackCatalog
      */
     public function for(Project $project): PreviewStack
     {
-        $template = config('application-templates.'.($project->preset ?: 'laravel'), []);
+        $template = $this->templates->for($project->preset ?: 'laravel');
 
         return new PreviewStack(
-            processes: is_array($template['processes'] ?? null) ? $template['processes'] : [],
-            resources: is_array($template['preview_resources'] ?? null) ? $template['preview_resources'] : [],
-            initialization: is_array($template['preview_initialization'] ?? null)
-                && is_string($template['preview_initialization']['command'] ?? null)
-                && trim($template['preview_initialization']['command']) !== ''
-                ? new PreviewInitialization($template['preview_initialization']['command'])
-                : null,
+            processes: $template->processes,
+            resources: $template->previewResources,
+            initialization: $template->initialization,
         );
     }
 }

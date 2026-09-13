@@ -5,15 +5,16 @@ namespace App\Actions\Project;
 use App\Models\Organization;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\ApplicationTemplateCatalog;
 use App\Services\Entitlements;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 
 class CreateProjectAction
 {
     public function __construct(
         private readonly Entitlements $entitlements,
+        private readonly ApplicationTemplateCatalog $templates,
     ) {}
 
     /**
@@ -25,19 +26,14 @@ class CreateProjectAction
      */
     public function handle(Organization $organization, User $actor, array $attributes): Project
     {
-        $templates = config('application-templates', []);
         $preset = $attributes['preset'] ?? null;
-
-        if (! is_string($preset) || ! array_key_exists($preset, $templates)) {
-            throw new InvalidArgumentException('The application preset is not configured.');
-        }
-
-        $template = $templates[$preset];
+        $template = $this->templates->for(is_string($preset) ? $preset : '');
         $slug = $this->uniqueSlug($organization->id, $attributes['name']);
 
         return DB::transaction(function () use ($organization, $actor, $attributes, $template, $slug): Project {
             $project = $organization->projects()->create([
                 ...$attributes,
+                'template_version' => $template->version(),
                 'slug' => $slug,
                 'created_by' => $actor->id,
             ]);
@@ -46,16 +42,16 @@ class CreateProjectAction
                 'slug' => 'production',
                 'type' => 'production',
                 'branch' => 'main',
-                'runtime_type' => $template['runtime_type'],
-                'build_command' => $template['build_command'],
-                'start_command' => $template['start_command'],
-                'container_port' => $template['container_port'],
-                'dockerfile_path' => $template['dockerfile_path'],
+                'runtime_type' => $template->runtimeType,
+                'build_command' => $template->buildCommand,
+                'start_command' => $template->startCommand,
+                'container_port' => $template->containerPort,
+                'dockerfile_path' => $template->dockerfilePath,
                 'is_protected' => true,
                 'requires_deployment_approval' => true,
             ]);
             if ($this->entitlements->allows($organization, 'workers')) {
-                foreach ($template['processes'] as $process) {
+                foreach ($template->processes as $process) {
                     $environment->processes()->create([
                         ...$process, 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true,
                     ]);
