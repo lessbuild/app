@@ -8,6 +8,17 @@ use App\Models\User;
 class RepositoryPolicy
 {
     /**
+     * Allow workspace members to inspect the tenant-scoped repository inventory.
+     *
+     * @param  User  $user  Account requesting the inventory.
+     * @return bool Whether the account belongs to its selected workspace.
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->currentOrganization?->permits($user, 'view') ?? false;
+    }
+
+    /**
      * Allow the repository owner or a viewer in its currently selected organization.
      *
      * @param  User  $user  Account requesting the ability in its current organization.

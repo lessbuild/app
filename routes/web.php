@@ -380,6 +380,8 @@ Route::middleware('auth')->group(function () {
             ->name('builds.note.update');
         Route::get('repositories/export', [RepositoriesController::class, 'export'])
             ->name('repositories.export');
+        Route::get('repositories/impact-preview', [RepositoriesController::class, 'impactPreview'])
+            ->name('repositories.impact-preview');
         Route::get('repositories/{repository}/webhook-deliveries/export', [RepositoriesController::class, 'exportWebhookDeliveries'])
             ->name('repositories.webhook-deliveries.export');
         Route::resource('repositories', RepositoriesController::class);

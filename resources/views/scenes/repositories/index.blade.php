@@ -11,6 +11,12 @@
     >
         <x-slot:buttons>
             <a
+                href="{{ route('repositories.impact-preview') }}"
+                class="flex items-center bg-secondary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
+            >
+                {{ __('Preview push impact') }}
+            </a>
+            <a
                 href="{{ route('repositories.create') }}"
                 class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
             >

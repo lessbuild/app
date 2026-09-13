@@ -7,6 +7,7 @@ use App\Actions\Repository\DeleteRepositoryAction;
 use App\Actions\Repository\DeployRepositoryAction;
 use App\Actions\Repository\UpdateRepositoryAction;
 use App\Exceptions\RepositoryWebhookConfigurationException;
+use App\Http\Requests\RepositoryImpactPreviewRequest;
 use App\Http\Requests\RepositoryIndexRequest;
 use App\Http\Requests\RepositoryRequest;
 use App\Http\Requests\RepositoryWebhookDeliveryRequest;
@@ -17,6 +18,7 @@ use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
 use App\Services\DeploymentPreflightGuidance;
 use App\Services\RepositoryDeploymentInsightsQuery;
+use App\Services\RepositoryImpactPreviewQuery;
 use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
 use App\Services\RepositoryWebhookDeliveryHistoryExporter;
@@ -34,6 +36,7 @@ class RepositoriesController extends Controller
         private readonly RepositoryInventoryQuery $repositoryInventory,
         private readonly RepositoryWebhookDeliveryHistoryExporter $webhookDeliveryHistoryExporter,
         private readonly RepositoryWebhookDeliveryHistoryQuery $webhookDeliveryHistory,
+        private readonly RepositoryImpactPreviewQuery $impactPreview,
     ) {}
 
     /**
@@ -71,6 +74,22 @@ class RepositoriesController extends Controller
         $filters = $request->filters();
 
         return $this->repositoryInventoryExporter->stream($request->user(), $filters);
+    }
+
+    /**
+     * Show a read-only impact preview for changed paths across enabled workspace push targets.
+     */
+    public function impactPreview(RepositoryImpactPreviewRequest $request): View
+    {
+        $this->authorize('viewAny', Repository::class);
+
+        return view('scenes.repositories.impact-preview', [
+            'preview' => $request->hasPreviewInput()
+                ? $this->impactPreview->for($request->user(), $request->changedPaths())
+                : null,
+            'changedPathsInput' => $request->changedPathsInput(),
+            'pathsUnavailable' => $request->pathsUnavailable(),
+        ]);
     }
 
     /**
