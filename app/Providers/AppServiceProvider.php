@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Contracts\ServerTroubleshootingTransport;
 use App\Http\Livewire\BuildDeploymentStatus;
 use App\Http\Livewire\RepositorySetup;
 use App\Http\Livewire\ServerCommand;
@@ -10,6 +11,7 @@ use App\Http\Livewire\ServerShow;
 use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
 use App\Models\User;
+use App\Services\SshServerTroubleshootingTransport;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
@@ -24,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(ServerTroubleshootingTransport::class, SshServerTroubleshootingTransport::class);
     }
 
     /**

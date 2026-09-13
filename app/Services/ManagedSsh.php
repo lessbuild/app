@@ -2,14 +2,31 @@
 
 namespace App\Services;
 
+use App\Data\ServerTroubleshootingTerminalSize;
 use RuntimeException;
 use Spatie\Ssh\Ssh;
+use Symfony\Component\Process\InputStream;
+use Symfony\Component\Process\Process;
 
 class ManagedSsh extends Ssh
 {
     private ?string $temporaryPrivateKey = null;
 
     private ?string $temporaryKnownHosts = null;
+
+    private ?int $managedPort = null;
+
+    /**
+     * Keep the port separately from Spatie's shell-fragment options so the
+     * interactive transport can construct an argv-safe Process command.
+     */
+    public function usePort(int $port): self
+    {
+        $this->managedPort = $port;
+        parent::usePort($port);
+
+        return $this;
+    }
 
     /**
      * Write private-key bytes to a restricted temporary file and configure the SSH client.
@@ -49,6 +66,61 @@ class ManagedSsh extends Ssh
         parent::usePrivateKey($path);
 
         return $this;
+    }
+
+    /**
+     * Build a PTY command without Spatie's one-shot bash heredoc transport.
+     * The remote command is fixed apart from validated terminal dimensions.
+     *
+     * @return list<string> An argv-safe SSH command for Symfony Process.
+     *
+     * @throws RuntimeException If a pinned host and private key were not configured.
+     */
+    public function interactiveCommand(ServerTroubleshootingTerminalSize $size): array
+    {
+        if ($this->temporaryPrivateKey === null || $this->temporaryKnownHosts === null) {
+            throw new RuntimeException('A pinned SSH identity is required for an interactive connection.');
+        }
+
+        $remoteCommand = sprintf(
+            'stty rows %d cols %d 2>/dev/null || true; exec setsid bash --noprofile --norc -i',
+            $size->rows,
+            $size->columns,
+        );
+
+        return [
+            'ssh',
+            '-tt',
+            '-o',
+            'BatchMode=yes',
+            '-o',
+            'PasswordAuthentication=no',
+            '-o',
+            'ConnectTimeout='.(int) config('lessbuild.ssh_connect_timeout', 10),
+            '-o',
+            'StrictHostKeyChecking=yes',
+            '-o',
+            'UserKnownHostsFile='.$this->temporaryKnownHosts,
+            '-o',
+            'EscapeChar=none',
+            '-i',
+            $this->temporaryPrivateKey,
+            '-p',
+            (string) ($this->managedPort ?? 22),
+            $this->getTargetForSsh(),
+            $remoteCommand,
+        ];
+    }
+
+    /**
+     * Create the unstarted local process and retain its input outside the
+     * Process object so a broker can append frames while it is running.
+     */
+    public function interactiveProcess(
+        InputStream $input,
+        ServerTroubleshootingTerminalSize $size,
+    ): Process {
+        return new Process($this->interactiveCommand($size), null, null, $input, null);
     }
 
     /**
