@@ -15,6 +15,7 @@ class PreviewStackCatalogTest extends TestCase
         $this->assertSame(['queue', 'scheduler'], array_column($stack->processes, 'name'));
         $this->assertSame(['database', 'cache'], array_column($stack->resources, 'name'));
         $this->assertSame(['postgresql', 'valkey'], array_column($stack->resources, 'type'));
+        $this->assertSame('php artisan db:seed --force', $stack->initialization?->command);
     }
 
     public function test_runtime_templates_without_preview_declarations_remain_unchanged(): void
@@ -23,5 +24,6 @@ class PreviewStackCatalogTest extends TestCase
 
         $this->assertSame([], $stack->processes);
         $this->assertSame([], $stack->resources);
+        $this->assertNull($stack->initialization);
     }
 }

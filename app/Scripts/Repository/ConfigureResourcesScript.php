@@ -48,6 +48,8 @@ class ConfigureResourcesScript extends BuildProvisioningScript
                 continue;
             }
             $containerArg = escapeshellarg($container);
+            $password = (string) ($variables['REDIS_PASSWORD'] ?? '');
+            $passwordArgument = $password === '' ? '' : ' --requirepass '.escapeshellarg($password);
             $sections[] = <<<BASH
             if ! command -v docker >/dev/null 2>&1; then
                 apt-get update -qq
@@ -56,7 +58,7 @@ class ConfigureResourcesScript extends BuildProvisioningScript
             fi
             docker volume create {$containerArg}-data >/dev/null
             if ! docker container inspect {$containerArg} >/dev/null 2>&1; then
-                docker run --detach --name {$containerArg} --restart unless-stopped --publish 127.0.0.1:{$port}:6379 --volume {$containerArg}-data:/data valkey/valkey:8-alpine valkey-server --appendonly yes
+                docker run --detach --name {$containerArg} --restart unless-stopped --publish 127.0.0.1:{$port}:6379 --volume {$containerArg}-data:/data valkey/valkey:8-alpine valkey-server --appendonly yes{$passwordArgument}
             else
                 docker start {$containerArg} >/dev/null 2>&1 || true
             fi

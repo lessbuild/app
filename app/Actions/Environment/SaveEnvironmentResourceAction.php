@@ -14,8 +14,9 @@ class SaveEnvironmentResourceAction
      *
      * @param  array{name: string, type: string, is_managed: bool|string, variables?: string|null, status?: string, is_preview_owned?: bool|string}  $data
      * @param  array<string, string>|null  $variables  Optional pre-parsed variables retained for non-HTTP callers.
+     * @param  array<string, string>|null  $managedVariables  Optional internal variables for managed preview credentials.
      */
-    public function handle(Environment $environment, array $data, ?array $variables = null): EnvironmentResource
+    public function handle(Environment $environment, array $data, ?array $variables = null, ?array $managedVariables = null): EnvironmentResource
     {
         if ($data['is_managed'] && $data['type'] === 'object_storage') {
             throw ValidationException::withMessages(['type' => __('Object storage must use externally supplied credentials.')]);
@@ -47,6 +48,9 @@ class SaveEnvironmentResourceAction
                 'VALKEY_HOST' => '127.0.0.1',
                 'VALKEY_PORT' => (string) $port,
             ];
+        }
+        if ($data['is_managed'] && $managedVariables !== null) {
+            $variables = array_replace($variables, $managedVariables);
         }
 
         $existing = $environment->resources()->where('name', $data['name'])->first();

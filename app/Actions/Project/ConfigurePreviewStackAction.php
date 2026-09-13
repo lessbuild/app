@@ -8,6 +8,7 @@ use App\Models\Environment;
 use App\Models\EnvironmentResource;
 use App\Models\Project;
 use App\Services\Entitlements;
+use App\Services\PreviewResourceCredentials;
 use App\Services\PreviewStackCatalog;
 use InvalidArgumentException;
 
@@ -20,12 +21,14 @@ class ConfigurePreviewStackAction
      * @param  Entitlements  $entitlements  Prevents preview children from bypassing workspace capabilities.
      * @param  SaveEnvironmentProcessAction  $processes  Reuses the normal process persistence behavior.
      * @param  SaveEnvironmentResourceAction  $resources  Reuses managed-resource configuration and encryption.
+     * @param  PreviewResourceCredentials  $credentials  Generates or preserves preview-only Valkey credentials.
      */
     public function __construct(
         private readonly PreviewStackCatalog $catalog,
         private readonly Entitlements $entitlements,
         private readonly SaveEnvironmentProcessAction $processes,
         private readonly SaveEnvironmentResourceAction $resources,
+        private readonly PreviewResourceCredentials $credentials,
     ) {}
 
     /**
@@ -66,13 +69,16 @@ class ConfigurePreviewStackAction
         if ($this->entitlements->allows($project->organization, 'resources')) {
             foreach ($stack->resources as $resource) {
                 $existing = $environment->resources()->where('name', $resource['name'])->first();
+                $managedVariables = $resource['type'] === 'valkey'
+                    ? $this->credentials->valkey($existing)
+                    : null;
                 $this->resources->handle($environment, [
                     'name' => $resource['name'],
                     'type' => $resource['type'],
                     'is_managed' => $resource['is_managed'],
                     'status' => $existing?->status ?? EnvironmentResource::STATUS_PLANNED,
                     'is_preview_owned' => true,
-                ]);
+                ], null, $managedVariables);
             }
         }
     }

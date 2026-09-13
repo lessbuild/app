@@ -128,6 +128,30 @@ class ApplicationConfigurationResourceSafetyTest extends TestCase
         }
     }
 
+    public function test_managed_valkey_uses_a_password_when_the_preview_snapshot_provides_one(): void
+    {
+        $password = "preview'cache-secret";
+        $script = $this->script([[
+            'is_managed' => true,
+            'type' => 'valkey',
+            'configuration' => [
+                'container_name' => 'buildpusher-valkey-1-cache',
+                'variables' => ['VALKEY_PORT' => '16380', 'REDIS_PASSWORD' => $password],
+            ],
+        ]]);
+
+        $this->assertStringContainsString("--requirepass 'preview'\\''cache-secret'", $script);
+        $legacy = $this->script([[
+            'is_managed' => true,
+            'type' => 'valkey',
+            'configuration' => [
+                'container_name' => 'buildpusher-valkey-1-cache',
+                'variables' => ['VALKEY_PORT' => '16380'],
+            ],
+        ]]);
+        $this->assertStringNotContainsString('--requirepass', $legacy);
+    }
+
     public function test_managed_database_identifier_changes_require_a_new_review(): void
     {
         [$user, $project, $website] = $this->fixture();

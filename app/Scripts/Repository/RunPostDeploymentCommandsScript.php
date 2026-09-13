@@ -13,6 +13,25 @@ class RunPostDeploymentCommandsScript extends RepositoryHookScript
 
     public static string $identifier = 'ran-post-deployment-commands';
 
+    public function __construct(?PreviewInitializationScript $previewInitialization = null)
+    {
+        $this->previewInitialization = $previewInitialization ?? new PreviewInitializationScript;
+    }
+
+    private readonly PreviewInitializationScript $previewInitialization;
+
+    /**
+     * Keep preview initialization in the existing post-deployment stage.
+     *
+     * @param  int  $step  Existing deployment stage reported after both hooks succeed.
+     * @param  Build  $build  Build supplying the optional initialization and repository hook.
+     * @return string Shell source for initialization followed by the existing hook behavior.
+     */
+    public function script(int $step, Build $build): string
+    {
+        return $this->previewInitialization->render($build).parent::script($step, $build);
+    }
+
     /**
      * Read the post-deployment hook from the build's repository.
      *

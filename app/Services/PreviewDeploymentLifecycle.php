@@ -30,6 +30,7 @@ class PreviewDeploymentLifecycle
      * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
      * @param  ConfigurePreviewStackAction  $previewStack  Persists supported process and managed-resource declarations.
      * @param  PreviewStackReadiness  $previewReadiness  Records remote resource initialization through deployment callbacks.
+     * @param  PreviewInitializationLifecycle  $previewInitialization  Records one-time application initialization attempts and stale-callback guards.
      * @param  QueuePreviewStackCleanupAction  $queuePreviewCleanup  Captures and dispatches cleanup after a preview becomes idle.
      */
     public function __construct(
@@ -41,6 +42,7 @@ class PreviewDeploymentLifecycle
         private readonly PreviewSecretApprovalResolver $previewSecrets,
         private readonly ConfigurePreviewStackAction $previewStack,
         private readonly PreviewStackReadiness $previewReadiness,
+        private readonly PreviewInitializationLifecycle $previewInitialization,
         private readonly QueuePreviewStackCleanupAction $queuePreviewCleanup,
     ) {}
 
@@ -125,6 +127,7 @@ class PreviewDeploymentLifecycle
                 $preview->repository?->update(['branch' => $webhook->sourceBranch]);
                 if ($revisionChanged) {
                     $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                    $this->previewInitialization->resetForRevision($preview, $project);
                 }
             }
 
@@ -192,6 +195,11 @@ class PreviewDeploymentLifecycle
         if (! $preview) {
             return;
         }
+        if ($build->status === Build::STATUS_SUCCEEDED) {
+            $this->previewInitialization->recordSuccess($build);
+        } else {
+            $this->previewInitialization->recordFailure($build);
+        }
         if ($preview->status === PreviewDeployment::STATUS_CLOSED) {
             $this->deleteWebsiteWhenIdle($preview);
 
@@ -220,6 +228,7 @@ class PreviewDeploymentLifecycle
      */
     public function deploymentStopped(Build $build): void
     {
+        $this->previewInitialization->recordStopped($build);
         $preview = PreviewDeployment::query()->where('repository_id', $build->repository_id)->first();
         if ($preview?->status === PreviewDeployment::STATUS_CLOSED) {
             $this->deleteWebsiteWhenIdle($preview);
@@ -312,6 +321,11 @@ class PreviewDeploymentLifecycle
             'source_branch' => $webhook->sourceBranch,
             'revision' => $webhook->revision,
             'status' => PreviewDeployment::STATUS_PROVISIONING,
+            'initialization_status' => $this->previewInitialization->statusFor($project),
+            'initialization_attempts' => 0,
+            'initialization_build_id' => null,
+            'initialization_error' => null,
+            'initialization_completed_at' => null,
             'url' => $website->url,
             'last_activity_at' => now(),
             'closed_at' => null,
@@ -361,15 +375,33 @@ class PreviewDeploymentLifecycle
         if (! $preview->repository?->isDeploymentReady() || $preview->repository->website->hasActiveDeployment()) {
             return;
         }
-        $build = $preview->repository->builds()->create([
-            'trigger_source' => Build::TRIGGER_WEBHOOK,
-            'revision' => $preview->revision,
-            'commit_message' => $preview->title,
-            ...$this->deployments->attributes($preview->repository),
-        ]);
-        $preview->update(['status' => PreviewDeployment::STATUS_DEPLOYING]);
-        $this->previewReadiness->beginProvisioning($build);
-        $this->deployments->dispatch($build);
+        $build = DB::transaction(function () use ($preview): ?Build {
+            $current = PreviewDeployment::query()->lockForUpdate()->find($preview->id);
+            if (! $current || $current->status === PreviewDeployment::STATUS_CLOSED) {
+                return null;
+            }
+
+            $initialization = $this->previewInitialization->payload($current);
+            $attributes = [
+                'trigger_source' => Build::TRIGGER_WEBHOOK,
+                'revision' => $current->revision,
+                'commit_message' => $current->title,
+                ...$this->deployments->attributes($current->repository),
+            ];
+            if ($initialization) {
+                $attributes['environment_payload']['preview_initialization'] = $initialization;
+            }
+            $build = $current->repository->builds()->create($attributes);
+            $current->update(['status' => PreviewDeployment::STATUS_DEPLOYING]);
+            $this->previewReadiness->beginProvisioning($build);
+            $this->previewInitialization->begin($current, $build, $initialization);
+
+            return $build;
+        }, 3);
+
+        if ($build) {
+            $this->deployments->dispatch($build);
+        }
     }
 
     /**

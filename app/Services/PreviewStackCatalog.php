@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\PreviewInitialization;
 use App\Data\PreviewStack;
 use App\Models\Project;
 
@@ -23,6 +24,11 @@ class PreviewStackCatalog
         return new PreviewStack(
             processes: is_array($template['processes'] ?? null) ? $template['processes'] : [],
             resources: is_array($template['preview_resources'] ?? null) ? $template['preview_resources'] : [],
+            initialization: is_array($template['preview_initialization'] ?? null)
+                && is_string($template['preview_initialization']['command'] ?? null)
+                && trim($template['preview_initialization']['command']) !== ''
+                ? new PreviewInitialization($template['preview_initialization']['command'])
+                : null,
         );
     }
 }

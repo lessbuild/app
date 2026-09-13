@@ -65,7 +65,15 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame('pgsql', $databaseConfiguration['variables']['DB_CONNECTION']);
         $cacheConfiguration = $preview->environment->resources()->where('name', 'cache')->firstOrFail()->configuration;
         $this->assertSame('127.0.0.1', $cacheConfiguration['variables']['VALKEY_HOST']);
+        $this->assertNotEmpty($cacheConfiguration['variables']['REDIS_PASSWORD']);
+        $this->assertNotSame('production-mail-secret', $cacheConfiguration['variables']['REDIS_PASSWORD']);
         $this->assertSame('buildpusher-valkey-'.$preview->environment_id.'-cache', $cacheConfiguration['container_name']);
+        $rawCacheConfiguration = (string) DB::table('environment_resources')
+            ->where('environment_id', $preview->environment_id)
+            ->where('name', 'cache')
+            ->value('configuration');
+        $this->assertStringNotContainsString($cacheConfiguration['variables']['REDIS_PASSWORD'], $rawCacheConfiguration);
+        $this->assertSame(PreviewDeployment::INITIALIZATION_PENDING, $preview->initialization_status);
         $previewWebsite = $preview->website->fresh();
         $previewEnvironment = (string) $previewWebsite->environment;
         $this->assertStringContainsString('APP_ENV="preview"', $previewEnvironment);
@@ -102,6 +110,11 @@ class PreviewDeploymentTest extends TestCase
         $this->assertIsArray($databasePayload);
         $this->assertSame($preview->website->database_password, $databasePayload['configuration']['variables']['DB_PASSWORD']);
         $this->assertStringNotContainsString('source-production-key', (string) $build->environment_payload['base_environment']);
+        $this->assertSame('php artisan db:seed --force', $build->environment_payload['preview_initialization']['command']);
+        $this->assertSame(1, $build->environment_payload['preview_initialization']['attempt']);
+        $this->assertSame($revision, $build->environment_payload['preview_initialization']['revision']);
+        $rawBuildPayload = (string) DB::table('builds')->whereKey($build->id)->value('environment_payload');
+        $this->assertStringNotContainsString('php artisan db:seed --force', $rawBuildPayload);
         Queue::assertPushed(PublishRepositoryJob::class, fn (PublishRepositoryJob $job): bool => $job->build->is($build));
 
         $build->update(['status' => Build::STATUS_RUNNING]);
@@ -109,6 +122,8 @@ class PreviewDeploymentTest extends TestCase
             'status' => app(RepositoryDeploymentPlan::class)->finalStage(),
         ])->assertNoContent();
         $this->assertSame(PreviewDeployment::STATUS_READY, $preview->fresh()->status);
+        $this->assertSame(PreviewDeployment::INITIALIZATION_SUCCEEDED, $preview->fresh()->initialization_status);
+        $this->assertNotNull($preview->fresh()->initialization_completed_at);
         $this->assertSame(
             EnvironmentResource::STATUS_READY,
             $preview->environment->resources()->where('name', 'database')->value('status'),
@@ -128,6 +143,80 @@ class PreviewDeploymentTest extends TestCase
         $cleanup = PreviewStackCleanup::query()->sole();
         $this->assertSame(PreviewStackCleanup::STATUS_QUEUED, $cleanup->status);
         Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
+    }
+
+    public function test_successful_preview_initialization_is_not_repeated_for_a_new_revision(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source, $project] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $firstRevision = str_repeat('1', 40);
+
+        $this->send($source, $this->payload('opened', $firstRevision), $secret, 'preview-init-once-open')->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $preview->website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+        $this->post(URL::signedRoute('callbacks.website', [
+            'website' => $preview->website,
+            'attempt' => $preview->website->provisioning_token,
+        ]), ['status' => app(WebsiteProvisioningPlan::class)->finalStage()])->assertOk();
+        $firstBuild = $preview->repository->builds()->sole();
+        $firstBuild->update(['status' => Build::STATUS_RUNNING]);
+        $this->post(URL::signedRoute('callbacks.build.status', $firstBuild), [
+            'status' => app(RepositoryDeploymentPlan::class)->finalStage(),
+        ])->assertNoContent();
+
+        $this->assertSame(PreviewDeployment::INITIALIZATION_SUCCEEDED, $preview->fresh()->initialization_status);
+
+        $secondRevision = str_repeat('2', 40);
+        $this->send($source, $this->payload('synchronize', $secondRevision), $secret, 'preview-init-once-update')
+            ->assertAccepted();
+
+        $secondBuild = $preview->repository->builds()->latest('id')->firstOrFail();
+        $this->assertNotSame($firstBuild->id, $secondBuild->id);
+        $this->assertArrayNotHasKey('preview_initialization', $secondBuild->environment_payload);
+        $this->assertSame(PreviewDeployment::INITIALIZATION_SUCCEEDED, $preview->fresh()->initialization_status);
+    }
+
+    public function test_failed_preview_initialization_retries_and_stale_attempts_cannot_complete_it(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('3', 40);
+
+        $this->send($source, $this->payload('opened', $revision), $secret, 'preview-init-retry-open')->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $preview->website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+        $this->post(URL::signedRoute('callbacks.website', [
+            'website' => $preview->website,
+            'attempt' => $preview->website->provisioning_token,
+        ]), ['status' => app(WebsiteProvisioningPlan::class)->finalStage()])->assertOk();
+        $firstBuild = $preview->repository->builds()->sole();
+        $firstBuild->update(['status' => Build::STATUS_RUNNING]);
+        $this->post(URL::signedRoute('callbacks.build.failed', $firstBuild), [
+            'message' => 'Preview initialization failed',
+            'exit_code' => 1,
+        ])->assertNoContent();
+
+        $this->assertSame(PreviewDeployment::INITIALIZATION_FAILED, $preview->fresh()->initialization_status);
+        $this->assertSame(1, $preview->fresh()->initialization_attempts);
+
+        $this->send($source, $this->payload('synchronize', $revision), $secret, 'preview-init-retry-same-revision')
+            ->assertAccepted();
+        $secondBuild = $preview->repository->builds()->latest('id')->firstOrFail();
+        $this->assertSame(2, $secondBuild->environment_payload['preview_initialization']['attempt']);
+        $this->assertSame(PreviewDeployment::INITIALIZATION_RUNNING, $preview->fresh()->initialization_status);
+        $this->assertSame($secondBuild->id, $preview->fresh()->initialization_build_id);
+
+        $this->post(URL::signedRoute('callbacks.build.status', $firstBuild), [
+            'status' => app(RepositoryDeploymentPlan::class)->finalStage(),
+        ])->assertNoContent();
+        $this->assertSame(PreviewDeployment::INITIALIZATION_RUNNING, $preview->fresh()->initialization_status);
+        $this->assertSame($secondBuild->id, $preview->fresh()->initialization_build_id);
     }
 
     public function test_concurrent_preview_quota_counts_open_previews_and_releases_capacity_on_close(): void

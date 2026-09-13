@@ -12,6 +12,7 @@ use App\Models\Website;
 use App\Scripts\Repository\ActivateReleaseScript;
 use App\Scripts\Repository\ArtisanCommandsScript;
 use App\Scripts\Repository\InstallDependenciesScript;
+use App\Scripts\Repository\PreviewInitializationScript;
 use App\Scripts\Repository\RunBuildCommandsScript;
 use App\Scripts\Repository\RunPostDeploymentCommandsScript;
 use App\Scripts\Repository\VerifyDeploymentHealthScript;
@@ -153,6 +154,33 @@ class DeploymentHooksTest extends TestCase
         $this->assertStringNotContainsString('base64 --decode', $buildScript.$postScript);
         $this->assertShellSyntax($buildScript);
         $this->assertShellSyntax($postScript);
+    }
+
+    public function test_preview_initialization_is_encoded_marked_and_keeps_the_existing_stage(): void
+    {
+        [$owner, $provider, $website] = $this->infrastructure();
+        $repository = $owner->repositories()->create($this->payload($provider, $website));
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_RUNNING,
+            'environment_payload' => [
+                'preview_initialization' => [
+                    'command' => 'php artisan db:seed --force',
+                    'attempt' => 2,
+                    'revision' => str_repeat('a', 40),
+                ],
+            ],
+        ]);
+
+        $script = (new PreviewInitializationScript)->render($build);
+        $this->assertStringContainsString(base64_encode('php artisan db:seed --force'), $script);
+        $this->assertStringNotContainsString('php artisan db:seed --force', $script);
+        $this->assertStringContainsString('/shared/.buildpusher-preview-initialized', $script);
+        $this->assertStringContainsString('Preview initialization failed', $script);
+        $this->assertShellSyntax($script);
+
+        $postScript = (new RunPostDeploymentCommandsScript)->script(8, $build);
+        $this->assertStringContainsString(base64_encode('php artisan db:seed --force'), $postScript);
+        $this->assertSame(15, app(RepositoryDeploymentPlan::class)->finalStage());
     }
 
     private function assertHookScript(

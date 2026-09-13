@@ -78,4 +78,16 @@ class RepositoryDeploymentPlan
 
         return $index === false ? $this->finalStage() : $index + 1;
     }
+
+    /**
+     * Locate the existing post-deployment stage used by preview initialization.
+     *
+     * @return int The one-based post-deployment stage, or the final stage when absent.
+     */
+    public function postDeploymentStage(): int
+    {
+        $index = array_search(RunPostDeploymentCommandsScript::class, $this->scripts(), true);
+
+        return $index === false ? $this->finalStage() : $index + 1;
+    }
 }

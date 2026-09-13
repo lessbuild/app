@@ -4,6 +4,7 @@ namespace App\Actions\Repository;
 
 use App\Models\Build;
 use App\Services\PreviewDeploymentLifecycle;
+use App\Services\PreviewInitializationLifecycle;
 use App\Services\PreviewStackReadiness;
 use App\Services\RepositoryDeploymentPlan;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ class RecordBuildStatusAction
         private readonly RepositoryDeploymentPlan $plan,
         private readonly PreviewDeploymentLifecycle $previews,
         private readonly PreviewStackReadiness $previewStack,
+        private readonly PreviewInitializationLifecycle $previewInitialization,
     ) {}
 
     /**
@@ -62,6 +64,7 @@ class RecordBuildStatusAction
             }
             $locked->update($attributes);
             $this->previewStack->recordProgress($locked, $status);
+            $this->previewInitialization->recordProgress($locked, $status);
         });
 
         if ($finished) {

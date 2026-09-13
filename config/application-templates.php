@@ -17,6 +17,7 @@ return [
             ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
             ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
         ],
+        'preview_initialization' => ['command' => 'php artisan db:seed --force'],
     ],
     'laravel-inertia' => [
         'name' => 'Laravel + Inertia',
@@ -34,6 +35,7 @@ return [
             ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
             ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
         ],
+        'preview_initialization' => ['command' => 'php artisan db:seed --force'],
     ],
     'laravel-api' => [
         'name' => 'Laravel API',
@@ -51,6 +53,7 @@ return [
             ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
             ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
         ],
+        'preview_initialization' => ['command' => 'php artisan db:seed --force'],
     ],
     'wordpress' => [
         'name' => 'WordPress',

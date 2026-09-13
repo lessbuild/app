@@ -18,12 +18,24 @@ class PreviewDeployment extends Model
 
     public const STATUS_CLOSED = 'closed';
 
+    public const INITIALIZATION_NOT_CONFIGURED = 'not_configured';
+
+    public const INITIALIZATION_PENDING = 'pending';
+
+    public const INITIALIZATION_RUNNING = 'running';
+
+    public const INITIALIZATION_SUCCEEDED = 'succeeded';
+
+    public const INITIALIZATION_FAILED = 'failed';
+
     protected $guarded = [];
 
     protected $casts = [
         'pull_request_number' => 'integer',
+        'initialization_attempts' => 'integer',
         'last_activity_at' => 'datetime',
         'closed_at' => 'datetime',
+        'initialization_completed_at' => 'datetime',
     ];
 
     /** @return BelongsTo<Project, $this> */
@@ -60,6 +72,12 @@ class PreviewDeployment extends Model
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class)->withTrashed();
+    }
+
+    /** @return BelongsTo<Build, $this> */
+    public function initializationBuild(): BelongsTo
+    {
+        return $this->belongsTo(Build::class, 'initialization_build_id');
     }
 
     /** @return HasMany<PreviewSecretApproval, $this> */
