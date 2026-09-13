@@ -82,7 +82,7 @@ class ProjectController extends Controller
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(),
             'canManage' => $project->organization->permits($request->user(), 'manage'),
             'canDeploy' => $project->organization->permits($request->user(), 'deploy'),
-            'featureAccess' => collect(['workers', 'resources', 'previews', 'scaling', 'hibernation'])
+            'featureAccess' => collect(['workers', 'resources', 'previews', 'scaling', 'hibernation', 'monitoring'])
                 ->mapWithKeys(fn (string $feature): array => [$feature => $entitlements->allows($project->organization, $feature)]),
         ]);
     }

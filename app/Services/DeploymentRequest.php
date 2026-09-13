@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\DeploymentObservationConfiguration;
 use App\Jobs\ApplyEnvironmentRuntimeStateJob;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
@@ -40,6 +41,7 @@ class DeploymentRequest
      */
     public function attributesForEnvironment(Repository $repository, ?Environment $environment, ?User $requester = null): array
     {
+        $repository->loadMissing('website');
         $environment?->loadMissing(['variables', 'processes', 'resources']);
         $payload = $environment ? [
             'base_environment' => (string) $repository->website?->environment,
@@ -83,6 +85,12 @@ class DeploymentRequest
             $payload['repository_root'] = $repository->deploymentRoot();
         }
 
+        $observation = $this->observationConfiguration($repository, $environment);
+        if ($observation) {
+            $payload ??= [];
+            $payload['post_deployment_observation'] = $observation->toArray();
+        }
+
         return [
             'status' => $environment?->requires_deployment_approval
                 ? Build::STATUS_AWAITING_APPROVAL
@@ -92,6 +100,36 @@ class DeploymentRequest
             'risk_assessment' => $this->preflight->assess($repository, $environment),
             'environment_payload' => $payload,
         ];
+    }
+
+    /**
+     * Capture only a valid, opt-in target for the post-deployment observation window.
+     *
+     * @param  Repository  $repository  Repository whose website is the remote deployment target.
+     * @param  Environment|null  $environment  Environment supplying the observation preference.
+     * @return DeploymentObservationConfiguration|null The non-secret target snapshot, or null when disabled/incomplete.
+     */
+    private function observationConfiguration(Repository $repository, ?Environment $environment): ?DeploymentObservationConfiguration
+    {
+        $website = $repository->website;
+        $duration = $environment?->post_deployment_observation_minutes;
+
+        if (! $environment || ! $website || is_null($duration)
+            || ! in_array((int) $duration, Environment::POST_DEPLOYMENT_OBSERVATION_MINUTES, true)
+            || (int) $environment->website_id !== (int) $website->id
+            || ! $website->server_id
+            || blank($website->url)
+            || blank($website->health_check_path)) {
+            return null;
+        }
+
+        return new DeploymentObservationConfiguration(
+            durationMinutes: (int) $duration,
+            websiteId: (int) $website->id,
+            serverId: (int) $website->server_id,
+            websiteUrl: (string) $website->url,
+            healthCheckPath: (string) $website->health_check_path,
+        );
     }
 
     /**

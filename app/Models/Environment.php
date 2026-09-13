@@ -12,6 +12,8 @@ class Environment extends Model
 {
     public const TYPES = ['production', 'staging', 'development', 'preview'];
 
+    public const POST_DEPLOYMENT_OBSERVATION_MINUTES = [5, 10, 15, 30, 60];
+
     public const DEPLOYMENT_STRATEGIES = ['blue_green', 'canary', 'rolling'];
 
     public const RUNTIME_TYPES = ['php', 'node', 'python', 'docker'];
@@ -21,6 +23,7 @@ class Environment extends Model
     protected $casts = [
         'is_protected' => 'boolean',
         'requires_deployment_approval' => 'boolean',
+        'post_deployment_observation_minutes' => 'integer',
         'automatic_rollback' => 'boolean',
         'minimum_replicas' => 'integer',
         'maximum_replicas' => 'integer',

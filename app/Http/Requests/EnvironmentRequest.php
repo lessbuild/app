@@ -45,6 +45,7 @@ class EnvironmentRequest extends FormRequest
             'website_id' => ['nullable', Rule::exists('websites', 'id')->where('organization_id', $organizationId)],
             'is_protected' => ['required', 'boolean'],
             'requires_deployment_approval' => ['required', 'boolean'],
+            'post_deployment_observation_minutes' => ['nullable', 'integer', Rule::in(Environment::POST_DEPLOYMENT_OBSERVATION_MINUTES)],
             'minimum_replicas' => ['required', 'integer', 'between:1,20'],
             'maximum_replicas' => ['required', 'integer', 'between:1,20', 'gte:minimum_replicas'],
             'hibernate_after_minutes' => ['nullable', 'integer', Rule::in([5, 15, 30, 60, 120, 1440])],
@@ -60,6 +61,7 @@ class EnvironmentRequest extends FormRequest
                 'minimum_replicas' => $environment->minimum_replicas,
                 'maximum_replicas' => $environment->maximum_replicas,
                 'hibernate_after_minutes' => $environment->hibernate_after_minutes,
+                'post_deployment_observation_minutes' => $environment->post_deployment_observation_minutes,
                 'runtime_type' => $environment->runtime_type ?: 'php',
                 'runtime_version' => $environment->runtime_version,
                 'build_command' => $environment->build_command,
@@ -80,6 +82,7 @@ class EnvironmentRequest extends FormRequest
             'start_command' => null,
             'container_port' => null,
             'dockerfile_path' => null,
+            'post_deployment_observation_minutes' => null,
         ]);
     }
 }

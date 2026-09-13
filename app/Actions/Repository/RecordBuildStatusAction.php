@@ -16,6 +16,7 @@ class RecordBuildStatusAction
         private readonly PreviewDeploymentLifecycle $previews,
         private readonly PreviewStackReadiness $previewStack,
         private readonly PreviewInitializationLifecycle $previewInitialization,
+        private readonly CreateDeploymentObservationAction $observations,
     ) {}
 
     /**
@@ -68,7 +69,9 @@ class RecordBuildStatusAction
         });
 
         if ($finished) {
-            $this->previews->buildFinished($build->fresh());
+            $completed = $build->fresh();
+            $this->previews->buildFinished($completed);
+            $this->observations->handle($completed);
         }
     }
 }

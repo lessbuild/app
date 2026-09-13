@@ -241,6 +241,12 @@ class Website extends Model
         return $this->hasMany(WebsiteHealthCheck::class);
     }
 
+    /** @return HasMany<DeploymentObservation, $this> */
+    public function deploymentObservations(): HasMany
+    {
+        return $this->hasMany(DeploymentObservation::class);
+    }
+
     /** @return HasMany<WebsiteLogSnapshot, $this> */
     public function runtimeLogs(): HasMany
     {

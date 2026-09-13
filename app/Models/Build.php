@@ -142,6 +142,12 @@ class Build extends Model
         return $this->hasOne(ConfigurationOperation::class);
     }
 
+    /** @return HasOne<DeploymentObservation, $this> */
+    public function deploymentObservation(): HasOne
+    {
+        return $this->hasOne(DeploymentObservation::class);
+    }
+
     /**
      * Resolve the service root captured for this build, retaining repository-root behavior for legacy builds.
      *

@@ -13,7 +13,7 @@ class EnvironmentRuntimeEntitlements
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * Enforce scaling and hibernation only when their effective values change or are enabled.
+     * Enforce paid runtime capabilities only when their effective values change or are enabled.
      *
      * @param  array<string, mixed>  $data  Validated environment attributes.
      * @param  Environment|null  $current  Existing values for updates, or null for creation.
@@ -30,6 +30,14 @@ class EnvironmentRuntimeEntitlements
         $hibernationChanged = ! $current || $requestedHibernation !== $current->hibernate_after_minutes;
         if ($hibernationChanged && ! is_null($data['hibernate_after_minutes'] ?? null)) {
             $this->entitlements->enforce($project->organization, 'hibernation');
+        }
+
+        $requestedObservation = is_null($data['post_deployment_observation_minutes'] ?? null)
+            ? null
+            : (int) $data['post_deployment_observation_minutes'];
+        $observationChanged = ! $current || $requestedObservation !== $current->post_deployment_observation_minutes;
+        if ($observationChanged && ! is_null($requestedObservation)) {
+            $this->entitlements->enforce($project->organization, 'monitoring');
         }
     }
 }
