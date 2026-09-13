@@ -2,9 +2,11 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 7E's stable alert
-identity and occurrence-metadata slice is complete locally at feature commit
-`aae111c`, after the alert-grouping characterization commit `43d4e43`, the
+The product-expansion sequence is active on `main`. Phase 7F's
+revision-aware post-deployment observation characterization is complete
+locally, after the Phase 7E stable alert identity and occurrence-metadata slice
+at feature commit `aae111c`, the alert-grouping characterization commit
+`43d4e43`, the
 Phase 7D canonical shareable investigation URL at feature commit `c757413`,
 characterization commit `c9b1e00` and the Phase 7C explicit
 incident-to-deployment evidence links at feature commit `3e79f4f`,
@@ -167,8 +169,10 @@ retain their previous fallback; inbox delivery, webhook frequency, retries and
 recovery behavior remain unchanged. The deployment plan's health stage is one
 immediate retried HTTP probe, while periodic website checks are separate,
 website-scoped records with no revision relationship or post-deployment
-observation window. A revision-aware observation window remains the next
-design task.
+observation window. Phase 7F characterization confirms that these must remain
+separate: a future observation aggregate needs its own build/revision/path
+identity, explicit opt-in configuration, post-commit scheduling and locked
+supersession/expiry guards rather than reusing periodic website history.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -233,9 +237,13 @@ unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
 failure (the test expects three `localhost` occurrences and the current script
 contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check` and the required-PHP
-asset/browser suite (**9 passed**) passed. The exact next task is to design and
-characterize a bounded revision-aware post-deployment observation record and
-lifecycle without reusing periodic website health history.
+asset/browser suite (**9 passed**) passed. The Phase 7F deployment-health,
+website-monitoring/history, observability-context and repository-deployment
+characterization run passed **44 tests / 497 assertions**. No application
+behavior or schema changed. The exact next task is to extract and inject the
+shared remote health-probe result without changing periodic monitoring, then
+implement the disabled-by-default revision-aware observation record and
+lifecycle with duplicate, supersession, retry, expiry and failure coverage.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
