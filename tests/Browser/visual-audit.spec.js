@@ -117,7 +117,7 @@ for (const device of devices) {
             page.getByRole('button', { name: 'Login' }).click(),
         ]);
 
-        const navigation = page.locator('#primary-navigation');
+        const navigation = page.locator(device.width < 1024 ? '#primary-navigation' : '#desktop-navigation');
         if (device.width < 1024) {
             await page.getByRole('button', { name: 'Toggle navigation' }).click();
             await expect(navigation).toBeVisible();
