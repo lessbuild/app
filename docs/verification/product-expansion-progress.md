@@ -1,7 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 6 isolated restore-verification characterization complete locally;
-the execution slice is next. Preview safety, trust/secret boundaries,
+Status: Phase 6 isolated restore-verification execution slice complete locally;
+the supported same-server Laravel/MySQL path is implemented and tested.
+Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
@@ -12,8 +13,8 @@ resource composition, the lifecycle characterization, deployment evidence
 timeline, the conservative monorepo path-filter slice, per-service
 repository-root execution boundary and read-only multi-target impact preview
 are complete. No additional service is published without lifecycle support.
-Provider-side cloud acceptance, the separate live drill and verified backup
-recovery remain outstanding.
+Provider-side cloud acceptance, the separate live drill and broader runtime/
+target recovery coverage remain outstanding.
 
 Date: 2026-09-13
 
@@ -1460,10 +1461,11 @@ fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 2026-09-13.
 
 The read-only multi-target impact preview described above is now complete. The
-exact next task is Phase 6: characterize backup completion separately from
-verified application/control-plane recovery, then implement the smallest
-read-only recovery evidence slice. Preserve existing restore and cleanup
-semantics; do not infer shared dependencies.
+Phase 6 characterization, read-only evidence and isolated verification slices
+are recorded below. The current exact next task is Phase 7: connect
+environment, deployment, logs, health and incident context with bounded,
+authorization-checked reads; preserve the separate provider/cloud acceptance
+track.
 
 ## Phase 5B — read-only multi-target impact preview (completed slice)
 
@@ -1529,11 +1531,12 @@ Commit `3940a28` (`feat: preview repository deployment impact`) was
 fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 2026-09-13.
 
-The exact next task is Phase 6: characterize backup completion separately from
-verified application/control-plane recovery, then implement the smallest
-read-only recovery evidence slice while preserving restore destinations,
-overwrite safeguards, duplicate protection, retries, partial-failure cleanup
-and existing dispatch semantics.
+The Phase 6 characterization, read-only evidence and isolated verification
+slices are recorded below. The current exact next task is Phase 7: connect
+environment, deployment, logs, health and incident context with bounded,
+authorization-checked reads while preserving restore destinations, overwrite
+safeguards, duplicate protection, retries, partial-failure cleanup and existing
+dispatch semantics.
 
 ## Phase 6 — backup recovery characterization (completed investigation)
 
@@ -1664,10 +1667,9 @@ provider/cloud acceptance or the separate live drill.
 Commit `764588e` (`feat: clarify backup recovery evidence`) was fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13.
 
-**Phase 6 read-only evidence exit gate: complete.** Exact next task:
-characterize and implement isolated restore verification with explicit target,
-overwrite review, integrity/smoke evidence, failure stage, duration and
-cleanup status while preserving the existing in-place restore workflow.
+**Phase 6 read-only evidence exit gate: complete.** The isolated
+restore-verification characterization and execution slices are recorded below;
+the existing in-place restore workflow remains separate and unchanged.
 
 ## Phase 6B — isolated restore-verification characterization (completed investigation)
 
@@ -1722,9 +1724,95 @@ execution behavior.
   credentials or claim that a live health check proves isolated recovery.
 
 **Phase 6B characterization exit gate: complete.** No application behavior was
-changed by this investigation. Exact next task: implement the persisted
-isolated verification attempt, safe request/action/policy boundary, remote
-integrity/smoke/cleanup script and focused failure/concurrency coverage.
+changed by the investigation itself. The persisted execution boundary,
+remote integrity/smoke/cleanup script and focused failure/concurrency coverage
+are implemented in the execution slice below.
+
+## Phase 6B — isolated restore verification (completed execution slice)
+
+### User problem and responsibility boundary
+
+The existing restore workflow safely replaces live website data and can roll
+back on remote failure, but it cannot answer whether a retained snapshot can
+be restored and exercised without an overwrite. The new workflow makes that
+answer durable while keeping the destructive restore operation unchanged.
+
+- `VerifyWebsiteBackupRequest` owns the exact website-name confirmation,
+  policy authorization and backup entitlement check. `WebsiteBackupPolicy`
+  exposes a separate `verify` ability while preserving the existing `restore`
+  ability and workspace scoping.
+- `RequestWebsiteBackupVerificationAction` owns the local transaction, locks
+  the backup row, revalidates workspace ownership and snapshot validity,
+  rejects active deployments and duplicate queued/running attempts, then
+  dispatches only after the verification row commits.
+- `VerifyWebsiteBackupJob` owns durable queued/running/succeeded/failed
+  transitions, exact snapshot revalidation, bounded stage markers and
+  sanitized failure persistence. `VerifyWebsiteBackupScript` owns the remote
+  shell protocol, quoting, integrity/smoke checks and trap-backed cleanup.
+- `BackupRecoveryEvidenceQuery` and `BackupRecoverySummary` expose only
+  successful independent verification as a separate dashboard indicator; the
+  controller coordinates the request/action/query and does not perform remote
+  work or persistence.
+
+This applies single responsibility and dependency inversion with concrete
+Laravel requests, policy, action, job, query and integration boundaries. No
+generic repository, universal action base, new provider interface or service
+locator was introduced in the business operation.
+
+### Behavior, safety and compatibility
+
+The `backup_restore_verifications` table records the exact snapshot identity,
+fixed `same_server_temporary` target, `never` overwrite mode, integrity/smoke/
+cleanup statuses, failure stage, bounded error, timestamps and duration. The
+request route is `POST backups/{backup}/verify`. A failed attempt is visible in
+the existing backup history and can be retried as a new attempt; an active
+attempt remains duplicate-protected by the locked backup row.
+
+The supported remote protocol restores the exact Restic snapshot into a
+deterministic temporary directory on the same managed server, imports the
+database dump into a unique temporary MySQL database after rewriting its
+validated identifier, checks the restored database/storage/.env contents,
+executes `php artisan migrate:status` against the temporary database and
+removes both temporary resources in an EXIT trap. Cleanup failure makes the
+verification fail. The remote execution uses `Runner::create(false)`, so
+remote output is not attached to normal command logging; persisted errors and
+the UI expose only bounded stage messages, never command output or
+credentials.
+
+The live database, `.env`, persistent storage, maintenance state, provider
+resources and existing in-place restore job are untouched. Dispatch remains
+outside the local transaction, synchronous queues retain their post-commit
+execution behavior, queued job compatibility is preserved, and unsupported
+target modes fail closed. This is an intentional new recovery-verification
+workflow, not a relabeling of an in-place restore or HTTPS transport evidence.
+
+### Scope limitations and verification
+
+This first execution slice supports Laravel service roots with MySQL on the
+existing managed server and a stored MySQL root credential. It does not yet
+provide an isolated external host, PostgreSQL restore adapter, arbitrary
+runtime smoke checks, production-data copying, provider cleanup evidence or
+scheduled restore drills. Those limitations are explicit; mocked remote
+runner tests are not cloud acceptance or the separate live drill.
+
+The focused backup verification, recovery evidence and managed-backup
+regression set passed **13 tests and 132 assertions**. The fresh strict
+isolated full PHP suite passed **1,408 tests and 12,199 assertions**, with the
+unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure (the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, changed PHP
+lint, full Pint, Vite build, route registration, `git diff --check` and the
+required-PHP asset/browser suite (**9 passed**) passed. No production or cloud
+resource was changed.
+
+Commit `a9b8730` (`feat: add isolated website backup verification`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13.
+
+**Phase 6B execution exit gate: complete for the supported local path.** The
+current exact next task is Phase 7 inventory: connect environment, deployment,
+logs, health and incident context through bounded, authorization-checked
+read collaborators while keeping provider/cloud acceptance separate.
 
 ## Slice ledger
 
@@ -1732,7 +1820,8 @@ integrity/smoke/cleanup script and focused failure/concurrency coverage.
 | --- | --- | --- | --- | --- | --- |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |
-| Phase 6B characterization | The existing restore mutates the live website and `BackupRestore` records no isolated target, overwrite mode, integrity/smoke result, failure stage, cleanup result or duration. Characterized a same-server temporary Restic directory/database protocol, exact snapshot binding, Laravel smoke boundary, fail-closed unsupported runtimes, EXIT-trap cleanup and separation from control-plane recovery. No application behavior changed. | Read-only source/protocol characterization completed; no runtime state or external resource changed. | Documentation change pending commit. | Not yet pushed; this characterization must be committed before the execution slice. | Implement the persisted isolated verification attempt and safe request/action/policy/job boundary. |
+| Phase 6B characterization | The existing restore mutates the live website and `BackupRestore` records no isolated target, overwrite mode, integrity/smoke result, failure stage, cleanup result or duration. Characterized a same-server temporary Restic directory/database protocol, exact snapshot binding, Laravel smoke boundary, fail-closed unsupported runtimes, EXIT-trap cleanup and separation from control-plane recovery. No application behavior changed. | Read-only source/protocol characterization completed; no runtime state or external resource changed. | `5bed78d` — `docs: characterize isolated restore verification` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the persisted isolated verification attempt and safe request/action/policy/job boundary. |
+| Phase 6B execution | The characterized recovery protocol needed a durable, duplicate-protected request and evidence boundary without changing the destructive in-place restore. Added a separate verification model/table, policy/request/action, post-commit job and injected remote script. It restores an exact snapshot to a same-server temporary MySQL target, checks restored files/database and Laravel readiness, records stage/status/duration/cleanup evidence, fails closed for unsupported target modes and offers safe retry after failure. | Verification/recovery/managed-backup regression set: **13 passed, 132 assertions**. Fresh strict isolated full PHP suite: **1,408 passed, 12,199 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, changed PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a9b8730` — `feat: add isolated website backup verification` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Start Phase 7 inventory: connect environment, deployment, logs, health and incidents through bounded, authorization-checked reads; preserve the separate cloud/live acceptance track. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

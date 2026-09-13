@@ -2,11 +2,11 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 6's read-only backup
-recovery evidence summary is complete locally at commit `764588e` after the
-backup-recovery characterization and Phase 5B read-only multi-target
-impact-preview slice, implemented
-in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
+The product-expansion sequence is active on `main`. Phase 6B's isolated
+restore-verification execution slice is complete locally at commit `a9b8730`
+after the backup-recovery characterization, read-only evidence summary and
+Phase 5B read-only multi-target impact-preview slice. It was implemented in
+the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
@@ -92,16 +92,22 @@ The current backups page previously derived summary metrics from only its latest
 evidence. `BackupRecoveryEvidenceQuery` and immutable
 `BackupRecoverySummary` now report completed backups, per-backup HTTPS
 transport evidence, completed in-place restores and measured duration
-separately. The page explicitly shows independent restore verification as
-`Not recorded`; restore execution, destinations, overwrite safeguards, jobs,
-schema and dispatch semantics remain unchanged. The isolated verification
-protocol is now characterized: use a deterministic temporary Restic directory
-and MySQL database on the existing managed server, bind the attempt to the
-exact snapshot, never touch live data or maintenance, run integrity and safe
-Laravel `artisan migrate:status` smoke checks, and make trap-backed cleanup
-part of the success condition. Unsupported runtimes fail closed. The next
-task is to implement that persisted, duplicate-protected verification attempt
-and its request/action/policy/job boundary.
+separately. The page now offers a distinct, manager-authorized isolated
+verification route. `RequestWebsiteBackupVerificationAction` binds an attempt
+to an exact snapshot under a backup-row lock and dispatches after commit;
+`VerifyWebsiteBackupJob` and `VerifyWebsiteBackupScript` persist bounded
+integrity, Laravel smoke, failure-stage, duration and trap-backed cleanup
+evidence. The supported path uses a temporary MySQL database and Restic
+directory on the existing managed server, never touches live data or
+maintenance, fails closed for unsupported target modes and offers a new retry
+after failure. Existing in-place restore execution, destinations, overwrite
+safeguards, job serialization and dispatch timing remain unchanged.
+
+This first execution slice supports Laravel/MySQL service roots with a stored
+managed-server MySQL root credential. PostgreSQL, external isolated targets,
+arbitrary runtime smoke checks, scheduled restore drills and provider/cloud
+acceptance remain separate work. No production resources or the acceptance
+drill were changed.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -132,12 +138,15 @@ passed **61 tests / 524 assertions**. The fresh full suite at `3940a28` passed
 PHP lint, route registration and `git diff --check` passed. No frontend assets
 changed. The new recovery-evidence feature plus managed-backup/release-audit
 regression set passed **12 tests / 120 assertions**. The fresh strict isolated
-full suite after the slice passed **1,402 tests / 12,129 assertions**, with the
-same unchanged `ProvisioningHardeningTest` localhost-count failure. Changed
-PHP lint, Pint and `git diff --check` passed; no frontend assets changed. The
-exact next task is to characterize isolated restore verification only after
-its destination, integrity, smoke, failure-stage and cleanup contracts are
-defined.
+full suite at `a9b8730` passed **1,408 tests / 12,199 assertions**, with the
+same unchanged `ProvisioningHardeningTest` localhost-count failure. The
+focused verification/recovery/managed-backup set passed **13 tests / 132
+assertions**. Required-PHP Composer validation/platform checks, changed PHP
+lint, full Pint, Vite, route registration, `git diff --check` and the
+required-PHP asset/browser suite (**9 passed**) passed. The current exact next
+task is Phase 7 inventory: connect environment, deployment, logs, health and
+incidents through bounded, authorization-checked reads; provider/cloud
+acceptance and the separate live drill remain outstanding.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
