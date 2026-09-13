@@ -2,9 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 7F's
-revision-aware post-deployment observation characterization is complete
-locally, after the Phase 7E stable alert identity and occurrence-metadata slice
+The product-expansion sequence is active on `main`. Phase 7F's shared website
+health probe extraction is complete locally at feature commit `3e4c337`, after
+the revision-aware post-deployment observation characterization and the Phase
+7E stable alert identity and occurrence-metadata slice
 at feature commit `aae111c`, the alert-grouping characterization commit
 `43d4e43`, the
 Phase 7D canonical shareable investigation URL at feature commit `c757413`,
@@ -239,11 +240,17 @@ contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check` and the required-PHP
 asset/browser suite (**9 passed**) passed. The Phase 7F deployment-health,
 website-monitoring/history, observability-context and repository-deployment
-characterization run passed **44 tests / 497 assertions**. No application
-behavior or schema changed. The exact next task is to extract and inject the
-shared remote health-probe result without changing periodic monitoring, then
-implement the disabled-by-default revision-aware observation record and
-lifecycle with duplicate, supersession, retry, expiry and failure coverage.
+characterization run passed **44 tests / 497 assertions**. The shared probe
+extraction then passed **35 tests / 441 assertions**; the fresh strict isolated
+full PHP suite passed **1,416 tests / 12,274 assertions**, with the same
+unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure. Required-PHP Composer validation/platform checks, PHP lint, full Pint,
+route-cache creation, `git diff --check` and the required-PHP asset/browser
+suite (**9 passed**) passed. No provider/cloud or live acceptance claim is
+made. The exact next task is to add the disabled-by-default revision-aware
+observation aggregate and lifecycle using the extracted probe, with explicit
+build/revision/path identity, post-commit scheduling and duplicate,
+supersession, retry, expiry and failure coverage.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 

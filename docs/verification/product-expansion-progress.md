@@ -1,9 +1,10 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7F revision-aware post-deployment observation characterization
-complete locally; the read-only context, finite troubleshooting filters,
-validated share link and stable alert metadata are implemented and tested. The
-observation record and lifecycle remain the next implementation slice.
+Status: Phase 7F shared website health probe extraction complete locally; the
+read-only context, finite troubleshooting filters, validated share link and
+stable alert metadata are implemented and tested. The disabled-by-default
+revision-aware observation aggregate and lifecycle remain the next
+implementation slice.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
@@ -2394,12 +2395,51 @@ monotonicity and the bounded observability read. No application behavior or
 schema changed in this investigation. Provider/cloud acceptance and the
 separate live acceptance drill remain outstanding.
 
-**Phase 7F characterization exit gate: complete.** The exact next task is to
-implement the smallest explicit observation boundary: first extract and inject
-the shared remote health-probe result without changing existing periodic
-monitor behavior, then add the disabled-by-default revision-aware observation
-record and lifecycle with focused duplicate, supersession, retry, expiry and
-failure tests.
+**Phase 7F characterization exit gate: complete.** The shared remote
+health-probe result is now extracted and injected without changing periodic
+monitor behavior. The exact next task is to add the disabled-by-default
+revision-aware observation aggregate and lifecycle with focused duplicate,
+supersession, retry, expiry and failure tests.
+
+## Phase 7F — shared website health probe extraction (completed slice)
+
+### Problem and responsibility boundary
+
+`WebsiteHealthMonitor` combined remote SSH command construction, output parsing,
+transport-failure sanitization, website persistence, aggregate state transitions
+and incident notification. That made it difficult to reuse the exact bounded
+probe for a future revision-aware deployment observation without coupling that
+observation to periodic website history.
+
+`WebsiteHealthProbe` now owns only remote execution and returns immutable
+`WebsiteHealthProbeResult` data: success, sanitized <=500-character error,
+optional HTTP status and bounded duration. `WebsiteHealthMonitor` retains
+eligibility, website row locking, retained `WebsiteHealthCheck` history,
+failure thresholds, incident transitions and automatic/manual semantics. This
+applies single responsibility and dependency inversion with a concrete
+collaborator, not a speculative interface; existing Runner/SSH behavior and
+monitoring command remain unchanged.
+
+The immediate deployment shell probe remains its own release/rollback contract
+with five retries and the existing callback behavior. This slice does not
+create observation records, alter schema, change website health history,
+schedule new jobs or infer causation.
+
+### Verification and limitations
+
+The focused probe/website-monitoring/history/automatic-control/deployment-health
+run passed **35 tests / 441 assertions**. The fresh strict isolated full PHP
+suite passed **1,416 tests / 12,274 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check` and the required-PHP
+asset/browser suite (**9 passed**) passed.
+
+No provider/cloud or live acceptance claim is made. The exact next task is to
+add the disabled-by-default revision-aware observation aggregate and lifecycle
+using this probe, with explicit build/revision/path identity, post-commit
+scheduling and duplicate, supersession, retry, expiry and failure coverage.
 
 ## Slice ledger
 
@@ -2417,7 +2457,8 @@ failure tests.
 | Phase 7D URL | The validated environment context had no explicit copyable investigation link. Added a canonical URL generated only from normalized filters, excluding arbitrary query input and preserving policy checks on every visit. No persistence, secret, response, authorization or query-bound change was introduced. | Focused observability/deployment/health/incident run: **26 passed, 222 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,241 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `c757413` — `feat: add shareable observability links` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize alert grouping/deduplication and post-deployment observation semantics before implementing the next troubleshooting slice. |
 | Phase 7E characterization | Operational incidents already group active failures by workspace/category/resource and source monitors suppress repeated state-transition notifications, but direct notifier calls still deliver repeated inbox/webhook events; the deployment health check is a single immediate probe with no revision-aware observation window or persisted health relationship. Preserved all current grouping, transition, retry and timing boundaries while documenting the next explicit metadata and observation designs. | Focused alert, incident, website-health and deployment-observation regression set: **55 passed, 615 assertions**. Read-only characterization; no application behavior or schema changed. | `43d4e43` — `docs: characterize alert grouping` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify stable incident identity/occurrence metadata on external alert deliveries without changing current delivery frequency; design revision-aware post-deployment observation separately. |
 | Phase 7E alert metadata | External alert payloads lacked a stable identity for grouping repeated events. Added immutable incident delivery metadata from the locked active incident and used its stable key for PagerDuty while preserving the legacy fallback, per-event inbox/webhook delivery, retry behavior and secret boundaries. | Focused alert/incident/observability run: **24 passed, 205 assertions**; broader alert/incident/website-health/deployment regression set: **55 passed, 608 assertions**. Fresh strict isolated full PHP suite: **1,413 passed, 12,248 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `aae111c` — `feat: add alert incident metadata` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Design and characterize a bounded revision-aware post-deployment observation record and lifecycle; do not reuse periodic website health history. |
-| Phase 7F characterization | The deployment health stage is a single immediate remote probe with rollback-on-failure, while periodic website checks are independently scheduled, website-scoped and unrelated to a build revision. Documented the separate observation aggregate, explicit disabled-by-default configuration, shared probe collaborator, post-commit scheduling, locked identity/deadline checks, supersession, retry, expiry and secret-safe result boundaries without changing application behavior or schema. | Focused deployment-health, website-monitoring/history, observability-context and repository-deployment run: **44 passed, 497 assertions**. Read-only characterization; no application behavior or schema changed. | `pending` — documentation slice | Not yet committed; this characterization is being recorded in the next documentation checkpoint. | Extract the shared remote health-probe result without changing periodic monitoring, then implement the disabled-by-default revision-aware observation lifecycle. |
+| Phase 7F characterization | The deployment health stage is a single immediate remote probe with rollback-on-failure, while periodic website checks are independently scheduled, website-scoped and unrelated to a build revision. Documented the separate observation aggregate, explicit disabled-by-default configuration, shared probe collaborator, post-commit scheduling, locked identity/deadline checks, supersession, retry, expiry and secret-safe result boundaries without changing application behavior or schema. | Focused deployment-health, website-monitoring/history, observability-context and repository-deployment run: **44 tests / 497 assertions**. Read-only characterization; no application behavior or schema changed. | `cb09f81` — `docs: characterize deployment observation` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the shared probe extraction; add the disabled-by-default revision-aware observation aggregate and lifecycle. |
+| Phase 7F shared probe | `WebsiteHealthMonitor` mixed remote execution with website state transitions. Extracted the injected `WebsiteHealthProbe` and immutable `WebsiteHealthProbeResult`; periodic history, thresholds, incident transitions, immediate deployment probe, retries and secret-safe bounds remain unchanged. | Focused probe/website-monitoring/history/automatic-control/deployment-health run: **35 tests / 441 assertions**. Fresh strict isolated full PHP suite: **1,416 tests / 12,274 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `3e4c337` — `refactor: extract website health probe` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add the disabled-by-default revision-aware observation aggregate and lifecycle using the extracted probe. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
