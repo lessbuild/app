@@ -27,7 +27,9 @@ operational contract and new projects record the installed template version
 without rewriting legacy rows.
 
 Phase 8's fixed server-host diagnostic implementation is now complete at
-feature commit `4add5b9`, fast-forwarded into canonical `main` and pushed to
+feature commit `4add5b9`, and the persisted troubleshooting-session lifecycle
+boundary is complete at feature commit `6e9e55f` with wording correction
+`335ea42`; all were fast-forwarded into canonical `main` and pushed to
 GitHub `origin/main`. The server detail page exposes a separate policy-
 authorized asynchronous snapshot/action/job boundary. It requires the stored
 pinned SSH host identity, runs a versioned fixed scalar probe, retains only
@@ -43,11 +45,13 @@ assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
 Required-PHP lint, Pint, Composer/platform, route-cache, shell, diff, Vite and
 required-PHP browser asset checks passed, including **9 browser tests**. No
 provider/cloud/live-acceptance claim is made. The interactive transport and
-host-execution characterization is now recorded in the progress ledger: the
-locked stack has no durable PTY/session registry or cleanup protocol. The
-exact next task is to implement and verify a minimal persisted session
-authorization/lifecycle boundary without remote execution; terminal sessions
-remain unimplemented.
+host-execution characterization is now recorded in the progress ledger, and
+the lifecycle slice passed **13 tests / 46 assertions** with the adjacent
+server/import/log/command/observability set passing **78 tests / 609
+assertions**. The locked stack still has no durable PTY/session registry or
+cleanup protocol, so terminal sessions remain unimplemented. The exact next
+task is to select and verify the bounded server-side transport and local/remote
+cleanup contract before adding routes or UI.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit

@@ -1,7 +1,9 @@
 # BuildPusher product expansion progress
 
-Status: Phase 8's fixed server-host diagnostic implementation is complete
-locally; the typed category-aware control-plane report is also complete.
+Status: Phase 8's fixed server-host diagnostic implementation and minimal
+persisted troubleshooting-session authorization/lifecycle boundary are
+complete locally; the typed category-aware control-plane report is also
+complete. Interactive terminal transport remains unimplemented.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -3036,8 +3038,10 @@ authorized and run. Interactive terminal transport remains deferred.
 **Phase 8 fixed-host implementation exit gate: complete locally.** Feature
 commit `4add5b9` (`feat: add fixed server diagnostics`) was fast-forwarded into
 canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. The exact
-next task is to characterize the interactive troubleshooting transport and
-host execution model before adding any terminal session capability.
+next task was to characterize the interactive troubleshooting transport and
+host execution model, then add a separate persisted session boundary. That
+characterization and lifecycle implementation are recorded below; the exact
+next task is now the bounded transport and abandoned-process cleanup contract.
 
 ## Phase 8 — interactive troubleshooting transport characterization (completed investigation)
 
@@ -3128,9 +3132,78 @@ cleanup behavior. No application behavior, schema, queue state or remote
 resource changed in this investigation.
 
 **Phase 8 interactive-transport characterization exit gate: complete.** The
-exact next task is to implement a minimal, persisted session authorization and
-lifecycle boundary with no remote execution yet, then add the selected
-transport only after its cleanup/revocation tests are green.
+minimal persisted authorization/lifecycle boundary is recorded below. The
+exact next task is to select and implement the server-side transport and
+host-process cleanup contract; no browser terminal or remote PTY may be
+exposed until reconnect, revocation, expiry, disconnect and abandoned-process
+tests are green.
+
+## Phase 8 — troubleshooting session authorization and lifecycle (completed slice)
+
+### Problem and responsibility boundary
+
+The transport characterization found no safe place to keep a live terminal
+grant, revalidate membership or represent expiry independently of the existing
+one-shot command history. Before selecting a PTY or browser transport, the
+application needed a durable session boundary whose state could be tested
+without opening SSH. This slice therefore adds no route, Livewire control,
+remote process or change to the existing queued-command contract.
+
+`ServerTroubleshootingSession` stores only the server/user ownership, opaque
+UUID, one-way grant digest, finite lifecycle state and bounded absolute/idle
+deadlines. The plaintext grant is returned only in the immutable
+`ServerTroubleshootingSessionGrant` data object at the application boundary;
+it is hidden from model serialization and is not placed in a queued job. The
+enum preserves explicit `connecting`, `connected`, `closing`, `closed`,
+`expired`, `revoked` and `failed` outcomes without changing any existing
+persisted value.
+
+`ServerPolicy::connect` permits the existing server-view audience to request a
+future connection, while `ServerPolicy::execute` requires the stronger
+workspace `operate` ability. `ServerTroubleshootingSessionPolicy` additionally
+binds every session decision to its issuing actor and server. Policies remain
+side-effect free. `OpenServerTroubleshootingSessionAction` owns the transaction,
+server/session locks, active-server and pinned-host-key prerequisites, bounded
+capacity and expired-session recovery. It creates no SSH connection or job.
+
+`TouchServerTroubleshootingSessionAction` revalidates the digest, actor
+membership and server state under a row lock. It extends only the idle deadline
+and never past the absolute deadline; expiry and server-inactive conditions
+become distinct terminal outcomes. Close and internal revoke actions are
+idempotent. A bounded scheduled expiry action marks idle/absolute deadline
+records without contacting a server. Server and user relationships are
+cascade-safe, and the existing owner-only arbitrary command path remains
+unchanged.
+
+This applies single responsibility and dependency inversion by separating the
+future transport's authorization/lifecycle state from HTTP, queued one-shot
+commands and SSH integration. It uses a meaningful immutable data boundary and
+finite enum outcomes without creating a generic session repository or a
+speculative transport interface. Membership is checked again on heartbeat, so
+revoked access cannot keep an otherwise live grant usable.
+
+### Verification and limitations
+
+The focused lifecycle suite passed **13 tests / 46 assertions**. The adjacent
+server, import, log, command and observability regression set passed **78 tests
+/ 609 assertions**. The fresh strict isolated full PHP suite passed **1,474
+tests / 12,580 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Migration fresh/rollback/reapply, the bounded expiry command
+and scheduler registration, required-PHP lint, scoped Pint and
+`git diff --check` passed. No frontend changed, so the prior required-PHP
+asset/browser evidence (**9 passed**) remains unchanged and was not rerun for
+this PHP-only slice.
+
+No SSH, PTY, websocket/SSE, browser terminal, remote cleanup or provider/cloud
+acceptance is included. A session row is an authorization/lifecycle boundary,
+not an interactive terminal. The feature commit `6e9e55f` and wording
+correction `335ea42` were fast-forwarded into canonical `main` and pushed to
+GitHub `origin/main` on 2026-09-13. The exact next task is to choose and test a
+bounded server-side transport with local/remote process ownership, reconnect,
+revocation, expiry, disconnect and abandoned-process cleanup semantics before
+adding any UI or route.
 
 ## Slice ledger
 
@@ -3160,6 +3233,7 @@ transport only after its cleanup/revocation tests are green.
 | Phase 8 fixed-host characterization | Existing server metrics, logs, import discovery and encrypted arbitrary-command history have separate scopes, but no current structured host-readiness report. Characterized a manual asynchronous snapshot with a dedicated policy ability, pinned-host-key fail-closed behavior, versioned fixed script, scalar allowlist, bounded timeout/output, lease/retry/stale-attempt protection and latest-result retention. No application behavior, schema, queue state or remote resource changed. | Read-only source/protocol characterization completed; implementation tests were defined before coding. | `7c4a896` — `docs: characterize fixed server diagnostics` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the implementation slice below; characterize the interactive troubleshooting transport next. |
 | Phase 8 fixed-host implementation | Existing server diagnostics had no dedicated current-result, safe execution or read boundary. Added a policy-authorized Livewire action, one latest snapshot per server, fixed allowlisted parser/probe, post-commit leased job, bounded transport retries, sanitized failure stages, stale-attempt protection and typed read-only checks. Missing host identity fails closed and raw output/credentials are never retained. Existing arbitrary commands, metrics, logs, provisioning and provider behavior remain separate. | Focused suite: **16 tests / 90 assertions**. Adjacent server/import/log/command/observability set: **45 tests / 373 assertions**. Fresh strict isolated full suite: **1,461 passed / 12,534 assertions / 1 unchanged baseline failure**. Required-PHP Composer/platform, lint, Pint, route cache, shell, diff checks, Vite and required-PHP browser asset suite: **9 passed**. | `4add5b9` — `feat: add fixed server diagnostics` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize the interactive troubleshooting transport and host execution model; keep terminal sessions separate from fixed diagnostics. |
 | Phase 8 interactive-transport characterization | Existing queued commands are one-shot root executions with encrypted bounded output, while `Runner`/`ManagedSsh` have no durable PTY, stdin, resize, heartbeat or abandoned-process cleanup contract. Characterized the separate session record, connect/execute authorization, pinned host-key requirement, short-lived grants, leases, input/output bounds, revalidation, audit and cleanup requirements. No application behavior, schema, queue state or remote resource changed. | Read-only source, dependency and runtime capability characterization completed; no terminal code or remote execution added. | This documentation checkpoint | Will be fast-forwarded into canonical `main` and pushed before the lifecycle boundary implementation. | Implement the minimal persisted session authorization/lifecycle boundary without remote execution, then verify its revocation and cleanup semantics before selecting transport. |
+| Phase 8 troubleshooting session lifecycle | The transport design had no durable grant, actor revalidation or terminal outcome boundary. Added an opaque hashed grant, actor/server policy split, finite session statuses, bounded absolute/idle deadlines, locked open/touch/close/revoke operations, membership heartbeat revalidation, atomic capacity and expired-session recovery, and a scheduled bounded expiry action. No remote execution, route, browser terminal or existing queued-command behavior changed. | Focused lifecycle suite: **13 tests / 46 assertions**. Adjacent server/import/log/command/observability regressions: **78 tests / 609 assertions**. Fresh strict isolated full suite: **1,474 passed / 12,580 assertions / 1 unchanged baseline failure**. Migration fresh/rollback/reapply, command/schedule, required-PHP lint, scoped Pint and `git diff --check` passed; prior required-PHP browser/assets evidence remains **9 passed**. | `6e9e55f` — `feat: add troubleshooting session lifecycle`; `335ea42` — `docs: clarify troubleshooting grant lifetime` | Feature and correction commits fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Select and test the bounded server-side PTY/transport and local/remote cleanup contract before adding routes or UI. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
