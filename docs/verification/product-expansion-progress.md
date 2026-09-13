@@ -1,6 +1,6 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7C explicit incident-to-deployment evidence links complete locally;
+Status: Phase 7D shareable investigation URL characterization complete locally;
 the read-only context and finite troubleshooting filters are implemented and tested.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
@@ -14,6 +14,8 @@ timeline, incident links from deployment cards, the conservative monorepo
 path-filter slice, per-service
 repository-root execution boundary and read-only multi-target impact preview
 are complete. No additional service is published without lifecycle support.
+Phase 7D characterization confirms that the existing notification saved-filter
+preference is not an appropriate cross-resource observability store.
 Provider-side cloud acceptance, the separate live drill and broader runtime/
 target recovery coverage remain outstanding.
 
@@ -2085,6 +2087,49 @@ fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 investigation views, including ownership, authorization rechecks, filter
 normalization, retention and whether a persistence change is justified.
 
+## Phase 7D — shareable investigation URL characterization (completed slice)
+
+### Existing behavior and responsibility assessment
+
+The repository already has saved filters for the notification inbox. They are
+stored in the authenticated user's `preferences` JSON, are limited to ten
+user-owned presets, and contain no organization, environment, resource-policy,
+expiry or retention metadata. That boundary is appropriate for a private
+notification preference but cannot safely represent a workspace investigation:
+it would not establish whether a referenced environment or service remains
+visible after a workspace switch, membership change or resource deletion.
+
+The observability context instead already uses a GET route with a bound
+environment and four finite, non-secret filters (`window`, `service`,
+`deployment` and `severity`). `ObservabilityContextRequest` rechecks the
+environment policy and current organization on every request, validates the
+service against the selected website's organization-owned repositories, and
+normalizes omitted values. The existing build, health, runtime-log and
+incident links recheck their own resource policies. A copied context URL will
+therefore fail closed after authorization changes rather than preserving a
+stale access grant.
+
+### Decision and future boundary
+
+Do not reuse notification preferences and do not add a persistence table for
+the first shareable-investigation slice. Add a canonical URL generated only
+from the validated filter data so arbitrary query parameters cannot be
+reflected into a share link. This is a controller/view navigation concern;
+the query collaborator remains responsible for bounded evidence and no
+secret, incident body or provider credential enters the URL.
+
+If named shared investigations are later justified, characterize an
+organization-owned model separately with an explicit schema version, owner or
+workspace permission, environment/resource revalidation, filter allowlist,
+expiry/retention and deletion behavior. That would require a policy and
+action boundary; the existing user-preference action is not a substitute.
+
+**Phase 7D characterization exit gate: complete.** Documentation commit
+`8a415b6` (`docs: record incident evidence links`) was fast-forwarded into
+canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. The exact
+next task is to add and test the canonical shareable context URL without
+introducing persistence or changing authorization semantics.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -2097,6 +2142,7 @@ normalization, retention and whether a persistence change is justified.
 | Phase 7A | Operators needed a selected environment view connecting deployments, health observations, runtime-log metadata and explicitly related incidents. Added a policy-authorized Form Request, immutable filter/context data objects, bounded tenant-scoped query collaborator, context route/view and dashboard/project links. Existing sensitive routes remain responsible for bodies and response authorization; no causal inference, writes, jobs or provider calls were added. | Focused observability run: **54 passed, 464 assertions**, including **3 tests / 29 assertions** for the new context. Fresh strict isolated full PHP suite: **1,411 passed, 12,228 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `5661873` — `feat: connect environment observability evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add explicit bounded service/deployment and incident-severity filters while preserving authorization, collection limits and possible-correlation wording. |
 | Phase 7B | The environment context had only a time window. Added validated repository-service selection, finite active/successful/unsuccessful deployment groups and incident-severity filtering, while retaining shared health/runtime/infrastructure signals that cannot be safely attributed to one repository. Cross-organization attached resources are excluded before evidence reads. | Focused observability/deployment/health/log run: **51 passed, 462 assertions**; new context file: **4 passed, 34 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,234 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `375c643` — `feat: add observability evidence filters` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add explicit incident links to relevant deployment/build or configuration evidence without implying causation. |
 | Phase 7C | Deployment incidents in the context identified a build resource but sent operators only to the general incident centre. Added a separate link to the existing policy-protected build detail for concrete deployment incidents, retaining the incident-centre navigation for response history and using the build page's existing configuration identity when present. Unknown categories/resource IDs receive no guessed link. | Focused observability/deployment/health/incident run: **26 passed, 218 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,236 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `3e79f4f` — `feat: link incidents to deployment evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize saved/shareable investigation views, authorization rechecks, filter normalization and retention before deciding whether persistence is justified. |
+| Phase 7D characterization | Existing saved notification filters are user-preference JSON without workspace/resource authorization, expiry or retention semantics, while the observability context already has a policy-checked GET URL with finite non-secret filters. Rejected reusing that preference boundary and decided that an initial shareable investigation needs only a canonical validated URL; named shared views require a separate organization-owned design. | Read-only source and behavior characterization completed; no application behavior or schema changed. | `8a415b6` — `docs: record incident evidence links` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the canonical shareable context URL without persistence or authorization changes. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

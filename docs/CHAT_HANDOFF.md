@@ -2,8 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 7C's explicit
-incident-to-deployment evidence links are complete locally at commit `3e79f4f`, after
+The product-expansion sequence is active on `main`. Phase 7D's shareable
+investigation URL characterization is complete locally at documentation commit
+`8a415b6`, after the Phase 7C explicit incident-to-deployment evidence links at
+feature commit `3e79f4f`,
 the Phase 7A environment evidence context, observability inventory and Phase 6B isolated
 restore-verification execution slice. It was implemented in
 the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
@@ -130,6 +132,15 @@ attribute them to one repository target. Rejected, failed and canceled builds
 are grouped as unsuccessful. Cross-organization attached website/server
 relations are discarded before any evidence query.
 
+Phase 7D characterized the existing notification saved-filter preference and
+rejected reusing it for observability: it is user-scoped JSON with no
+workspace/resource authorization, environment identity, expiry or retention
+contract. The environment context's existing GET route is already shareable
+and rechecks the current environment policy and finite service/deployment/
+severity filters on every request. The next implementation adds a canonical
+validated URL to the context without adding persistence; named shared views
+remain a separate future design.
+
 Phase 7C keeps the existing incident-centre link and adds a separate
 `Open deployment evidence` action when a deployment incident's resource ID
 resolves to one of the already bounded, tenant-scoped builds in the context.
@@ -187,9 +198,8 @@ run passed **26 tests / 218 assertions**; its strict isolated full suite passed
 **1,412 tests / 12,236 assertions** with the same unchanged baseline failure.
 PHP lint, full Pint, route-cache creation, `git diff --check` and the required-
 PHP asset/browser suite (**9 passed**) also passed. The exact next task is to
-characterize saved/shareable investigation views, authorization rechecks,
-filter normalization and retention before deciding whether persistence is
-justified.
+add and test the canonical shareable context URL without changing
+authorization semantics or introducing a new persistence table.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
