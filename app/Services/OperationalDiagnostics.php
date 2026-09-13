@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Data\OperationalDiagnosticCheck;
+use App\Data\OperationalDiagnosticReport;
+use App\Enums\OperationalDiagnosticCategory;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Support\Facades\Process;
 use Throwable;
@@ -23,8 +26,24 @@ class OperationalDiagnostics
         private readonly ExternalMonitoring $externalMonitoring,
     ) {}
 
-    /** @return list<array{name: string, passed: bool, detail: string}> */
+    /**
+     * Return the established untyped projection used by existing adapters.
+     *
+     * @return list<array{name: string, passed: bool, detail: string}>
+     */
     public function run(): array
+    {
+        return $this->report()->toLegacyChecks();
+    }
+
+    /**
+     * Run the safe operational checks with an explicit responsibility category.
+     *
+     * The category-aware report is an internal extension point. The legacy
+     * projection above remains the compatibility boundary for CLI, JSON, cache
+     * and public-status consumers.
+     */
+    public function report(): OperationalDiagnosticReport
     {
         $environment = (string) config('app.env');
         $production = $environment === 'production';
@@ -34,16 +53,18 @@ class OperationalDiagnostics
             && is_string(parse_url($url, PHP_URL_HOST));
         $migrationsReady = $this->readiness->isReady();
 
-        return [
-            $this->result('Application key', filled(config('app.key')), filled(config('app.key')) ? 'Configured' : 'Missing'),
+        return new OperationalDiagnosticReport([
+            $this->result('Application key', OperationalDiagnosticCategory::Runtime, filled(config('app.key')), filled(config('app.key')) ? 'Configured' : 'Missing'),
             $this->result(
                 'Application URL',
+                OperationalDiagnosticCategory::Runtime,
                 $validUrl,
                 $validUrl ? 'Valid HTTP(S) URL' : 'Must include an HTTP(S) scheme and host',
             ),
             $this->databaseCheck(),
             $this->result(
                 'Database migrations',
+                OperationalDiagnosticCategory::Runtime,
                 $migrationsReady,
                 $migrationsReady ? 'Current' : 'Pending, unavailable, or not initialized',
             ),
@@ -51,48 +72,52 @@ class OperationalDiagnostics
             $this->writableCheck('Bootstrap cache', base_path('bootstrap/cache')),
             $this->result(
                 'Debug mode',
+                OperationalDiagnosticCategory::Runtime,
                 ! $production || ! (bool) config('app.debug'),
                 $production && config('app.debug') ? 'Must be disabled in production' : ($production ? 'Disabled in production' : "Environment: {$environment}"),
             ),
             $this->result(
                 'Queue connection',
+                OperationalDiagnosticCategory::Runtime,
                 ! $production || $queue !== 'sync',
                 $production && $queue === 'sync' ? 'Production queue must be asynchronous' : $queue,
             ),
-            $this->email->check(),
-            $this->externalMonitoring->configurationCheck(),
+            $this->fromLegacyCheck($this->email->check(), OperationalDiagnosticCategory::Connectivity),
+            $this->fromLegacyCheck($this->externalMonitoring->configurationCheck(), OperationalDiagnosticCategory::Connectivity),
             ...$this->queueStateChecks($queue),
             $this->systemServiceCheck(),
             $this->systemTimerCheck(),
-        ];
+        ]);
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function databaseCheck(): array
+    /** @return OperationalDiagnosticCheck */
+    private function databaseCheck(): OperationalDiagnosticCheck
     {
         try {
             $connection = $this->database->connection();
             $connection->select('select 1');
 
-            return $this->result('Database connection', true, $connection->getDriverName());
+            return $this->result('Database connection', OperationalDiagnosticCategory::Connectivity, true, $connection->getDriverName());
         } catch (Throwable) {
-            return $this->result('Database connection', false, 'Unavailable');
+            return $this->result('Database connection', OperationalDiagnosticCategory::Connectivity, false, 'Unavailable');
         }
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function writableCheck(string $name, string $path): array
+    /** @return OperationalDiagnosticCheck */
+    private function writableCheck(string $name, string $path): OperationalDiagnosticCheck
     {
-        return $this->result($name, is_dir($path) && is_writable($path), is_dir($path) && is_writable($path) ? 'Writable' : 'Missing or not writable');
+        $writable = is_dir($path) && is_writable($path);
+
+        return $this->result($name, OperationalDiagnosticCategory::Storage, $writable, $writable ? 'Writable' : 'Missing or not writable');
     }
 
-    /** @return list<array{name: string, passed: bool, detail: string}> */
+    /** @return list<OperationalDiagnosticCheck> */
     private function queueStateChecks(string $connection): array
     {
         $driver = (string) config("queue.connections.{$connection}.driver");
         if ($driver !== 'database') {
             return [
-                $this->result('Pending queue state', true, $driver === 'sync' ? 'Runs inline' : 'Inspect the external queue backend'),
+                $this->result('Pending queue state', OperationalDiagnosticCategory::Connectivity, true, $driver === 'sync' ? 'Runs inline' : 'Inspect the external queue backend'),
                 $this->failedJobCheck(),
             ];
         }
@@ -112,23 +137,23 @@ class OperationalDiagnostics
             $detail = $count === 0 ? $pending : "{$pending}; oldest {$ageMinutes}m";
 
             return [
-                $this->result('Pending queue state', $passed, $passed ? $detail : "{$detail}; limits {$countLimit} jobs / {$ageLimit}m"),
+                $this->result('Pending queue state', OperationalDiagnosticCategory::Connectivity, $passed, $passed ? $detail : "{$detail}; limits {$countLimit} jobs / {$ageLimit}m"),
                 $this->failedJobCheck(),
             ];
         } catch (Throwable) {
             return [
-                $this->result('Pending queue state', false, 'Unavailable'),
+                $this->result('Pending queue state', OperationalDiagnosticCategory::Connectivity, false, 'Unavailable'),
                 $this->failedJobCheck(),
             ];
         }
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function failedJobCheck(): array
+    /** @return OperationalDiagnosticCheck */
+    private function failedJobCheck(): OperationalDiagnosticCheck
     {
         $driver = (string) config('queue.failed.driver');
         if (! in_array($driver, ['database', 'database-uuids'], true)) {
-            return $this->result('Failed queue jobs', true, 'Inspect the configured failure backend');
+            return $this->result('Failed queue jobs', OperationalDiagnosticCategory::Connectivity, true, 'Inspect the configured failure backend');
         }
 
         try {
@@ -138,19 +163,20 @@ class OperationalDiagnostics
 
             return $this->result(
                 'Failed queue jobs',
+                OperationalDiagnosticCategory::Connectivity,
                 $count === 0,
                 $count === 0 ? 'None' : ($count === 1 ? '1 failed job requires review' : "{$count} failed jobs require review"),
             );
         } catch (Throwable) {
-            return $this->result('Failed queue jobs', false, 'Unavailable');
+            return $this->result('Failed queue jobs', OperationalDiagnosticCategory::Connectivity, false, 'Unavailable');
         }
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function systemServiceCheck(): array
+    /** @return OperationalDiagnosticCheck */
+    private function systemServiceCheck(): OperationalDiagnosticCheck
     {
         if (! (bool) config('lessbuild.diagnostics.systemd_timers')) {
-            return $this->result('Application services', true, 'Systemd inspection is not enabled');
+            return $this->result('Application services', OperationalDiagnosticCategory::Process, true, 'Systemd inspection is not enabled');
         }
 
         $units = config('lessbuild.diagnostics.systemd_services', []);
@@ -161,11 +187,11 @@ class OperationalDiagnostics
         return $this->systemdUnitCheck('Application services', array_values($units), 'services');
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function systemTimerCheck(): array
+    /** @return OperationalDiagnosticCheck */
+    private function systemTimerCheck(): OperationalDiagnosticCheck
     {
         if (! (bool) config('lessbuild.diagnostics.systemd_timers')) {
-            return $this->result('Automation timers', true, 'Systemd inspection is not enabled');
+            return $this->result('Automation timers', OperationalDiagnosticCategory::Process, true, 'Systemd inspection is not enabled');
         }
 
         try {
@@ -180,15 +206,20 @@ class OperationalDiagnostics
 
             return $this->systemdUnitCheck('Automation timers', $units, 'timers');
         } catch (Throwable) {
-            return $this->result('Automation timers', false, 'Unable to inspect required systemd timers');
+            return $this->result(
+                'Automation timers',
+                OperationalDiagnosticCategory::Process,
+                false,
+                'Unable to inspect required systemd timers',
+            );
         }
     }
 
     /**
      * @param  list<string>  $units
-     * @return array{name: string, passed: bool, detail: string}
+     * @return OperationalDiagnosticCheck
      */
-    private function systemdUnitCheck(string $name, array $units, string $label): array
+    private function systemdUnitCheck(string $name, array $units, string $label): OperationalDiagnosticCheck
     {
         try {
             $active = Process::timeout(5)->quietly()->run(['systemctl', 'is-active', ...$units]);
@@ -198,19 +229,34 @@ class OperationalDiagnostics
 
             return $this->result(
                 $name,
+                OperationalDiagnosticCategory::Process,
                 $passed,
                 $passed
                     ? "{$count} required systemd {$label} are enabled and active"
                     : "One or more required systemd {$label} are disabled or inactive",
             );
         } catch (Throwable) {
-            return $this->result($name, false, "Unable to inspect required systemd {$label}");
+            return $this->result($name, OperationalDiagnosticCategory::Process, false, "Unable to inspect required systemd {$label}");
         }
     }
 
-    /** @return array{name: string, passed: bool, detail: string} */
-    private function result(string $name, bool $passed, string $detail): array
+    private function result(
+        string $name,
+        OperationalDiagnosticCategory $category,
+        bool $passed,
+        string $detail,
+    ): OperationalDiagnosticCheck {
+        return new OperationalDiagnosticCheck($name, $category, $passed, $detail);
+    }
+
+    /**
+     * Adapt an existing safe check collaborator without changing its public
+     * result shape while the report becomes typed.
+     *
+     * @param  array{name: string, passed: bool, detail: string}  $check
+     */
+    private function fromLegacyCheck(array $check, OperationalDiagnosticCategory $category): OperationalDiagnosticCheck
     {
-        return compact('name', 'passed', 'detail');
+        return $this->result($check['name'], $category, $check['passed'], $check['detail']);
     }
 }
