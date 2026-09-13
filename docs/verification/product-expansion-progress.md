@@ -1,8 +1,9 @@
 # BuildPusher product expansion progress
 
 Status: Phase 7F's disabled-by-default revision-aware post-deployment
-observation aggregate is complete locally; the remote execution, retry, lease
-and expiry lifecycle remain the next implementation slice. The read-only
+observation aggregate, leased execution and bounded build-detail read surface
+are complete locally. The next implementation slice connects those outcomes to
+the bounded environment evidence context. The read-only
 context, finite troubleshooting filters, validated share link, stable alert
 metadata and shared website health probe are implemented and tested.
 Preview safety, trust/secret boundaries,
@@ -23,8 +24,12 @@ initial shareable link is deliberately stateless and non-secret. Phase 7F now
 stores an opt-in, encrypted-build-payload snapshot as a separate
 revision-bound observation aggregate after a successful deployment. It is
 disabled by default, requires the existing monitoring entitlement when
-enabled, creates no remote work yet, and supersedes older active observations
-for the same website/repository under a locked transaction.
+enabled, queues a unique leased worker after commit and supersedes older active
+observations for the same website/repository under a locked transaction. The
+worker probes outside the transaction, retries unexpected failures within a
+bounded queue budget, recovers due work and expired leases every minute and
+rejects stale claim/revision/target results. Build detail shows bounded status
+metadata only; claim tokens and remote error text are not rendered.
 Provider-side cloud acceptance, the separate live drill and broader runtime/
 target recovery coverage remain outstanding.
 
@@ -2464,7 +2469,8 @@ the encrypted build payload. `CreateDeploymentObservationAction` owns the
 transaction-time build status, target revalidation, duplicate callback
 idempotency and supersession of older active observations for the same
 website/repository. The finite status enum and model provide a stable boundary
-for the next queued execution slice. No remote work is dispatched yet.
+for the queued execution slice. The creation action does not perform remote
+work itself; queued execution is a separate boundary described below.
 
 This applies single responsibility and dependency inversion: the deployment
 request builds an immutable input snapshot, the action owns local state
@@ -2484,10 +2490,74 @@ contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check` and the required-PHP
 asset/browser suite (**9 passed**) passed.
 
-No provider/cloud or live acceptance claim is made. The exact next task is to
+No provider/cloud or live acceptance claim is made. The exact next task was to
 add leased remote observation execution using the shared probe, with bounded
 retry, expiry/failure outcomes, duplicate-dispatch protection and stale-claim
-guards.
+guards; that task is recorded in the following completed slice.
+
+## Phase 7F — leased observation execution and bounded build read surface (completed slice)
+
+### Problem and responsibility boundary
+
+The aggregate could record that a successful deployment requested observation,
+but it could not execute the bounded window or recover when a worker stopped
+after claiming work. Calling the remote probe from the signed build callback
+would mix remote I/O with callback/local transaction behavior; allowing a late
+worker to write without an attempt guard could overwrite a newer deployment or
+claim.
+
+`RunDeploymentObservationAction` now owns the observation state machine. It
+locks and claims one due row, verifies the successful build and exact captured
+website/revision identity, and constructs a non-secret probe target. The
+`WebsiteHealthProbe` runs outside database transactions. A two-minute lease
+and claim token define the recovery boundary; the action records a result only
+if the same claim, current successful deployment and target identity still
+match. A changed target is finalized as `superseded` rather than left active.
+
+`ObserveDeploymentJob` coordinates one durable queue delivery with three
+bounded attempts and backoff. It carries only the observation ID and is unique
+for the lease window. `ProcessDeploymentObservationsCommand` queues at most 100
+due observations or expired leases each minute; the action rechecks every
+identity and lease before remote work. The successful-build action dispatches
+the first job only after its transaction commits, so a synchronous queue can
+execute immediately without running inside the creation transaction.
+
+Expected unsuccessful HTTP results become terminal `failed` outcomes with
+bounded status/duration/error storage; successful checks remain `observing`
+until the deadline, then become `healthy`. Expired windows become `expired`,
+and unexpected worker exceptions clear the claim for bounded queue retry or
+persist a terminal failure on the final attempt. A worker that disappears is
+recoverable after lease expiry. The build detail surface exposes only status,
+window, successful-check count, HTTP status and timestamps, and polls while
+the observation is active. It does not render claim tokens or remote error
+text.
+
+This applies single responsibility and dependency inversion: the job and
+scheduler coordinate durable work, the action owns local state transitions and
+locks, and the injected shared probe owns bounded remote execution. The
+existing periodic `WebsiteHealthCheck` history and the deployment plan's
+immediate health probe remain separate; no website health state, incident
+threshold or deployment response contract is changed.
+
+### Verification and limitations
+
+The final focused observation run passed **14 tests / 87 assertions**, covering
+post-commit dispatch idempotency, successful and failed probes, worker retries,
+future and due scheduling, expired leases/windows, target/revision changes,
+stale claims, periodic-health isolation and the bounded build read surface.
+The fresh strict isolated full PHP suite at `c6eff04` passed **1,429 tests /
+12,359 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
+asset/browser suite (**9 passed**) passed.
+
+**Phase 7F execution/read-surface exit gate: complete locally.** No
+provider/cloud or live acceptance claim is made. The exact next task is to
+include revision-bound observation outcomes in the bounded environment
+evidence context, preserving service filters, tenant authorization and
+exclusion of remote error text.
 
 ## Slice ledger
 
@@ -2507,7 +2577,8 @@ guards.
 | Phase 7E alert metadata | External alert payloads lacked a stable identity for grouping repeated events. Added immutable incident delivery metadata from the locked active incident and used its stable key for PagerDuty while preserving the legacy fallback, per-event inbox/webhook delivery, retry behavior and secret boundaries. | Focused alert/incident/observability run: **24 passed, 205 assertions**; broader alert/incident/website-health/deployment regression set: **55 passed, 608 assertions**. Fresh strict isolated full PHP suite: **1,413 passed, 12,248 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `aae111c` — `feat: add alert incident metadata` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Design and characterize a bounded revision-aware post-deployment observation record and lifecycle; do not reuse periodic website health history. |
 | Phase 7F characterization | The deployment health stage is a single immediate remote probe with rollback-on-failure, while periodic website checks are independently scheduled, website-scoped and unrelated to a build revision. Documented the separate observation aggregate, explicit disabled-by-default configuration, shared probe collaborator, post-commit scheduling, locked identity/deadline checks, supersession, retry, expiry and secret-safe result boundaries without changing application behavior or schema. | Focused deployment-health, website-monitoring/history, observability-context and repository-deployment run: **44 tests / 497 assertions**. Read-only characterization; no application behavior or schema changed. | `cb09f81` — `docs: characterize deployment observation` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the shared probe extraction; add the disabled-by-default revision-aware observation aggregate and lifecycle. |
 | Phase 7F shared probe | `WebsiteHealthMonitor` mixed remote execution with website state transitions. Extracted the injected `WebsiteHealthProbe` and immutable `WebsiteHealthProbeResult`; periodic history, thresholds, incident transitions, immediate deployment probe, retries and secret-safe bounds remain unchanged. | Focused probe/website-monitoring/history/automatic-control/deployment-health run: **35 tests / 441 assertions**. Fresh strict isolated full PHP suite: **1,416 tests / 12,274 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `3e4c337` — `refactor: extract website health probe` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add the disabled-by-default revision-aware observation aggregate and lifecycle using the extracted probe. |
-| Phase 7F observation aggregate | Successful deployments had no durable, revision-bound post-deployment observation boundary. Added an optional environment window protected by the existing monitoring entitlement, an immutable non-secret target snapshot in the encrypted build payload, a finite observation status model and a locked/idempotent creation action invoked after successful build completion. The action validates the captured build/revision/path identity, avoids legacy/incomplete targets, supersedes older active observations for the same website/repository and performs no remote work or dispatch yet. Periodic website history and the immediate deployment probe remain separate. | Focused feature/regression run: **68 tests / 517 assertions**. Fresh strict isolated full PHP suite: **1,421 tests / 12,301 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `32c3947` — `feat: add deployment observation records` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add leased remote observation execution using the shared probe, with bounded retries, expiry/failure outcomes, duplicate-dispatch protection and stale-claim guards. |
+| Phase 7F observation aggregate | Successful deployments had no durable, revision-bound post-deployment observation boundary. Added an optional environment window protected by the existing monitoring entitlement, an immutable non-secret target snapshot in the encrypted build payload, a finite observation status model and a locked/idempotent creation action invoked after successful build completion. The action validates the captured build/revision/path identity, avoids legacy/incomplete targets and supersedes older active observations for the same website/repository. The creation action performs no remote work itself; execution is a separate queued boundary. Periodic website history and the immediate deployment probe remain separate. | Focused feature/regression run: **68 tests / 517 assertions**. Fresh strict isolated full PHP suite: **1,421 tests / 12,301 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `32c3947` — `feat: add deployment observation records` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add leased remote observation execution using the shared probe, with bounded retries, expiry/failure outcomes, duplicate-dispatch protection and stale-claim guards. |
+| Phase 7F observation execution/read surface | The observation aggregate needed durable remote execution, lease recovery and a safe user-facing result without changing periodic website health or immediate deployment health. Added a post-commit unique job, a locked two-minute claim action, bounded queue retries/backoff, a minute-level scheduler for due work and expired leases, current build/revision/target revalidation, terminal expiry/failure/supersession outcomes and stale-claim protection. Build details expose bounded status metadata while hiding claim tokens and remote error text. | Final focused observation run: **14 tests / 87 assertions**. Fresh strict isolated full PHP suite: **1,429 tests / 12,359 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check`, Vite and required-PHP asset/browser suite: **9 passed**. | `c6eff04` — `feat: execute revision-bound deployment observations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Include revision-bound observation outcomes in the bounded environment evidence context, preserving service filters, tenant authorization and exclusion of remote error text. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

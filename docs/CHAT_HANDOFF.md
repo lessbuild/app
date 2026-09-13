@@ -3,8 +3,9 @@
 ## Product expansion current checkpoint — 2026-09-13
 
 The product-expansion sequence is active on `main`. Phase 7F's disabled-by-default
-revision-aware post-deployment observation aggregate is complete locally at
-feature commit `32c3947`, following the shared website health probe extraction
+revision-aware post-deployment observation aggregate and leased execution/read
+surface are complete locally at feature commit `c6eff04`, following the shared
+website health probe extraction
 at `3e4c337`, the revision-aware post-deployment observation characterization
 and the Phase 7E stable alert identity and occurrence-metadata slice
 at feature commit `aae111c`, the alert-grouping characterization commit
@@ -176,8 +177,15 @@ monitoring-entitled observation aggregate with its own build/revision/path
 identity. The successful-build callback snapshots the non-secret target in the
 encrypted build payload, creates one pending record after commit, is idempotent
 for duplicate callbacks and supersedes older active observations for the same
-website/repository under a locked transaction. No remote probe, retry or lease
-job is dispatched yet; those execution semantics are the next slice.
+website/repository under a locked transaction. The post-commit path now queues a
+unique observation job; `RunDeploymentObservationAction` claims one row with a
+short lease, probes the immutable target outside the transaction, and records
+only a still-current result. Queue retries are bounded, due work and expired
+leases are recovered by a minute scheduler, and stale claim/revision/target
+results cannot overwrite newer work. The build detail surface shows only
+bounded status, check count, HTTP status and timestamps; claim tokens and remote
+error text are not rendered. Continuous website health history and the
+deployment plan's immediate health probe remain separate.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -252,17 +260,19 @@ failure. Required-PHP Composer validation/platform checks, PHP lint, full Pint,
 route-cache creation, `git diff --check` and the required-PHP asset/browser
 suite (**9 passed**) passed. The Phase 7F shared probe extraction then passed
 **35 tests / 441 assertions**; the subsequent observation aggregate slice
-passed **68 tests / 517 assertions** in its focused/regression run. The fresh
-strict isolated full PHP suite at `32c3947` passed **1,421 tests / 12,301
+passed **68 tests / 517 assertions** in its focused/regression run. The leased
+execution/read-surface slice passed **14 tests / 87 assertions** in its final
+focused observation run. The fresh
+strict isolated full PHP suite at `c6eff04` passed **1,429 tests / 12,359
 assertions**, with the unchanged
 `ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
 (the test expects three `localhost` occurrences and the current script
 contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check` and the required-PHP
 asset/browser suite (**9 passed**) passed. No provider/cloud or live
-acceptance claim is made. The exact next task is to add leased remote
-observation execution using the shared probe, with bounded retry, expiry,
-failure, duplicate-dispatch and stale-claim coverage.
+acceptance claim is made. The exact next task is to expose revision-bound
+observation outcomes in the bounded environment evidence context, preserving
+service filters, tenant authorization and exclusion of remote error text.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
