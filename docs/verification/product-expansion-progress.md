@@ -1,7 +1,7 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7A bounded environment evidence context slice complete locally;
-the read-only observability context is implemented and tested.
+Status: Phase 7B bounded observability evidence filters complete locally;
+the read-only context and finite troubleshooting filters are implemented and tested.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
@@ -1963,6 +1963,71 @@ fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 slice: explicit service/deployment and incident-severity filters with the same
 authorization, query bounds and possible-correlation wording.
 
+## Phase 7B — bounded observability evidence filters (completed slice)
+
+### Problem and entry points
+
+The environment context initially supported only a time window. Operators
+could not narrow deployment evidence to one repository service, separate active,
+successful and unsuccessful deployment groups, or focus incidents by severity.
+The existing context route and dashboard/project links remain the entry points;
+this slice extends their query-string contract without adding persistence or a
+new endpoint.
+
+### Responsibility boundary and preserved behavior
+
+`ObservabilityContextRequest` validates service IDs against non-deleted
+repository targets on the selected organization-owned website and normalizes
+the finite deployment groups `all`, `active`, `successful` and `unsuccessful`
+plus the existing incident severities. `ObservabilityContextFilters` carries
+the immutable values, including the selected repository ID, and
+`ObservabilityEnvironmentContextQuery` applies them to bounded build and
+incident reads. The context read model carries the available service metadata
+so the view can preserve the selected filter without unrestricted request
+input.
+
+Service filtering narrows deployment records only: website health, runtime-log
+metadata and shared server/provider evidence remain visible because the
+current data model cannot safely attribute those signals to one repository
+target. Unsuccessful deployments include rejected, failed and canceled builds;
+active builds retain the existing recovery visibility rule. Incident severity
+filtering applies only after explicit environment resource mapping. Existing
+tenant policy checks, deliberate denial ordering, sensitive-content boundaries,
+collection limits, no-write behavior and possible-correlation wording remain
+unchanged. Cross-organization website/server relations are discarded from the
+read model before their evidence is queried.
+
+This is a single-responsibility/dependency-inversion improvement: the request
+owns HTTP validation, the data object owns normalized filter state, the query
+owns Eloquent filtering and tenant-safe mapping, and the controller/view do
+only coordination/presentation. No generic repository, provider abstraction,
+remote call, queue dispatch, migration or persisted-value change was added.
+
+### Verification and limitations
+
+The focused observability/deployment/health/log run passed **51 tests / 462
+assertions**; `ObservabilityEnvironmentContextTest` passed **4 tests / 34
+assertions**, including service/deployment/severity filtering, finite bounds,
+authorization-before-validation and secret/body exclusion. The fresh strict
+isolated PHP suite passed **1,412 tests / 12,234 assertions**, with the
+unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure (the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, Vite build, route registration, `git diff --check` and the required-
+PHP asset/browser suite (**9 passed**) passed.
+
+This slice still does not provide explicit incident-to-build/configuration
+links, saved investigation views, alert grouping controls or configurable
+post-deployment observation. Provider-side monitoring, cloud acceptance and
+the separate live acceptance drill remain outstanding.
+
+**Phase 7B exit gate: complete for the bounded filter slice.** Feature commit
+`375c643` (`feat: add observability evidence filters`) was fast-forwarded into
+canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. The exact
+next task is to add explicit incident links to the relevant deployment/build
+or configuration evidence, preserving resource authorization and avoiding
+causal claims.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -1973,6 +2038,7 @@ authorization, query bounds and possible-correlation wording.
 | Phase 6B execution | The characterized recovery protocol needed a durable, duplicate-protected request and evidence boundary without changing the destructive in-place restore. Added a separate verification model/table, policy/request/action, post-commit job and injected remote script. It restores an exact snapshot to a same-server temporary MySQL target, checks restored files/database and Laravel readiness, records stage/status/duration/cleanup evidence, fails closed for unsupported target modes and offers safe retry after failure. | Verification/recovery/managed-backup regression set: **13 passed, 132 assertions**. Fresh strict isolated full PHP suite: **1,408 passed, 12,199 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, changed PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a9b8730` — `feat: add isolated website backup verification` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Start Phase 7 inventory: connect environment, deployment, logs, health and incidents through bounded, authorization-checked reads; preserve the separate cloud/live acceptance track. |
 | Phase 7 inventory | The existing observability dashboard exposed workspace-wide deployment and failed-health signals but had no selected-environment evidence context. Completed the source inventory and characterized existing policy, query, log, health, incident and side-effect boundaries before coding. | Read-only source/instruction characterization completed; no application behavior changed. | `82cbeb1` — `docs: inventory connected observability` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the bounded environment evidence context with explicit authorization and secret-safe links. |
 | Phase 7A | Operators needed a selected environment view connecting deployments, health observations, runtime-log metadata and explicitly related incidents. Added a policy-authorized Form Request, immutable filter/context data objects, bounded tenant-scoped query collaborator, context route/view and dashboard/project links. Existing sensitive routes remain responsible for bodies and response authorization; no causal inference, writes, jobs or provider calls were added. | Focused observability run: **54 passed, 464 assertions**, including **3 tests / 29 assertions** for the new context. Fresh strict isolated full PHP suite: **1,411 passed, 12,228 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `5661873` — `feat: connect environment observability evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add explicit bounded service/deployment and incident-severity filters while preserving authorization, collection limits and possible-correlation wording. |
+| Phase 7B | The environment context had only a time window. Added validated repository-service selection, finite active/successful/unsuccessful deployment groups and incident-severity filtering, while retaining shared health/runtime/infrastructure signals that cannot be safely attributed to one repository. Cross-organization attached resources are excluded before evidence reads. | Focused observability/deployment/health/log run: **51 passed, 462 assertions**; new context file: **4 passed, 34 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,234 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `375c643` — `feat: add observability evidence filters` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add explicit incident links to relevant deployment/build or configuration evidence without implying causation. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
