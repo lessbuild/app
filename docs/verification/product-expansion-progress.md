@@ -3039,6 +3039,99 @@ canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. The exact
 next task is to characterize the interactive troubleshooting transport and
 host execution model before adding any terminal session capability.
 
+## Phase 8 — interactive troubleshooting transport characterization (completed investigation)
+
+### Existing boundary and responsibility problem
+
+BuildPusher already exposes queued server commands, but that feature is a
+different contract from an interactive troubleshooting session. `ServerCommand`
+and `ServerCommandsController` authorize the existing command/history abilities;
+`QueueServerCommandAction` locks an active server, enforces the current owner
+and one-active-command rules, encrypts the command and dispatches
+`RunServerCommandJob` after commit. The job claims a queued row once, calls
+`Runner`, captures a bounded stdout/stderr tail and stores the terminal result.
+The command model is therefore an auditable one-shot execution record, not a
+live channel.
+
+`Runner` and `ManagedSsh` create a new root SSH connection for each execution,
+write temporary private-key and known-host files, and use the Spatie SSH
+`bash -se` heredoc transport. The normal runner callback logs remote output;
+`ManagedSsh` has no durable PTY, stdin, resize, heartbeat or disconnect
+protocol. `executeAsync()` returns a local process handle and cannot itself be
+serialized as a durable application session. The runner also deliberately
+disables strict host checking when a server has no stored host key, which is
+acceptable only for legacy command compatibility and is not acceptable for a
+new terminal capability. The fixed diagnostics slice already proves the safer
+fail-closed host-key boundary for read-only probes.
+
+The current command UI polls recent history through Livewire and sends a
+complete command before the queue worker starts. It has no separate connect
+and execute abilities, no session lease or short-lived grant, no revocation
+check during execution, no remote process cleanup contract and no policy for
+persisting sensitive terminal output. A terminal must not reuse
+`ServerCommandExecution`, `RunServerCommandJob`, encrypted command history or
+the generic output-logging callback, because doing so would change the meaning
+and security boundary of existing commands.
+
+### Characterized terminal contract
+
+Any future session needs a separate persisted lifecycle record and an injected
+transport collaborator. The proposed record would contain an opaque session
+identity, actor/server ownership, finite `connecting`/`connected`/`closing`/
+`closed`/`expired`/`failed` state, a short authorization expiry, an idle
+deadline, a lease/heartbeat and a bounded local process identity. It must store
+no private key, password, bearer token, PTY transcript or raw terminal output
+in the queue payload. The browser receives only an opaque capability and
+bounded stream chunks; every connect, input, resize and close request
+revalidates actor membership, current organization/resource access, session
+expiry and server lifecycle.
+
+Connect and execute must be separate decisions. The policy/gate design must
+choose the least-privileged existing workspace abilities for opening a session
+and for sending shell input, while preserving the current owner-only queued
+command behavior until a deliberate product authorization change is reviewed.
+Policies will remain side-effect free; session actions will own locks, leases,
+revocation and local persistence; a transport adapter will own SSH/PTY
+construction, pinned host-key checking, bounded timeouts, input/output limits
+and sanitized transport failures.
+
+The first implementation should use an explicitly selected server-side
+transport supported by the current locked dependencies. It must define how a
+worker survives web-request boundaries, how a local process is reclaimed after
+worker death, how remote process groups are terminated after disconnect or
+expiry, and what happens during a network partition. A polling-only sequence
+of one-shot commands would be an improvement to command history, not an
+interactive terminal, and should not be labeled as one. WebSocket/SSE or PTY
+support must not be assumed from Livewire or Symfony Process without a tested
+runtime and deployment model.
+
+Required controls before implementation are: independent connect/execute
+authorization; short-lived session grants; membership/credential revalidation;
+active server and pinned host identity checks; one-session/concurrency and
+idle limits; bounded input, output and resize frames; explicit terminal size;
+disconnect, expiry and reconnect semantics; cleanup of abandoned local and
+remote processes; audit metadata; and an explicit sensitive-output retention
+policy. Reconnect must create a newly authorized session and cannot revive a
+revoked grant. A session must never make provider credentials, environment
+files, command history or control-plane secrets available to the browser.
+
+### Characterization result and next task
+
+The current locked stack contains Symfony Process PTY and input primitives,
+but the application has no supported long-lived process registry, bidirectional
+browser transport or remote cleanup protocol. The safe next slice is therefore
+to implement and test the separate session authorization/data boundary and a
+bounded lifecycle state machine only after the transport choice, worker
+ownership and cleanup semantics are specified. Do not call that slice an
+interactive terminal until it can carry input/output and prove revocation and
+cleanup behavior. No application behavior, schema, queue state or remote
+resource changed in this investigation.
+
+**Phase 8 interactive-transport characterization exit gate: complete.** The
+exact next task is to implement a minimal, persisted session authorization and
+lifecycle boundary with no remote execution yet, then add the selected
+transport only after its cleanup/revocation tests are green.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -3066,6 +3159,7 @@ host execution model before adding any terminal session capability.
 | Phase 8 typed report | Existing operational checks were safe but untyped, leaving category-aware troubleshooting consumers coupled to legacy arrays. Added immutable enum-backed check/report data objects and made `OperationalDiagnostics::report()` the typed composition boundary; `run()` remains the exact legacy adapter used by current CLI, JSON, health, public-status and cache consumers. | Focused diagnostic regression set: **20 tests / 159 assertions**. Fresh strict isolated full PHP suite: **1,445 tests / 12,443 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Pint test mode, route-cache creation and `git diff --check` passed. No frontend changes; browser/assets not rerun for this PHP-only slice. | `2f7d719` — `refactor: type operational diagnostics` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and design the fixed server-host structured diagnostic contract, including host-key behavior, command allowlist, timeout, failure and retention semantics; keep interactive transport separate. |
 | Phase 8 fixed-host characterization | Existing server metrics, logs, import discovery and encrypted arbitrary-command history have separate scopes, but no current structured host-readiness report. Characterized a manual asynchronous snapshot with a dedicated policy ability, pinned-host-key fail-closed behavior, versioned fixed script, scalar allowlist, bounded timeout/output, lease/retry/stale-attempt protection and latest-result retention. No application behavior, schema, queue state or remote resource changed. | Read-only source/protocol characterization completed; implementation tests were defined before coding. | `7c4a896` — `docs: characterize fixed server diagnostics` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the implementation slice below; characterize the interactive troubleshooting transport next. |
 | Phase 8 fixed-host implementation | Existing server diagnostics had no dedicated current-result, safe execution or read boundary. Added a policy-authorized Livewire action, one latest snapshot per server, fixed allowlisted parser/probe, post-commit leased job, bounded transport retries, sanitized failure stages, stale-attempt protection and typed read-only checks. Missing host identity fails closed and raw output/credentials are never retained. Existing arbitrary commands, metrics, logs, provisioning and provider behavior remain separate. | Focused suite: **16 tests / 90 assertions**. Adjacent server/import/log/command/observability set: **45 tests / 373 assertions**. Fresh strict isolated full suite: **1,461 passed / 12,534 assertions / 1 unchanged baseline failure**. Required-PHP Composer/platform, lint, Pint, route cache, shell, diff checks, Vite and required-PHP browser asset suite: **9 passed**. | `4add5b9` — `feat: add fixed server diagnostics` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize the interactive troubleshooting transport and host execution model; keep terminal sessions separate from fixed diagnostics. |
+| Phase 8 interactive-transport characterization | Existing queued commands are one-shot root executions with encrypted bounded output, while `Runner`/`ManagedSsh` have no durable PTY, stdin, resize, heartbeat or abandoned-process cleanup contract. Characterized the separate session record, connect/execute authorization, pinned host-key requirement, short-lived grants, leases, input/output bounds, revalidation, audit and cleanup requirements. No application behavior, schema, queue state or remote resource changed. | Read-only source, dependency and runtime capability characterization completed; no terminal code or remote execution added. | This documentation checkpoint | Will be fast-forwarded into canonical `main` and pushed before the lifecycle boundary implementation. | Implement the minimal persisted session authorization/lifecycle boundary without remote execution, then verify its revocation and cleanup semantics before selecting transport. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

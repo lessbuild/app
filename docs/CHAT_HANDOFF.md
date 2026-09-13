@@ -42,9 +42,12 @@ assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
 `ProvisioningHardeningTest::test_website_database_user_is_local_only` failure.
 Required-PHP lint, Pint, Composer/platform, route-cache, shell, diff, Vite and
 required-PHP browser asset checks passed, including **9 browser tests**. No
-provider/cloud/live-acceptance claim is made. The exact next task is to
-characterize the separate interactive troubleshooting transport and host
-execution model before implementing terminal sessions.
+provider/cloud/live-acceptance claim is made. The interactive transport and
+host-execution characterization is now recorded in the progress ledger: the
+locked stack has no durable PTY/session registry or cleanup protocol. The
+exact next task is to implement and verify a minimal persisted session
+authorization/lifecycle boundary without remote execution; terminal sessions
+remain unimplemented.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit
