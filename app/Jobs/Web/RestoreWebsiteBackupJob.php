@@ -55,6 +55,7 @@ class RestoreWebsiteBackupJob implements ShouldQueue
         $restic = $repositories->shell($backup->destination, $website);
         $stage = escapeshellarg("/tmp/buildpusher-restore-{$restore->id}");
         $root = escapeshellarg("/var/www/{$website->deployment_slug}");
+        $currentPath = escapeshellarg($website->deploymentPath('current'));
         $password = escapeshellarg($website->server->mysql_root_password);
         $database = escapeshellarg($website->databaseIdentifier());
         $snapshot = escapeshellarg($backup->snapshot_id);
@@ -74,7 +75,7 @@ class RestoreWebsiteBackupJob implements ShouldQueue
             if [ -f "\$STAGE/safety.sql" ]; then MYSQL_PWD={$password} mysql < "\$STAGE/safety.sql" || true; fi
             if [ -d "\$SAFETY_STORAGE" ]; then rm -rf -- "\$APP_ROOT/shared/storage"; mv -- "\$SAFETY_STORAGE" "\$APP_ROOT/shared/storage"; fi
             if [ -f "\$STAGE/safety.env" ]; then cp -- "\$STAGE/safety.env" "\$APP_ROOT/.env"; fi
-            if [ -f "\$APP_ROOT/current/artisan" ]; then cd -- "\$APP_ROOT/current" && php artisan up || true; fi
+            if [ -f {$currentPath}/artisan ]; then cd -- {$currentPath} && php artisan up || true; fi
             rm -rf -- "\$STAGE"
             exit "\$code"
         }
@@ -84,7 +85,7 @@ class RestoreWebsiteBackupJob implements ShouldQueue
         {$restic['environment']} restic restore {$snapshot} --target "\$STAGE/restore"
         test -s "\$STAGE/restore/database.sql"
         test -d "\$STAGE/restore/storage"
-        if [ -f "\$APP_ROOT/current/artisan" ]; then cd -- "\$APP_ROOT/current" && php artisan down --retry=30; fi
+        if [ -f {$currentPath}/artisan ]; then cd -- {$currentPath} && php artisan down --retry=30; fi
         MYSQL_PWD={$password} mysqldump --single-transaction --routines --triggers --events --databases "\$DATABASE" > "\$STAGE/safety.sql"
         cp -- "\$APP_ROOT/.env" "\$STAGE/safety.env"
         mv -- "\$APP_ROOT/shared/storage" "\$SAFETY_STORAGE"
@@ -94,7 +95,7 @@ class RestoreWebsiteBackupJob implements ShouldQueue
         MYSQL_PWD={$password} mysql < "\$STAGE/restore/database.sql"
         chown -R www-data:www-data "\$APP_ROOT/shared/storage"
         chmod 640 "\$APP_ROOT/.env"
-        if [ -f "\$APP_ROOT/current/artisan" ]; then cd -- "\$APP_ROOT/current" && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan up; fi
+        if [ -f {$currentPath}/artisan ]; then cd -- {$currentPath} && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan up; fi
         {$healthCheck}
         trap - ERR
         rm -rf -- "\$STAGE"

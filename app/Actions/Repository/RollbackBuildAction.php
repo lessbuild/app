@@ -50,6 +50,10 @@ class RollbackBuildAction
                 'approved_at' => now(),
                 'release_name' => $lockedSource->release_name,
                 'release_path' => $lockedSource->release_path,
+                'environment_payload' => is_array($lockedSource->environment_payload)
+                    && array_key_exists('repository_root', $lockedSource->environment_payload)
+                    ? ['repository_root' => $lockedSource->environment_payload['repository_root']]
+                    : null,
                 'rolled_back_from_build_id' => $lockedSource->id,
             ]);
 

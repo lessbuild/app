@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Scopes\WebsiteScopes;
+use App\Support\RepositoryPath;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -179,6 +180,37 @@ class Website extends Model
     public function builds(): HasManyThrough
     {
         return $this->hasManyThrough(Build::class, Repository::class);
+    }
+
+    /**
+     * Resolve the service root of the latest successful deployment for website-level maintenance tasks.
+     *
+     * @return string A safe relative directory, or `.` when no deployment target has been configured.
+     */
+    public function deploymentRoot(): string
+    {
+        $build = $this->builds()
+            ->with('repository')
+            ->where('builds.status', Build::STATUS_SUCCEEDED)
+            ->latest('builds.id')
+            ->first();
+
+        if ($build) {
+            return $build->deploymentRoot();
+        }
+
+        return $this->repositories()->latest('id')->first()?->deploymentRoot() ?? '.';
+    }
+
+    /**
+     * Resolve a service path inside the website's active deployment.
+     *
+     * @param  string  $phase  Internal deployment phase such as `current`.
+     * @return string The absolute service path on the managed server.
+     */
+    public function deploymentPath(string $phase): string
+    {
+        return RepositoryPath::withRoot("/var/www/{$this->deployment_slug}/{$phase}", $this->deploymentRoot());
     }
 
     /**

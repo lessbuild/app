@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\RepositoryPath;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -97,6 +98,37 @@ class Environment extends Model
     public function builds(): HasMany
     {
         return $this->hasMany(Build::class);
+    }
+
+    /**
+     * Resolve the service root of the latest successful build for environment-scoped maintenance tasks.
+     *
+     * @return string A safe relative directory, or `.` when no successful build exists.
+     */
+    public function deploymentRoot(): string
+    {
+        $build = $this->builds()
+            ->with('repository')
+            ->where('status', Build::STATUS_SUCCEEDED)
+            ->latest('id')
+            ->first();
+
+        if ($build) {
+            return $build->deploymentRoot();
+        }
+
+        return $this->website?->repositories()->where('branch', $this->branch)->latest('id')->first()?->deploymentRoot() ?? '.';
+    }
+
+    /**
+     * Resolve a service path inside this environment's active deployment.
+     *
+     * @param  string  $phase  Internal deployment phase such as `current`.
+     * @return string The absolute service path on the managed server.
+     */
+    public function deploymentPath(string $phase): string
+    {
+        return RepositoryPath::withRoot("/var/www/{$this->website?->deployment_slug}/{$phase}", $this->deploymentRoot());
     }
 
     /** @return HasMany<EnvironmentProcess, $this> */

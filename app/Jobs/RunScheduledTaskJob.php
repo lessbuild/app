@@ -55,7 +55,7 @@ class RunScheduledTaskJob implements ShouldBeUnique, ShouldQueue
         $run->update(['status' => 'running', 'started_at' => now()]);
         $started = hrtime(true);
         $command = escapeshellarg(base64_encode($task->command));
-        $root = escapeshellarg('/var/www/'.$website->deployment_slug.'/current');
+        $root = escapeshellarg($task->environment->deploymentPath('current'));
         $environment = escapeshellarg('/var/www/'.$website->deployment_slug.'/.env');
         $timeout = max(10, min(3600, $task->timeout_seconds));
         $script = <<<BASH

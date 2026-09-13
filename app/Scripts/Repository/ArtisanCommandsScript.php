@@ -28,7 +28,7 @@ class ArtisanCommandsScript extends BuildProvisioningScript
     public function script(int $step, Build $build): string
     {
         $repository = $build->repository;
-        $candidatePath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $candidatePath = escapeshellarg($build->deploymentPath('setup'));
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT

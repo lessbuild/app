@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\BuildStatus;
 use App\Models\Concerns\HasDuration;
 use App\Presenters\BuildPresenter;
+use App\Support\RepositoryPath;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -139,6 +140,35 @@ class Build extends Model
     public function configurationOperation(): HasOne
     {
         return $this->hasOne(ConfigurationOperation::class);
+    }
+
+    /**
+     * Resolve the service root captured for this build, retaining repository-root behavior for legacy builds.
+     *
+     * @return string A safe relative directory, or `.` for the repository root.
+     */
+    public function deploymentRoot(): string
+    {
+        $payload = $this->environment_payload;
+        $root = is_array($payload) && array_key_exists('repository_root', $payload)
+            ? $payload['repository_root']
+            : $this->repository->deployment_root;
+
+        return RepositoryPath::normalizeRoot($root);
+    }
+
+    /**
+     * Resolve a service path inside this build's setup, current or other internal deployment phase.
+     *
+     * @param  string  $phase  Internal deployment phase such as `setup` or `current`.
+     * @return string The absolute service path on the managed server.
+     */
+    public function deploymentPath(string $phase): string
+    {
+        return RepositoryPath::withRoot(
+            "/var/www/{$this->repository->website->deployment_slug}/{$phase}",
+            $this->deploymentRoot(),
+        );
     }
 
     /** @return BelongsTo<Build, $this> */

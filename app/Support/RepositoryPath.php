@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use InvalidArgumentException;
+
 class RepositoryPath
 {
     public const MAX_PATTERN_BYTES = 255;
@@ -19,6 +21,46 @@ class RepositoryPath
     public static function normalize(mixed $value): ?string
     {
         return self::normalizeRelative($value, self::MAX_PATH_BYTES, false);
+    }
+
+    /**
+     * Normalize an optional service root directory, using the repository root when omitted.
+     *
+     * @param  mixed  $value  User or persisted service-root input.
+     * @return string A safe relative directory, or `.` for the repository root.
+     *
+     * @throws InvalidArgumentException When a nonblank root is not safe.
+     */
+    public static function normalizeRoot(mixed $value): string
+    {
+        if ($value === null || (is_string($value) && trim($value) === '')) {
+            return '.';
+        }
+        if (is_string($value) && in_array(trim($value), ['.', './'], true)) {
+            return '.';
+        }
+
+        $normalized = self::normalize($value);
+        if ($normalized === null) {
+            throw new InvalidArgumentException('The repository deployment root is invalid.');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Append a validated relative service root to an internal deployment path.
+     *
+     * @param  string  $base  Absolute deployment path owned by the application.
+     * @param  mixed  $root  Optional safe relative service root.
+     * @return string The absolute path for the service within the deployment target.
+     */
+    public static function withRoot(string $base, mixed $root): string
+    {
+        $base = rtrim($base, '/');
+        $root = self::normalizeRoot($root);
+
+        return $root === '.' ? $base : $base.'/'.$root;
     }
 
     /**

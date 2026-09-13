@@ -43,7 +43,11 @@ class PreviewDeploymentTest extends TestCase
         Queue::fake();
         [$owner, $source, $project] = $this->application();
         $secret = 'preview-webhook-'.str_repeat('x', 48);
-        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $source->update([
+            'webhook_enabled' => true,
+            'webhook_secret' => $secret,
+            'deployment_root' => 'apps/storefront',
+        ]);
         $revision = str_repeat('a', 40);
         $payload = $this->payload('opened', $revision);
 
@@ -55,6 +59,7 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame('pr-17-storefront.previews.example.com', $preview->url);
         $this->assertSame('preview', $preview->environment->type);
         $this->assertSame('feature/checkout', $preview->repository->branch);
+        $this->assertSame('apps/storefront', $preview->repository->deployment_root);
         $this->assertNotSame($source->website_id, $preview->website_id);
         $this->assertEqualsCanonicalizing(['queue', 'scheduler'], $preview->environment->processes()->pluck('name')->all());
         $this->assertEqualsCanonicalizing(['database', 'cache'], $preview->environment->resources()->pluck('name')->all());
@@ -100,6 +105,7 @@ class PreviewDeploymentTest extends TestCase
 
         $build = $preview->repository->builds()->sole();
         $this->assertSame($revision, $build->revision);
+        $this->assertSame('apps/storefront', $build->environment_payload['repository_root']);
         $this->assertSame(
             EnvironmentResource::STATUS_PROVISIONING,
             $preview->environment->resources()->where('name', 'database')->value('status'),

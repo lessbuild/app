@@ -28,10 +28,11 @@ class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
     public function script(int $step, Website $website): string
     {
         $slug = $website->deployment_slug;
+        $documentRoot = $website->deploymentPath('current').'/public';
         $progress = $this->progress($step, $website);
         $config = <<<CADDY
         {$website->url} {
-            root * /var/www/{$slug}/current/public
+            root * {$documentRoot}
             encode zstd gzip
             log {
                 output file /var/log/caddy/{$slug}.access.log {

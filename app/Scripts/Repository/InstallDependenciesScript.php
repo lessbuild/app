@@ -30,7 +30,7 @@ class InstallDependenciesScript extends BuildProvisioningScript
         $repository = $build->repository;
         $runtime = $build->environment_payload['runtime'] ?? [];
         $runtimeType = in_array($runtime['type'] ?? null, ['php', 'node', 'python', 'docker'], true) ? $runtime['type'] : 'php';
-        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $setupPath = escapeshellarg($build->deploymentPath('setup'));
         $buildCommand = trim((string) ($runtime['build_command'] ?? ''));
         $encodedBuildCommand = escapeshellarg(base64_encode($buildCommand));
         $dockerfile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'Dockerfile'));

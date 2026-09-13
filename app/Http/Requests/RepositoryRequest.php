@@ -6,6 +6,7 @@ use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
 use App\Rules\GitBranch;
+use App\Rules\RepositoryDeploymentRoot;
 use App\Rules\RepositoryPathPattern;
 use App\Rules\SourceRepositoryUrl;
 use App\Support\RepositoryPath;
@@ -62,6 +63,7 @@ class RepositoryRequest extends FormRequest
                 'max:255',
                 new GitBranch,
             ],
+            'deployment_root' => ['nullable', 'string', 'max:512', new RepositoryDeploymentRoot],
             'auto_deploy_include_paths' => ['nullable', 'array', 'max:50'],
             'auto_deploy_include_paths.*' => ['string', 'max:255', new RepositoryPathPattern],
             'auto_deploy_exclude_paths' => ['nullable', 'array', 'max:50'],
@@ -97,10 +99,14 @@ class RepositoryRequest extends FormRequest
         );
         $includePaths = $this->input('auto_deploy_include_paths', $repository?->auto_deploy_include_paths);
         $excludePaths = $this->input('auto_deploy_exclude_paths', $repository?->auto_deploy_exclude_paths);
+        $deploymentRoot = $this->input('deployment_root', $repository?->deployment_root);
 
         $this->merge([
             'url' => SourceRepositoryUrl::normalize((string) $this->input('url')),
             'branch' => trim((string) $this->input('branch', 'main')),
+            'deployment_root' => is_string($deploymentRoot) && trim($deploymentRoot) === ''
+                ? null
+                : (is_string($deploymentRoot) ? RepositoryPath::normalize($deploymentRoot) ?? $deploymentRoot : $deploymentRoot),
             'build_commands' => is_string($buildCommands) && trim($buildCommands) === ''
                 ? null
                 : $buildCommands,

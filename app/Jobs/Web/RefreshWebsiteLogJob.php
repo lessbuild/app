@@ -54,7 +54,7 @@ class RefreshWebsiteLogJob implements ShouldBeUnique, ShouldQueue
         }
         $snapshot->update(['status' => WebsiteLogSnapshot::STATUS_REFRESHING, 'error' => null]);
         $path = match ($this->type) {
-            'application' => "/var/www/{$website->deployment_slug}/current/storage/logs/laravel.log",
+            'application' => $website->deploymentPath('current').'/storage/logs/laravel.log',
             'access' => "/var/log/caddy/{$website->deployment_slug}.access.log",
         };
         $lines = min(10000, max(100, $website->log_retention_lines ?: 1000));

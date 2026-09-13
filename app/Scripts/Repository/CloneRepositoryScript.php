@@ -32,7 +32,9 @@ class CloneRepositoryScript extends BuildProvisioningScript
         $provider = $repository->provider;
         $host = $provider->repositoryHost();
         $username = $provider->repositoryCredentialUsername();
-        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $setup = $build->deploymentPath('setup');
+        $setupPath = escapeshellarg($setup);
+        $setupParent = escapeshellarg(dirname($setup));
         $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
         $token = $provider->isGitHubApp()
             ? app(GitHubApp::class)->installationToken($provider->external_id)
@@ -48,6 +50,7 @@ class CloneRepositoryScript extends BuildProvisioningScript
             CREDENTIALS_DIR={$credentialDirectory}
             trap 'rm -rf -- "\$CREDENTIALS_DIR"; rm -f -- "\$0"' EXIT
             rm -rf -- {$setupPath}
+            install -d -m 755 -- {$setupParent}
             install -d -m 700 -- "\$CREDENTIALS_DIR"
             printf '%s' {$credentialPayload} | base64 --decode > "\$CREDENTIALS_DIR/.netrc"
             chmod 600 "\$CREDENTIALS_DIR/.netrc"

@@ -28,11 +28,11 @@ class RunBuildCommandsScript extends RepositoryHookScript
      * Locate the setup release directory for this repository hook.
      *
      * @param  Build  $build  The build whose website supplies the deployment slug.
-     * @return string The absolute remote path ending in /setup.
+     * @return string The absolute remote path for the repository service's setup directory.
      */
     protected function workingDirectory(Build $build): string
     {
-        return "/var/www/{$build->repository->website->deployment_slug}/setup";
+        return $build->deploymentPath('setup');
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToOrganization;
 use App\Models\Scopes\RepositoryScopes;
+use App\Support\RepositoryPath;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -119,5 +120,15 @@ class Repository extends Model
         $segment = $this->provider?->provider === Provider::TYPE_BITBUCKET ? 'commits' : 'commit';
 
         return "https://{$path}/{$segment}/{$revision}";
+    }
+
+    /**
+     * Resolve the optional service directory used by this deployment target.
+     *
+     * @return string A safe relative directory, or `.` for the repository root.
+     */
+    public function deploymentRoot(): string
+    {
+        return RepositoryPath::normalizeRoot($this->deployment_root);
     }
 }

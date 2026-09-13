@@ -25,6 +25,7 @@ class ConfigureProcessesScript extends BuildProvisioningScript
     {
         $slug = $build->repository->website->deployment_slug;
         $root = escapeshellarg("/var/www/{$slug}");
+        $servicePath = escapeshellarg($build->deploymentPath('current'));
         $prefix = 'buildpusher-'.$slug;
         $desired = [];
         $active = [];
@@ -43,7 +44,7 @@ class ConfigureProcessesScript extends BuildProvisioningScript
             $restartPolicy = in_array($process['restart_policy'] ?? null, ['always', 'on-failure', 'no'], true) ? $process['restart_policy'] : 'always';
             $restartDelay = max(0, min(300, (int) ($process['restart_delay_seconds'] ?? 5)));
             $replicas = ($process['type'] ?? null) === 'scheduler' ? 1 : max($configuredReplicas, $maximumReplicas);
-            $script = "#!/bin/bash\nset -e\ncd /var/www/{$slug}/current\nexec ".($process['command'] ?? 'php artisan queue:work')."\n";
+            $script = "#!/bin/bash\nset -e\ncd -- {$servicePath}\nexec ".($process['command'] ?? 'php artisan queue:work')."\n";
             $encodedScript = escapeshellarg(base64_encode($script));
             for ($replica = 1; $replica <= $replicas; $replica++) {
                 $unit = "{$prefix}-{$name}-{$replica}.service";

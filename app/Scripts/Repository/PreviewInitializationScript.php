@@ -30,7 +30,7 @@ class PreviewInitializationScript
         $attempt = max(1, (int) ($initialization['attempt'] ?? 1));
         $slug = $build->repository->website->deployment_slug;
         $marker = escapeshellarg("/var/www/{$slug}/shared/.buildpusher-preview-initialized");
-        $workingDirectory = escapeshellarg("/var/www/{$slug}/current");
+        $workingDirectory = escapeshellarg($build->deploymentPath('current'));
 
         return <<<SCRIPT
 

@@ -6,6 +6,7 @@ use App\Jobs\Web\CreateWebsiteBackupJob;
 use App\Jobs\Web\RestoreWebsiteBackupJob;
 use App\Models\BackupDestination;
 use App\Models\BackupRestore;
+use App\Models\Build;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
@@ -117,6 +118,19 @@ class ManagedBackupTest extends TestCase
     {
         Queue::fake();
         [$owner, $website] = $this->infrastructure();
+        $repository = $owner->repositories()->create([
+            'provider_id' => $owner->providers()->sole()->id,
+            'website_id' => $website->id,
+            'name' => 'Application',
+            'url' => 'github.com/example/application.git',
+            'branch' => 'main',
+            'description' => 'Source',
+            'deployment_root' => 'apps/storefront',
+        ]);
+        $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'environment_payload' => ['repository_root' => 'apps/storefront'],
+        ]);
         $backup = $website->backups()->create([
             'backup_destination_id' => $this->destination($owner)->id,
             'status' => WebsiteBackup::STATUS_SUCCEEDED,
@@ -139,6 +153,7 @@ class ManagedBackupTest extends TestCase
         $this->assertStringContainsString('restic restore', $command);
         $this->assertStringContainsString('php artisan down', $command);
         $this->assertStringContainsString('php artisan up', $command);
+        $this->assertStringContainsString("cd -- '/var/www/application/current/apps/storefront'", $command);
     }
 
     /** @return array{User, Website} */

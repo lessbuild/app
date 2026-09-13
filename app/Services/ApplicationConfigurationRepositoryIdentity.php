@@ -30,7 +30,7 @@ class ApplicationConfigurationRepositoryIdentity
         return hash_hmac('sha256', json_encode([
             $repository->only([
                 'id', 'organization_id', 'user_id', 'provider_id', 'website_id',
-                'url', 'branch', 'build_commands', 'post_deployment_commands',
+                'url', 'branch', 'deployment_root', 'build_commands', 'post_deployment_commands',
             ]),
             ['website_id' => $repository->website?->id, 'server_id' => $repository->website?->server_id,
                 'deployment_slug' => $repository->website?->deployment_slug,

@@ -29,7 +29,7 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
     public function script(int $step, Build $build): string
     {
         $repository = $build->repository;
-        $setupPath = escapeshellarg("/var/www/{$repository->website->deployment_slug}/setup");
+        $setupPath = escapeshellarg($build->deploymentPath('setup'));
         $branch = escapeshellarg($repository->branch);
         $remoteBranch = escapeshellarg("origin/{$repository->branch}");
         $revision = $build->revision;

@@ -47,11 +47,11 @@ class RunPostDeploymentCommandsScript extends RepositoryHookScript
      * Locate the current release directory for this repository hook.
      *
      * @param  Build  $build  The build whose website supplies the deployment slug.
-     * @return string The absolute remote path ending in /current.
+     * @return string The absolute remote path for the repository service's active release.
      */
     protected function workingDirectory(Build $build): string
     {
-        return "/var/www/{$build->repository->website->deployment_slug}/current";
+        return $build->deploymentPath('current');
     }
 
     /**

@@ -28,7 +28,7 @@ class ValidateCandidateScript extends BuildProvisioningScript
             return "\n# Canary validation not selected\n{$progress}\n";
         }
         $website = $build->repository->website;
-        $setup = escapeshellarg("/var/www/{$website->deployment_slug}/setup");
+        $setup = escapeshellarg($build->deploymentPath('setup'));
         $healthPath = escapeshellarg($website->health_check_enabled ? $website->health_check_path : '/');
         $host = escapeshellarg($website->url);
         $port = 20000 + ($build->id % 20000);

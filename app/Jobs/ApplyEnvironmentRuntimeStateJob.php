@@ -48,7 +48,7 @@ class ApplyEnvironmentRuntimeStateJob implements ShouldBeUnique, ShouldQueue
             return;
         }
         $slug = $environment->website->deployment_slug;
-        $root = escapeshellarg('/var/www/'.$slug.'/current');
+        $root = escapeshellarg($environment->deploymentPath('current'));
         $prefix = escapeshellarg('buildpusher-'.$slug.'-');
         $replicas = max($environment->minimum_replicas, min($environment->maximum_replicas, $environment->desired_replicas));
         $hibernate = $this->hibernate ? '1' : '0';

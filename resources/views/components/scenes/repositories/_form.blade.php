@@ -88,6 +88,28 @@
         <x-forms.errors name="branch"></x-forms.errors>
     </div>
 
+    <div class="col-span-3 sm:col-span-2">
+        <label for="deployment_root" class="block text-sm font-medium text-primary">
+            {{ __('Service root directory') }}
+        </label>
+        <div class="mt-1 flex rounded-md shadow-xs">
+            <input
+                value="{{ old('deployment_root', $repository->deployment_root ?? '') }}"
+                type="text"
+                name="deployment_root"
+                id="deployment_root"
+                maxlength="512"
+                autocomplete="off"
+                class="input secondary rounded-sm font-mono"
+                placeholder="Repository root (.)"
+            >
+        </div>
+        <p class="mt-2 text-sm text-secondary">
+            {{ __('Optional path inside the checkout for this deployment target, such as apps/storefront. Leave blank for the repository root. Build, runtime, worker, Caddy, log and restore paths follow this directory.') }}
+        </p>
+        <x-forms.errors name="deployment_root"></x-forms.errors>
+    </div>
+
     <div>
         @php($autoDeployIncludePaths = old('auto_deploy_include_paths', $repository->auto_deploy_include_paths ?? []))
         @php($autoDeployExcludePaths = old('auto_deploy_exclude_paths', $repository->auto_deploy_exclude_paths ?? []))

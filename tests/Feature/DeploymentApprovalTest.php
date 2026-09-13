@@ -96,6 +96,7 @@ class DeploymentApprovalTest extends TestCase
     {
         Queue::fake();
         [$owner, $repository] = $this->protectedRepository();
+        $repository->update(['deployment_root' => 'apps/storefront']);
         $environment = $repository->website->environments()->sole();
         $source = $repository->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
@@ -104,6 +105,7 @@ class DeploymentApprovalTest extends TestCase
             'revision' => str_repeat('a', 40),
             'release_name' => '20260905010101-build-42',
             'release_path' => "/var/www/{$repository->website->deployment_slug}/releases/20260905010101-build-42",
+            'environment_payload' => ['repository_root' => 'apps/storefront'],
             'activated_at' => now()->subMinute(),
         ]);
 
@@ -114,6 +116,7 @@ class DeploymentApprovalTest extends TestCase
         $this->assertSame(Build::TRIGGER_ROLLBACK, $rollback->trigger_source);
         $this->assertSame($source->id, $rollback->rolled_back_from_build_id);
         $this->assertSame($source->release_path, $rollback->release_path);
+        $this->assertSame(['repository_root' => 'apps/storefront'], $rollback->environment_payload);
         $this->assertSame($owner->id, $rollback->approved_by);
         Queue::assertPushed(RollbackReleaseJob::class, fn (RollbackReleaseJob $job): bool => $job->build->is($rollback));
     }

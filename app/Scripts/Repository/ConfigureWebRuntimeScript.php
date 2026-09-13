@@ -4,6 +4,7 @@ namespace App\Scripts\Repository;
 
 use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
+use App\Services\WebsiteCaddyConfiguration;
 
 class ConfigureWebRuntimeScript extends BuildProvisioningScript
 {
@@ -12,6 +13,18 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
     public static string $description = 'Start the candidate runtime, verify it, and atomically route traffic to it';
 
     public static string $identifier = 'configured-web-runtime';
+
+    /**
+     * Bind the shared Caddy renderer while retaining a direct-construction fallback for script tests and callers.
+     *
+     * @param  WebsiteCaddyConfiguration|null  $caddy  Renderer for complete website routing configurations.
+     */
+    public function __construct(?WebsiteCaddyConfiguration $caddy = null)
+    {
+        $this->caddy = $caddy ?? new WebsiteCaddyConfiguration;
+    }
+
+    private readonly WebsiteCaddyConfiguration $caddy;
 
     /**
      * Render candidate startup, readiness checks and Caddy activation for the captured web runtime.
@@ -26,6 +39,25 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $type = $runtime['type'] ?? 'php';
         $progress = $this->progress($step, $build);
         if (! in_array($type, ['node', 'python', 'docker'], true)) {
+            if ($build->deploymentRoot() !== '.') {
+                $website = $build->repository->website;
+                $documentRoot = $build->deploymentPath('current').'/public';
+                $config = $this->caddy->php(
+                    $website,
+                    $documentRoot,
+                );
+                $encodedConfig = escapeshellarg(base64_encode($config));
+                $configPath = escapeshellarg("/etc/caddy/websites/{$website->deployment_slug}.conf");
+
+                return <<<SCRIPT
+                printf '%s' {$encodedConfig} | base64 --decode > {$configPath}
+                caddy validate --config /etc/caddy/Caddyfile
+                systemctl reload caddy
+                # PHP-FPM continues to serve the selected service root
+                {$progress}
+                SCRIPT;
+            }
+
             return "# PHP remains served by Caddy and PHP-FPM\n{$progress}";
         }
 
@@ -47,15 +79,12 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $unit = "buildpusher-{$slug}-web-{$build->id}.service";
         $unitPath = escapeshellarg("/etc/systemd/system/{$unit}");
         $runnerPath = escapeshellarg("/var/www/{$slug}/shared/web-{$build->id}.sh");
-        $runner = "#!/bin/bash\nset -e\nset -a\n. /var/www/{$slug}/.env\nset +a\nexport PORT={$hostPort}\nexport HOST=127.0.0.1\ncd /var/www/{$slug}/current\nCOMMAND=\"\$(printf '%s' {$encodedStartCommand} | base64 --decode)\"\nexec /bin/bash -lc \"\$COMMAND\"\n";
+        $servicePath = escapeshellarg($build->deploymentPath('current'));
+        $runner = "#!/bin/bash\nset -e\nset -a\n. /var/www/{$slug}/.env\nset +a\nexport PORT={$hostPort}\nexport HOST=127.0.0.1\ncd -- {$servicePath}\nCOMMAND=\"\$(printf '%s' {$encodedStartCommand} | base64 --decode)\"\nexec /bin/bash -lc \"\$COMMAND\"\n";
         $encodedRunner = escapeshellarg(base64_encode($runner));
         $unitConfig = "[Unit]\nDescription=BuildPusher {$slug} web runtime {$build->id}\nAfter=network.target\n\n[Service]\nType=simple\nUser=www-data\nGroup=www-data\nExecStart=/var/www/{$slug}/shared/web-{$build->id}.sh\nRestart=always\nRestartSec=3\nTimeoutStopSec=30\n\n[Install]\nWantedBy=multi-user.target\n";
         $encodedUnit = escapeshellarg(base64_encode($unitConfig));
-        $hostnames = $website->domains->where('type', 'alias')->pluck('hostname')->prepend($website->url)->unique()->implode(', ');
-        $caddy = "{$hostnames} {\n    encode zstd gzip\n    reverse_proxy 127.0.0.1:{$hostPort}\n    log {\n        output file /var/log/caddy/{$slug}.access.log {\n            roll_size 20MiB\n            roll_keep 5\n            roll_keep_for 168h\n        }\n        format json\n    }\n}\n";
-        foreach ($website->domains->where('type', 'redirect') as $domain) {
-            $caddy .= "\n{$domain->hostname} {\n    redir ".rtrim((string) $domain->redirect_url, '/')."{uri} permanent\n}\n";
-        }
+        $caddy = $this->caddy->reverseProxy($website, $hostPort);
         $encodedCaddy = escapeshellarg(base64_encode($caddy));
 
         $start = $type === 'docker'

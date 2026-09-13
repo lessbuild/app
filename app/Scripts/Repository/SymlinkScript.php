@@ -29,12 +29,13 @@ class SymlinkScript extends BuildProvisioningScript
     {
         $repository = $build->repository;
         $root = escapeshellarg("/var/www/{$repository->website->deployment_slug}");
+        $setupPath = escapeshellarg($build->deploymentPath('setup'));
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
             DEPLOY_ROOT={$root}
-            CURRENT_PATH="\$DEPLOY_ROOT/setup"
+            CURRENT_PATH={$setupPath}
             SHARED_STORAGE="\$DEPLOY_ROOT/shared/storage"
 
             # Seed persistent storage from the first release, then share it.

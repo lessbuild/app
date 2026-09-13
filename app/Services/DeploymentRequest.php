@@ -36,11 +36,52 @@ class DeploymentRequest
      * @param  Repository  $repository  The source repository and website for the deployment.
      * @param  Environment|null  $environment  The explicitly selected environment, or null for a website-only deployment.
      * @param  User|null  $requester  The account attributed to the request, if available.
-     * @return array<string, mixed> Build attributes including a snapshot of variables, runtime, enabled processes and resources.
+     * @return array<string, mixed> Build attributes including a snapshot of variables, runtime, enabled processes, resources and non-default service roots.
      */
     public function attributesForEnvironment(Repository $repository, ?Environment $environment, ?User $requester = null): array
     {
         $environment?->loadMissing(['variables', 'processes', 'resources']);
+        $payload = $environment ? [
+            'base_environment' => (string) $repository->website?->environment,
+            'runtime' => [
+                'minimum_replicas' => $environment->minimum_replicas,
+                'maximum_replicas' => $environment->maximum_replicas,
+                'desired_replicas' => $environment->desired_replicas,
+                'hibernate_after_minutes' => $environment->hibernate_after_minutes,
+                'deployment_strategy' => $environment->deployment_strategy,
+                'rolling_pause_seconds' => $environment->rolling_pause_seconds,
+                'type' => $environment->runtime_type ?: 'php',
+                'version' => $environment->runtime_version,
+                'build_command' => $environment->build_command,
+                'start_command' => $environment->start_command,
+                'container_port' => $environment->container_port,
+                'dockerfile_path' => $environment->dockerfile_path,
+            ],
+            'variables' => $environment->variables
+                ->whereIn('scope', ['runtime', 'all'])
+                ->mapWithKeys(fn ($variable) => [$variable->key => $variable->value])->all(),
+            'build_variables' => $environment->variables
+                ->whereIn('scope', ['build', 'all'])
+                ->mapWithKeys(fn ($variable) => [$variable->key => $variable->value])->all(),
+            'processes' => $environment->processes->where('is_enabled', true)->map(fn ($process) => [
+                'name' => $process->name,
+                'type' => $process->type,
+                'command' => $process->command,
+                'replicas' => $process->replicas,
+                'restart_policy' => $process->restart_policy,
+                'restart_delay_seconds' => $process->restart_delay_seconds,
+            ])->values()->all(),
+            'resources' => $environment->resources->map(fn ($resource) => [
+                'name' => $resource->name,
+                'type' => $resource->type,
+                'is_managed' => $resource->is_managed,
+                'configuration' => $resource->configuration,
+            ])->values()->all(),
+        ] : null;
+        if ($repository->deploymentRoot() !== '.') {
+            $payload ??= [];
+            $payload['repository_root'] = $repository->deploymentRoot();
+        }
 
         return [
             'status' => $environment?->requires_deployment_approval
@@ -49,43 +90,7 @@ class DeploymentRequest
             'environment_id' => $environment?->id,
             'requested_by' => $requester?->id,
             'risk_assessment' => $this->preflight->assess($repository, $environment),
-            'environment_payload' => $environment ? [
-                'base_environment' => (string) $repository->website?->environment,
-                'runtime' => [
-                    'minimum_replicas' => $environment->minimum_replicas,
-                    'maximum_replicas' => $environment->maximum_replicas,
-                    'desired_replicas' => $environment->desired_replicas,
-                    'hibernate_after_minutes' => $environment->hibernate_after_minutes,
-                    'deployment_strategy' => $environment->deployment_strategy,
-                    'rolling_pause_seconds' => $environment->rolling_pause_seconds,
-                    'type' => $environment->runtime_type ?: 'php',
-                    'version' => $environment->runtime_version,
-                    'build_command' => $environment->build_command,
-                    'start_command' => $environment->start_command,
-                    'container_port' => $environment->container_port,
-                    'dockerfile_path' => $environment->dockerfile_path,
-                ],
-                'variables' => $environment->variables
-                    ->whereIn('scope', ['runtime', 'all'])
-                    ->mapWithKeys(fn ($variable) => [$variable->key => $variable->value])->all(),
-                'build_variables' => $environment->variables
-                    ->whereIn('scope', ['build', 'all'])
-                    ->mapWithKeys(fn ($variable) => [$variable->key => $variable->value])->all(),
-                'processes' => $environment->processes->where('is_enabled', true)->map(fn ($process) => [
-                    'name' => $process->name,
-                    'type' => $process->type,
-                    'command' => $process->command,
-                    'replicas' => $process->replicas,
-                    'restart_policy' => $process->restart_policy,
-                    'restart_delay_seconds' => $process->restart_delay_seconds,
-                ])->values()->all(),
-                'resources' => $environment->resources->map(fn ($resource) => [
-                    'name' => $resource->name,
-                    'type' => $resource->type,
-                    'is_managed' => $resource->is_managed,
-                    'configuration' => $resource->configuration,
-                ])->values()->all(),
-            ] : null,
+            'environment_payload' => $payload,
         ];
     }
 

@@ -142,6 +142,18 @@
         </section>
     @endif
 
+    <section class="my-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="repository-layout-title">
+        <h2 id="repository-layout-title" class="text-xl font-semibold text-primary">{{ __('Deployment layout') }}</h2>
+        <p class="mt-1 text-sm text-secondary">
+            {{ __('This target deploys from :root. The repository root is used when no service directory is configured.', ['root' => $repository->deploymentRoot() === '.' ? __('the repository root') : $repository->deploymentRoot()]) }}
+        </p>
+        @if ($repository->deploymentRoot() !== '.')
+            <p class="mt-2 text-sm text-secondary">
+                {{ __('Build and post-deployment hooks, runtime processes, PHP public files, application logs and restore maintenance commands are scoped to this service directory.') }}
+            </p>
+        @endif
+    </section>
+
     @php($oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret"))
     <section id="deployment-webhook" class="my-6 rounded-lg border border-primary bg-primary p-5">
         <div class="flex flex-wrap items-start justify-between gap-4">

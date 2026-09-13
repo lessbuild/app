@@ -294,6 +294,7 @@ class PreviewDeploymentLifecycle
             'url' => $source->url,
             'branch' => $webhook->sourceBranch,
             'description' => "Ephemeral preview source for {$label}",
+            'deployment_root' => $source->deployment_root,
             'build_commands' => $source->build_commands,
             'post_deployment_commands' => $source->post_deployment_commands,
             'webhook_enabled' => false,
