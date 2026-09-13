@@ -7,11 +7,15 @@ use App\Models\Repository;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\DeploymentRequest;
+use App\Services\Entitlements;
 use Illuminate\Support\Facades\DB;
 
 class DeployRepositoryAction
 {
-    public function __construct(private readonly DeploymentRequest $deployments) {}
+    public function __construct(
+        private readonly DeploymentRequest $deployments,
+        private readonly Entitlements $entitlements,
+    ) {}
 
     /**
      * Create and dispatch one manual deployment while serializing website capacity and repository state.
@@ -28,6 +32,8 @@ class DeployRepositoryAction
             if ((int) $lockedRepository->website_id !== (int) $website->id) {
                 return null;
             }
+
+            $this->entitlements->enforce($lockedRepository->organization ?: $requester, 'deployments');
 
             if ($website->hasActiveDeployment()) {
                 return null;

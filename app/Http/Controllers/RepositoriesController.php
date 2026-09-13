@@ -15,6 +15,7 @@ use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentPreflight;
+use App\Services\DeploymentPreflightGuidance;
 use App\Services\RepositoryDeploymentInsightsQuery;
 use App\Services\RepositoryInventoryExporter;
 use App\Services\RepositoryInventoryQuery;
@@ -80,10 +81,17 @@ class RepositoriesController extends Controller
         Repository $repository,
         DeploymentGate $gate,
         DeploymentPreflight $preflight,
+        DeploymentPreflightGuidance $guidance,
         RepositoryDeploymentInsightsQuery $deploymentInsights,
     ): View {
         $this->authorize('view', $repository);
         $deliveryFilters = $request->filters();
+        $environment = $gate->environment($repository);
+        $deploymentPreflight = $preflight->assess($repository, $environment);
+        $isFirstDeployment = ! $repository->builds()->exists();
+        $deploymentGuidance = $isFirstDeployment
+            ? $guidance->for($repository, $environment, $request->user(), $deploymentPreflight)
+            : null;
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
@@ -99,8 +107,10 @@ class RepositoriesController extends Controller
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
-            'deploymentPreflight' => $preflight->assess($repository, $gate->environment($repository)),
-            'isFirstDeployment' => ! $repository->builds()->exists(),
+            'deploymentPreflight' => $deploymentPreflight,
+            'deploymentGuidance' => $deploymentGuidance,
+            'deploymentPlanBlocked' => ($deploymentGuidance['plan']['status'] ?? null) === 'failed',
+            'isFirstDeployment' => $isFirstDeployment,
         ]);
     }
 

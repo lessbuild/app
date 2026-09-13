@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
+use App\Models\Provider;
+use App\Models\ProviderConnectionCheck;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
@@ -43,6 +45,10 @@ class RepositoryDeploymentTest extends TestCase
             ->assertSee('Health verification')
             ->assertSee('Release recovery')
             ->assertSee('Push automation')
+            ->assertSee('Next steps before launch')
+            ->assertSee('Source provider access')
+            ->assertSee('Run a connection check before the first deployment')
+            ->assertSee(route('providers.show', $repository->provider), false)
             ->assertSee('Launch first deployment')
             ->assertSee(route('websites.edit', $repository->website), false);
 
@@ -50,6 +56,64 @@ class RepositoryDeploymentTest extends TestCase
         $this->actingAs($user)->get(route('repositories.show', $repository))
             ->assertSuccessful()
             ->assertDontSee('Review the launch checks');
+    }
+
+    public function test_first_deployment_guidance_distinguishes_invalid_credentials_from_missing_provider_permissions(): void
+    {
+        [$user, $repository] = $this->repository();
+        $provider = $repository->provider;
+
+        $provider->forceFill([
+            'connection_status' => Provider::CONNECTION_FAILED,
+            'connection_checked_at' => now(),
+        ])->save();
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 10,
+            'checked_at' => now(),
+        ]);
+
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSee('rejected the credential (HTTP 401)')
+            ->assertSee('Update provider credential')
+            ->assertSee(route('providers.edit', $provider), false);
+
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 403,
+            'duration_ms' => 10,
+            'checked_at' => now()->addSecond(),
+        ]);
+
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSee('denied access (HTTP 403)')
+            ->assertSee('Review provider permissions')
+            ->assertSee('Grant repository read access or use a credential with the required scope');
+    }
+
+    public function test_deployment_entitlement_is_explained_and_denial_has_no_side_effects(): void
+    {
+        config(['billing.enforce_entitlements' => true, 'billing.plans.free.entitlements' => []]);
+        Queue::fake();
+        [$user, $repository] = $this->repository();
+
+        $this->actingAs($user)->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertSee('Plan access')
+            ->assertSee('Your current plan does not include Git deployments')
+            ->assertSee(route('billing.index'), false);
+
+        $this->actingAs($user)
+            ->post(route('repositories.deploy', $repository))
+            ->assertSessionHasErrors('plan');
+
+        $this->assertDatabaseCount('builds', 0);
+        Queue::assertNothingPushed();
     }
 
     public function test_a_repository_cannot_have_overlapping_deployments(): void

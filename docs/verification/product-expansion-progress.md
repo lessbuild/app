@@ -1,8 +1,7 @@
 # BuildPusher product expansion progress
 
-Status: Phase 1D complete. Phase 0 and the preview safety/navigation slices are
-complete; first-deployment guidance and the multi-service preview lifecycle
-remain incomplete.
+Status: Phase 1E complete. Phase 0 and the preview safety/navigation/guidance
+slices are complete; the multi-service preview lifecycle remains incomplete.
 
 Date: 2026-09-13
 
@@ -257,10 +256,10 @@ code. The compatibility note is also recorded in
 ### Remaining Phase 1 characterization
 
 The following remain outside the completed safety slices: dependent-resource
-credential provisioning, first-deployment guidance and focused browser evidence
-for that journey. Trusted target-repository/fork policy was added in Phase 1B,
-explicit secret-scope approval was added in Phase 1C, and responsive navigation
-was completed in Phase 1D below.
+credential provisioning and the multi-service preview lifecycle. Trusted
+target-repository/fork policy was added in Phase 1B, explicit secret-scope
+approval was added in Phase 1C, responsive navigation was completed in Phase 1D
+and first-deployment guidance was completed in Phase 1E below.
 
 ### Phase 1 exit criteria
 
@@ -283,8 +282,11 @@ was completed in Phase 1D below.
   old input or generated diagnostics.
 - **Completed in Phase 1D:** the tablet palette-focus discrepancy and missing
   mobile Settings destination are fixed and covered by focused browser evidence.
-- Actionable first-deployment feedback remains to be completed with focused
-  browser evidence.
+- **Completed in Phase 1E:** first-deployment guidance distinguishes source
+  credential rejection, insufficient provider permissions, unavailable/unchecked
+  provider checks and plan entitlement denial, with links to the existing
+  settings, connection-check and billing pages. Manual deployment entitlement
+  denial is rechecked inside its transaction and creates no build or job.
 
 ## Phase 1B — trusted pull-request admission (completed slice)
 
@@ -428,8 +430,58 @@ the addition does not alter route names, authorization or persisted state.
 `DashboardTest.php` and `LocalUiAssetTest.php` passed 36 tests and 737
 assertions. The isolated accessibility browser suite passed 3 tests across
 mobile, tablet and desktop in 26.2 seconds. The isolated mobile visual crawl
-passed 1 test in 1.2 minutes. The Vite build, Pint and `git diff --check` passed.
-First-deployment prerequisite guidance remains the next Phase 1 task.
+passed 1 test in 1.2 minutes. The broad visual audit passed mobile and tablet;
+its desktop navigation assertion was corrected to target the intentional
+desktop sidebar and then passed 1 desktop test. The Vite build, Pint and
+`git diff --check` passed.
+
+## Phase 1E — first-deployment preflight guidance (completed slice)
+
+### Concrete responsibility problem
+
+The repository page displayed the technical preflight snapshot but did not turn
+failed or incomplete checks into a clear recovery path. A user could not tell a
+rejected credential from an insufficient provider scope, could not reach the
+right existing settings page from each check, and manual deployment did not
+recheck the existing `deployments` entitlement at the transaction boundary.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `DeploymentPreflight` continues to own the stable
+  technical risk snapshot; the injected `DeploymentPreflightGuidance` service
+  owns only view-facing next steps and safe links.
+- **Dependency inversion:** the guidance service receives `Entitlements` and
+  Laravel's URL generator through its constructor; it makes no remote provider
+  call and does not depend on a controller request.
+- **Business-operation boundary:** `DeployRepositoryAction` rechecks the
+  deployment entitlement inside its existing transaction before any write, while
+  the controller still only coordinates the response.
+
+### Implementation and preserved behavior
+
+The repository page now reports completed prerequisites and remaining blockers,
+links server/website/source/environment/health/recovery/webhook issues to the
+existing pages, and adds a plan-access explanation with a billing link. Provider
+guidance uses only the retained HTTP status and health state: 401 is described
+as credential rejection, 403 as insufficient access, and transport/unchecked
+states remain actionable without displaying response bodies, tokens or errors.
+The persisted `risk_assessment` shape and existing deployment preflight rules
+remain unchanged. Manual deployments now honor the same existing
+`deployments` entitlement already enforced by configuration operations; the
+default plan definitions still include Git deployments. A denied request rolls
+back before creating a build or dispatching a job, and the existing redirect,
+flash, approval and queue behavior remains unchanged when access is allowed.
+
+### Verification and remaining work
+
+`RepositoryDeploymentTest.php`: 11 passed, 70 assertions, including 401/403
+classification and entitlement denial with no build/job side effects. Adjacent
+deployment, preflight snapshot, environment, authorization, deployment-control
+and configuration-delivery coverage: 32 passed, 269 assertions. The isolated
+browser visual audit passed mobile/tablet and the corrected desktop contract;
+the Vite build, Pint and `git diff --check` passed. The unchanged baseline
+`ProvisioningHardeningTest` localhost-count failure remains documented above.
+The exact feature commit and push are recorded in the slice ledger below.
 
 ## Slice ledger
 
@@ -440,6 +492,8 @@ First-deployment prerequisite guidance remains the next Phase 1 task.
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
 | Phase 1C | The safe baseline had no explicit, narrowly scoped way for a manager to authorize source runtime secrets. Added a scoped approval route/action/policy, source-environment linkage, version-bound approval records and a resolver that applies values only for the exact revision; preview-owned and dependent-resource credentials remain isolated. | Preview suite: 17 passed, 136 assertions. Adjacent preview/webhook/provisioning/project/environment/configuration recovery suites: 189 passed, 1,571 assertions. Full isolated PHP suite: 1,332 passed, 1 unchanged baseline failure, 11,510 assertions. Asset build, Pint and `git diff --check` passed; isolated migration rehearsal applied the new schema. | `80cbaec` — `feat: add revision-bound preview secret approvals` | Pushed to GitHub `origin/main` on 2026-09-13. | Resolve the documented mobile/tablet feedback discrepancy and add actionable first-deployment preflight guidance with focused browser evidence. |
 | Phase 1D | The responsive layout opened the command palette at tablet width without a visible focus-restoration trigger, and mobile navigation omitted the desktop Settings shortcut. Added named tablet/mobile palette triggers, shared visible-trigger focus restoration and the existing account Settings destination while keeping Account as the sole current route. | `DashboardTest.php` and `LocalUiAssetTest.php`: 36 passed, 737 assertions. Accessibility browser suite: 3 passed across mobile/tablet/desktop. Mobile visual crawl: 1 passed. Vite build, Pint and `git diff --check` passed. | `9a0bea8` — `fix: restore responsive navigation focus` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
+| Phase 1D test contract | The broad visual audit checked the mobile dialog ID at desktop width even though the layout intentionally uses the desktop sidebar there. Selected `#primary-navigation` below the desktop breakpoint and `#desktop-navigation` at desktop widths; no application behavior changed. | Mobile and tablet visual-audit runs passed; corrected desktop visual-audit run: 1 passed in 1.4 minutes. | `575d86f` — `test: align responsive visual navigation audit` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
+| Phase 1E | The repository page showed a technical snapshot without actionable recovery links or sanitized distinction between invalid provider credentials, insufficient scopes and plan denial. Added injected `DeploymentPreflightGuidance`, preserved the persisted preflight shape, and rechecked the existing deployment entitlement inside `DeployRepositoryAction` before writes. | `RepositoryDeploymentTest.php`: 11 passed, 70 assertions. Adjacent deployment/preflight/environment/authorization/configuration coverage: 32 passed, 269 assertions. Mobile/tablet visual audit and corrected desktop audit passed; Vite, Pint and `git diff --check` passed. | Pending verified commit and push. | Pending. | Complete the Phase 2 configuration authoring/editor, dependency overview, secret-safe environment comparison and read-only observable-drift slice. |
 
 ## External acceptance still outstanding
 

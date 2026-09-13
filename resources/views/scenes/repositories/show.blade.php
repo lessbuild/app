@@ -23,11 +23,11 @@
 
             <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                 @csrf
-                <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady)>
+                <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked)>
                     <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                         <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
                     </svg>
-                    {{ ! $deploymentReady ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
+                {{ ! $deploymentReady || $deploymentPlanBlocked ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
                 </button>
             </form>
 
@@ -60,6 +60,13 @@
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
         </div>
     @endif
+
+    @error('plan')
+        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+            {{ $message }}
+            <a href="{{ route('billing.index') }}" class="font-bold underline">{{ __('View plans') }}</a>
+        </div>
+    @enderror
 
     @if ($isFirstDeployment)
         <section class="my-6 rounded-2xl border border-primary bg-primary p-5" aria-labelledby="first-deployment-title">
@@ -94,11 +101,44 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                     @csrf
-                    <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady)>{{ __('Launch first deployment') }}</button>
+                    <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked)>{{ __('Launch first deployment') }}</button>
                 </form>
                 <a href="{{ route('repositories.edit', $repository) }}" class="button secondary">{{ __('Review source settings') }}</a>
                 <a href="{{ route('websites.edit', $repository->website) }}" class="button secondary">{{ __('Review website settings') }}</a>
             </div>
+
+            @if ($deploymentGuidance['steps'])
+                <section class="mt-5 border-t border-primary pt-5" aria-labelledby="first-deployment-next-steps">
+                    <div class="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h3 id="first-deployment-next-steps" class="text-lg font-bold text-primary">{{ __('Next steps before launch') }}</h3>
+                            <p class="mt-1 text-sm text-secondary">
+                                {{ __(':completed of :total prerequisites confirmed. :blockers blocker(s) require attention; recommendations can be completed later.', ['completed' => $deploymentGuidance['completed'], 'total' => $deploymentGuidance['total'], 'blockers' => $deploymentGuidance['blockers']]) }}
+                            </p>
+                        </div>
+                    </div>
+                    <ul class="mt-4 grid gap-3 md:grid-cols-2">
+                        @foreach ($deploymentGuidance['steps'] as $step)
+                            <li class="rounded-xl border border-primary bg-secondary p-4">
+                                <div class="flex gap-3">
+                                    <span aria-hidden="true" @class([
+                                        'font-black',
+                                        'text-amber-600' => $step['status'] === 'warning',
+                                        'text-red-600' => $step['status'] === 'failed',
+                                    ])>{{ $step['status'] === 'failed' ? '!' : '○' }}</span>
+                                    <div>
+                                        <strong class="block text-primary">{{ $step['title'] }}</strong>
+                                        <span class="mt-1 block text-xs text-secondary">{{ $step['detail'] }}</span>
+                                        <a href="{{ $step['url'] }}" class="mt-2 inline-block text-xs font-bold text-ternary underline">{{ $step['action'] }}</a>
+                                    </div>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </section>
+            @else
+                <p class="mt-5 border-t border-primary pt-5 text-sm font-semibold text-green-700">{{ __('All first-deployment checks are confirmed. You can launch this revision.') }}</p>
+            @endif
         </section>
     @endif
 
