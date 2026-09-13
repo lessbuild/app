@@ -1,15 +1,16 @@
 # BuildPusher product expansion progress
 
-Status: Phase 4 complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 5A complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
 ownership-aware cleanup, atomic concurrent-preview quotas, explicit
 initialization/resource credential boundaries, normalized provider readiness
 observations, the versioned curated service-template contract, the Node
-resource composition and the lifecycle characterization are complete. No
-additional service is published without lifecycle support. Provider-side cloud
-acceptance and the separate live drill remain outstanding.
+resource composition, the lifecycle characterization and deployment evidence
+timeline are complete. No additional service is published without lifecycle
+support. Provider-side cloud acceptance, the separate live drill and monorepo
+change-impact support remain outstanding.
 
 Date: 2026-09-13
 
@@ -1201,12 +1202,86 @@ was discarded as environment evidence; it did not execute the affected
 application assertions.
 
 The feature commit `818ebc0` was fast-forwarded through canonical `main` and
-pushed to GitHub `origin/main` on 2026-09-13. The exact next task is Phase 5:
-improve deployment clarity and characterize monorepo change impact without
+pushed to GitHub `origin/main` on 2026-09-13. Phase 5A is recorded below. The
+exact next task is Phase 5B: characterize monorepo change impact without
 changing deployment strategies, approval checks, revision identity, webhook
 idempotency, cancellation or stale-attempt handling. Provider/cloud acceptance,
 template installation on real hosts and the separate live drill remain
 outstanding.
+
+## Phase 5A — deployment timeline and evidence (completed slice)
+
+### Concrete responsibility problem
+
+The build page already displayed individual status fields, setup stages, logs,
+failure guidance and rollback controls, but the lifecycle meaning was split
+between the Livewire component, the setup partial and the deployment plan. A
+user could inspect a log, yet had no single bounded view of the request,
+approval, source preparation, build, application preparation, release
+activation, traffic routing, resource configuration, health validation and
+finalization path. The page also showed only a shortened revision and did not
+surface the actor or the existing configuration-operation identity.
+
+### Responsibility boundary and applicable principles
+
+- **Single responsibility:** `BuildDeploymentTimeline` interprets the existing
+  monotonic callback progress and deployment-plan stages into immutable
+  `DeploymentTimelineEntry` values. Livewire coordinates authorization, eager
+  loading and view data; the Blade view presents the result.
+- **Dependency inversion:** the timeline receives the existing
+  `RepositoryDeploymentPlan`, so it follows the one source of truth for stage
+  order rather than copying stage numbers into a UI component.
+- **Liskov substitution:** the reader consumes the same persisted status and
+  setup-stage contract used by callbacks and jobs. Successful legacy builds are
+  treated as complete because their persisted terminal status is the stronger
+  completion signal; failed, canceled and active builds retain recorded partial
+  progress.
+- **Laravel mechanisms:** an Eloquent `Build::configurationOperation()` relation
+  reuses the existing unique `configuration_operations.build_id` link. No
+  repository abstraction or write path was introduced.
+
+### Implementation and preserved behavior
+
+Added `RepositoryDeploymentPlan::stageFor()` and the injected
+`BuildDeploymentTimeline` reader. The reader reports request, conditional
+approval, provisioning, build, application preparation, release activation,
+traffic routing, managed resources, health verification and finalization. It
+marks only persisted lifecycle stages as completed/active/failed/canceled or
+pending. It exposes the recorded request, approval, release activation and
+finalization times; intermediate callbacks currently persist no individual
+timestamps, so the UI explicitly says when a milestone has no timestamp rather
+than inferring one from `started_at` or `finished_at`.
+
+The build page now shows the complete revision when one exists, the requesting
+and approving/rejecting account identity, and the exact configuration review,
+application, operation and intent-digest identity for configuration-driven
+builds. It never renders the encrypted operation payload. Existing log bounds,
+polling, authorization, approval actions, deployment strategies, release
+retention, rollback eligibility, queue behavior and callback semantics are
+unchanged. The new relation is read-only and ordinary builds continue to have
+no configuration identity.
+
+### Verification and limitations
+
+`BuildDeploymentTimelineTest` covers successful legacy progress, active stage
+ranges, failed first-unrecorded stages, canceled partial progress and approval
+states. `DeploymentTimelineTest` covers the authorized build page, exact
+revision/actor/configuration identity and encrypted-payload non-disclosure.
+The focused deployment timeline/history/log batch passed **16 tests and 134
+assertions**. The fresh isolated full PHP suite passed **1,383 tests and 11,979
+assertions** with the one unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script contains
+four). Pint, changed-file PHP lint and `git diff --check` passed.
+
+Commit `b5d1cab` (`feat: clarify deployment lifecycle evidence`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13. This is local application evidence; no provider, cloud or live
+acceptance was performed. The exact next task is Phase 5B: characterize whether
+repositories already support service roots and changed-path filters, then add
+the smallest safe monorepo change-impact boundary without weakening webhook
+idempotency, revision attestation, approval checks, deployment serialization,
+cancellation or stale-attempt protection.
 
 ## Slice ledger
 
@@ -1233,7 +1308,10 @@ outstanding.
 | Phase 3F | The existing provider observation discarded provider lifecycle state, so the UI could not distinguish a provider-reported ready server from a stopped one and local preview callbacks could be over-interpreted as remote health. Extended the existing `CloudServerData` result and three provider adapters with normalized transient readiness, then carried it through the existing manager-authorized observation query and view. | Focused provider contract/observation batch: 10 passed, 84 assertions. Fresh isolated full PHP suite: 1,366 passed, 1 unchanged baseline failure, 11,808 assertions. Required-PHP Composer validation/platform checks, Pint, Vite and `git diff --check` passed. No persistence, polling, reconciliation, remote mutation or route/API contract change. | `8a116dc` — `feat: expose provider readiness state` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4: begin the smallest curated service-template slice with explicit version, compatibility/readiness and recovery metadata. |
 | Phase 4A | Existing application presets had runtime defaults but no explicit versioned operational contract, and project creation did not record which curated definition supplied its defaults. Added immutable catalog/data boundaries and Laravel 1.0.0 metadata for compatibility, resources/credential modes, persistent data, readiness, limits, backup/restore, upgrade, recovery and deletion; new curated projects record `template_version`, while legacy/unpublished presets remain unversioned. | Focused catalog/project/runtime/preview batch: 38 passed, 326 assertions. Fresh isolated full PHP suite: 1,371 passed, 1 unchanged baseline failure, 11,839 assertions. Populated SQLite migration rollback/reapply and config-cache checks passed; Composer/platform, Pint, Vite and `git diff --check` passed. No installation, upgrade, remote mutation or queue contract change. | `925baf5` — `feat: version curated application templates` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4B: characterize existing Node resource composition and add it only with complete lifecycle/recovery evidence. |
 | Phase 4B | The generic Node preset had runtime defaults but no preview composition, and preview environments did not inherit the selected source runtime settings. Added a versioned Node service-template declaration for managed PostgreSQL/Valkey and copied only the existing runtime fields into preview environments. Reused the existing snapshot, encrypted credential, callback readiness, ownership-aware cleanup and retry paths; Node has no Laravel workers or automatic initialization. | Focused catalog/project/runtime/preview batch: 41 passed, 372 assertions. Adjacent preview/concurrency/cleanup/readiness/PostgreSQL/configuration-resource/runtime/project batch: 56 passed, 518 assertions. Fresh isolated full PHP suite with PHPUnit `:memory:` configuration: 1,374 passed, 1 unchanged baseline failure, 11,885 assertions. PHP lint, Composer/platform, Pint, Vite, config-cache and `git diff --check` passed. A file-database run was discarded because it invalidated the repository's isolation assertions. No remote mutation, dependency or queue contract change. | `b8c5871` — `feat: compose node preview resources` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4C: characterize template installation/upgrade execution and assess one additional service only if its existing lifecycle can support it. |
-| Phase 4C | Curated metadata needed characterization against the actual deployment, resource-installation and exact-cleanup paths before another service could be published. Added a lifecycle contract test for published Laravel/Node templates and explicitly deferred Mailpit because the resource model, configuration schema, provisioning, backup and cleanup lifecycle do not support it yet. Template upgrades remain reviewed deployments; no automatic version mutation was introduced. | Lifecycle characterization: 3 passed, 57 assertions. Adjacent service-template, release, PostgreSQL resource, preview cleanup, project-creation and preview-deployment batch: 41 passed, 408 assertions with `SESSION_DRIVER=array`. Pint and `git diff --check` passed. The unsupported `SESSION_DRIVER=sync` attempt failed during test setup and was discarded. | `818ebc0` — `test: characterize service template lifecycle` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 5: improve deployment clarity and characterize monorepo change impact without changing deployment strategies or callback/approval guarantees. |
+| Phase 4C | Curated metadata needed characterization against the actual deployment, resource-installation and exact-cleanup paths before another service could be published. Added a lifecycle contract test for published Laravel/Node templates and explicitly deferred Mailpit because the resource model, configuration schema, provisioning, backup and cleanup lifecycle do not support it yet. Template upgrades remain reviewed deployments; no automatic version mutation was introduced. | Lifecycle characterization: 3 passed, 57 assertions. Adjacent service-template, release, PostgreSQL resource, preview cleanup, project-creation and preview-deployment batch: 41 passed, 408 assertions with `SESSION_DRIVER=array`. Pint and `git diff --check` passed. The unsupported `SESSION_DRIVER=sync` attempt failed during test setup and was discarded. | `818ebc0` — `test: characterize service template lifecycle` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by Phase 5A deployment evidence; proceed to Phase 5B monorepo change-impact characterization. |
+| Phase 5A | Build details had lifecycle facts in separate status fields, setup stages and failure guidance, with no unified request-to-health evidence view. Added a plan-driven read collaborator, immutable timeline entries, exact revision/actor/approval context and the existing configuration-operation identity without adding writes or schema changes. | Timeline/history/log batch: **16 passed, 134 assertions**. Fresh isolated full PHP suite: **1,383 passed, 1 unchanged baseline failure, 11,979 assertions**. Pint, PHP lint and `git diff --check` passed. Encrypted configuration payload was not rendered. | `b5d1cab` — `feat: clarify deployment lifecycle evidence` | Pushed to GitHub `origin/main` on 2026-09-13. | Characterize existing repository service-root/include/exclude support and design the smallest safe Phase 5B monorepo change-impact slice. |
+
+| Phase 5A | Build details had lifecycle facts in separate status fields, setup stages and failure guidance, with no unified request-to-health evidence view. Added a plan-driven read collaborator, immutable timeline entries, exact revision/actor/approval context and the existing configuration-operation identity without adding writes or schema changes. | Timeline/history/log batch: **16 passed, 134 assertions**. Fresh isolated full PHP suite: **1,383 passed, 1 unchanged baseline failure, 11,979 assertions**. Pint, PHP lint and `git diff --check` passed. Encrypted configuration payload was not rendered. | `b5d1cab` — `feat: clarify deployment lifecycle evidence` | Pushed to GitHub `origin/main` on 2026-09-13. | Characterize existing repository service-root/include/exclude support and design the smallest safe Phase 5B monorepo change-impact slice. |
 
 ## Phase 1 exit verification
 

@@ -2,10 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 4 is complete locally
-through the lifecycle characterization commit `818ebc0`, implemented in the
-isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded into
-canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
+The product-expansion sequence is active on `main`. Phase 5A is complete locally
+through deployment-evidence commit `b5d1cab`, implemented in the isolated clone
+`/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded into canonical
+`main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
 Phase 3E initialization/credential boundaries and Phase 3F provider
@@ -32,6 +32,18 @@ and other additional services are explicitly deferred because the existing
 resource schema, provisioning, backup and cleanup lifecycle does not support
 them yet.
 
+The build detail page now has a plan-driven deployment timeline covering the
+recorded request, conditional approval, deployment preparation, build,
+application preparation, release activation, traffic routing, managed
+resources, health verification and finalization milestones. It displays the
+full immutable revision, requesting and approving/rejecting actor identity and,
+for configuration-driven builds, the existing review/application/operation
+identity and non-secret intent digest. The timeline does not invent timestamps:
+only request, approval, release activation and finalization use persisted times;
+other milestones explicitly show that no individual timestamp is recorded.
+The existing setup-stage, log, approval, rollback, queue and callback behavior
+is unchanged.
+
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
@@ -44,9 +56,13 @@ the separate live drill. The Phase 4C lifecycle characterization passed **3
 tests / 57 assertions**; the adjacent service-template, release, PostgreSQL
 resource, preview cleanup, project-creation and preview-deployment batch passed
 **41 tests / 408 assertions** with the supported isolated array session driver.
-The exact next task is Phase 5: improve deployment clarity and characterize
-monorepo change impact while preserving deployment strategies, approvals,
-revision identity, webhook idempotency, cancellation and stale-attempt safety.
+The Phase 5A timeline/history/log batch passed **16 tests / 134 assertions**.
+The fresh full suite at `b5d1cab` passed **1,383 tests / 11,979 assertions**,
+with the same unchanged `ProvisioningHardeningTest` `localhost` count failure.
+The exact next task is Phase 5B: characterize repository service roots and
+changed-path filters, then add safe monorepo change-impact visibility while
+preserving deployment strategies, approvals, revision identity, webhook
+idempotency, cancellation and stale-attempt safety.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
