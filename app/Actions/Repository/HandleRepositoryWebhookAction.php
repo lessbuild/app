@@ -10,6 +10,7 @@ use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentRequest;
+use App\Services\RepositoryChangeImpactEvaluator;
 use Illuminate\Support\Facades\DB;
 
 class HandleRepositoryWebhookAction
@@ -20,11 +21,13 @@ class HandleRepositoryWebhookAction
      * @param  QueuePendingWebhookDeploymentAction  $queuePendingDeployment  Action that drains an eligible retained webhook revision after website capacity becomes available.
      * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
      * @param  DeploymentGate  $gate  Deployment lock and scheduling-window policy evaluator.
+     * @param  RepositoryChangeImpactEvaluator  $changeImpact  Pure evaluator for configured automatic deployment path scope.
      */
     public function __construct(
         private readonly QueuePendingWebhookDeploymentAction $queuePendingDeployment,
         private readonly DeploymentRequest $deployments,
         private readonly DeploymentGate $gate,
+        private readonly RepositoryChangeImpactEvaluator $changeImpact,
     ) {}
 
     /**
@@ -32,7 +35,7 @@ class HandleRepositoryWebhookAction
      *
      * @param  Repository  $repository  Repository addressed by the verified webhook.
      * @param  VerifiedRepositoryWebhook  $webhook  Authenticated delivery identity, source revision, and commit details.
-     * @return RepositoryWebhookResult The duplicate, unavailable, pending, or queued disposition, including the build when one was created.
+     * @return RepositoryWebhookResult The duplicate, unavailable, pending, skipped, or queued disposition, including the build when one was created.
      */
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): RepositoryWebhookResult
     {
@@ -44,6 +47,9 @@ class HandleRepositoryWebhookAction
                 'delivery_id' => $webhook->deliveryId,
                 'revision' => $webhook->revision,
                 'commit_message' => $webhook->commitMessage,
+                'changed_paths' => $webhook->changedPaths === null
+                    ? null
+                    : json_encode($webhook->changedPaths, JSON_THROW_ON_ERROR),
                 'status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -59,6 +65,12 @@ class HandleRepositoryWebhookAction
                 $delivery->update(['status' => RepositoryWebhookDelivery::STATUS_UNAVAILABLE]);
 
                 return new RepositoryWebhookResult(RepositoryWebhookResult::UNAVAILABLE);
+            }
+
+            if ($this->changeImpact->evaluate($locked, $webhook->changedPaths)->isUnaffected()) {
+                $delivery->update(['status' => RepositoryWebhookDelivery::STATUS_SKIPPED]);
+
+                return new RepositoryWebhookResult(RepositoryWebhookResult::SKIPPED);
             }
 
             if ((int) $locked->website_id !== (int) $website->id

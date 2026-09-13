@@ -157,6 +157,7 @@ class DemoOperationsSeeder extends Seeder
         $definitions = [
             [$github, 'demo-github-queued', RepositoryWebhookDelivery::STATUS_QUEUED, str_repeat('a', 40), 'Demo stable push', $builds['github_redeploy']],
             [$github, 'demo-github-superseded', RepositoryWebhookDelivery::STATUS_SUPERSEDED, str_repeat('b', 40), 'Demo older coalesced push', null],
+            [$github, 'demo-github-skipped', RepositoryWebhookDelivery::STATUS_SKIPPED, str_repeat('c', 40), 'Demo documentation-only push', null],
             [$gitlab, 'demo-gitlab-pending', RepositoryWebhookDelivery::STATUS_PENDING, str_repeat('e', 40), 'Demo pending status-page release', null],
             [$gitlab, 'demo-gitlab-unavailable', RepositoryWebhookDelivery::STATUS_UNAVAILABLE, str_repeat('d', 40), 'Demo push while infrastructure was unavailable', null],
             [$bitbucket, 'demo-bitbucket-received', RepositoryWebhookDelivery::STATUS_RECEIVED, str_repeat('f', 40), 'Demo delivery interrupted before classification', null],

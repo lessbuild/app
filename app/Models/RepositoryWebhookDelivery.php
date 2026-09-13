@@ -9,6 +9,8 @@ class RepositoryWebhookDelivery extends Model
 {
     public const STATUS_RECEIVED = 'received';
 
+    public const STATUS_SKIPPED = 'skipped';
+
     public const STATUS_QUEUED = 'queued';
 
     public const STATUS_PENDING = 'pending';
@@ -23,9 +25,14 @@ class RepositoryWebhookDelivery extends Model
         self::STATUS_UNAVAILABLE,
         self::STATUS_SUPERSEDED,
         self::STATUS_RECEIVED,
+        self::STATUS_SKIPPED,
     ];
 
     protected $guarded = [];
+
+    protected $casts = [
+        'changed_paths' => 'array',
+    ];
 
     /** @return BelongsTo<Repository, $this> */
     public function repository(): BelongsTo

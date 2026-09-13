@@ -24,6 +24,8 @@ class Repository extends Model
     protected $casts = [
         'build_commands' => 'encrypted',
         'post_deployment_commands' => 'encrypted',
+        'auto_deploy_include_paths' => 'array',
+        'auto_deploy_exclude_paths' => 'array',
         'webhook_enabled' => 'boolean',
         'webhook_pending' => 'boolean',
         'webhook_last_received_at' => 'datetime',

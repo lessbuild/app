@@ -190,6 +190,11 @@
                 <p>{{ __('Create a GitLab push webhook, copy its whsec_ signing token, and save that token below.') }}</p>
             @endif
             <p class="mt-1">{{ __('Only pushes to :branch deploy. Duplicate deliveries are ignored.', ['branch' => $repository->branch]) }}</p>
+            @if ($repository->auto_deploy_include_paths || $repository->auto_deploy_exclude_paths)
+                <p class="mt-2">
+                    {{ __('Automatic path filtering is enabled. A delivery is skipped only when the provider reports changed paths and none affect this deployment target.') }}
+                </p>
+            @endif
             @if ($repository->webhook_pending)
                 <p class="mt-2 font-medium text-amber-700">{{ __('A newer push is waiting for the active deployment to finish.') }}</p>
             @elseif ($repository->webhook_last_received_at)
@@ -283,7 +288,7 @@
                 </form>
             </div>
 
-            <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+            <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
                 <div class="rounded-lg border border-primary bg-primary p-3">
                     <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching deliveries') }}</dt>
                     <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['total'] }}</dd>
@@ -295,6 +300,10 @@
                 <div class="rounded-lg border border-primary bg-primary p-3">
                     <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Pending deliveries') }}</dt>
                     <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['pending'] }}</dd>
+                </div>
+                <div class="rounded-lg border border-primary bg-primary p-3">
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Skipped deliveries') }}</dt>
+                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['skipped'] }}</dd>
                 </div>
                 <div class="rounded-lg border border-primary bg-primary p-3">
                     <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unavailable deliveries') }}</dt>
@@ -352,6 +361,7 @@
                                                 'rounded-full px-2 py-1 text-xs font-semibold uppercase',
                                                 'bg-green-100 text-green-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED,
                                                 'bg-amber-100 text-amber-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING,
+                                                'bg-blue-100 text-blue-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED,
                                                 'bg-red-100 text-red-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
                                                 'bg-gray-100 text-gray-700' => in_array($delivery->status, [
                                                     \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED,
@@ -368,6 +378,8 @@
                                                 {{ __('Waiting for active deployment') }}
                                             @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE)
                                                 {{ __('Deployment unavailable') }}
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED)
+                                                {{ __('No configured deployment path changed') }}
                                             @else
                                                 &mdash;
                                             @endif

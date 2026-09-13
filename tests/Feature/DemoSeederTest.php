@@ -724,9 +724,10 @@ class DemoSeederTest extends TestCase
                 'duration_sample_size' => 3,
             ])
             ->assertViewHas('deliveryMetrics', [
-                'total' => 2,
+                'total' => 3,
                 'queued' => 1,
                 'pending' => 0,
+                'skipped' => 1,
                 'unavailable' => 0,
                 'superseded' => 1,
                 'received' => 0,
@@ -745,6 +746,7 @@ class DemoSeederTest extends TestCase
                 'total' => 1,
                 'queued' => 1,
                 'pending' => 0,
+                'skipped' => 0,
                 'unavailable' => 0,
                 'superseded' => 0,
                 'received' => 0,

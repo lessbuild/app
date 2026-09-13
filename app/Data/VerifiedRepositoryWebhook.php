@@ -19,6 +19,7 @@ class VerifiedRepositoryWebhook
      * @param  string|null  $targetBranch  Target branch for the pull/merge request, if supplied.
      * @param  bool|null  $isFork  Whether the source repository differs from the target repository, or null when the provider did not supply enough metadata.
      * @param  string|null  $targetRepository  Provider identity of the pull/merge request target repository or project, if supplied.
+     * @param  list<string>|null  $changedPaths  Bounded normalized paths from a push payload, or null when the provider did not provide them.
      */
     public function __construct(
         public readonly string $deliveryId,
@@ -33,6 +34,7 @@ class VerifiedRepositoryWebhook
         public readonly ?string $targetBranch = null,
         public readonly ?bool $isFork = null,
         public readonly ?string $targetRepository = null,
+        public readonly ?array $changedPaths = null,
     ) {}
 
     /**

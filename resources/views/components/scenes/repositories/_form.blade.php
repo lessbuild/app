@@ -89,6 +89,50 @@
     </div>
 
     <div>
+        @php($autoDeployIncludePaths = old('auto_deploy_include_paths', $repository->auto_deploy_include_paths ?? []))
+        @php($autoDeployExcludePaths = old('auto_deploy_exclude_paths', $repository->auto_deploy_exclude_paths ?? []))
+        <h2 class="text-sm font-medium text-primary">{{ __('Automatic deployment paths') }}</h2>
+        <p class="mt-1 text-sm text-secondary">
+            {{ __('Optional filters for authenticated push deployments. Use one path or glob per line, relative to the repository root. A blank include list considers every path; exclusions win. If a provider does not report changed paths, BuildPusher deploys conservatively.') }}
+        </p>
+        <p class="mt-1 text-sm text-secondary">
+            {{ __('Each repository record is one deployment target. Include shared dependency files explicitly for every target that depends on them.') }}
+        </p>
+        <div class="mt-3 grid gap-4 md:grid-cols-2">
+            <div>
+                <label for="auto_deploy_include_paths" class="block text-sm font-medium text-primary">
+                    {{ __('Include paths') }}
+                </label>
+                <textarea
+                    id="auto_deploy_include_paths"
+                    name="auto_deploy_include_paths"
+                    rows="5"
+                    maxlength="5000"
+                    autocomplete="off"
+                    class="input secondary mt-1 rounded-sm font-mono"
+                    placeholder="apps/storefront/**&#10;packages/shared/**">{{ is_array($autoDeployIncludePaths) ? collect($autoDeployIncludePaths)->map(fn (mixed $path): string => (string) $path)->implode("\n") : $autoDeployIncludePaths }}</textarea>
+                <x-forms.errors name="auto_deploy_include_paths"></x-forms.errors>
+                <x-forms.errors name="auto_deploy_include_paths.*"></x-forms.errors>
+            </div>
+            <div>
+                <label for="auto_deploy_exclude_paths" class="block text-sm font-medium text-primary">
+                    {{ __('Exclude paths') }}
+                </label>
+                <textarea
+                    id="auto_deploy_exclude_paths"
+                    name="auto_deploy_exclude_paths"
+                    rows="5"
+                    maxlength="5000"
+                    autocomplete="off"
+                    class="input secondary mt-1 rounded-sm font-mono"
+                    placeholder="docs/**&#10;*.md">{{ is_array($autoDeployExcludePaths) ? collect($autoDeployExcludePaths)->map(fn (mixed $path): string => (string) $path)->implode("\n") : $autoDeployExcludePaths }}</textarea>
+                <x-forms.errors name="auto_deploy_exclude_paths"></x-forms.errors>
+                <x-forms.errors name="auto_deploy_exclude_paths.*"></x-forms.errors>
+            </div>
+        </div>
+    </div>
+
+    <div>
         <label for="build_commands" class="block text-sm font-medium text-primary">
             {{ __('Build commands') }}
         </label>

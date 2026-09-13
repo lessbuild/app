@@ -677,6 +677,7 @@ class DashboardTest extends TestCase
             ->assertViewHas('webhookDeliveryCounts', [
                 RepositoryWebhookDelivery::STATUS_QUEUED => 2,
                 RepositoryWebhookDelivery::STATUS_PENDING => 1,
+                RepositoryWebhookDelivery::STATUS_SKIPPED => 0,
                 RepositoryWebhookDelivery::STATUS_UNAVAILABLE => 1,
                 RepositoryWebhookDelivery::STATUS_SUPERSEDED => 1,
                 RepositoryWebhookDelivery::STATUS_RECEIVED => 1,

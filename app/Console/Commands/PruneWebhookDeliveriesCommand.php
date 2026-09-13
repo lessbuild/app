@@ -14,7 +14,7 @@ class PruneWebhookDeliveriesCommand extends Command
     protected $description = 'Prune expired webhook delivery history while preserving active deliveries';
 
     /**
-     * Delete old unavailable or superseded deliveries and queued deliveries without an active build, preserving pending revisions.
+     * Delete old unavailable, skipped or superseded deliveries and queued deliveries without an active build, preserving pending revisions.
      *
      * @return int SUCCESS after pruning, or FAILURE when retention is not a positive integer.
      */
@@ -37,6 +37,7 @@ class PruneWebhookDeliveriesCommand extends Command
                     ->whereIn('status', [
                         RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
                         RepositoryWebhookDelivery::STATUS_SUPERSEDED,
+                        RepositoryWebhookDelivery::STATUS_SKIPPED,
                     ])
                     ->orWhere(function ($query): void {
                         $query

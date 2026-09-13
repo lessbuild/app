@@ -6,6 +6,7 @@ use App\Data\VerifiedRepositoryWebhook;
 use App\Exceptions\InvalidRepositoryWebhook;
 use App\Models\Provider;
 use App\Models\Repository;
+use App\Support\RepositoryPath;
 use Illuminate\Http\Request;
 use JsonException;
 
@@ -51,7 +52,7 @@ class RepositoryWebhookVerifier
             throw new InvalidRepositoryWebhook('The webhook payload is not a JSON object.', 422);
         }
 
-        [$isPush, $matchesBranch, $revision, $commitMessage] = match ($provider) {
+        [$isPush, $matchesBranch, $revision, $commitMessage, $changedPaths] = match ($provider) {
             Provider::TYPE_GITHUB => $this->githubEvent($request, $payload, $repository->branch),
             Provider::TYPE_GITLAB => $this->gitLabEvent($request, $payload, $repository->branch),
             Provider::TYPE_BITBUCKET => $this->bitbucketEvent($request, $payload, $repository->branch),
@@ -83,6 +84,7 @@ class RepositoryWebhookVerifier
             $targetBranch,
             $isFork,
             $targetRepository,
+            $changedPaths,
         );
     }
 
@@ -202,7 +204,7 @@ class RepositoryWebhookVerifier
         return $deliveryId;
     }
 
-    /** @return array{bool, bool, ?string, ?string} */
+    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     private function githubEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-GitHub-Event') === 'push';
@@ -216,10 +218,11 @@ class RepositoryWebhookVerifier
             $matches,
             $matches ? $this->revision($payload['after'] ?? null) : null,
             $matches ? $this->commitMessage($payload['head_commit']['message'] ?? null) : null,
+            $matches ? $this->changedPaths($payload['commits'] ?? null) : null,
         ];
     }
 
-    /** @return array{bool, bool, ?string, ?string} */
+    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     private function gitLabEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-Gitlab-Event') === 'Push Hook';
@@ -236,10 +239,11 @@ class RepositoryWebhookVerifier
             $matches,
             $revision,
             $matches && is_array($commit) ? $this->commitMessage($commit['message'] ?? null) : null,
+            $matches ? $this->changedPaths($payload['commits'] ?? null) : null,
         ];
     }
 
-    /** @return array{bool, bool, ?string, ?string} */
+    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     private function bitbucketEvent(Request $request, array $payload, string $branch): array
     {
         $isPush = $request->header('X-Event-Key') === 'repo:push';
@@ -254,6 +258,7 @@ class RepositoryWebhookVerifier
             $matches,
             $matches ? $this->revision($change['new']['target']['hash'] ?? null) : null,
             $matches ? $this->commitMessage($change['new']['target']['message'] ?? null) : null,
+            null,
         ];
     }
 
@@ -437,5 +442,53 @@ class RepositoryWebhookVerifier
         $message = trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $message) ?? '');
 
         return $message === '' ? null : mb_substr($message, 0, 500);
+    }
+
+    /**
+     * Extract bounded changed paths from providers that include file lists in push commits.
+     *
+     * A missing or malformed file list is represented as null so automatic path
+     * filtering can deploy conservatively. An empty list is retained as known data.
+     *
+     * @param  mixed  $commits  Provider push commit list.
+     * @return list<string>|null Normalized unique paths, or null when unavailable or unsafe.
+     */
+    private function changedPaths(mixed $commits): ?array
+    {
+        if (! is_array($commits) || $commits === []) {
+            return null;
+        }
+
+        $paths = [];
+        $hasPathList = false;
+        foreach ($commits as $commit) {
+            if (! is_array($commit)) {
+                return null;
+            }
+
+            foreach (['added', 'modified', 'removed'] as $field) {
+                if (! array_key_exists($field, $commit)) {
+                    continue;
+                }
+                if (! is_array($commit[$field])) {
+                    return null;
+                }
+
+                $hasPathList = true;
+                foreach ($commit[$field] as $path) {
+                    $path = RepositoryPath::normalize($path);
+                    if ($path === null) {
+                        return null;
+                    }
+
+                    $paths[$path] = true;
+                    if (count($paths) > RepositoryPath::MAX_CHANGED_PATHS) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return $hasPathList ? array_keys($paths) : null;
     }
 }

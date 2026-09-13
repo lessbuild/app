@@ -8,6 +8,7 @@ use App\Models\RepositoryWebhookDelivery;
 use App\Models\Website;
 use App\Services\DeploymentGate;
 use App\Services\DeploymentRequest;
+use App\Services\RepositoryChangeImpactEvaluator;
 use Illuminate\Support\Facades\DB;
 
 class QueuePendingWebhookDeploymentAction
@@ -17,10 +18,12 @@ class QueuePendingWebhookDeploymentAction
      *
      * @param  DeploymentRequest  $deployments  Service that persists deployment requests and dispatches eligible builds.
      * @param  DeploymentGate  $gate  Deployment lock and scheduling-window policy evaluator.
+     * @param  RepositoryChangeImpactEvaluator  $changeImpact  Pure evaluator for configured automatic deployment path scope.
      */
     public function __construct(
         private readonly DeploymentRequest $deployments,
         private readonly DeploymentGate $gate,
+        private readonly RepositoryChangeImpactEvaluator $changeImpact,
     ) {}
 
     /**
@@ -65,12 +68,25 @@ class QueuePendingWebhookDeploymentAction
                     continue;
                 }
 
-                $locked->update(['setup_stage' => 0]);
                 $pendingDeliveries = $locked->webhookDeliveries()
                     ->where('status', RepositoryWebhookDelivery::STATUS_PENDING)
                     ->orderBy('id')
                     ->lockForUpdate()
                     ->get();
+                $changedPaths = $pendingDeliveries->isEmpty()
+                    ? null
+                    : $this->changeImpact->mergeChangedPaths($pendingDeliveries
+                        ->map(fn (RepositoryWebhookDelivery $delivery): ?array => $delivery->changed_paths)
+                        ->all());
+                if ($this->changeImpact->evaluate($locked, $changedPaths)->isUnaffected()) {
+                    $locked->webhookDeliveries()
+                        ->where('status', RepositoryWebhookDelivery::STATUS_PENDING)
+                        ->update(['status' => RepositoryWebhookDelivery::STATUS_SKIPPED]);
+
+                    continue;
+                }
+
+                $locked->update(['setup_stage' => 0]);
                 $build = $locked->builds()->create([
                     'trigger_source' => Build::TRIGGER_WEBHOOK,
                     'revision' => $revision,

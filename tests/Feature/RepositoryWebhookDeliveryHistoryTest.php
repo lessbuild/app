@@ -75,6 +75,7 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
                 'total' => 1,
                 'queued' => 1,
                 'pending' => 0,
+                'skipped' => 0,
                 'unavailable' => 0,
                 'superseded' => 0,
                 'received' => 0,
@@ -109,9 +110,10 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
         $this->actingAs($owner)->get(route('repositories.show', $repository))
             ->assertSuccessful()
             ->assertViewHas('deliveryMetrics', [
-                'total' => 5,
+                'total' => 6,
                 'queued' => 1,
                 'pending' => 1,
+                'skipped' => 1,
                 'unavailable' => 1,
                 'superseded' => 1,
                 'received' => 1,
@@ -119,6 +121,7 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertSee('Matching deliveries')
             ->assertSee('Queued deliveries')
             ->assertSee('Pending deliveries')
+            ->assertSee('Skipped deliveries')
             ->assertSee('Unavailable deliveries')
             ->assertSee('Superseded deliveries')
             ->assertSee('Received deliveries')
@@ -134,6 +137,7 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
                 'total' => 0,
                 'queued' => 0,
                 'pending' => 0,
+                'skipped' => 0,
                 'unavailable' => 0,
                 'superseded' => 0,
                 'received' => 0,

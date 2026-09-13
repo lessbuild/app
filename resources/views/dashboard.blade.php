@@ -335,10 +335,11 @@
                 </a>
             </div>
 
-            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-6">
                 @foreach ([
                     \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED => __('Queued'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_PENDING => __('Pending'),
+                    \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED => __('Skipped'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE => __('Unavailable'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),

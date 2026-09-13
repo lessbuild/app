@@ -123,11 +123,142 @@ class RepositoryWebhookTest extends TestCase
         Queue::assertPushed(PublishRepositoryJob::class, 1);
     }
 
+    public function test_github_path_filters_skip_unrelated_pushes_without_creating_a_build(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository(Provider::TYPE_GITHUB);
+        $secret = $this->enable($repository);
+        $repository->update([
+            'auto_deploy_include_paths' => ['apps/storefront/**'],
+            'auto_deploy_exclude_paths' => ['apps/storefront/docs/**'],
+        ]);
+        $revision = str_repeat('a', 40);
+        $payload = [
+            'ref' => 'refs/heads/main',
+            'after' => $revision,
+            'head_commit' => ['message' => 'Update documentation'],
+            'commits' => [[
+                'id' => $revision,
+                'added' => [],
+                'modified' => ['apps/storefront/docs/README.md'],
+                'removed' => [],
+            ]],
+        ];
+
+        $this->send($repository, $payload, $this->githubHeaders($secret, $payload, 'github-paths-skipped'))
+            ->assertOk()
+            ->assertJson(['status' => 'skipped']);
+
+        $delivery = $repository->webhookDeliveries()->sole();
+        $this->assertSame(RepositoryWebhookDelivery::STATUS_SKIPPED, $delivery->status);
+        $this->assertSame(['apps/storefront/docs/README.md'], $delivery->changed_paths);
+        $this->assertDatabaseCount('builds', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_path_filters_queue_affected_pushes_and_unknown_provider_paths_conservatively(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository(Provider::TYPE_GITHUB);
+        $secret = $this->enable($repository);
+        $repository->update(['auto_deploy_include_paths' => ['apps/storefront/**']]);
+
+        $affectedRevision = str_repeat('b', 40);
+        $affectedPayload = [
+            'ref' => 'refs/heads/main',
+            'after' => $affectedRevision,
+            'head_commit' => ['message' => 'Update storefront'],
+            'commits' => [[
+                'id' => $affectedRevision,
+                'added' => ['apps/storefront/app.php'],
+                'modified' => [],
+                'removed' => [],
+            ]],
+        ];
+        $this->send($repository, $affectedPayload, $this->githubHeaders($secret, $affectedPayload, 'github-paths-affected'))
+            ->assertStatus(202)
+            ->assertJson(['status' => 'queued']);
+        $this->assertSame(['apps/storefront/app.php'], $repository->webhookDeliveries()->latest('id')->firstOrFail()->changed_paths);
+
+        $repository->builds()->firstOrFail()->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'finished_at' => now(),
+        ]);
+        $unknownRevision = str_repeat('c', 40);
+        $unknownPayload = [
+            'ref' => 'refs/heads/main',
+            'after' => $unknownRevision,
+            'head_commit' => ['message' => 'Provider omitted file details'],
+        ];
+        $this->send($repository, $unknownPayload, $this->githubHeaders($secret, $unknownPayload, 'github-paths-unknown'))
+            ->assertStatus(202)
+            ->assertJson(['status' => 'queued']);
+
+        $unknown = $repository->webhookDeliveries()->where('delivery_id', 'github-paths-unknown')->sole();
+        $this->assertNull($unknown->changed_paths);
+        $this->assertSame(2, $repository->builds()->count());
+        Queue::assertPushed(PublishRepositoryJob::class, 2);
+    }
+
+    public function test_irrelevant_pushes_do_not_replace_a_relevant_pending_push(): void
+    {
+        Queue::fake();
+        [, $repository] = $this->repository(Provider::TYPE_GITHUB);
+        $secret = $this->enable($repository);
+        $repository->update(['auto_deploy_include_paths' => ['apps/**']]);
+        $repository->builds()->create(['status' => Build::STATUS_RUNNING]);
+
+        $relevantRevision = str_repeat('d', 40);
+        $relevantPayload = [
+            'ref' => 'refs/heads/main',
+            'after' => $relevantRevision,
+            'head_commit' => ['message' => 'Pending application change'],
+            'commits' => [[
+                'id' => $relevantRevision,
+                'added' => ['apps/app.php'],
+                'modified' => [],
+                'removed' => [],
+            ]],
+        ];
+        $this->send($repository, $relevantPayload, $this->githubHeaders($secret, $relevantPayload, 'github-relevant-pending'))
+            ->assertStatus(202)
+            ->assertJson(['status' => 'pending']);
+
+        $irrelevantRevision = str_repeat('e', 40);
+        $irrelevantPayload = [
+            'ref' => 'refs/heads/main',
+            'after' => $irrelevantRevision,
+            'head_commit' => ['message' => 'Pending documentation change'],
+            'commits' => [[
+                'id' => $irrelevantRevision,
+                'added' => ['docs/readme.md'],
+                'modified' => [],
+                'removed' => [],
+            ]],
+        ];
+        $this->send($repository, $irrelevantPayload, $this->githubHeaders($secret, $irrelevantPayload, 'github-irrelevant-pending'))
+            ->assertOk()
+            ->assertJson(['status' => 'skipped']);
+
+        $this->assertSame($relevantRevision, $repository->fresh()->webhook_pending_revision);
+        $repository->builds()->firstOrFail()->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'finished_at' => now(),
+        ]);
+
+        $queued = $repository->builds()->where('status', Build::STATUS_QUEUED)->sole();
+        $this->assertSame($relevantRevision, $queued->revision);
+        $this->assertSame(RepositoryWebhookDelivery::STATUS_QUEUED, $repository->webhookDeliveries()->where('delivery_id', 'github-relevant-pending')->sole()->status);
+        $this->assertSame(RepositoryWebhookDelivery::STATUS_SKIPPED, $repository->webhookDeliveries()->where('delivery_id', 'github-irrelevant-pending')->sole()->status);
+        Queue::assertPushed(PublishRepositoryJob::class, 1);
+    }
+
     public function test_bitbucket_push_uses_raw_body_hmac_and_matches_changed_branch(): void
     {
         Queue::fake();
         [, $repository] = $this->repository(Provider::TYPE_BITBUCKET);
         $secret = $this->enable($repository);
+        $repository->update(['auto_deploy_include_paths' => ['apps/**']]);
         $revision = str_repeat('b', 40);
         $payload = ['push' => ['changes' => [
             ['new' => ['type' => 'tag', 'name' => 'main']],
@@ -156,6 +287,7 @@ class RepositoryWebhookTest extends TestCase
             'delivery_id' => '{bitbucket-request-1}',
             'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
         ]);
+        $this->assertNull($repository->webhookDeliveries()->sole()->changed_paths);
     }
 
     public function test_gitlab_signing_token_requires_current_hmac_timestamp(): void
@@ -177,7 +309,13 @@ class RepositoryWebhookTest extends TestCase
         $payload = [
             'ref' => 'refs/heads/main',
             'after' => $revision,
-            'commits' => [['id' => $revision, 'message' => 'GitLab release']],
+            'commits' => [[
+                'id' => $revision,
+                'message' => 'GitLab release',
+                'added' => ['apps/api/app.php'],
+                'modified' => [],
+                'removed' => [],
+            ]],
         ];
         $headers = $this->gitLabHeaders($secret, $payload, 'gitlab-1', now()->getTimestamp());
         $this->send($repository, $payload, $headers)
@@ -196,6 +334,7 @@ class RepositoryWebhookTest extends TestCase
             'revision' => $revision,
             'commit_message' => 'GitLab release',
         ]);
+        $this->assertSame(['apps/api/app.php'], $repository->webhookDeliveries()->sole()->changed_paths);
         Queue::assertPushed(PublishRepositoryJob::class, 1);
     }
 

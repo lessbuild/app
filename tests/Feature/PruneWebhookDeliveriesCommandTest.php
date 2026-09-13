@@ -27,6 +27,7 @@ class PruneWebhookDeliveriesCommandTest extends TestCase
         $expired = collect([
             $this->delivery($repository, 'old-unavailable', RepositoryWebhookDelivery::STATUS_UNAVAILABLE, $old),
             $this->delivery($repository, 'old-superseded', RepositoryWebhookDelivery::STATUS_SUPERSEDED, $old),
+            $this->delivery($repository, 'old-skipped', RepositoryWebhookDelivery::STATUS_SKIPPED, $old),
             $this->delivery($repository, 'old-terminal-build', RepositoryWebhookDelivery::STATUS_QUEUED, $old, $terminalBuild),
             $this->delivery($repository, 'old-missing-build', RepositoryWebhookDelivery::STATUS_QUEUED, $old),
         ]);
@@ -38,7 +39,7 @@ class PruneWebhookDeliveriesCommandTest extends TestCase
         ]);
 
         $this->assertSame(0, Artisan::call('lessbuild:webhooks:prune'));
-        $this->assertStringContainsString('Pruned 4 webhook delivery record(s) older than 90 day(s).', Artisan::output());
+        $this->assertStringContainsString('Pruned 5 webhook delivery record(s) older than 90 day(s).', Artisan::output());
         $expired->each(fn (RepositoryWebhookDelivery $delivery) => $this->assertModelMissing($delivery));
         $preserved->each(fn (RepositoryWebhookDelivery $delivery) => $this->assertModelExists($delivery));
     }

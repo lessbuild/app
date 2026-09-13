@@ -60,6 +60,36 @@ class RepositorySafetyTest extends TestCase
         $this->assertDatabaseCount('repositories', 0);
     }
 
+    public function test_automatic_deployment_path_filters_are_normalized_and_omitted_fields_are_preserved(): void
+    {
+        [$user, $provider, , $website] = $this->infrastructure();
+        $repository = $user->repositories()->create([
+            ...$this->payload($provider, $website),
+            'auto_deploy_include_paths' => ['apps/**'],
+            'auto_deploy_exclude_paths' => ['docs/**'],
+        ]);
+
+        $this->actingAs($user)->patch(route('repositories.update', $repository), [
+            ...$this->payload($provider, $website),
+        ])->assertRedirect();
+        $this->assertSame(['apps/**'], $repository->fresh()->auto_deploy_include_paths);
+        $this->assertSame(['docs/**'], $repository->fresh()->auto_deploy_exclude_paths);
+
+        $this->actingAs($user)->patch(route('repositories.update', $repository), [
+            ...$this->payload($provider, $website),
+            'auto_deploy_include_paths' => " ./apps/**\npackages/shared/** \n",
+            'auto_deploy_exclude_paths' => "docs/**\n",
+        ])->assertRedirect();
+        $this->assertSame(['apps/**', 'packages/shared/**'], $repository->fresh()->auto_deploy_include_paths);
+        $this->assertSame(['docs/**'], $repository->fresh()->auto_deploy_exclude_paths);
+
+        $this->actingAs($user)->patch(route('repositories.update', $repository), [
+            ...$this->payload($provider, $website),
+            'auto_deploy_include_paths' => '../secrets/**',
+        ])->assertSessionHasErrors('auto_deploy_include_paths.0');
+        $this->assertSame(['apps/**', 'packages/shared/**'], $repository->fresh()->auto_deploy_include_paths);
+    }
+
     public function test_repository_forms_only_offer_active_websites_and_preserve_selection(): void
     {
         [$user, $provider, $server, $activeWebsite] = $this->infrastructure();

@@ -6,7 +6,9 @@ use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Website;
 use App\Rules\GitBranch;
+use App\Rules\RepositoryPathPattern;
 use App\Rules\SourceRepositoryUrl;
+use App\Support\RepositoryPath;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -60,6 +62,10 @@ class RepositoryRequest extends FormRequest
                 'max:255',
                 new GitBranch,
             ],
+            'auto_deploy_include_paths' => ['nullable', 'array', 'max:50'],
+            'auto_deploy_include_paths.*' => ['string', 'max:255', new RepositoryPathPattern],
+            'auto_deploy_exclude_paths' => ['nullable', 'array', 'max:50'],
+            'auto_deploy_exclude_paths.*' => ['string', 'max:255', new RepositoryPathPattern],
             'build_commands' => ['nullable', 'string', 'max:10000'],
             'post_deployment_commands' => ['nullable', 'string', 'max:10000'],
             'description' => ['required', 'string'],
@@ -79,7 +85,7 @@ class RepositoryRequest extends FormRequest
     }
 
     /**
-     * Normalize the repository URL and branch while retaining omitted commands and converting blank commands to null.
+     * Normalize the repository URL, branch, path filters and commands while retaining omitted values.
      */
     protected function prepareForValidation(): void
     {
@@ -89,6 +95,8 @@ class RepositoryRequest extends FormRequest
             'post_deployment_commands',
             $repository?->post_deployment_commands,
         );
+        $includePaths = $this->input('auto_deploy_include_paths', $repository?->auto_deploy_include_paths);
+        $excludePaths = $this->input('auto_deploy_exclude_paths', $repository?->auto_deploy_exclude_paths);
 
         $this->merge([
             'url' => SourceRepositoryUrl::normalize((string) $this->input('url')),
@@ -99,6 +107,38 @@ class RepositoryRequest extends FormRequest
             'post_deployment_commands' => is_string($postDeploymentCommands) && trim($postDeploymentCommands) === ''
                 ? null
                 : $postDeploymentCommands,
+            'auto_deploy_include_paths' => $this->pathPatterns($includePaths),
+            'auto_deploy_exclude_paths' => $this->pathPatterns($excludePaths),
         ]);
+    }
+
+    /**
+     * Convert the newline-oriented form fields into validated path-pattern arrays.
+     *
+     * @param  mixed  $value  Existing array, submitted textarea, null or invalid input.
+     * @return mixed Normalized array/null or the original invalid value for validation to reject.
+     */
+    private function pathPatterns(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            $value = preg_split('/\R/u', $value) ?: [];
+        }
+        if ($value === null) {
+            return null;
+        }
+        if (! is_array($value)) {
+            return $value;
+        }
+
+        $patterns = [];
+        foreach ($value as $pattern) {
+            if (is_string($pattern) && trim($pattern) === '') {
+                continue;
+            }
+
+            $patterns[] = RepositoryPath::normalizePattern($pattern) ?? $pattern;
+        }
+
+        return $patterns === [] ? null : $patterns;
     }
 }
