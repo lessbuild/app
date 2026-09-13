@@ -45,6 +45,32 @@ class ApplicationTemplateCatalogTest extends TestCase
         $this->assertNull($template->version());
     }
 
+    public function test_node_template_composes_supported_resources_without_worker_or_initialization_defaults(): void
+    {
+        $template = app(ApplicationTemplateCatalog::class)->for('node');
+
+        $this->assertSame('node', $template->runtimeType);
+        $this->assertSame('npm run build --if-present', $template->buildCommand);
+        $this->assertSame('npm start', $template->startCommand);
+        $this->assertSame('1.0.0', $template->version());
+        $this->assertSame(['database', 'cache'], array_column($template->previewResources, 'name'));
+        $this->assertSame(['postgresql', 'valkey'], array_column($template->previewResources, 'type'));
+        $this->assertSame([], $template->processes);
+        $this->assertNull($template->initialization);
+        $this->assertSame([
+            'runtime' => 'node',
+            'framework' => 'node',
+            'node' => '20 - 24',
+            'deployment' => 'BuildPusher managed website',
+        ], $template->serviceTemplate?->compatibility);
+        $this->assertSame(['web', 'database', 'cache'], array_column($template->serviceTemplate?->readinessChecks ?? [], 'name'));
+        $this->assertSame(0, $template->serviceTemplate?->resourceLimits['processes']);
+        $this->assertSame(2, $template->serviceTemplate?->resourceLimits['resources']);
+        $this->assertArrayNotHasKey('initialization', $template->serviceTemplate?->failureRecovery ?? []);
+        $this->assertArrayHasKey('database', $template->serviceTemplate?->backupRestore ?? []);
+        $this->assertArrayHasKey('retention', $template->serviceTemplate?->deletion ?? []);
+    }
+
     public function test_unknown_presets_fail_closed(): void
     {
         $this->expectException(InvalidArgumentException::class);

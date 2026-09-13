@@ -64,6 +64,33 @@ $laravelServiceTemplate = [
     ],
 ];
 
+$nodeServiceTemplate = $laravelServiceTemplate;
+$nodeServiceTemplate['compatibility'] = [
+    'runtime' => 'node',
+    'framework' => 'node',
+    'node' => '20 - 24',
+    'deployment' => 'BuildPusher managed website',
+];
+$nodeServiceTemplate['readiness_checks'] = [
+    ['name' => 'web', 'kind' => 'http', 'path' => '/'],
+    ['name' => 'database', 'kind' => 'resource', 'resource' => 'database'],
+    ['name' => 'cache', 'kind' => 'resource', 'resource' => 'cache'],
+];
+$nodeServiceTemplate['resource_limits'] = [
+    'processes' => 0,
+    'resources' => 2,
+    'replicas' => [],
+];
+$nodeServiceTemplate['upgrade'] = [
+    'policy' => 'Review template changes before applying them to an installed project.',
+    'application' => 'Run package installation, builds and schema changes through the normal reviewed deployment workflow.',
+    'resources' => 'Keep existing resource identities, persistent locations and credentials across revisions unless a separate migration is approved.',
+];
+$nodeServiceTemplate['failure_recovery'] = [
+    'provisioning' => 'Retry failed resource provisioning through the preview lifecycle; ready resources are not downgraded by an application-only failure.',
+    'cleanup' => 'Retry incomplete preview cleanup from its durable ownership record; shared resources remain protected.',
+];
+
 return [
     'laravel' => [
         'name' => 'Laravel',
@@ -154,6 +181,11 @@ return [
         'container_port' => 3000,
         'dockerfile_path' => null,
         'processes' => [],
+        'preview_resources' => [
+            ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
+            ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
+        ],
+        'service_template' => $nodeServiceTemplate,
     ],
     'nextjs' => [
         'name' => 'Next.js',

@@ -145,6 +145,76 @@ class PreviewDeploymentTest extends TestCase
         Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
     }
 
+    public function test_node_preset_carries_runtime_and_supported_resources_into_a_preview(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source, $project] = $this->application();
+        $project->update(['preset' => 'node']);
+        $project->environments()->where('type', 'production')->update([
+            'runtime_type' => 'node',
+            'runtime_version' => '20',
+            'build_command' => 'npm run build --if-present',
+            'start_command' => 'npm start',
+            'container_port' => 3000,
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('b', 40);
+
+        $this->send($source, $this->payload('opened', $revision), $secret, 'node-preview-open')
+            ->assertAccepted()
+            ->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $preview = PreviewDeployment::query()->sole();
+        $environment = $preview->environment;
+        $this->assertSame('node', $environment->runtime_type);
+        $this->assertSame('20', $environment->runtime_version);
+        $this->assertSame('npm run build --if-present', $environment->build_command);
+        $this->assertSame('npm start', $environment->start_command);
+        $this->assertSame(3000, $environment->container_port);
+        $this->assertSame([], $environment->processes()->pluck('name')->all());
+        $this->assertEqualsCanonicalizing(['database', 'cache'], $environment->resources()->pluck('name')->all());
+        $this->assertTrue($environment->resources()->where('name', 'database')->value('is_preview_owned'));
+        $cache = $environment->resources()->where('name', 'cache')->firstOrFail();
+        $this->assertNotEmpty($cache->configuration['variables']['REDIS_PASSWORD']);
+        $this->assertNotSame('production-mail-secret', $cache->configuration['variables']['REDIS_PASSWORD']);
+
+        $preview->website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+        $this->post(URL::signedRoute('callbacks.website', [
+            'website' => $preview->website,
+            'attempt' => $preview->website->provisioning_token,
+        ]), ['status' => app(WebsiteProvisioningPlan::class)->finalStage()])->assertOk();
+
+        $build = $preview->repository->builds()->sole();
+        $this->assertSame('node', $build->environment_payload['runtime']['type']);
+        $this->assertSame('npm start', $build->environment_payload['runtime']['start_command']);
+        $this->assertEqualsCanonicalizing(['postgresql', 'valkey'], array_column($build->environment_payload['resources'], 'type'));
+        $this->assertArrayNotHasKey('preview_initialization', $build->environment_payload);
+        Queue::assertPushed(PublishRepositoryJob::class, fn (PublishRepositoryJob $job): bool => $job->build->is($build));
+
+        $build->update(['status' => Build::STATUS_RUNNING]);
+        $this->post(URL::signedRoute('callbacks.build.status', $build), [
+            'status' => app(RepositoryDeploymentPlan::class)->finalStage(),
+        ])->assertNoContent();
+        $this->assertSame(PreviewDeployment::STATUS_READY, $preview->fresh()->status);
+        $this->assertSame(
+            EnvironmentResource::STATUS_READY,
+            $environment->resources()->where('name', 'database')->value('status'),
+        );
+        $this->assertSame(
+            EnvironmentResource::STATUS_READY,
+            $environment->resources()->where('name', 'cache')->value('status'),
+        );
+
+        $this->send($source, $this->payload('closed', $revision), $secret, 'node-preview-close')
+            ->assertOk()
+            ->assertJson(['status' => PreviewDeployment::STATUS_CLOSED]);
+        $cleanup = PreviewStackCleanup::query()->sole();
+        $this->assertSame(PreviewStackCleanup::STATUS_QUEUED, $cleanup->status);
+        Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
+    }
+
     public function test_successful_preview_initialization_is_not_repeated_for_a_new_revision(): void
     {
         config(['billing.enforce_limits' => false]);

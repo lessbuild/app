@@ -26,4 +26,14 @@ class PreviewStackCatalogTest extends TestCase
         $this->assertSame([], $stack->resources);
         $this->assertNull($stack->initialization);
     }
+
+    public function test_node_template_composes_database_and_cache_without_laravel_processes(): void
+    {
+        $stack = app(PreviewStackCatalog::class)->for(new Project(['preset' => 'node']));
+
+        $this->assertSame([], $stack->processes);
+        $this->assertSame(['database', 'cache'], array_column($stack->resources, 'name'));
+        $this->assertSame(['postgresql', 'valkey'], array_column($stack->resources, 'type'));
+        $this->assertNull($stack->initialization);
+    }
 }
