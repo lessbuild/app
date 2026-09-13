@@ -15,11 +15,11 @@ use App\Http\Requests\RunWebsiteBackupRequest;
 use App\Http\Requests\StoreBackupDestinationRequest;
 use App\Http\Requests\StoreBackupScheduleRequest;
 use App\Models\BackupDestination;
-use App\Models\BackupRestore;
 use App\Models\Organization;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
+use App\Services\BackupRecoveryEvidenceQuery;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +30,10 @@ class BackupController extends Controller
     /**
      * Use workspace entitlements to gate backup configuration and recovery operations.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly Entitlements $entitlements,
+        private readonly BackupRecoveryEvidenceQuery $recoveryEvidence,
+    ) {}
 
     /**
      * Render the current workspace's recent backups, destinations, schedules, and recovery metrics.
@@ -38,21 +41,14 @@ class BackupController extends Controller
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
-        $backups = WebsiteBackup::query()
-            ->whereHas('website', fn ($query) => $query->where('organization_id', $organization->id))
-            ->with(['website', 'destination', 'restores'])->latest()->limit(50)->get();
-        $latestBackup = $backups->where('status', WebsiteBackup::STATUS_SUCCEEDED)->sortByDesc('completed_at')->first();
-        $latestRestore = $backups->flatMap->restores->where('status', BackupRestore::STATUS_SUCCEEDED)->sortByDesc('completed_at')->first();
+        $backups = $this->recoveryEvidence->recentBackups($organization);
+        $recoverySummary = $this->recoveryEvidence->summary($organization);
 
         return view('backups.index', [
             'destinations' => $organization->backupDestinations()->latest()->get(),
             'websites' => $organization->websites()->with(['backupSchedules.destination'])->orderBy('name')->get(),
             'backups' => $backups,
-            'recoveryMetrics' => [
-                'last_recovery_point' => $latestBackup?->completed_at,
-                'last_restore_drill' => $latestRestore?->completed_at,
-                'last_restore_seconds' => $latestRestore?->started_at && $latestRestore?->completed_at ? $latestRestore->started_at->diffInSeconds($latestRestore->completed_at) : null,
-            ],
+            'recoverySummary' => $recoverySummary,
             'canManage' => $organization->permits($request->user(), 'manage'),
         ]);
     }

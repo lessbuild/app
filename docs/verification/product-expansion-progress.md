@@ -1,7 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 6 backup recovery characterization complete locally; the read-only
-recovery evidence slice is next. Preview safety, trust/secret boundaries,
+Status: Phase 6 read-only backup recovery evidence slice complete locally; the
+isolated restore-verification slice is next. Preview safety, trust/secret
+boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
@@ -1600,15 +1601,80 @@ isolated restore-test slice must build on the characterized job safety behavior
 and add explicit destination, integrity, smoke, stage and cleanup contracts.
 
 **Phase 6 characterization exit gate: complete.** No application behavior was
-changed by this investigation. Exact next task: implement and test the
-read-only recovery summary query and honest dashboard indicators described
-above, then commit and push that cohesive slice.
+changed by this investigation. The read-only recovery summary and honest
+dashboard indicators described above are now implemented and verified below.
+
+## Phase 6 — read-only backup recovery evidence summary (completed slice)
+
+### Concrete responsibility problem
+
+`BackupController::index()` selected the latest 50 mixed-status backup rows and
+calculated recovery metrics from that bounded collection. This made an older
+successful backup disappear from the summary when newer failures filled the
+window. The controller also presented a completed in-place `BackupRestore` as
+restore-drill evidence even though the existing job does not persist an
+independent restore test, integrity check, application smoke result or cleanup
+status.
+
+### Responsibility boundary and applicable principles
+
+- **Single responsibility:** `BackupRecoveryEvidenceQuery` owns
+  organization-scoped backup-history and evidence selection. The controller
+  now coordinates the existing destination/website reads, invokes the query
+  and returns the view; it no longer defines recovery semantics.
+- **Dependency inversion:** the controller receives the concrete read
+  collaborator through its constructor. The query uses Eloquent relationships
+  and targeted latest-record queries without introducing a generic repository
+  or provider abstraction.
+- **Stable read boundary:** immutable `BackupRecoverySummary` carries converted
+  timestamps and measured restore duration. Its nullable independent-verification
+  field is intentionally empty until a later persisted verification workflow
+  supplies real evidence.
+- **Laravel mechanisms:** tenant scoping remains in `whereHas('website')` and
+  `whereHas('backup')`; history remains capped at 50 rows with eager-loaded
+  website/destination/restore relations; summary queries are independent of
+  that presentation limit and do not write or dispatch.
+
+### Implementation and preserved behavior
+
+The backups page now shows five separate indicators: latest completed managed
+backup, latest per-backup HTTPS transport evidence, latest completed in-place
+restore, independent restore verification and observed restore duration. The
+independent verification card says `Not recorded` rather than claiming that a
+live restore was an isolated drill. The control-plane SQLite backup/verifier is
+not mixed into these managed website metrics.
+
+The existing 50-row history, destination/schedule lists, restore form,
+confirmation, routes, flash messages, encrypted fields, job serialization,
+restore safety rollback and dispatch timing are unchanged. This slice adds no
+migration, provider call, queue job, restore target, overwrite behavior or
+persisted state. Foreign workspace records remain excluded, credentials are
+not rendered and the summary performs no side effects.
+
+### Verification and limitations
+
+The new recovery-evidence feature and existing managed-backup/release-audit
+regression set passed **12 tests and 120 assertions**. The strict isolated full
+PHP suite passed **1,402 tests and 12,129 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script contains
+four). Changed PHP files pass lint and Pint; `git diff --check` passed. No
+frontend assets changed. This is local evidence only and does not establish
+provider/cloud acceptance or the separate live drill.
+
+Commit and push status are recorded after the commit below.
+
+**Phase 6 read-only evidence exit gate: complete.** Exact next task:
+characterize and implement isolated restore verification with explicit target,
+overwrite review, integrity/smoke evidence, failure stage, duration and
+cleanup status while preserving the existing in-place restore workflow.
 
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
-| Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | Documentation change pending commit. | Not yet pushed; this characterization must be committed before the read-only summary slice. | Extract the organization-scoped read-only recovery summary and update honest dashboard indicators without changing restore jobs, schema or dispatch semantics. |
+| Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
+| Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | Pending commit. | Not yet pushed. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
