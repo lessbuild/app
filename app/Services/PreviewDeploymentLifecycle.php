@@ -27,6 +27,7 @@ class PreviewDeploymentLifecycle
      * @param  PreviewTrustPolicy  $previewTrust  Admits only trusted target repository and branch events.
      * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
      * @param  ConfigurePreviewStackAction  $previewStack  Persists supported process and managed-resource declarations.
+     * @param  PreviewStackReadiness  $previewReadiness  Records remote resource initialization through deployment callbacks.
      */
     public function __construct(
         private readonly PlanLimits $limits,
@@ -36,6 +37,7 @@ class PreviewDeploymentLifecycle
         private readonly PreviewTrustPolicy $previewTrust,
         private readonly PreviewSecretApprovalResolver $previewSecrets,
         private readonly ConfigurePreviewStackAction $previewStack,
+        private readonly PreviewStackReadiness $previewReadiness,
     ) {}
 
     /**
@@ -338,6 +340,7 @@ class PreviewDeploymentLifecycle
             ...$this->deployments->attributes($preview->repository),
         ]);
         $preview->update(['status' => PreviewDeployment::STATUS_DEPLOYING]);
+        $this->previewReadiness->beginProvisioning($build);
         $this->deployments->dispatch($build);
     }
 

@@ -66,4 +66,16 @@ class RepositoryDeploymentPlan
 
         return $index === false ? $this->finalStage() : $index + 1;
     }
+
+    /**
+     * Locate the stage that finishes managed-resource initialization.
+     *
+     * @return int The one-based resource configuration stage, or the final stage when the plan has no resource step.
+     */
+    public function resourceStage(): int
+    {
+        $index = array_search(ConfigureResourcesScript::class, $this->scripts(), true);
+
+        return $index === false ? $this->finalStage() : $index + 1;
+    }
 }

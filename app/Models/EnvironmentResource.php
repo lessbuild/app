@@ -12,7 +12,11 @@ class EnvironmentResource extends Model
 
     public const STATUS_PLANNED = 'planned';
 
+    public const STATUS_PROVISIONING = 'provisioning';
+
     public const STATUS_READY = 'ready';
+
+    public const STATUS_FAILED = 'failed';
 
     protected $guarded = [];
 

@@ -89,6 +89,10 @@ class PreviewDeploymentTest extends TestCase
 
         $build = $preview->repository->builds()->sole();
         $this->assertSame($revision, $build->revision);
+        $this->assertSame(
+            EnvironmentResource::STATUS_PROVISIONING,
+            $preview->environment->resources()->where('name', 'database')->value('status'),
+        );
         $this->assertEqualsCanonicalizing(['queue', 'scheduler'], array_column($build->environment_payload['processes'], 'name'));
         $this->assertEqualsCanonicalizing(['postgresql', 'valkey'], array_column($build->environment_payload['resources'], 'type'));
         $databasePayload = collect($build->environment_payload['resources'])->first(fn (array $resource): bool => $resource['type'] === 'postgresql');
@@ -102,6 +106,14 @@ class PreviewDeploymentTest extends TestCase
             'status' => app(RepositoryDeploymentPlan::class)->finalStage(),
         ])->assertNoContent();
         $this->assertSame(PreviewDeployment::STATUS_READY, $preview->fresh()->status);
+        $this->assertSame(
+            EnvironmentResource::STATUS_READY,
+            $preview->environment->resources()->where('name', 'database')->value('status'),
+        );
+        $this->assertSame(
+            EnvironmentResource::STATUS_READY,
+            $preview->environment->resources()->where('name', 'cache')->value('status'),
+        );
 
         $closed = $this->payload('closed', $revision);
         $this->send($source, $closed, $secret, 'preview-close')

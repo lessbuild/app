@@ -5,6 +5,7 @@ namespace App\Actions\Repository;
 use App\Models\Build;
 use App\Services\AutomaticDeploymentRollback;
 use App\Services\PreviewDeploymentLifecycle;
+use App\Services\PreviewStackReadiness;
 use Illuminate\Support\Facades\DB;
 
 class RecordBuildFailureAction
@@ -12,6 +13,7 @@ class RecordBuildFailureAction
     public function __construct(
         private readonly PreviewDeploymentLifecycle $previews,
         private readonly AutomaticDeploymentRollback $rollback,
+        private readonly PreviewStackReadiness $previewStack,
     ) {}
 
     /**
@@ -41,6 +43,7 @@ class RecordBuildFailureAction
                     ? $message
                     : "{$message} (exit code {$exitCode})",
             ]);
+            $this->previewStack->recordFailure($locked);
             $finished = true;
         });
 
