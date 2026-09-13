@@ -34,10 +34,11 @@ commit `0390030`. The bounded context now includes safe, exact
 revision/website-matched outcomes for explicitly requested post-deployment
 observations, retains active observations outside the selected time window and
 preserves the existing service filters, tenant authorization and secret-safe
-read boundary. The next implementation slice is to characterize named saved
-investigation views, including organization/resource authorization, filter
-normalization, expiry and retention, before deciding whether persistence is
-justified.
+read boundary. Phase 7G characterization confirmed that personal notification
+presets cannot safely serve cross-member observability views. The next
+implementation slice is the separate organization-owned named investigation
+view with validated filters, policy rechecks, opaque identifiers, explicit
+expiry and atomic retention bounds.
 
 ## Deferred release gates
 
