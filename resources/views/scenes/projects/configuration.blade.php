@@ -69,6 +69,35 @@
                 </ul>
             </section>
         @endif
+        <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-overview-heading">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2 id="environment-overview-heading" class="font-bold text-primary">{{ __('Current environment overview') }}</h2>
+                    <p class="mt-2 text-sm text-secondary">{{ __('Recorded local state for this application. It does not query or claim to represent remote provider drift.') }}</p>
+                </div>
+                <span class="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary">{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</span>
+            </div>
+            @if($environmentOverview->isNotEmpty())
+                <div class="mt-4 overflow-x-auto">
+                    <table class="w-full min-w-[48rem] text-left text-sm">
+                        <caption class="sr-only">{{ __('Recorded environment dependencies') }}</caption>
+                        <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Environment') }}</th><th scope="col" class="p-3">{{ __('Runtime') }}</th><th scope="col" class="p-3">{{ __('Recorded dependencies') }}</th><th scope="col" class="p-3">{{ __('Configuration') }}</th></tr></thead>
+                        <tbody>
+                            @foreach($environmentOverview as $environment)
+                                <tr class="border-b border-primary align-top text-primary">
+                                    <th scope="row" class="p-3"><span class="block font-bold">{{ $environment->name }} @if($environment->isProtected)<span class="ml-1 rounded-full bg-ternary px-2 py-0.5 text-[10px] uppercase text-white">{{ __('Protected') }}</span>@endif</span><span class="mt-1 block text-xs text-secondary">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</span></th>
+                                    <td class="p-3 text-secondary">{{ ucfirst($environment->runtimeType) }}</td>
+                                    <td class="p-3"><ul class="space-y-1">@foreach($environment->dependencies as $dependency)<li><span class="font-medium text-primary">{{ ucfirst($dependency['kind']) }}:</span> {{ $dependency['name'] }} <span class="text-secondary">· {{ str_replace('_', ' ', $dependency['status']) }} · {{ $dependency['detail'] }}</span></li>@endforeach</ul></td>
+                                    <td class="p-3 text-secondary">{{ $environment->processCount }} {{ __('process(es)') }} · {{ $environment->resourceCount }} {{ __('resource(s)') }} · {{ $environment->variableCount }} {{ __('variable(s)') }}<br><span class="text-xs">{{ $environment->secretCount }} {{ __('secret value(s) masked') }}</span></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="mt-4 text-sm text-secondary">{{ __('No environments have been recorded yet.') }}</p>
+            @endif
+        </section>
         <details class="mt-6 rounded-xl border border-primary bg-primary p-5">
             <summary class="cursor-pointer font-bold text-primary">{{ __('Find workspace binding IDs') }}</summary>
             <p class="mt-3 text-secondary">{{ __('Use these IDs in the JSON bindings below. Secret values are never shown.') }}</p>

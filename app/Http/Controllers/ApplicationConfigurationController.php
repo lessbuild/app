@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\Repository;
 use App\Models\Website;
 use App\Services\ApplicationConfigurationCancellation;
+use App\Services\ApplicationConfigurationEnvironmentOverviewQuery;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationResults;
 use App\Services\ApplicationConfigurationRetries;
@@ -26,7 +27,10 @@ use Illuminate\Validation\ValidationException;
 
 class ApplicationConfigurationController extends Controller
 {
-    public function __construct(private readonly ApplicationConfigurationResults $results) {}
+    public function __construct(
+        private readonly ApplicationConfigurationResults $results,
+        private readonly ApplicationConfigurationEnvironmentOverviewQuery $environmentOverview,
+    ) {}
 
     /**
      * @param  Request  $request  The authenticated workspace member.
@@ -49,6 +53,7 @@ class ApplicationConfigurationController extends Controller
 
         return view('scenes.projects.configuration', [
             'project' => $project, 'review' => null, 'plan' => null, 'application' => null,
+            'environmentOverview' => $this->environmentOverview->for($project),
             'recentApplications' => ConfigurationApplication::query()->whereHas('review', fn ($query) => $query->where('project_id', $project->id))
                 ->latest('id')->limit(20)->get(['id', 'configuration_review_id', 'status', 'created_at']),
             'websites' => Website::query()->where('organization_id', $project->organization_id)
