@@ -56,6 +56,19 @@ class ServerPolicy
             && ($server->organization?->permits($user, 'deploy') ?? true);
     }
 
+    /** Allow a workspace viewer to request a future short-lived troubleshooting connection. */
+    public function connect(User $user, Server $server): bool
+    {
+        return $this->view($user, $server);
+    }
+
+    /** Require the stronger operations ability before a future session may accept shell input. */
+    public function execute(User $user, Server $server): bool
+    {
+        return $this->view($user, $server)
+            && ($server->organization?->permits($user, 'operate') ?? true);
+    }
+
     /**
      * Allow any account that can view a server to request its fixed,
      * read-only diagnostic; arbitrary root commands remain an update ability.

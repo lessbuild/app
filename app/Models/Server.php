@@ -157,6 +157,12 @@ class Server extends Model
         return $this->hasOne(ServerDiagnosticSnapshot::class);
     }
 
+    /** @return HasMany<ServerTroubleshootingSession, $this> */
+    public function troubleshootingSessions(): HasMany
+    {
+        return $this->hasMany(ServerTroubleshootingSession::class);
+    }
+
     /** @return HasMany<ServerCommandExecution, $this> */
     public function commandExecutions(): HasMany
     {

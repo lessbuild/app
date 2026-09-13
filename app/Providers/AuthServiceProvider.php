@@ -21,6 +21,7 @@ use App\Models\Recipe;
 use App\Models\RecipeReport;
 use App\Models\Repository;
 use App\Models\Server;
+use App\Models\ServerTroubleshootingSession;
 use App\Models\StatusIncident;
 use App\Models\StatusPage;
 use App\Models\User;
@@ -48,6 +49,7 @@ use App\Policies\RecipePolicy;
 use App\Policies\RecipeReportPolicy;
 use App\Policies\RepositoryPolicy;
 use App\Policies\ServerPolicy;
+use App\Policies\ServerTroubleshootingSessionPolicy;
 use App\Policies\StatusIncidentPolicy;
 use App\Policies\StatusPagePolicy;
 use App\Policies\WebsiteBackupPolicy;
@@ -88,6 +90,7 @@ class AuthServiceProvider extends ServiceProvider
         RecipeReport::class => RecipeReportPolicy::class,
         ProductFeedback::class => ProductFeedbackPolicy::class,
         Server::class => ServerPolicy::class,
+        ServerTroubleshootingSession::class => ServerTroubleshootingSessionPolicy::class,
         PreviewDeployment::class => PreviewDeploymentPolicy::class,
         StatusPage::class => StatusPagePolicy::class,
         StatusIncident::class => StatusIncidentPolicy::class,

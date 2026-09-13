@@ -280,4 +280,10 @@ class User extends Authenticatable implements MustVerifyEmailContract
     {
         return $this->hasMany(ServerCommandExecution::class);
     }
+
+    /** @return HasMany<ServerTroubleshootingSession, $this> */
+    public function troubleshootingSessions(): HasMany
+    {
+        return $this->hasMany(ServerTroubleshootingSession::class);
+    }
 }
