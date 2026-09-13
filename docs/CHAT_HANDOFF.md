@@ -2,10 +2,11 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 4B was implemented
-in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
-`b8c5871`; it was fast-forwarded into canonical `main` and pushed to GitHub
-`origin/main`. Building on the Phase 3A manifest, Phase 3B readiness states,
+The product-expansion sequence is active on `main`. Phase 4 is complete locally
+through the lifecycle characterization commit `818ebc0`, implemented in the
+isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded into
+canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
+manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
 Phase 3E initialization/credential boundaries and Phase 3F provider
 observations, curated Laravel and generic Node presets now have a versioned
@@ -23,9 +24,15 @@ passwordless resources preserve their current state. Generic Node previews now
 inherit the selected source environment's runtime settings and compose the same
 managed PostgreSQL/Valkey resources without Laravel workers or initialization.
 The deployment plan still has 15 stages, queue dispatch remains outside the
-transaction, and provider readiness is not inferred from local callbacks.
+transaction, and provider readiness is not inferred from local callbacks. The
+published Laravel and Node templates are characterized against the shared
+dependency, managed-resource and exact preview-cleanup paths. Template changes
+remain reviewed deployments; there is no automatic version mutation. Mailpit
+and other additional services are explicitly deferred because the existing
+resource schema, provisioning, backup and cleanup lifecycle does not support
+them yet.
 
-The fresh isolated full PHP suite at the feature commit passed **1,374 tests /
+The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
 4B focused catalog/project/runtime/preview coverage passed 41 tests / 372
@@ -33,9 +40,13 @@ assertions; the adjacent preview/resource/configuration batch passed 56 tests /
 518 assertions. PHP lint, required-PHP Composer validation/platform checks, full
 Pint, Vite build, config-cache create/clear and `git diff --check` passed. This
 is local application evidence, not provider-side readiness, cloud lifecycle or
-the separate live drill. The exact next task is Phase 4C: characterize
-installation/upgrade execution and evaluate one additional service only if its
-existing lifecycle can support it.
+the separate live drill. The Phase 4C lifecycle characterization passed **3
+tests / 57 assertions**; the adjacent service-template, release, PostgreSQL
+resource, preview cleanup, project-creation and preview-deployment batch passed
+**41 tests / 408 assertions** with the supported isolated array session driver.
+The exact next task is Phase 5: improve deployment clarity and characterize
+monorepo change impact while preserving deployment strategies, approvals,
+revision identity, webhook idempotency, cancellation and stale-attempt safety.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 

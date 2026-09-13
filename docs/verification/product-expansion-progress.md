@@ -1,14 +1,15 @@
 # BuildPusher product expansion progress
 
-Status: Phase 4B complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 4 complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
 ownership-aware cleanup, atomic concurrent-preview quotas, explicit
 initialization/resource credential boundaries, normalized provider readiness
-observations, the versioned curated service-template contract and the Node
-resource composition are complete. Provider-side cloud acceptance and the
-separate live drill remain outstanding.
+observations, the versioned curated service-template contract, the Node
+resource composition and the lifecycle characterization are complete. No
+additional service is published without lifecycle support. Provider-side cloud
+acceptance and the separate live drill remain outstanding.
 
 Date: 2026-09-13
 
@@ -1125,11 +1126,87 @@ configuration-environment failures and was discarded as an invalid baseline.
 PHP lint, required-PHP Composer validation/platform checks, full Pint, Vite
 build, config-cache create/clear and `git diff --check` passed. The feature
 commit `b8c5871` was fast-forwarded through canonical `main` and pushed to
-GitHub `origin/main` on 2026-09-13. Installation/upgrade execution, an
-additional service such as Mailpit, Node cloud/provider acceptance and the
-separate live drill remain outstanding. The exact next task is Phase 4C:
-characterize template installation/upgrade execution and assess one additional
-service only if its existing lifecycle can support it.
+GitHub `origin/main` on 2026-09-13. Phase 4C is recorded below.
+
+## Phase 4C — template lifecycle characterization and service boundary (completed slice)
+
+### Concrete responsibility problem
+
+The curated metadata could describe an operational contract, but it did not by
+itself prove that the selected template reached the existing installation,
+resource-provisioning or cleanup paths. Publishing another service such as
+Mailpit would also be unsafe: the application has no matching resource type,
+configuration schema, provisioning implementation, backup scope or exact
+cleanup identity for it. A metadata-only addition would overstate support and
+leave failures to be handled by unrelated orchestration code.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** the catalog declares immutable support metadata;
+  the repository deployment plan installs application dependencies and runs
+  reviewed build revisions; `ConfigureResourcesScript` provisions supported
+  local resources; and `PreviewStackCleanupScript` removes only captured,
+  exact identities. The characterization test checks those boundaries without
+  moving remote work into the catalog.
+- **Open/closed:** a future service can be added only after its resource,
+  readiness, backup/restore, upgrade, failure-recovery and deletion behavior
+  is implemented through the existing contracts. This slice does not add a
+  provider-specific conditional or a speculative service adapter.
+- **Liskov substitution:** every published template is required to use the
+  same preview resource installation and cleanup result semantics. The test
+  renders each published definition through the shared PostgreSQL/Valkey paths
+  and checks valid shell output.
+- **Dependency inversion:** no new HTTP or provider dependency was introduced;
+  the test resolves the existing catalog, preview-stack catalog, deployment
+  plan and cleanup service that production code already uses.
+
+### Implementation and preserved behavior
+
+The existing standard repository deployment plan is the installation boundary:
+`InstallDependenciesScript` installs lockfile-driven application dependencies,
+the normal build stages execute the repository revision, and the existing
+resource/process stages apply the captured environment snapshot. Curated
+template upgrades therefore remain explicit reviewed deployments; there is no
+automatic version mutation or unreviewed resource migration. The nullable
+`projects.template_version` remains the initial-definition identity recorded by
+Phase 4A.
+
+Added `ServiceTemplateLifecycleTest` to characterize the published Laravel and
+Node definitions. It verifies that their declared resources match the actual
+preview stack, that each resource type is both a known environment resource and
+supported by the resource installation/cleanup paths, that generated resource
+and cleanup shell is syntactically valid, and that upgrade metadata remains
+reviewable. The test also verifies the existing deployment plan still includes
+dependency installation before repository build commands.
+
+The model currently lists more resource types for ordinary environments, but
+the curated preview lifecycle has complete installation and exact cleanup
+support only for managed PostgreSQL and Valkey. Mailpit is therefore explicitly
+deferred until its resource identity, generated configuration, readiness,
+backup/restore, retry and deletion semantics can be implemented and tested
+together. `nextjs` remains unpublished for the same evidence reason.
+
+No route, API envelope, schema, persisted value, queue payload, provider call,
+credential, installation command or existing template behavior changed in this
+characterization slice.
+
+### Verification and remaining work
+
+The new lifecycle characterization passed **3 tests and 57 assertions**. The
+adjacent service-template, release, PostgreSQL resource, preview cleanup,
+project-creation and preview-deployment batch passed **41 tests and 408
+assertions** with the isolated array session driver. An initial adjacent run
+using unsupported `SESSION_DRIVER=sync` failed during Laravel test setup and
+was discarded as environment evidence; it did not execute the affected
+application assertions.
+
+The feature commit `818ebc0` was fast-forwarded through canonical `main` and
+pushed to GitHub `origin/main` on 2026-09-13. The exact next task is Phase 5:
+improve deployment clarity and characterize monorepo change impact without
+changing deployment strategies, approval checks, revision identity, webhook
+idempotency, cancellation or stale-attempt handling. Provider/cloud acceptance,
+template installation on real hosts and the separate live drill remain
+outstanding.
 
 ## Slice ledger
 
@@ -1156,6 +1233,7 @@ service only if its existing lifecycle can support it.
 | Phase 3F | The existing provider observation discarded provider lifecycle state, so the UI could not distinguish a provider-reported ready server from a stopped one and local preview callbacks could be over-interpreted as remote health. Extended the existing `CloudServerData` result and three provider adapters with normalized transient readiness, then carried it through the existing manager-authorized observation query and view. | Focused provider contract/observation batch: 10 passed, 84 assertions. Fresh isolated full PHP suite: 1,366 passed, 1 unchanged baseline failure, 11,808 assertions. Required-PHP Composer validation/platform checks, Pint, Vite and `git diff --check` passed. No persistence, polling, reconciliation, remote mutation or route/API contract change. | `8a116dc` — `feat: expose provider readiness state` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4: begin the smallest curated service-template slice with explicit version, compatibility/readiness and recovery metadata. |
 | Phase 4A | Existing application presets had runtime defaults but no explicit versioned operational contract, and project creation did not record which curated definition supplied its defaults. Added immutable catalog/data boundaries and Laravel 1.0.0 metadata for compatibility, resources/credential modes, persistent data, readiness, limits, backup/restore, upgrade, recovery and deletion; new curated projects record `template_version`, while legacy/unpublished presets remain unversioned. | Focused catalog/project/runtime/preview batch: 38 passed, 326 assertions. Fresh isolated full PHP suite: 1,371 passed, 1 unchanged baseline failure, 11,839 assertions. Populated SQLite migration rollback/reapply and config-cache checks passed; Composer/platform, Pint, Vite and `git diff --check` passed. No installation, upgrade, remote mutation or queue contract change. | `925baf5` — `feat: version curated application templates` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4B: characterize existing Node resource composition and add it only with complete lifecycle/recovery evidence. |
 | Phase 4B | The generic Node preset had runtime defaults but no preview composition, and preview environments did not inherit the selected source runtime settings. Added a versioned Node service-template declaration for managed PostgreSQL/Valkey and copied only the existing runtime fields into preview environments. Reused the existing snapshot, encrypted credential, callback readiness, ownership-aware cleanup and retry paths; Node has no Laravel workers or automatic initialization. | Focused catalog/project/runtime/preview batch: 41 passed, 372 assertions. Adjacent preview/concurrency/cleanup/readiness/PostgreSQL/configuration-resource/runtime/project batch: 56 passed, 518 assertions. Fresh isolated full PHP suite with PHPUnit `:memory:` configuration: 1,374 passed, 1 unchanged baseline failure, 11,885 assertions. PHP lint, Composer/platform, Pint, Vite, config-cache and `git diff --check` passed. A file-database run was discarded because it invalidated the repository's isolation assertions. No remote mutation, dependency or queue contract change. | `b8c5871` — `feat: compose node preview resources` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4C: characterize template installation/upgrade execution and assess one additional service only if its existing lifecycle can support it. |
+| Phase 4C | Curated metadata needed characterization against the actual deployment, resource-installation and exact-cleanup paths before another service could be published. Added a lifecycle contract test for published Laravel/Node templates and explicitly deferred Mailpit because the resource model, configuration schema, provisioning, backup and cleanup lifecycle do not support it yet. Template upgrades remain reviewed deployments; no automatic version mutation was introduced. | Lifecycle characterization: 3 passed, 57 assertions. Adjacent service-template, release, PostgreSQL resource, preview cleanup, project-creation and preview-deployment batch: 41 passed, 408 assertions with `SESSION_DRIVER=array`. Pint and `git diff --check` passed. The unsupported `SESSION_DRIVER=sync` attempt failed during test setup and was discarded. | `818ebc0` — `test: characterize service template lifecycle` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 5: improve deployment clarity and characterize monorepo change impact without changing deployment strategies or callback/approval guarantees. |
 
 ## Phase 1 exit verification
 

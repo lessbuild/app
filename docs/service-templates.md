@@ -80,6 +80,15 @@ The published 1.0.0 contracts describe the existing local support boundaries:
   not evidence that a remote provider, SSH connection, application, database,
   cache or process is currently healthy.
 
-Installation/upgrade execution, additional service catalog entries and
-provider/cloud acceptance are not covered by this contract slice. They require
-their own lifecycle and recovery evidence before being expanded further.
+Installation and upgrades use the existing reviewed repository deployment and
+configuration-apply paths. The lifecycle characterization verifies that every
+published template reaches the shared dependency, managed-resource and exact
+preview-cleanup stages; it does not create an automatic template-upgrade
+mutation. A version change must remain an explicit review with its application,
+resource and data consequences.
+
+Additional service catalog entries remain deferred. In particular, Mailpit is
+not published because its resource identity, configuration schema, readiness,
+backup/restore, retry and deletion behavior are not implemented across the
+existing lifecycle. Provider/cloud acceptance, installation on real hosts and
+the separate live drill also remain outstanding.
