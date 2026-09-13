@@ -1,7 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7G's organization-owned named investigation views are complete
-locally. Phase 7F's disabled-by-default revision-aware post-deployment
+Status: Phase 8's structured-diagnostics characterization is complete locally.
+Phase 7G's organization-owned named investigation views and Phase 7F's
+disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
 environment evidence integration are also complete. The read-only
 context, finite troubleshooting filters, validated share link, stable alert
@@ -2741,10 +2742,101 @@ asset/browser suite (**9 passed**) also passed.
 
 The new web routes do not change existing API envelopes, notification
 preferences, context filter semantics or evidence retention. No provider,
-cloud, billing or live-acceptance claim is made. The exact next task is Phase 8
-structured-diagnostics characterization: inventory the existing bounded
-runtime, process, storage and connectivity diagnostics before designing any
-interactive terminal transport.
+cloud, billing or live-acceptance claim is made. The exact next task is the
+Phase 8 typed category-aware control-plane diagnostic report, after which any
+server-host probe or interactive terminal transport must be designed as a
+separate bounded protocol.
+
+## Phase 8 — structured diagnostics characterization (completed investigation)
+
+### Existing diagnostic boundaries
+
+The application already has a bounded control-plane diagnostic path.
+`OperationalDiagnostics::run()` returns fourteen safe checks when optional
+systemd inspection is disabled: application key presence, application URL
+shape, database connectivity, migration readiness, storage and bootstrap-cache
+writability, production debug and queue configuration, email readiness,
+external-monitoring configuration, pending and failed queue state, and
+optional application-service and automation-timer state. It injects the
+readiness, database, email and monitoring collaborators, reads queue counts and
+timestamps rather than payloads, uses bounded `systemctl` processes and
+replaces failures with safe details. It does not return configuration values,
+queue payloads, exception text or endpoint bodies.
+
+`SystemHealth` uses those checks for a short-lived dashboard cache and for a
+fresh private manager-only HTML/JSON report. `DiagnoseApplicationCommand` is
+the machine-readable and human-readable CLI adapter, and
+`PublicPlatformStatus` derives coarse public components from the same named
+checks. The existing route, JSON envelope, check names, detail strings, cache
+key and authorization are compatibility contracts. They are not a
+server-host diagnostic and must remain unchanged while the internal result
+boundary is improved.
+
+The server-side paths have different scopes:
+
+| Area | Existing entry point | What it safely establishes | Why it is not the next interactive boundary |
+| --- | --- | --- | --- |
+| Import discovery | `ServerDiscovery::inspect()` and `InspectServerImportAction` | Pins the SSH host identity, runs one fixed read-only script, verifies root/Ubuntu/architecture and returns bounded capacity/service warnings before import. | It is an import-time admission check; it is not persisted, polled or intended to represent current process/storage/connectivity health. |
+| Numeric telemetry | `CollectServerMetricsJob` and `ServerMetric` | Runs a fixed `/proc`, `df` and process-count sample for an active server, stores bounded numeric metrics, evaluates existing alerts and prunes old samples. | Metrics are measurements, not a readiness report; no service identity, diagnostic category or failure-stage contract should be inferred from a missing sample. |
+| Runtime logs | `RefreshServerLogJob`, `CollectServerLogAction` and `ServerLogSnapshot` | Refreshes an allowlisted, bounded log category asynchronously and retains output for an authorized server view/download. | Log text is evidence, not structured health state; it must remain bounded and separately authorized. |
+| Arbitrary commands | `QueueServerCommandAction`, `RunServerCommandJob` and `ServerCommand` | Locks an active server, enforces owner/deploy access and one active execution, encrypts the command/output, dispatches after commit and retains a bounded root-command result. | It is a deliberately powerful operation, not a diagnostic API. Reusing it for fixed probes would blur permissions, audit meaning, retry semantics and future terminal transport. |
+
+There is currently no persisted or routed structured diagnostic report for an
+already-imported server. `ServerShow` displays metrics, log snapshots and the
+command dialog, but does not claim that any of those proves current runtime,
+process, storage or connectivity readiness. The existing `ServerPolicy` gives
+workspace members view access and deploy-capable actors update/command access;
+any future server diagnostic read must select and document its own ability
+without weakening tenant scoping or turning a viewer request into root command
+execution.
+
+### Responsibility and protocol decisions
+
+The first Phase 8 implementation slice will improve the existing control-plane
+diagnostic contract, not create an interactive shell. Introduce an immutable,
+category-aware diagnostic check/report boundary and keep
+`OperationalDiagnostics::run()` as a compatibility adapter that returns the
+current arrays in the current order. Categories will cover runtime
+configuration, storage, connectivity and process/automation checks. The CLI,
+`SystemHealth`, `PublicPlatformStatus`, JSON fields, check names/details and
+cache behavior will continue to consume the legacy projection until a separate
+read-surface change is justified and tested.
+
+This is a single-responsibility improvement: the diagnostic result becomes an
+explicit value rather than an untyped array while the existing service remains
+the composition point for the current checks. It applies dependency inversion
+without adding interfaces for concrete application checks or repositories. A
+later server-host diagnostic slice may reuse the typed result shape, but must
+first define a fixed read-only command, host-key behavior, output allowlist,
+timeout, failure and retention contract. It must not call
+`QueueServerCommandAction` or expose secrets from environment files, command
+output, logs or old input.
+
+Interactive troubleshooting is explicitly deferred. The current `Runner`
+executes as root and disables strict host-key checking when a server has no
+stored key; there is no short-lived session grant, separate connect/execute
+ability, membership revalidation, idle/concurrency limit, resize/disconnect
+protocol, abandoned-process cleanup or terminal audit record. Designing those
+after the fixed diagnostic boundary prevents a convenient command dialog from
+becoming an unbounded remote execution transport.
+
+### Verification and next task
+
+The characterization inspected the existing source, routes, policies, jobs,
+models, migrations and focused tests without changing application behavior,
+schema, queue state or remote resources. Existing focused coverage includes
+the safe human/JSON diagnostics report, systemd service/timer outcomes, bounded
+queue checks, secret exclusion, import discovery, metrics collection,
+command encryption/lifecycle and log snapshots. The known full-suite baseline
+failure remains `ProvisioningHardeningTest::test_website_database_user_is_local_only`;
+it is unrelated to this characterization. Provider/cloud acceptance and the
+separate live acceptance drill remain outstanding.
+
+**Phase 8 characterization exit gate: complete.** The exact next task is to
+implement the typed category-aware control-plane diagnostic report while
+preserving the existing `run()` projection and all current CLI, JSON, cache and
+HTTP behavior. Only after that slice is verified should a fixed server-host
+diagnostic or interactive transport be considered.
 
 ## Slice ledger
 
@@ -2768,7 +2860,8 @@ interactive terminal transport.
 | Phase 7F observation execution/read surface | The observation aggregate needed durable remote execution, lease recovery and a safe user-facing result without changing periodic website health or immediate deployment health. Added a post-commit unique job, a locked two-minute claim action, bounded queue retries/backoff, a minute-level scheduler for due work and expired leases, current build/revision/target revalidation, terminal expiry/failure/supersession outcomes and stale-claim protection. Build details expose bounded status metadata while hiding claim tokens and remote error text. | Final focused observation run: **14 tests / 87 assertions**. Fresh strict isolated full PHP suite: **1,429 tests / 12,359 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check`, Vite and required-PHP asset/browser suite: **9 passed**. | `c6eff04` — `feat: execute revision-bound deployment observations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Include revision-bound observation outcomes in the bounded environment evidence context, preserving service filters, tenant authorization and exclusion of remote error text. |
 | Phase 7F environment evidence outcomes | The bounded environment evidence context had no revision-bound outcome from an explicitly requested post-deployment observation. Extended the existing tenant-scoped query to retain active observations outside the time window, preserve service filters and eager-load only approved fields. An immutable `DeploymentObservationEvidence` read model and view expose status, checks, duration, HTTP status and check time only; exact build/revision/current-website matching rejects stale or cross-target rows. No remote calls, writes, jobs, routes or causal claims were added. | Combined environment-context, deployment-observation and observability regression run: **39 tests / 295 assertions**. Fresh strict isolated full PHP suite: **1,433 tests / 12,383 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check`, Vite and required-PHP asset/browser suite (**9 passed**) passed. | `0390030` — `feat: surface deployment observations in environment evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize named saved investigation views, including organization/resource authorization, filter normalization, expiry and retention, before deciding whether persistence is justified. |
 | Phase 7G characterization | Existing saved notification filters are personal user-preference JSON with notification-only criteria, a ten-entry cap and name replacement, but no organization/environment identity, membership visibility, expiry or retention. The stateless observability URL already normalizes finite filters and rechecks environment authorization on every visit. Characterized and rejected reuse of the personal preference boundary; named shared views justify a separate organization-owned, environment-bound record with opaque identity, revalidated filters, explicit expiry and bounded retention. | Focused notification-inbox and observability regression run: **34 tests / 261 assertions**. Read-only source/behavior characterization; no application behavior, schema or runtime state changed. | `2bf89f8` — `docs: characterize named saved investigation views` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the organization-owned named investigation view with validated filters, policy rechecks, opaque identifiers, explicit expiry, atomic retention bounds and redirect to the canonical context read. |
-| Phase 7G named investigations | The stateless context link had no bounded named team handoff, and notification preferences could not safely carry workspace/environment authorization. Added an organization-owned, environment-bound view with opaque UUID routing, finite normalized filters, creator/manager deletion policy, current-resource revalidation, 7/30/90-day expiry choices, a 50-active-view organization cap and a bounded scheduled prune command. Opening redirects to the canonical context, so evidence remains read-only, current and secret-safe. | `ObservabilityInvestigationViewTest`: **10 tests / 48 assertions**. Adjacent observability/notification regression set: **44 tests / 309 assertions**. Fresh strict isolated full PHP suite: **1,443 tests / 12,433 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, Vite, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a2351fa` — `feat: add saved observability investigations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 8: characterize existing bounded runtime, process, storage and connectivity diagnostics before designing interactive terminal transport. |
+| Phase 7G named investigations | The stateless context link had no bounded named team handoff, and notification preferences could not safely carry workspace/environment authorization. Added an organization-owned, environment-bound view with opaque UUID routing, finite normalized filters, creator/manager deletion policy, current-resource revalidation, 7/30/90-day expiry choices, a 50-active-view organization cap and a bounded scheduled prune command. Opening redirects to the canonical context, so evidence remains read-only, current and secret-safe. | `ObservabilityInvestigationViewTest`: **10 tests / 48 assertions**. Adjacent observability/notification regression set: **44 tests / 309 assertions**. Fresh strict isolated full PHP suite: **1,443 tests / 12,433 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, Vite, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a2351fa` — `feat: add saved observability investigations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 8 characterization is complete; implement the typed category-aware control-plane diagnostic report. |
+| Phase 8 characterization | The application already has separate safe control-plane diagnostics, import-time SSH discovery, numeric server telemetry, bounded logs and encrypted arbitrary root-command history, but no typed category-aware diagnostic report and no justified interactive transport. Characterized their scopes, authorization, output/secret boundaries, process timeouts and failure semantics. Decided to type the existing control-plane result first while preserving the current CLI/JSON/HTTP/cache projection; server-host probes and terminal sessions remain separate designs. | Read-only source, route, policy, job, migration and focused-test characterization completed; no application behavior, schema, queue state or remote resource changed. The known baseline `ProvisioningHardeningTest::test_website_database_user_is_local_only` remains unchanged. | Pending implementation | No application commit yet; this characterization will be committed and pushed before code changes. | Implement the typed category-aware control-plane diagnostic report with an exact legacy projection, then verify existing CLI, system-health, public-status and secret-safety behavior. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
