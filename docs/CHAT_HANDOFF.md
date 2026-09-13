@@ -36,10 +36,12 @@ tests / 12,443 assertions** with the unchanged
 `ProvisioningHardeningTest::test_website_database_user_is_local_only` failure.
 Required-PHP Composer validation/platform checks, PHP lint, full Pint, route
 cache and `git diff --check` passed. This PHP-only slice made no frontend
-changes. The exact next task is to characterize and design a fixed server-host
-structured diagnostic contract with explicit host-key, command allowlist,
-timeout, failure and retention semantics; interactive terminal transport
-remains deferred.
+changes. The fixed server-host diagnostic contract is now characterized in
+the progress ledger, including pinned host identity, an allowlisted versioned
+script, bounded scalar parsing, lease/retry behavior and latest-result
+retention. The exact next task is to implement its persisted asynchronous
+snapshot/action/job/read boundary; interactive terminal transport remains
+deferred.
 
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
