@@ -1,6 +1,6 @@
 # BuildPusher product expansion progress
 
-Status: Phase 5B per-service repository-root slice complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 5B read-only multi-target impact-preview slice complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
@@ -8,11 +8,11 @@ ownership-aware cleanup, atomic concurrent-preview quotas, explicit
 initialization/resource credential boundaries, normalized provider readiness
 observations, the versioned curated service-template contract, the Node
 resource composition, the lifecycle characterization, deployment evidence
-timeline, the conservative monorepo path-filter slice and per-service
-repository-root execution boundary are complete. No additional service is
-published without lifecycle support. Provider-side cloud acceptance, the
-separate live drill and the read-only multi-target change-impact preview remain
-outstanding.
+timeline, the conservative monorepo path-filter slice, per-service
+repository-root execution boundary and read-only multi-target impact preview
+are complete. No additional service is published without lifecycle support.
+Provider-side cloud acceptance, the separate live drill and verified backup
+recovery remain outstanding.
 
 Date: 2026-09-13
 
@@ -1458,11 +1458,81 @@ Commit `72d7c69` (`feat: support per-service repository roots`) was
 fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 2026-09-13.
 
-The exact next task is a separately verified, read-only multi-target impact
-preview over the scoped repository inventory. It must reuse the pure path
-impact evaluator, show affected/unaffected/unknown targets conservatively,
-perform no writes or queue dispatch, and preserve unknown-path deployment
-behavior. Do not infer shared dependencies.
+The read-only multi-target impact preview described above is now complete. The
+exact next task is Phase 6: characterize backup completion separately from
+verified application/control-plane recovery, then implement the smallest
+read-only recovery evidence slice. Preserve existing restore and cleanup
+semantics; do not infer shared dependencies.
+
+## Phase 5B — read-only multi-target impact preview (completed slice)
+
+### Concrete responsibility problem
+
+The automatic webhook path filter already evaluated one repository target, but
+users had no way to answer which enabled services would be affected by the
+same changed-file set before sending or replaying a push. Repeating that logic
+in a controller would risk different include/exclude or unknown-path semantics
+from the webhook workflow and could accidentally become a deployment trigger.
+
+### Responsibility boundary and applicable principles
+
+- **Single responsibility:** `RepositoryImpactPreviewQuery` composes the
+  existing tenant-scoped `RepositoryInventoryQuery` with the pure
+  `RepositoryChangeImpactEvaluator`; `RepositoryImpactPreview` and
+  `RepositoryImpactPreviewTarget` carry the immutable read result. The
+  controller only authorizes, invokes the query and renders the response.
+- **Dependency inversion:** the preview depends on the existing evaluator and
+  inventory collaborators rather than provider payloads, Eloquent writes or
+  webhook orchestration. No new provider contract or generic repository was
+  introduced.
+- **Laravel mechanisms:** `RepositoryImpactPreviewRequest` owns bounded
+  newline-path validation and the explicit unavailable-data mode;
+  `RepositoryPolicy::viewAny` protects the workspace inventory; eager-loaded
+  website data avoids per-target relationship queries; the GET route and Blade
+  view are read-only.
+
+### Implementation, intentional change and preserved behavior
+
+Added `repositories.impact-preview`, linked from the repository inventory. A
+workspace member can enter normalized relative changed paths or explicitly
+mark the provider path list unavailable. The query evaluates only repositories
+with enabled push webhooks in the selected workspace, ordered deterministically,
+and displays each service root, configured scope and at most the first five
+matched paths. Affected, unaffected and unknown totals are shown together;
+unknown data remains conservative and is described as deployable. Foreign
+repositories, disabled push targets and repository credentials are not
+rendered.
+
+This is an opt-in read-only feature. It creates no builds, webhook deliveries,
+jobs, provider calls or persisted state and does not alter automatic webhook
+behavior. Empty path input is rejected; unavailable path data is an explicit
+preview mode. Existing webhook behavior remains conservative when provider
+paths are missing, shared dependencies still require explicit target filters,
+and no shared-dependency inference or cross-service orchestration was added.
+
+### Verification and limitations
+
+The new preview feature suite passed **4 tests and 24 assertions**. The
+repository/deployment regression batch passed **61 tests and 524 assertions**,
+including tenancy, path-filter, root, webhook, history, rollback and no-side-
+effect behavior. The fresh isolated full PHP suite passed **1,400 tests and
+12,111 assertions** with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script contains
+four). Full Pint, changed-file PHP lint, route registration and
+`git diff --check` passed. No frontend assets changed in this slice. This is
+local application evidence only; provider-side cloud acceptance and the
+separate live drill remain outstanding.
+
+Commit `3940a28` (`feat: preview repository deployment impact`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13.
+
+The exact next task is Phase 6: characterize backup completion separately from
+verified application/control-plane recovery, then implement the smallest
+read-only recovery evidence slice while preserving restore destinations,
+overwrite safeguards, duplicate protection, retries, partial-failure cleanup
+and existing dispatch semantics.
 
 ## Slice ledger
 
@@ -1492,7 +1562,8 @@ behavior. Do not infer shared dependencies.
 | Phase 4C | Curated metadata needed characterization against the actual deployment, resource-installation and exact-cleanup paths before another service could be published. Added a lifecycle contract test for published Laravel/Node templates and explicitly deferred Mailpit because the resource model, configuration schema, provisioning, backup and cleanup lifecycle do not support it yet. Template upgrades remain reviewed deployments; no automatic version mutation was introduced. | Lifecycle characterization: 3 passed, 57 assertions. Adjacent service-template, release, PostgreSQL resource, preview cleanup, project-creation and preview-deployment batch: 41 passed, 408 assertions with `SESSION_DRIVER=array`. Pint and `git diff --check` passed. The unsupported `SESSION_DRIVER=sync` attempt failed during test setup and was discarded. | `818ebc0` — `test: characterize service template lifecycle` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by Phase 5A deployment evidence; proceed to Phase 5B monorepo change-impact characterization. |
 | Phase 5A | Build details had lifecycle facts in separate status fields, setup stages and failure guidance, with no unified request-to-health evidence view. Added a plan-driven read collaborator, immutable timeline entries, exact revision/actor/approval context and the existing configuration-operation identity without adding writes or schema changes. | Timeline/history/log batch: **16 passed, 134 assertions**. Fresh isolated full PHP suite: **1,383 passed, 1 unchanged baseline failure, 11,979 assertions**. Pint, PHP lint and `git diff --check` passed. Encrypted configuration payload was not rendered. | `b5d1cab` — `feat: clarify deployment lifecycle evidence` | Pushed to GitHub `origin/main` on 2026-09-13. | Completed by the Phase 5B path-filter slice below; characterize per-service repository-root execution and multi-target impact next. |
 | Phase 5B path filters | Automatic webhook deployment had no per-target path scope or persisted provider changed paths. Added bounded relative include/exclude globs, GitHub/GitLab extraction, conservative unknown handling, explicit skipped history, pending-path aggregation, request/UI configuration and dashboard/history/retention support. | Focused evaluator/webhook/request/history/dashboard/demo/retention batch: **57 passed, 976 assertions**. Fresh isolated full PHP suite: **1,392 passed, 1 unchanged baseline failure, 12,027 assertions**. Full Pint and `git diff --check` passed. | `c79c736` — `feat: add safe monorepo path filters` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the per-service repository-root slice; implement a read-only multi-target impact preview without changing unavailable-path behavior. |
-| Phase 5B repository roots | Deployment scripts and website-level maintenance jobs assumed one repository root per target. Added a validated optional service root, immutable build-payload snapshot/fallback, root-aware deployment scripts/jobs and an injected shared Caddy renderer. Default paths and historical/queued compatibility remain unchanged; no shared-dependency inference or multi-target orchestration was added. | Focused deployment-root/preview/rollback/backup/hooks/runtime/domain/security batch: **60 passed, 586 assertions**. Fresh isolated full PHP suite: **1,396 passed, 1 unchanged baseline failure, 12,086 assertions**. Required-PHP platform checks, Pint, Vite and `git diff --check` passed. | `72d7c69` — `feat: support per-service repository roots` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement a read-only multi-target impact preview over scoped repositories; affected/unaffected/unknown results must be conservative and must not write or dispatch jobs. |
+| Phase 5B repository roots | Deployment scripts and website-level maintenance jobs assumed one repository root per target. Added a validated optional service root, immutable build-payload snapshot/fallback, root-aware deployment scripts/jobs and an injected shared Caddy renderer. Default paths and historical/queued compatibility remain unchanged; no shared-dependency inference or multi-target orchestration was added. | Focused deployment-root/preview/rollback/backup/hooks/runtime/domain/security batch: **60 passed, 586 assertions**. Fresh isolated full PHP suite: **1,396 passed, 1 unchanged baseline failure, 12,086 assertions**. Required-PHP platform checks, Pint, Vite and `git diff --check` passed. | `72d7c69` — `feat: support per-service repository roots` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the read-only multi-target impact-preview slice; proceed to Phase 6 verified backup-recovery characterization. |
+| Phase 5B impact preview | The webhook evaluator could decide one target, but users could not preview the same changed-file set across their enabled push targets. Added a policy-protected GET preview that reuses the tenant-scoped inventory and pure evaluator, accepts bounded newline paths or explicit unavailable data, and reports affected/unaffected/unknown targets without any write or queue path. | Preview feature suite: **4 passed, 24 assertions**. Repository/deployment regression batch: **61 passed, 524 assertions**. Fresh isolated full PHP suite: **1,400 passed, 1 unchanged baseline failure, 12,111 assertions**. Full Pint, changed-file PHP lint, route registration and `git diff --check` passed; no frontend assets changed. | `3940a28` — `feat: preview repository deployment impact` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 6: characterize backup completion versus verified recovery, then implement the smallest read-only recovery evidence slice while preserving restore and cleanup semantics. |
 
 ## Phase 1 exit verification
 

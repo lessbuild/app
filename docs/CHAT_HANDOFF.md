@@ -2,8 +2,8 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 5B's per-service
-repository-root slice is complete locally through commit `72d7c69`, implemented
+The product-expansion sequence is active on `main`. Phase 5B's read-only
+multi-target impact-preview slice is complete locally through commit `3940a28`, implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
@@ -63,8 +63,18 @@ directory. Rollbacks, previews and configuration identity preserve the root;
 legacy builds fall back to the repository value. Blank/`.` roots retain the
 old paths, and a release remains a whole checkout under the existing slug.
 There is no shared-dependency inference, separate release-artifact model or
-multi-target impact preview yet. Website-level maintenance follows the latest
-successful service deployment where available.
+automatic cross-service orchestration. Website-level maintenance follows the
+latest successful service deployment where available.
+
+The repository inventory now links to a read-only **Deployment impact preview**.
+It evaluates the existing pure path-impact rules across enabled push-webhook
+targets in the selected workspace, accepts newline-delimited paths or an
+explicit unavailable-path mode, and shows affected, unaffected and unknown
+targets with service roots and bounded matched-path evidence. `viewAny`
+authorization and eager-loaded tenant-scoped inventory protect the read; the
+page creates no builds, deliveries, jobs, provider calls or persisted state.
+Unknown path data remains conservative, and no shared-dependency inference or
+cross-service orchestration was added.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -87,9 +97,15 @@ rollback/backup/hooks/runtime/domain/security batch passed **60 tests / 586
 assertions**. The fresh full suite at `72d7c69` passed **1,396 tests /
 12,086 assertions**, with the same unchanged `ProvisioningHardeningTest`
 `localhost` count failure. Required-PHP Composer platform checks, full Pint,
-Vite asset build and `git diff --check` passed. The exact next task is a
-read-only multi-target impact preview over scoped repositories, with
-conservative affected/unaffected/unknown results and no writes or queued jobs.
+Vite asset build and `git diff --check` passed. The preview feature suite
+passed **4 tests / 24 assertions**; the repository/deployment regression batch
+passed **61 tests / 524 assertions**. The fresh full suite at `3940a28` passed
+**1,400 tests / 12,111 assertions**, with the same unchanged
+`ProvisioningHardeningTest` `localhost` count failure. Full Pint, changed-file
+PHP lint, route registration and `git diff --check` passed. No frontend assets
+changed. The exact next task is Phase 6: characterize backup completion
+separately from verified recovery, then add the smallest read-only recovery
+evidence slice while preserving restore and cleanup semantics.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
