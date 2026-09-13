@@ -8,14 +8,15 @@ information required before BuildPusher can advertise a supported topology.
 ## Current contract
 
 The curated contract is defined in `config/application-templates.php` under
-`service_template` and normalized by `ApplicationTemplateCatalog`. The Laravel
-presets currently published under this contract are:
+`service_template` and normalized by `ApplicationTemplateCatalog`. The
+currently published presets are:
 
 | Preset | Version | Runtime | Managed preview resources |
 | --- | --- | --- | --- |
 | `laravel` | `1.0.0` | PHP/Laravel | PostgreSQL and Valkey |
 | `laravel-inertia` | `1.0.0` | PHP/Laravel + Inertia | PostgreSQL and Valkey |
 | `laravel-api` | `1.0.0` | PHP/Laravel API | PostgreSQL and Valkey |
+| `node` | `1.0.0` | Node.js | PostgreSQL and Valkey |
 
 Each definition records:
 
@@ -26,7 +27,8 @@ Each definition records:
 - bounded process/resource limits;
 - backup and restore scope;
 - upgrade guidance;
-- initialization, provisioning and cleanup recovery guidance; and
+- initialization where the preset has a safe default, provisioning and cleanup
+  recovery guidance; and
 - deletion and retention behavior.
 
 These fields are non-secret support metadata. They do not contain generated
@@ -46,9 +48,25 @@ configuration review/apply workflow where it changes application state. A
 template definition change alone is not an upgrade and must not mutate an
 existing installation.
 
+## Node composition
+
+The `node` preset composes the existing runtime, managed-resource, readiness and
+cleanup paths. It has no worker process or automatic initialization command:
+application-specific migrations and seed data remain part of the reviewed
+repository deployment. Preview builds receive the managed PostgreSQL and Valkey
+variables through the same encrypted deployment snapshot used by other
+supported presets. A preview inherits the selected nonpreview environment's
+runtime type, version, build command, start command, port and Dockerfile path;
+the default Laravel values remain unchanged.
+
+`nextjs` remains an existing but unpublished Node runtime preset. It is not
+silently upgraded to the curated contract because framework-specific build,
+initialization, recovery and compatibility behavior still needs its own
+evidence.
+
 ## Recovery boundaries
 
-The Laravel 1.0.0 contract describes the existing local support boundaries:
+The published 1.0.0 contracts describe the existing local support boundaries:
 
 - PostgreSQL application data and BuildPusher control-plane data are separate
   recovery scopes.
@@ -62,7 +80,6 @@ The Laravel 1.0.0 contract describes the existing local support boundaries:
   not evidence that a remote provider, SSH connection, application, database,
   cache or process is currently healthy.
 
-Node composition, installation/upgrade execution, additional service catalog
-entries and provider/cloud acceptance are not covered by this first contract
-slice. They require their own lifecycle and recovery evidence before being
-published as supported templates.
+Installation/upgrade execution, additional service catalog entries and
+provider/cloud acceptance are not covered by this contract slice. They require
+their own lifecycle and recovery evidence before being expanded further.

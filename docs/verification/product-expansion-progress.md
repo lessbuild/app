@@ -1,14 +1,14 @@
 # BuildPusher product expansion progress
 
-Status: Phase 4A complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 4B complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
 ownership-aware cleanup, atomic concurrent-preview quotas, explicit
-initialization/resource credential boundaries and normalized provider
-readiness observations and the first versioned curated service-template
-contract are complete. Provider-side cloud acceptance and the separate live
-drill remain outstanding.
+initialization/resource credential boundaries, normalized provider readiness
+observations, the versioned curated service-template contract and the Node
+resource composition are complete. Provider-side cloud acceptance and the
+separate live drill remain outstanding.
 
 Date: 2026-09-13
 
@@ -196,12 +196,11 @@ application defect or an outdated expectation and record the decision.
    expose one-time normalized provider lifecycle/readiness observations.
    Local implementation is complete; completion still requires provider-side
    and cloud evidence.
-5. **Phase 4 — curated service templates.** Phase 4A now defines a versioned,
-   immutable operational contract for the supported Laravel presets and records
-   the installed version on new projects without rewriting legacy rows. Next,
-   compose the existing Node preset with supported resources, then add only
-   templates with installation, readiness, upgrade, restore and deletion
-   evidence.
+5. **Phase 4 — curated service templates.** Phase 4B now composes the generic
+   Node preset with the existing managed PostgreSQL/Valkey, readiness and
+   cleanup paths while preserving the versioned Laravel contract. Next,
+   characterize template installation/upgrade execution and add only templates
+   with installation, readiness, upgrade, restore and deletion evidence.
 6. **Phase 5 — deployment clarity and monorepo support.** Improve timeline and
    change-impact visibility while preserving existing deployment strategies.
 7. **Phase 6 — verified backup recovery.** Separate backup completion from
@@ -1049,10 +1048,88 @@ Vite build and `git diff --check` passed. The feature commit `925baf5` was
 fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on
 2026-09-13. This slice defines support metadata and version identity only; it
 does not claim Node composition, template installation/upgrade execution or
-provider/cloud acceptance. The exact next task is Phase 4B: characterize the
-existing Node preset's supported resource composition and add it only if
-installation, readiness, credentials, backup/recovery and cleanup semantics
-are all covered.
+provider/cloud acceptance. The Phase 4B Node composition is recorded below.
+
+## Phase 4B — Node preview composition (completed slice)
+
+### Concrete responsibility problem
+
+The existing generic `node` preset already supplied runtime commands for
+projects, but preview selection treated it as an empty stack. Its preview
+environment also did not carry the selected source environment's runtime
+settings, so a Node preview could fall back to the default PHP runtime. The
+resource and cleanup implementations were already generic; the missing
+responsibility was an explicit catalog declaration and a lifecycle boundary
+that preserved the source runtime configuration.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `ApplicationTemplateCatalog` continues to
+  normalize template data, `PreviewStackCatalog` selects declared children,
+  `PreviewDeploymentLifecycle` copies environment runtime settings, and the
+  existing environment actions, deployment snapshot service, readiness service
+  and cleanup job retain their respective responsibilities.
+- **Open/closed:** the Node composition is a versioned configuration/catalog
+  extension. No provider-specific conditionals or second resource-provisioning
+  implementation was introduced.
+- **Liskov substitution:** Node uses the same managed-resource result, encrypted
+  credential, callback readiness, retry, ownership and deletion contracts as
+  the existing Laravel preview stack; the feature test exercises the shared
+  lifecycle through a Node selection.
+- **Dependency inversion:** preview orchestration remains connected to the
+  existing catalog and resource/deployment collaborators. No HTTP request,
+  provider client or generic repository was added to the stack boundary.
+
+### Implementation and preserved behavior
+
+The generic `node` preset is now curated at version `1.0.0`. It declares managed
+PostgreSQL and Valkey, generated credential metadata, persistent-data and
+backup/restore boundaries, web/resource readiness checks, a two-resource limit,
+reviewable upgrade guidance, provisioning/cleanup recovery and deletion
+behavior. It intentionally declares no worker process and no automatic
+initialization command; application-specific migrations and seed data remain
+part of the reviewed repository deployment. `nextjs` remains an existing but
+unpublished runtime preset because its framework-specific lifecycle has not
+been characterized.
+
+When a preview is created, its environment now copies the selected nonpreview
+environment's runtime type, version, build command, start command, port and
+Dockerfile path. This makes the Node preset's existing runtime contract reach
+the preview deployment snapshot. The default Laravel preview values remain
+unchanged, while an explicitly configured source runtime is no longer lost.
+
+The existing `ConfigurePreviewStackAction`, `SaveEnvironmentResourceAction`,
+`PreviewResourceCredentials`, `DeploymentRequest`, `ConfigureResourcesScript`,
+`PreviewStackReadiness`, `QueuePreviewStackCleanupAction` and cleanup job remain
+the execution path. Database and Valkey values are generated/derived and
+encrypted at rest; they are not copied from the source website environment.
+Readiness remains callback-backed local resource state, and cleanup remains
+exact-identity, preview-owned and retryable. The new metadata does not perform a
+remote mutation or imply provider-side health. Existing projects are not
+backfilled or silently retagged; newly created Node projects receive the
+versioned identity through the Phase 4A project-creation boundary.
+
+### Verification and remaining work
+
+The focused catalog/project/runtime/preview batch passed **41 tests and 372
+assertions**. The adjacent preview/concurrency/cleanup/readiness/PostgreSQL/
+configuration-resource/runtime/project batch passed **56 tests and 518
+assertions**. The fresh isolated full PHP suite, using the repository's
+in-memory PHPUnit database configuration, passed **1,374 tests and 11,885
+assertions** with the one unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script contains
+four). A run that explicitly forced a file database produced three additional
+configuration-environment failures and was discarded as an invalid baseline.
+
+PHP lint, required-PHP Composer validation/platform checks, full Pint, Vite
+build, config-cache create/clear and `git diff --check` passed. The feature
+commit `b8c5871` was fast-forwarded through canonical `main` and pushed to
+GitHub `origin/main` on 2026-09-13. Installation/upgrade execution, an
+additional service such as Mailpit, Node cloud/provider acceptance and the
+separate live drill remain outstanding. The exact next task is Phase 4C:
+characterize template installation/upgrade execution and assess one additional
+service only if its existing lifecycle can support it.
 
 ## Slice ledger
 
@@ -1078,6 +1155,7 @@ are all covered.
 
 | Phase 3F | The existing provider observation discarded provider lifecycle state, so the UI could not distinguish a provider-reported ready server from a stopped one and local preview callbacks could be over-interpreted as remote health. Extended the existing `CloudServerData` result and three provider adapters with normalized transient readiness, then carried it through the existing manager-authorized observation query and view. | Focused provider contract/observation batch: 10 passed, 84 assertions. Fresh isolated full PHP suite: 1,366 passed, 1 unchanged baseline failure, 11,808 assertions. Required-PHP Composer validation/platform checks, Pint, Vite and `git diff --check` passed. No persistence, polling, reconciliation, remote mutation or route/API contract change. | `8a116dc` — `feat: expose provider readiness state` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4: begin the smallest curated service-template slice with explicit version, compatibility/readiness and recovery metadata. |
 | Phase 4A | Existing application presets had runtime defaults but no explicit versioned operational contract, and project creation did not record which curated definition supplied its defaults. Added immutable catalog/data boundaries and Laravel 1.0.0 metadata for compatibility, resources/credential modes, persistent data, readiness, limits, backup/restore, upgrade, recovery and deletion; new curated projects record `template_version`, while legacy/unpublished presets remain unversioned. | Focused catalog/project/runtime/preview batch: 38 passed, 326 assertions. Fresh isolated full PHP suite: 1,371 passed, 1 unchanged baseline failure, 11,839 assertions. Populated SQLite migration rollback/reapply and config-cache checks passed; Composer/platform, Pint, Vite and `git diff --check` passed. No installation, upgrade, remote mutation or queue contract change. | `925baf5` — `feat: version curated application templates` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4B: characterize existing Node resource composition and add it only with complete lifecycle/recovery evidence. |
+| Phase 4B | The generic Node preset had runtime defaults but no preview composition, and preview environments did not inherit the selected source runtime settings. Added a versioned Node service-template declaration for managed PostgreSQL/Valkey and copied only the existing runtime fields into preview environments. Reused the existing snapshot, encrypted credential, callback readiness, ownership-aware cleanup and retry paths; Node has no Laravel workers or automatic initialization. | Focused catalog/project/runtime/preview batch: 41 passed, 372 assertions. Adjacent preview/concurrency/cleanup/readiness/PostgreSQL/configuration-resource/runtime/project batch: 56 passed, 518 assertions. Fresh isolated full PHP suite with PHPUnit `:memory:` configuration: 1,374 passed, 1 unchanged baseline failure, 11,885 assertions. PHP lint, Composer/platform, Pint, Vite, config-cache and `git diff --check` passed. A file-database run was discarded because it invalidated the repository's isolation assertions. No remote mutation, dependency or queue contract change. | `b8c5871` — `feat: compose node preview resources` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4C: characterize template installation/upgrade execution and assess one additional service only if its existing lifecycle can support it. |
 
 ## Phase 1 exit verification
 

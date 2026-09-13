@@ -2,15 +2,15 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 4A was implemented
+The product-expansion sequence is active on `main`. Phase 4B was implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
-`925baf5`; it was fast-forwarded into canonical `main` and pushed to GitHub
+`b8c5871`; it was fast-forwarded into canonical `main` and pushed to GitHub
 `origin/main`. Building on the Phase 3A manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
 Phase 3E initialization/credential boundaries and Phase 3F provider
-observations, curated Laravel presets now have a versioned operational
-contract and new projects record the installed template version without
-rewriting legacy rows.
+observations, curated Laravel and generic Node presets now have a versioned
+operational contract and new projects record the installed template version
+without rewriting legacy rows.
 
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
@@ -19,21 +19,23 @@ only after completion and remains retryable after interruption or failure.
 Exact build/revision matching prevents stale callbacks from changing a newer
 attempt. New preview-owned Valkey resources receive encrypted random passwords
 and shell-escaped `--requirepass`; existing passwordful and legacy
-passwordless resources preserve their current state. The deployment plan still
-has 15 stages, queue dispatch remains outside the transaction, and provider
-readiness is not inferred from local callbacks.
+passwordless resources preserve their current state. Generic Node previews now
+inherit the selected source environment's runtime settings and compose the same
+managed PostgreSQL/Valkey resources without Laravel workers or initialization.
+The deployment plan still has 15 stages, queue dispatch remains outside the
+transaction, and provider readiness is not inferred from local callbacks.
 
-The fresh isolated full PHP suite at the feature commit passed **1,371 tests /
-11,839 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
+The fresh isolated full PHP suite at the feature commit passed **1,374 tests /
+11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
-4A focused catalog/project/runtime/preview coverage passed 38 tests / 326
-assertions. Migration
-fresh/rollback/reapply, PHP lint, required-PHP Composer validation/platform
-checks, full Pint, Vite build and `git diff --check` passed. This is local
-application evidence, not provider-side readiness, cloud lifecycle or the
-separate live drill. The exact next task is Phase 4B: characterize the existing
-Node preset's supported resource composition and add it only with complete
-installation, readiness, credentials, backup/recovery and cleanup semantics.
+4B focused catalog/project/runtime/preview coverage passed 41 tests / 372
+assertions; the adjacent preview/resource/configuration batch passed 56 tests /
+518 assertions. PHP lint, required-PHP Composer validation/platform checks, full
+Pint, Vite build, config-cache create/clear and `git diff --check` passed. This
+is local application evidence, not provider-side readiness, cloud lifecycle or
+the separate live drill. The exact next task is Phase 4C: characterize
+installation/upgrade execution and evaluate one additional service only if its
+existing lifecycle can support it.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
