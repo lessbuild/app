@@ -3,9 +3,11 @@
 namespace App\Http\Livewire;
 
 use App\Actions\Server\CollectServerLogAction;
+use App\Actions\Server\QueueServerDiagnosticAction;
 use App\Actions\Server\QueueServerLogRefreshAction;
 use App\Jobs\Server\CollectServerMetricsJob;
 use App\Models\Server;
+use App\Models\ServerDiagnosticSnapshot;
 use App\Models\ServerLogSnapshot;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
@@ -61,6 +63,20 @@ class ServerShow extends Component
     }
 
     /**
+     * Authorize a fixed read-only host diagnostic and queue it without opening
+     * an SSH connection during the Livewire request.
+     */
+    public function runDiagnostics(QueueServerDiagnosticAction $queueDiagnostics): void
+    {
+        Gate::authorize('diagnose', $this->server);
+        $snapshot = $queueDiagnostics->handle($this->server);
+
+        if ($snapshot->status === ServerDiagnosticSnapshot::STATUS_FAILED) {
+            $this->addError('diagnostics', $snapshot->error ?: __('Unable to run server diagnostics.'));
+        }
+    }
+
+    /**
      * Refresh and authorize server visibility, then render bounded metric history, selected logs, and polling state.
      */
     public function render(): View
@@ -79,9 +95,12 @@ class ServerShow extends Component
             ->whereNotNull('refreshed_at')
             ->sortByDesc('refreshed_at')
             ->first();
+        $diagnosticSnapshot = $this->server->diagnosticSnapshot()->first();
+        $diagnosticReport = $diagnosticSnapshot?->report();
         $logs = $logSnapshot?->log === null ? [] : explode(PHP_EOL, $logSnapshot->log);
         $shouldPoll = ! in_array($this->server->provisioning_status, [Server::STATUS_ACTIVE, Server::STATUS_FAILED], true)
-            || in_array($logSnapshot?->status, [ServerLogSnapshot::STATUS_QUEUED, ServerLogSnapshot::STATUS_REFRESHING], true);
+            || in_array($logSnapshot?->status, [ServerLogSnapshot::STATUS_QUEUED, ServerLogSnapshot::STATUS_REFRESHING], true)
+            || $diagnosticSnapshot?->isActive();
 
         return view('livewire.scenes.servers.show', [
             'websites' => $websites,
@@ -99,6 +118,8 @@ class ServerShow extends Component
             'shouldPoll' => $shouldPoll,
             'metricHistory' => $this->server->metrics()->where('recorded_at', '>=', now()->subDay())->latest('recorded_at')->limit(288)->get()->reverse()->values(),
             'latestMetric' => $this->server->metrics()->latest('recorded_at')->first(),
+            'diagnosticSnapshot' => $diagnosticSnapshot,
+            'diagnosticReport' => $diagnosticReport,
         ])->layout('components.layouts.app');
     }
 

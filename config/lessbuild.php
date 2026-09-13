@@ -44,6 +44,8 @@ return [
     'server_log_max_characters' => (int) env('SERVER_LOG_MAX_CHARACTERS', 262144),
     'server_command_output_max_characters' => (int) env('SERVER_COMMAND_OUTPUT_MAX_CHARACTERS', 262144),
     'server_command_retention_days' => (int) env('SERVER_COMMAND_RETENTION_DAYS', 180),
+    'server_diagnostic_output_max_characters' => (int) env('SERVER_DIAGNOSTIC_OUTPUT_MAX_CHARACTERS', 16384),
+    'server_diagnostic_lease_seconds' => (int) env('SERVER_DIAGNOSTIC_LEASE_SECONDS', 180),
     'notification_retention_days' => (int) env('NOTIFICATION_RETENTION_DAYS', 90),
     'sign_in_retention_days' => (int) env('SIGN_IN_RETENTION_DAYS', 90),
     'access_request_retention_days' => max(30, (int) env('ACCESS_REQUEST_RETENTION_DAYS', 365)),

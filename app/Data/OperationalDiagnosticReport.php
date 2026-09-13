@@ -51,4 +51,45 @@ final readonly class OperationalDiagnosticReport
             $this->checks,
         );
     }
+
+    /**
+     * Preserve typed categories for the bounded server diagnostic snapshot.
+     *
+     * @return list<array{name: string, category: string, passed: bool, detail: string}>
+     */
+    public function toStoredChecks(): array
+    {
+        return array_map(
+            fn (OperationalDiagnosticCheck $check): array => $check->toStoredArray(),
+            $this->checks,
+        );
+    }
+
+    /**
+     * Rehydrate a report from its generated, non-secret JSON representation.
+     *
+     * @param  list<array{name: string, category: string, passed: bool, detail: string}>  $checks
+     */
+    public static function fromStoredChecks(array $checks): self
+    {
+        return new self(array_map(function (array $check): OperationalDiagnosticCheck {
+            $category = is_string($check['category'] ?? null)
+                ? OperationalDiagnosticCategory::tryFrom($check['category'])
+                : null;
+
+            if (! is_string($check['name'] ?? null)
+                || ! is_bool($check['passed'] ?? null)
+                || ! is_string($check['detail'] ?? null)
+                || $category === null) {
+                throw new \InvalidArgumentException('Stored diagnostic check data is invalid.');
+            }
+
+            return new OperationalDiagnosticCheck(
+                $check['name'],
+                $category,
+                $check['passed'],
+                $check['detail'],
+            );
+        }, $checks));
+    }
 }

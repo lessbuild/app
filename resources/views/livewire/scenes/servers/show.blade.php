@@ -212,6 +212,68 @@
         @endif
     </section>
 
+    <section class="mt-6 rounded-2xl border border-primary bg-primary p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Troubleshooting') }}</p>
+                <h2 class="mt-1 text-xl font-black text-primary">{{ __('Server diagnostics') }}</h2>
+                <p class="mt-1 max-w-2xl text-sm text-secondary">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
+            </div>
+            @can('diagnose', $server)
+                <button
+                    type="button"
+                    wire:click="runDiagnostics"
+                    wire:loading.attr="disabled"
+                    wire:target="runDiagnostics"
+                    class="button primary"
+                    @disabled($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE || $diagnosticSnapshot?->isActive())
+                >
+                    <span wire:loading.remove wire:target="runDiagnostics">{{ __('Run diagnostics') }}</span>
+                    <span wire:loading wire:target="runDiagnostics">{{ __('Queueing…') }}</span>
+                </button>
+            @endcan
+        </div>
+
+        @if ($errors->has('diagnostics'))
+            <div class="mt-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700">{{ $errors->first('diagnostics') }}</div>
+        @endif
+
+        @if ($diagnosticSnapshot === null)
+            <div class="mt-4 rounded-lg border border-dashed border-primary p-4 text-sm text-secondary">{{ __('No server diagnostic has been collected yet.') }}</div>
+        @elseif ($diagnosticSnapshot->status === \App\Models\ServerDiagnosticSnapshot::STATUS_QUEUED)
+            <div class="mt-4 rounded-lg border border-primary bg-secondary p-4 text-sm text-secondary">{{ __('Server diagnostics are queued.') }}</div>
+        @elseif ($diagnosticSnapshot->status === \App\Models\ServerDiagnosticSnapshot::STATUS_RUNNING)
+            <div class="mt-4 rounded-lg border border-primary bg-secondary p-4 text-sm text-secondary">{{ __('Server diagnostics are running.') }}</div>
+        @elseif ($diagnosticSnapshot->status === \App\Models\ServerDiagnosticSnapshot::STATUS_FAILED)
+            <div class="mt-4 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-700">
+                <p class="font-semibold">{{ __('Unable to complete server diagnostics.') }}</p>
+                <p class="mt-1">{{ $diagnosticSnapshot->error ?: __('The diagnostic connection or response was unavailable.') }}</p>
+                @if ($diagnosticSnapshot->finished_at)
+                    <p class="mt-1 text-xs">{{ __('Last attempted :time', ['time' => $diagnosticSnapshot->finished_at->diffForHumans()]) }}</p>
+                @endif
+            </div>
+        @elseif ($diagnosticReport !== null)
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($diagnosticReport->checks as $check)
+                    <div @class([
+                        'rounded-lg border p-4',
+                        'border-green-300 bg-green-50' => $check->passed,
+                        'border-red-300 bg-red-50' => ! $check->passed,
+                    ])>
+                        <div class="flex items-start justify-between gap-3">
+                            <p class="text-sm font-semibold text-primary">{{ $check->name }}</p>
+                            <span class="text-xs font-bold uppercase {{ $check->passed ? 'text-green-700' : 'text-red-700' }}">{{ $check->passed ? __('Passed') : __('Attention') }}</span>
+                        </div>
+                        <p class="mt-2 text-sm text-secondary">{{ $check->detail }}</p>
+                    </div>
+                @endforeach
+            </div>
+            @if ($diagnosticSnapshot->finished_at)
+                <p class="mt-4 text-xs text-secondary">{{ __('Collected :time · attempt :attempt', ['time' => $diagnosticSnapshot->finished_at->diffForHumans(), 'attempt' => $diagnosticSnapshot->attempt]) }}</p>
+            @endif
+        @endif
+    </section>
+
     <!-- Quick Actions -->
     <div class="pt-10 grid grid-cols-2 gap-6">
 

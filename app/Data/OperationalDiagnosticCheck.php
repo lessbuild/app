@@ -30,4 +30,17 @@ final readonly class OperationalDiagnosticCheck
             'detail' => $this->detail,
         ];
     }
+
+    /**
+     * Preserve the category when the safe check is stored in a server snapshot.
+     *
+     * @return array{name: string, category: string, passed: bool, detail: string}
+     */
+    public function toStoredArray(): array
+    {
+        return [
+            ...$this->toLegacyArray(),
+            'category' => $this->category->value,
+        ];
+    }
 }
