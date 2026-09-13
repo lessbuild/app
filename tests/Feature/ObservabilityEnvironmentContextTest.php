@@ -112,9 +112,18 @@ class ObservabilityEnvironmentContextTest extends TestCase
             'environment' => $environment,
             'window' => '24h',
         ]));
+        $shareUrl = route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => '24h',
+            'service' => 'all',
+            'deployment' => 'all',
+            'severity' => 'all',
+        ]);
 
         $response->assertSuccessful()
             ->assertSee('Environment evidence')
+            ->assertSee('data-testid="share-environment-context"', false)
+            ->assertSee($shareUrl)
             ->assertSee('Deployment requires investigation')
             ->assertSee('Recent website recovery')
             ->assertSee('Open deployment evidence')
@@ -285,13 +294,23 @@ class ObservabilityEnvironmentContextTest extends TestCase
             'service' => $repository->id,
             'deployment' => 'unsuccessful',
             'severity' => 'critical',
+            'unused' => 'unvalidated-value',
         ]));
+        $shareUrl = route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => '24h',
+            'service' => $repository->id,
+            'deployment' => 'unsuccessful',
+            'severity' => 'critical',
+        ]);
 
         $response->assertSuccessful()
+            ->assertSee($shareUrl)
             ->assertSee('Critical selected deployment')
             ->assertSee('Application repository')
             ->assertSee('Worker service')
-            ->assertDontSee('Minor other-service deployment');
+            ->assertDontSee('Minor other-service deployment')
+            ->assertDontSee('unvalidated-value');
 
         $response->assertViewHas('context', function ($context) use ($repository, $selectedBuild): bool {
             return $context->serviceId === $repository->id

@@ -56,8 +56,14 @@ class ObservabilityController extends Controller
         Environment $environment,
         ObservabilityEnvironmentContextQuery $context,
     ): View {
+        $filters = $request->filters();
+
         return view('observability.environment-context', [
-            'context' => $context->for($environment, $request->filters()),
+            'context' => $context->for($environment, $filters),
+            'shareUrl' => route('observability.environments.context', [
+                'environment' => $environment,
+                ...$filters->queryParameters(),
+            ]),
         ]);
     }
 

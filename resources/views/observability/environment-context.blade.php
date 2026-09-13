@@ -16,7 +16,10 @@
             :title="__('Environment evidence')"
             :description="__('A bounded view of deployment, health, runtime-log and incident signals for :environment.', ['environment' => $environment->name])"
         />
-        <a href="{{ route('observability.index') }}" class="button secondary">{{ __('Observability overview') }}</a>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ $shareUrl }}" class="button secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</a>
+            <a href="{{ route('observability.index') }}" class="button secondary">{{ __('Observability overview') }}</a>
+        </div>
     </div>
 
     <section class="mt-8 rounded-2xl border border-primary bg-primary p-6" aria-labelledby="environment-context-heading">

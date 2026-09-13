@@ -77,4 +77,19 @@ class ObservabilityContextFilters
     {
         return self::DEPLOYMENTS[$this->deployment];
     }
+
+    /**
+     * Return only the validated values used to reproduce this context read.
+     *
+     * @return array{window: string, service: string, deployment: string, severity: string}
+     */
+    public function queryParameters(): array
+    {
+        return [
+            'window' => $this->window,
+            'service' => $this->serviceId === null ? 'all' : (string) $this->serviceId,
+            'deployment' => $this->deployment,
+            'severity' => $this->severity,
+        ];
+    }
 }
