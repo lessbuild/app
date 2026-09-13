@@ -144,9 +144,18 @@ workflow. Existing preview rows are migrated as `not_configured` and are not
 retroactively executed; a later revision change can opt them into the curated
 command. Templates without a declaration remain unconfigured.
 
-Independent provider-readiness checks remain separate preview-lifecycle work.
-Local readiness states must not be presented as proof that a remote PostgreSQL,
-Valkey or process is healthy.
+The existing manager-authorized **Observe provider** read now includes the
+provider's normalized server readiness and safe lifecycle state when the
+selected DigitalOcean, Hetzner Cloud or Vultr adapter reports them. A server is
+shown as ready only when the provider reports its running state and a public
+address; missing lifecycle data is unknown and a reported stopped/off state is
+not ready. This is a one-time observation, not persisted desired state.
+
+Provider readiness remains distinct from BuildPusher's local preview/resource
+callbacks. It does not prove SSH access, application health,
+PostgreSQL/Valkey/process health, remote drift or successful cleanup. Provider
+credentials, live state transitions and the separate acceptance drill still
+require external verification.
 
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 

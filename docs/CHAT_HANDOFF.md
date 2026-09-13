@@ -2,13 +2,14 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 3E was implemented
+The product-expansion sequence is active on `main`. Phase 3F was implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
-`cf5da72`, followed by the compatibility fix `fa114f0`; both were fast-forwarded
-into canonical `main` and pushed to GitHub `origin/main`. Building on the
-Phase 3A manifest, Phase 3B readiness states, Phase 3C ownership-aware
-cleanup and Phase 3D organization-locked quotas, previews now have an explicit
-curated initialization boundary and managed Valkey credential boundary.
+`8a116dc`; it was fast-forwarded into canonical `main` and pushed to GitHub
+`origin/main`. Building on the Phase 3A manifest, Phase 3B readiness states,
+Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas and
+Phase 3E initialization/credential boundaries, the existing provider
+observation now exposes normalized server readiness without turning local
+preview callbacks into a claim about remote health.
 
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
@@ -21,17 +22,17 @@ passwordless resources preserve their current state. The deployment plan still
 has 15 stages, queue dispatch remains outside the transaction, and provider
 readiness is not inferred from local callbacks.
 
-The fresh isolated full PHP suite at the feature commit passed **1,362 tests /
-11,785 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
+The fresh isolated full PHP suite at the feature commit passed **1,366 tests /
+11,808 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
-3E focused coverage passed 37 tests / 375 assertions; adjacent lifecycle and
-callback coverage passed 56 / 473, callback integrity passed 5 / 34, and the
-legacy credential compatibility follow-up passed 31 / 307. Migration
+3F focused provider contract/observation coverage passed 10 tests / 84
+assertions. Migration
 fresh/rollback/reapply, PHP lint, required-PHP Composer validation/platform
 checks, full Pint, Vite build and `git diff --check` passed. This is local
 application evidence, not provider-side readiness, cloud lifecycle or the
-separate live drill. The exact next task is Phase 3F: characterize independent
-provider-readiness evidence. The progress ledger is [here](verification/product-expansion-progress.md) and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
+separate live drill. The exact next task is Phase 4: begin the smallest curated
+service-template slice with explicit version, compatibility/readiness and
+recovery metadata. The progress ledger is [here](verification/product-expansion-progress.md) and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
 ## Controller modernization current checkpoint — 2026-09-12
 
