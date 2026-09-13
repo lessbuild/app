@@ -8,7 +8,7 @@ use Carbon\CarbonInterface;
 final readonly class ServerTroubleshootingSessionGrant
 {
     /**
-     * Carry an opaque, one-time transport grant without persisting its
+     * Carry an opaque, short-lived transport grant without persisting its
      * plaintext value or placing it in a queued job.
      */
     public function __construct(
