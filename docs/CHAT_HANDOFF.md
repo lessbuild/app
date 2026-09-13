@@ -2,8 +2,9 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 5B's read-only
-multi-target impact-preview slice is complete locally through commit `3940a28`, implemented
+The product-expansion sequence is active on `main`. Phase 6 backup-recovery
+characterization is complete locally after the Phase 5B read-only
+multi-target impact-preview slice at commit `3940a28`, implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
@@ -76,6 +77,24 @@ page creates no builds, deliveries, jobs, provider calls or persisted state.
 Unknown path data remains conservative, and no shared-dependency inference or
 cross-service orchestration was added.
 
+Phase 6 characterization traced the managed website backup and restore
+lifecycles. A completed `WebsiteBackup` records a Restic snapshot, size,
+completion time and per-backup HTTPS transport evidence; that transport field
+does not prove independent hosting or data integrity. `BackupRestore` records
+only queued/running/succeeded/failed state, start/completion time and an error.
+The existing restore is an in-place production restore with a remote safety
+rollback and optional live health check, not an isolated restore test with
+persisted integrity, application-smoke, recovery-stage or cleanup evidence.
+The local SQLite control-plane backup/verifier is a separate recovery scope.
+The current backups page also derives summary metrics from only its latest 50
+mixed-status rows and labels a completed in-place restore as restore-drill
+evidence. The exact next task is an injected, organization-scoped read-only
+recovery summary that reports completed backups, transport evidence, completed
+in-place restores and measured duration separately while explicitly showing
+independent recovery verification as not recorded. Restore execution,
+destinations, overwrite safeguards, jobs, schema and dispatch semantics remain
+unchanged in that first slice.
+
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
@@ -103,9 +122,9 @@ passed **61 tests / 524 assertions**. The fresh full suite at `3940a28` passed
 **1,400 tests / 12,111 assertions**, with the same unchanged
 `ProvisioningHardeningTest` `localhost` count failure. Full Pint, changed-file
 PHP lint, route registration and `git diff --check` passed. No frontend assets
-changed. The exact next task is Phase 6: characterize backup completion
-separately from verified recovery, then add the smallest read-only recovery
-evidence slice while preserving restore and cleanup semantics.
+changed. The exact next task is Phase 6's read-only recovery summary slice,
+followed by isolated restore verification only after its destination,
+integrity, smoke, stage and cleanup contracts are characterized.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
