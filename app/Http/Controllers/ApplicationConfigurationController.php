@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ApplyApplicationConfigurationRequest;
 use App\Http\Requests\CancelApplicationConfigurationRequest;
 use App\Http\Requests\CompareApplicationConfigurationRequest;
+use App\Http\Requests\ObserveApplicationConfigurationRequest;
 use App\Http\Requests\RetryApplicationConfigurationRequest;
 use App\Http\Requests\StoreApplicationConfigurationRequest;
 use App\Models\ConfigurationApplication;
@@ -17,6 +18,7 @@ use App\Models\Website;
 use App\Services\ApplicationConfigurationAuthoringGuide;
 use App\Services\ApplicationConfigurationCancellation;
 use App\Services\ApplicationConfigurationEnvironmentComparisonQuery;
+use App\Services\ApplicationConfigurationEnvironmentObservationQuery;
 use App\Services\ApplicationConfigurationEnvironmentOverviewQuery;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationResults;
@@ -34,6 +36,7 @@ class ApplicationConfigurationController extends Controller
         private readonly ApplicationConfigurationResults $results,
         private readonly ApplicationConfigurationEnvironmentOverviewQuery $environmentOverview,
         private readonly ApplicationConfigurationAuthoringGuide $authoringGuide,
+        private readonly ApplicationConfigurationEnvironmentObservationQuery $environmentObservation,
     ) {}
 
     /**
@@ -78,6 +81,25 @@ class ApplicationConfigurationController extends Controller
         return view('scenes.projects.configuration', [
             ...$this->authoringPageData($project),
             'comparison' => $comparison,
+        ]);
+    }
+
+    /**
+     * Explicitly fetch the supported provider metadata for one recorded environment.
+     *
+     * @param  ObserveApplicationConfigurationRequest  $request  Validated project environment ID.
+     * @param  Project  $project  The authorized configuration target.
+     * @return View The authoring page with a one-time, read-only observation.
+     */
+    public function observe(ObserveApplicationConfigurationRequest $request, Project $project): View
+    {
+        $this->access($project);
+        $observation = $this->environmentObservation->for($project, $request->environmentId());
+        abort_unless($observation, 404);
+
+        return view('scenes.projects.configuration', [
+            ...$this->authoringPageData($project),
+            'observation' => $observation,
         ]);
     }
 

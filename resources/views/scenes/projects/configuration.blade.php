@@ -81,7 +81,7 @@
                 <div class="mt-4 overflow-x-auto">
                     <table class="w-full min-w-[48rem] text-left text-sm">
                         <caption class="sr-only">{{ __('Recorded environment dependencies') }}</caption>
-                        <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Environment') }}</th><th scope="col" class="p-3">{{ __('Runtime') }}</th><th scope="col" class="p-3">{{ __('Recorded dependencies') }}</th><th scope="col" class="p-3">{{ __('Configuration') }}</th></tr></thead>
+                        <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Environment') }}</th><th scope="col" class="p-3">{{ __('Runtime') }}</th><th scope="col" class="p-3">{{ __('Recorded dependencies') }}</th><th scope="col" class="p-3">{{ __('Configuration') }}</th><th scope="col" class="p-3">{{ __('Provider state') }}</th></tr></thead>
                         <tbody>
                             @foreach($environmentOverview as $environment)
                                 <tr class="border-b border-primary align-top text-primary">
@@ -89,6 +89,7 @@
                                     <td class="p-3 text-secondary">{{ ucfirst($environment->runtimeType) }}</td>
                                     <td class="p-3"><ul class="space-y-1">@foreach($environment->dependencies as $dependency)<li><span class="font-medium text-primary">{{ ucfirst($dependency['kind']) }}:</span> {{ $dependency['name'] }} <span class="text-secondary">· {{ str_replace('_', ' ', $dependency['status']) }} · {{ $dependency['detail'] }}</span></li>@endforeach</ul></td>
                                     <td class="p-3 text-secondary">{{ $environment->processCount }} {{ __('process(es)') }} · {{ $environment->resourceCount }} {{ __('resource(s)') }} · {{ $environment->variableCount }} {{ __('variable(s)') }}<br><span class="text-xs">{{ $environment->secretCount }} {{ __('secret value(s) masked') }}</span></td>
+                                    <td class="p-3"><form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><button type="submit" class="button secondary whitespace-nowrap">{{ __('Observe provider') }}</button></form></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -107,6 +108,27 @@
                 </form>
             @endif
         </section>
+        @isset($observation)
+            <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-observation-heading">
+                <h2 id="environment-observation-heading" class="font-bold text-primary">{{ __('Observed provider state') }}</h2>
+                <p class="mt-2 text-sm text-secondary">{{ __('One-time read for :environment through :provider. This is observed remote state, separate from desired configuration and BuildPusher’s recorded local state.', ['environment' => $observation->environmentName, 'provider' => $observation->providerName]) }}</p>
+                <p class="mt-3 text-sm text-secondary">{{ $observation->message }}</p>
+                @if($observation->status === \App\Data\ApplicationEnvironmentObservation::STATUS_OBSERVED)
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="w-full min-w-[42rem] text-left text-sm">
+                            <caption class="sr-only">{{ __('Observed provider server fields') }}</caption>
+                            <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Field') }}</th><th scope="col" class="p-3">{{ __('Recorded locally') }}</th><th scope="col" class="p-3">{{ __('Observed at provider') }}</th><th scope="col" class="p-3">{{ __('Result') }}</th></tr></thead>
+                            <tbody>
+                                @foreach($observation->fields as $field)
+                                    <tr class="border-b border-primary align-top text-primary"><th scope="row" class="p-3 font-medium">{{ $field['field'] }}</th><td class="p-3 text-secondary">{{ $field['recorded'] }}</td><td class="p-3 text-secondary">{{ $field['observed'] }}</td><td class="p-3">{{ $field['status'] === 'match' ? __('Matches') : __('Different') }}</td></tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    @if($observation->hasDifferences())<p class="mt-3 text-xs text-secondary">{{ __('A difference is informational only. Corrective changes must go through the existing configuration review and apply workflow.') }}</p>@endif
+                @endif
+            </section>
+        @endisset
         @isset($comparison)
             <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-comparison-heading">
                 <h2 id="environment-comparison-heading" class="font-bold text-primary">{{ __('Recorded environment comparison') }}</h2>
