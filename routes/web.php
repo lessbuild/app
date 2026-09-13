@@ -215,6 +215,14 @@ Route::middleware('auth')->group(function () {
         Route::get('observability', [ObservabilityController::class, 'index'])->name('observability.index');
         Route::get('observability/environments/{environment}/context', [ObservabilityController::class, 'environmentContext'])
             ->name('observability.environments.context');
+        Route::post('observability/environments/{environment}/investigations', [ObservabilityController::class, 'storeInvestigation'])
+            ->name('observability.environments.investigations.store');
+        Route::get('observability/investigations/{view}', [ObservabilityController::class, 'showInvestigation'])
+            ->whereUuid('view')
+            ->name('observability.investigations.show');
+        Route::delete('observability/investigations/{view}', [ObservabilityController::class, 'destroyInvestigation'])
+            ->whereUuid('view')
+            ->name('observability.investigations.destroy');
         Route::get('observability/operational-incidents/export', [OperationalIncidentController::class, 'export'])->name('observability.operational-incidents.export');
         Route::get('domains', [DomainController::class, 'index'])->name('domains.index');
         Route::get('databases', [DatabaseController::class, 'index'])->name('databases.index');

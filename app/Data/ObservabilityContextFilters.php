@@ -72,6 +72,41 @@ class ObservabilityContextFilters
         return new self($window, $serviceId, $deployment, $severity, $now ?? now());
     }
 
+    /**
+     * Reconstruct the canonical filter contract from persisted view data.
+     *
+     * Stored values are treated as untrusted legacy data and rejected when
+     * they do not use the same finite shape as the HTTP boundary.
+     *
+     * @param  array<string, mixed>  $values  Persisted canonical filter values.
+     * @return self|null Normalized filters, or null for an invalid stored shape.
+     */
+    public static function fromQueryParameters(array $values, ?CarbonInterface $now = null): ?self
+    {
+        $window = $values['window'] ?? null;
+        $service = $values['service'] ?? null;
+        $deployment = $values['deployment'] ?? null;
+        $severity = $values['severity'] ?? null;
+
+        if (! is_string($window) || ! array_key_exists($window, self::WINDOWS)
+            || ! is_string($deployment) || ! array_key_exists($deployment, self::DEPLOYMENTS)
+            || ! is_string($severity) || ! in_array($severity, self::SEVERITIES, true)) {
+            return null;
+        }
+
+        if ($service === 'all') {
+            $serviceId = null;
+        } elseif (is_int($service) && $service > 0) {
+            $serviceId = $service;
+        } elseif (is_string($service) && filter_var($service, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) !== false) {
+            $serviceId = (int) $service;
+        } else {
+            return null;
+        }
+
+        return self::fromValues($window, $serviceId, $deployment, $severity, $now);
+    }
+
     /** @return list<string> Status values represented by the selected deployment group. */
     public function deploymentStatuses(): array
     {

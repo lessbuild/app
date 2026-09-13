@@ -103,6 +103,12 @@ class Environment extends Model
         return $this->hasMany(Build::class);
     }
 
+    /** @return HasMany<ObservabilityInvestigationView, $this> */
+    public function investigationViews(): HasMany
+    {
+        return $this->hasMany(ObservabilityInvestigationView::class);
+    }
+
     /**
      * Resolve the service root of the latest successful build for environment-scoped maintenance tasks.
      *

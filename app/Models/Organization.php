@@ -130,6 +130,12 @@ class Organization extends Model
         return $this->hasMany(OperationalIncident::class);
     }
 
+    /** @return HasMany<ObservabilityInvestigationView, $this> */
+    public function investigationViews(): HasMany
+    {
+        return $this->hasMany(ObservabilityInvestigationView::class);
+    }
+
     /** @return HasMany<LoadBalancer, $this> */
     public function loadBalancers(): HasMany
     {

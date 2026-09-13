@@ -92,6 +92,64 @@
             <button type="submit" class="button primary sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</button>
         </form>
         <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
+
+        <div class="mt-5 border-t border-primary pt-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h3 class="font-bold text-primary">{{ __('Save this investigation') }}</h3>
+                    <p class="mt-1 text-xs text-secondary">{{ __('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.') }}</p>
+                </div>
+                <form method="POST" action="{{ route('observability.environments.investigations.store', $environment) }}" class="flex flex-wrap items-end gap-2">
+                    @csrf
+                    <input type="hidden" name="window" value="{{ $context->window }}">
+                    <input type="hidden" name="service" value="{{ $context->serviceId ?? 'all' }}">
+                    <input type="hidden" name="deployment" value="{{ $context->deployment }}">
+                    <input type="hidden" name="severity" value="{{ $context->severity }}">
+                    <label>
+                        <span class="sr-only">{{ __('Investigation name') }}</span>
+                        <input name="name" maxlength="60" required class="input secondary rounded-sm" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
+                    </label>
+                    <label>
+                        <span class="sr-only">{{ __('Keep for') }}</span>
+                        <select name="expires_in_days" class="input secondary rounded-sm">
+                            @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
+                                <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    <button type="submit" class="button primary">{{ __('Save view') }}</button>
+                </form>
+            </div>
+            @error('name')
+                <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+            @enderror
+            @error('service')
+                <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+            @enderror
+        </div>
+
+        @if($savedInvestigations->isNotEmpty())
+            <div class="mt-5 border-t border-primary pt-5" data-testid="saved-investigations">
+                <h3 class="font-bold text-primary">{{ __('Saved investigations for this environment') }}</h3>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                    @foreach($savedInvestigations as $saved)
+                        <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3">
+                            <a href="{{ route('observability.investigations.show', $saved) }}" class="min-w-0 flex-1">
+                                <span class="block truncate font-bold text-primary">{{ $saved->name }}</span>
+                                <span class="mt-0.5 block text-xs text-secondary">{{ __('By :name · expires :time', ['name' => $saved->creator?->name ?? __('former member'), 'time' => $saved->expires_at?->diffForHumans()]) }}</span>
+                            </a>
+                            @if($canManageInvestigationViews || (int) $saved->created_by === (int) auth()->id())
+                                <form method="POST" action="{{ route('observability.investigations.destroy', $saved) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-bold text-secondary underline" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</button>
+                                </form>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </section>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
