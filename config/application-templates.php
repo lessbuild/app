@@ -13,6 +13,10 @@ return [
             ['name' => 'queue', 'type' => 'worker', 'command' => 'php artisan queue:work --sleep=3 --tries=3 --timeout=90'],
             ['name' => 'scheduler', 'type' => 'scheduler', 'command' => 'php artisan schedule:work'],
         ],
+        'preview_resources' => [
+            ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
+            ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
+        ],
     ],
     'laravel-inertia' => [
         'name' => 'Laravel + Inertia',
@@ -26,6 +30,10 @@ return [
             ['name' => 'queue', 'type' => 'worker', 'command' => 'php artisan queue:work --sleep=3 --tries=3 --timeout=90'],
             ['name' => 'scheduler', 'type' => 'scheduler', 'command' => 'php artisan schedule:work'],
         ],
+        'preview_resources' => [
+            ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
+            ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
+        ],
     ],
     'laravel-api' => [
         'name' => 'Laravel API',
@@ -38,6 +46,10 @@ return [
         'processes' => [
             ['name' => 'queue', 'type' => 'worker', 'command' => 'php artisan queue:work --sleep=3 --tries=3 --timeout=90'],
             ['name' => 'scheduler', 'type' => 'scheduler', 'command' => 'php artisan schedule:work'],
+        ],
+        'preview_resources' => [
+            ['name' => 'database', 'type' => 'postgresql', 'is_managed' => true],
+            ['name' => 'cache', 'type' => 'valkey', 'is_managed' => true],
         ],
     ],
     'wordpress' => [

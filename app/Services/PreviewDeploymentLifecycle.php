@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Actions\Project\ConfigurePreviewStackAction;
 use App\Data\VerifiedRepositoryWebhook;
 use App\Jobs\ReportGitHubPreviewJob;
 use App\Jobs\Web\AddWebsiteJob;
@@ -25,6 +26,7 @@ class PreviewDeploymentLifecycle
      * @param  PreviewEnvironmentConfiguration  $previewEnvironment  Builds safe preview-owned runtime configuration.
      * @param  PreviewTrustPolicy  $previewTrust  Admits only trusted target repository and branch events.
      * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
+     * @param  ConfigurePreviewStackAction  $previewStack  Persists supported process and managed-resource declarations.
      */
     public function __construct(
         private readonly PlanLimits $limits,
@@ -33,6 +35,7 @@ class PreviewDeploymentLifecycle
         private readonly PreviewEnvironmentConfiguration $previewEnvironment,
         private readonly PreviewTrustPolicy $previewTrust,
         private readonly PreviewSecretApprovalResolver $previewSecrets,
+        private readonly ConfigurePreviewStackAction $previewStack,
     ) {}
 
     /**
@@ -114,6 +117,10 @@ class PreviewDeploymentLifecycle
             }
 
             $this->configure($preview, $webhook);
+            $preview->loadMissing('environment.website');
+            if ($preview->environment) {
+                $this->previewStack->handle($project, $preview->environment);
+            }
 
             return $preview->fresh(['website', 'repository']);
         });

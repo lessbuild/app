@@ -10,6 +10,10 @@ class EnvironmentResource extends Model
 {
     public const TYPES = ['mysql', 'postgresql', 'redis', 'valkey', 'object_storage'];
 
+    public const STATUS_PLANNED = 'planned';
+
+    public const STATUS_READY = 'ready';
+
     protected $guarded = [];
 
     protected $hidden = ['configuration'];

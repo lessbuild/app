@@ -6,6 +6,7 @@ use App\Jobs\Repository\PublishRepositoryJob;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
 use App\Models\Build;
+use App\Models\EnvironmentResource;
 use App\Models\PreviewDeployment;
 use App\Models\PreviewSecretApproval;
 use App\Models\Project;
@@ -52,6 +53,16 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame('preview', $preview->environment->type);
         $this->assertSame('feature/checkout', $preview->repository->branch);
         $this->assertNotSame($source->website_id, $preview->website_id);
+        $this->assertEqualsCanonicalizing(['queue', 'scheduler'], $preview->environment->processes()->pluck('name')->all());
+        $this->assertEqualsCanonicalizing(['database', 'cache'], $preview->environment->resources()->pluck('name')->all());
+        $this->assertSame('php artisan queue:work --sleep=3 --tries=3 --timeout=90', $preview->environment->processes()->where('name', 'queue')->value('command'));
+        $this->assertSame(EnvironmentResource::STATUS_PLANNED, $preview->environment->resources()->where('name', 'database')->value('status'));
+        $databaseConfiguration = $preview->environment->resources()->where('name', 'database')->firstOrFail()->configuration;
+        $this->assertSame($preview->website->database_password, $databaseConfiguration['variables']['DB_PASSWORD']);
+        $this->assertSame('pgsql', $databaseConfiguration['variables']['DB_CONNECTION']);
+        $cacheConfiguration = $preview->environment->resources()->where('name', 'cache')->firstOrFail()->configuration;
+        $this->assertSame('127.0.0.1', $cacheConfiguration['variables']['VALKEY_HOST']);
+        $this->assertSame('buildpusher-valkey-'.$preview->environment_id.'-cache', $cacheConfiguration['container_name']);
         $previewWebsite = $preview->website->fresh();
         $previewEnvironment = (string) $previewWebsite->environment;
         $this->assertStringContainsString('APP_ENV="preview"', $previewEnvironment);
@@ -78,6 +89,12 @@ class PreviewDeploymentTest extends TestCase
 
         $build = $preview->repository->builds()->sole();
         $this->assertSame($revision, $build->revision);
+        $this->assertEqualsCanonicalizing(['queue', 'scheduler'], array_column($build->environment_payload['processes'], 'name'));
+        $this->assertEqualsCanonicalizing(['postgresql', 'valkey'], array_column($build->environment_payload['resources'], 'type'));
+        $databasePayload = collect($build->environment_payload['resources'])->first(fn (array $resource): bool => $resource['type'] === 'postgresql');
+        $this->assertIsArray($databasePayload);
+        $this->assertSame($preview->website->database_password, $databasePayload['configuration']['variables']['DB_PASSWORD']);
+        $this->assertStringNotContainsString('source-production-key', (string) $build->environment_payload['base_environment']);
         Queue::assertPushed(PublishRepositoryJob::class, fn (PublishRepositoryJob $job): bool => $job->build->is($build));
 
         $build->update(['status' => Build::STATUS_RUNNING]);
@@ -130,6 +147,9 @@ class PreviewDeploymentTest extends TestCase
 
         $this->send($source, $this->payload('synchronize', str_repeat('b', 40)), $secret, 'preview-update')
             ->assertAccepted();
+
+        $this->assertSame(2, $preview->environment()->firstOrFail()->processes()->count());
+        $this->assertSame(2, $preview->environment()->firstOrFail()->resources()->count());
 
         $environment = (string) $preview->website->fresh()->environment;
         $this->assertStringContainsString('APP_ENV="preview"', $environment);

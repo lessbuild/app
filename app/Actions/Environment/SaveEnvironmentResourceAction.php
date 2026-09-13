@@ -12,7 +12,7 @@ class SaveEnvironmentResourceAction
     /**
      * Persist an environment resource using its external variables or managed connection configuration.
      *
-     * @param  array{name: string, type: string, is_managed: bool|string, variables?: string|null}  $data
+     * @param  array{name: string, type: string, is_managed: bool|string, variables?: string|null, status?: string}  $data
      * @param  array<string, string>|null  $variables  Optional pre-parsed variables retained for non-HTTP callers.
      */
     public function handle(Environment $environment, array $data, ?array $variables = null): EnvironmentResource
@@ -58,7 +58,7 @@ class SaveEnvironmentResourceAction
                     ? 'buildpusher-valkey-'.$environment->id.'-'.Str::slug($data['name'])
                     : null,
             ],
-            'status' => 'ready',
+            'status' => $data['status'] ?? EnvironmentResource::STATUS_READY,
         ]);
     }
 
