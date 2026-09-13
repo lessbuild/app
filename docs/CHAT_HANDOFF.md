@@ -26,6 +26,21 @@ observations, curated Laravel and generic Node presets now have a versioned
 operational contract and new projects record the installed template version
 without rewriting legacy rows.
 
+Phase 8's structured-diagnostics characterization is complete at `f084951`,
+and the typed control-plane diagnostic report is complete at feature commit
+`2f7d719`. `OperationalDiagnostics::report()` now carries immutable,
+enum-categorized checks while `run()` preserves the exact existing CLI, JSON,
+health, public-status and cache projection. The focused diagnostic set passed
+**20 tests / 159 assertions**; the strict isolated full suite passed **1,445
+tests / 12,443 assertions** with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure.
+Required-PHP Composer validation/platform checks, PHP lint, full Pint, route
+cache and `git diff --check` passed. This PHP-only slice made no frontend
+changes. The exact next task is to characterize and design a fixed server-host
+structured diagnostic contract with explicit host-key, command allowlist,
+timeout, failure and retention semantics; interactive terminal transport
+remains deferred.
+
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
 is active within the existing post-deployment stage, writes a success marker
@@ -295,9 +310,10 @@ contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
 asset/browser suite (**9 passed**) also passed. The feature adds no API
 envelope, notification-preference or evidence-snapshot change; no provider,
-cloud or live-acceptance claim is made. The exact next task is Phase 8
-structured-diagnostics characterization before any interactive terminal
-transport.
+cloud or live-acceptance claim is made. That earlier checkpoint is superseded
+by the Phase 8 characterization and typed-report commits recorded above; the
+exact next task is the fixed server-host structured diagnostic contract before
+any interactive terminal transport.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
