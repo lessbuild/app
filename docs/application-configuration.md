@@ -17,6 +17,13 @@ renders commands, variable keys or values, encrypted resource configuration or
 provider credentials. Review and apply remain the only paths that can change
 configuration.
 
+The same page includes a parser-valid version-2 starter document, an
+illustrative bindings object and a concise field guide. The numeric binding in
+that example is a placeholder and must be replaced with an ID from the
+workspace catalog. The guide does not prefill the editable form, and invalid
+YAML/JSON submissions retain the existing secret-safe behavior: submitted
+documents and bindings are not flashed into session old input.
+
 ## Version 2 example
 
 ```yaml

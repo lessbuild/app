@@ -1,10 +1,9 @@
 # BuildPusher product expansion progress
 
-Status: Phase 2A complete. Preview safety, trust/secret boundaries,
+Status: Phase 2B complete. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance and the recorded
-configuration environment overview are complete; the remaining Phase 2
-authoring/comparison work and multi-service preview lifecycle remain
-incomplete.
+configuration authoring guidance are complete; the remaining Phase 2
+comparison work and multi-service preview lifecycle remain incomplete.
 
 Date: 2026-09-13
 
@@ -499,6 +498,7 @@ The exact feature commit and push are recorded in the slice ledger below.
 | Phase 1E | The repository page showed a technical snapshot without actionable recovery links or sanitized distinction between invalid provider credentials, insufficient scopes and plan denial. Added injected `DeploymentPreflightGuidance`, preserved the persisted preflight shape, and rechecked the existing deployment entitlement inside `DeployRepositoryAction` before writes. | `RepositoryDeploymentTest.php`: 11 passed, 70 assertions. Adjacent deployment/preflight/environment/authorization/configuration coverage: 32 passed, 269 assertions. Mobile/tablet visual audit and corrected desktop audit passed; Vite, Pint and `git diff --check` passed. | `e1f985d` — `feat: add actionable first deployment guidance` | Pushed to GitHub `origin/main` on 2026-09-13. | Complete the Phase 2 configuration authoring/editor, dependency overview, secret-safe environment comparison and read-only observable-drift slice. |
 
 | Phase 2A | The configuration authoring page had no bounded view of the application's recorded topology before a user prepared a review. Added an injected eager-loaded query collaborator and immutable secret-safe environment read model covering servers, websites, branch-matched repositories, latest build status, processes, resources and masked variable counts. | Focused overview/web coverage: 5 passed, 59 assertions. Full configuration/API/ownership batch: 183 passed, 1,775 assertions. The query-count regression proves eager-loaded reads remain constant as environments grow; sensitive command, resource configuration, variable value/ciphertext and foreign-project data are excluded. Full Pint, Vite build and `git diff --check` passed. No schema or review/apply behavior changed. | `1d5b571` — `feat: add configuration environment overview` | Pushed to GitHub `origin/main` on 2026-09-13. | Add the next smallest Phase 2 authoring slice: schema-aware starter guidance and review-safe authoring feedback using the existing version-2 parser, without flashing submitted commands or bindings. |
+| Phase 2B | The version-2 form exposed raw YAML and JSON fields without explaining the parser's required structure or safe binding workflow. Added an injected authoring-guide collaborator with a parser-verified starter document, illustrative bindings and safe field guidance; the editable form remains blank so placeholders cannot be submitted accidentally. | Authoring/web coverage: 4 passed, 47 assertions, including parser acceptance and absence of credential material. Full Pint, Vite build and `git diff --check` passed. Existing validation still rejects malformed input without flashing documents or bindings into session old input. No schema, API, persistence or review/apply behavior changed. | `f928653` — `feat: add configuration authoring guide` | Pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement secret-safe comparison of desired/recorded environment state, explicitly separating any future observable remote state from local comparisons. |
 
 ## Phase 1 exit verification
 
