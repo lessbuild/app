@@ -3,8 +3,9 @@
 ## Product expansion current checkpoint — 2026-09-13
 
 The product-expansion sequence is active on `main`. Phase 7F's disabled-by-default
-revision-aware post-deployment observation aggregate and leased execution/read
-surface are complete locally at feature commit `c6eff04`, following the shared
+revision-aware post-deployment observation aggregate, leased execution/read
+surface and bounded environment-evidence integration are complete locally at
+feature commits `c6eff04` and `0390030`, following the shared
 website health probe extraction
 at `3e4c337`, the revision-aware post-deployment observation characterization
 and the Phase 7E stable alert identity and occurrence-metadata slice
@@ -184,8 +185,12 @@ only a still-current result. Queue retries are bounded, due work and expired
 leases are recovered by a minute scheduler, and stale claim/revision/target
 results cannot overwrite newer work. The build detail surface shows only
 bounded status, check count, HTTP status and timestamps; claim tokens and remote
-error text are not rendered. Continuous website health history and the
-deployment plan's immediate health probe remain separate.
+error text are not rendered. The bounded environment context now retains
+active observation outcomes outside its selected time window, applies the
+existing service and tenant filters, and renders only an immutable
+revision/website-matched summary. It excludes remote error text, target
+URLs/paths, claim tokens and lease metadata. Continuous website health history
+and the deployment plan's immediate health probe remain separate.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -269,10 +274,19 @@ assertions**, with the unchanged
 (the test expects three `localhost` occurrences and the current script
 contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check` and the required-PHP
-asset/browser suite (**9 passed**) passed. No provider/cloud or live
-acceptance claim is made. The exact next task is to expose revision-bound
-observation outcomes in the bounded environment evidence context, preserving
-service filters, tenant authorization and exclusion of remote error text.
+asset/browser suite (**9 passed**) passed. The subsequent environment-context,
+deployment-observation and observability regression run passed **39 tests /
+295 assertions**. The fresh strict isolated full PHP suite at `0390030` passed
+**1,433 tests / 12,383 assertions**, with the same unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
+asset/browser suite (**9 passed**) also passed. No provider/cloud or live
+acceptance claim is made. The exact next task is to characterize named saved
+investigation views, including organization/resource authorization, filter
+normalization, expiry and retention, before deciding whether persistence is
+justified.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 

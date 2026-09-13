@@ -27,6 +27,18 @@ These are comparisons of documented capabilities against inspected source, not h
 
 This ordering is an engineering judgment: close audit correctness first, then build configuration foundations before multiplying deployment options. It does not authorize paid infrastructure creation.
 
+## Current checkpoint — 2026-09-13
+
+The Phase 7F environment-evidence integration is complete locally in feature
+commit `0390030`. The bounded context now includes safe, exact
+revision/website-matched outcomes for explicitly requested post-deployment
+observations, retains active observations outside the selected time window and
+preserves the existing service filters, tenant authorization and secret-safe
+read boundary. The next implementation slice is to characterize named saved
+investigation views, including organization/resource authorization, filter
+normalization, expiry and retention, before deciding whether persistence is
+justified.
+
 ## Deferred release gates
 
 - Independent monitoring endpoints and live heartbeat/status verification.
