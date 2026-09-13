@@ -1814,6 +1814,92 @@ current exact next task is Phase 7 inventory: connect environment, deployment,
 logs, health and incident context through bounded, authorization-checked
 read collaborators while keeping provider/cloud acceptance separate.
 
+## Phase 7 — connected observability inventory (completed investigation)
+
+### Current journeys and entry points
+
+The authenticated and verified `GET /observability` route renders the current
+workspace's server telemetry, metric rules, alert destinations, public status
+pages, status incidents and a bounded list of recent deployment and failed-health
+signals. `ObservabilityController::index()` coordinates the request and calls
+`ObservabilityDashboardQuery`; it does not perform writes. Operational incident
+actions have their own controller and CSV export route. Website detail and
+health-history routes expose retained runtime-log snapshots and paginated health
+checks. Build detail and its Livewire status component expose the existing
+deployment log, failure guidance and plan-driven timeline.
+
+### Existing boundaries and evidence
+
+| Concern | Existing implementation and contract | Current gap/classification |
+| --- | --- | --- |
+| Workspace access | The verified web group supplies authentication. Resource policies use current-workspace membership and `Organization::permits()`. Operational incidents use `OperationalIncidentPolicy` for export and response actions. | The dashboard read is implicitly current-workspace scoped rather than represented by a dedicated read policy. A new context read must authorize the current workspace before accepting an environment selector and must not turn resource/state guards into permissions. Existing with a read-boundary improvement. |
+| Deployments | `ObservabilityDashboardQuery` loads at most 10 terminal `Build` records through the repository's organization relationship. `BuildPolicy`, `BuildsController`, `BuildDeploymentTimeline` and `DeploymentFailureGuidance` preserve build visibility, immutable revision context, bounded logs and recovery guidance. | The dashboard cannot focus on one `Environment`, show active attempts, or filter a bounded deployment window. Existing with correlation/readability gap. |
+| Health | The dashboard loads at most 10 failed `WebsiteHealthCheck` records through the website organization relationship. `WebsiteHealthHistoryQuery` owns retained limits, filters, metrics and exports; website policy checks visibility. | Health history is available only after navigating to a website. A context view should reuse the same website-scoped relationship and preserve retained/temporal bounds. Existing with navigation gap. |
+| Runtime logs | `WebsiteLogSnapshot` stores encrypted, bounded application/access snapshots. Website routes authorize `WebsitePolicy`, validate supported types, return no-store responses and queue refreshes through `QueueWebsiteLogRefreshAction`. Build and provisioning logs have separate authorized views. | The dashboard does not expose a context link to a runtime-log surface and must never load or render encrypted log bodies merely to summarize an environment. Existing with safe-link gap. |
+| Incidents and grouping | `IncidentNotifier` deduplicates active incidents by workspace/category/resource, records encrypted summaries/events and resolves them on recovery. `ObservabilityDashboardQuery` loads at most 50 current-workspace incidents with assignee/events; export remains a separate user-requested CSV. | Incident rows use category/resource IDs rather than an environment ID. Context correlation must explicitly map supported categories (environment build, website, server, metric rule, scheduled task and provider) and omit ambiguous records rather than guessing. Existing with explicit-correlation gap. |
+| Metrics and alerts | Server metrics are eager-loaded to 24 samples per server; metric rules and alert destinations are workspace scoped. Alert delivery and recovery semantics are covered by existing actions/jobs. | This slice must not add polling, remote observations, alert regrouping or provider calls. Those remain later work after a read-only context proves useful. Existing and out of first-slice scope. |
+| Authorization and side effects | The index is read-only. Website/build/incident links re-enter their existing policy-protected endpoints. No context read may write, dispatch a job, invoke a provider or expose secrets. | Need direct tests for foreign environment IDs, viewer access, no side effects and secret/log-body exclusion. |
+
+### Proposed smallest verified slice
+
+Add an authorization-checked, read-only **environment evidence context** below
+the existing observability dashboard. It accepts a selected current-workspace
+environment and one of the bounded windows `24h`, `7d` or `30d`, then loads:
+
+- the environment's safe project/website/server identity;
+- recent environment-linked builds, including active attempts, with links to
+  the existing build detail/timeline and no build-log bodies;
+- recent website health checks within the selected window, with a link to the
+  existing filtered health history;
+- current encrypted runtime-log snapshot metadata only, with links to the
+  existing authorized website log surface;
+- operational incidents explicitly related to the environment's build,
+  website, server, metric-rule, scheduled-task or provider IDs.
+
+The read model will carry a visible “related evidence”/“possible correlation”
+label. It will not infer causation, merge unrelated resources, add a generic
+polymorphic repository, or claim remote drift. The first slice will use query
+parameters rather than persisted saved views; shareable/saved investigation
+URLs, severity/service filters, alert grouping and observation controls remain
+subsequent slices with their own authorization and retention decisions.
+
+### Responsibility boundary and applicable principles
+
+- **Single responsibility:** `ObservabilityDashboardQuery` remains the broad
+  dashboard read. A new `ObservabilityEnvironmentContextQuery` owns only the
+  selected environment's bounded evidence relationships and explicit incident
+  mapping. The controller continues to authorize, pass validated values and
+  return a view.
+- **Dependency inversion:** a `ObservabilityContextRequest` owns the finite
+  window and tenant-scoped environment selection; the query receives explicit
+  values and never reads an HTTP request or resolves an actor from the
+  container.
+- **Liskov/tenant safety:** build, website, health and incident records are
+  selected through organization/environment relationships and existing policy
+  entry points. Unsupported incident categories are not treated as related.
+- **Laravel mechanisms:** Form Request normalization, Eloquent relationships,
+  bounded eager loading, existing policies and no-store links where sensitive
+  log output is returned.
+
+### Verification and completion criteria
+
+Add behavior tests proving that an authorized member can select its own
+environment and see only bounded, related evidence; a foreign environment is
+rejected before any read is rendered; an unauthorized viewer cannot bypass the
+workspace boundary; active and terminal builds are included within the window;
+health/log links preserve their existing route contracts; encrypted log bodies,
+environment variables, provider credentials and incident encrypted summaries
+are not included in the context response; and the read performs no writes,
+queue dispatches or provider calls. Add query-count/bound assertions where
+they can be made stable. Run the focused observability/deployment/health/log
+suite, Pint, lint and the full isolated PHP regression suite before integration.
+
+This is local application evidence only. Provider-side monitoring, cloud
+acceptance and the separate live acceptance drill remain outstanding.
+
+**Phase 7 inventory exit gate: complete.** The exact next task is to implement
+the bounded environment evidence context and push its verified feature commit.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
