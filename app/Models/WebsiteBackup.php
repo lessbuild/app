@@ -48,4 +48,10 @@ class WebsiteBackup extends Model
     {
         return $this->hasMany(BackupRestore::class);
     }
+
+    /** @return HasMany<BackupRestoreVerification, $this> */
+    public function verifications(): HasMany
+    {
+        return $this->hasMany(BackupRestoreVerification::class);
+    }
 }

@@ -7,6 +7,7 @@ use App\Actions\Backup\DeleteBackupDestinationAction;
 use App\Actions\Backup\DeleteBackupScheduleAction;
 use App\Actions\Backup\QueueWebsiteBackupAction;
 use App\Actions\Backup\RequestWebsiteBackupRestoreAction;
+use App\Actions\Backup\RequestWebsiteBackupVerificationAction;
 use App\Actions\Backup\SaveBackupScheduleAction;
 use App\Exceptions\BackupDestinationInUseException;
 use App\Exceptions\BackupRestoreException;
@@ -14,6 +15,7 @@ use App\Http\Requests\RestoreWebsiteBackupRequest;
 use App\Http\Requests\RunWebsiteBackupRequest;
 use App\Http\Requests\StoreBackupDestinationRequest;
 use App\Http\Requests\StoreBackupScheduleRequest;
+use App\Http\Requests\VerifyWebsiteBackupRequest;
 use App\Models\BackupDestination;
 use App\Models\Organization;
 use App\Models\Website;
@@ -146,5 +148,20 @@ class BackupController extends Controller
         }
 
         return back()->with('success', __('Restore queued with automatic safety rollback.'));
+    }
+
+    /**
+     * Require the website-name confirmation and queue an isolated recovery verification without overwriting live data.
+     */
+    public function verify(VerifyWebsiteBackupRequest $request, WebsiteBackup $backup, RequestWebsiteBackupVerificationAction $requestVerification): RedirectResponse
+    {
+        $this->authorize('verify', $backup);
+        try {
+            $requestVerification->handle($backup, $request->user());
+        } catch (BackupRestoreException $exception) {
+            return back()->with('error', __($exception->getMessage()));
+        }
+
+        return back()->with('success', __('Isolated restore verification queued.'));
     }
 }

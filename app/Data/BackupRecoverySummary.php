@@ -8,8 +8,8 @@ use Carbon\CarbonInterface;
 class BackupRecoverySummary
 {
     /**
-     * Carry separate managed-backup and restore evidence without implying that
-     * an in-place restore is an independently verified recovery drill.
+     * Carry separate managed-backup, in-place restore, and isolated recovery
+     * evidence without treating one kind of evidence as another.
      */
     public function __construct(
         ?CarbonInterface $latestBackupCompletedAt,

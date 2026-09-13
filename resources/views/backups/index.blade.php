@@ -42,17 +42,104 @@
     </div>
 
     <section class="mt-5 rounded-2xl border border-primary bg-primary p-6">
-        <div class="flex flex-wrap items-start justify-between gap-4"><div><h2 class="text-xl font-black text-primary">{{ __('Backup history and restore') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Restores create a safety snapshot, verify health, and roll back automatically on failure.') }}</p></div>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-black text-primary">{{ __('Backup history and restore') }}</h2>
+                <p class="mt-1 text-sm text-secondary">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
+            </div>
             @if($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
-                <details class="rounded-xl border border-primary bg-secondary px-4 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Run backup') }}</summary><div class="mt-3 w-72 space-y-2">@foreach($websites as $website)<form method="POST" action="{{ route('backups.run', $website) }}" class="rounded-lg border border-primary bg-primary p-3">@csrf<p class="mb-2 truncate text-sm font-bold text-primary">{{ $website->name }}</p><div class="flex gap-2"><select name="backup_destination_id" class="input secondary min-w-0 flex-1 rounded-sm">@foreach($destinations as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><button type="submit" class="button primary">{{ __('Run') }}</button></div></form>@endforeach</div></details>
+                <details class="rounded-xl border border-primary bg-secondary px-4 py-2">
+                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Run backup') }}</summary>
+                    <div class="mt-3 w-72 space-y-2">
+                        @foreach($websites as $website)
+                            <form method="POST" action="{{ route('backups.run', $website) }}" class="rounded-lg border border-primary bg-primary p-3">
+                                @csrf
+                                <p class="mb-2 truncate text-sm font-bold text-primary">{{ $website->name }}</p>
+                                <div class="flex gap-2">
+                                    <select name="backup_destination_id" class="input secondary min-w-0 flex-1 rounded-sm">
+                                        @foreach($destinations as $destination)
+                                            <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <button type="submit" class="button primary">{{ __('Run') }}</button>
+                                </div>
+                            </form>
+                        @endforeach
+                    </div>
+                </details>
             @endif
         </div>
-        <div class="mt-5 overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b border-primary text-xs uppercase text-secondary"><th class="p-3">{{ __('Website') }}</th><th class="p-3">{{ __('Status') }}</th><th class="p-3">{{ __('Snapshot') }}</th><th class="p-3">{{ __('Completed') }}</th><th class="p-3">{{ __('Restore') }}</th></tr></thead><tbody>
-            @forelse($backups as $backup)
-                <tr class="border-b border-primary"><td class="p-3 font-medium text-primary">{{ $backup->website->name }}</td><td class="p-3">{{ ucfirst($backup->status) }}@if($backup->error)<span class="block max-w-xs text-xs text-red-700">{{ $backup->error }}</span>@endif</td><td class="p-3 font-mono text-xs">{{ $backup->snapshot_id ? substr($backup->snapshot_id, 0, 12) : '—' }}</td><td class="p-3 text-secondary">{{ $backup->completed_at?->diffForHumans() ?? '—' }}</td><td class="p-3">@if($canManage && $backup->status === \App\Models\WebsiteBackup::STATUS_SUCCEEDED)<form method="POST" action="{{ route('backups.restore', $backup) }}" class="flex gap-2">@csrf<input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required><button type="submit" class="button secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Restore this backup and replace the current database and persistent files?')) }})">{{ __('Restore') }}</button></form>@else — @endif</td></tr>
-            @empty
-                <tr><td colspan="5" class="p-6 text-center text-secondary">{{ __('No backups have run yet.') }}</td></tr>
-            @endforelse
-        </tbody></table></div>
+
+        <div class="mt-5 overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead>
+                    <tr class="border-b border-primary text-xs uppercase text-secondary">
+                        <th class="p-3">{{ __('Website') }}</th>
+                        <th class="p-3">{{ __('Status') }}</th>
+                        <th class="p-3">{{ __('Snapshot') }}</th>
+                        <th class="p-3">{{ __('Completed') }}</th>
+                        <th class="p-3">{{ __('Verification') }}</th>
+                        <th class="p-3">{{ __('Restore') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($backups as $backup)
+                        @php
+                            $verification = $backup->verifications->sortByDesc('id')->first();
+                            $canVerify = $canManage && $backup->status === \App\Models\WebsiteBackup::STATUS_SUCCEEDED;
+                        @endphp
+                        <tr class="border-b border-primary">
+                            <td class="p-3 font-medium text-primary">{{ $backup->website->name }}</td>
+                            <td class="p-3">
+                                {{ ucfirst($backup->status) }}
+                                @if($backup->error)
+                                    <span class="block max-w-xs text-xs text-red-700">{{ $backup->error }}</span>
+                                @endif
+                            </td>
+                            <td class="p-3 font-mono text-xs">{{ $backup->snapshot_id ? substr($backup->snapshot_id, 0, 12) : '—' }}</td>
+                            <td class="p-3 text-secondary">{{ $backup->completed_at?->diffForHumans() ?? '—' }}</td>
+                            <td class="p-3">
+                                @if($verification)
+                                    <span>{{ ucfirst($verification->status) }}</span>
+                                    <span class="block text-xs text-secondary">{{ ucfirst($verification->integrity_status) }} integrity · {{ ucfirst($verification->smoke_status) }} smoke · {{ ucfirst($verification->cleanup_status) }} cleanup</span>
+                                    @if($verification->failure_stage)
+                                        <span class="block text-xs text-red-700">{{ __('Failed at :stage', ['stage' => $verification->failure_stage]) }}</span>
+                                    @endif
+                                    @if($canVerify && $verification->status === \App\Models\BackupRestoreVerification::STATUS_FAILED)
+                                        <form method="POST" action="{{ route('backups.verify', $backup) }}" class="mt-2 space-y-2">
+                                            @csrf
+                                            <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
+                                            <button type="submit" class="button secondary">{{ __('Retry verification') }}</button>
+                                        </form>
+                                    @endif
+                                @elseif($canVerify)
+                                    <form method="POST" action="{{ route('backups.verify', $backup) }}" class="space-y-2">
+                                        @csrf
+                                        <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
+                                        <button type="submit" class="button secondary">{{ __('Verify safely') }}</button>
+                                        <span class="block max-w-xs text-xs text-secondary">{{ __('Temporary database and storage only; no live overwrite.') }}</span>
+                                    </form>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td class="p-3">
+                                @if($canVerify)
+                                    <form method="POST" action="{{ route('backups.restore', $backup) }}" class="flex gap-2">
+                                        @csrf
+                                        <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
+                                        <button type="submit" class="button secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Restore this backup and replace the current database and persistent files?')) }})">{{ __('Restore') }}</button>
+                                    </form>
+                                @else
+                                    —
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="6" class="p-6 text-center text-secondary">{{ __('No backups have run yet.') }}</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </section>
 </x-layouts.app>

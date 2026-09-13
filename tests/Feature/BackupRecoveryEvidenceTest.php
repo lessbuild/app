@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Data\BackupRecoverySummary;
 use App\Models\BackupDestination;
 use App\Models\BackupRestore;
+use App\Models\BackupRestoreVerification;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\User;
@@ -123,6 +124,17 @@ class BackupRecoveryEvidenceTest extends TestCase
             'started_at' => now()->subMinutes(2),
             'completed_at' => now(),
         ]);
+        $foreignBackup->verifications()->create([
+            'requested_by' => $foreignOwner->id,
+            'snapshot_id' => $foreignBackup->snapshot_id,
+            'target_type' => BackupRestoreVerification::TARGET_SAME_SERVER_TEMPORARY,
+            'overwrite_mode' => BackupRestoreVerification::OVERWRITE_NEVER,
+            'status' => BackupRestoreVerification::STATUS_SUCCEEDED,
+            'integrity_status' => BackupRestoreVerification::CHECK_PASSED,
+            'smoke_status' => BackupRestoreVerification::CHECK_PASSED,
+            'cleanup_status' => BackupRestoreVerification::CLEANUP_PASSED,
+            'completed_at' => now(),
+        ]);
 
         $summary = app(BackupRecoveryEvidenceQuery::class)->summary($owner->currentOrganization);
 
@@ -130,6 +142,7 @@ class BackupRecoveryEvidenceTest extends TestCase
         $this->assertNull($summary->latestTransportVerifiedAt);
         $this->assertNull($summary->latestRestoreCompletedAt);
         $this->assertNull($summary->latestRestoreSeconds);
+        $this->assertNull($summary->latestIndependentRecoveryVerificationAt);
     }
 
     /** @return array{User, Website} */

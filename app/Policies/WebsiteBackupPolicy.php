@@ -12,6 +12,19 @@ class WebsiteBackupPolicy
      */
     public function restore(User $user, WebsiteBackup $backup): bool
     {
+        return $this->canManage($user, $backup);
+    }
+
+    /**
+     * Allow a manager in the backup website's selected workspace to run an isolated recovery verification.
+     */
+    public function verify(User $user, WebsiteBackup $backup): bool
+    {
+        return $this->canManage($user, $backup);
+    }
+
+    private function canManage(User $user, WebsiteBackup $backup): bool
+    {
         $website = $backup->website;
 
         return $website !== null

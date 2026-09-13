@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Data\BackupRecoverySummary;
 use App\Models\BackupRestore;
+use App\Models\BackupRestoreVerification;
 use App\Models\Organization;
 use App\Models\WebsiteBackup;
 use Illuminate\Database\Eloquent\Collection;
@@ -20,7 +21,7 @@ class BackupRecoveryEvidenceQuery
     {
         return WebsiteBackup::query()
             ->whereHas('website', fn ($query) => $query->where('organization_id', $organization->id))
-            ->with(['website', 'destination', 'restores'])
+            ->with(['website', 'destination', 'restores', 'verifications'])
             ->latest()
             ->limit(50)
             ->get();
@@ -30,9 +31,9 @@ class BackupRecoveryEvidenceQuery
      * Select recovery evidence independently of the bounded history window.
      *
      * Successful managed backups require a stored snapshot and completion
-     * time. HTTPS evidence remains a transport fact, while successful restore
-     * rows remain in-place restore evidence. Independent restore verification
-     * has no persisted source yet and therefore remains explicitly null.
+     * time. HTTPS evidence remains a transport fact, successful restore rows
+     * remain in-place restore evidence, and isolated verification is reported
+     * separately only after its integrity, smoke, and cleanup checks succeed.
      */
     public function summary(Organization $organization): BackupRecoverySummary
     {
@@ -67,6 +68,20 @@ class BackupRecoveryEvidenceQuery
             ->latest('id')
             ->first(['started_at', 'completed_at']);
 
+        $latestVerification = BackupRestoreVerification::query()
+            ->whereHas('backup', function ($query) use ($organization): void {
+                $query
+                    ->whereHas('website', fn ($websiteQuery) => $websiteQuery->where('organization_id', $organization->id))
+                    ->where('status', WebsiteBackup::STATUS_SUCCEEDED)
+                    ->whereNotNull('snapshot_id')
+                    ->whereNotNull('completed_at');
+            })
+            ->where('status', BackupRestoreVerification::STATUS_SUCCEEDED)
+            ->whereNotNull('completed_at')
+            ->latest('completed_at')
+            ->latest('id')
+            ->first(['completed_at']);
+
         return new BackupRecoverySummary(
             latestBackupCompletedAt: $latestBackup?->completed_at,
             latestTransportVerifiedAt: $latestTransport?->https_verified_at,
@@ -74,6 +89,7 @@ class BackupRecoveryEvidenceQuery
             latestRestoreSeconds: $latestRestore?->started_at && $latestRestore?->completed_at
                 ? $latestRestore->started_at->diffInSeconds($latestRestore->completed_at)
                 : null,
+            latestIndependentRecoveryVerificationAt: $latestVerification?->completed_at,
         );
     }
 }

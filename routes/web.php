@@ -258,6 +258,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('backups/schedules/{schedule}', [BackupController::class, 'destroySchedule'])->name('backups.schedules.destroy');
         Route::post('backups/websites/{website}/run', [BackupController::class, 'run'])->name('backups.run');
         Route::post('backups/{backup}/restore', [BackupController::class, 'restore'])->name('backups.restore');
+        Route::post('backups/{backup}/verify', [BackupController::class, 'verify'])->name('backups.verify');
         Route::post('observability/destinations', [ObservabilityController::class, 'storeDestination'])->name('observability.destinations.store');
         Route::post('observability/metric-rules', [ObservabilityController::class, 'storeMetricRule'])->name('observability.metric-rules.store');
         Route::delete('observability/metric-rules/{rule}', [ObservabilityController::class, 'destroyMetricRule'])->name('observability.metric-rules.destroy');
