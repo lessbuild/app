@@ -33,6 +33,23 @@ variable keys and values, encrypted resource configuration and credentials are
 excluded. Corrective changes still go through a new configuration review and
 apply.
 
+Each recorded environment also has an **Observe provider** action. This is an
+explicit, manager-authorized one-time read through the existing
+`ServerProvider` contract for DigitalOcean, Hetzner Cloud or Vultr. It compares
+only the normalized server fields that the contract already returns: provider
+identifier, name, region, size, image and public/private addresses. The result
+is observed remote state, separate from desired configuration and recorded local
+state. A difference is informational; it never writes to BuildPusher, changes a
+provider resource or starts reconciliation. No provider request is made when
+the normal authoring page or local comparison is opened.
+
+The observation reports **unavailable** when the environment has no
+workspace-owned provider placement or provider identifier, and **unknown** when
+the provider cannot confirm the current state. Those outcomes do not expose
+provider response bodies, credentials or exception details. Fields not exposed
+by the shared provider contract remain outside this report, so the feature does
+not claim comprehensive remote drift detection.
+
 ## Version 2 example
 
 ```yaml
