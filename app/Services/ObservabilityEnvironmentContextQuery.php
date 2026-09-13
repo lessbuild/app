@@ -8,6 +8,7 @@ use App\Models\Build;
 use App\Models\Environment;
 use App\Models\MetricAlertRule;
 use App\Models\OperationalIncident;
+use App\Models\Repository;
 use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,8 +40,19 @@ class ObservabilityEnvironmentContextQuery
         ]);
 
         $organizationId = (int) $environment->project->organization_id;
-        $builds = $this->builds($environment, $organizationId, $filters);
         $website = $environment->website;
+        $server = $environment->server;
+
+        if ($website && (int) $website->organization_id !== $organizationId) {
+            $website = null;
+            $environment->setRelation('website', null);
+        }
+        if ($server && (int) $server->organization_id !== $organizationId) {
+            $server = null;
+            $environment->setRelation('server', null);
+        }
+
+        $builds = $this->builds($environment, $organizationId, $filters);
         $healthChecks = $website ? $this->healthChecks($website->id, $filters) : new Collection;
         $runtimeLogs = $website ? $this->runtimeLogs($website->id) : new Collection;
         $incidentIds = $this->relatedIncidentIds($environment, $organizationId, $builds);
@@ -48,11 +60,15 @@ class ObservabilityEnvironmentContextQuery
         return new ObservabilityEnvironmentContext(
             environment: $environment,
             window: $filters->window,
+            serviceId: $filters->serviceId,
+            deployment: $filters->deployment,
+            severity: $filters->severity,
             since: $filters->since,
             builds: $builds,
             healthChecks: $healthChecks,
             runtimeLogs: $runtimeLogs,
             incidents: $this->incidents($organizationId, $incidentIds, $filters),
+            services: $website ? $this->services($website->id, $organizationId) : new Collection,
         );
     }
 
@@ -63,8 +79,12 @@ class ObservabilityEnvironmentContextQuery
      */
     private function builds(Environment $environment, int $organizationId, ObservabilityContextFilters $filters): Collection
     {
+        $deploymentStatuses = $filters->deploymentStatuses();
+
         return $environment->builds()
             ->whereHas('repository', fn (Builder $query) => $query->where('organization_id', $organizationId))
+            ->when($filters->serviceId !== null, fn (Builder $query) => $query->where('builds.repository_id', $filters->serviceId))
+            ->when($deploymentStatuses !== [], fn (Builder $query) => $query->whereIn('builds.status', $deploymentStatuses))
             ->where(function (Builder $query) use ($filters): void {
                 $query->where('builds.created_at', '>=', $filters->since)
                     ->orWhereIn('builds.status', Build::ACTIVE_STATUSES);
@@ -85,6 +105,22 @@ class ObservabilityEnvironmentContextQuery
             ->latest('builds.created_at')
             ->latest('builds.id')
             ->limit(self::MAX_BUILDS)
+            ->get();
+    }
+
+    /**
+     * Load the website's current organization-owned repository targets as selectable services.
+     *
+     * @return Collection<int, Repository> Service metadata only; repository secrets are not selected.
+     */
+    private function services(int $websiteId, int $organizationId): Collection
+    {
+        return Repository::query()
+            ->where('website_id', $websiteId)
+            ->where('organization_id', $organizationId)
+            ->select(['id', 'website_id', 'name'])
+            ->orderBy('name')
+            ->orderBy('id')
             ->get();
     }
 
@@ -172,6 +208,7 @@ class ObservabilityEnvironmentContextQuery
                 $query->whereIn('status', [OperationalIncident::STATUS_OPEN, OperationalIncident::STATUS_ACKNOWLEDGED])
                     ->orWhere('last_seen_at', '>=', $filters->since);
             })
+            ->when($filters->severity !== 'all', fn (Builder $query): Builder => $query->where('severity', $filters->severity))
             ->with('assignee:id,name')
             ->select([
                 'id',

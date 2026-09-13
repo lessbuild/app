@@ -218,6 +218,84 @@ class ObservabilityEnvironmentContextTest extends TestCase
                 && $context->healthChecks->count() === 20);
     }
 
+    public function test_context_filters_deployments_by_service_and_incidents_by_severity(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, , $repository] = $this->environment();
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $website->id,
+            'name' => 'Worker service',
+            'url' => 'github.com/example/worker.git',
+            'branch' => 'main',
+            'description' => 'Worker source',
+        ]);
+        $selectedBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_FAILED,
+            'revision' => str_repeat('d', 40),
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'created_at' => now()->subHour(),
+            'finished_at' => now()->subMinutes(30),
+        ]);
+        $otherBuild = $otherRepository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('e', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subMinutes(45),
+            'finished_at' => now()->subMinutes(15),
+        ]);
+        OperationalIncident::query()->create([
+            'organization_id' => $owner->current_organization_id,
+            'category' => 'deployment',
+            'resource_id' => $selectedBuild->id,
+            'active_key' => 'deployment:'.$selectedBuild->id,
+            'status' => OperationalIncident::STATUS_OPEN,
+            'severity' => 'critical',
+            'title' => 'Critical selected deployment',
+            'summary' => 'private critical summary',
+            'occurrences' => 1,
+            'detected_at' => now()->subMinutes(30),
+            'last_seen_at' => now()->subMinutes(30),
+        ]);
+        OperationalIncident::query()->create([
+            'organization_id' => $owner->current_organization_id,
+            'category' => 'deployment',
+            'resource_id' => $otherBuild->id,
+            'active_key' => 'deployment:'.$otherBuild->id,
+            'status' => OperationalIncident::STATUS_OPEN,
+            'severity' => 'minor',
+            'title' => 'Minor other-service deployment',
+            'summary' => 'private minor summary',
+            'occurrences' => 1,
+            'detected_at' => now()->subMinutes(20),
+            'last_seen_at' => now()->subMinutes(20),
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+            'service' => $repository->id,
+            'deployment' => 'unsuccessful',
+            'severity' => 'critical',
+        ]));
+
+        $response->assertSuccessful()
+            ->assertSee('Critical selected deployment')
+            ->assertSee('Application repository')
+            ->assertSee('Worker service')
+            ->assertDontSee('Minor other-service deployment');
+
+        $response->assertViewHas('context', function ($context) use ($repository, $selectedBuild): bool {
+            return $context->serviceId === $repository->id
+                && $context->deployment === 'unsuccessful'
+                && $context->severity === 'critical'
+                && $context->services->count() === 2
+                && $context->builds->pluck('id')->all() === [$selectedBuild->id]
+                && $context->incidents->pluck('severity')->all() === ['critical'];
+        });
+    }
+
     /** @return array{User, Environment, Website, Server, Repository} */
     private function environment(): array
     {

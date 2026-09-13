@@ -5,6 +5,7 @@ namespace App\Data;
 use App\Models\Build;
 use App\Models\Environment;
 use App\Models\OperationalIncident;
+use App\Models\Repository;
 use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use Carbon\CarbonImmutable;
@@ -26,15 +27,20 @@ class ObservabilityEnvironmentContext
      * @param  Collection<int, WebsiteHealthCheck>  $healthChecks  Recent website observations.
      * @param  Collection<int, WebsiteLogSnapshot>  $runtimeLogs  Current snapshot metadata.
      * @param  Collection<int, OperationalIncident>  $incidents  Explicitly related incidents.
+     * @param  Collection<int, Repository>  $services  Authorized deployment services for the website.
      */
     public function __construct(
         public readonly Environment $environment,
         public readonly string $window,
+        public readonly ?int $serviceId,
+        public readonly string $deployment,
+        public readonly string $severity,
         CarbonInterface $since,
         public readonly Collection $builds,
         public readonly Collection $healthChecks,
         public readonly Collection $runtimeLogs,
         public readonly Collection $incidents,
+        public readonly Collection $services,
     ) {
         $this->since = $since->toImmutable();
     }

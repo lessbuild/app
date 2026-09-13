@@ -2,6 +2,8 @@
 
 namespace App\Data;
 
+use App\Models\Build;
+use App\Models\OperationalIncident;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
@@ -14,6 +16,17 @@ class ObservabilityContextFilters
         '30d' => 720,
     ];
 
+    /** @var array<string, list<string>> Deployment status groups accepted by the context read. */
+    public const DEPLOYMENTS = [
+        'all' => [],
+        'active' => Build::ACTIVE_STATUSES,
+        'successful' => [Build::STATUS_SUCCEEDED],
+        'unsuccessful' => [Build::STATUS_REJECTED, Build::STATUS_FAILED, Build::STATUS_CANCELED],
+    ];
+
+    /** @var list<string> Incident severities accepted by the context read. */
+    public const SEVERITIES = ['all', ...OperationalIncident::SEVERITIES];
+
     public readonly CarbonImmutable $since;
 
     /**
@@ -24,6 +37,9 @@ class ObservabilityContextFilters
      */
     public function __construct(
         public readonly string $window,
+        public readonly ?int $serviceId,
+        public readonly string $deployment,
+        public readonly string $severity,
         CarbonInterface $now,
     ) {
         $this->since = $now->copy()->subHours(self::WINDOWS[$window])->toImmutable();
@@ -36,6 +52,29 @@ class ObservabilityContextFilters
      */
     public static function fromWindow(string $window, ?CarbonInterface $now = null): self
     {
-        return new self($window, $now ?? now());
+        return self::fromValues($window, null, 'all', 'all', $now);
+    }
+
+    /**
+     * Build the complete immutable filter boundary from validated context values.
+     *
+     * @param  '24h'|'7d'|'30d'  $window  Validated investigation window.
+     * @param  'all'|'active'|'successful'|'unsuccessful'  $deployment  Validated deployment status group.
+     * @param  'all'|'minor'|'major'|'critical'  $severity  Validated incident severity.
+     */
+    public static function fromValues(
+        string $window,
+        ?int $serviceId,
+        string $deployment,
+        string $severity,
+        ?CarbonInterface $now = null,
+    ): self {
+        return new self($window, $serviceId, $deployment, $severity, $now ?? now());
+    }
+
+    /** @return list<string> Status values represented by the selected deployment group. */
+    public function deploymentStatuses(): array
+    {
+        return self::DEPLOYMENTS[$this->deployment];
     }
 }

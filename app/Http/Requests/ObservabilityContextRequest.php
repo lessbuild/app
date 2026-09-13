@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Data\ObservabilityContextFilters;
 use App\Models\Environment;
+use App\Models\Repository;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -23,6 +24,9 @@ class ObservabilityContextRequest extends FormRequest
     {
         return [
             'window' => ['required', Rule::in(array_keys(ObservabilityContextFilters::WINDOWS))],
+            'service' => ['required', Rule::in(array_merge(['all'], $this->serviceIds()))],
+            'deployment' => ['required', Rule::in(array_keys(ObservabilityContextFilters::DEPLOYMENTS))],
+            'severity' => ['required', Rule::in(ObservabilityContextFilters::SEVERITIES)],
         ];
     }
 
@@ -35,15 +39,56 @@ class ObservabilityContextRequest extends FormRequest
     {
         /** @var '24h'|'7d'|'30d' $window */
         $window = $this->validated('window');
+        $service = $this->validated('service');
+        /** @var 'all'|'active'|'successful'|'unsuccessful' $deployment */
+        $deployment = $this->validated('deployment');
+        /** @var 'all'|'minor'|'major'|'critical' $severity */
+        $severity = $this->validated('severity');
 
-        return ObservabilityContextFilters::fromWindow($window);
+        return ObservabilityContextFilters::fromValues(
+            window: $window,
+            serviceId: $service === 'all' ? null : (int) $service,
+            deployment: $deployment,
+            severity: $severity,
+        );
     }
 
-    /** Default the first context visit to one day while rejecting explicit unsupported values. */
+    /** Default the first context visit to broad, unfiltered evidence while rejecting explicit null values. */
     protected function prepareForValidation(): void
     {
-        if (! $this->has('window')) {
-            $this->merge(['window' => '24h']);
+        $defaults = [];
+
+        if ($this->missing('window')) {
+            $defaults['window'] = '24h';
         }
+        if ($this->missing('service')) {
+            $defaults['service'] = 'all';
+        }
+        if ($this->missing('deployment')) {
+            $defaults['deployment'] = 'all';
+        }
+        if ($this->missing('severity')) {
+            $defaults['severity'] = 'all';
+        }
+
+        if ($defaults !== []) {
+            $this->merge($defaults);
+        }
+    }
+
+    /** @return list<string> Repository service IDs belonging to the selected environment's website. */
+    private function serviceIds(): array
+    {
+        $environment = $this->route('environment');
+        if (! $environment instanceof Environment || ! $environment->website_id) {
+            return [];
+        }
+
+        return Repository::query()
+            ->where('organization_id', $environment->project->organization_id)
+            ->where('website_id', $environment->website_id)
+            ->pluck('id')
+            ->map(static fn (int|string $id): string => (string) $id)
+            ->all();
     }
 }

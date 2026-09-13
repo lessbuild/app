@@ -52,7 +52,7 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-5 flex flex-wrap items-end gap-3 border-t border-primary pt-5">
+        <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-5 grid gap-3 border-t border-primary pt-5 sm:grid-cols-2 lg:grid-cols-4">
             <label>
                 <span class="block text-xs font-bold uppercase text-secondary">{{ __('Evidence window') }}</span>
                 <select name="window" class="input secondary mt-1 rounded-sm">
@@ -61,9 +61,34 @@
                     @endforeach
                 </select>
             </label>
-            <button type="submit" class="button primary">{{ __('Refresh context') }}</button>
+            <label>
+                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Service') }}</span>
+                <select name="service" class="input secondary mt-1 rounded-sm">
+                    <option value="all" @selected($context->serviceId === null)>{{ __('All services') }}</option>
+                    @foreach($context->services as $service)
+                        <option value="{{ $service->id }}" @selected($context->serviceId === (int) $service->id)>{{ $service->name }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label>
+                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Deployments') }}</span>
+                <select name="deployment" class="input secondary mt-1 rounded-sm">
+                    @foreach(['all' => __('All deployments'), 'active' => __('Active'), 'successful' => __('Successful'), 'unsuccessful' => __('Unsuccessful')] as $deployment => $label)
+                        <option value="{{ $deployment }}" @selected($context->deployment === $deployment)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <label>
+                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Incident severity') }}</span>
+                <select name="severity" class="input secondary mt-1 rounded-sm">
+                    @foreach(\App\Data\ObservabilityContextFilters::SEVERITIES as $severity)
+                        <option value="{{ $severity }}" @selected($context->severity === $severity)>{{ str($severity)->headline() }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <button type="submit" class="button primary sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</button>
         </form>
-        <p class="mt-3 text-xs text-secondary">{{ __('Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
+        <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
     </section>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
