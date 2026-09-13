@@ -2,9 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 7D's canonical
-shareable investigation URL is complete locally at feature commit `c757413`,
-after characterization commit `c9b1e00` and the Phase 7C explicit
+The product-expansion sequence is active on `main`. Phase 7E's alert-grouping
+and post-deployment-observation characterization is complete locally, after
+the Phase 7D canonical shareable investigation URL at feature commit
+`c757413`, characterization commit `c9b1e00` and the Phase 7C explicit
 incident-to-deployment evidence links at feature commit `3e79f4f`,
 the Phase 7A environment evidence context, observability inventory and Phase 6B isolated
 restore-verification execution slice. It was implemented in
@@ -152,6 +153,21 @@ context response. Other incident categories do not receive guessed links, and
 the UI continues to describe adjacent signals as evidence rather than proof of
 causation.
 
+Phase 7E characterization found that operational incidents already group an
+active failure by workspace/category/resource under a unique key, append
+occurrence events under a row lock and clear that key on recovery. Website,
+provider and metric monitors add transition, consecutive-breach and cooldown
+guards. Direct `IncidentNotifier::fail()` calls still send each database and
+external alert event, so incident grouping is not delivery deduplication;
+PagerDuty has a provider-specific deduplication key, while other destinations
+do not. The deployment plan's health stage is one immediate retried HTTP
+probe, while periodic website checks are separate, website-scoped records with
+no revision relationship or post-deployment observation window. The next
+implementation carries stable incident identity and occurrence metadata on
+external alert deliveries without changing current delivery frequency or
+retry behavior. A revision-aware post-deployment observation window remains a
+separate design.
+
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
@@ -206,7 +222,11 @@ Composer validation/platform checks, PHP lint, full Pint, route-cache creation,
 `git diff --check` and the required-PHP asset/browser suite (**9 passed**) also
 passed. The exact next task is to characterize existing alert
 grouping/deduplication and post-deployment observation semantics before
-changing either.
+changing either. The Phase 7E alert, incident, website-health and deployment
+observation characterization run passed **55 tests / 615 assertions**; no
+application behavior or schema changed. The exact next task is to implement
+and verify stable incident identity/occurrence metadata on external alert
+deliveries without changing current delivery frequency.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 

@@ -1,8 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7D canonical shareable investigation URL complete locally;
-the read-only context, finite troubleshooting filters and validated share link
-are implemented and tested.
+Status: Phase 7E alert grouping and post-deployment observation
+characterization complete locally; the read-only context, finite troubleshooting
+filters and validated share link are implemented and tested.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
@@ -2176,6 +2176,81 @@ drill remains outstanding.
 to characterize existing alert grouping/deduplication and post-deployment
 observation semantics before changing either.
 
+## Phase 7E — alert grouping and post-deployment observation characterization (completed investigation)
+
+### Existing alert grouping and delivery behavior
+
+Operational incidents already provide a durable grouping boundary. A failure
+uses the current workspace, resource category and resource ID to form a unique
+`active_key`; a row lock and transaction either create the active incident or
+increment its `occurrences`, update `last_seen_at` and append a `repeated`
+event. Recovery locks the open or acknowledged row, records the resolution and
+clears `active_key`, so a later outage begins a new incident. The environment
+context displays the resulting occurrence count and last-seen time.
+
+The source monitors have additional transition guards: website health requires
+the configured consecutive-failure threshold and notifies only on the change
+to unhealthy; provider health notifies only when its persisted connection state
+changes; metric rules use consecutive breaches, `is_alerting` and a cooldown;
+manual health jobs are unique per website, and metric collection jobs are
+unique per server. Failed deployments remain distinct because each build has a
+different resource ID.
+
+Incident grouping does not currently deduplicate delivery. Every direct
+`IncidentNotifier::fail()` call still creates a database failure notification
+and queues each subscribed alert destination; repeated incident events are
+therefore grouped in the operational-incident table but remain individually
+visible in the inbox and external delivery stream. Webhook jobs retry with
+bounded backoff and PagerDuty receives a category/resource deduplication key,
+while generic webhook, Slack, Discord, Teams and email destinations have no
+provider-neutral suppression or idempotency key. Resolved incidents are pruned
+only after the bounded retention period, while open incidents are preserved.
+
+### Existing post-deployment observation behavior
+
+The repository deployment plan runs one immediate remote HTTP probe after
+post-deployment commands and before release cleanup. It retries the curl probe
+five times with a two-second delay and turns the deployment into a failure when
+the probe cannot succeed. That check does not create a `WebsiteHealthCheck`
+row, persist an observation window, or retain a build-to-health-check
+relationship; the build only records the existing stage, activation and finish
+timestamps.
+
+Periodic website monitoring is a separate scheduler path. It checks active,
+non-hibernated websites according to the configured 5/10/15/30/60-minute
+interval, retains up to 100 observations per website, applies the configured
+1/2/3/5/10 consecutive-failure threshold and reports website transitions to
+the incident notifier. It is not a post-deployment observation window and
+cannot establish that a later health result was caused by a particular build.
+
+### Boundary and next implementation
+
+Do not replace the existing incident key, transition guards, queue retry
+semantics or deployment health probe in this characterization. The next
+smallest safe alert slice is to carry an explicit, stable incident identity
+and occurrence metadata with external alert deliveries, allowing downstream
+systems to group repeated events without silently changing the existing inbox
+or webhook notification frequency. A later suppression policy must be
+separately designed with destination-level opt-in, queued-job compatibility,
+recovery behavior and replay/idempotency guarantees.
+
+Post-deployment observation requires a separate design because adding a window
+would affect build persistence, queue scheduling, website-monitor state,
+deployment/recovery semantics and the claim that a health result is related to
+a revision. It should begin with a bounded, revision-aware observation record
+and explicit cancellation/retry behavior rather than reusing the website's
+periodic health history.
+
+The focused alert, incident, website-health and deployment-observation
+regression set passed **55 tests / 615 assertions**. No application behavior or
+schema changed in this investigation. The exact next task is to implement and
+verify the stable incident identity/occurrence metadata for external alert
+deliveries while preserving current delivery frequency and retry behavior.
+
+**Phase 7E characterization exit gate: complete.** This characterization is
+ready for the next feature slice; no provider/cloud or live acceptance claim is
+made.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -2190,6 +2265,7 @@ observation semantics before changing either.
 | Phase 7C | Deployment incidents in the context identified a build resource but sent operators only to the general incident centre. Added a separate link to the existing policy-protected build detail for concrete deployment incidents, retaining the incident-centre navigation for response history and using the build page's existing configuration identity when present. Unknown categories/resource IDs receive no guessed link. | Focused observability/deployment/health/incident run: **26 passed, 218 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,236 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `3e79f4f` — `feat: link incidents to deployment evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize saved/shareable investigation views, authorization rechecks, filter normalization and retention before deciding whether persistence is justified. |
 | Phase 7D characterization | Existing saved notification filters are user-preference JSON without workspace/resource authorization, expiry or retention semantics, while the observability context already has a policy-checked GET URL with finite non-secret filters. Rejected reusing that preference boundary and decided that an initial shareable investigation needs only a canonical validated URL; named shared views require a separate organization-owned design. | Read-only source and behavior characterization completed; no application behavior or schema changed. | `c9b1e00` — `docs: characterize shareable investigations` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the canonical shareable context URL without persistence or authorization changes. |
 | Phase 7D URL | The validated environment context had no explicit copyable investigation link. Added a canonical URL generated only from normalized filters, excluding arbitrary query input and preserving policy checks on every visit. No persistence, secret, response, authorization or query-bound change was introduced. | Focused observability/deployment/health/incident run: **26 passed, 222 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,241 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `c757413` — `feat: add shareable observability links` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize alert grouping/deduplication and post-deployment observation semantics before implementing the next troubleshooting slice. |
+| Phase 7E characterization | Operational incidents already group active failures by workspace/category/resource and source monitors suppress repeated state-transition notifications, but direct notifier calls still deliver repeated inbox/webhook events; the deployment health check is a single immediate probe with no revision-aware observation window or persisted health relationship. Preserved all current grouping, transition, retry and timing boundaries while documenting the next explicit metadata and observation designs. | Focused alert, incident, website-health and deployment-observation regression set: **55 passed, 615 assertions**. Read-only characterization; no application behavior or schema changed. | `pending` — documentation slice | Not yet committed; this characterization is being recorded in the next documentation checkpoint. | Implement and verify stable incident identity/occurrence metadata on external alert deliveries without changing current delivery frequency; design revision-aware post-deployment observation separately. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
