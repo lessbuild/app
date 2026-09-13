@@ -6,19 +6,18 @@ use App\Models\Server;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 class WebsiteHealthMonitor
 {
     /**
-     * Bind remote probes and incident reporting for website health checks.
+     * Bind probe execution, state persistence and incident reporting for website health checks.
      *
-     * @param  Runner  $runner  Executes the website probe through its attached server.
+     * @param  WebsiteHealthProbe  $probe  Executes the bounded website probe without persistence.
      * @param  ActivityRecorder  $activity  Records health-state transitions.
      * @param  IncidentNotifier  $incidents  Persists and notifies failure and recovery events.
      */
     public function __construct(
-        private readonly Runner $runner,
+        private readonly WebsiteHealthProbe $probe,
         private readonly ActivityRecorder $activity,
         private readonly IncidentNotifier $incidents,
     ) {}
@@ -40,62 +39,16 @@ class WebsiteHealthMonitor
             return null;
         }
 
-        [$successful, $error, $httpStatus, $durationMs] = $this->execute($website);
+        $result = $this->probe->probe($website);
 
-        return $this->recordResult($website, $successful, $error, $httpStatus, $durationMs, $automatic);
-    }
-
-    /** @return array{bool, ?string, ?int, ?int} */
-    private function execute(Website $website): array
-    {
-        $url = escapeshellarg("http://{$website->url}{$website->health_check_path}");
-        $command = <<<BASH
-        curl --fail --silent --show-error --location \
-            --connect-timeout 5 --max-time 15 \
-            --retry 1 --retry-delay 1 --retry-all-errors \
-            --user-agent "lessbuild-health-monitor" \
-            --output /dev/null --write-out '%{http_code} %{time_total}\\n' {$url}
-        BASH;
-
-        try {
-            $process = $this->runner->server($website->server)->create()->execute($command);
-        } catch (Throwable $exception) {
-            report($exception);
-
-            return [false, str($exception->getMessage())->limit(500)->toString() ?: 'Unable to reach the managed server.', null, null];
-        }
-
-        $output = trim($process->getOutput());
-        [$httpStatus, $durationMs] = $this->parseMetrics($output);
-
-        if ($process->isSuccessful()) {
-            return [true, null, $httpStatus, $durationMs];
-        }
-
-        $error = trim($process->getErrorOutput());
-
-        return [
-            false,
-            str($error ?: 'The website did not return a successful response.')->limit(500)->toString(),
-            $httpStatus,
-            $durationMs,
-        ];
-    }
-
-    /** @return array{?int, ?int} */
-    private function parseMetrics(string $output): array
-    {
-        if (! preg_match('/(?<!\d)(\d{3}) ([0-9]+(?:\.[0-9]+)?)\s*\z/', $output, $matches)) {
-            return [null, null];
-        }
-
-        $httpStatus = (int) $matches[1];
-        $durationMs = (int) round((float) $matches[2] * 1000);
-
-        return [
-            $httpStatus > 0 ? $httpStatus : null,
-            max(0, min($durationMs, 4_294_967_295)),
-        ];
+        return $this->recordResult(
+            $website,
+            $result->successful,
+            $result->error,
+            $result->httpStatus,
+            $result->durationMs,
+            $automatic,
+        );
     }
 
     /**
