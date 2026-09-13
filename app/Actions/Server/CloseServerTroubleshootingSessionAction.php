@@ -36,6 +36,9 @@ class CloseServerTroubleshootingSessionAction
                     'status' => ServerTroubleshootingSession::STATUS_EXPIRED,
                     'closed_at' => $now,
                     'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_EXPIRED,
+                    'broker_lease_hash' => null,
+                    'broker_lease_expires_at' => null,
+                    'broker_process_id' => null,
                 ]);
 
                 return false;
@@ -45,6 +48,9 @@ class CloseServerTroubleshootingSessionAction
                 'status' => ServerTroubleshootingSession::STATUS_CLOSED,
                 'closed_at' => $now,
                 'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_USER,
+                'broker_lease_hash' => null,
+                'broker_lease_expires_at' => null,
+                'broker_process_id' => null,
             ]);
 
             return true;

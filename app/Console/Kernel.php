@@ -54,6 +54,11 @@ class Kernel extends ConsoleKernel
             ->when(fn (): bool => Schema::hasTable('server_troubleshooting_sessions'))
             ->withoutOverlapping()
             ->runInBackground();
+        $schedule->command('buildpusher:troubleshooting:frames:prune')
+            ->everyMinute()
+            ->when(fn (): bool => Schema::hasTable('server_troubleshooting_frames'))
+            ->withoutOverlapping()
+            ->runInBackground();
         $schedule->command('lessbuild:webhooks:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:commands:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:notifications:prune')->daily()->withoutOverlapping()->runInBackground();

@@ -24,6 +24,9 @@ class RevokeServerTroubleshootingSessionAction
                 'status' => ServerTroubleshootingSession::STATUS_REVOKED,
                 'closed_at' => now(),
                 'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_REVOKED,
+                'broker_lease_hash' => null,
+                'broker_lease_expires_at' => null,
+                'broker_process_id' => null,
             ]);
 
             return true;

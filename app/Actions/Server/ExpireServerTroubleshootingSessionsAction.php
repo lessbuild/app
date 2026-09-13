@@ -19,7 +19,12 @@ class ExpireServerTroubleshootingSessionsAction
                 ->where(function ($query) use ($now): void {
                     $query
                         ->where('expires_at', '<=', $now)
-                        ->orWhere('idle_expires_at', '<=', $now);
+                        ->orWhere('idle_expires_at', '<=', $now)
+                        ->orWhere(function ($query) use ($now): void {
+                            $query
+                                ->whereNotNull('broker_lease_expires_at')
+                                ->where('broker_lease_expires_at', '<=', $now);
+                        });
                 })
                 ->orderBy('id')
                 ->limit($limit)
@@ -27,10 +32,19 @@ class ExpireServerTroubleshootingSessionsAction
                 ->get();
 
             foreach ($sessions as $session) {
+                $brokerExpired = $session->brokerLeaseExpired($now)
+                    && ! $session->hasExpired($now);
                 $session->update([
-                    'status' => ServerTroubleshootingSession::STATUS_EXPIRED,
+                    'status' => $brokerExpired
+                        ? ServerTroubleshootingSession::STATUS_FAILED
+                        : ServerTroubleshootingSession::STATUS_EXPIRED,
                     'closed_at' => $now,
-                    'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_EXPIRED,
+                    'close_reason' => $brokerExpired
+                        ? ServerTroubleshootingSession::CLOSE_REASON_TRANSPORT
+                        : ServerTroubleshootingSession::CLOSE_REASON_EXPIRED,
+                    'broker_lease_hash' => null,
+                    'broker_lease_expires_at' => null,
+                    'broker_process_id' => null,
                 ]);
             }
 

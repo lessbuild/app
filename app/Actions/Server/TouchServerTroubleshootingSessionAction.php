@@ -47,11 +47,27 @@ class TouchServerTroubleshootingSessionAction
                 return false;
             }
 
+            if ($locked->brokerLeaseExpired($now)) {
+                $locked->update([
+                    'status' => ServerTroubleshootingSession::STATUS_FAILED,
+                    'closed_at' => $now,
+                    'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_TRANSPORT,
+                    'broker_lease_hash' => null,
+                    'broker_lease_expires_at' => null,
+                    'broker_process_id' => null,
+                ]);
+
+                return false;
+            }
+
             if ($locked->server->provisioning_status !== Server::STATUS_ACTIVE) {
                 $locked->update([
                     'status' => ServerTroubleshootingSession::STATUS_FAILED,
                     'closed_at' => $now,
                     'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_SERVER_INACTIVE,
+                    'broker_lease_hash' => null,
+                    'broker_lease_expires_at' => null,
+                    'broker_process_id' => null,
                 ]);
 
                 return false;
@@ -73,6 +89,9 @@ class TouchServerTroubleshootingSessionAction
             'status' => ServerTroubleshootingSession::STATUS_EXPIRED,
             'closed_at' => $now,
             'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_EXPIRED,
+            'broker_lease_hash' => null,
+            'broker_lease_expires_at' => null,
+            'broker_process_id' => null,
         ]);
     }
 

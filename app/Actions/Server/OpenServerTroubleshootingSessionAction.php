@@ -58,11 +58,23 @@ class OpenServerTroubleshootingSessionAction
                 ->get();
 
             foreach ($active as $existing) {
-                if ($existing->hasExpired($now)) {
+                if ($existing->brokerLeaseExpired($now)) {
+                    $existing->update([
+                        'status' => ServerTroubleshootingSession::STATUS_FAILED,
+                        'closed_at' => $now,
+                        'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_TRANSPORT,
+                        'broker_lease_hash' => null,
+                        'broker_lease_expires_at' => null,
+                        'broker_process_id' => null,
+                    ]);
+                } elseif ($existing->hasExpired($now)) {
                     $existing->update([
                         'status' => ServerTroubleshootingSession::STATUS_EXPIRED,
                         'closed_at' => $now,
                         'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_EXPIRED,
+                        'broker_lease_hash' => null,
+                        'broker_lease_expires_at' => null,
+                        'broker_process_id' => null,
                     ]);
                 }
             }
