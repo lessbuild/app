@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Build;
+use App\Models\DeploymentObservation;
 use App\Models\Environment;
 use App\Models\OperationalIncident;
 use App\Models\Provider;
@@ -199,13 +200,14 @@ class ObservabilityEnvironmentContextTest extends TestCase
         [$owner, $environment, $website, , $repository] = $this->environment();
 
         foreach (range(1, 25) as $number) {
-            $repository->builds()->create([
+            $build = $repository->builds()->create([
                 'environment_id' => $environment->id,
                 'status' => Build::STATUS_SUCCEEDED,
                 'revision' => str_repeat((string) ($number % 10), 40),
                 'trigger_source' => Build::TRIGGER_MANUAL,
                 'created_at' => now()->subMinutes($number),
             ]);
+            $this->observation($build, $website);
             $website->healthChecks()->create([
                 'successful' => true,
                 'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
@@ -231,7 +233,157 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ]))
             ->assertSuccessful()
             ->assertViewHas('context', fn ($context): bool => $context->builds->count() === 20
+                && $context->deploymentObservations->count() === 20
                 && $context->healthChecks->count() === 20);
+    }
+
+    public function test_context_includes_active_revision_bound_observations_without_exposing_remote_details(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, , $repository] = $this->environment();
+        $recentBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('a', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subHour(),
+        ]);
+        $oldBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('b', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subDays(2),
+        ]);
+        $this->observation($recentBuild, $website, [
+            'status' => DeploymentObservation::STATUS_HEALTHY,
+            'successful_checks' => 4,
+            'last_http_status' => 200,
+            'last_error' => 'remote-observation-error',
+            'claim_token' => 'observation-claim-secret',
+            'website_url' => 'https://secret-observation.example.test',
+            'health_check_path' => '/private-health-path',
+        ]);
+        $this->observation($oldBuild, $website, [
+            'status' => DeploymentObservation::STATUS_OBSERVING,
+            'successful_checks' => 1,
+            'deadline_at' => now()->addHour(),
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => '24h',
+        ]));
+
+        $response->assertSuccessful()
+            ->assertSee('Post-deployment verification')
+            ->assertSee('Healthy')
+            ->assertSee('Observing')
+            ->assertSee('HTTP 200')
+            ->assertSee('data-testid="deployment-observation-evidence-'.$recentBuild->id.'"', false)
+            ->assertSee('data-testid="deployment-observation-evidence-'.$oldBuild->id.'"', false)
+            ->assertDontSee('remote-observation-error')
+            ->assertDontSee('observation-claim-secret')
+            ->assertDontSee('secret-observation.example.test')
+            ->assertDontSee('/private-health-path');
+
+        $response->assertViewHas('context', function ($context) use ($recentBuild, $oldBuild): bool {
+            $recent = $context->deploymentObservations->get($recentBuild->id);
+            $old = $context->deploymentObservations->get($oldBuild->id);
+
+            return $recent?->status === DeploymentObservation::STATUS_HEALTHY
+                && $recent?->successfulChecks === 4
+                && $old?->status === DeploymentObservation::STATUS_OBSERVING
+                && $context->builds->pluck('id')->contains($oldBuild->id);
+        });
+
+        $loadedObservation = $response->viewData('context')->builds->firstWhere('id', $recentBuild->id)->deploymentObservation;
+        $this->assertArrayNotHasKey('last_error', $loadedObservation->getAttributes());
+        $this->assertArrayNotHasKey('claim_token', $loadedObservation->getAttributes());
+        $this->assertArrayNotHasKey('website_url', $loadedObservation->getAttributes());
+    }
+
+    public function test_context_service_filter_keeps_observation_outcomes_bound_to_selected_deployment_service(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, , $repository] = $this->environment();
+        $otherRepository = $owner->repositories()->create([
+            'provider_id' => $repository->provider_id,
+            'website_id' => $website->id,
+            'name' => 'Worker service',
+            'url' => 'github.com/example/worker.git',
+            'branch' => 'main',
+            'description' => 'Worker source',
+        ]);
+        $selectedBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('c', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subMinutes(20),
+        ]);
+        $otherBuild = $otherRepository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('d', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subMinutes(10),
+        ]);
+        $this->observation($selectedBuild, $website, ['successful_checks' => 3]);
+        $this->observation($otherBuild, $website, ['successful_checks' => 9]);
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+            'service' => $repository->id,
+        ]));
+
+        $response->assertSuccessful()
+            ->assertSee('data-testid="deployment-observation-evidence-'.$selectedBuild->id.'"', false)
+            ->assertDontSee('data-testid="deployment-observation-evidence-'.$otherBuild->id.'"', false);
+
+        $response->assertViewHas('context', fn ($context): bool => $context->serviceId === $repository->id
+            && $context->deploymentObservations->keys()->all() === [$selectedBuild->id]);
+    }
+
+    public function test_context_does_not_present_an_observation_when_revision_or_website_identity_changed(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, , $repository] = $this->environment();
+        $build = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('e', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subMinutes(10),
+        ]);
+        $otherWebsite = $owner->websites()->create([
+            'server_id' => $website->server_id,
+            'name' => 'Other website',
+            'description' => 'Other application',
+            'environment' => 'APP_SECRET=other-secret',
+            'url' => 'other.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $websiteMismatchBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('g', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subMinutes(5),
+        ]);
+        $this->observation($build, $website, [
+            'revision' => str_repeat('f', 40),
+            'status' => DeploymentObservation::STATUS_HEALTHY,
+        ]);
+        $this->observation($websiteMismatchBuild, $otherWebsite);
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+        ]));
+
+        $response->assertSuccessful()
+            ->assertDontSee('Post-deployment verification')
+            ->assertViewHas('context', fn ($context): bool => $context->deploymentObservations->isEmpty());
     }
 
     public function test_context_filters_deployments_by_service_and_incidents_by_severity(): void
@@ -369,5 +521,27 @@ class ObservabilityEnvironmentContextTest extends TestCase
         ]);
 
         return [$owner, $environment, $website, $server, $repository];
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function observation(Build $build, Website $website, array $attributes = []): DeploymentObservation
+    {
+        return DeploymentObservation::query()->create(array_merge([
+            'build_id' => $build->id,
+            'website_id' => $website->id,
+            'server_id' => $website->server_id,
+            'revision' => $build->revision,
+            'website_url' => 'app.example.com',
+            'health_check_path' => '/health',
+            'duration_minutes' => 15,
+            'status' => DeploymentObservation::STATUS_HEALTHY,
+            'successful_checks' => 2,
+            'last_http_status' => 200,
+            'last_duration_ms' => 80,
+            'started_at' => now()->subMinutes(15),
+            'last_checked_at' => now()->subMinute(),
+            'deadline_at' => now()->addMinutes(15),
+            'completed_at' => now(),
+        ], $attributes));
     }
 }

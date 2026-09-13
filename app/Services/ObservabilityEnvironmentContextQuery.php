@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Data\DeploymentObservationEvidence;
 use App\Data\ObservabilityContextFilters;
 use App\Data\ObservabilityEnvironmentContext;
 use App\Models\Build;
+use App\Models\DeploymentObservation;
 use App\Models\Environment;
 use App\Models\MetricAlertRule;
 use App\Models\OperationalIncident;
@@ -13,11 +15,14 @@ use App\Models\WebsiteHealthCheck;
 use App\Models\WebsiteLogSnapshot;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection as BaseCollection;
 
 class ObservabilityEnvironmentContextQuery
 {
     public const MAX_BUILDS = 20;
+
+    public const MAX_DEPLOYMENT_OBSERVATIONS = 20;
 
     public const MAX_HEALTH_CHECKS = 20;
 
@@ -52,7 +57,8 @@ class ObservabilityEnvironmentContextQuery
             $environment->setRelation('server', null);
         }
 
-        $builds = $this->builds($environment, $organizationId, $filters);
+        $builds = $this->builds($environment, $organizationId, $filters, $website?->id);
+        $deploymentObservations = $this->deploymentObservations($builds);
         $healthChecks = $website ? $this->healthChecks($website->id, $filters) : new Collection;
         $runtimeLogs = $website ? $this->runtimeLogs($website->id) : new Collection;
         $incidentIds = $this->relatedIncidentIds($environment, $organizationId, $builds);
@@ -65,6 +71,7 @@ class ObservabilityEnvironmentContextQuery
             severity: $filters->severity,
             since: $filters->since,
             builds: $builds,
+            deploymentObservations: $deploymentObservations,
             healthChecks: $healthChecks,
             runtimeLogs: $runtimeLogs,
             incidents: $this->incidents($organizationId, $incidentIds, $filters),
@@ -73,11 +80,11 @@ class ObservabilityEnvironmentContextQuery
     }
 
     /**
-     * Load recent environment builds, retaining active attempts regardless of age for recovery visibility.
+     * Load recent environment builds, retaining active attempts and active observations regardless of age for recovery visibility.
      *
      * @return Collection<int, Build> Bounded build metadata without deployment logs or environment payloads.
      */
-    private function builds(Environment $environment, int $organizationId, ObservabilityContextFilters $filters): Collection
+    private function builds(Environment $environment, int $organizationId, ObservabilityContextFilters $filters, ?int $websiteId): Collection
     {
         $deploymentStatuses = $filters->deploymentStatuses();
 
@@ -85,11 +92,35 @@ class ObservabilityEnvironmentContextQuery
             ->whereHas('repository', fn (Builder $query) => $query->where('organization_id', $organizationId))
             ->when($filters->serviceId !== null, fn (Builder $query) => $query->where('builds.repository_id', $filters->serviceId))
             ->when($deploymentStatuses !== [], fn (Builder $query) => $query->whereIn('builds.status', $deploymentStatuses))
-            ->where(function (Builder $query) use ($filters): void {
+            ->where(function (Builder $query) use ($filters, $websiteId): void {
                 $query->where('builds.created_at', '>=', $filters->since)
-                    ->orWhereIn('builds.status', Build::ACTIVE_STATUSES);
+                    ->orWhereIn('builds.status', Build::ACTIVE_STATUSES)
+                    ->orWhereHas('deploymentObservation', function (Builder $query) use ($websiteId): void {
+                        $query->whereIn('status', DeploymentObservation::ACTIVE_STATUSES)
+                            ->where('website_id', $websiteId);
+                    });
             })
-            ->with('repository:id,organization_id,website_id,name')
+            ->with([
+                'repository:id,organization_id,website_id,name',
+                'deploymentObservation' => function (Relation $query) use ($websiteId): void {
+                    $query->where('website_id', $websiteId)
+                        ->select([
+                            'id',
+                            'build_id',
+                            'website_id',
+                            'revision',
+                            'duration_minutes',
+                            'status',
+                            'successful_checks',
+                            'last_http_status',
+                            'last_duration_ms',
+                            'started_at',
+                            'last_checked_at',
+                            'deadline_at',
+                            'completed_at',
+                        ]);
+                },
+            ])
             ->select([
                 'builds.id',
                 'builds.repository_id',
@@ -106,6 +137,33 @@ class ObservabilityEnvironmentContextQuery
             ->latest('builds.id')
             ->limit(self::MAX_BUILDS)
             ->get();
+    }
+
+    /**
+     * Convert eager-loaded observations into a keyed, secret-safe read model.
+     *
+     * An observation is shown only when its captured website and revision still
+     * match the build that owns it. This keeps stale or malformed rows from
+     * being presented as evidence for another deployment.
+     *
+     * @param  Collection<int, Build>  $builds  Already scoped and bounded builds.
+     * @return BaseCollection<int, DeploymentObservationEvidence> Safe evidence keyed by build ID.
+     */
+    private function deploymentObservations(Collection $builds): BaseCollection
+    {
+        return $builds
+            ->mapWithKeys(function (Build $build): array {
+                $observation = $build->deploymentObservation;
+
+                if (! $observation instanceof DeploymentObservation
+                    || (int) $observation->build_id !== (int) $build->id
+                    || (string) $observation->revision !== (string) $build->revision) {
+                    return [];
+                }
+
+                return [(int) $build->id => DeploymentObservationEvidence::fromModel($observation)];
+            })
+            ->take(self::MAX_DEPLOYMENT_OBSERVATIONS);
     }
 
     /**

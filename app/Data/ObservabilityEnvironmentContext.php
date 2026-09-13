@@ -11,6 +11,7 @@ use App\Models\WebsiteLogSnapshot;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 
 class ObservabilityEnvironmentContext
 {
@@ -22,8 +23,11 @@ class ObservabilityEnvironmentContext
      * Build and health collections contain metadata only. Runtime-log snapshots
      * deliberately exclude their encrypted bodies and operational incidents
      * deliberately exclude encrypted summaries, resolutions and timeline bodies.
+     * Deployment observations contain only revision-bound outcome metadata; their
+     * remote error text, target details and lease fields are excluded.
      *
      * @param  Collection<int, Build>  $builds  Recent or active environment deployments.
+     * @param  BaseCollection<int, DeploymentObservationEvidence>  $deploymentObservations  Safe observations keyed by build ID.
      * @param  Collection<int, WebsiteHealthCheck>  $healthChecks  Recent website observations.
      * @param  Collection<int, WebsiteLogSnapshot>  $runtimeLogs  Current snapshot metadata.
      * @param  Collection<int, OperationalIncident>  $incidents  Explicitly related incidents.
@@ -37,6 +41,7 @@ class ObservabilityEnvironmentContext
         public readonly string $severity,
         CarbonInterface $since,
         public readonly Collection $builds,
+        public readonly BaseCollection $deploymentObservations,
         public readonly Collection $healthChecks,
         public readonly Collection $runtimeLogs,
         public readonly Collection $incidents,

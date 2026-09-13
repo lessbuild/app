@@ -109,6 +109,14 @@
                         $buildColor = in_array($build->status, [\App\Models\Build::STATUS_FAILED, \App\Models\Build::STATUS_CANCELED], true)
                             ? 'bg-red-500'
                             : ($build->status === \App\Models\Build::STATUS_SUCCEEDED ? 'bg-green-500' : 'bg-amber-500');
+                        $observation = $context->deploymentObservations->get((int) $build->id);
+                        $observationColor = match ($observation?->status) {
+                            \App\Models\DeploymentObservation::STATUS_HEALTHY => 'bg-green-100 text-green-800',
+                            \App\Models\DeploymentObservation::STATUS_FAILED, \App\Models\DeploymentObservation::STATUS_EXPIRED => 'bg-red-100 text-red-800',
+                            \App\Models\DeploymentObservation::STATUS_SUPERSEDED => 'bg-secondary text-secondary',
+                            \App\Models\DeploymentObservation::STATUS_PENDING, \App\Models\DeploymentObservation::STATUS_OBSERVING => 'bg-amber-100 text-amber-800',
+                            default => 'bg-secondary text-secondary',
+                        };
                     @endphp
                     <a href="{{ route('builds.show', $build) }}" class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3 transition hover:border-ternary">
                         <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ $buildColor }}" aria-hidden="true"></span>
@@ -118,6 +126,23 @@
                         </span>
                         <span class="shrink-0 text-right text-xs text-secondary">{{ str((string) $build->status)->headline() }}<br>{{ $build->created_at?->diffForHumans() }}</span>
                     </a>
+                    @if($observation)
+                        <div class="-mt-1 rounded-b-xl border border-t-0 border-primary bg-secondary px-3 pb-3 pt-2 text-xs" data-testid="deployment-observation-evidence-{{ $build->id }}">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="font-bold text-primary">{{ __('Post-deployment verification') }}</span>
+                                <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase {{ $observationColor }}">{{ str($observation->status)->headline() }}</span>
+                            </div>
+                            <p class="mt-1 text-secondary">
+                                {{ __('Revision-linked · :count successful checks · :duration-minute window', ['count' => $observation->successfulChecks, 'duration' => $observation->durationMinutes]) }}
+                                @if($observation->lastHttpStatus !== null)
+                                    · {{ __('HTTP :status', ['status' => $observation->lastHttpStatus]) }}
+                                @endif
+                                @if($observation->lastCheckedAt)
+                                    · {{ __('Checked :time', ['time' => $observation->lastCheckedAt->diffForHumans()]) }}
+                                @endif
+                            </p>
+                        </div>
+                    @endif
                 @empty
                     <p class="rounded-xl border border-dashed border-primary p-4 text-sm text-secondary">{{ __('No deployment metadata was recorded in this window.') }}</p>
                 @endforelse
