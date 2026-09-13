@@ -1,6 +1,6 @@
 # BuildPusher product expansion progress
 
-Status: Phase 8's fixed server-host diagnostic characterization is complete
+Status: Phase 8's fixed server-host diagnostic implementation is complete
 locally; the typed category-aware control-plane report is also complete.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
@@ -34,6 +34,16 @@ rejects stale claim/revision/target results. Build detail shows bounded status
 metadata only; claim tokens and remote error text are not rendered.
 Provider-side cloud acceptance, the separate live drill and broader runtime/
 target recovery coverage remain outstanding.
+
+The fixed server-host diagnostic now has its own policy-authorized,
+asynchronous snapshot boundary. It requires the stored SSH host identity,
+executes only a versioned application-owned scalar probe, persists typed checks
+rather than raw output, and keeps one latest result per server. Leased queue
+claims, bounded transport retries, terminal sanitized failures and attempt
+tokens prevent duplicate work, secret disclosure and stale completions. The
+existing arbitrary server command, metrics, log, provisioning and
+provider-health paths remain separate. Interactive terminal execution is not
+implied by this diagnostic.
 
 Date: 2026-09-13
 
@@ -2957,9 +2967,77 @@ of secrets or arbitrary command output. Existing metrics, logs, arbitrary
 commands and provisioning behavior must remain green.
 
 **Phase 8 fixed-host characterization exit gate: complete.** The exact next
-task is to implement the persisted fixed server-host diagnostic snapshot,
-policy/request/action/job boundary and safe read surface. Interactive terminal
-transport remains deferred until this bounded protocol is proven.
+task was to implement the persisted fixed server-host diagnostic snapshot,
+policy/action/job boundary and safe read surface; that implementation is
+recorded below. Interactive terminal transport remains a separate,
+unimplemented protocol.
+
+## Phase 8 — fixed server-host diagnostics (completed slice)
+
+### Problem and responsibility boundary
+
+The characterization established that existing metrics, logs, provisioning
+discovery and encrypted arbitrary-command history could not safely serve a
+current structured host-readiness product. Reusing command history would mix
+read-only health checks with a stronger command ability and retain the wrong
+data. The affected entry point is the authorized server detail view, with
+`ServerPolicy`, `ServerShow`, `Runner` and `ManagedSsh` providing the existing
+authorization, UI and transport boundaries.
+
+Added `ServerDiagnosticSnapshot`, a unique latest-result record per server,
+plus `QueueServerDiagnosticAction` and `RunServerDiagnosticJob`. The policy's
+`diagnose` ability is intentionally no stronger than server visibility and is
+separate from update/arbitrary-command execution. The Livewire component queues
+the action without opening SSH; no Form Request was added because this action
+has no user-supplied diagnostic command or filter. The action locks the server
+and snapshot, prevents duplicate unexpired work, fails closed for inactive or
+unprepared servers, and dispatches only after commit. The job claims a bounded
+lease, probes outside the database transaction, retries transport failures,
+and updates only the matching attempt token. Expired attempts can be replaced;
+stale jobs cannot overwrite a newer result.
+
+`ServerDiagnosticProbe` owns the fixed remote integration and
+`ServerDiagnosticOutputParser` owns its strict, bounded scalar response
+contract. The script does not interpolate user, database or environment-file
+values and does not read secrets, logs, process arguments or arbitrary URLs.
+It requires the stored pinned host identity before calling the existing SSH
+runner. Only safe categorized checks are stored and rendered; credentials,
+claim tokens, raw response bodies and exception text are not retained. The
+existing typed operational diagnostic report now provides the storage
+projection without changing its legacy CLI/JSON/HTTP shape.
+
+This applies single responsibility and dependency inversion at the HTTP,
+operation, queue and integration boundaries, while retaining existing provider
+and SSH contracts. It does not create a generic command abstraction or change
+arbitrary command execution, server metrics, logs, provisioning, routes,
+provider calls or persisted values outside the new snapshot table.
+
+### Verification and limitations
+
+The focused fixed-diagnostic suite passed **16 tests / 90 assertions**. The
+adjacent server, import, log, command and observability regression set passed
+**45 tests / 373 assertions**. The fresh strict isolated full PHP suite passed
+**1,461 tests / 12,534 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Migration fresh/rollback/reapply, required-PHP Composer
+validation and platform checks, changed-file PHP lint, full Pint, Pint test
+mode, route-cache creation, fixed-script shell validation and `git diff --check`
+passed. The required-PHP asset build and browser asset/non-JavaScript suite
+passed **9 tests**. The initial browser invocation using the system PHP 8.3
+stopped at PHPUnit's version check and was not application evidence; the
+mandated PHP 8.5 rerun passed.
+
+No provider/cloud, paid-resource or separate live acceptance claim is made.
+The fixed probe is local application evidence; it does not establish host
+availability for an actual managed server until the separate live drill is
+authorized and run. Interactive terminal transport remains deferred.
+
+**Phase 8 fixed-host implementation exit gate: complete locally.** Feature
+commit `4add5b9` (`feat: add fixed server diagnostics`) was fast-forwarded into
+canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. The exact
+next task is to characterize the interactive troubleshooting transport and
+host execution model before adding any terminal session capability.
 
 ## Slice ledger
 
@@ -2986,7 +3064,8 @@ transport remains deferred until this bounded protocol is proven.
 | Phase 7G named investigations | The stateless context link had no bounded named team handoff, and notification preferences could not safely carry workspace/environment authorization. Added an organization-owned, environment-bound view with opaque UUID routing, finite normalized filters, creator/manager deletion policy, current-resource revalidation, 7/30/90-day expiry choices, a 50-active-view organization cap and a bounded scheduled prune command. Opening redirects to the canonical context, so evidence remains read-only, current and secret-safe. | `ObservabilityInvestigationViewTest`: **10 tests / 48 assertions**. Adjacent observability/notification regression set: **44 tests / 309 assertions**. Fresh strict isolated full PHP suite: **1,443 tests / 12,433 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, Vite, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a2351fa` — `feat: add saved observability investigations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 8 characterization is complete; implement the typed category-aware control-plane diagnostic report. |
 | Phase 8 characterization | The application already has separate safe control-plane diagnostics, import-time SSH discovery, numeric server telemetry, bounded logs and encrypted arbitrary root-command history, but no typed category-aware diagnostic report and no justified interactive transport. Characterized their scopes, authorization, output/secret boundaries, process timeouts and failure semantics. Decided to type the existing control-plane result first while preserving the current CLI/JSON/HTTP/cache projection; server-host probes and terminal sessions remain separate designs. | Read-only source, route, policy, job, migration and focused-test characterization completed; no application behavior, schema, queue state or remote resource changed. The known baseline `ProvisioningHardeningTest::test_website_database_user_is_local_only` remains unchanged. | `f084951` — `docs: characterize structured diagnostics` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the typed category-aware control-plane diagnostic report with an exact legacy projection, then verify existing CLI, system-health, public-status and secret-safety behavior. |
 | Phase 8 typed report | Existing operational checks were safe but untyped, leaving category-aware troubleshooting consumers coupled to legacy arrays. Added immutable enum-backed check/report data objects and made `OperationalDiagnostics::report()` the typed composition boundary; `run()` remains the exact legacy adapter used by current CLI, JSON, health, public-status and cache consumers. | Focused diagnostic regression set: **20 tests / 159 assertions**. Fresh strict isolated full PHP suite: **1,445 tests / 12,443 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Pint test mode, route-cache creation and `git diff --check` passed. No frontend changes; browser/assets not rerun for this PHP-only slice. | `2f7d719` — `refactor: type operational diagnostics` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and design the fixed server-host structured diagnostic contract, including host-key behavior, command allowlist, timeout, failure and retention semantics; keep interactive transport separate. |
-| Phase 8 fixed-host characterization | Existing server metrics, logs, import discovery and encrypted arbitrary-command history have separate scopes, but no current structured host-readiness report. Characterized a manual asynchronous snapshot with a dedicated policy ability, pinned-host-key fail-closed behavior, versioned fixed script, scalar allowlist, bounded timeout/output, lease/retry/stale-attempt protection and latest-result retention. No application behavior, schema, queue state or remote resource changed. | Read-only source/protocol characterization completed; implementation tests are defined before coding. | This documentation checkpoint | Will be fast-forwarded into canonical `main` and pushed to GitHub `origin/main` before implementation. | Implement the persisted fixed server-host diagnostic snapshot, policy/request/action/job boundary and safe read surface; keep interactive transport separate. |
+| Phase 8 fixed-host characterization | Existing server metrics, logs, import discovery and encrypted arbitrary-command history have separate scopes, but no current structured host-readiness report. Characterized a manual asynchronous snapshot with a dedicated policy ability, pinned-host-key fail-closed behavior, versioned fixed script, scalar allowlist, bounded timeout/output, lease/retry/stale-attempt protection and latest-result retention. No application behavior, schema, queue state or remote resource changed. | Read-only source/protocol characterization completed; implementation tests were defined before coding. | `7c4a896` — `docs: characterize fixed server diagnostics` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the implementation slice below; characterize the interactive troubleshooting transport next. |
+| Phase 8 fixed-host implementation | Existing server diagnostics had no dedicated current-result, safe execution or read boundary. Added a policy-authorized Livewire action, one latest snapshot per server, fixed allowlisted parser/probe, post-commit leased job, bounded transport retries, sanitized failure stages, stale-attempt protection and typed read-only checks. Missing host identity fails closed and raw output/credentials are never retained. Existing arbitrary commands, metrics, logs, provisioning and provider behavior remain separate. | Focused suite: **16 tests / 90 assertions**. Adjacent server/import/log/command/observability set: **45 tests / 373 assertions**. Fresh strict isolated full suite: **1,461 passed / 12,534 assertions / 1 unchanged baseline failure**. Required-PHP Composer/platform, lint, Pint, route cache, shell, diff checks, Vite and required-PHP browser asset suite: **9 passed**. | `4add5b9` — `feat: add fixed server diagnostics` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize the interactive troubleshooting transport and host execution model; keep terminal sessions separate from fixed diagnostics. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

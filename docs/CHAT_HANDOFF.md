@@ -26,6 +26,26 @@ observations, curated Laravel and generic Node presets now have a versioned
 operational contract and new projects record the installed template version
 without rewriting legacy rows.
 
+Phase 8's fixed server-host diagnostic implementation is now complete at
+feature commit `4add5b9`, fast-forwarded into canonical `main` and pushed to
+GitHub `origin/main`. The server detail page exposes a separate policy-
+authorized asynchronous snapshot/action/job boundary. It requires the stored
+pinned SSH host identity, runs a versioned fixed scalar probe, retains only
+typed safe checks, and protects duplicate requests, retries, leases and stale
+attempts. The existing arbitrary command, metrics, logs, provisioning and
+provider-health paths remain separate; this is not an interactive terminal.
+
+The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
+server/import/log/command/observability regressions passed **45 tests / 373
+assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
+12,534 assertions** with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure.
+Required-PHP lint, Pint, Composer/platform, route-cache, shell, diff, Vite and
+required-PHP browser asset checks passed, including **9 browser tests**. No
+provider/cloud/live-acceptance claim is made. The exact next task is to
+characterize the separate interactive troubleshooting transport and host
+execution model before implementing terminal sessions.
+
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit
 `2f7d719`. `OperationalDiagnostics::report()` now carries immutable,
@@ -36,12 +56,11 @@ tests / 12,443 assertions** with the unchanged
 `ProvisioningHardeningTest::test_website_database_user_is_local_only` failure.
 Required-PHP Composer validation/platform checks, PHP lint, full Pint, route
 cache and `git diff --check` passed. This PHP-only slice made no frontend
-changes. The fixed server-host diagnostic contract is now characterized in
-the progress ledger, including pinned host identity, an allowlisted versioned
-script, bounded scalar parsing, lease/retry behavior and latest-result
-retention. The exact next task is to implement its persisted asynchronous
-snapshot/action/job/read boundary; interactive terminal transport remains
-deferred.
+changes. The fixed server-host diagnostic contract is implemented in `4add5b9`
+and is recorded in the progress ledger, including pinned host identity, an
+allowlisted versioned script, bounded scalar parsing, lease/retry behavior,
+latest-result retention and a safe server-page read surface. Interactive
+terminal transport remains deferred.
 
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
