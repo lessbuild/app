@@ -11,7 +11,7 @@ return [
             'description' => 'Start deploying on your own infrastructure.',
             'features' => ['1 server', '1 website', 'Git deployments', 'Atomic releases'],
             'entitlements' => ['deployments', 'releases', 'approvals'],
-            'limits' => ['servers' => 1, 'websites' => 1, 'members' => 1], 'included_seats' => 1,
+            'limits' => ['servers' => 1, 'websites' => 1, 'members' => 1, 'preview_deployments' => 0], 'included_seats' => 1,
         ],
         'starter' => [
             'name' => 'Starter', 'price' => 9, 'yearly_price' => 90,
@@ -21,7 +21,7 @@ return [
             'description' => 'For personal projects and small applications.',
             'features' => ['2 servers', '5 websites', 'Health monitoring', 'Workers and idle hibernation'],
             'entitlements' => ['deployments', 'releases', 'approvals', 'monitoring', 'workers', 'hibernation'],
-            'limits' => ['servers' => 2, 'websites' => 5, 'members' => 1], 'included_seats' => 1,
+            'limits' => ['servers' => 2, 'websites' => 5, 'members' => 1, 'preview_deployments' => 0], 'included_seats' => 1,
         ],
         'pro' => [
             'name' => 'Pro', 'price' => 19, 'yearly_price' => 190,
@@ -31,7 +31,7 @@ return [
             'description' => 'For developers running production workloads.',
             'features' => ['5 servers', 'Unlimited websites', 'Preview environments', 'Managed backups and resources'],
             'entitlements' => ['deployments', 'releases', 'approvals', 'monitoring', 'workers', 'hibernation', 'previews', 'backups', 'resources', 'status_pages', 'scheduled_deployments', 'cost_controls'],
-            'limits' => ['servers' => 5, 'websites' => null, 'members' => 1], 'included_seats' => 1,
+            'limits' => ['servers' => 5, 'websites' => null, 'members' => 1, 'preview_deployments' => 5], 'included_seats' => 1,
         ],
         'team' => [
             'name' => 'Team', 'price' => 49, 'yearly_price' => 490,
@@ -43,7 +43,7 @@ return [
             'description' => 'Collaboration and operations for growing teams.',
             'features' => ['20 servers', '5 seats included', 'Alert integrations', 'Full audit history'],
             'entitlements' => ['deployments', 'releases', 'approvals', 'monitoring', 'workers', 'hibernation', 'previews', 'backups', 'resources', 'status_pages', 'scheduled_deployments', 'cost_controls', 'teams', 'alerts', 'audit'],
-            'limits' => ['servers' => 20, 'websites' => null, 'members' => null], 'included_seats' => 5,
+            'limits' => ['servers' => 20, 'websites' => null, 'members' => null, 'preview_deployments' => 10], 'included_seats' => 5,
         ],
         'business' => [
             'name' => 'Business', 'price' => 99, 'yearly_price' => 990,
@@ -55,7 +55,7 @@ return [
             'description' => 'Automation and scale controls for serious operations.',
             'features' => ['50 servers', '20 seats included', 'API and CLI access', 'Scaling automation'],
             'entitlements' => ['deployments', 'releases', 'approvals', 'monitoring', 'workers', 'hibernation', 'previews', 'backups', 'resources', 'status_pages', 'scheduled_deployments', 'cost_controls', 'teams', 'alerts', 'audit', 'api', 'scaling', 'scheduled_scaling', 'high_availability', 'sso'],
-            'limits' => ['servers' => 50, 'websites' => null, 'members' => null], 'included_seats' => 20,
+            'limits' => ['servers' => 50, 'websites' => null, 'members' => null, 'preview_deployments' => 20], 'included_seats' => 20,
         ],
         'unlimited' => [
             'name' => 'Unlimited', 'price' => 199, 'yearly_price' => 1990,
@@ -65,7 +65,7 @@ return [
             'description' => 'No fixed limits for high-scale operations.',
             'features' => ['Unlimited servers and websites', 'Unlimited seats', 'Every BuildPusher feature', 'Priority support'],
             'entitlements' => ['*'],
-            'limits' => ['servers' => null, 'websites' => null, 'members' => null], 'included_seats' => null,
+            'limits' => ['servers' => null, 'websites' => null, 'members' => null, 'preview_deployments' => null], 'included_seats' => null,
         ],
     ],
 ];

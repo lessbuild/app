@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Organization extends Model
 {
@@ -91,6 +92,12 @@ class Organization extends Model
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
+    }
+
+    /** @return HasManyThrough<PreviewDeployment, Project, $this> */
+    public function previews(): HasManyThrough
+    {
+        return $this->hasManyThrough(PreviewDeployment::class, Project::class);
     }
 
     /** @return HasMany<AlertDestination, $this> */

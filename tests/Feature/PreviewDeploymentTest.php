@@ -17,6 +17,7 @@ use App\Models\Repository;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\PlanLimits;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\WebsiteProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -127,6 +128,48 @@ class PreviewDeploymentTest extends TestCase
         $cleanup = PreviewStackCleanup::query()->sole();
         $this->assertSame(PreviewStackCleanup::STATUS_QUEUED, $cleanup->status);
         Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
+    }
+
+    public function test_concurrent_preview_quota_counts_open_previews_and_releases_capacity_on_close(): void
+    {
+        config([
+            'billing.enforce_limits' => true,
+            'billing.plans.free.limits.websites' => null,
+            'billing.plans.free.limits.preview_deployments' => 1,
+        ]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('a', 40)), $secret, 'preview-quota-first')
+            ->assertAccepted()
+            ->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $this->assertSame(1, PreviewDeployment::query()->where('status', '!=', PreviewDeployment::STATUS_CLOSED)->count());
+        $this->assertSame(1, PreviewDeployment::query()->whereNull('closed_at')->count());
+        $usage = app(PlanLimits::class)->usageForOrganization($source->organization, 'preview_deployments');
+        $this->assertSame(['used' => 1, 'limit' => 1, 'allowed' => false], array_intersect_key($usage, array_flip(['used', 'limit', 'allowed'])));
+
+        $this->send($source, $this->payload('opened', str_repeat('b', 40), number: 18), $secret, 'preview-quota-second')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_limit_reached']);
+
+        $this->assertSame(1, PreviewDeployment::query()->count());
+        $this->assertSame(2, $source->organization->websites()->count());
+        Queue::assertPushed(AddWebsiteJob::class, 1);
+
+        $this->send($source, $this->payload('closed', str_repeat('a', 40)), $secret, 'preview-quota-close')
+            ->assertOk()
+            ->assertJson(['status' => PreviewDeployment::STATUS_CLOSED]);
+
+        $this->send($source, $this->payload('opened', str_repeat('b', 40), number: 18), $secret, 'preview-quota-retry')
+            ->assertAccepted()
+            ->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $this->assertSame(1, PreviewDeployment::query()->whereNull('closed_at')->count());
+        $this->assertSame(2, PreviewDeployment::query()->count());
+        Queue::assertPushed(AddWebsiteJob::class, 2);
     }
 
     public function test_preview_settings_are_workspace_scoped_and_validated(): void
@@ -570,10 +613,11 @@ class PreviewDeploymentTest extends TestCase
         ?string $targetBranch = 'main',
         ?string $headRepository = 'example/storefront',
         ?string $baseRepository = 'example/storefront',
+        int $number = 17,
     ): array {
         $pullRequest = [
             'action' => $action,
-            'number' => 17,
+            'number' => $number,
             'pull_request' => [
                 'title' => 'Preview checkout',
                 'head' => ['ref' => 'feature/checkout', 'sha' => $revision],

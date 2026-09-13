@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Organization;
+use App\Models\PreviewDeployment;
 use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,10 @@ class PlanLimits
             'servers' => $user->servers()->count(),
             'websites' => $user->websites()->count(),
             'members' => 1,
+            'preview_deployments' => PreviewDeployment::query()
+                ->whereHas('project.organization', fn ($query) => $query->where('owner_id', $user->id))
+                ->where(fn ($query) => $query->where('status', '!=', PreviewDeployment::STATUS_CLOSED)->orWhereNull('closed_at'))
+                ->count(),
             default => throw new \InvalidArgumentException("Unsupported billing resource [{$resource}]."),
         };
 
@@ -51,6 +56,9 @@ class PlanLimits
             'websites' => $organization->websites()->count(),
             'members' => $organization->members()->count()
                 + $organization->invitations()->whereNull('accepted_at')->where('expires_at', '>', now())->count(),
+            'preview_deployments' => $organization->previews()
+                ->where(fn ($query) => $query->where('status', '!=', PreviewDeployment::STATUS_CLOSED)->orWhereNull('closed_at'))
+                ->count(),
             default => throw new \InvalidArgumentException("Unsupported billing resource [{$resource}]."),
         };
 
@@ -125,6 +133,7 @@ class PlanLimits
             'servers' => 'server',
             'websites' => 'website',
             'members' => 'workspace member',
+            'preview_deployments' => 'concurrent preview environment',
         };
         throw ValidationException::withMessages([
             'plan' => __("Your :plan plan allows :limit {$label}(s). Upgrade your plan to create another.", [

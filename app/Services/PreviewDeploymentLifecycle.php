@@ -9,6 +9,7 @@ use App\Jobs\ReportGitHubPreviewJob;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Models\Build;
 use App\Models\Environment;
+use App\Models\Organization;
 use App\Models\PreviewDeployment;
 use App\Models\Project;
 use App\Models\Repository;
@@ -21,7 +22,7 @@ class PreviewDeploymentLifecycle
     /**
      * Bind resource limits, deployment requests and plan features for preview lifecycle actions.
      *
-     * @param  PlanLimits  $limits  Checks workspace website capacity before preview creation.
+     * @param  PlanLimits  $limits  Checks website and concurrent-preview capacity under the locked workspace.
      * @param  DeploymentRequest  $deployments  Captures and dispatches preview builds.
      * @param  Entitlements  $entitlements  Checks whether the workspace plan permits previews.
      * @param  PreviewEnvironmentConfiguration  $previewEnvironment  Builds safe preview-owned runtime configuration.
@@ -84,16 +85,17 @@ class PreviewDeploymentLifecycle
             return 'invalid_preview';
         }
 
-        $existing = PreviewDeployment::query()
-            ->where('source_repository_id', $source->id)
-            ->where('pull_request_number', $webhook->pullRequestNumber)
-            ->first();
-        if (! $existing && ! $this->limits->usageForOrganization($baseEnvironment->project->organization, 'websites')['allowed']) {
-            return 'preview_limit_reached';
-        }
-
-        $preview = DB::transaction(function () use ($source, $webhook, $baseEnvironment): PreviewDeployment {
-            $project = Project::query()->lockForUpdate()->findOrFail($baseEnvironment->project_id);
+        $preview = DB::transaction(function () use ($source, $webhook, $baseEnvironment): ?PreviewDeployment {
+            // The version increment is an internal write-side lock for SQLite and other
+            // drivers that do not implement SELECT ... FOR UPDATE; it is not domain state.
+            DB::table('organizations')
+                ->where('id', $baseEnvironment->project->organization_id)
+                ->increment('preview_quota_lock_version');
+            $organization = Organization::query()->lockForUpdate()->findOrFail($baseEnvironment->project->organization_id);
+            $project = Project::query()
+                ->where('organization_id', $organization->id)
+                ->lockForUpdate()
+                ->findOrFail($baseEnvironment->project_id);
             $preview = PreviewDeployment::query()
                 ->where('source_repository_id', $source->id)
                 ->where('pull_request_number', $webhook->pullRequestNumber)
@@ -101,6 +103,11 @@ class PreviewDeploymentLifecycle
                 ->first();
 
             if (! $preview || ! $preview->website || $preview->website->trashed()) {
+                if (! $this->limits->usageForOrganization($organization, 'websites')['allowed']
+                    || ! $this->limits->usageForOrganization($organization, 'preview_deployments')['allowed']) {
+                    return null;
+                }
+
                 $preview = $this->create($project, $baseEnvironment, $source, $webhook, $preview);
             } else {
                 $revisionChanged = ! hash_equals((string) $preview->revision, (string) $webhook->revision);
@@ -128,7 +135,11 @@ class PreviewDeploymentLifecycle
             }
 
             return $preview->fresh(['website', 'repository']);
-        });
+        }, 3);
+
+        if (! $preview) {
+            return 'preview_limit_reached';
+        }
 
         if ($preview->website?->provisioning_status === Website::STATUS_QUEUED) {
             AddWebsiteJob::dispatch($preview->website);
