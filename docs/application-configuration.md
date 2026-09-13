@@ -24,6 +24,15 @@ workspace catalog. The guide does not prefill the editable form, and invalid
 YAML/JSON submissions retain the existing secret-safe behavior: submitted
 documents and bindings are not flashed into session old input.
 
+Managers can select two environments on the authoring page to view a
+**Recorded environment comparison**. The comparison is limited to local
+metadata such as type, branch, runtime, protection, dependency identity and
+status, process/resource descriptors and masked variable counts. It does not
+contact a provider, inspect remote state or claim to detect drift. Commands,
+variable keys and values, encrypted resource configuration and credentials are
+excluded. Corrective changes still go through a new configuration review and
+apply.
+
 ## Version 2 example
 
 ```yaml
