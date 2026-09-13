@@ -2,14 +2,15 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 3F was implemented
+The product-expansion sequence is active on `main`. Phase 4A was implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
-`8a116dc`; it was fast-forwarded into canonical `main` and pushed to GitHub
+`925baf5`; it was fast-forwarded into canonical `main` and pushed to GitHub
 `origin/main`. Building on the Phase 3A manifest, Phase 3B readiness states,
-Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas and
-Phase 3E initialization/credential boundaries, the existing provider
-observation now exposes normalized server readiness without turning local
-preview callbacks into a claim about remote health.
+Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
+Phase 3E initialization/credential boundaries and Phase 3F provider
+observations, curated Laravel presets now have a versioned operational
+contract and new projects record the installed template version without
+rewriting legacy rows.
 
 Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
 revision/attempt-bound preview payload. It runs once after the candidate release
@@ -22,17 +23,19 @@ passwordless resources preserve their current state. The deployment plan still
 has 15 stages, queue dispatch remains outside the transaction, and provider
 readiness is not inferred from local callbacks.
 
-The fresh isolated full PHP suite at the feature commit passed **1,366 tests /
-11,808 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
+The fresh isolated full PHP suite at the feature commit passed **1,371 tests /
+11,839 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
-3F focused provider contract/observation coverage passed 10 tests / 84
+4A focused catalog/project/runtime/preview coverage passed 38 tests / 326
 assertions. Migration
 fresh/rollback/reapply, PHP lint, required-PHP Composer validation/platform
 checks, full Pint, Vite build and `git diff --check` passed. This is local
 application evidence, not provider-side readiness, cloud lifecycle or the
-separate live drill. The exact next task is Phase 4: begin the smallest curated
-service-template slice with explicit version, compatibility/readiness and
-recovery metadata. The progress ledger is [here](verification/product-expansion-progress.md) and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
+separate live drill. The exact next task is Phase 4B: characterize the existing
+Node preset's supported resource composition and add it only with complete
+installation, readiness, credentials, backup/recovery and cleanup semantics.
+The progress ledger is [here](verification/product-expansion-progress.md), the
+template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
 ## Controller modernization current checkpoint — 2026-09-12
 

@@ -1,13 +1,14 @@
 # BuildPusher product expansion progress
 
-Status: Phase 3F complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 4A complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
 ownership-aware cleanup, atomic concurrent-preview quotas, explicit
 initialization/resource credential boundaries and normalized provider
-readiness observations are complete. Provider-side cloud acceptance and the
-separate live drill remain outstanding.
+readiness observations and the first versioned curated service-template
+contract are complete. Provider-side cloud acceptance and the separate live
+drill remain outstanding.
 
 Date: 2026-09-13
 
@@ -195,8 +196,12 @@ application defect or an outdated expectation and record the decision.
    expose one-time normalized provider lifecycle/readiness observations.
    Local implementation is complete; completion still requires provider-side
    and cloud evidence.
-5. **Phase 4 — curated service templates.** Add only supported, versioned
-   templates with installation, readiness, upgrade, restore and deletion evidence.
+5. **Phase 4 — curated service templates.** Phase 4A now defines a versioned,
+   immutable operational contract for the supported Laravel presets and records
+   the installed version on new projects without rewriting legacy rows. Next,
+   compose the existing Node preset with supported resources, then add only
+   templates with installation, readiness, upgrade, restore and deletion
+   evidence.
 6. **Phase 5 — deployment clarity and monorepo support.** Improve timeline and
    change-impact visibility while preserving existing deployment strategies.
 7. **Phase 6 — verified backup recovery.** Separate backup completion from
@@ -966,9 +971,88 @@ Required-PHP Composer validation/platform checks, full Pint, Vite build and
 through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13.
 This is local adapter and presentation evidence; provider credentials, real
 remote server transitions, application-level health and the separate live
-acceptance drill remain outstanding. The exact next task is Phase 4: start the
-smallest curated service-template slice with explicit version,
-compatibility/readiness and recovery metadata.
+acceptance drill remain outstanding. The exact next task was Phase 4A: start
+the smallest curated service-template slice with explicit version,
+compatibility/readiness and recovery metadata. That slice is recorded below;
+its next task is Node/resource composition.
+
+## Phase 4A — versioned curated service-template contract (completed slice)
+
+### Concrete responsibility problem
+
+The application-template configuration supplied runtime defaults and preview
+children, but it did not describe the operational contract that makes a
+published service template supportable. Project creation also discarded which
+template revision supplied those defaults, so a later template edit could not
+be reviewed against a project's installed baseline. Treating raw configuration
+arrays as the contract would spread version, compatibility, readiness and
+recovery assumptions across controllers, actions and preview code.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `ApplicationTemplateCatalog` normalizes trusted
+  configuration; `ApplicationTemplateDefinition` and
+  `ServiceTemplateMetadata` carry immutable application/operational data;
+  `CreateProjectAction` records the selected version; and the controller/view
+  only coordinate and present the result.
+- **Dependency inversion:** project creation, the project form and
+  `PreviewStackCatalog` consume the injected concrete catalog instead of
+  reading template arrays independently. No generic repository or provider
+  interface was introduced.
+- **Open/closed:** adding a curated template is now a configuration/catalog
+  extension with an explicit version and support contract; existing preview
+  resource and process actions remain unchanged.
+- **Interface segregation:** the catalog exposes only the preset definitions
+  needed by its actual consumers. Installation, upgrade and remote health
+  capabilities are not implied by this read-only metadata boundary.
+
+### Implementation and preserved behavior
+
+The three existing Laravel presets (`laravel`, `laravel-inertia` and
+`laravel-api`) now share a version `1.0.0` service-template contract covering
+PHP/Laravel compatibility, managed PostgreSQL and Valkey resources with
+generated credential names, persistent locations and retention, web/process/
+resource readiness checks, replica/resource limits, backup/restore scope,
+upgrade guidance, partial-failure recovery and deletion/retention behavior.
+The metadata contains no credential values and does not execute any new remote
+operation.
+
+`ApplicationTemplateCatalog` returns immutable definitions for the project
+creation form, project action and preview stack catalog. New projects record
+the selected curated version in nullable `projects.template_version`. Existing
+projects and currently unpublished presets remain `NULL`; the migration does
+not infer or rewrite their installed version. The field is never silently
+updated when configuration changes, leaving a later upgrade workflow an
+explicit review boundary. The project creation screen shows only the curated
+version, resource count and readiness-check count, not generated credential
+names or values.
+
+Runtime defaults, preset keys, validation behavior, protected production
+environment creation, entitled worker creation, preview child declarations,
+initialization state, queue payloads, routes, response formats and existing
+resource credentials remain unchanged. A populated disposable SQLite database
+survived migration rollback/reapply with its project row intact and the new
+column restored.
+
+### Verification and remaining work
+
+The focused Phase 4A catalog/project/runtime/preview batch passed **38 tests
+and 326 assertions**. The fresh isolated full PHP suite passed **1,371 tests
+and 11,839 assertions**, with the one unchanged baseline failure in
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` (the
+test expects three `localhost` occurrences and the current script contains
+four). No Phase 4A test failed.
+
+Migration fresh/rollback/reapply on populated disposable SQLite, config-cache
+creation/clear, required-PHP Composer validation/platform checks, full Pint,
+Vite build and `git diff --check` passed. The feature commit `925baf5` was
+fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13. This slice defines support metadata and version identity only; it
+does not claim Node composition, template installation/upgrade execution or
+provider/cloud acceptance. The exact next task is Phase 4B: characterize the
+existing Node preset's supported resource composition and add it only if
+installation, readiness, credentials, backup/recovery and cleanup semantics
+are all covered.
 
 ## Slice ledger
 
@@ -993,6 +1077,7 @@ compatibility/readiness and recovery metadata.
 | Phase 3E | The template-driven stack had no explicit first-release initialization or managed Valkey credential boundary. Added a curated `PreviewInitialization` data boundary, injected durable initialization lifecycle with revision/attempt/stale-callback guards, encoded marker-based execution inside the existing post-deployment stage, encrypted preview-only Valkey credentials and legacy passwordless preservation. | Phase 3E focused batch: 37 passed, 375 assertions. Adjacent lifecycle/deployment/callback batch: 56 passed, 473 assertions; callback integrity: 5 passed, 34 assertions; compatibility follow-up: 31 passed, 307 assertions. Fresh full suite at feature commit: 1,362 passed, 1 unchanged baseline failure, 11,785 assertions. Migration rehearsal, lint, Pint, Composer/platform checks, Vite and `git diff --check` passed. | `cf5da72` — `feat: add explicit preview initialization`; `fa114f0` — `fix: preserve legacy preview cache credentials` | Both commits fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 3F: characterize independent provider-readiness evidence and keep it distinct from local lifecycle state. |
 
 | Phase 3F | The existing provider observation discarded provider lifecycle state, so the UI could not distinguish a provider-reported ready server from a stopped one and local preview callbacks could be over-interpreted as remote health. Extended the existing `CloudServerData` result and three provider adapters with normalized transient readiness, then carried it through the existing manager-authorized observation query and view. | Focused provider contract/observation batch: 10 passed, 84 assertions. Fresh isolated full PHP suite: 1,366 passed, 1 unchanged baseline failure, 11,808 assertions. Required-PHP Composer validation/platform checks, Pint, Vite and `git diff --check` passed. No persistence, polling, reconciliation, remote mutation or route/API contract change. | `8a116dc` — `feat: expose provider readiness state` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4: begin the smallest curated service-template slice with explicit version, compatibility/readiness and recovery metadata. |
+| Phase 4A | Existing application presets had runtime defaults but no explicit versioned operational contract, and project creation did not record which curated definition supplied its defaults. Added immutable catalog/data boundaries and Laravel 1.0.0 metadata for compatibility, resources/credential modes, persistent data, readiness, limits, backup/restore, upgrade, recovery and deletion; new curated projects record `template_version`, while legacy/unpublished presets remain unversioned. | Focused catalog/project/runtime/preview batch: 38 passed, 326 assertions. Fresh isolated full PHP suite: 1,371 passed, 1 unchanged baseline failure, 11,839 assertions. Populated SQLite migration rollback/reapply and config-cache checks passed; Composer/platform, Pint, Vite and `git diff --check` passed. No installation, upgrade, remote mutation or queue contract change. | `925baf5` — `feat: version curated application templates` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4B: characterize existing Node resource composition and add it only with complete lifecycle/recovery evidence. |
 
 ## Phase 1 exit verification
 
