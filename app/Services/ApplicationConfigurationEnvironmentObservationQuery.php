@@ -79,6 +79,8 @@ class ApplicationConfigurationEnvironmentObservationQuery
             status: ApplicationEnvironmentObservation::STATUS_OBSERVED,
             message: __('The provider returned the supported server metadata below. Differences are informational only.'),
             fields: $this->fields($server, $observed),
+            providerReadiness: $observed->readiness,
+            providerState: $observed->providerStatus,
         );
     }
 

@@ -43,6 +43,8 @@ class ApplicationConfigurationEnvironmentObservationTest extends TestCase
             image: 'Ubuntu 22.04',
             publicIp: '203.0.113.10',
             privateIp: '10.0.0.10',
+            providerStatus: 'active',
+            readiness: CloudServerData::READINESS_READY,
         ));
         $this->resolver($provider, $client);
 
@@ -56,11 +58,41 @@ class ApplicationConfigurationEnvironmentObservationTest extends TestCase
             ->assertSee('Observed provider state')
             ->assertSee('Test Cloud')
             ->assertSee('Remote server')
+            ->assertSee('Provider readiness: Ready')
+            ->assertSee('Provider lifecycle: active')
             ->assertSee('Different')
             ->assertSee('Matches')
             ->assertDontSee('do-not-render');
         $this->assertSame('Recorded server', $server->fresh()->name);
         $this->assertDatabaseCount('configuration_applications', 0);
+    }
+
+    public function test_observation_distinguishes_a_provider_server_that_is_not_ready(): void
+    {
+        [$owner, $project, $environment, $server, $provider] = $this->projectEnvironment(withServer: true);
+        $server->update(['identifier' => 'server-1']);
+        $client = Mockery::mock(ServerProvider::class);
+        $client->shouldReceive('name')->once()->andReturn('Test Cloud');
+        $client->shouldReceive('server')->once()->with('server-1')->andReturn(new CloudServerData(
+            identifier: 'server-1',
+            name: 'Stopped server',
+            region: 'nyc3',
+            size: 's-1vcpu-1gb',
+            image: 'Ubuntu 22.04',
+            publicIp: '203.0.113.10',
+            providerStatus: 'off',
+            readiness: CloudServerData::READINESS_NOT_READY,
+        ));
+        $this->resolver($provider, $client);
+
+        $this->actingAs($owner)
+            ->get(route('projects.configuration.observe', [
+                'project' => $project,
+                'environment_id' => $environment->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Provider readiness: Not Ready')
+            ->assertSee('Provider lifecycle: off');
     }
 
     public function test_missing_server_or_identifier_is_reported_unavailable_without_resolving_a_provider(): void

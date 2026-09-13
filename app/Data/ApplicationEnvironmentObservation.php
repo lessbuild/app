@@ -14,6 +14,8 @@ class ApplicationEnvironmentObservation
      * Carry a one-time, provider-backed observation of a recorded environment.
      *
      * @param  list<array{field: string, recorded: string, observed: string, status: 'match'|'different'}>  $fields  Normalized server metadata only; credentials and response bodies are excluded.
+     * @param  'ready'|'not_ready'|'unknown'  $providerReadiness  Provider-reported server readiness, not application health.
+     * @param  string|null  $providerState  Provider lifecycle value, if safely reported.
      */
     public function __construct(
         public readonly int $environmentId,
@@ -22,6 +24,8 @@ class ApplicationEnvironmentObservation
         public readonly string $status,
         public readonly string $message,
         public readonly array $fields = [],
+        public readonly string $providerReadiness = CloudServerData::READINESS_UNKNOWN,
+        public readonly ?string $providerState = null,
     ) {}
 
     /**

@@ -191,15 +191,38 @@ class HetznerCloud implements ServerProvider
             throw new RuntimeException('Hetzner Cloud returned an incomplete server response.');
         }
 
+        $publicIp = data_get($server, 'public_net.ipv4.ip');
+        $providerStatus = is_scalar($server['status'] ?? null) ? (string) $server['status'] : null;
+
         return new CloudServerData(
             identifier: (string) $server['id'],
             name: (string) $server['name'],
             region: (string) data_get($server, 'datacenter.location.name', ''),
             size: (string) data_get($server, 'server_type.name', ''),
             image: (string) data_get($server, 'image.name', ''),
-            publicIp: data_get($server, 'public_net.ipv4.ip'),
+            publicIp: $publicIp,
             privateIp: data_get($server, 'private_net.0.ip'),
+            providerStatus: $providerStatus,
+            readiness: $this->readiness($providerStatus, $publicIp),
         );
+    }
+
+    /**
+     * Normalize Hetzner's running state into the shared provider readiness contract.
+     *
+     * @param  string|null  $status  Provider server status.
+     * @param  string|null  $publicIp  Public address reported by the provider.
+     * @return string One of the shared cloud readiness values.
+     */
+    private function readiness(?string $status, ?string $publicIp): string
+    {
+        if (blank($status)) {
+            return CloudServerData::READINESS_UNKNOWN;
+        }
+
+        return $status === 'running' && filled($publicIp)
+            ? CloudServerData::READINESS_READY
+            : CloudServerData::READINESS_NOT_READY;
     }
 
     /**

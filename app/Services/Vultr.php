@@ -189,15 +189,40 @@ class Vultr implements ServerProvider
             throw new RuntimeException('Vultr returned an incomplete instance response.');
         }
 
+        $publicIp = is_scalar($server['main_ip'] ?? null) ? (string) $server['main_ip'] : null;
+        $providerStatus = is_scalar($server['power_status'] ?? ($server['status'] ?? null))
+            ? (string) ($server['power_status'] ?? $server['status'])
+            : null;
+
         return new CloudServerData(
             identifier: (string) $server['id'],
             name: (string) ($server['hostname'] ?? $server['label'] ?? ''),
             region: (string) ($server['region'] ?? ''),
             size: (string) ($server['plan'] ?? ''),
             image: (string) ($server['os_id'] ?? $server['os'] ?? ''),
-            publicIp: $server['main_ip'] ?? null,
+            publicIp: $publicIp,
             privateIp: $server['internal_ip'] ?? null,
+            providerStatus: $providerStatus,
+            readiness: $this->readiness($providerStatus, $publicIp),
         );
+    }
+
+    /**
+     * Normalize Vultr's running state into the shared provider readiness contract.
+     *
+     * @param  string|null  $status  Vultr power or lifecycle status.
+     * @param  string|null  $publicIp  Public address reported by the provider.
+     * @return string One of the shared cloud readiness values.
+     */
+    private function readiness(?string $status, ?string $publicIp): string
+    {
+        if (blank($status)) {
+            return CloudServerData::READINESS_UNKNOWN;
+        }
+
+        return in_array($status, ['running', 'active'], true) && filled($publicIp)
+            ? CloudServerData::READINESS_READY
+            : CloudServerData::READINESS_NOT_READY;
     }
 
     /**

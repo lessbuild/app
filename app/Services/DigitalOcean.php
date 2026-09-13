@@ -444,6 +444,8 @@ class DigitalOcean implements ServerProvider
         }
 
         $networks = collect($droplet['networks']['v4'] ?? []);
+        $publicIp = $networks->firstWhere('type', 'public')['ip_address'] ?? null;
+        $providerStatus = is_scalar($droplet['status'] ?? null) ? (string) $droplet['status'] : null;
 
         return new CloudServerData(
             identifier: (int) $droplet['id'],
@@ -451,8 +453,29 @@ class DigitalOcean implements ServerProvider
             region: (string) $droplet['region']['name'],
             size: (string) $droplet['size']['slug'],
             image: (string) $droplet['image']['name'],
-            publicIp: $networks->firstWhere('type', 'public')['ip_address'] ?? null,
+            publicIp: $publicIp,
             privateIp: $networks->firstWhere('type', 'private')['ip_address'] ?? null,
+            providerStatus: $providerStatus,
+            readiness: $this->readiness($providerStatus, $publicIp, 'active'),
         );
+    }
+
+    /**
+     * Normalize DigitalOcean's active state into the shared provider readiness contract.
+     *
+     * @param  string|null  $status  Provider droplet status.
+     * @param  string|null  $publicIp  Public address reported by the provider.
+     * @param  string  $readyStatus  Provider status that means the instance is running.
+     * @return string One of the shared cloud readiness values.
+     */
+    private function readiness(?string $status, ?string $publicIp, string $readyStatus): string
+    {
+        if (blank($status)) {
+            return CloudServerData::READINESS_UNKNOWN;
+        }
+
+        return $status === $readyStatus && filled($publicIp)
+            ? CloudServerData::READINESS_READY
+            : CloudServerData::READINESS_NOT_READY;
     }
 }
