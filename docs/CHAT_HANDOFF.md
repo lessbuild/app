@@ -2,37 +2,36 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 3D was integrated
-from the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
-`d722bad`, then pushed to GitHub `origin/main`. Building on the Phase 3A
-manifest, Phase 3B readiness states and Phase 3C ownership-aware cleanup,
-preview creation now checks website and concurrent-preview capacity inside a
-transaction locked at the organization boundary. An independent-process race
-test proves that two pull requests cannot both claim the last preview slot.
-Existing preview configuration, trust, secret-approval, entitlement and
-webhook idempotency boundaries remain in force.
+The product-expansion sequence is active on `main`. Phase 3E was implemented
+in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
+`cf5da72`, followed by the compatibility fix `fa114f0`; both were fast-forwarded
+into canonical `main` and pushed to GitHub `origin/main`. Building on the
+Phase 3A manifest, Phase 3B readiness states, Phase 3C ownership-aware
+cleanup and Phase 3D organization-locked quotas, previews now have an explicit
+curated initialization boundary and managed Valkey credential boundary.
 
-The cleanup script covers the exact preview worker/scheduler units, generated
-PostgreSQL database/role and generated Valkey container/volume; manual/shared
-children and invalid identities fail closed. Existing generic website/Caddy/
-MySQL cleanup remains separate. Historical process/resource rows default to
-not-owned, so they are not guessed to be safe to delete. Active preview usage
-is derived from open preview records, and closed previews release capacity only
-with a recorded closure timestamp. The internal organization lock version is
-SQLite-compatible lock state, not a domain reservation counter. The exact next
-implementation task is Phase 3E: define explicit initialization/secrets and
-resource credential boundaries, then characterize independent provider-readiness
-evidence. Cloud/provider acceptance and the separate live drill remain
-outstanding.
+Supported Laravel presets carry `php artisan db:seed --force` as an encrypted,
+revision/attempt-bound preview payload. It runs once after the candidate release
+is active within the existing post-deployment stage, writes a success marker
+only after completion and remains retryable after interruption or failure.
+Exact build/revision matching prevents stale callbacks from changing a newer
+attempt. New preview-owned Valkey resources receive encrypted random passwords
+and shell-escaped `--requirepass`; existing passwordful and legacy
+passwordless resources preserve their current state. The deployment plan still
+has 15 stages, queue dispatch remains outside the transaction, and provider
+readiness is not inferred from local callbacks.
 
-Phase 3D verification used the required PHP 8.5 runtime, `APP_DEBUG=true` and
-an isolated in-memory SQLite database: **1,359 tests passed / 11,742
-assertions**. Focused quota coverage passed 18 tests / 172 assertions and the
-independent-process race passed 1 test / 7 assertions; migration
-fresh/rollback/reapply rehearsal, required-PHP Composer validation/platform
+The fresh isolated full PHP suite at the feature commit passed **1,362 tests /
+11,785 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
+failure (4 `localhost` occurrences instead of the test's expected 3). Phase
+3E focused coverage passed 37 tests / 375 assertions; adjacent lifecycle and
+callback coverage passed 56 / 473, callback integrity passed 5 / 34, and the
+legacy credential compatibility follow-up passed 31 / 307. Migration
+fresh/rollback/reapply, PHP lint, required-PHP Composer validation/platform
 checks, full Pint, Vite build and `git diff --check` passed. This is local
-transaction and application-state evidence, not provider-side quota, cloud
-lifecycle or acceptance-drill evidence. The progress ledger is [here](verification/product-expansion-progress.md) and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint; their statements that preview backlog work had not started describe their earlier dates.
+application evidence, not provider-side readiness, cloud lifecycle or the
+separate live drill. The exact next task is Phase 3F: characterize independent
+provider-readiness evidence. The progress ledger is [here](verification/product-expansion-progress.md) and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
 ## Controller modernization current checkpoint — 2026-09-12
 

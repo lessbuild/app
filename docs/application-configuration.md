@@ -100,8 +100,12 @@ environment and secret values remain excluded. Declarations begin with status
 **planned**, move to **provisioning** before the preview build is dispatched,
 and move to **ready** or **failed** from the existing signed resource-stage and
 failure callbacks. This is durable local lifecycle evidence, not an independent
-provider health check. The current Valkey declaration remains loopback-bound
-and without authentication.
+provider health check. New preview-owned Valkey declarations are loopback-bound
+and receive a random `REDIS_PASSWORD` stored in the encrypted resource
+configuration; the managed-resource script shell-escapes it for
+`--requirepass`. Existing preview resources preserve their current credential
+state, including legacy passwordless containers, so a revision update does not
+rotate a live resource without a coordinated migration.
 
 Preview stack children are explicitly marked as preview-owned. When a preview
 closes or expires after it is idle, BuildPusher captures the original
@@ -128,9 +132,21 @@ reservation counter, and active usage remains derived from preview records.
 Capacity denial preserves the existing `preview_limit_reached` response and
 creates no preview children or job.
 
-Explicit initialization secrets and independent provider-readiness checks remain
-separate preview-lifecycle work. Local readiness states must not be presented
-as proof that a remote PostgreSQL, Valkey or process is healthy.
+Supported Laravel preview templates explicitly declare the curated
+`php artisan db:seed --force` initialization command. It runs once after the
+first candidate release is active, within the existing post-deployment stage,
+and writes a marker only after success. Its encrypted payload is bound to the
+preview revision and build attempt; failed or interrupted attempts are
+retryable, while stale callbacks cannot complete a newer attempt. The command
+must be safe to repeat because remote execution is at-least-once. The default
+is sample-data initialization; production-data copying is not part of this
+workflow. Existing preview rows are migrated as `not_configured` and are not
+retroactively executed; a later revision change can opt them into the curated
+command. Templates without a declaration remain unconfigured.
+
+Independent provider-readiness checks remain separate preview-lifecycle work.
+Local readiness states must not be presented as proof that a remote PostgreSQL,
+Valkey or process is healthy.
 
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 

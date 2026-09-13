@@ -1,12 +1,12 @@
 # BuildPusher product expansion progress
 
-Status: Phase 3D complete. Preview safety, trust/secret boundaries, responsive
+Status: Phase 3E complete. Preview safety, trust/secret boundaries, responsive
 navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
-stack manifest, callback-backed local resource readiness and retryable
-ownership-aware cleanup and atomic concurrent-preview quotas are complete;
-explicit initialization secrets and independent provider-readiness verification
-remain incomplete.
+stack manifest, callback-backed local resource readiness, retryable
+ownership-aware cleanup, atomic concurrent-preview quotas and explicit
+initialization/resource credential boundaries are complete; independent
+provider-readiness verification remains incomplete.
 
 Date: 2026-09-13
 
@@ -68,7 +68,7 @@ target for arbitrary extraction.
 | Projects, environments and configuration as code | Create and manage projects, environments, processes, variables and resources; author, review, apply, cancel and retry configuration through web and API; inspect receipts and recover operations. Entry points are `ProjectController`, `EnvironmentController`, `ApplicationConfigurationController` and `Api\\V1\\ControlPlaneController`. | `app/Actions/Project`, `app/Actions/Environment`; configuration requests; `ProjectPolicy`, `EnvironmentPolicy`, `EnvironmentResourcePolicy`, `ConfigurationApplicationPolicy` and `ConfigurationReviewPolicy`; `ApplicationConfigurationPlanner`, `ApplicationConfigurationReconciler`, `ApplicationConfigurationTransaction`, `ApplicationConfigurationDelivery`, `ApplicationConfigurationExecution` and `WorkflowConfiguration`; configuration jobs and extensive feature/API/OpenAPI tests. | Existing and locally verified with known product gaps. Desired state, recorded state and observed remote state need a clearer authoring/editor, dependency overview, safe environment comparison and explicitly read-only drift report. | Add guided authoring, schema/structure feedback, readable change summaries, dependency list/table and secret-safe comparisons. Corrective changes must use review/apply. Preserve reviewed-input identity, secret-version revalidation, ownership/adoption, no-op identity, removal safeguards, atomic claims, leases, stale callbacks, API envelopes and YAML compatibility. |
 | Providers, cloud inventory and imports | Add/update/delete cloud providers, test connections, inspect provider inventory, import existing servers/websites and provision servers. Entry points include `ProviderController`, `ProviderConnectionController`, `ProviderServerCatalogController`, `ServersController`, `ImportServerController` and `ImportWebsiteController`. | `app/Actions/Provider`, `app/Actions/Server`, `app/Actions/Web`; `ProviderRequest`, `ServerRequest`, import requests; provider/server/website policies; `ProviderConnectionTester`, `ProviderHealthMonitor`, `ServerProviderResolver`, provider contracts/adapters and provisioning jobs. Inventory, scoped-token, connection, server lifecycle and import tests exist. | Existing and locally verified for fakes and local workflows. Live provider credentials, real provisioning, provider cleanup and monitoring heartbeat acceptance are outstanding. | Improve first-deployment preflight so missing permissions, invalid credentials and entitlement limits are distinct and actionable. Preserve encrypted tokens, secret exclusion, provider-specific probes, retries, leases, ownership and sanitized failures. Verify each adapter through shared behavioral contract tests before extending variants. |
 | Websites, repositories, builds and deployments | Create/import websites, connect repositories, deploy, approve/reject/promote/rollback/cancel, switch releases, inspect build progress/logs and configure webhooks. Entry points include `WebsitesController`, `RepositoriesController`, `BuildsController`, `BuildPromotionController`, callback controllers and repository webhook controllers. | `app/Actions/Web`, `app/Actions/Repository`; website/repository/build/callback requests; `WebsitePolicy`, `RepositoryPolicy`, `BuildPolicy`; `DeploymentRequest`, `RepositoryDeploymentPlan`, `DeploymentFailureGuidance`, health services, source-provider contracts and deployment/provisioning jobs. Deployment serialization, revision, callback, health, rollback and failure-guidance tests are present. | Existing and locally verified with clarity gaps. Build details expose progress and guidance, but a unified request/provision/build/migration/health/traffic timeline and explicit monorepo change impact need inventory confirmation. | Add a bounded deployment timeline and failure links without changing strategies or claiming percentage traffic splitting. Then confirm or add per-service roots/path filters and conservative unknown-change behavior. Preserve immutable revisions, approvals, webhook idempotency, locks, cancellation, stale attempts, retained artifacts and the distinction between application rollback and database recovery. |
-| Preview deployments | A pull-request webhook opens or updates a preview, provisions a website/repository/environment, queues the build, reports to GitHub, closes/expires and cleans up. Settings are managed from project preview routes. The core entry point is `PreviewDeploymentLifecycle`; the project preview action/request and repository webhook path complete the flow. | `PreviewDeployment`, `PreviewDeploymentLifecycle`, `PreviewEnvironmentConfiguration`, `PreviewTrustPolicy`, `UpdateProjectPreviewsAction`, preview settings request, `ProjectPolicy`, `AddWebsiteJob`, `ReportGitHubPreviewJob`, `DeploymentRequest`, `PlanLimits`, `Entitlements`, `PreviewStackCatalog`, `ConfigurePreviewStackAction`, `QueuePreviewStackCleanupAction`, `CleanupPreviewStackJob` and `PreviewStackCleanupScript`; `PreviewDeploymentTest` covers open/update/close, settings, entitlement ordering, source-secret exclusion, legacy-preview sanitization, provider trust metadata, idempotent child declarations, cleanup/retry behavior and capacity release. `PreviewDeploymentConcurrencyTest` covers the last-slot race. | Existing with completed configuration, trust, local readiness, ownership-aware cleanup and atomic quota boundaries, with remaining lifecycle gaps. New and revised previews receive explicit preview-owned configuration instead of copied source environment text. Updated/reopened code execution is limited to the configured target branch and configured target repository; forks and unknown trust metadata are denied. Supported Laravel presets persist queue/scheduler process declarations and planned managed PostgreSQL/Valkey children, while unsupported presets remain unchanged. Explicit remote initialization/secrets and independent provider-readiness verification remain outstanding. | Phases 1 and 3A–3D establish safe configuration, trust/secret approval, navigation, first-deployment guidance, a template-driven local stack manifest, callback-backed resource states, durable exact-identity cleanup and transactionally serialized concurrent-preview quotas. Continue with explicit initialization/secrets and provider-readiness evidence. Completion still requires open/update/fail/retry/close/reopen/expire lifecycle tests, independent provider evidence and separate cloud acceptance. |
+| Preview deployments | A pull-request webhook opens or updates a preview, provisions a website/repository/environment, queues the build, reports to GitHub, closes/expires and cleans up. Settings are managed from project preview routes. The core entry point is `PreviewDeploymentLifecycle`; the project preview action/request and repository webhook path complete the flow. | `PreviewDeployment`, `PreviewDeploymentLifecycle`, `PreviewEnvironmentConfiguration`, `PreviewTrustPolicy`, `PreviewInitializationLifecycle`, `PreviewResourceCredentials`, `UpdateProjectPreviewsAction`, preview settings request, `ProjectPolicy`, `AddWebsiteJob`, `ReportGitHubPreviewJob`, `DeploymentRequest`, `PlanLimits`, `Entitlements`, `PreviewStackCatalog`, `ConfigurePreviewStackAction`, `QueuePreviewStackCleanupAction`, `CleanupPreviewStackJob` and `PreviewStackCleanupScript`; `PreviewDeploymentTest` covers open/update/close, initialization, settings, entitlement ordering, source-secret exclusion, legacy-preview sanitization, provider trust metadata, idempotent child declarations, cleanup/retry behavior and capacity release. `PreviewDeploymentConcurrencyTest` covers the last-slot race. `DeploymentHooksTest` and `PreviewResourceCredentialsTest` cover encoded initialization scripts, marker/retry behavior, stage compatibility and credential preservation. | Existing with completed configuration, trust, local readiness, ownership-aware cleanup, atomic quota and explicit initialization/resource credential boundaries. New and revised previews receive explicit preview-owned configuration instead of copied source environment text. Updated/reopened code execution is limited to the configured target branch and configured target repository; forks and unknown trust metadata are denied. Supported Laravel presets persist queue/scheduler process declarations and planned managed PostgreSQL/Valkey children; new Valkey resources receive encrypted, shell-escaped credentials; initialization is a curated, one-time, retryable command. Unsupported presets and legacy passwordless resources remain unchanged. Independent provider-readiness verification remains outstanding. | Phases 1 and 3A–3E establish safe configuration, trust/secret approval, navigation, first-deployment guidance, a template-driven local stack manifest, callback-backed resource states, durable exact-identity cleanup, transactionally serialized concurrent-preview quotas, explicit preview initialization and managed Valkey credential boundaries. Continue with independent provider-readiness evidence. Completion still requires provider evidence and separate cloud acceptance. |
 | Databases, load balancers, domains and backups | Manage database users/clones/inspection, backup destinations/schedules/runs/restores, load balancers/nodes and website domains. Entry points are `DatabaseController`, `BackupController`, `LoadBalancerController` and `DomainController`. | `app/Actions/Database`, `app/Actions/Backup`, `app/Actions/LoadBalancer`, `app/Actions/Domain`; resource requests and policies; database/backup/restore/load-balancer jobs; provider contracts and command-safety services. Managed-backup, restore, database safety, domain and load-balancer lifecycle suites cover local behavior. | Existing and locally verified with recovery-evidence gaps. Backup and restore workflows exist, but backup completion is not the same as verified recovery; isolated restore smoke tests, cleanup visibility and control-plane/application-data scope need a clearer product surface. | Add recovery verification indicators, destination/overwrite review, integrity and application smoke checks, failure stage/duration and cleanup status, reusing existing jobs/actions. Preserve encrypted credentials, organization-scoped IDs, incompatibility guards, ownership, duplicate protection, dispatch timing, retries and partial-remote failure behavior. Keep remote calls outside new local transactions. |
 | Automation and runtime control | Configure deployment/scaling schedules and scheduled tasks, queue runs, change process/runtime/scaling settings and manage scoped personal API tokens. Entry point is `AutomationController` plus runtime/environment/API routes. | `app/Actions/Automation`, environment actions; automation/runtime/scale/token requests; token and environment policies; `WorkflowConfiguration`, `DeploymentLauncher` and scheduled-task jobs. Automation, token, runtime and concurrency tests exist. | Existing and locally verified. Product clarity and API/web parity should be improved without merging distinct request contracts. | Improve schedule validation/help and runtime feedback, preserve cron/timezone/overlap behavior, token ownership/expiry/rotation, capability checks, entitlements, bounds, organization scoping and dispatch semantics. Keep web min/max scaling distinct from API replica-count requests. |
 | Logs, metrics, health, alerts, incidents and status | Inspect server/website logs and metrics, health history, alert rules/destinations, operational incidents and public status pages/subscriptions. Entry points include `ObservabilityController`, `OperationalIncidentController`, health/log controllers and status controllers. | Observability actions, health/log services, `OperationalIncidentQuery`/exporter, `DeploymentFailureGuidance`, `WebsiteHealthMonitor`, `ProviderHealthMonitor`, incident notifier, observability requests and resource policies; focused observability, health, log, incident and status tests exist. | Existing and locally verified with correlation gaps. Evidence is spread across resources; users need an environment view linking deployments, logs, health checks and incidents, plus safe saved/shareable investigations, grouping and retention limits. | Add deterministic environment-context diagnostics, bounded filters and links to related deployment/configuration changes. Label correlations as possible unless evidence establishes causation. Recheck authorization on saved/shareable URLs and preserve redaction, polling bounds, alert deduplication, observation timing and notification semantics. |
@@ -185,13 +185,14 @@ application defect or an outdated expectation and record the decision.
 3. **Phase 2 — configuration authoring and environment overview.** Add the
    reviewable authoring, summaries, dependency view, secret-safe comparison and
    read-only observable drift reporting described above.
-4. **Phase 3 — complete preview environments.** Phases 3A through 3D now
+4. **Phase 3 — complete preview environments.** Phases 3A through 3E now
    declare the representative Laravel worker/scheduler/PostgreSQL/Valkey stack,
    record callback-backed planned/provisioning/ready/failed resource states and
    capture exact owned identities for retryable close/expiry cleanup and
-   transactionally serialize concurrent-preview quotas. Continue with explicit
-   initialization secrets and independent provider-readiness evidence;
-   completion still requires full-stack lifecycle and cloud evidence.
+   transactionally serialize concurrent-preview quotas, run curated
+   revision-bound initialization once and protect managed Valkey credentials.
+   Continue with independent provider-readiness evidence; completion still
+   requires provider-side and cloud evidence.
 5. **Phase 4 — curated service templates.** Add only supported, versioned
    templates with installation, readiness, upgrade, restore and deletion evidence.
 6. **Phase 5 — deployment clarity and monorepo support.** Improve timeline and
@@ -797,9 +798,105 @@ Feature commit `d722bad` (`feat: enforce concurrent preview quotas`) is pushed
 to GitHub `origin/main`. This proves local transactional serialization and
 application behavior; it does not establish provider-side quota enforcement,
 cloud lifecycle behavior or the separate live acceptance drill. The exact next
-task is Phase 3E: define explicit preview initialization and secret/resource
+task was Phase 3E: define explicit preview initialization and secret/resource
 credential boundaries, then characterize independent provider-readiness
 evidence.
+
+## Phase 3E — explicit preview initialization and resource credentials (completed slice)
+
+### Concrete responsibility problem
+
+The template-driven preview stack had durable local resource declarations and
+callback-backed readiness, but it did not define how a fresh application would
+receive sample data or how a managed Valkey service would authenticate. Adding
+those behaviors directly to the existing deployment script or lifecycle would
+mix template policy, shell rendering, credential generation and callback state,
+and could silently copy or rotate credentials for an already-running preview.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `PreviewStackCatalog` resolves the curated
+  template declaration; `PreviewInitializationLifecycle` owns durable attempt
+  state and exact callback identity; `PreviewInitializationScript` renders the
+  bounded shell hook; `PreviewResourceCredentials` owns the Valkey credential
+  boundary; and the existing environment/deployment actions continue to own
+  persistence and dispatch.
+- **Dependency inversion:** preview lifecycle coordination receives the new
+  collaborators through constructor injection and reuses the existing
+  `RepositoryDeploymentPlan`, `DeploymentRequest` and environment actions. No
+  service-location call or generic deployment framework was introduced.
+- **Liskov/idempotency:** initialization is tied to the exact repository,
+  environment, revision and build attempt. Repeated callbacks, retries and
+  stale builds cannot complete or fail a newer attempt; the shell marker makes
+  a successful command safe to observe again.
+- **Interface segregation:** no provider contract was changed because this
+  slice does not claim independent provider health or introduce a new remote
+  capability.
+
+### Implementation and preserved behavior
+
+Supported Laravel presets now explicitly declare the curated command
+`php artisan db:seed --force`. A new preview stores a pending internal state;
+the first queued build carries only the curated command, revision and attempt
+identity in Build's encrypted environment payload. The command runs after the
+candidate release is active, inside the existing post-deployment stage, and
+writes `/shared/.buildpusher-preview-initialized` only after success. The
+command is base64-encoded before entering the generated shell and failures
+persist only a generic safe message. A missing marker after an interrupted
+remote process permits an at-least-once retry, so template initialization
+commands must be safe to repeat.
+
+Initialization state is persisted as `not_configured`, `pending`, `running`,
+`succeeded` or `failed`, with attempts, current build identity, failure text and
+completion time. A failed or stopped attempt can retry the same revision with a
+new attempt number. A successful first initialization is not repeated on later
+revisions. Status callbacks and terminal reconciliation require the current
+exact build/revision identity, so stale callbacks cannot overwrite a newer
+attempt. Build dispatch remains outside the local transaction, preserving
+synchronous queue behavior; the build creation, preview claim and initialization
+claim are committed together before dispatch.
+
+New preview-owned Valkey resources receive a random `REDIS_PASSWORD` in their
+encrypted resource configuration, and the resource script shell-escapes it for
+the new container's `--requirepass` option. Existing preview resource
+declarations preserve their current password, including legacy passwordless
+state, so an ordinary revision update cannot make the application and an
+already-running container disagree. The existing generated preview database
+credential, independent application key, source-secret exclusion, ownership
+flags, cleanup manifest and resource readiness transitions remain unchanged.
+
+The migration defaults existing preview rows to `not_configured`; it does not
+retroactively execute initialization or copy data. A later revision change can
+opt an existing preview into the curated initialization state, while existing
+resource credential state is preserved. Templates without an explicit command
+remain unconfigured. This is an intentional feature boundary: preview data is
+sample data by default, not copied production data, and no independent provider
+readiness is implied by the local state machine.
+
+### Verification and remaining work
+
+The Phase 3E focused preview/deployment/resource batch passed **37 tests and
+375 assertions**. Adjacent preview cleanup, cancellation, deployment,
+watchdog and provisioning-callback coverage passed **56 tests and 473
+assertions**; callback-integrity coverage passed **5 tests and 34 assertions**.
+The compatibility follow-up for historical passwordless resources passed **31
+tests and 307 assertions** including the new direct credential-boundary unit
+tests. The fresh isolated full PHP suite at the feature commit passed **1,362
+tests and 11,785 assertions**, with the one unchanged baseline failure in
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` (the
+test expects three `localhost` occurrences and the current script contains
+four). No Phase 3E failure occurred.
+
+Migration fresh/rollback/reapply rehearsal, changed-file PHP lint, full Pint,
+required-PHP Composer validation/platform checks, Vite asset build and
+`git diff --check` passed. The feature commit `cf5da72` and the compatibility
+fix `fa114f0` are both fast-forwarded through canonical `main` and pushed to
+GitHub `origin/main` on 2026-09-13. This evidence covers local application
+state, encrypted snapshots and shell contracts; it does not establish remote
+Valkey/PostgreSQL/process readiness, cloud cleanup or the separate live
+acceptance drill. The exact next task is Phase 3F: characterize independent
+provider-readiness evidence without presenting local callback state as proof of
+remote health.
 
 ## Slice ledger
 
@@ -821,6 +918,7 @@ evidence.
 | Phase 3B | Phase 3A resources remained `planned` after deployment progress or failure. Added injected `PreviewStackReadiness` and a deployment-plan resource-stage boundary so preview resources transition to `provisioning`, `ready` or `failed` through existing signed callbacks and queued-job failure handling. | Focused readiness coverage: 21 passed, 170 assertions. Adjacent deployment/resource coverage: 24 passed, 157 assertions. Full isolated PHP suite: 1,351 passed, 11,652 assertions. Pint, changed-file lint and `git diff --check` passed. | `f780685` — `feat: record preview resource readiness`; `ad98671` — `docs: record preview resource readiness` | Feature and documentation commits pushed to GitHub `origin/main` on 2026-09-13. | Phase 3C cleanup is now complete; continue with Phase 3D atomic concurrent-preview quotas, then explicit initialization/secrets. |
 | Phase 3C | Preview closure knew how to clean generic website state but not the exact processes and managed PostgreSQL/Valkey children created by a preview, and partial cleanup had no durable retry boundary. Added explicit ownership flags, an immutable non-secret cleanup manifest, locked capture, a unique leased cleanup job, exact script generation, lifecycle re-entry for cancellation/watchdog/failure and manager-only retry. | Focused cleanup/lifecycle suite: 23 passed, 219 assertions. Full isolated PHP suite: 1,357 passed, 11,718 assertions. Migration fresh/rollback/reapply, required-PHP Composer platform checks, Pint, Vite build, `git diff --check` and isolated Playwright asset suite (9 tests) passed. Local runner/script evidence does not establish cloud cleanup or provider acceptance. | `74165bd` — `feat: clean up preview stacks safely` | Feature commit pushed to GitHub `origin/main` on 2026-09-13. | Phase 3D: enforce atomic concurrent-preview quotas, then define explicit initialization/secrets and independent provider-readiness evidence. |
 | Phase 3D | Preview capacity was checked before the transaction and only the project was locked, so concurrent pull requests could overcommit the last website/preview slot. Added organization-scoped active-preview usage, config-as-code plan limits and a transactionally serialized lifecycle check with an internal lock version for SQLite-compatible races. | `PreviewDeploymentTest.php`: 18 passed, 172 assertions. Independent-process quota race: 1 passed, 7 assertions. Broader quota/plan/billing batch: 34 passed, 224 assertions; adjacent cleanup/runtime/deployment: 19 passed, 150 assertions; project/tenancy: 9 passed, 49 assertions. Fresh isolated full PHP suite: 1,359 passed, 11,742 assertions. Migration fresh/rollback/reapply, required-PHP Composer validation/platform checks, Pint, Vite build and `git diff --check` passed. | `d722bad` — `feat: enforce concurrent preview quotas` | Feature commit pushed to GitHub `origin/main` on 2026-09-13. | Phase 3E: define explicit preview initialization/secrets and resource credential boundaries, then characterize independent provider-readiness evidence. |
+| Phase 3E | The template-driven stack had no explicit first-release initialization or managed Valkey credential boundary. Added a curated `PreviewInitialization` data boundary, injected durable initialization lifecycle with revision/attempt/stale-callback guards, encoded marker-based execution inside the existing post-deployment stage, encrypted preview-only Valkey credentials and legacy passwordless preservation. | Phase 3E focused batch: 37 passed, 375 assertions. Adjacent lifecycle/deployment/callback batch: 56 passed, 473 assertions; callback integrity: 5 passed, 34 assertions; compatibility follow-up: 31 passed, 307 assertions. Fresh full suite at feature commit: 1,362 passed, 1 unchanged baseline failure, 11,785 assertions. Migration rehearsal, lint, Pint, Composer/platform checks, Vite and `git diff --check` passed. | `cf5da72` — `feat: add explicit preview initialization`; `fa114f0` — `fix: preserve legacy preview cache credentials` | Both commits fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 3F: characterize independent provider-readiness evidence and keep it distinct from local lifecycle state. |
 
 ## Phase 1 exit verification
 
