@@ -178,6 +178,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
         Route::get('projects/{project}/configuration', [ApplicationConfigurationController::class, 'create'])->name('projects.configuration.create');
         Route::post('projects/{project}/configuration', [ApplicationConfigurationController::class, 'store'])->name('projects.configuration.store');
+        Route::get('projects/{project}/configuration/compare', [ApplicationConfigurationController::class, 'compare'])->name('projects.configuration.compare');
         Route::get('projects/{project}/configuration/{review}', [ApplicationConfigurationController::class, 'show'])->name('projects.configuration.review');
         Route::post('projects/{project}/configuration/{review}/operations/{operation}/cancel', [ApplicationConfigurationController::class, 'cancel'])->name('projects.configuration.cancel');
         Route::post('projects/{project}/configuration/{review}/operations/{operation}/retry', [ApplicationConfigurationController::class, 'retry'])->name('projects.configuration.retry');

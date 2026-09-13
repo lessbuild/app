@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ApplyApplicationConfigurationRequest;
 use App\Http\Requests\CancelApplicationConfigurationRequest;
+use App\Http\Requests\CompareApplicationConfigurationRequest;
 use App\Http\Requests\RetryApplicationConfigurationRequest;
 use App\Http\Requests\StoreApplicationConfigurationRequest;
 use App\Models\ConfigurationApplication;
@@ -15,6 +16,7 @@ use App\Models\Repository;
 use App\Models\Website;
 use App\Services\ApplicationConfigurationAuthoringGuide;
 use App\Services\ApplicationConfigurationCancellation;
+use App\Services\ApplicationConfigurationEnvironmentComparisonQuery;
 use App\Services\ApplicationConfigurationEnvironmentOverviewQuery;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationResults;
@@ -53,7 +55,40 @@ class ApplicationConfigurationController extends Controller
     {
         $this->access($project);
 
+        return view('scenes.projects.configuration', $this->authoringPageData($project));
+    }
+
+    /**
+     * Render a manager-only comparison of two environments' recorded local metadata.
+     *
+     * @param  CompareApplicationConfigurationRequest  $request  Validated environment IDs.
+     * @param  Project  $project  The authorized configuration target.
+     * @param  ApplicationConfigurationEnvironmentComparisonQuery  $comparisonQuery  Compares safe recorded state without provider calls.
+     * @return View The authoring page with the selected comparison.
+     */
+    public function compare(
+        CompareApplicationConfigurationRequest $request,
+        Project $project,
+        ApplicationConfigurationEnvironmentComparisonQuery $comparisonQuery,
+    ): View {
+        $this->access($project);
+        $comparison = $comparisonQuery->for($project, $request->fromEnvironmentId(), $request->toEnvironmentId());
+        abort_unless($comparison, 404);
+
         return view('scenes.projects.configuration', [
+            ...$this->authoringPageData($project),
+            'comparison' => $comparison,
+        ]);
+    }
+
+    /**
+     * Compose the shared read-only data for the authoring and comparison views.
+     *
+     * @return array<string, mixed> Workspace-scoped catalogs and safe configuration guidance.
+     */
+    private function authoringPageData(Project $project): array
+    {
+        return [
             'project' => $project, 'review' => null, 'plan' => null, 'application' => null,
             'environmentOverview' => $this->environmentOverview->for($project),
             'authoringGuide' => $this->authoringGuide->for(),
@@ -68,7 +103,7 @@ class ApplicationConfigurationController extends Controller
                 ->whereHas('environment.project', fn ($query) => $query->where('organization_id', $project->organization_id))
                 ->with('environment:id,name,project_id')->orderBy('key')
                 ->paginate(25, ['id', 'environment_id', 'key', 'scope'], 'secrets_page'),
-        ]);
+        ];
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Data\ApplicationEnvironmentOverview;
 use App\Models\Environment;
 use App\Models\Project;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 class ApplicationConfigurationEnvironmentOverviewQuery
@@ -19,20 +20,48 @@ class ApplicationConfigurationEnvironmentOverviewQuery
      */
     public function for(Project $project): Collection
     {
-        return $project->environments()
-            ->with([
-                'server:id,name,provisioning_status',
-                'website:id,name,provisioning_status,health_status',
-                'website.repositories:id,website_id,name,branch',
-                'website.repositories.latestBuild' => fn ($query) => $query->select(['builds.id', 'builds.repository_id', 'builds.status']),
-                'processes:id,environment_id,name,type,replicas,is_enabled',
-                'resources:id,environment_id,name,type,is_managed,status',
-                'variables:id,environment_id,is_secret',
-            ])
+        return $this->query($project)
             ->orderByRaw("CASE type WHEN 'preview' THEN 0 WHEN 'development' THEN 1 WHEN 'staging' THEN 2 WHEN 'production' THEN 3 ELSE 4 END")
             ->orderBy('name')
             ->get()
             ->map(fn ($environment): ApplicationEnvironmentOverview => $this->summarize($environment));
+    }
+
+    /**
+     * Load exactly two project environments for a comparison without expanding the whole project page.
+     *
+     * @return array{from: ApplicationEnvironmentOverview, to: ApplicationEnvironmentOverview}|null Ordered summaries, or null when either ID is outside the project.
+     */
+    public function pair(Project $project, int $fromId, int $toId): ?array
+    {
+        $summaries = $this->query($project)
+            ->whereKey([$fromId, $toId])
+            ->get()
+            ->mapWithKeys(fn (Environment $environment): array => [$environment->id => $this->summarize($environment)]);
+
+        if ($summaries->count() !== 2 || ! $summaries->has($fromId) || ! $summaries->has($toId)) {
+            return null;
+        }
+
+        return ['from' => $summaries->get($fromId), 'to' => $summaries->get($toId)];
+    }
+
+    /**
+     * Build the one project-scoped eager-loaded query shared by the overview and comparison reads.
+     *
+     * @return HasMany<Environment, Project> Recorded environment topology query.
+     */
+    private function query(Project $project): HasMany
+    {
+        return $project->environments()->with([
+            'server:id,name,provisioning_status',
+            'website:id,name,provisioning_status,health_status',
+            'website.repositories:id,website_id,name,branch',
+            'website.repositories.latestBuild' => fn ($query) => $query->select(['builds.id', 'builds.repository_id', 'builds.status']),
+            'processes:id,environment_id,name,type,replicas,is_enabled',
+            'resources:id,environment_id,name,type,is_managed,status',
+            'variables:id,environment_id,is_secret',
+        ]);
     }
 
     /**
