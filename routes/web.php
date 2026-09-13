@@ -213,6 +213,8 @@ Route::middleware('auth')->group(function () {
         Route::get('system-health/report', [SystemHealthController::class, 'report'])->name('system-health.report');
         Route::get('system-health', SystemHealthController::class)->name('system-health.index');
         Route::get('observability', [ObservabilityController::class, 'index'])->name('observability.index');
+        Route::get('observability/environments/{environment}/context', [ObservabilityController::class, 'environmentContext'])
+            ->name('observability.environments.context');
         Route::get('observability/operational-incidents/export', [OperationalIncidentController::class, 'export'])->name('observability.operational-incidents.export');
         Route::get('domains', [DomainController::class, 'index'])->name('domains.index');
         Route::get('databases', [DatabaseController::class, 'index'])->name('databases.index');

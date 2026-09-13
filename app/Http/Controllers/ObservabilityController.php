@@ -12,6 +12,7 @@ use App\Actions\Observability\DeleteStatusPageAction;
 use App\Actions\Observability\QueueAlertDestinationTestAction;
 use App\Actions\Observability\UpdateStatusIncidentAction;
 use App\Actions\Observability\UpdateStatusPageAction;
+use App\Http\Requests\ObservabilityContextRequest;
 use App\Http\Requests\StoreAlertDestinationRequest;
 use App\Http\Requests\StoreMetricAlertRuleRequest;
 use App\Http\Requests\StoreStatusIncidentRequest;
@@ -19,10 +20,12 @@ use App\Http\Requests\StoreStatusPageRequest;
 use App\Http\Requests\UpdateStatusIncidentRequest;
 use App\Http\Requests\UpdateStatusPageRequest;
 use App\Models\AlertDestination;
+use App\Models\Environment;
 use App\Models\MetricAlertRule;
 use App\Models\StatusIncident;
 use App\Models\StatusPage;
 use App\Services\ObservabilityDashboardQuery;
+use App\Services\ObservabilityEnvironmentContextQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -42,6 +45,19 @@ class ObservabilityController extends Controller
             'canManage' => $organization->permits($request->user(), 'manage'),
             'canOperate' => $organization->permits($request->user(), 'operate'),
             'canExportIncidents' => $organization->permits($request->user(), 'operate') || $organization->permits($request->user(), 'audit'),
+        ]);
+    }
+
+    /**
+     * Render bounded deployment, health, runtime-log metadata, and related incident evidence for one environment.
+     */
+    public function environmentContext(
+        ObservabilityContextRequest $request,
+        Environment $environment,
+        ObservabilityEnvironmentContextQuery $context,
+    ): View {
+        return view('observability.environment-context', [
+            'context' => $context->for($environment, $request->filters()),
         ]);
     }
 

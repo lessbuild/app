@@ -27,6 +27,11 @@ class ObservabilityDashboardQuery
             'destinations' => $organization->alertDestinations()->latest()->get(),
             'statusPages' => $organization->statusPages()->with('websites')->latest()->get(),
             'websites' => $organization->websites()->orderBy('name')->get(),
+            'environmentProjects' => $organization->projects()
+                ->with('environments:id,project_id,name,type,status,branch')
+                ->select(['id', 'organization_id', 'name'])
+                ->orderBy('name')
+                ->get(),
             'incidents' => $incidents,
             'correlatedBuilds' => Build::query()
                 ->whereHas('repository.website', fn ($query) => $query->where('organization_id', $organization->id))

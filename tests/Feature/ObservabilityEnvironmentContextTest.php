@@ -1,0 +1,269 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Build;
+use App\Models\Environment;
+use App\Models\OperationalIncident;
+use App\Models\Provider;
+use App\Models\Repository;
+use App\Models\Server;
+use App\Models\User;
+use App\Models\Website;
+use App\Models\WebsiteHealthCheck;
+use App\Models\WebsiteLogSnapshot;
+use Carbon\Carbon;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+class ObservabilityEnvironmentContextTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function tearDown(): void
+    {
+        Carbon::setTestNow();
+        parent::tearDown();
+    }
+
+    public function test_member_can_view_bounded_environment_evidence_without_sensitive_bodies(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, $server, $repository] = $this->environment();
+        $recentBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_FAILED,
+            'revision' => str_repeat('a', 40),
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'created_at' => now()->subHours(2),
+            'started_at' => now()->subHours(2),
+            'finished_at' => now()->subHour(),
+        ]);
+        $recentBuild->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => 'private-deployment-output',
+        ]);
+        $oldTerminalBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_SUCCEEDED,
+            'revision' => str_repeat('b', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subDays(2),
+        ]);
+        $oldActiveBuild = $repository->builds()->create([
+            'environment_id' => $environment->id,
+            'status' => Build::STATUS_RUNNING,
+            'revision' => str_repeat('c', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'created_at' => now()->subDays(2),
+        ]);
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'http_status' => 503,
+            'duration_ms' => 120,
+            'endpoint' => 'https://app.example.com/health',
+            'error' => 'private-health-error',
+            'checked_at' => now()->subHours(3),
+        ]);
+        $website->healthChecks()->create([
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 200,
+            'duration_ms' => 80,
+            'endpoint' => 'https://app.example.com/health',
+            'checked_at' => now()->subDays(2),
+        ]);
+        $website->runtimeLogs()->create([
+            'type' => 'application',
+            'status' => WebsiteLogSnapshot::STATUS_READY,
+            'log' => 'private-runtime-output',
+            'refreshed_at' => now()->subHour(),
+        ]);
+        OperationalIncident::query()->create([
+            'organization_id' => $owner->current_organization_id,
+            'category' => 'deployment',
+            'resource_id' => $recentBuild->id,
+            'active_key' => 'deployment:'.$recentBuild->id,
+            'status' => OperationalIncident::STATUS_OPEN,
+            'severity' => 'major',
+            'title' => 'Deployment requires investigation',
+            'summary' => 'private-incident-summary',
+            'occurrences' => 1,
+            'detected_at' => now()->subHour(),
+            'last_seen_at' => now()->subHour(),
+        ]);
+        OperationalIncident::query()->create([
+            'organization_id' => $owner->current_organization_id,
+            'category' => 'website',
+            'resource_id' => $website->id,
+            'active_key' => 'website:'.$website->id,
+            'status' => OperationalIncident::STATUS_RESOLVED,
+            'severity' => 'minor',
+            'title' => 'Recent website recovery',
+            'summary' => 'private-website-summary',
+            'occurrences' => 2,
+            'detected_at' => now()->subHours(5),
+            'last_seen_at' => now()->subHours(4),
+            'resolved_at' => now()->subHours(3),
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => '24h',
+        ]));
+
+        $response->assertSuccessful()
+            ->assertSee('Environment evidence')
+            ->assertSee('Deployment requires investigation')
+            ->assertSee('Recent website recovery')
+            ->assertSee($recentBuild->shortRevision())
+            ->assertSee(route('builds.show', $recentBuild), false)
+            ->assertSee(route('websites.runtime-logs.show', [$website, 'application']), false)
+            ->assertDontSee('private-deployment-output')
+            ->assertDontSee('private-runtime-output')
+            ->assertDontSee('private-health-error')
+            ->assertDontSee('private-incident-summary')
+            ->assertDontSee('private-website-summary');
+
+        $response->assertViewHas('context', function ($context) use ($oldTerminalBuild, $oldActiveBuild): bool {
+            return $context->builds->pluck('id')->contains($oldActiveBuild->id)
+                && ! $context->builds->pluck('id')->contains($oldTerminalBuild->id)
+                && $context->healthChecks->count() === 1
+                && $context->runtimeLogs->first()->getAttribute('log') === null
+                && ! array_key_exists('summary', $context->incidents->first()->getAttributes());
+        });
+
+        $this->assertSame(3, $environment->builds()->count());
+        $this->assertSame(2, $website->healthChecks()->count());
+        $this->assertSame(1, $website->runtimeLogs()->count());
+        $this->assertSame($server->id, $environment->server_id);
+
+        $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee(route('observability.environments.context', $environment), false);
+    }
+
+    public function test_context_read_is_tenant_authorized_before_window_validation(): void
+    {
+        [$owner, $environment] = $this->environment();
+        $foreign = User::factory()->create();
+        $foreignEnvironment = $foreign->currentOrganization->projects()->create([
+            'created_by' => $foreign->id,
+            'name' => 'Foreign application',
+            'slug' => 'foreign-application',
+        ])->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+        ]);
+        $intruder = User::factory()->create();
+
+        $this->actingAs($owner)
+            ->get(route('observability.environments.context', [
+                'environment' => $foreignEnvironment,
+                'window' => 'unsupported',
+            ]))
+            ->assertForbidden();
+        $this->actingAs($intruder)
+            ->get(route('observability.environments.context', [
+                'environment' => $environment,
+                'window' => 'unsupported',
+            ]))
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('builds', 0);
+        $this->assertDatabaseCount('website_health_checks', 0);
+    }
+
+    public function test_context_window_is_finite_and_each_evidence_collection_is_bounded(): void
+    {
+        Carbon::setTestNow('2026-09-13 12:00:00');
+        [$owner, $environment, $website, , $repository] = $this->environment();
+
+        foreach (range(1, 25) as $number) {
+            $repository->builds()->create([
+                'environment_id' => $environment->id,
+                'status' => Build::STATUS_SUCCEEDED,
+                'revision' => str_repeat((string) ($number % 10), 40),
+                'trigger_source' => Build::TRIGGER_MANUAL,
+                'created_at' => now()->subMinutes($number),
+            ]);
+            $website->healthChecks()->create([
+                'successful' => true,
+                'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+                'http_status' => 200,
+                'duration_ms' => 50,
+                'endpoint' => 'https://app.example.com/health',
+                'checked_at' => now()->subMinutes($number),
+            ]);
+        }
+
+        $this->actingAs($owner)
+            ->get(route('observability.environments.context', [
+                'environment' => $environment,
+                'window' => 'unsupported',
+            ]))
+            ->assertRedirect()
+            ->assertSessionHasErrors('window');
+
+        $this->actingAs($owner)
+            ->get(route('observability.environments.context', [
+                'environment' => $environment,
+                'window' => '7d',
+            ]))
+            ->assertSuccessful()
+            ->assertViewHas('context', fn ($context): bool => $context->builds->count() === 20
+                && $context->healthChecks->count() === 20);
+    }
+
+    /** @return array{User, Environment, Website, Server, Repository} */
+    private function environment(): array
+    {
+        $owner = User::factory()->create();
+        $provider = $owner->providers()->create([
+            'name' => 'Source provider',
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => 'provider-token',
+            'description' => 'Source control',
+        ]);
+        $server = $owner->servers()->create([
+            'name' => 'Application server',
+            'public_ip' => '203.0.113.10',
+            'ssh_private_key' => 'private-key',
+            'provisioning_status' => 'active',
+        ]);
+        $website = $owner->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'Application website',
+            'description' => 'Application',
+            'environment' => 'APP_SECRET=private-environment-value',
+            'url' => 'app.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $project = $owner->currentOrganization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Application',
+            'slug' => 'application',
+        ]);
+        $environment = $project->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+            'branch' => 'main',
+            'server_id' => $server->id,
+            'website_id' => $website->id,
+        ]);
+        $repository = $owner->repositories()->create([
+            'provider_id' => $provider->id,
+            'website_id' => $website->id,
+            'name' => 'Application repository',
+            'url' => 'github.com/example/application.git',
+            'branch' => 'main',
+            'description' => 'Application source',
+        ]);
+
+        return [$owner, $environment, $website, $server, $repository];
+    }
+}

@@ -288,7 +288,7 @@
         @endif
     </section>
 
-    <section class="mt-6 rounded-2xl border border-primary bg-primary p-5" x-data="{ logType: 'application' }">
+    <section class="mt-6 rounded-2xl border border-primary bg-primary p-5" id="runtime-logs" x-data="{ logType: 'application' }">
         <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p><h2 class="mt-1 text-xl font-black text-primary">{{ __('Live log snapshots') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p></div><div class="flex gap-2">@foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)<button type="button" class="button secondary" @click="logType='{{ $type }}'">{{ ucfirst($type) }}</button>@endforeach</div></div>
         @foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)
             @php($snapshot = $runtimeLogs->get($type))
