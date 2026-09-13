@@ -99,6 +99,25 @@
             @endif
         </section>
         <details class="mt-6 rounded-xl border border-primary bg-primary p-5">
+            <summary class="cursor-pointer font-bold text-primary">{{ __('Version 2 authoring guide') }}</summary>
+            <p class="mt-3 text-sm text-secondary">{{ __('Start with the parser-valid example below, replace the illustrative binding ID with a workspace ID from the catalog, then add only the sections you need. Invalid submissions are rejected without retaining this form in session input.') }}</p>
+            <div class="mt-4 grid gap-5 lg:grid-cols-2">
+                <section>
+                    <h2 class="font-bold text-primary">{{ __('Starter YAML') }}</h2>
+                    <pre class="mt-2 overflow-x-auto rounded-lg border border-primary bg-secondary p-3 text-xs text-primary" tabindex="0"><code>{{ $authoringGuide['document'] }}</code></pre>
+                </section>
+                <section>
+                    <h2 class="font-bold text-primary">{{ __('Starter bindings JSON') }}</h2>
+                    <pre class="mt-2 overflow-x-auto rounded-lg border border-primary bg-secondary p-3 text-xs text-primary" tabindex="0"><code>{{ $authoringGuide['bindings'] }}</code></pre>
+                </section>
+            </div>
+            <ul class="mt-4 space-y-2 text-sm text-secondary">
+                @foreach($authoringGuide['fields'] as $field)
+                    <li><code class="text-primary">{{ $field['path'] }}</code> — {{ $field['description'] }}</li>
+                @endforeach
+            </ul>
+        </details>
+        <details class="mt-6 rounded-xl border border-primary bg-primary p-5">
             <summary class="cursor-pointer font-bold text-primary">{{ __('Find workspace binding IDs') }}</summary>
             <p class="mt-3 text-secondary">{{ __('Use these IDs in the JSON bindings below. Secret values are never shown.') }}</p>
             <div class="mt-4 grid gap-6 lg:grid-cols-3">

@@ -55,7 +55,7 @@ class ApplicationConfigurationWebTest extends TestCase
         $other = User::factory()->create();
         $otherServer = $other->servers()->create(['name' => 'Foreign']);
         $other->websites()->create(['server_id' => $otherServer->id, 'name' => 'Foreign website', 'url' => 'foreign.test', 'description' => 'Test', 'environment' => '']);
-        $this->actingAs($user)->get($url)->assertOk()->assertSee('Current environment overview')->assertSee('Version 2 YAML')->assertSee('CATALOG_TOKEN')
+        $this->actingAs($user)->get($url)->assertOk()->assertSee('Current environment overview')->assertSee('Version 2 authoring guide')->assertSee('Version 2 YAML')->assertSee('CATALOG_TOKEN')
             ->assertDontSee('catalog-private-value')->assertDontSee('invalid-ciphertext')->assertDontSee('foreign.test');
         $this->from($url)->post($url, ['document' => 'private-command', 'bindings' => '{}'])->assertSessionHasErrors('document')->assertSessionMissing('_old_input');
         $this->post($url, ['document' => "version: 2\nenvironments:\n  staging:\n    type: staging\n    placement: site\n    runtime:\n      type: php\n      build_command: private-command\n", 'bindings' => json_encode(['placements' => ['site' => $website->id]])])->assertRedirect();
