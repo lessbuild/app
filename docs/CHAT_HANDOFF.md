@@ -30,7 +30,9 @@ Phase 8's fixed server-host diagnostic implementation is now complete at
 feature commit `4add5b9`, the persisted troubleshooting-session lifecycle
 boundary is complete at feature commit `6e9e55f` with wording correction
 `335ea42`, and the bounded transport/process-ownership seam is complete at
-feature commit `6013f19`; all were fast-forwarded into canonical `main` and
+feature commit `6013f19`. Durable encrypted frames and the bounded broker
+ownership command are complete at feature commit `5b54f3b`; all were
+fast-forwarded into canonical `main` and
 pushed to GitHub `origin/main`. The server detail page exposes a separate policy-
 authorized asynchronous snapshot/action/job boundary. It requires the stored
 pinned SSH host identity, runs a versioned fixed scalar probe, retains only
@@ -49,14 +51,21 @@ provider/cloud/live-acceptance claim is made. The interactive transport and
 host-execution characterization is now recorded in the progress ledger, and
 the lifecycle slice passed **13 tests / 46 assertions** with the adjacent
 server/import/log/command/observability set passing **78 tests / 609
-assertions**. The locked stack still has no durable encrypted frame relay,
-supervisor-owned broker, live lease revalidation loop or proven remote cleanup
-protocol, so terminal sessions remain unimplemented. The transport suite
-passed **8 tests / 25 assertions** and the adjacent server command/diagnostic/
-session set passed **58 tests / 376 assertions**; the fresh strict isolated full
-suite passed **1,482 tests / 12,605 assertions** with the unchanged provisioning
-baseline failure. The exact next task is to add and verify the bounded frame
-relay and broker ownership guards before adding routes or UI.
+assertions**. The transport suite passed **8 tests / 25 assertions** and the
+adjacent server command/diagnostic/session set passed **58 tests / 376
+assertions**; the fresh strict isolated full suite passed **1,482 tests /
+12,605 assertions** with the unchanged provisioning baseline failure. The
+durable frame/broker slice passed **33 tests / 135 assertions**; the fresh
+strict isolated full suite passed **1,494 tests / 12,668 assertions** with the
+same unchanged baseline failure. The new migration pair passed a disposable
+SQLite fresh/rollback/reapply rehearsal. Input is encrypted and marked sent
+before remote write for at-most-once semantics; output is sequenced,
+acknowledgeable and bounded, and exact lease/attempt/process guards fail closed
+on expiry or stale callbacks. Supervisor installation, real remote cleanup,
+reconnect and browser-terminal exposure remain outstanding. The exact next
+task is to characterize and implement the policy-authorized HTTP/Livewire
+connect, input, output polling/acknowledgment, resize, close and reconnect
+boundary while keeping exposure gated on remote cleanup and revocation proof.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit

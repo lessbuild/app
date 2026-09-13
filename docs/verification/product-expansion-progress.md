@@ -1,11 +1,12 @@
 # BuildPusher product expansion progress
 
 Status: Phase 8's fixed server-host diagnostic implementation, minimal
-persisted troubleshooting-session authorization/lifecycle boundary and bounded
-server-side transport/process-ownership boundary are complete locally; the
-typed category-aware control-plane report is also complete. Durable frame
-relay, supervisor/broker wiring, remote cleanup proof and an interactive
-terminal route/UI remain unimplemented.
+persisted troubleshooting-session authorization/lifecycle boundary, bounded
+server-side transport/process-ownership boundary, durable encrypted frame
+relay and bounded broker ownership command are complete locally; the typed
+category-aware control-plane report is also complete. Supervisor installation
+wiring, remote cleanup/reconnect proof and an interactive terminal route/UI
+remain outstanding.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -3272,6 +3273,68 @@ relay and supervisor-owned broker command with session lease, attempt and
 process-identity guards; keep routes and UI disabled until revocation, expiry,
 disconnect and cleanup behavior is proven.
 
+## Phase 8 — durable troubleshooting frames and broker ownership (completed slice)
+
+### Problem and responsibility boundary
+
+The transport seam could own a PTY process, but it had no durable exchange
+buffer or supervisor identity. A browser-facing boundary could therefore lose
+input/output across requests or allow an abandoned process to overlap a newer
+broker. This slice adds those guarantees without exposing a route or changing
+the existing one-shot server-command workflow.
+
+`ServerTroubleshootingFrame` and its separate table retain input and output as
+encrypted, sequenced rows. Input and output have independent bounded limits;
+output is acknowledged through a sequence and old rows are removed by a
+bounded scheduled prune. A broker marks an input frame sent before the remote
+write, giving shell input at-most-once behavior across an uncertain broker
+crash: a frame may be lost, but it is not replayed into a new shell. Output is
+persisted only while the exact broker lease is valid, and overflow fails the
+connection before inserting an unbounded batch.
+
+The session now stores a hashed short broker lease, monotonic attempt, process
+identity and input/output sequence counters. Claim, connect, renew, release
+and frame operations lock the session and require the exact token, attempt and
+process identity. An expired lease is terminalized rather than replaced, so a
+possibly orphaned remote process cannot overlap a new one. User close,
+revocation, idle/absolute expiry and scheduled maintenance clear ownership;
+stale broker callbacks cannot clear a replacement. `ServerTroubleshootingBroker`
+coordinates the injected transport, live lease renewal, frame relay and a
+bounded polling window. The console command is suitable for a supervisor-owned
+process, while actual supervisor/systemd installation remains deferred.
+
+This applies single responsibility by keeping authorization/lifecycle actions,
+encrypted frame persistence and transport orchestration separate. It applies
+dependency inversion through the existing transport contract and does not add
+a generic repository or speculative integration framework.
+
+### Verification and limitations
+
+The focused troubleshooting/session/transport suite passed **33 tests / 135
+assertions**. The fresh strict isolated full PHP suite passed **1,494 tests /
+12,668 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP changed-file lint, full Pint and
+`git diff --check` passed. The new migrations applied, rolled back as the last
+two migrations and reapplied on disposable SQLite. A whole-database rollback
+was not used as evidence because the unrelated pre-existing
+`2026_09_05_160000_add_expiry_to_personal_access_tokens` migration fails on
+SQLite when its index remains during a drop-column operation. The prior
+required-PHP asset/browser evidence (**9 passed**) remains unchanged and was
+not rerun for this PHP-only slice.
+
+No real remote host, network partition, supervisor restart, abandoned remote
+process cleanup, reconnect protocol, route, Livewire terminal or browser
+journey was exercised. No provider/cloud/live-acceptance claim is made.
+Feature commit `5b54f3b` was fast-forwarded into canonical `main` and pushed
+to GitHub `origin/main` on 2026-09-13.
+
+The exact next task is to characterize and implement the policy-authorized
+HTTP/Livewire boundary for connect, bounded input, output polling/acknowledgment,
+resize, close and reconnect; keep user exposure gated until remote cleanup and
+revocation behavior has been tested.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -3302,6 +3365,7 @@ disconnect and cleanup behavior is proven.
 | Phase 8 interactive-transport characterization | Existing queued commands are one-shot root executions with encrypted bounded output, while `Runner`/`ManagedSsh` have no durable PTY, stdin, resize, heartbeat or abandoned-process cleanup contract. Characterized the separate session record, connect/execute authorization, pinned host-key requirement, short-lived grants, leases, input/output bounds, revalidation, audit and cleanup requirements. No application behavior, schema, queue state or remote resource changed. | Read-only source, dependency and runtime capability characterization completed; no terminal code or remote execution added. | This documentation checkpoint | Will be fast-forwarded into canonical `main` and pushed before the lifecycle boundary implementation. | Implement the minimal persisted session authorization/lifecycle boundary without remote execution, then verify its revocation and cleanup semantics before selecting transport. |
 | Phase 8 troubleshooting session lifecycle | The transport design had no durable grant, actor revalidation or terminal outcome boundary. Added an opaque hashed grant, actor/server policy split, finite session statuses, bounded absolute/idle deadlines, locked open/touch/close/revoke operations, membership heartbeat revalidation, atomic capacity and expired-session recovery, and a scheduled bounded expiry action. No remote execution, route, browser terminal or existing queued-command behavior changed. | Focused lifecycle suite: **13 tests / 46 assertions**. Adjacent server/import/log/command/observability regressions: **78 tests / 609 assertions**. Fresh strict isolated full suite: **1,474 passed / 12,580 assertions / 1 unchanged baseline failure**. Migration fresh/rollback/reapply, command/schedule, required-PHP lint, scoped Pint and `git diff --check` passed; prior required-PHP browser/assets evidence remains **9 passed**. | `6e9e55f` — `feat: add troubleshooting session lifecycle`; `335ea42` — `docs: clarify troubleshooting grant lifetime` | Feature and correction commits fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Select and test the bounded server-side PTY/transport and local/remote cleanup contract before adding routes or UI. |
 | Phase 8 bounded troubleshooting transport | The persisted session boundary had no process/input/output seam. Added injected transport and connection contracts, a pinned SSH PTY command adapter, validated terminal dimensions, bounded async local I/O, idempotent process-group/temporary-credential cleanup and fail-closed host-key checks. Existing one-shot command execution and legacy Runner behavior remain unchanged; no route, frame store, broker, remote execution or UI was enabled. | Focused transport suite: **8 tests / 25 assertions**. Adjacent server command/diagnostic/session regression set: **58 tests / 376 assertions**. Fresh strict isolated full PHP suite: **1,482 passed / 12,605 assertions / 1 unchanged baseline failure**. Required-PHP changed-file lint, full Pint and `git diff --check` passed; prior required-PHP browser/assets evidence remains **9 passed**. | `6013f19` — `feat: add bounded troubleshooting transport` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add durable bounded encrypted frame relay and supervisor-owned broker lease/attempt/process guards before routes or UI. |
+| Phase 8 durable frames and broker ownership | The transport seam had no durable exchange buffer or supervisor identity. Added encrypted, sequenced input/output frames with independent backpressure and bounded pruning; exact hashed lease, attempt and process guards; broker claim/connect/renew/release actions; a bounded supervisor-oriented broker command; and terminal cleanup integration. Input is marked sent before remote write for at-most-once semantics, output is acknowledged by sequence, expired leases fail closed and stale callbacks cannot affect a newer attempt. Existing one-shot command execution remains unchanged and no route/UI was exposed. | Focused troubleshooting/session/transport suite: **33 tests / 135 assertions**. Fresh strict isolated full PHP suite: **1,494 passed / 12,668 assertions / 1 unchanged baseline failure**. Required-PHP changed-file lint, full Pint and `git diff --check` passed. New migration pair fresh/rollback/reapply passed on disposable SQLite; whole rollback retains the unrelated pre-existing SQLite index/drop-column failure. Prior required-PHP asset/browser evidence remains **9 passed** and was not rerun for this PHP-only slice. | `5b54f3b` — `feat: add durable troubleshooting frame broker` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement the policy-authorized HTTP/Livewire connect, input, output polling/ack, resize, close and reconnect boundary; keep exposure gated on remote cleanup proof. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
