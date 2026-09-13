@@ -3,6 +3,7 @@
 namespace App\Actions\Repository;
 
 use App\Data\DeploymentObservationConfiguration;
+use App\Jobs\Repository\ObserveDeploymentJob;
 use App\Models\Build;
 use App\Models\DeploymentObservation;
 use App\Models\Repository;
@@ -23,7 +24,8 @@ class CreateDeploymentObservationAction
      */
     public function handle(Build $build): ?DeploymentObservation
     {
-        return DB::transaction(function () use ($build): ?DeploymentObservation {
+        $created = false;
+        $observation = DB::transaction(function () use ($build, &$created): ?DeploymentObservation {
             $lockedBuild = Build::query()->lockForUpdate()->find($build->id);
             if (! $lockedBuild || $lockedBuild->status !== Build::STATUS_SUCCEEDED) {
                 return null;
@@ -68,6 +70,8 @@ class CreateDeploymentObservationAction
                     'updated_at' => $now,
                 ]);
 
+            $created = true;
+
             return DeploymentObservation::query()->create([
                 'build_id' => $lockedBuild->id,
                 'website_id' => $configuration->websiteId,
@@ -81,5 +85,12 @@ class CreateDeploymentObservationAction
                 'next_check_at' => $now,
             ]);
         }, 5);
+
+        if ($created && $observation) {
+            // Queue only after the record transaction commits; a synchronous queue may execute immediately here.
+            ObserveDeploymentJob::dispatch($observation->id);
+        }
+
+        return $observation;
     }
 }

@@ -33,6 +33,7 @@ class BuildDeploymentStatus extends Component
             'approver',
             'rejecter',
             'configurationOperation.application.review',
+            'deploymentObservation',
         ]);
         Gate::authorize('view', $this->build);
 
@@ -44,7 +45,8 @@ class BuildDeploymentStatus extends Component
             'deploymentLog' => $log,
             'previousBuild' => $this->build->previousInRepository(),
             'nextBuild' => $this->build->nextInRepository(),
-            'shouldPoll' => $this->build->statusEnum()?->isActive() === true,
+            'shouldPoll' => $this->build->statusEnum()?->isActive() === true
+                || $this->build->deploymentObservation?->statusEnum()?->isActive() === true,
             'processes' => $plan->scripts(),
             'failureGuidance' => $this->build->status === Build::STATUS_FAILED
                 ? $guidance->for($this->build, $plan)
@@ -53,6 +55,7 @@ class BuildDeploymentStatus extends Component
                 ? $this->build->latestRestorableBefore()
                 : null,
             'deploymentTimeline' => $timeline->for($this->build),
+            'deploymentObservation' => $this->build->deploymentObservation,
             'website' => $this->build->repository->website,
         ]);
     }

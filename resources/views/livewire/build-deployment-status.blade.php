@@ -385,6 +385,67 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_SUCCEEDED)
+        @if ($deploymentObservation)
+            <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-observation-title">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment observation') }}</p>
+                        <h2 id="deployment-observation-title" class="mt-1 text-lg font-black text-primary">{{ __('Revision-linked verification') }}</h2>
+                        <p class="mt-1 text-sm text-secondary">{{ __('BuildPusher checks this deployment’s captured health target during a bounded window. This result is separate from continuous website health monitoring.') }}</p>
+                    </div>
+                    <span @class([
+                        'rounded-full px-3 py-1 text-xs font-bold uppercase',
+                        'bg-green-100 text-green-700' => $deploymentObservation->statusEnum()?->value === 'healthy',
+                        'bg-blue-100 text-blue-700' => in_array($deploymentObservation->statusEnum()?->value, ['pending', 'observing'], true),
+                        'bg-red-100 text-red-700' => $deploymentObservation->statusEnum()?->value === 'failed',
+                        'bg-amber-100 text-amber-800' => in_array($deploymentObservation->statusEnum()?->value, ['expired', 'superseded'], true),
+                        'bg-gray-100 text-gray-700' => $deploymentObservation->statusEnum() === null,
+                    ])>{{ str($deploymentObservation->status)->replace('_', ' ')->headline() }}</span>
+                </div>
+                <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observation window') }}</dt>
+                        <dd class="mt-1 text-sm text-primary">{{ trans_choice(':minutes minute|:minutes minutes', $deploymentObservation->duration_minutes, ['minutes' => $deploymentObservation->duration_minutes]) }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Successful checks') }}</dt>
+                        <dd class="mt-1 text-sm text-primary">{{ $deploymentObservation->successful_checks }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last HTTP status') }}</dt>
+                        <dd class="mt-1 text-sm text-primary">{{ $deploymentObservation->last_http_status ?? __('Not checked yet') }}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last checked') }}</dt>
+                        <dd class="mt-1 text-sm text-primary">{{ $deploymentObservation->last_checked_at?->format('Y-m-d H:i:s T') ?? __('Not checked yet') }}</dd>
+                    </div>
+                </dl>
+                <p class="mt-4 text-sm text-secondary">
+                    @switch($deploymentObservation->statusEnum()?->value)
+                        @case('pending')
+                            {{ __('The first post-deployment check is waiting to run.') }}
+                            @break
+                        @case('observing')
+                            {{ __('The observation is still running. The next check is scheduled automatically.') }}
+                            @break
+                        @case('healthy')
+                            {{ __('The deployment completed its observation window with successful checks.') }}
+                            @break
+                        @case('failed')
+                            {{ __('The deployment did not complete post-deployment verification. Review the deployment log and website health history for details.') }}
+                            @break
+                        @case('expired')
+                            {{ __('The observation window expired before verification completed.') }}
+                            @break
+                        @case('superseded')
+                            {{ __('A newer successful deployment replaced this observation.') }}
+                            @break
+                        @default
+                            {{ __('This observation uses a legacy state that is not displayed in detail.') }}
+                    @endswitch
+                </p>
+            </section>
+        @endif
         <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-health-title">
             <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-1 text-lg font-black text-primary">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-secondary">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><span @class(['rounded-full px-3 py-1 text-xs font-bold uppercase','bg-green-100 text-green-700' => $website->health_status === 'healthy','bg-red-100 text-red-700' => $website->health_status === 'unhealthy','bg-gray-100 text-gray-700' => ! in_array($website->health_status, ['healthy','unhealthy'], true)])>{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</span></div>
             <div class="mt-4 flex flex-wrap gap-3"><a href="https://{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="button primary">{{ __('Open live website') }}</a><a href="{{ route('websites.show', $website) }}#health-history-heading" class="button secondary">{{ __('View health history') }}</a>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<button type="submit" class="button secondary">{{ __('Run health check now') }}</button></form>@else<a href="{{ route('websites.edit', $website) }}" class="button secondary">{{ __('Enable health monitoring') }}</a>@endif</div>

@@ -39,6 +39,11 @@ class Kernel extends ConsoleKernel
             ->when(fn (): bool => filled(config('monitoring.heartbeat_url')))
             ->withoutOverlapping()
             ->runInBackground();
+        $schedule->command('buildpusher:deployments:observe')
+            ->everyMinute()
+            ->when(fn (): bool => Schema::hasTable('deployment_observations'))
+            ->withoutOverlapping()
+            ->runInBackground();
         $schedule->command('lessbuild:webhooks:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:commands:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:notifications:prune')->daily()->withoutOverlapping()->runInBackground();

@@ -26,6 +26,8 @@ class DeploymentObservation extends Model
 
     protected $guarded = [];
 
+    protected $hidden = ['claim_token'];
+
     protected $casts = [
         'duration_minutes' => 'integer',
         'successful_checks' => 'integer',
