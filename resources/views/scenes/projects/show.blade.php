@@ -169,7 +169,31 @@
             @elseif($canManage)
                 <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
             @endif
-            <div class="mt-4 space-y-2">@forelse($project->previews->sortByDesc('last_activity_at') as $preview)<article class="rounded-xl border border-primary bg-secondary p-3"><div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><span class="text-xs font-bold text-secondary">{{ ucfirst($preview->status) }}</span></div>@if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-sm font-medium text-ternary">{{ $preview->url }}</a>@endif</article>@empty<p class="text-sm text-secondary">{{ __('No pull-request previews yet.') }}</p>@endforelse</div>
+            <div class="mt-4 space-y-2">
+                @forelse($project->previews->sortByDesc('last_activity_at') as $preview)
+                    @php($sourceSecrets = $preview->sourceEnvironment?->variables->where('is_secret', true)->whereIn('scope', ['runtime', 'all'])->whereNotIn('key', \App\Models\PreviewSecretApproval::PROTECTED_KEYS) ?? collect())
+                    <article class="rounded-xl border border-primary bg-secondary p-3">
+                        <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><span class="text-xs font-bold text-secondary">{{ ucfirst($preview->status) }}</span></div>
+                        @if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-sm font-medium text-ternary">{{ $preview->url }}</a>@endif
+                        @if($canManage && $preview->status !== 'closed' && $sourceSecrets->isNotEmpty())
+                            <form method="POST" action="{{ route('projects.previews.secrets.approve', [$project, $preview]) }}" class="mt-3 border-t border-primary pt-3">
+                                @csrf
+                                <input type="hidden" name="revision" value="{{ $preview->revision }}">
+                                <p class="text-xs leading-5 text-secondary">{{ __('Previews receive no source secrets by default. Approve only the runtime keys this exact revision may use; rotated values require approval again.') }}</p>
+                                <fieldset class="mt-2 grid gap-2 sm:grid-cols-2">
+                                    <legend class="sr-only">{{ __('Preview secret keys') }}</legend>
+                                    @foreach($sourceSecrets as $secret)
+                                        <label class="flex items-center gap-2 text-sm text-primary"><input type="checkbox" name="secret_keys[]" value="{{ $secret->key }}"><span>{{ $secret->key }} <span class="text-xs text-secondary">(v{{ $secret->current_version }})</span></span></label>
+                                    @endforeach
+                                </fieldset>
+                                <button type="submit" class="button secondary mt-3">{{ __('Approve selected preview secrets') }}</button>
+                            </form>
+                        @endif
+                    </article>
+                @empty
+                    <p class="text-sm text-secondary">{{ __('No pull-request previews yet.') }}</p>
+                @endforelse
+            </div>
         </details>
     </div>
 </x-layouts.app>

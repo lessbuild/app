@@ -13,6 +13,7 @@ use App\Models\LoadBalancer;
 use App\Models\MetricAlertRule;
 use App\Models\OperationalIncident;
 use App\Models\Organization;
+use App\Models\PreviewDeployment;
 use App\Models\ProductFeedback;
 use App\Models\Project;
 use App\Models\Provider;
@@ -39,6 +40,7 @@ use App\Policies\NotificationPolicy;
 use App\Policies\OperationalIncidentPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\PersonalAccessTokenPolicy;
+use App\Policies\PreviewDeploymentPolicy;
 use App\Policies\ProductFeedbackPolicy;
 use App\Policies\ProjectPolicy;
 use App\Policies\ProviderPolicy;
@@ -86,6 +88,7 @@ class AuthServiceProvider extends ServiceProvider
         RecipeReport::class => RecipeReportPolicy::class,
         ProductFeedback::class => ProductFeedbackPolicy::class,
         Server::class => ServerPolicy::class,
+        PreviewDeployment::class => PreviewDeploymentPolicy::class,
         StatusPage::class => StatusPagePolicy::class,
         StatusIncident::class => StatusIncidentPolicy::class,
         Website::class => WebsitePolicy::class,

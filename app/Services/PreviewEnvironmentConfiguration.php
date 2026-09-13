@@ -23,17 +23,21 @@ class PreviewEnvironmentConfiguration
      * The database password is already generated for the preview website and is
      * used by the existing local MySQL provisioning script. The application key
      * is generated here so a preview cannot decrypt or sign data with the source
-     * website's key.
+     * website's key. Approved values are merged first so these preview-owned
+     * credentials remain authoritative even if a future caller supplies a
+     * malformed scope.
      *
      * @param  Website  $website  The persisted preview website with its generated identity and credentials.
      * @param  int  $pullRequestNumber  The verified pull-request number used in the preview marker.
+     * @param  array<string, string>  $approvedSecrets  Explicitly approved, version-checked runtime values.
      * @return string The encrypted-at-rest website environment content to persist.
      */
-    public function for(Website $website, int $pullRequestNumber): string
+    public function for(Website $website, int $pullRequestNumber, array $approvedSecrets = []): string
     {
         $database = $website->databaseIdentifier();
 
         return $this->environmentFile->merge('', [
+            ...$approvedSecrets,
             'APP_ENV' => 'preview',
             'APP_DEBUG' => false,
             'APP_KEY' => 'base64:'.base64_encode(random_bytes(32)),

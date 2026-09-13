@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Project\ApprovePreviewSecretsAction;
 use App\Actions\Project\CreateProjectAction;
 use App\Actions\Project\DeleteProjectAction;
 use App\Actions\Project\UpdateProjectPreviewsAction;
+use App\Http\Requests\ApprovePreviewSecretsRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectPreviewsRequest;
 use App\Models\Organization;
+use App\Models\PreviewDeployment;
 use App\Models\Project;
 use App\Rules\Hostname;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProjectController extends Controller
@@ -68,6 +72,7 @@ class ProjectController extends Controller
                 'environments.processes',
                 'environments.resources',
                 'previews.website',
+                'previews.sourceEnvironment.variables',
             ]),
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(),
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(),
@@ -100,5 +105,27 @@ class ProjectController extends Controller
         $updateProjectPreviews->handle($project, $request->validated());
 
         return back()->with('success', __('Preview environment settings saved.'));
+    }
+
+    /**
+     * Authorize and record the manager's explicit, revision-bound preview secret scope.
+     */
+    public function approvePreviewSecrets(
+        ApprovePreviewSecretsRequest $request,
+        Project $project,
+        PreviewDeployment $preview,
+        ApprovePreviewSecretsAction $approvePreviewSecrets,
+    ): RedirectResponse {
+        try {
+            $approval = $approvePreviewSecrets->handle($preview, $request->user(), $request->revision(), $request->secretKeys());
+        } catch (ValidationException $exception) {
+            return back()
+                ->withErrors($exception->errors(), $exception->errorBag)
+                ->withInput([]);
+        }
+
+        return $approval
+            ? back()->with('success', __('Selected preview secrets were approved for this revision. The next verified update will apply them.'))
+            : back()->with('info', __('This preview is closed, unavailable, or no longer belongs to your managed workspace.'));
     }
 }

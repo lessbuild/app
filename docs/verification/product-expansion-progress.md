@@ -1,10 +1,10 @@
 # BuildPusher product expansion progress
 
-Status: Phase 1B complete. Phase 0 and the first preview safety/trust slices are
-complete; the remaining Phase 1 secret-approval, usability and first-deployment
-slices are not yet complete.
+Status: Phase 1C complete. Phase 0 and the first preview safety slices are
+complete; preview usability, first-deployment guidance and the multi-service
+preview lifecycle remain incomplete.
 
-Date: 2026-09-12
+Date: 2026-09-13
 
 Integration branch: `main`
 
@@ -256,11 +256,11 @@ code. The compatibility note is also recorded in
 
 ### Remaining Phase 1 characterization
 
-The following were deliberately not included in this slice: explicit
-secret-scope approval, safe handling of dependent resource credentials, the
-navigation/tablet decision, first-deployment guidance and focused browser
-evidence for those journeys. Trusted-branch, target-repository and fork policy
-was added in Phase 1B below.
+The following remain outside the completed safety slices: dependent-resource
+credential provisioning, the navigation/tablet decision, first-deployment
+guidance and focused browser evidence for those journeys. Trusted
+target-repository/fork policy was added in Phase 1B and explicit secret-scope
+approval was added in Phase 1C below.
 
 ### Phase 1 exit criteria
 
@@ -269,8 +269,13 @@ was added in Phase 1B below.
   a revised legacy preview is sanitized before its new revision is queued.
 - **Completed in Phase 1B:** trusted target-branch, target-repository and fork
   decisions are explicit; denied inputs create no website, environment,
-  repository, preview record or queued job. Explicit secret-scope approval is
-  still outstanding and is not implied by this trust decision.
+  repository, preview record or queued job. Fork execution remains disabled
+  until host-level isolation is proven.
+- **Completed in Phase 1C:** managers can approve only selected runtime/all
+  secret variables for the exact current revision. The approval stores variable
+  identities and versions, not values; rotation, reclassification, revision
+  changes and closure invalidate it, and preview-owned credentials remain
+  protected. Resource configuration is not a source of preview secrets.
 - Repeated webhooks remain idempotent, changed revisions supersede stale work,
   close/reopen does not permit stale cleanup to delete a current preview, and all
   existing preview tests remain green.
@@ -324,9 +329,64 @@ The preview suite covers same-repository admission for GitHub, GitLab and
 Bitbucket, wrong target branch, mismatched target repository, forked requests,
 missing target metadata and missing source metadata, with assertions that no
 preview resources or jobs are created on denial. The adjacent repository webhook
-and provisioning callback suites remain part of the slice regression. The next
-slice must define explicit, revision-bound secret-scope approval separately from
-repository trust.
+and provisioning callback suites remain part of the slice regression. Secret
+scope is intentionally documented separately in Phase 1C.
+
+## Phase 1C — revision-bound preview secret approval (completed slice)
+
+### Concrete responsibility problem
+
+The safe preview baseline removed implicit source-environment copying, but the
+product had no explicit way for a manager to authorize a narrowly defined set
+of runtime secrets for a trusted preview. A project-wide switch would not bind
+that decision to a pull-request revision, and copying resource configuration
+would risk forwarding dependent credentials without an independent lifecycle.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** `ApprovePreviewSecretsAction` owns the locked
+  approval write; `PreviewDeploymentPolicy` owns workspace permission;
+  `PreviewSecretApprovalResolver` owns version-checked secret reads;
+  `PreviewEnvironmentConfiguration` owns safe environment-file construction;
+  the lifecycle only coordinates them.
+- **Dependency inversion:** the lifecycle receives the resolver and configuration
+  collaborator through constructor injection; no controller request or secret
+  lookup is passed into queued work.
+- **Interface segregation:** no new interface was introduced because this
+  workflow has one concrete application consumer and no provider variant.
+
+### Implementation and preserved behavior
+
+`preview_deployments.source_environment_id` records the selected nonpreview
+source. Managers can submit secret names through the scoped project preview
+route. The action rechecks current workspace management access under the
+preview lock, verifies that every selected variable is secret and runtime/all,
+and stores only the exact revision, source environment, variable IDs and
+current versions. Protected preview-owned keys (`APP_*`, the preview marker and
+`DB_*`) are rejected.
+
+The resolver applies a scope only when the revision, source environment,
+variable identity, current version, secret classification and runtime scope all
+still match. A later verified webhook then places the approved values in the
+encrypted preview environment. No approval values are stored in plaintext, old
+input or responses; website environment text, provider credentials, commands
+and resource configuration remain excluded. Rotation, stale page revisions,
+new revisions and closure fail closed. Existing webhook trust, idempotency,
+locks, queue timing, safe baseline, cleanup and serialized values remain intact.
+
+### Verification and remaining work
+
+The preview suite now covers safe-by-default behavior, manager authorization,
+exact revision approval, stale page rejection, secret rotation, protected
+preview credentials, resource-secret exclusion and closure revocation. The
+focused preview suite passed 17 tests and 136 assertions. The adjacent
+preview, webhook, provisioning, project/environment and configuration recovery
+suites passed 189 tests and 1,571 assertions; the asset build, Pint and
+`git diff --check` passed. The full isolated PHP suite passed 1,332 tests with
+one unchanged baseline failure and 11,510 assertions: `ProvisioningHardeningTest`
+still expects three `localhost` occurrences and receives four at line 93. The
+approval is applied on the next verified event; dependent Postgres/Valkey
+provisioning and independent resource credential approval remain Phase 3 work.
 
 ## Slice ledger
 
@@ -335,6 +395,7 @@ repository trust.
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
+| Phase 1C | The safe baseline had no explicit, narrowly scoped way for a manager to authorize source runtime secrets. Added a scoped approval route/action/policy, source-environment linkage, version-bound approval records and a resolver that applies values only for the exact revision; preview-owned and dependent-resource credentials remain isolated. | Preview suite: 17 passed, 136 assertions. Adjacent preview/webhook/provisioning/project/environment/configuration recovery suites: 189 passed, 1,571 assertions. Full isolated PHP suite: 1,332 passed, 1 unchanged baseline failure, 11,510 assertions. Asset build, Pint and `git diff --check` passed. | Pending verified commit and push. | Pending. | Resolve the documented mobile/tablet feedback discrepancy and add actionable first-deployment preflight guidance with focused browser evidence. |
 
 ## External acceptance still outstanding
 

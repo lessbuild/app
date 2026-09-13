@@ -7,6 +7,7 @@ use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
 use App\Models\Build;
 use App\Models\PreviewDeployment;
+use App\Models\PreviewSecretApproval;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Repository;
@@ -134,6 +135,169 @@ class PreviewDeploymentTest extends TestCase
         $this->assertStringContainsString('APP_ENV="preview"', $environment);
         $this->assertStringNotContainsString('base64:legacy-preview-key', $environment);
         $this->assertStringNotContainsString('legacy-preview-secret', $environment);
+    }
+
+    public function test_preview_secrets_require_manager_approval_for_the_exact_revision(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [$owner, $source, $project] = $this->application();
+        $environment = $project->environments()->where('type', 'production')->sole();
+        $variable = $environment->variables()->create([
+            'key' => 'PREVIEW_API_TOKEN', 'value' => 'preview-approved-secret', 'is_secret' => true,
+            'scope' => 'runtime', 'current_version' => 4, 'updated_by' => $owner->id,
+        ]);
+        $environment->resources()->create([
+            'name' => 'external-cache', 'type' => 'object_storage', 'is_managed' => false,
+            'configuration' => ['variables' => ['OBJECT_STORAGE_SECRET' => 'resource-private-secret']],
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('2', 40);
+
+        $this->send($source, $this->payload('opened', $revision), $secret, 'preview-secret-open')
+            ->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $safeEnvironment = (string) $preview->website->fresh()->environment;
+        $this->assertStringNotContainsString('preview-approved-secret', $safeEnvironment);
+        $this->assertStringNotContainsString('resource-private-secret', $safeEnvironment);
+
+        $this->actingAs($owner)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $revision,
+            'secret_keys' => [$variable->key],
+        ])->assertRedirect()->assertSessionHas('success', 'Selected preview secrets were approved for this revision. The next verified update will apply them.');
+
+        $approval = PreviewSecretApproval::query()->sole();
+        $this->assertSame($revision, $approval->revision);
+        $this->assertSame($environment->id, $approval->source_environment_id);
+        $this->assertSame([(string) $variable->id => 4], $approval->variable_versions);
+        $this->assertStringNotContainsString('preview-approved-secret', $approval->toJson());
+
+        $this->send($source, $this->payload('synchronize', $revision), $secret, 'preview-secret-sync')
+            ->assertAccepted();
+        $configured = (string) $preview->website->fresh()->environment;
+        $this->assertStringContainsString('PREVIEW_API_TOKEN="preview-approved-secret"', $configured);
+        $this->assertStringNotContainsString('production-api-secret', $configured);
+        $this->assertStringNotContainsString('resource-private-secret', $configured);
+    }
+
+    public function test_preview_secret_scope_requires_management_and_rejects_preview_owned_credentials(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [$owner, $source, $project] = $this->application();
+        $environment = $project->environments()->where('type', 'production')->sole();
+        $protected = $environment->variables()->create([
+            'key' => 'DB_PASSWORD', 'value' => 'attempted-override', 'is_secret' => true,
+            'scope' => 'runtime', 'current_version' => 1, 'updated_by' => $owner->id,
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $this->send($source, $this->payload('opened', str_repeat('3', 40)), $secret, 'preview-protected-open')
+            ->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $outsider = User::factory()->create();
+
+        $this->actingAs($outsider)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $preview->revision,
+            'secret_keys' => [$protected->key],
+        ])->assertForbidden();
+        $this->assertDatabaseCount('preview_secret_approvals', 0);
+
+        $this->actingAs($owner)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $preview->revision,
+            'secret_keys' => [$protected->key],
+        ])->assertSessionHasErrors(['secret_keys'], errorBag: 'preview_secrets')
+            ->assertSessionMissing('_old_input.secret_keys');
+        $this->assertDatabaseCount('preview_secret_approvals', 0);
+    }
+
+    public function test_secret_approval_rejects_a_stale_revision_from_the_preview_page(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [$owner, $source, $project] = $this->application();
+        $environment = $project->environments()->where('type', 'production')->sole();
+        $variable = $environment->variables()->create([
+            'key' => 'PREVIEW_STALE_TOKEN', 'value' => 'stale-secret', 'is_secret' => true,
+            'scope' => 'runtime', 'current_version' => 1, 'updated_by' => $owner->id,
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $oldRevision = str_repeat('7', 40);
+        $currentRevision = str_repeat('8', 40);
+        $this->send($source, $this->payload('opened', $oldRevision), $secret, 'preview-stale-open')->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $this->send($source, $this->payload('synchronize', $currentRevision), $secret, 'preview-stale-update')->assertAccepted();
+
+        $this->actingAs($owner)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $oldRevision,
+            'secret_keys' => [$variable->key],
+        ])->assertRedirect()->assertSessionHas('info', 'This preview is closed, unavailable, or no longer belongs to your managed workspace.');
+
+        $this->assertDatabaseCount('preview_secret_approvals', 0);
+    }
+
+    public function test_secret_rotation_and_revision_change_invalidate_preview_approval(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [$owner, $source, $project] = $this->application();
+        $environment = $project->environments()->where('type', 'production')->sole();
+        $variable = $environment->variables()->create([
+            'key' => 'PREVIEW_ROTATING_TOKEN', 'value' => 'version-one', 'is_secret' => true,
+            'scope' => 'all', 'current_version' => 1, 'updated_by' => $owner->id,
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $firstRevision = str_repeat('4', 40);
+        $secondRevision = str_repeat('5', 40);
+        $this->send($source, $this->payload('opened', $firstRevision), $secret, 'preview-rotation-open')->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+
+        $this->actingAs($owner)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $firstRevision,
+            'secret_keys' => [$variable->key],
+        ])->assertRedirect();
+        $variable->update(['value' => 'version-two', 'current_version' => 2]);
+
+        $this->send($source, $this->payload('synchronize', $firstRevision), $secret, 'preview-rotation-stale')
+            ->assertAccepted();
+        $staleEnvironment = (string) $preview->website->fresh()->environment;
+        $this->assertStringNotContainsString('version-one', $staleEnvironment);
+        $this->assertStringNotContainsString('version-two', $staleEnvironment);
+
+        $this->send($source, $this->payload('synchronize', $secondRevision), $secret, 'preview-rotation-new-revision')
+            ->assertAccepted();
+        $this->assertNotNull(PreviewSecretApproval::query()->sole()->fresh()->revoked_at);
+        $newEnvironment = (string) $preview->website->fresh()->environment;
+        $this->assertStringNotContainsString('version-one', $newEnvironment);
+        $this->assertStringNotContainsString('version-two', $newEnvironment);
+    }
+
+    public function test_closing_a_preview_revokes_its_secret_approval(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [$owner, $source, $project] = $this->application();
+        $environment = $project->environments()->where('type', 'production')->sole();
+        $variable = $environment->variables()->create([
+            'key' => 'PREVIEW_CLOSE_TOKEN', 'value' => 'close-secret', 'is_secret' => true,
+            'scope' => 'runtime', 'current_version' => 1, 'updated_by' => $owner->id,
+        ]);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('6', 40);
+        $this->send($source, $this->payload('opened', $revision), $secret, 'preview-close-open')->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $this->actingAs($owner)->post(route('projects.previews.secrets.approve', [$project, $preview]), [
+            'revision' => $revision,
+            'secret_keys' => [$variable->key],
+        ])->assertRedirect();
+
+        $this->send($source, $this->payload('closed', $revision), $secret, 'preview-close-secret')
+            ->assertOk()->assertJson(['status' => PreviewDeployment::STATUS_CLOSED]);
+        $this->assertNotNull(PreviewSecretApproval::query()->sole()->fresh()->revoked_at);
     }
 
     public function test_pull_request_targeting_a_different_branch_is_ignored_without_side_effects(): void

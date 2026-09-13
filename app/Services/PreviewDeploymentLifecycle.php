@@ -22,6 +22,9 @@ class PreviewDeploymentLifecycle
      * @param  PlanLimits  $limits  Checks workspace website capacity before preview creation.
      * @param  DeploymentRequest  $deployments  Captures and dispatches preview builds.
      * @param  Entitlements  $entitlements  Checks whether the workspace plan permits previews.
+     * @param  PreviewEnvironmentConfiguration  $previewEnvironment  Builds safe preview-owned runtime configuration.
+     * @param  PreviewTrustPolicy  $previewTrust  Admits only trusted target repository and branch events.
+     * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
      */
     public function __construct(
         private readonly PlanLimits $limits,
@@ -29,6 +32,7 @@ class PreviewDeploymentLifecycle
         private readonly Entitlements $entitlements,
         private readonly PreviewEnvironmentConfiguration $previewEnvironment,
         private readonly PreviewTrustPolicy $previewTrust,
+        private readonly PreviewSecretApprovalResolver $previewSecrets,
     ) {}
 
     /**
@@ -91,10 +95,9 @@ class PreviewDeploymentLifecycle
             if (! $preview || ! $preview->website || $preview->website->trashed()) {
                 $preview = $this->create($project, $baseEnvironment, $source, $webhook, $preview);
             } else {
-                $preview->website->update([
-                    'environment' => $this->previewEnvironment->for($preview->website, $webhook->pullRequestNumber),
-                ]);
+                $revisionChanged = ! hash_equals((string) $preview->revision, (string) $webhook->revision);
                 $preview->update([
+                    'source_environment_id' => $baseEnvironment->id,
                     'title' => $webhook->pullRequestTitle,
                     'source_branch' => $webhook->sourceBranch,
                     'revision' => $webhook->revision,
@@ -105,7 +108,12 @@ class PreviewDeploymentLifecycle
                     'closed_at' => null,
                 ]);
                 $preview->repository?->update(['branch' => $webhook->sourceBranch]);
+                if ($revisionChanged) {
+                    $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                }
             }
+
+            $this->configure($preview, $webhook);
 
             return $preview->fresh(['website', 'repository']);
         });
@@ -190,6 +198,7 @@ class PreviewDeploymentLifecycle
     public function expire(PreviewDeployment $preview): void
     {
         $preview->update(['status' => PreviewDeployment::STATUS_CLOSED, 'closed_at' => now()]);
+        $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
         ReportGitHubPreviewJob::dispatch($preview->id);
         $this->deleteWebsiteWhenIdle($preview);
     }
@@ -231,9 +240,6 @@ class PreviewDeploymentLifecycle
             'release_retention' => min(3, $baseWebsite->release_retention),
         ]);
         $website->save();
-        $website->update([
-            'environment' => $this->previewEnvironment->for($website, $webhook->pullRequestNumber),
-        ]);
         $repository = $project->organization->repositories()->create([
             'user_id' => $project->organization->owner_id,
             'provider_id' => $source->provider_id,
@@ -260,6 +266,7 @@ class PreviewDeploymentLifecycle
         $attributes = [
             'project_id' => $project->id,
             'source_repository_id' => $source->id,
+            'source_environment_id' => $baseEnvironment->id,
             'environment_id' => $environment->id,
             'website_id' => $website->id,
             'repository_id' => $repository->id,
@@ -273,12 +280,36 @@ class PreviewDeploymentLifecycle
             'closed_at' => null,
         ];
         if ($preview) {
+            $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
             $preview->update($attributes);
 
             return $preview;
         }
 
         return PreviewDeployment::query()->create($attributes);
+    }
+
+    /**
+     * Persist independent preview configuration plus the currently approved secret scope.
+     *
+     * @param  PreviewDeployment  $preview  Preview whose website receives the configuration.
+     * @param  VerifiedRepositoryWebhook  $webhook  Verified event supplying the exact revision and PR number.
+     * @return void No value; unapproved or stale scopes produce the safe configuration only.
+     */
+    private function configure(PreviewDeployment $preview, VerifiedRepositoryWebhook $webhook): void
+    {
+        $website = $preview->website;
+        if (! $website) {
+            return;
+        }
+
+        $website->update([
+            'environment' => $this->previewEnvironment->for(
+                $website,
+                $webhook->pullRequestNumber,
+                $this->previewSecrets->valuesFor($preview, (string) $webhook->revision),
+            ),
+        ]);
     }
 
     /**

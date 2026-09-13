@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PreviewDeployment extends Model
 {
@@ -38,6 +39,12 @@ class PreviewDeployment extends Model
     }
 
     /** @return BelongsTo<Environment, $this> */
+    public function sourceEnvironment(): BelongsTo
+    {
+        return $this->belongsTo(Environment::class, 'source_environment_id');
+    }
+
+    /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
@@ -53,5 +60,11 @@ class PreviewDeployment extends Model
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class)->withTrashed();
+    }
+
+    /** @return HasMany<PreviewSecretApproval, $this> */
+    public function secretApprovals(): HasMany
+    {
+        return $this->hasMany(PreviewSecretApproval::class);
     }
 }
