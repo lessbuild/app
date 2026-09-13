@@ -2,10 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 5A is complete locally
-through deployment-evidence commit `b5d1cab`, implemented in the isolated clone
-`/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded into canonical
-`main` and pushed to GitHub `origin/main`. Building on the Phase 3A
+The product-expansion sequence is active on `main`. Phase 5B's first
+path-filter slice is complete locally through commit `c79c736`, implemented in
+the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
+into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
 Phase 3E initialization/credential boundaries and Phase 3F provider
@@ -44,6 +44,22 @@ other milestones explicitly show that no individual timestamp is recorded.
 The existing setup-stage, log, approval, rollback, queue and callback behavior
 is unchanged.
 
+Automatic push deployments now have optional per-target include and exclude
+path globs. GitHub and GitLab changed paths are bounded, normalized and retained
+on webhook deliveries; missing or malformed path data, including current
+Bitbucket push payloads, remains unknown and queues conservatively. A known
+delivery outside the configured scope receives an explicit `skipped` history
+status and creates no build or queue job. Exclusions win, shared dependency
+paths must be listed explicitly for each target, and pending delivery path sets
+are merged conservatively. Existing repositories default to no filters, so their
+deploy behavior is unchanged. The repository form and history/dashboard views
+explain and expose this outcome without rendering credentials or payloads.
+
+The current deployment scripts still assume one repository root per deployment
+target. Per-service repository roots and a multi-target “which services deploy”
+preview are not implemented yet; they are the exact next task and must be
+characterized separately before execution changes.
+
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
@@ -59,10 +75,14 @@ resource, preview cleanup, project-creation and preview-deployment batch passed
 The Phase 5A timeline/history/log batch passed **16 tests / 134 assertions**.
 The fresh full suite at `b5d1cab` passed **1,383 tests / 11,979 assertions**,
 with the same unchanged `ProvisioningHardeningTest` `localhost` count failure.
-The exact next task is Phase 5B: characterize repository service roots and
-changed-path filters, then add safe monorepo change-impact visibility while
-preserving deployment strategies, approvals, revision identity, webhook
-idempotency, cancellation and stale-attempt safety.
+The Phase 5B path-filter/evaluator/webhook/history/dashboard batch passed **57
+tests / 976 assertions**. The fresh full suite at `c79c736` passed **1,392 tests /
+12,027 assertions**, with the same unchanged `ProvisioningHardeningTest`
+`localhost` count failure. The exact next task is to characterize release
+working-directory assumptions, then add per-service repository roots and a
+read-only multi-target impact preview while preserving deployment strategies,
+approvals, revision identity, webhook idempotency, cancellation and stale-attempt
+safety.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
