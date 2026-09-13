@@ -3,9 +3,9 @@
 ## Product expansion current checkpoint — 2026-09-13
 
 The product-expansion sequence is active on `main`. Phase 6's read-only backup
-recovery evidence summary is complete locally after the backup-recovery
-characterization and Phase 5B read-only
-multi-target impact-preview slice at commit `3940a28`, implemented
+recovery evidence summary is complete locally at commit `764588e` after the
+backup-recovery characterization and Phase 5B read-only multi-target
+impact-preview slice, implemented
 in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
