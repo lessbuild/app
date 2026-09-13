@@ -2,9 +2,9 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 5B's first
-path-filter slice is complete locally through commit `c79c736`, implemented in
-the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
+The product-expansion sequence is active on `main`. Phase 5B's per-service
+repository-root slice is complete locally through commit `72d7c69`, implemented
+in the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
 Phase 3C ownership-aware cleanup, Phase 3D organization-locked quotas,
@@ -55,10 +55,16 @@ are merged conservatively. Existing repositories default to no filters, so their
 deploy behavior is unchanged. The repository form and history/dashboard views
 explain and expose this outcome without rendering credentials or payloads.
 
-The current deployment scripts still assume one repository root per deployment
-target. Per-service repository roots and a multi-target “which services deploy”
-preview are not implemented yet; they are the exact next task and must be
-characterized separately before execution changes.
+Repositories now support an optional safe relative service root. New
+non-default deployment payloads snapshot `repository_root`, and the existing
+clone, checkout, dependency, build-hook, Artisan, canary, release, process,
+runtime, Caddy, log, scheduled-task and restore paths use that service
+directory. Rollbacks, previews and configuration identity preserve the root;
+legacy builds fall back to the repository value. Blank/`.` roots retain the
+old paths, and a release remains a whole checkout under the existing slug.
+There is no shared-dependency inference, separate release-artifact model or
+multi-target impact preview yet. Website-level maintenance follows the latest
+successful service deployment where available.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -76,13 +82,14 @@ The Phase 5A timeline/history/log batch passed **16 tests / 134 assertions**.
 The fresh full suite at `b5d1cab` passed **1,383 tests / 11,979 assertions**,
 with the same unchanged `ProvisioningHardeningTest` `localhost` count failure.
 The Phase 5B path-filter/evaluator/webhook/history/dashboard batch passed **57
-tests / 976 assertions**. The fresh full suite at `c79c736` passed **1,392 tests /
-12,027 assertions**, with the same unchanged `ProvisioningHardeningTest`
-`localhost` count failure. The exact next task is to characterize release
-working-directory assumptions, then add per-service repository roots and a
-read-only multi-target impact preview while preserving deployment strategies,
-approvals, revision identity, webhook idempotency, cancellation and stale-attempt
-safety.
+tests / 976 assertions**. The per-service repository-root/deployment/preview/
+rollback/backup/hooks/runtime/domain/security batch passed **60 tests / 586
+assertions**. The fresh full suite at `72d7c69` passed **1,396 tests /
+12,086 assertions**, with the same unchanged `ProvisioningHardeningTest`
+`localhost` count failure. Required-PHP Composer platform checks, full Pint,
+Vite asset build and `git diff --check` passed. The exact next task is a
+read-only multi-target impact preview over scoped repositories, with
+conservative affected/unaffected/unknown results and no writes or queued jobs.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 

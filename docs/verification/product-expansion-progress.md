@@ -1,6 +1,6 @@
 # BuildPusher product expansion progress
 
-Status: Phase 5B path-filter slice complete locally. Preview safety, trust/secret boundaries,
+Status: Phase 5B per-service repository-root slice complete locally. Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
 stack manifest, callback-backed local resource readiness, retryable
@@ -8,10 +8,11 @@ ownership-aware cleanup, atomic concurrent-preview quotas, explicit
 initialization/resource credential boundaries, normalized provider readiness
 observations, the versioned curated service-template contract, the Node
 resource composition, the lifecycle characterization, deployment evidence
-timeline and the first conservative monorepo path-filter slice are complete.
-No additional service is published without lifecycle support. Provider-side
-cloud acceptance, the separate live drill, per-service repository roots and
-multi-service change-impact previews remain outstanding.
+timeline, the conservative monorepo path-filter slice and per-service
+repository-root execution boundary are complete. No additional service is
+published without lifecycle support. Provider-side cloud acceptance, the
+separate live drill and the read-only multi-target change-impact preview remain
+outstanding.
 
 Date: 2026-09-13
 
@@ -1376,6 +1377,93 @@ per-service repository-root boundary and a read-only multi-target impact preview
 Do not infer shared dependencies or skip a target when changed paths are
 unavailable.
 
+## Phase 5B — per-service repository roots (completed slice)
+
+### Characterization and concrete responsibility problem
+
+The deployment scripts previously assumed that every target used the whole
+repository checkout. The checkout is created under the deployment slug, then
+the setup directory becomes a retained release and the current-release
+symlink. Build hooks, dependency installation, Artisan commands, canary checks,
+post-deployment commands and process runners use that working directory;
+web-root, Caddy, logs, scheduled tasks and restore maintenance commands also
+need the service's effective path. A repository could therefore describe a
+subdirectory in a monorepo only by convention; cloning still prepared and
+executed the repository root.
+
+### Responsibility boundary and applicable principles
+
+- **Single responsibility:** `RepositoryPath` owns safe relative-root
+  normalization and path composition, `RepositoryDeploymentRoot` owns request
+  validation, `Build` owns the immutable deployment-root snapshot/fallback and
+  `WebsiteCaddyConfiguration` owns shared PHP/reverse-proxy document rendering.
+  Deployment scripts and website-level jobs consume those boundaries instead
+  of reconstructing service paths independently.
+- **Dependency inversion:** Caddy rendering is an injected collaborator for
+  runtime configuration and domain application jobs. The deployment-root
+  value travels through the existing repository/build payload boundary rather
+  than introducing a repository abstraction or service locator into scripts.
+- **Open/closed and compatibility:** the existing default repository root
+  remains the behavior for legacy rows and blank/`.` values. A non-default
+  root extends the existing deployment path contract across the established
+  script/job consumers without changing provider adapters or deployment
+  strategies.
+- **Laravel mechanisms:** `RepositoryRequest` validates and normalizes the
+  optional field, Eloquent persists it as a nullable value, `DeploymentRequest`
+  snapshots it into new build payloads, and existing actions/jobs/scripts keep
+  writes, dispatch, locks and remote execution in their established places.
+
+### Implementation, intentional change and preserved behavior
+
+Repositories now have an optional relative service root. Absolute paths,
+traversal, control characters, wildcards and oversized values are rejected;
+blank, `.` and `./` resolve to the repository root. New non-default deployment
+payloads record `repository_root`, so clone, checkout, dependency installation,
+build hooks, Artisan, canary, release symlink, post-deployment, process,
+runtime, Caddy, log, scheduled-task and restore paths resolve to the selected
+service directory. The release remains a whole checkout under the existing
+deployment slug; this slice does not create separate release artifacts.
+
+Rollback payloads and preview repositories preserve the selected root, and
+configuration repository identity includes it so a changed root invalidates a
+pending review. Historical builds without a root snapshot use the existing
+repository fallback. Website-level maintenance follows the latest successful
+service deployment when one is available, with the existing repository
+fallback otherwise. The default payload shape and all default script paths
+remain unchanged. No new configuration-document YAML field or API response
+field was added, and no automatic shared-dependency inference, multi-target
+orchestration or path-based impact preview was introduced.
+
+This is an intentional opt-in behavior change for a repository deployment
+target: a configured service root scopes execution and document-root behavior
+to that relative directory. Teams with multiple services must still configure
+each target explicitly and include shared dependency paths in the existing
+path-filter settings. Existing installations and queued payloads remain
+compatible; no remote resources are created or deleted by this boundary.
+
+### Verification and limitations
+
+The focused repository-root, preview, rollback, backup, hooks, runtime,
+domain, website-security and environment-runtime batch passed **60 tests and
+586 assertions**. The fresh isolated full PHP suite passed **1,396 tests and
+12,086 assertions** with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script contains
+four). Required-PHP Composer platform checks, full Pint, Vite asset build,
+changed-file checks and `git diff --check` passed. This is local application
+evidence only; provider-side cloud acceptance and the separate live drill
+remain outstanding.
+
+Commit `72d7c69` (`feat: support per-service repository roots`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13.
+
+The exact next task is a separately verified, read-only multi-target impact
+preview over the scoped repository inventory. It must reuse the pure path
+impact evaluator, show affected/unaffected/unknown targets conservatively,
+perform no writes or queue dispatch, and preserve unknown-path deployment
+behavior. Do not infer shared dependencies.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -1403,9 +1491,8 @@ unavailable.
 | Phase 4B | The generic Node preset had runtime defaults but no preview composition, and preview environments did not inherit the selected source runtime settings. Added a versioned Node service-template declaration for managed PostgreSQL/Valkey and copied only the existing runtime fields into preview environments. Reused the existing snapshot, encrypted credential, callback readiness, ownership-aware cleanup and retry paths; Node has no Laravel workers or automatic initialization. | Focused catalog/project/runtime/preview batch: 41 passed, 372 assertions. Adjacent preview/concurrency/cleanup/readiness/PostgreSQL/configuration-resource/runtime/project batch: 56 passed, 518 assertions. Fresh isolated full PHP suite with PHPUnit `:memory:` configuration: 1,374 passed, 1 unchanged baseline failure, 11,885 assertions. PHP lint, Composer/platform, Pint, Vite, config-cache and `git diff --check` passed. A file-database run was discarded because it invalidated the repository's isolation assertions. No remote mutation, dependency or queue contract change. | `b8c5871` — `feat: compose node preview resources` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 4C: characterize template installation/upgrade execution and assess one additional service only if its existing lifecycle can support it. |
 | Phase 4C | Curated metadata needed characterization against the actual deployment, resource-installation and exact-cleanup paths before another service could be published. Added a lifecycle contract test for published Laravel/Node templates and explicitly deferred Mailpit because the resource model, configuration schema, provisioning, backup and cleanup lifecycle do not support it yet. Template upgrades remain reviewed deployments; no automatic version mutation was introduced. | Lifecycle characterization: 3 passed, 57 assertions. Adjacent service-template, release, PostgreSQL resource, preview cleanup, project-creation and preview-deployment batch: 41 passed, 408 assertions with `SESSION_DRIVER=array`. Pint and `git diff --check` passed. The unsupported `SESSION_DRIVER=sync` attempt failed during test setup and was discarded. | `818ebc0` — `test: characterize service template lifecycle` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by Phase 5A deployment evidence; proceed to Phase 5B monorepo change-impact characterization. |
 | Phase 5A | Build details had lifecycle facts in separate status fields, setup stages and failure guidance, with no unified request-to-health evidence view. Added a plan-driven read collaborator, immutable timeline entries, exact revision/actor/approval context and the existing configuration-operation identity without adding writes or schema changes. | Timeline/history/log batch: **16 passed, 134 assertions**. Fresh isolated full PHP suite: **1,383 passed, 1 unchanged baseline failure, 11,979 assertions**. Pint, PHP lint and `git diff --check` passed. Encrypted configuration payload was not rendered. | `b5d1cab` — `feat: clarify deployment lifecycle evidence` | Pushed to GitHub `origin/main` on 2026-09-13. | Completed by the Phase 5B path-filter slice below; characterize per-service repository-root execution and multi-target impact next. |
-| Phase 5B path filters | Automatic webhook deployment had no per-target path scope or persisted provider changed paths. Added bounded relative include/exclude globs, GitHub/GitLab extraction, conservative unknown handling, explicit skipped history, pending-path aggregation, request/UI configuration and dashboard/history/retention support. Repository roots and multi-target preview remain deferred because the current deployment scripts still assume one repository root. | Focused evaluator/webhook/request/history/dashboard/demo/retention batch: **57 passed, 976 assertions**. Fresh isolated full PHP suite: **1,392 passed, 1 unchanged baseline failure, 12,027 assertions**. Full Pint and `git diff --check` passed. | `c79c736` — `feat: add safe monorepo path filters` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize release working-directory assumptions, then implement per-service repository roots and a read-only multi-target impact preview without changing unavailable-path behavior. |
-
-| Phase 5A | Build details had lifecycle facts in separate status fields, setup stages and failure guidance, with no unified request-to-health evidence view. Added a plan-driven read collaborator, immutable timeline entries, exact revision/actor/approval context and the existing configuration-operation identity without adding writes or schema changes. | Timeline/history/log batch: **16 passed, 134 assertions**. Fresh isolated full PHP suite: **1,383 passed, 1 unchanged baseline failure, 11,979 assertions**. Pint, PHP lint and `git diff --check` passed. Encrypted configuration payload was not rendered. | `b5d1cab` — `feat: clarify deployment lifecycle evidence` | Pushed to GitHub `origin/main` on 2026-09-13. | Characterize existing repository service-root/include/exclude support and design the smallest safe Phase 5B monorepo change-impact slice. |
+| Phase 5B path filters | Automatic webhook deployment had no per-target path scope or persisted provider changed paths. Added bounded relative include/exclude globs, GitHub/GitLab extraction, conservative unknown handling, explicit skipped history, pending-path aggregation, request/UI configuration and dashboard/history/retention support. | Focused evaluator/webhook/request/history/dashboard/demo/retention batch: **57 passed, 976 assertions**. Fresh isolated full PHP suite: **1,392 passed, 1 unchanged baseline failure, 12,027 assertions**. Full Pint and `git diff --check` passed. | `c79c736` — `feat: add safe monorepo path filters` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Completed by the per-service repository-root slice; implement a read-only multi-target impact preview without changing unavailable-path behavior. |
+| Phase 5B repository roots | Deployment scripts and website-level maintenance jobs assumed one repository root per target. Added a validated optional service root, immutable build-payload snapshot/fallback, root-aware deployment scripts/jobs and an injected shared Caddy renderer. Default paths and historical/queued compatibility remain unchanged; no shared-dependency inference or multi-target orchestration was added. | Focused deployment-root/preview/rollback/backup/hooks/runtime/domain/security batch: **60 passed, 586 assertions**. Fresh isolated full PHP suite: **1,396 passed, 1 unchanged baseline failure, 12,086 assertions**. Required-PHP platform checks, Pint, Vite and `git diff --check` passed. | `72d7c69` — `feat: support per-service repository roots` | Feature commit fast-forwarded through canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement a read-only multi-target impact preview over scoped repositories; affected/unaffected/unknown results must be conservative and must not write or dispatch jobs. |
 
 ## Phase 1 exit verification
 
