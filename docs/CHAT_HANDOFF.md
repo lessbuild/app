@@ -2,31 +2,37 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 3B is complete and
-was integrated from the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`
-as `f780685`, then pushed to GitHub `origin/main`. Building on the Phase 3A
-manifest, preview resources now transition from planned to provisioning before
-deployment and to ready or failed from the existing signed deployment callbacks.
-Existing preview configuration, trust, secret-approval, entitlement and webhook
-idempotency boundaries remain in force.
+The product-expansion sequence is active on `main`. Phase 3C was integrated
+from the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ` as
+`74165bd`, then pushed to GitHub `origin/main`. Building on the Phase 3A
+manifest and Phase 3B readiness states, preview processes and managed resources
+now carry explicit ownership, and close/expiry, cancellation, watchdog and
+failed-publish paths capture exact non-secret identities into a durable cleanup
+record. A unique leased job performs bounded retryable cleanup and cannot let a
+reopened preview retarget an old stack. Existing preview configuration, trust,
+secret-approval, entitlement and webhook idempotency boundaries remain in force.
 
-The readiness state is durable local lifecycle evidence derived from the
-resource-initialization deployment stage; it is not an independent provider
-health check. Valkey's current declaration remains loopback-bound without
-authentication. The exact next implementation task is Phase 3C: capture
-preview-stack ownership and make close/expiry cleanup retryable and stale-attempt
-safe, then add atomic concurrent-preview quotas. Cloud/provider acceptance and
-the separate live drill remain outstanding.
+The cleanup script covers the exact preview worker/scheduler units, generated
+PostgreSQL database/role and generated Valkey container/volume; manual/shared
+children and invalid identities fail closed. Existing generic website/Caddy/
+MySQL cleanup remains separate. Historical process/resource rows default to
+not-owned, so they are not guessed to be safe to delete. The exact next
+implementation task is Phase 3D: enforce atomic concurrent-preview quotas, then
+define explicit initialization/secrets and independent provider-readiness
+evidence. Cloud/provider acceptance and the separate live drill remain
+outstanding.
 
-Phase 3B verification used the required PHP 8.5 runtime, `APP_DEBUG=true` and
-an isolated in-memory SQLite database: **1,351 tests passed / 11,652
-assertions**. Focused readiness coverage passed 21 tests / 170 assertions and
-adjacent deployment/resource coverage passed 24 tests / 157 assertions; Pint,
-changed-file lint and `git diff --check` passed. The progress ledger is
-[here](verification/product-expansion-progress.md) and the roadmap is
-[here](NEXT_ROADMAP.md). Older handoff entries below are historical and are
-superseded by this checkpoint; their statements that preview backlog work had
-not started describe their earlier dates.
+Phase 3C verification used the required PHP 8.5 runtime, `APP_DEBUG=true` and
+an isolated in-memory SQLite database: **1,357 tests passed / 11,718
+assertions**. Focused cleanup/lifecycle coverage passed 23 tests / 219
+assertions; migration fresh/rollback/reapply rehearsal, required-PHP Composer
+validation/platform checks, full Pint, Vite build, `git diff --check` and the
+isolated Playwright asset suite (9 tests) passed. This is local runner/script
+and application-state evidence, not cloud cleanup or provider acceptance. The
+progress ledger is [here](verification/product-expansion-progress.md) and the
+roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical
+and are superseded by this checkpoint; their statements that preview backlog
+work had not started describe their earlier dates.
 
 ## Controller modernization current checkpoint — 2026-09-12
 

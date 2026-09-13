@@ -101,8 +101,22 @@ environment and secret values remain excluded. Declarations begin with status
 and move to **ready** or **failed** from the existing signed resource-stage and
 failure callbacks. This is durable local lifecycle evidence, not an independent
 provider health check. The current Valkey declaration remains loopback-bound
-and without authentication. Explicit initialization secrets, atomic quotas and
-retryable ownership-aware cleanup remain separate preview-lifecycle work.
+and without authentication.
+
+Preview stack children are explicitly marked as preview-owned. When a preview
+closes or expires after it is idle, BuildPusher captures the original
+environment, website, server and deployment-slug identities plus only exact,
+non-secret process/resource identifiers in a durable cleanup record. A unique
+leased job then performs bounded, retryable cleanup for the generated worker/
+scheduler units, PostgreSQL database/role and Valkey container/volume. Repeated
+events are idempotent; a reopened preview cannot retarget an old cleanup; manual
+or shared children are excluded; invalid identities fail closed; and cleanup
+failures remain visible for manager-authorized retry. Existing generic
+website/Caddy/MySQL cleanup remains a separate operation. The migration adds
+ownership flags with a false default, so historical children are deliberately
+not treated as preview-owned without a later explicit declaration. Explicit
+initialization secrets, atomic quotas and independent provider-readiness checks
+remain separate preview-lifecycle work.
 
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 
