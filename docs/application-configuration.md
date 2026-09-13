@@ -114,9 +114,23 @@ or shared children are excluded; invalid identities fail closed; and cleanup
 failures remain visible for manager-authorized retry. Existing generic
 website/Caddy/MySQL cleanup remains a separate operation. The migration adds
 ownership flags with a false default, so historical children are deliberately
-not treated as preview-owned without a later explicit declaration. Explicit
-initialization secrets, atomic quotas and independent provider-readiness checks
-remain separate preview-lifecycle work.
+not treated as preview-owned without a later explicit declaration.
+
+Concurrent preview capacity is organization-scoped and is checked in the same
+retrying transaction that creates a new preview stack. `PlanLimits` counts
+previews whose lifecycle is not closed; a closed preview releases capacity only
+when `closed_at` is recorded. A legacy closed row with no closure timestamp is
+counted fail-safe. The configured concurrent-preview limits are `0` for Free
+and Starter, `5` for Pro, `10` for Team, `20` for Business and unlimited for
+Unlimited. The lock-version column added to organizations is internal
+write-side serialization state for SQLite-compatible locking; it is not a
+reservation counter, and active usage remains derived from preview records.
+Capacity denial preserves the existing `preview_limit_reached` response and
+creates no preview children or job.
+
+Explicit initialization secrets and independent provider-readiness checks remain
+separate preview-lifecycle work. Local readiness states must not be presented
+as proof that a remote PostgreSQL, Valkey or process is healthy.
 
 External resources (`managed: false`) accept `variable_refs`, mapping connection-variable names to secret binding names, for example `variable_refs: {AWS_SECRET_ACCESS_KEY: storage_key}`. Sources must permit runtime use. Values are copied into encrypted resource configuration and deployment snapshots, never into the document or plan response. An explicit empty map clears those resource variables; omitting the map preserves existing external-resource configuration. Managed resources reject this override.
 
