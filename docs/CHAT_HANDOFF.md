@@ -94,9 +94,14 @@ evidence. `BackupRecoveryEvidenceQuery` and immutable
 transport evidence, completed in-place restores and measured duration
 separately. The page explicitly shows independent restore verification as
 `Not recorded`; restore execution, destinations, overwrite safeguards, jobs,
-schema and dispatch semantics remain unchanged. The next task is to
-characterize isolated restore verification with explicit target, overwrite,
-integrity, smoke, failure-stage and cleanup contracts.
+schema and dispatch semantics remain unchanged. The isolated verification
+protocol is now characterized: use a deterministic temporary Restic directory
+and MySQL database on the existing managed server, bind the attempt to the
+exact snapshot, never touch live data or maintenance, run integrity and safe
+Laravel `artisan migrate:status` smoke checks, and make trap-backed cleanup
+part of the success condition. Unsupported runtimes fail closed. The next
+task is to implement that persisted, duplicate-protected verification attempt
+and its request/action/policy/job boundary.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
