@@ -13,7 +13,7 @@ class EnvironmentProcess extends Model
 
     protected $hidden = ['command'];
 
-    protected $casts = ['command' => 'encrypted', 'replicas' => 'integer', 'restart_delay_seconds' => 'integer', 'is_enabled' => 'boolean'];
+    protected $casts = ['command' => 'encrypted', 'replicas' => 'integer', 'restart_delay_seconds' => 'integer', 'is_enabled' => 'boolean', 'is_preview_owned' => 'boolean'];
 
     /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo

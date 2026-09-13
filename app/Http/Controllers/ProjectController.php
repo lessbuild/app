@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Actions\Project\ApprovePreviewSecretsAction;
 use App\Actions\Project\CreateProjectAction;
 use App\Actions\Project\DeleteProjectAction;
+use App\Actions\Project\QueuePreviewStackCleanupAction;
 use App\Actions\Project\UpdateProjectPreviewsAction;
 use App\Http\Requests\ApprovePreviewSecretsRequest;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectPreviewsRequest;
 use App\Models\Organization;
 use App\Models\PreviewDeployment;
+use App\Models\PreviewStackCleanup;
 use App\Models\Project;
 use App\Rules\Hostname;
 use App\Services\Entitlements;
@@ -73,6 +75,7 @@ class ProjectController extends Controller
                 'environments.resources',
                 'previews.website',
                 'previews.sourceEnvironment.variables',
+                'previews.stackCleanups',
             ]),
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(),
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(),
@@ -127,5 +130,25 @@ class ProjectController extends Controller
         return $approval
             ? back()->with('success', __('Selected preview secrets were approved for this revision. The next verified update will apply them.'))
             : back()->with('info', __('This preview is closed, unavailable, or no longer belongs to your managed workspace.'));
+    }
+
+    /**
+     * Authorize and requeue cleanup for a closed preview whose remote stack remains incomplete.
+     */
+    public function retryPreviewCleanup(
+        Project $project,
+        PreviewDeployment $preview,
+        QueuePreviewStackCleanupAction $queuePreviewCleanup,
+    ): RedirectResponse {
+        $this->authorize('retryCleanup', $preview);
+        $cleanup = $queuePreviewCleanup->handle($preview);
+
+        if (! $cleanup) {
+            return back()->with('info', __('This preview has no retryable stack cleanup.'));
+        }
+
+        return $cleanup->status === PreviewStackCleanup::STATUS_QUEUED
+            ? back()->with('success', __('Preview stack cleanup queued.'))
+            : back()->with('info', __('This preview stack cleanup is already running or completed.'));
     }
 }

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Repository\CancelDeploymentAction;
 use App\Models\Build;
+use App\Services\PreviewDeploymentLifecycle;
 use App\Services\Runner;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
@@ -23,7 +24,7 @@ class WatchStaleDeploymentsCommand extends Command
      * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
      * @return int SUCCESS after the watchdog pass, including attempts retained for a later cancellation retry.
      */
-    public function handle(Runner $runner): int
+    public function handle(Runner $runner, PreviewDeploymentLifecycle $previews): int
     {
         $minutes = max(1, (int) ($this->option('minutes') ?: config('lessbuild.deployment_stale_minutes')));
         $cutoff = now()->subMinutes($minutes);
@@ -33,14 +34,14 @@ class WatchStaleDeploymentsCommand extends Command
             ->whereIn('status', Build::ACTIVE_STATUSES)
             ->orderBy('id')
             ->pluck('id')
-            ->each(function (int $buildId) use ($runner, $cutoff, $minutes, &$processed): void {
+            ->each(function (int $buildId) use ($runner, $cutoff, $minutes, $previews, &$processed): void {
                 $build = $this->claim($buildId, $cutoff, $minutes);
                 if (! $build) {
                     return;
                 }
 
                 if ($build->remote_process_path === null && $build->started_at === null) {
-                    $this->finish($build, null, $minutes);
+                    $this->finish($build, null, $minutes, $previews);
                     $processed++;
 
                     return;
@@ -61,7 +62,7 @@ class WatchStaleDeploymentsCommand extends Command
                     return;
                 }
 
-                $this->finish($build, $log, $minutes);
+                $this->finish($build, $log, $minutes, $previews);
                 $processed++;
             });
 
@@ -116,16 +117,16 @@ class WatchStaleDeploymentsCommand extends Command
      * @param  string|null  $log  Optional remaining remote log returned by cancellation.
      * @param  int  $minutes  Inactivity threshold included in the terminal failure message.
      */
-    private function finish(Build $build, ?string $log, int $minutes): void
+    private function finish(Build $build, ?string $log, int $minutes, PreviewDeploymentLifecycle $previews): void
     {
-        DB::transaction(function () use ($build, $log, $minutes): void {
+        $finished = DB::transaction(function () use ($build, $log, $minutes): bool {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_TIMING_OUT)
                 ->lockForUpdate()
                 ->first();
             if (! $locked) {
-                return;
+                return false;
             }
 
             if ($log !== null) {
@@ -142,6 +143,12 @@ class WatchStaleDeploymentsCommand extends Command
                 'finished_at' => now(),
                 'failure_message' => "Deployment timed out after {$minutes} minutes without a heartbeat.",
             ]);
+
+            return true;
         });
+
+        if ($finished) {
+            $previews->buildFinished($build->fresh());
+        }
     }
 }

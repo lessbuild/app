@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\Project\ConfigurePreviewStackAction;
+use App\Actions\Project\QueuePreviewStackCleanupAction;
 use App\Data\VerifiedRepositoryWebhook;
 use App\Jobs\ReportGitHubPreviewJob;
 use App\Jobs\Web\AddWebsiteJob;
@@ -28,6 +29,7 @@ class PreviewDeploymentLifecycle
      * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
      * @param  ConfigurePreviewStackAction  $previewStack  Persists supported process and managed-resource declarations.
      * @param  PreviewStackReadiness  $previewReadiness  Records remote resource initialization through deployment callbacks.
+     * @param  QueuePreviewStackCleanupAction  $queuePreviewCleanup  Captures and dispatches cleanup after a preview becomes idle.
      */
     public function __construct(
         private readonly PlanLimits $limits,
@@ -38,6 +40,7 @@ class PreviewDeploymentLifecycle
         private readonly PreviewSecretApprovalResolver $previewSecrets,
         private readonly ConfigurePreviewStackAction $previewStack,
         private readonly PreviewStackReadiness $previewReadiness,
+        private readonly QueuePreviewStackCleanupAction $queuePreviewCleanup,
     ) {}
 
     /**
@@ -196,6 +199,20 @@ class PreviewDeploymentLifecycle
         }
         $preview->update(['status' => PreviewDeployment::STATUS_FAILED]);
         ReportGitHubPreviewJob::dispatch($preview->id);
+    }
+
+    /**
+     * Re-check a closed preview after cancellation or timeout and start cleanup when its deployment is idle.
+     *
+     * @param  Build  $build  Terminal deployment whose repository identifies the preview.
+     * @return void No value; active or nonclosed previews remain under their normal lifecycle.
+     */
+    public function deploymentStopped(Build $build): void
+    {
+        $preview = PreviewDeployment::query()->where('repository_id', $build->repository_id)->first();
+        if ($preview?->status === PreviewDeployment::STATUS_CLOSED) {
+            $this->deleteWebsiteWhenIdle($preview);
+        }
     }
 
     /**
@@ -374,7 +391,12 @@ class PreviewDeploymentLifecycle
     private function deleteWebsiteWhenIdle(PreviewDeployment $preview): void
     {
         $website = $preview->website;
-        if ($website && ! $website->trashed() && ! $website->hasActiveDeployment()) {
+        if (! $website || $website->hasActiveDeployment()) {
+            return;
+        }
+
+        $this->queuePreviewCleanup->handle($preview);
+        if (! $website->trashed()) {
             $website->delete();
         }
     }

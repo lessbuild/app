@@ -6,6 +6,7 @@ use App\Actions\Repository\PublishRepositoryAction;
 use App\Models\Build;
 use App\Services\ApplicationConfigurationExecution;
 use App\Services\AutomaticDeploymentRollback;
+use App\Services\PreviewDeploymentLifecycle;
 use App\Services\PreviewStackReadiness;
 use App\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -116,6 +117,7 @@ class PublishRepositoryJob implements ShouldQueue
         });
 
         app(PreviewStackReadiness::class)->recordFailure($this->build->fresh());
+        app(PreviewDeploymentLifecycle::class)->buildFinished($this->build->fresh());
         app(AutomaticDeploymentRollback::class)->attempt($this->build->fresh());
     }
 }

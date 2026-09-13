@@ -12,7 +12,7 @@ class SaveEnvironmentResourceAction
     /**
      * Persist an environment resource using its external variables or managed connection configuration.
      *
-     * @param  array{name: string, type: string, is_managed: bool|string, variables?: string|null, status?: string}  $data
+     * @param  array{name: string, type: string, is_managed: bool|string, variables?: string|null, status?: string, is_preview_owned?: bool|string}  $data
      * @param  array<string, string>|null  $variables  Optional pre-parsed variables retained for non-HTTP callers.
      */
     public function handle(Environment $environment, array $data, ?array $variables = null): EnvironmentResource
@@ -49,9 +49,14 @@ class SaveEnvironmentResourceAction
             ];
         }
 
+        $existing = $environment->resources()->where('name', $data['name'])->first();
+
         return $environment->resources()->updateOrCreate(['name' => $data['name']], [
             'type' => $data['type'],
             'is_managed' => $data['is_managed'],
+            'is_preview_owned' => array_key_exists('is_preview_owned', $data)
+                ? (bool) $data['is_preview_owned']
+                : (bool) $existing?->is_preview_owned,
             'configuration' => [
                 'variables' => $variables,
                 'container_name' => $data['is_managed'] && $data['type'] === 'valkey'

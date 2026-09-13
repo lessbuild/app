@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\Project\CleanupPreviewStackJob;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
@@ -9,6 +10,7 @@ use App\Models\Build;
 use App\Models\EnvironmentResource;
 use App\Models\PreviewDeployment;
 use App\Models\PreviewSecretApproval;
+use App\Models\PreviewStackCleanup;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Repository;
@@ -122,6 +124,9 @@ class PreviewDeploymentTest extends TestCase
         $this->assertNotNull($preview->fresh()->closed_at);
         $this->assertTrue($preview->website->fresh()->trashed());
         Queue::assertPushed(DeleteWebsiteFromCaddyJob::class);
+        $cleanup = PreviewStackCleanup::query()->sole();
+        $this->assertSame(PreviewStackCleanup::STATUS_QUEUED, $cleanup->status);
+        Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
     }
 
     public function test_preview_settings_are_workspace_scoped_and_validated(): void

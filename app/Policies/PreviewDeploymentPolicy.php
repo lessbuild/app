@@ -24,4 +24,13 @@ class PreviewDeploymentPolicy
         return $this->view($user, $preview)
             && $preview->project->organization->permits($user, 'manage');
     }
+
+    /**
+     * Require workspace management permission before retrying an owned preview cleanup.
+     */
+    public function retryCleanup(User $user, PreviewDeployment $preview): bool
+    {
+        return $this->view($user, $preview)
+            && $preview->project->organization->permits($user, 'manage');
+    }
 }

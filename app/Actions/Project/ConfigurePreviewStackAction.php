@@ -58,6 +58,7 @@ class ConfigurePreviewStackAction
                     'restart_policy' => 'always',
                     'restart_delay_seconds' => 5,
                     'is_enabled' => true,
+                    'is_preview_owned' => true,
                 ]);
             }
         }
@@ -70,6 +71,7 @@ class ConfigurePreviewStackAction
                     'type' => $resource['type'],
                     'is_managed' => $resource['is_managed'],
                     'status' => $existing?->status ?? EnvironmentResource::STATUS_PLANNED,
+                    'is_preview_owned' => true,
                 ]);
             }
         }

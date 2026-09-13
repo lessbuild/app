@@ -10,12 +10,17 @@ class SaveEnvironmentProcessAction
     /**
      * Persist one process definition for the next environment deployment.
      *
-     * @param  array{name: string, type: string, command: string, replicas: int|string, restart_policy: string, restart_delay_seconds: int|string, is_enabled: bool|string}  $data
+     * @param  array{name: string, type: string, command: string, replicas: int|string, restart_policy: string, restart_delay_seconds: int|string, is_enabled: bool|string, is_preview_owned?: bool|string}  $data
      */
     public function handle(Environment $environment, array $data): EnvironmentProcess
     {
         if ($data['type'] === 'scheduler') {
             $data['replicas'] = 1;
+        }
+
+        $existing = $environment->processes()->where('name', $data['name'])->first();
+        if (! array_key_exists('is_preview_owned', $data)) {
+            $data['is_preview_owned'] = (bool) $existing?->is_preview_owned;
         }
 
         return $environment->processes()->updateOrCreate(['name' => $data['name']], $data);

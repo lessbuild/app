@@ -189,6 +189,9 @@ Route::middleware('auth')->group(function () {
         Route::post('projects/{project}/previews/{preview}/secrets', [ProjectController::class, 'approvePreviewSecrets'])
             ->scopeBindings()
             ->name('projects.previews.secrets.approve');
+        Route::post('projects/{project}/previews/{preview}/cleanup', [ProjectController::class, 'retryPreviewCleanup'])
+            ->scopeBindings()
+            ->name('projects.previews.cleanup.retry');
         Route::post('projects/{project}/environments', [EnvironmentController::class, 'store'])->name('environments.store');
         Route::patch('environments/{environment}', [EnvironmentController::class, 'update'])->name('environments.update');
         Route::delete('environments/{environment}', [EnvironmentController::class, 'destroy'])->name('environments.destroy');

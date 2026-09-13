@@ -4,10 +4,13 @@ namespace App\Actions\Repository;
 
 use App\Models\Build;
 use App\Models\Website;
+use App\Services\PreviewDeploymentLifecycle;
 use Illuminate\Support\Facades\DB;
 
 class CancelQueuedDeploymentAction
 {
+    public function __construct(private readonly PreviewDeploymentLifecycle $previews) {}
+
     /**
      * Lock the website and build before canceling a queued deployment or pending approval; clear its remote process metadata.
      *
@@ -18,7 +21,7 @@ class CancelQueuedDeploymentAction
     {
         $websiteId = $build->repository()->value('website_id');
 
-        return DB::transaction(function () use ($build, $websiteId): bool {
+        $canceled = DB::transaction(function () use ($build, $websiteId): bool {
             $website = Website::query()->lockForUpdate()->find($websiteId);
             if (! $website) {
                 return false;
@@ -43,5 +46,11 @@ class CancelQueuedDeploymentAction
 
             return true;
         });
+
+        if ($canceled) {
+            $this->previews->deploymentStopped($build->fresh());
+        }
+
+        return $canceled;
     }
 }

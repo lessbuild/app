@@ -22,7 +22,7 @@ class EnvironmentResource extends Model
 
     protected $hidden = ['configuration'];
 
-    protected $casts = ['configuration' => 'encrypted:array', 'is_managed' => 'boolean'];
+    protected $casts = ['configuration' => 'encrypted:array', 'is_managed' => 'boolean', 'is_preview_owned' => 'boolean'];
 
     /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo

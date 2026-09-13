@@ -3,12 +3,16 @@
 namespace App\Actions\Repository;
 
 use App\Models\Build;
+use App\Services\PreviewDeploymentLifecycle;
 use App\Services\Runner;
 use Illuminate\Support\Facades\DB;
 
 class CancelRunningDeploymentAction
 {
-    public function __construct(private readonly Runner $runner) {}
+    public function __construct(
+        private readonly Runner $runner,
+        private readonly PreviewDeploymentLifecycle $previews,
+    ) {}
 
     /**
      * Stop the recorded remote process, then atomically finalize only the matching running attempt.
@@ -24,7 +28,7 @@ class CancelRunningDeploymentAction
         $processPath = $build->remote_process_path;
         $partialLog = (new CancelDeploymentAction($build, $this->runner))->handle();
 
-        return DB::transaction(function () use ($build, $processId, $processPath, $partialLog): bool {
+        $canceled = DB::transaction(function () use ($build, $processId, $processPath, $partialLog): bool {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_RUNNING)
@@ -54,5 +58,11 @@ class CancelRunningDeploymentAction
 
             return true;
         });
+
+        if ($canceled) {
+            $this->previews->deploymentStopped($build->fresh());
+        }
+
+        return $canceled;
     }
 }

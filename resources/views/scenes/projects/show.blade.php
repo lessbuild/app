@@ -172,9 +172,21 @@
             <div class="mt-4 space-y-2">
                 @forelse($project->previews->sortByDesc('last_activity_at') as $preview)
                     @php($sourceSecrets = $preview->sourceEnvironment?->variables->where('is_secret', true)->whereIn('scope', ['runtime', 'all'])->whereNotIn('key', \App\Models\PreviewSecretApproval::PROTECTED_KEYS) ?? collect())
+                    @php($previewCleanup = $preview->stackCleanups->sortByDesc('id')->first())
                     <article class="rounded-xl border border-primary bg-secondary p-3">
                         <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><span class="text-xs font-bold text-secondary">{{ ucfirst($preview->status) }}</span></div>
                         @if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-sm font-medium text-ternary">{{ $preview->url }}</a>@endif
+                        @if($previewCleanup)
+                            <div class="mt-2 border-t border-primary pt-2 text-xs text-secondary">
+                                <p>{{ __('Stack cleanup: :status', ['status' => ucfirst($previewCleanup->status)]) }}</p>
+                                @if($previewCleanup->error)<p class="mt-1">{{ $previewCleanup->error }}</p>@endif
+                                @can('retryCleanup', $preview)
+                                    @if($previewCleanup->status === \App\Models\PreviewStackCleanup::STATUS_FAILED)
+                                        <form method="POST" action="{{ route('projects.previews.cleanup.retry', [$project, $preview]) }}" class="mt-2">@csrf<button type="submit" class="font-bold text-ternary">{{ __('Retry stack cleanup') }}</button></form>
+                                    @endif
+                                @endcan
+                            </div>
+                        @endif
                         @if($canManage && $preview->status !== 'closed' && $sourceSecrets->isNotEmpty())
                             <form method="POST" action="{{ route('projects.previews.secrets.approve', [$project, $preview]) }}" class="mt-3 border-t border-primary pt-3">
                                 @csrf

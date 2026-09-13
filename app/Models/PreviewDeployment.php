@@ -67,4 +67,10 @@ class PreviewDeployment extends Model
     {
         return $this->hasMany(PreviewSecretApproval::class);
     }
+
+    /** @return HasMany<PreviewStackCleanup, $this> */
+    public function stackCleanups(): HasMany
+    {
+        return $this->hasMany(PreviewStackCleanup::class);
+    }
 }
