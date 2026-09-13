@@ -16,6 +16,9 @@ class VerifiedRepositoryWebhook
      * @param  int|null  $pullRequestNumber  Provider pull/merge-request number for a preview event.
      * @param  string|null  $pullRequestTitle  Pull/merge-request title, if supplied.
      * @param  string|null  $sourceBranch  Source branch for the pull/merge request, if supplied.
+     * @param  string|null  $targetBranch  Target branch for the pull/merge request, if supplied.
+     * @param  bool|null  $isFork  Whether the source repository differs from the target repository, or null when the provider did not supply enough metadata.
+     * @param  string|null  $targetRepository  Provider identity of the pull/merge request target repository or project, if supplied.
      */
     public function __construct(
         public readonly string $deliveryId,
@@ -27,6 +30,9 @@ class VerifiedRepositoryWebhook
         public readonly ?int $pullRequestNumber = null,
         public readonly ?string $pullRequestTitle = null,
         public readonly ?string $sourceBranch = null,
+        public readonly ?string $targetBranch = null,
+        public readonly ?bool $isFork = null,
+        public readonly ?string $targetRepository = null,
     ) {}
 
     /**

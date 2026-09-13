@@ -28,6 +28,7 @@ class PreviewDeploymentLifecycle
         private readonly DeploymentRequest $deployments,
         private readonly Entitlements $entitlements,
         private readonly PreviewEnvironmentConfiguration $previewEnvironment,
+        private readonly PreviewTrustPolicy $previewTrust,
     ) {}
 
     /**
@@ -60,6 +61,11 @@ class PreviewDeploymentLifecycle
 
         if ($webhook->previewAction === 'closed') {
             return $this->close($source, $webhook->pullRequestNumber);
+        }
+
+        $trust = $this->previewTrust->evaluate($source, $webhook);
+        if (! $trust->allowed()) {
+            return $trust->status;
         }
 
         if (! $webhook->revision || ! $webhook->sourceBranch) {

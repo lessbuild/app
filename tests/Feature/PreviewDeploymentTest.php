@@ -136,6 +136,164 @@ class PreviewDeploymentTest extends TestCase
         $this->assertStringNotContainsString('legacy-preview-secret', $environment);
     }
 
+    public function test_pull_request_targeting_a_different_branch_is_ignored_without_side_effects(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('c', 40), 'release'), $secret, 'preview-wrong-target')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_target_ignored']);
+
+        $this->assertDatabaseCount('preview_deployments', 0);
+        $this->assertDatabaseCount('websites', 1);
+        $this->assertDatabaseCount('repositories', 1);
+        $this->assertDatabaseCount('environments', 1);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_forked_pull_request_is_blocked_without_side_effects(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('d', 40), 'main', 'contributor/storefront', 'example/storefront'), $secret, 'preview-fork')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_fork_blocked']);
+
+        $this->assertDatabaseCount('preview_deployments', 0);
+        $this->assertDatabaseCount('websites', 1);
+        $this->assertDatabaseCount('repositories', 1);
+        $this->assertDatabaseCount('environments', 1);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_preview_without_provider_trust_metadata_is_blocked_without_side_effects(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('e', 40), null, null, null), $secret, 'preview-unverified')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_target_unverified']);
+
+        $this->assertDatabaseCount('preview_deployments', 0);
+        $this->assertDatabaseCount('websites', 1);
+        $this->assertDatabaseCount('repositories', 1);
+        $this->assertDatabaseCount('environments', 1);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_preview_without_source_repository_metadata_is_blocked_without_side_effects(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('f', 40), 'main', null), $secret, 'preview-source-unverified')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_source_unverified']);
+
+        $this->assertDatabaseCount('preview_deployments', 0);
+        $this->assertDatabaseCount('websites', 1);
+        $this->assertDatabaseCount('repositories', 1);
+        $this->assertDatabaseCount('environments', 1);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_preview_target_repository_must_match_the_configured_source(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+
+        $this->send($source, $this->payload('opened', str_repeat('1', 40), 'main', 'other/storefront', 'other/storefront'), $secret, 'preview-source-mismatch')
+            ->assertOk()
+            ->assertJson(['status' => 'preview_source_ignored']);
+
+        $this->assertDatabaseCount('preview_deployments', 0);
+        $this->assertDatabaseCount('websites', 1);
+        $this->assertDatabaseCount('repositories', 1);
+        $this->assertDatabaseCount('environments', 1);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_gitlab_merge_request_preview_uses_target_project_and_branch_metadata(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application(providerType: Provider::TYPE_GITLAB);
+        $secret = 'whsec_'.base64_encode(random_bytes(32));
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('f', 40);
+        $payload = [
+            'object_attributes' => [
+                'action' => 'open', 'iid' => 17, 'title' => 'Preview checkout',
+                'source_branch' => 'feature/checkout', 'target_branch' => 'main',
+                'source_project_id' => 42, 'target_project_id' => 42,
+                'last_commit' => ['id' => $revision],
+            ],
+            'project' => ['path_with_namespace' => 'example/storefront'],
+        ];
+        $delivery = 'gitlab-preview';
+        $timestamp = now()->getTimestamp();
+
+        $this->sendWithHeaders($source, $payload, [
+            'webhook-id' => $delivery,
+            'webhook-timestamp' => (string) $timestamp,
+            'webhook-signature' => 'v1,'.base64_encode(hash_hmac(
+                'sha256', $delivery.'.'.$timestamp.'.'.$this->raw($payload), base64_decode(substr($secret, 6), true), true,
+            )),
+            'X-Gitlab-Event' => 'Merge Request Hook',
+        ])->assertStatus(202)->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $this->assertDatabaseHas('preview_deployments', ['pull_request_number' => 17, 'revision' => $revision]);
+    }
+
+    public function test_bitbucket_pull_request_preview_uses_destination_and_source_repository_metadata(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application(providerType: Provider::TYPE_BITBUCKET);
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('7', 40);
+        $payload = [
+            'pullrequest' => [
+                'id' => 17, 'title' => 'Preview checkout',
+                'source' => [
+                    'branch' => ['name' => 'feature/checkout'], 'commit' => ['hash' => $revision],
+                    'repository' => ['full_name' => 'example/storefront'],
+                ],
+                'destination' => [
+                    'branch' => ['name' => 'main'], 'repository' => ['full_name' => 'example/storefront'],
+                ],
+            ],
+        ];
+        $delivery = 'bitbucket-preview';
+
+        $this->sendWithHeaders($source, $payload, [
+            'X-Hub-Signature' => 'sha256='.hash_hmac('sha256', $this->raw($payload), $secret),
+            'X-Request-UUID' => $delivery,
+            'X-Event-Key' => 'pullrequest:created',
+        ])->assertStatus(202)->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $this->assertDatabaseHas('preview_deployments', ['pull_request_number' => 17, 'revision' => $revision]);
+    }
+
     public function test_preview_settings_entitlement_is_checked_before_validation_and_writes(): void
     {
         config(['billing.enforce_entitlements' => true]);
@@ -175,11 +333,11 @@ class PreviewDeploymentTest extends TestCase
     }
 
     /** @return array{User, Repository, Project} */
-    private function application(bool $previews = true): array
+    private function application(bool $previews = true, string $providerType = Provider::TYPE_GITHUB): array
     {
         $owner = User::factory()->create();
         $provider = $owner->providers()->create([
-            'name' => 'GitHub', 'provider' => Provider::TYPE_GITHUB, 'token' => 'token', 'description' => 'Source',
+            'name' => ucfirst($providerType), 'provider' => $providerType, 'token' => 'token', 'description' => 'Source',
         ]);
         $server = $owner->servers()->create(['name' => 'Production', 'provisioning_status' => Server::STATUS_ACTIVE]);
         $website = $owner->websites()->create([
@@ -190,7 +348,7 @@ class PreviewDeploymentTest extends TestCase
         ]);
         $repository = $owner->repositories()->create([
             'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'Storefront source',
-            'url' => 'github.com/example/storefront.git', 'branch' => 'main', 'description' => 'Source',
+            'url' => $provider->repositoryHost().'/example/storefront.git', 'branch' => 'main', 'description' => 'Source',
         ]);
         $project = $owner->currentOrganization->projects()->create([
             'created_by' => $owner->id, 'name' => 'Storefront', 'slug' => 'storefront',
@@ -205,9 +363,14 @@ class PreviewDeploymentTest extends TestCase
         return [$owner, $repository, $project];
     }
 
-    private function payload(string $action, string $revision): array
-    {
-        return [
+    private function payload(
+        string $action,
+        string $revision,
+        ?string $targetBranch = 'main',
+        ?string $headRepository = 'example/storefront',
+        ?string $baseRepository = 'example/storefront',
+    ): array {
+        $pullRequest = [
             'action' => $action,
             'number' => 17,
             'pull_request' => [
@@ -215,17 +378,47 @@ class PreviewDeploymentTest extends TestCase
                 'head' => ['ref' => 'feature/checkout', 'sha' => $revision],
             ],
         ];
+
+        if ($headRepository !== null) {
+            $pullRequest['pull_request']['head']['repo'] = ['full_name' => $headRepository];
+        }
+        if ($targetBranch !== null) {
+            $pullRequest['pull_request']['base'] = ['ref' => $targetBranch];
+            if ($baseRepository !== null) {
+                $pullRequest['pull_request']['base']['repo'] = ['full_name' => $baseRepository];
+            }
+        }
+
+        return $pullRequest;
     }
 
     private function send(Repository $repository, array $payload, string $secret, string $delivery): TestResponse
     {
-        $raw = json_encode($payload, JSON_THROW_ON_ERROR);
+        return $this->sendWithHeaders($repository, $payload, [
+            'X-Hub-Signature-256' => 'sha256='.hash_hmac('sha256', $this->raw($payload), $secret),
+            'X-GitHub-Delivery' => $delivery,
+            'X-GitHub-Event' => 'pull_request',
+        ]);
+    }
 
-        return $this->call('POST', route('webhooks.repositories.receive', $repository), server: [
-            'CONTENT_TYPE' => 'application/json',
-            'HTTP_X_HUB_SIGNATURE_256' => 'sha256='.hash_hmac('sha256', $raw, $secret),
-            'HTTP_X_GITHUB_DELIVERY' => $delivery,
-            'HTTP_X_GITHUB_EVENT' => 'pull_request',
-        ], content: $raw);
+    /** @param array<string, string> $headers */
+    private function sendWithHeaders(Repository $repository, array $payload, array $headers): TestResponse
+    {
+        $server = ['CONTENT_TYPE' => 'application/json'];
+        foreach ($headers as $name => $value) {
+            $server['HTTP_'.strtoupper(str_replace('-', '_', $name))] = $value;
+        }
+
+        return $this->call(
+            'POST',
+            route('webhooks.repositories.receive', $repository),
+            server: $server,
+            content: $this->raw($payload),
+        );
+    }
+
+    private function raw(array $payload): string
+    {
+        return json_encode($payload, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
     }
 }

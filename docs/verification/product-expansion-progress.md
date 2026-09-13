@@ -1,7 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 1A complete. Phase 0 is complete; the remaining Phase 1 safety,
-usability and first-deployment slices are not yet complete.
+Status: Phase 1B complete. Phase 0 and the first preview safety/trust slices are
+complete; the remaining Phase 1 secret-approval, usability and first-deployment
+slices are not yet complete.
 
 Date: 2026-09-12
 
@@ -63,7 +64,7 @@ target for arbitrary extraction.
 | Projects, environments and configuration as code | Create and manage projects, environments, processes, variables and resources; author, review, apply, cancel and retry configuration through web and API; inspect receipts and recover operations. Entry points are `ProjectController`, `EnvironmentController`, `ApplicationConfigurationController` and `Api\\V1\\ControlPlaneController`. | `app/Actions/Project`, `app/Actions/Environment`; configuration requests; `ProjectPolicy`, `EnvironmentPolicy`, `EnvironmentResourcePolicy`, `ConfigurationApplicationPolicy` and `ConfigurationReviewPolicy`; `ApplicationConfigurationPlanner`, `ApplicationConfigurationReconciler`, `ApplicationConfigurationTransaction`, `ApplicationConfigurationDelivery`, `ApplicationConfigurationExecution` and `WorkflowConfiguration`; configuration jobs and extensive feature/API/OpenAPI tests. | Existing and locally verified with known product gaps. Desired state, recorded state and observed remote state need a clearer authoring/editor, dependency overview, safe environment comparison and explicitly read-only drift report. | Add guided authoring, schema/structure feedback, readable change summaries, dependency list/table and secret-safe comparisons. Corrective changes must use review/apply. Preserve reviewed-input identity, secret-version revalidation, ownership/adoption, no-op identity, removal safeguards, atomic claims, leases, stale callbacks, API envelopes and YAML compatibility. |
 | Providers, cloud inventory and imports | Add/update/delete cloud providers, test connections, inspect provider inventory, import existing servers/websites and provision servers. Entry points include `ProviderController`, `ProviderConnectionController`, `ProviderServerCatalogController`, `ServersController`, `ImportServerController` and `ImportWebsiteController`. | `app/Actions/Provider`, `app/Actions/Server`, `app/Actions/Web`; `ProviderRequest`, `ServerRequest`, import requests; provider/server/website policies; `ProviderConnectionTester`, `ProviderHealthMonitor`, `ServerProviderResolver`, provider contracts/adapters and provisioning jobs. Inventory, scoped-token, connection, server lifecycle and import tests exist. | Existing and locally verified for fakes and local workflows. Live provider credentials, real provisioning, provider cleanup and monitoring heartbeat acceptance are outstanding. | Improve first-deployment preflight so missing permissions, invalid credentials and entitlement limits are distinct and actionable. Preserve encrypted tokens, secret exclusion, provider-specific probes, retries, leases, ownership and sanitized failures. Verify each adapter through shared behavioral contract tests before extending variants. |
 | Websites, repositories, builds and deployments | Create/import websites, connect repositories, deploy, approve/reject/promote/rollback/cancel, switch releases, inspect build progress/logs and configure webhooks. Entry points include `WebsitesController`, `RepositoriesController`, `BuildsController`, `BuildPromotionController`, callback controllers and repository webhook controllers. | `app/Actions/Web`, `app/Actions/Repository`; website/repository/build/callback requests; `WebsitePolicy`, `RepositoryPolicy`, `BuildPolicy`; `DeploymentRequest`, `RepositoryDeploymentPlan`, `DeploymentFailureGuidance`, health services, source-provider contracts and deployment/provisioning jobs. Deployment serialization, revision, callback, health, rollback and failure-guidance tests are present. | Existing and locally verified with clarity gaps. Build details expose progress and guidance, but a unified request/provision/build/migration/health/traffic timeline and explicit monorepo change impact need inventory confirmation. | Add a bounded deployment timeline and failure links without changing strategies or claiming percentage traffic splitting. Then confirm or add per-service roots/path filters and conservative unknown-change behavior. Preserve immutable revisions, approvals, webhook idempotency, locks, cancellation, stale attempts, retained artifacts and the distinction between application rollback and database recovery. |
-| Preview deployments | A pull-request webhook opens or updates a preview, provisions a website/repository/environment, queues the build, reports to GitHub, closes/expires and cleans up. Settings are managed from project preview routes. The core entry point is `PreviewDeploymentLifecycle`; the project preview action/request and repository webhook path complete the flow. | `PreviewDeployment`, `PreviewDeploymentLifecycle`, `PreviewEnvironmentConfiguration`, `UpdateProjectPreviewsAction`, preview settings request, `ProjectPolicy`, `AddWebsiteJob`, `ReportGitHubPreviewJob`, `DeploymentRequest`, `PlanLimits` and `Entitlements`; `PreviewDeploymentTest` covers open/update/close, settings, entitlement ordering, source-secret exclusion and legacy-preview sanitization. | Existing with a completed first security slice and remaining lifecycle gaps. New and revised previews now receive explicit preview-owned configuration instead of copied source environment text. The lifecycle is still a single website/repository/environment and does not yet provide the planned dependent Postgres/Valkey stack, explicit initialization, trusted/fork policy, concurrent quotas or durable partial-cleanup model. | Phase 1A establishes the safe configuration boundary. Remaining Phase 1 work must define trusted/fork handling, secret-scope approval, navigation/feedback and first-deployment guidance. Phase 3 then adds representative multi-service resources, initialization, quota, expiry and retryable cleanup. Completion requires open/update/fail/retry/close/reopen/expire concurrency tests and separate cloud acceptance evidence. |
+| Preview deployments | A pull-request webhook opens or updates a preview, provisions a website/repository/environment, queues the build, reports to GitHub, closes/expires and cleans up. Settings are managed from project preview routes. The core entry point is `PreviewDeploymentLifecycle`; the project preview action/request and repository webhook path complete the flow. | `PreviewDeployment`, `PreviewDeploymentLifecycle`, `PreviewEnvironmentConfiguration`, `PreviewTrustPolicy`, `UpdateProjectPreviewsAction`, preview settings request, `ProjectPolicy`, `AddWebsiteJob`, `ReportGitHubPreviewJob`, `DeploymentRequest`, `PlanLimits` and `Entitlements`; `PreviewDeploymentTest` covers open/update/close, settings, entitlement ordering, source-secret exclusion, legacy-preview sanitization and provider trust metadata. | Existing with completed configuration and trust boundaries and remaining lifecycle gaps. New and revised previews receive explicit preview-owned configuration instead of copied source environment text. Updated/reopened code execution is now limited to the configured target branch and configured target repository; forks and unknown trust metadata are denied. The lifecycle is still a single website/repository/environment and does not yet provide the planned dependent Postgres/Valkey stack, explicit initialization, concurrent quotas or durable partial-cleanup model. | Phase 1A established safe preview configuration and Phase 1B established trusted target/fork admission. Remaining Phase 1 work must define explicit secret-scope approval, navigation/feedback and first-deployment guidance. Phase 3 then adds representative multi-service resources, initialization, quota, expiry and retryable cleanup. Completion requires open/update/fail/retry/close/reopen/expire concurrency tests and separate cloud acceptance evidence. |
 | Databases, load balancers, domains and backups | Manage database users/clones/inspection, backup destinations/schedules/runs/restores, load balancers/nodes and website domains. Entry points are `DatabaseController`, `BackupController`, `LoadBalancerController` and `DomainController`. | `app/Actions/Database`, `app/Actions/Backup`, `app/Actions/LoadBalancer`, `app/Actions/Domain`; resource requests and policies; database/backup/restore/load-balancer jobs; provider contracts and command-safety services. Managed-backup, restore, database safety, domain and load-balancer lifecycle suites cover local behavior. | Existing and locally verified with recovery-evidence gaps. Backup and restore workflows exist, but backup completion is not the same as verified recovery; isolated restore smoke tests, cleanup visibility and control-plane/application-data scope need a clearer product surface. | Add recovery verification indicators, destination/overwrite review, integrity and application smoke checks, failure stage/duration and cleanup status, reusing existing jobs/actions. Preserve encrypted credentials, organization-scoped IDs, incompatibility guards, ownership, duplicate protection, dispatch timing, retries and partial-remote failure behavior. Keep remote calls outside new local transactions. |
 | Automation and runtime control | Configure deployment/scaling schedules and scheduled tasks, queue runs, change process/runtime/scaling settings and manage scoped personal API tokens. Entry point is `AutomationController` plus runtime/environment/API routes. | `app/Actions/Automation`, environment actions; automation/runtime/scale/token requests; token and environment policies; `WorkflowConfiguration`, `DeploymentLauncher` and scheduled-task jobs. Automation, token, runtime and concurrency tests exist. | Existing and locally verified. Product clarity and API/web parity should be improved without merging distinct request contracts. | Improve schedule validation/help and runtime feedback, preserve cron/timezone/overlap behavior, token ownership/expiry/rotation, capability checks, entitlements, bounds, organization scoping and dispatch semantics. Keep web min/max scaling distinct from API replica-count requests. |
 | Logs, metrics, health, alerts, incidents and status | Inspect server/website logs and metrics, health history, alert rules/destinations, operational incidents and public status pages/subscriptions. Entry points include `ObservabilityController`, `OperationalIncidentController`, health/log controllers and status controllers. | Observability actions, health/log services, `OperationalIncidentQuery`/exporter, `DeploymentFailureGuidance`, `WebsiteHealthMonitor`, `ProviderHealthMonitor`, incident notifier, observability requests and resource policies; focused observability, health, log, incident and status tests exist. | Existing and locally verified with correlation gaps. Evidence is spread across resources; users need an environment view linking deployments, logs, health checks and incidents, plus safe saved/shareable investigations, grouping and retention limits. | Add deterministic environment-context diagnostics, bounded filters and links to related deployment/configuration changes. Label correlations as possible unless evidence establishes causation. Recheck authorization on saved/shareable URLs and preserve redaction, polling bounds, alert deduplication, observation timing and notification semantics. |
@@ -255,19 +256,21 @@ code. The compatibility note is also recorded in
 
 ### Remaining Phase 1 characterization
 
-The following are deliberately not included in this slice and are the next Phase
-1 work: trusted-branch and fork policy, explicit secret-scope approval, safe
-handling of dependent resource credentials, the navigation/tablet decision,
-first-deployment guidance and focused browser evidence for those journeys.
+The following were deliberately not included in this slice: explicit
+secret-scope approval, safe handling of dependent resource credentials, the
+navigation/tablet decision, first-deployment guidance and focused browser
+evidence for those journeys. Trusted-branch, target-repository and fork policy
+was added in Phase 1B below.
 
 ### Phase 1 exit criteria
 
 - **Completed in Phase 1A:** behavioral tests prove source secret text is not
   copied into a new preview website, including encrypted-at-rest source values;
   a revised legacy preview is sanitized before its new revision is queued.
-- Trusted-branch and fork decisions are explicit and bound to the revision and
-  approved secret scope; denied inputs create no website, environment, repository,
-  preview record or queued job.
+- **Completed in Phase 1B:** trusted target-branch, target-repository and fork
+  decisions are explicit; denied inputs create no website, environment,
+  repository, preview record or queued job. Explicit secret-scope approval is
+  still outstanding and is not implied by this trust decision.
 - Repeated webhooks remain idempotent, changed revisions supersede stale work,
   close/reopen does not permit stale cleanup to delete a current preview, and all
   existing preview tests remain green.
@@ -276,12 +279,62 @@ first-deployment guidance and focused browser evidence for those journeys.
 - The tablet/mobile browser discrepancy decision and actionable first-deployment
   feedback are recorded with focused browser evidence.
 
+## Phase 1B — trusted pull-request admission (completed slice)
+
+### Concrete responsibility problem
+
+`RepositoryWebhookVerifier` authenticated webhook signatures and normalized the
+pull-request source branch, but it did not carry the target branch, target
+repository or fork identity into the preview workflow. Consequently,
+`PreviewDeploymentLifecycle` could provision any signed pull-request payload
+with a usable revision, even when it targeted another branch, came from a fork or
+omitted the provider metadata needed to establish trust.
+
+### Applicable principles and Laravel mechanisms
+
+- **Single responsibility:** provider adapters normalize protocol metadata;
+  `PreviewTrustPolicy` owns only preview admission decisions; the lifecycle
+  continues to coordinate persistence, locks, dispatch and cleanup.
+- **Dependency inversion:** the lifecycle receives the concrete trust policy
+  through constructor injection. No HTTP request, provider SDK or service locator
+  is passed into business coordination.
+- **Liskov substitution:** GitHub, GitLab and Bitbucket preview payloads now map
+  to the same target/fork fields and are exercised through the same lifecycle
+  admission contract.
+
+### Implementation and preserved behavior
+
+`VerifiedRepositoryWebhook` now carries target branch, target repository and
+nullable fork status. The verifier derives these from GitHub base/head
+repositories, GitLab target/source project IDs and target project identity, and
+Bitbucket destination/source repositories. `PreviewTrustPolicy` requires an
+exact configured target branch and repository, rejects forks and rejects missing
+trust metadata. Close events bypass execution admission so cleanup remains
+available when a provider omits code-execution metadata.
+
+The denial is an intentional preview security change. It does not change webhook
+signature validation, push deployment handling, preview identity, revision
+serialization, existing locks, idempotency, queue timing or stale cleanup
+behavior. Fork execution remains disabled until host-level isolation is proven;
+the policy cannot be bypassed by future secret approval.
+
+### Verification and remaining work
+
+The preview suite covers same-repository admission for GitHub, GitLab and
+Bitbucket, wrong target branch, mismatched target repository, forked requests,
+missing target metadata and missing source metadata, with assertions that no
+preview resources or jobs are created on denial. The adjacent repository webhook
+and provisioning callback suites remain part of the slice regression. The next
+slice must define explicit, revision-bound secret-scope approval separately from
+repository trust.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
+| Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions are required before final commit. Pint passed. | Pending verified commit and push. | Pending. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
 
 ## External acceptance still outstanding
 

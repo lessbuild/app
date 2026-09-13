@@ -61,7 +61,7 @@ class RepositoryWebhookVerifier
             throw new InvalidRepositoryWebhook('The webhook commit revision is invalid.', 422);
         }
 
-        [$previewAction, $pullRequestNumber, $pullRequestTitle, $sourceBranch, $previewRevision] = match ($provider) {
+        [$previewAction, $pullRequestNumber, $pullRequestTitle, $sourceBranch, $previewRevision, $targetBranch, $isFork, $targetRepository] = match ($provider) {
             Provider::TYPE_GITHUB => $this->githubPreviewEvent($request, $payload),
             Provider::TYPE_GITLAB => $this->gitLabPreviewEvent($request, $payload),
             Provider::TYPE_BITBUCKET => $this->bitbucketPreviewEvent($request, $payload),
@@ -80,6 +80,9 @@ class RepositoryWebhookVerifier
             $pullRequestNumber,
             $pullRequestTitle,
             $sourceBranch,
+            $targetBranch,
+            $isFork,
+            $targetRepository,
         );
     }
 
@@ -254,11 +257,11 @@ class RepositoryWebhookVerifier
         ];
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     private function githubPreviewEvent(Request $request, array $payload): array
     {
         if ($request->header('X-GitHub-Event') !== 'pull_request') {
-            return [null, null, null, null, null];
+            return [null, null, null, null, null, null, null, null];
         }
 
         $action = match ($payload['action'] ?? null) {
@@ -267,20 +270,29 @@ class RepositoryWebhookVerifier
             default => null,
         };
 
+        $pullRequest = is_array($payload['pull_request'] ?? null) ? $payload['pull_request'] : [];
+        $head = is_array($pullRequest['head'] ?? null) ? $pullRequest['head'] : [];
+        $base = is_array($pullRequest['base'] ?? null) ? $pullRequest['base'] : [];
+        $headRepository = is_array($head['repo'] ?? null) ? $head['repo'] : [];
+        $baseRepository = is_array($base['repo'] ?? null) ? $base['repo'] : [];
+
         return $this->previewPayload(
             $action,
             $payload['number'] ?? null,
-            $payload['pull_request']['title'] ?? null,
-            $payload['pull_request']['head']['ref'] ?? null,
-            $payload['pull_request']['head']['sha'] ?? null,
+            $pullRequest['title'] ?? null,
+            $head['ref'] ?? null,
+            $head['sha'] ?? null,
+            $base['ref'] ?? null,
+            $this->forkStatus($headRepository['full_name'] ?? null, $baseRepository['full_name'] ?? null),
+            $baseRepository['full_name'] ?? null,
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     private function gitLabPreviewEvent(Request $request, array $payload): array
     {
         if ($request->header('X-Gitlab-Event') !== 'Merge Request Hook') {
-            return [null, null, null, null, null];
+            return [null, null, null, null, null, null, null, null];
         }
         $attributes = is_array($payload['object_attributes'] ?? null) ? $payload['object_attributes'] : [];
         $action = match ($attributes['action'] ?? null) {
@@ -295,10 +307,13 @@ class RepositoryWebhookVerifier
             $attributes['title'] ?? null,
             $attributes['source_branch'] ?? null,
             $attributes['last_commit']['id'] ?? null,
+            $attributes['target_branch'] ?? null,
+            $this->forkStatus($attributes['source_project_id'] ?? null, $attributes['target_project_id'] ?? null),
+            (is_array($payload['project'] ?? null) ? $payload['project']['path_with_namespace'] ?? null : null),
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string} */
+    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     private function bitbucketPreviewEvent(Request $request, array $payload): array
     {
         $event = $request->header('X-Event-Key');
@@ -315,23 +330,72 @@ class RepositoryWebhookVerifier
             $pullRequest['title'] ?? null,
             $pullRequest['source']['branch']['name'] ?? null,
             $pullRequest['source']['commit']['hash'] ?? null,
+            $pullRequest['destination']['branch']['name'] ?? null,
+            $this->forkStatus(
+                $pullRequest['source']['repository']['full_name'] ?? null,
+                $pullRequest['destination']['repository']['full_name'] ?? null,
+            ),
+            $pullRequest['destination']['repository']['full_name'] ?? null,
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string} */
-    private function previewPayload(mixed $action, mixed $number, mixed $title, mixed $branch, mixed $revision): array
-    {
+    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
+    private function previewPayload(
+        mixed $action,
+        mixed $number,
+        mixed $title,
+        mixed $branch,
+        mixed $revision,
+        mixed $targetBranch,
+        ?bool $isFork,
+        mixed $targetRepository,
+    ): array {
         if (! is_string($action) || ! is_numeric($number) || (int) $number < 1) {
-            return [null, null, null, null, null];
+            return [null, null, null, null, null, null, null, null];
         }
 
         $cleanTitle = is_string($title) ? mb_substr(trim($title), 0, 255) : null;
         $cleanBranch = is_string($branch) ? mb_substr(trim($branch), 0, 255) : null;
         if ($cleanBranch === null || $cleanBranch === '' || preg_match('/[\x00-\x1F\x7F]/', $cleanBranch)) {
-            return [null, null, null, null, null];
+            return [null, null, null, null, null, null, null, null];
         }
 
-        return [$action, (int) $number, $cleanTitle ?: null, $cleanBranch, $this->revision($revision)];
+        $cleanTargetBranch = is_string($targetBranch) ? mb_substr(trim($targetBranch), 0, 255) : null;
+        if ($cleanTargetBranch !== null && ($cleanTargetBranch === '' || preg_match('/[\x00-\x1F\x7F]/', $cleanTargetBranch))) {
+            $cleanTargetBranch = null;
+        }
+
+        $cleanTargetRepository = is_string($targetRepository) ? mb_substr(trim($targetRepository), 0, 255) : null;
+        if ($cleanTargetRepository === '') {
+            $cleanTargetRepository = null;
+        }
+
+        return [$action, (int) $number, $cleanTitle ?: null, $cleanBranch, $this->revision($revision), $cleanTargetBranch, $isFork, $cleanTargetRepository];
+    }
+
+    /**
+     * Determine whether two provider identities represent different repositories or projects.
+     *
+     * @param  mixed  $source  Provider source repository/project identity.
+     * @param  mixed  $target  Provider target repository/project identity.
+     * @return bool|null True for a fork or cross-project request, false for the same identity, or null when either identity is absent.
+     */
+    private function forkStatus(mixed $source, mixed $target): ?bool
+    {
+        if (! is_string($source) && ! is_int($source)) {
+            return null;
+        }
+        if (! is_string($target) && ! is_int($target)) {
+            return null;
+        }
+
+        $source = strtolower(trim((string) $source));
+        $target = strtolower(trim((string) $target));
+        if ($source === '' || $target === '') {
+            return null;
+        }
+
+        return $source !== $target;
     }
 
     /**
