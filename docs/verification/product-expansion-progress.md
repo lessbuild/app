@@ -1,8 +1,9 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7E alert grouping and post-deployment observation
-characterization complete locally; the read-only context, finite troubleshooting
-filters and validated share link are implemented and tested.
+Status: Phase 7E stable alert identity and occurrence metadata complete locally;
+the read-only context, finite troubleshooting filters and validated share link
+are implemented and tested. Revision-aware post-deployment observation remains
+the next design task.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
@@ -2251,6 +2252,59 @@ deliveries while preserving current delivery frequency and retry behavior.
 ready for the next feature slice; no provider/cloud or live acceptance claim is
 made.
 
+## Phase 7E — stable alert identity and occurrence metadata (completed slice)
+
+### Problem and responsibility boundary
+
+Operational incidents were already grouped and counted locally, but external
+destinations received only the event's category and resource fields. PagerDuty
+reconstructed a grouping key itself; generic webhooks, Slack, Discord, Teams
+and email consumers had no stable incident identity or occurrence count with
+which to group repeated deliveries. The application continues to deliver
+every failure event, but now carries the grouping context with each external
+payload.
+
+`OperationalIncidentAlert` is an immutable delivery boundary built only after
+the existing incident transaction and row lock return the active incident.
+`IncidentNotifier` retains the existing unique `active_key`, repeated-event
+history, notification preferences and fan-out behavior, while passing the
+context to `DeliverAlertWebhookJob`. The payload adds non-secret
+`incident_id`, `incident_occurrences` and `dedup_key` fields. PagerDuty uses
+the supplied key, and legacy jobs without it retain the previous fallback
+calculation. This applies single responsibility and dependency inversion at
+the integration boundary without adding a provider interface, schema change,
+new queue semantics or automatic suppression.
+
+The existing database inbox remains per-event, repeated incident events remain
+visible, webhook retry/backoff remains unchanged, and recovery continues to
+use the existing category/resource behavior. The first incident now explicitly
+sets its existing database-default occurrence value before building the
+in-memory delivery context, avoiding a transient zero in newly created
+payloads without changing the stored value.
+
+### Verification and limitations
+
+The focused alert, incident and observability run passed **24 tests / 205
+assertions**; the broader alert, incident, website-health and deployment
+regression set passed **55 tests / 608 assertions**. The fresh strict isolated
+PHP suite passed **1,413 tests / 12,248 assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check` and the required-PHP
+asset/browser suite (**9 passed**) passed.
+
+This slice adds grouping metadata, not destination-side deduplication or
+delivery suppression. It does not add a revision-aware post-deployment
+observation window, alert grouping controls, polling or provider/cloud
+acceptance. The separate live acceptance drill remains outstanding.
+
+**Phase 7E alert metadata exit gate: complete.** Feature commit `aae111c`
+(`feat: add alert incident metadata`) was fast-forwarded into canonical `main`
+and pushed to GitHub `origin/main` on 2026-09-13. The exact next task is to
+design and characterize a bounded revision-aware post-deployment observation
+record and lifecycle without reusing periodic website health history.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -2265,7 +2319,8 @@ made.
 | Phase 7C | Deployment incidents in the context identified a build resource but sent operators only to the general incident centre. Added a separate link to the existing policy-protected build detail for concrete deployment incidents, retaining the incident-centre navigation for response history and using the build page's existing configuration identity when present. Unknown categories/resource IDs receive no guessed link. | Focused observability/deployment/health/incident run: **26 passed, 218 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,236 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `3e79f4f` — `feat: link incidents to deployment evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize saved/shareable investigation views, authorization rechecks, filter normalization and retention before deciding whether persistence is justified. |
 | Phase 7D characterization | Existing saved notification filters are user-preference JSON without workspace/resource authorization, expiry or retention semantics, while the observability context already has a policy-checked GET URL with finite non-secret filters. Rejected reusing that preference boundary and decided that an initial shareable investigation needs only a canonical validated URL; named shared views require a separate organization-owned design. | Read-only source and behavior characterization completed; no application behavior or schema changed. | `c9b1e00` — `docs: characterize shareable investigations` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the canonical shareable context URL without persistence or authorization changes. |
 | Phase 7D URL | The validated environment context had no explicit copyable investigation link. Added a canonical URL generated only from normalized filters, excluding arbitrary query input and preserving policy checks on every visit. No persistence, secret, response, authorization or query-bound change was introduced. | Focused observability/deployment/health/incident run: **26 passed, 222 assertions**. Fresh strict isolated full PHP suite: **1,412 passed, 12,241 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `c757413` — `feat: add shareable observability links` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize alert grouping/deduplication and post-deployment observation semantics before implementing the next troubleshooting slice. |
-| Phase 7E characterization | Operational incidents already group active failures by workspace/category/resource and source monitors suppress repeated state-transition notifications, but direct notifier calls still deliver repeated inbox/webhook events; the deployment health check is a single immediate probe with no revision-aware observation window or persisted health relationship. Preserved all current grouping, transition, retry and timing boundaries while documenting the next explicit metadata and observation designs. | Focused alert, incident, website-health and deployment-observation regression set: **55 passed, 615 assertions**. Read-only characterization; no application behavior or schema changed. | `pending` — documentation slice | Not yet committed; this characterization is being recorded in the next documentation checkpoint. | Implement and verify stable incident identity/occurrence metadata on external alert deliveries without changing current delivery frequency; design revision-aware post-deployment observation separately. |
+| Phase 7E characterization | Operational incidents already group active failures by workspace/category/resource and source monitors suppress repeated state-transition notifications, but direct notifier calls still deliver repeated inbox/webhook events; the deployment health check is a single immediate probe with no revision-aware observation window or persisted health relationship. Preserved all current grouping, transition, retry and timing boundaries while documenting the next explicit metadata and observation designs. | Focused alert, incident, website-health and deployment-observation regression set: **55 passed, 615 assertions**. Read-only characterization; no application behavior or schema changed. | `43d4e43` — `docs: characterize alert grouping` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify stable incident identity/occurrence metadata on external alert deliveries without changing current delivery frequency; design revision-aware post-deployment observation separately. |
+| Phase 7E alert metadata | External alert payloads lacked a stable identity for grouping repeated events. Added immutable incident delivery metadata from the locked active incident and used its stable key for PagerDuty while preserving the legacy fallback, per-event inbox/webhook delivery, retry behavior and secret boundaries. | Focused alert/incident/observability run: **24 passed, 205 assertions**; broader alert/incident/website-health/deployment regression set: **55 passed, 608 assertions**. Fresh strict isolated full PHP suite: **1,413 passed, 12,248 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `aae111c` — `feat: add alert incident metadata` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Design and characterize a bounded revision-aware post-deployment observation record and lifecycle; do not reuse periodic website health history. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
