@@ -2,10 +2,10 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 6B's isolated
-restore-verification execution slice is complete locally at commit `a9b8730`
-after the backup-recovery characterization, read-only evidence summary and
-Phase 5B read-only multi-target impact-preview slice. It was implemented in
+The product-expansion sequence is active on `main`. Phase 7A's bounded
+environment evidence context is complete locally at commit `5661873`, after
+the Phase 7 observability inventory and the Phase 6B isolated
+restore-verification execution slice. It was implemented in
 the isolated clone `/tmp/buildpusher-product-expansion-uHhkwZ`, fast-forwarded
 into canonical `main` and pushed to GitHub `origin/main`. Building on the Phase 3A
 manifest, Phase 3B readiness states,
@@ -109,6 +109,19 @@ arbitrary runtime smoke checks, scheduled restore drills and provider/cloud
 acceptance remain separate work. No production resources or the acceptance
 drill were changed.
 
+The first connected-observability slice adds a policy-authorized environment
+context at `GET /observability/environments/{environment}/context`, linked from
+the observability dashboard and project environment cards. A finite `24h`,
+`7d` or `30d` Form Request boundary feeds an injected query collaborator that
+loads recent or active environment builds, bounded website health observations,
+metadata-only current runtime-log snapshots and explicitly related operational
+incidents. Existing build, health, runtime-log and incident routes remain the
+authorization and sensitive-content boundaries. The context does not render
+encrypted log bodies, health errors/endpoints, incident summaries/resolutions,
+provider credentials or environment secrets; it performs no writes, queued
+jobs, provider calls or causal inference. Adjacent signals are labeled as
+evidence to investigate, not proof of causation.
+
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
 failure (4 `localhost` occurrences instead of the test's expected 3). Phase
@@ -144,8 +157,15 @@ focused verification/recovery/managed-backup set passed **13 tests / 132
 assertions**. Required-PHP Composer validation/platform checks, changed PHP
 lint, full Pint, Vite, route registration, `git diff --check` and the
 required-PHP asset/browser suite (**9 passed**) passed. The current exact next
-task is Phase 7 inventory: connect environment, deployment, logs, health and
-incidents through bounded, authorization-checked reads; provider/cloud
+task is Phase 7B: add bounded service/deployment and incident-severity filters
+to the environment context while preserving authorization, query limits and
+possible-correlation wording. The fresh strict isolated full suite at
+`5661873` passed **1,411 tests / 12,228 assertions**, with the same unchanged
+`ProvisioningHardeningTest` localhost-count failure. The focused
+observability run passed **54 tests / 464 assertions**, including **3 tests /
+29 assertions** for the context. Required-PHP Composer validation/platform
+checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and
+the required-PHP asset/browser suite (**9 passed**) passed. Provider/cloud
 acceptance and the separate live drill remain outstanding.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.

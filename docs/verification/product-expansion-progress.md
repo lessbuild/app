@@ -1,7 +1,7 @@
 # BuildPusher product expansion progress
 
-Status: Phase 6 isolated restore-verification execution slice complete locally;
-the supported same-server Laravel/MySQL path is implemented and tested.
+Status: Phase 7A bounded environment evidence context slice complete locally;
+the read-only observability context is implemented and tested.
 Preview safety, trust/secret boundaries,
 responsive navigation, first-deployment guidance, recorded configuration
 authoring/comparison, explicit provider observations, a template-driven preview
@@ -1897,8 +1897,71 @@ suite, Pint, lint and the full isolated PHP regression suite before integration.
 This is local application evidence only. Provider-side monitoring, cloud
 acceptance and the separate live acceptance drill remain outstanding.
 
-**Phase 7 inventory exit gate: complete.** The exact next task is to implement
+**Phase 7 inventory exit gate: complete.** The exact next task was to implement
 the bounded environment evidence context and push its verified feature commit.
+
+## Phase 7A — bounded environment evidence context (completed slice)
+
+### Problem and entry points
+
+The existing observability dashboard showed workspace-wide deployment and
+failed-health lists, but it did not let an operator select one environment and
+follow its deployment, health, runtime-log and operational-incident evidence.
+The new read path is linked from `GET /observability` and the project
+environment view, and is served by
+`GET /observability/environments/{environment}/context`. The website detail
+page now exposes a stable anchor for the existing runtime-log surface.
+
+### Responsibility boundary and preserved behavior
+
+`ObservabilityContextRequest` authorizes the existing `EnvironmentPolicy` and
+normalizes only the finite `24h`, `7d` and `30d` window values. It rejects a
+foreign or unauthorized environment before validating an unsupported window.
+`ObservabilityEnvironmentContextQuery` owns the explicit, bounded Eloquent
+read: recent or active environment builds, recent website health observations,
+metadata-only current log snapshots and incident relationships for builds,
+website, server, metric-rule, scheduled-task and provider resources.
+`ObservabilityEnvironmentContext` is the immutable secret-safe read model;
+the controller only passes validated filters and returns the view.
+
+This applies single responsibility and dependency inversion without adding a
+generic repository or provider abstraction. Existing build, health, log and
+incident routes remain the authorization and sensitive-content boundaries.
+The context does not render build-log bodies, health error/endpoint text,
+encrypted runtime output, incident summaries/resolutions/events, provider
+credentials or environment secrets. It performs no writes, queue dispatches,
+provider calls, persistence changes or causal inference. Active builds and
+open/acknowledged incidents remain visible for recovery context even when they
+predate the selected window; terminal builds and resolved incidents are window
+bounded. Existing dashboard, project, website, response, route and API
+contracts are otherwise unchanged.
+
+### Verification and limitations
+
+`ObservabilityEnvironmentContextTest` passed **3 tests / 29 assertions** inside
+the focused observability run of **54 tests / 464 assertions**. The tests cover
+viewer access, foreign-tenant denial before malformed-window validation,
+finite windows, per-collection bounds, active-build retention, explicit
+incident mapping, link contracts, secret/body exclusion and no writes. The
+fresh strict isolated PHP suite passed **1,411 tests / 12,228 assertions**,
+with the unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure (the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, Vite build, route registration, `git diff --check` and the required-
+PHP asset/browser suite (**9 passed**) passed.
+
+This is a local read-only evidence path. It does not add saved investigation
+views, service/severity filters, alert grouping, polling, remote health
+observation or a claim that adjacent signals caused an incident. Provider-side
+monitoring, cloud acceptance and the separate live acceptance drill remain
+outstanding.
+
+**Phase 7A exit gate: complete for the bounded context slice.** Feature commit
+`5661873` (`feat: connect environment observability evidence`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-13. The exact next task is to add the next bounded troubleshooting
+slice: explicit service/deployment and incident-severity filters with the same
+authorization, query bounds and possible-correlation wording.
 
 ## Slice ledger
 
@@ -1908,6 +1971,8 @@ the bounded environment evidence context and push its verified feature commit.
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |
 | Phase 6B characterization | The existing restore mutates the live website and `BackupRestore` records no isolated target, overwrite mode, integrity/smoke result, failure stage, cleanup result or duration. Characterized a same-server temporary Restic directory/database protocol, exact snapshot binding, Laravel smoke boundary, fail-closed unsupported runtimes, EXIT-trap cleanup and separation from control-plane recovery. No application behavior changed. | Read-only source/protocol characterization completed; no runtime state or external resource changed. | `5bed78d` — `docs: characterize isolated restore verification` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the persisted isolated verification attempt and safe request/action/policy/job boundary. |
 | Phase 6B execution | The characterized recovery protocol needed a durable, duplicate-protected request and evidence boundary without changing the destructive in-place restore. Added a separate verification model/table, policy/request/action, post-commit job and injected remote script. It restores an exact snapshot to a same-server temporary MySQL target, checks restored files/database and Laravel readiness, records stage/status/duration/cleanup evidence, fails closed for unsupported target modes and offers safe retry after failure. | Verification/recovery/managed-backup regression set: **13 passed, 132 assertions**. Fresh strict isolated full PHP suite: **1,408 passed, 12,199 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, changed PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a9b8730` — `feat: add isolated website backup verification` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Start Phase 7 inventory: connect environment, deployment, logs, health and incidents through bounded, authorization-checked reads; preserve the separate cloud/live acceptance track. |
+| Phase 7 inventory | The existing observability dashboard exposed workspace-wide deployment and failed-health signals but had no selected-environment evidence context. Completed the source inventory and characterized existing policy, query, log, health, incident and side-effect boundaries before coding. | Read-only source/instruction characterization completed; no application behavior changed. | `82cbeb1` — `docs: inventory connected observability` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the bounded environment evidence context with explicit authorization and secret-safe links. |
+| Phase 7A | Operators needed a selected environment view connecting deployments, health observations, runtime-log metadata and explicitly related incidents. Added a policy-authorized Form Request, immutable filter/context data objects, bounded tenant-scoped query collaborator, context route/view and dashboard/project links. Existing sensitive routes remain responsible for bodies and response authorization; no causal inference, writes, jobs or provider calls were added. | Focused observability run: **54 passed, 464 assertions**, including **3 tests / 29 assertions** for the new context. Fresh strict isolated full PHP suite: **1,411 passed, 12,228 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, Vite, route registration, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `5661873` — `feat: connect environment observability evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add explicit bounded service/deployment and incident-severity filters while preserving authorization, collection limits and possible-correlation wording. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |
