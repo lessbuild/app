@@ -56,6 +56,19 @@ class RepositoryDeploymentPlan
     }
 
     /**
+     * Find the one-based stage for a deployment script without duplicating the plan order in a reader.
+     *
+     * @param  class-string<BuildScript>  $script  Script whose callback stage should be located.
+     * @return int|null The one-based stage, or null when this plan does not contain the script.
+     */
+    public function stageFor(string $script): ?int
+    {
+        $index = array_search($script, $this->scripts(), true);
+
+        return $index === false ? null : $index + 1;
+    }
+
+    /**
      * Locate the one-based stage that activates the candidate release.
      *
      * @return int The activation stage, or the final stage when no activation script is present.

@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\Build;
+use App\Services\BuildDeploymentTimeline;
 use App\Services\DeploymentFailureGuidance;
 use App\Services\RepositoryDeploymentPlan;
 use Illuminate\Contracts\View\View;
@@ -21,8 +22,18 @@ class BuildDeploymentStatus extends Component
     public function render(
         RepositoryDeploymentPlan $plan,
         DeploymentFailureGuidance $guidance,
+        BuildDeploymentTimeline $timeline,
     ): View {
-        $this->build->refresh()->loadMissing(['repository.website.server', 'environment.project', 'promotedFrom.environment', 'promotions.environment']);
+        $this->build->refresh()->loadMissing([
+            'repository.website.server',
+            'environment.project',
+            'promotedFrom.environment',
+            'promotions.environment',
+            'requester',
+            'approver',
+            'rejecter',
+            'configurationOperation.application.review',
+        ]);
         Gate::authorize('view', $this->build);
 
         $log = $this->build->logs()
@@ -41,6 +52,7 @@ class BuildDeploymentStatus extends Component
             'rollbackCandidate' => $this->build->status === Build::STATUS_FAILED
                 ? $this->build->latestRestorableBefore()
                 : null,
+            'deploymentTimeline' => $timeline->for($this->build),
             'website' => $this->build->repository->website,
         ]);
     }

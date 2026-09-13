@@ -36,6 +36,96 @@
         </div>
     </dl>
 
+    <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-evidence-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</p>
+                <h2 id="deployment-evidence-title" class="mt-1 text-lg font-black text-primary">{{ __('Identity and approval context') }}</h2>
+            </div>
+            <span class="text-xs text-secondary">{{ __('Persisted by BuildPusher') }}</span>
+        </div>
+        <dl class="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Revision identity') }}</dt>
+                <dd class="mt-1 break-all font-mono text-sm text-primary">{{ $build->revision ?? __('Current branch; no immutable revision recorded') }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Requested by') }}</dt>
+                <dd class="mt-1 text-sm text-primary">
+                    @if ($build->requester)
+                        {{ $build->requester->name }} <span class="text-secondary">(#{{ $build->requester->id }})</span>
+                    @else
+                        {{ $build->trigger_source === \App\Models\Build::TRIGGER_WEBHOOK ? __('Source webhook') : __('No actor recorded') }}
+                    @endif
+                </dd>
+            </div>
+            <div>
+                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Approval') }}</dt>
+                <dd class="mt-1 text-sm text-primary">
+                    @if ($build->approved_at)
+                        {{ __('Approved by') }} {{ $build->approver?->name ?? __('a removed account') }}{{ $build->approver ? ' (#'.$build->approver->id.')' : '' }}
+                        <time datetime="{{ $build->approved_at->toIso8601String() }}" class="block text-xs text-secondary">{{ $build->approved_at->format('Y-m-d H:i:s T') }}</time>
+                    @elseif ($build->rejected_at)
+                        {{ __('Rejected by') }} {{ $build->rejecter?->name ?? __('a removed account') }}{{ $build->rejecter ? ' (#'.$build->rejecter->id.')' : '' }}
+                        <time datetime="{{ $build->rejected_at->toIso8601String() }}" class="block text-xs text-secondary">{{ $build->rejected_at->format('Y-m-d H:i:s T') }}</time>
+                    @elseif ($build->status === \App\Models\Build::STATUS_AWAITING_APPROVAL)
+                        {{ __('Awaiting an authorized reviewer') }}
+                    @else
+                        {{ __('No approval recorded') }}
+                    @endif
+                </dd>
+            </div>
+            @if ($configurationOperation = $build->configurationOperation)
+                <div>
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Configuration identity') }}</dt>
+                    <dd class="mt-1 text-sm text-primary">
+                        {{ __('Review #:review · Application #:application · Operation #:operation', ['review' => $configurationOperation->application?->configuration_review_id ?? __('unknown'), 'application' => $configurationOperation->configuration_application_id, 'operation' => $configurationOperation->id]) }}
+                        <span class="block text-xs text-secondary">{{ __('Environment :environment · :kind operation', ['environment' => $configurationOperation->environment_slug, 'kind' => $configurationOperation->kind]) }}</span>
+                        @if ($configurationOperation->intent_digest)
+                            <span class="mt-1 block break-all font-mono text-xs text-secondary">{{ __('Intent :digest', ['digest' => $configurationOperation->intent_digest]) }}</span>
+                        @endif
+                    </dd>
+                </div>
+            @endif
+        </dl>
+    </section>
+
+    <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-timeline-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</p>
+                <h2 id="deployment-timeline-title" class="mt-1 text-lg font-black text-primary">{{ __('What happened and what happens next') }}</h2>
+            </div>
+            <p class="text-xs text-secondary">{{ __('Milestones follow the recorded deployment stages.') }}</p>
+        </div>
+        <ol class="mt-5 space-y-4">
+            @foreach ($deploymentTimeline as $entry)
+                <li class="relative pl-9">
+                    <span @class([
+                        'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black',
+                        'bg-green-100 text-green-700' => $entry->status === 'completed',
+                        'bg-blue-100 text-blue-700' => $entry->status === 'active',
+                        'bg-red-100 text-red-700' => $entry->status === 'failed',
+                        'bg-amber-100 text-amber-800' => $entry->status === 'canceled',
+                        'bg-secondary text-secondary' => $entry->status === 'pending',
+                    ]) aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
+                    <div class="rounded-lg bg-secondary p-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="font-semibold text-primary">{{ __($entry->title) }}</h3>
+                            <span class="text-xs font-bold uppercase text-secondary">{{ str($entry->status)->headline() }}</span>
+                        </div>
+                        <p class="mt-1 text-sm text-secondary">{{ __($entry->description) }}</p>
+                        @if ($entry->occurredAt)
+                            <time datetime="{{ $entry->occurredAt->toIso8601String() }}" class="mt-2 block text-xs text-secondary">{{ $entry->occurredAt->format('Y-m-d H:i:s T') }}</time>
+                        @else
+                            <span class="mt-2 block text-xs text-secondary">{{ __('No milestone timestamp is recorded.') }}</span>
+                        @endif
+                    </div>
+                </li>
+            @endforeach
+        </ol>
+    </section>
+
     @if($build->promotedFrom)
         <aside class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-950"><p class="font-bold">{{ __('Promoted release') }}</p><p class="mt-1 text-sm">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="font-bold underline">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm">{{ $build->promotion_note }}</p>@endif</aside>
     @endif
