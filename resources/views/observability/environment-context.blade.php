@@ -186,14 +186,23 @@
             </div>
             <div class="mt-4 space-y-2">
                 @forelse($context->incidents as $incident)
-                    <a href="{{ route('observability.index') }}#operational-incidents" class="block rounded-xl border border-primary bg-secondary p-3 transition hover:border-ternary">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase {{ $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED ? 'bg-green-100 text-green-800' : ($incident->severity === 'critical' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800') }}">{{ str((string) $incident->status)->headline() }}</span>
-                            <span class="text-xs text-secondary">{{ str((string) $incident->severity)->headline() }} · {{ str((string) $incident->category)->headline() }} #{{ $incident->resource_id }}</span>
-                        </div>
-                        <p class="mt-2 font-bold text-primary">{{ $incident->title }}</p>
-                        <p class="mt-1 text-xs text-secondary">{{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }} · {{ __('Last seen :time', ['time' => $incident->last_seen_at?->diffForHumans()]) }} · {{ __('Owner: :owner', ['owner' => $incident->assignee?->name ?? __('Unassigned')]) }}</p>
-                    </a>
+                    @php($incidentBuild = $incident->category === 'deployment' ? $context->builds->firstWhere('id', (int) $incident->resource_id) : null)
+                    <div class="rounded-xl border border-primary bg-secondary p-3 transition hover:border-ternary">
+                        <a href="{{ route('observability.index') }}#operational-incidents" class="block">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase {{ $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED ? 'bg-green-100 text-green-800' : ($incident->severity === 'critical' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800') }}">{{ str((string) $incident->status)->headline() }}</span>
+                                <span class="text-xs text-secondary">{{ str((string) $incident->severity)->headline() }} · {{ str((string) $incident->category)->headline() }} #{{ $incident->resource_id }}</span>
+                            </div>
+                            <p class="mt-2 font-bold text-primary">{{ $incident->title }}</p>
+                            <p class="mt-1 text-xs text-secondary">{{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }} · {{ __('Last seen :time', ['time' => $incident->last_seen_at?->diffForHumans()]) }} · {{ __('Owner: :owner', ['owner' => $incident->assignee?->name ?? __('Unassigned')]) }}</p>
+                        </a>
+                        @if($incidentBuild)
+                            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-primary pt-3">
+                                <a href="{{ route('builds.show', $incidentBuild) }}" class="text-xs font-bold text-ternary underline" data-testid="incident-deployment-evidence-link">{{ __('Open deployment evidence') }}</a>
+                                <span class="text-xs text-secondary">{{ __('Recorded configuration identity is shown there when available.') }}</span>
+                            </div>
+                        @endif
+                    </div>
                 @empty
                     <p class="rounded-xl border border-dashed border-primary p-4 text-sm text-secondary">{{ __('No explicitly related incidents were recorded in this window.') }}</p>
                 @endforelse

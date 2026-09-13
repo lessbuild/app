@@ -117,6 +117,8 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->assertSee('Environment evidence')
             ->assertSee('Deployment requires investigation')
             ->assertSee('Recent website recovery')
+            ->assertSee('Open deployment evidence')
+            ->assertSee('data-testid="incident-deployment-evidence-link"', false)
             ->assertSee($recentBuild->shortRevision())
             ->assertSee(route('builds.show', $recentBuild), false)
             ->assertSee(route('websites.runtime-logs.show', [$website, 'application']), false)
@@ -125,6 +127,11 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->assertDontSee('private-health-error')
             ->assertDontSee('private-incident-summary')
             ->assertDontSee('private-website-summary');
+
+        $this->assertStringContainsString(
+            '<a href="'.route('builds.show', $recentBuild).'" class="text-xs font-bold text-ternary underline" data-testid="incident-deployment-evidence-link">Open deployment evidence</a>',
+            $response->getContent(),
+        );
 
         $response->assertViewHas('context', function ($context) use ($oldTerminalBuild, $oldActiveBuild): bool {
             return $context->builds->pluck('id')->contains($oldActiveBuild->id)
