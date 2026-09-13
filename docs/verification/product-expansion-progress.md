@@ -1,11 +1,9 @@
 # BuildPusher product expansion progress
 
-Status: Phase 7F's disabled-by-default revision-aware post-deployment
+Status: Phase 7G's organization-owned named investigation views are complete
+locally. Phase 7F's disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
-environment evidence integration are complete locally. The Phase 7G
-characterization of named saved investigation views is complete; the next
-implementation slice adds their organization, resource-authorization and
-retention boundary. The read-only
+environment evidence integration are also complete. The read-only
 context, finite troubleshooting filters, validated share link, stable alert
 metadata and shared website health probe are implemented and tested.
 Preview safety, trust/secret boundaries,
@@ -231,9 +229,14 @@ application defect or an outdated expectation and record the decision.
 7. **Phase 6 — verified backup recovery.** Separate backup completion from
    verified application/control-plane recovery and make cleanup visible.
 8. **Phase 7 — connected observability and troubleshooting.** Connect deployment,
-   environment, log, health and incident context with bounded queries.
-9. **Phase 8 — interactive troubleshooting.** Design and implement sessions only
-   after structured diagnostics and the host transport/security model are clear.
+   environment, log, health and incident context with bounded queries. The
+   completed local slices now include revision-bound observation outcomes and
+   expiring organization-owned investigation handoff views; provider/cloud
+   acceptance remains separate.
+9. **Phase 8 — structured diagnostics, then interactive troubleshooting.**
+   Characterize and improve bounded runtime/process/storage/connectivity
+   diagnostics before designing sessions with a clear host transport/security
+   model.
 10. **Phase 9 — resource usage and cost visibility.** Distinguish estimates,
     measured use and provider billing; show safe review-only cleanup signals.
 
@@ -2680,6 +2683,69 @@ implement the separate organization-owned named investigation view with
 validated filters, policy rechecks, opaque identifiers, explicit expiry,
 atomic retention bounds and a redirect to the existing canonical context read.
 
+## Phase 7G — organization-owned named investigation views (completed slice)
+
+### Problem and responsibility boundary
+
+The stateless observability context URL was safe to copy, but it did not give
+teams a bounded named handoff that could be listed and removed from the
+environment view. The existing notification saved-filter preference was not a
+safe substitute because it is personal JSON without environment identity,
+workspace authorization, expiry or current-resource revalidation.
+
+The new `ObservabilityInvestigationView` record stores only an opaque UUID,
+organization and environment identity, creator identity, a bounded name,
+normalized context filters and an expiration time. It never snapshots
+deployment output, incident bodies, health errors, runtime logs, secrets or
+provider data. The route key is the UUID rather than an enumerable database
+ID.
+
+`StoreObservabilityInvestigationViewRequest` extends the existing context
+request so authorization and finite filter normalization remain at the HTTP
+boundary. `ObservabilityInvestigationViewData` carries the immutable validated
+input to `CreateObservabilityInvestigationViewAction`, which owns the
+transaction-time organization lock, service revalidation, case-insensitive
+duplicate check and active per-organization cap. `ObservabilityInvestigationViewPolicy`
+owns open/delete decisions; the creator or a current workspace manager may
+remove a view, while an open always requires current workspace and environment
+access. `ObservabilityInvestigationViewQuery` owns the bounded active list and
+`ObservabilityInvestigationViewResolver` revalidates persisted filters and
+service identity before redirecting to the canonical context route. The
+controller coordinates those boundaries and returns the existing response
+style; it does not perform persistence or return a new evidence payload.
+
+This applies single responsibility, least privilege and dependency inversion
+without reusing personal preferences, introducing a generic repository or
+creating a public bearer link. Expiry choices are finite (7, 30 or 90 days),
+the default is 30 days and the active cap is 50 per organization. Expired rows
+remain available to the bounded prune command rather than being deleted as a
+side effect of a failed create; the scheduled command deletes only bounded
+expired IDs. Opening an expired or detached/corrupt view returns the existing
+404-style unavailable response, while an authorized creator or manager can
+remove the expired row.
+
+### Verification and limitations
+
+`ObservabilityInvestigationViewTest` passed **10 tests / 48 assertions**,
+covering member save/open and canonical redirect, bounded listing, creator
+removal, denial before malformed input, foreign-workspace protection, expiry,
+corrupt/stale filter rejection, duplicate names, atomic active-cap behavior,
+default retention and bounded pruning. The adjacent observability and
+notification regression set passed **44 tests / 309 assertions**. The fresh
+strict isolated full PHP suite passed **1,443 tests / 12,433 assertions**, with
+the unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure (the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
+asset/browser suite (**9 passed**) also passed.
+
+The new web routes do not change existing API envelopes, notification
+preferences, context filter semantics or evidence retention. No provider,
+cloud, billing or live-acceptance claim is made. The exact next task is Phase 8
+structured-diagnostics characterization: inventory the existing bounded
+runtime, process, storage and connectivity diagnostics before designing any
+interactive terminal transport.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
@@ -2701,7 +2767,8 @@ atomic retention bounds and a redirect to the existing canonical context read.
 | Phase 7F observation aggregate | Successful deployments had no durable, revision-bound post-deployment observation boundary. Added an optional environment window protected by the existing monitoring entitlement, an immutable non-secret target snapshot in the encrypted build payload, a finite observation status model and a locked/idempotent creation action invoked after successful build completion. The action validates the captured build/revision/path identity, avoids legacy/incomplete targets and supersedes older active observations for the same website/repository. The creation action performs no remote work itself; execution is a separate queued boundary. Periodic website history and the immediate deployment probe remain separate. | Focused feature/regression run: **68 tests / 517 assertions**. Fresh strict isolated full PHP suite: **1,421 tests / 12,301 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `32c3947` — `feat: add deployment observation records` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Add leased remote observation execution using the shared probe, with bounded retries, expiry/failure outcomes, duplicate-dispatch protection and stale-claim guards. |
 | Phase 7F observation execution/read surface | The observation aggregate needed durable remote execution, lease recovery and a safe user-facing result without changing periodic website health or immediate deployment health. Added a post-commit unique job, a locked two-minute claim action, bounded queue retries/backoff, a minute-level scheduler for due work and expired leases, current build/revision/target revalidation, terminal expiry/failure/supersession outcomes and stale-claim protection. Build details expose bounded status metadata while hiding claim tokens and remote error text. | Final focused observation run: **14 tests / 87 assertions**. Fresh strict isolated full PHP suite: **1,429 tests / 12,359 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check`, Vite and required-PHP asset/browser suite: **9 passed**. | `c6eff04` — `feat: execute revision-bound deployment observations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Include revision-bound observation outcomes in the bounded environment evidence context, preserving service filters, tenant authorization and exclusion of remote error text. |
 | Phase 7F environment evidence outcomes | The bounded environment evidence context had no revision-bound outcome from an explicitly requested post-deployment observation. Extended the existing tenant-scoped query to retain active observations outside the time window, preserve service filters and eager-load only approved fields. An immutable `DeploymentObservationEvidence` read model and view expose status, checks, duration, HTTP status and check time only; exact build/revision/current-website matching rejects stale or cross-target rows. No remote calls, writes, jobs, routes or causal claims were added. | Combined environment-context, deployment-observation and observability regression run: **39 tests / 295 assertions**. Fresh strict isolated full PHP suite: **1,433 tests / 12,383 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, `git diff --check`, Vite and required-PHP asset/browser suite (**9 passed**) passed. | `0390030` — `feat: surface deployment observations in environment evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize named saved investigation views, including organization/resource authorization, filter normalization, expiry and retention, before deciding whether persistence is justified. |
-| Phase 7G characterization | Existing saved notification filters are personal user-preference JSON with notification-only criteria, a ten-entry cap and name replacement, but no organization/environment identity, membership visibility, expiry or retention. The stateless observability URL already normalizes finite filters and rechecks environment authorization on every visit. Characterized and rejected reuse of the personal preference boundary; named shared views justify a separate organization-owned, environment-bound record with opaque identity, revalidated filters, explicit expiry and bounded retention. | Focused notification-inbox and observability regression run: **34 tests / 261 assertions**. Read-only source/behavior characterization; no application behavior, schema or runtime state changed. | `docs: characterize named saved investigation views` | Documentation checkpoint will be recorded and pushed immediately after commit. | Implement the organization-owned named investigation view with validated filters, policy rechecks, opaque identifiers, explicit expiry, atomic retention bounds and redirect to the canonical context read. |
+| Phase 7G characterization | Existing saved notification filters are personal user-preference JSON with notification-only criteria, a ten-entry cap and name replacement, but no organization/environment identity, membership visibility, expiry or retention. The stateless observability URL already normalizes finite filters and rechecks environment authorization on every visit. Characterized and rejected reuse of the personal preference boundary; named shared views justify a separate organization-owned, environment-bound record with opaque identity, revalidated filters, explicit expiry and bounded retention. | Focused notification-inbox and observability regression run: **34 tests / 261 assertions**. Read-only source/behavior characterization; no application behavior, schema or runtime state changed. | `2bf89f8` — `docs: characterize named saved investigation views` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the organization-owned named investigation view with validated filters, policy rechecks, opaque identifiers, explicit expiry, atomic retention bounds and redirect to the canonical context read. |
+| Phase 7G named investigations | The stateless context link had no bounded named team handoff, and notification preferences could not safely carry workspace/environment authorization. Added an organization-owned, environment-bound view with opaque UUID routing, finite normalized filters, creator/manager deletion policy, current-resource revalidation, 7/30/90-day expiry choices, a 50-active-view organization cap and a bounded scheduled prune command. Opening redirects to the canonical context, so evidence remains read-only, current and secret-safe. | `ObservabilityInvestigationViewTest`: **10 tests / 48 assertions**. Adjacent observability/notification regression set: **44 tests / 309 assertions**. Fresh strict isolated full PHP suite: **1,443 tests / 12,433 assertions, 1 unchanged baseline failure**. Required-PHP Composer validation/platform checks, PHP lint, full Pint, route-cache creation, Vite, `git diff --check` and required-PHP asset/browser suite: **9 passed**. | `a2351fa` — `feat: add saved observability investigations` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Phase 8: characterize existing bounded runtime, process, storage and connectivity diagnostics before designing interactive terminal transport. |
 | Phase 0 | Product inventory and isolation/baseline were missing for this expansion. Created this ledger; no application behavior changed. | See baseline evidence above. | `590fa5a` — `docs: record product expansion baseline`; `27176fe` — `docs: record product expansion push` | Pushed to GitHub `origin/main` on 2026-09-12. | Completed by the Phase 1A preview-configuration characterization and implementation below. |
 | Phase 1A | `PreviewDeploymentLifecycle::create()` copied the source website's encrypted environment text into previews, mixing lifecycle orchestration with preview configuration policy and risking source credentials in untrusted code. Added `PreviewEnvironmentConfiguration`, explicit preview-owned application/database values and sanitization of legacy previews on revised events. | `PreviewDeploymentTest.php`: 5 passed, 56 assertions. Adjacent provisioning/callback/environment tests: 36 passed, 304 assertions. Full isolated PHP suite: 1,320 passed, 1 baseline failure, 11,429 assertions; same `ProvisioningHardeningTest` `localhost` count mismatch as Phase 0. Pint and `git diff --check` passed. | `87a242f` — `feat: isolate preview environment configuration` | Pushed to GitHub `origin/main` on 2026-09-12. | Define trusted-branch/fork policy and explicit secret-scope approval, then address navigation/feedback and first-deployment guidance with focused browser evidence. |
 | Phase 1B | Signed preview webhooks lacked explicit target-branch, target-repository and fork admission. Added provider-neutral metadata to `VerifiedRepositoryWebhook`, provider-specific normalization and injected `PreviewTrustPolicy`; forks, mismatched targets and unknown metadata are denied before any preview side effect, while close cleanup remains available. | Preview suite: 12 passed, 97 assertions. GitHub, GitLab and Bitbucket preview metadata paths are covered; adjacent repository webhook and provisioning callback regressions: 45 passed, 390 assertions. Pint and `git diff --check` passed. | `1c422d5` — `feat: enforce trusted preview pull requests` | Pushed to GitHub `origin/main` on 2026-09-13. | Design the explicit revision-bound preview secret-scope approval and dependent-resource credential boundary; then address navigation/feedback and first-deployment guidance. |

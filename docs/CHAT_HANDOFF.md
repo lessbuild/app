@@ -6,7 +6,7 @@ The product-expansion sequence is active on `main`. Phase 7F's disabled-by-defau
 revision-aware post-deployment observation aggregate, leased execution/read
 surface and bounded environment-evidence integration are complete locally at
 feature commits `c6eff04` and `0390030`; the Phase 7G named-investigation-view
-characterization is now complete as a documentation checkpoint, following the shared
+implementation is complete at feature commit `a2351fa`, following the shared
 website health probe extraction
 at `3e4c337`, the revision-aware post-deployment observation characterization
 and the Phase 7E stable alert identity and occurrence-metadata slice
@@ -285,12 +285,19 @@ contains four). Required-PHP Composer validation/platform checks, PHP lint,
 full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
 asset/browser suite (**9 passed**) also passed. The focused notification-inbox
 and observability characterization run passed **34 tests / 261 assertions**;
-it confirmed that personal notification presets cannot safely back
-organization-scoped observability views. No provider/cloud or live acceptance
-claim is made. The exact next task is to implement the separate
-organization-owned named investigation view with validated filters, policy
-rechecks, opaque identifiers, explicit expiry, atomic retention bounds and a
-redirect to the canonical context read.
+the named-view implementation then passed **10 tests / 48 assertions**, and
+the adjacent observability/notification regression set passed **44 tests /
+309 assertions**. The fresh strict isolated full PHP suite at `a2351fa` passed
+**1,443 tests / 12,433 assertions**, with the same unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check`, Vite and the required-PHP
+asset/browser suite (**9 passed**) also passed. The feature adds no API
+envelope, notification-preference or evidence-snapshot change; no provider,
+cloud or live-acceptance claim is made. The exact next task is Phase 8
+structured-diagnostics characterization before any interactive terminal
+transport.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
