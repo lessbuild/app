@@ -8,6 +8,15 @@ Upload a document, validate it, review a plan, then apply that exact plan. Valid
 
 The configuration describes project environments, their runtime, named processes, named resources and secret references. It uses logical names for portable topology. Existing servers, websites and secrets are supplied through explicit workspace-scoped bindings; credentials never belong in the document or plan response.
 
+The web authoring page includes a **Current environment overview** before the
+binding form. It is a read-only projection of recorded local state: each
+environment shows its branch, runtime, server, website, matching repository,
+latest recorded build status, processes, resources and masked variable counts.
+It does not contact a provider or compare against remote state, and it never
+renders commands, variable keys or values, encrypted resource configuration or
+provider credentials. Review and apply remain the only paths that can change
+configuration.
+
 ## Version 2 example
 
 ```yaml

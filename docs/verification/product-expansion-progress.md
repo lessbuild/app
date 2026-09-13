@@ -1,8 +1,10 @@
 # BuildPusher product expansion progress
 
-Status: Phase 1 complete. Preview safety, trust/secret boundaries,
-responsive navigation and first-deployment guidance are complete; the
-multi-service preview lifecycle remains incomplete.
+Status: Phase 2A complete. Preview safety, trust/secret boundaries,
+responsive navigation, first-deployment guidance and the recorded
+configuration environment overview are complete; the remaining Phase 2
+authoring/comparison work and multi-service preview lifecycle remain
+incomplete.
 
 Date: 2026-09-13
 
@@ -495,6 +497,8 @@ The exact feature commit and push are recorded in the slice ledger below.
 | Phase 1D | The responsive layout opened the command palette at tablet width without a visible focus-restoration trigger, and mobile navigation omitted the desktop Settings shortcut. Added named tablet/mobile palette triggers, shared visible-trigger focus restoration and the existing account Settings destination while keeping Account as the sole current route. | `DashboardTest.php` and `LocalUiAssetTest.php`: 36 passed, 737 assertions. Accessibility browser suite: 3 passed across mobile/tablet/desktop. Mobile visual crawl: 1 passed. Vite build, Pint and `git diff --check` passed. | `9a0bea8` — `fix: restore responsive navigation focus` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
 | Phase 1D test contract | The broad visual audit checked the mobile dialog ID at desktop width even though the layout intentionally uses the desktop sidebar there. Selected `#primary-navigation` below the desktop breakpoint and `#desktop-navigation` at desktop widths; no application behavior changed. | Mobile and tablet visual-audit runs passed; corrected desktop visual-audit run: 1 passed in 1.4 minutes. | `575d86f` — `test: align responsive visual navigation audit` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
 | Phase 1E | The repository page showed a technical snapshot without actionable recovery links or sanitized distinction between invalid provider credentials, insufficient scopes and plan denial. Added injected `DeploymentPreflightGuidance`, preserved the persisted preflight shape, and rechecked the existing deployment entitlement inside `DeployRepositoryAction` before writes. | `RepositoryDeploymentTest.php`: 11 passed, 70 assertions. Adjacent deployment/preflight/environment/authorization/configuration coverage: 32 passed, 269 assertions. Mobile/tablet visual audit and corrected desktop audit passed; Vite, Pint and `git diff --check` passed. | `e1f985d` — `feat: add actionable first deployment guidance` | Pushed to GitHub `origin/main` on 2026-09-13. | Complete the Phase 2 configuration authoring/editor, dependency overview, secret-safe environment comparison and read-only observable-drift slice. |
+
+| Phase 2A | The configuration authoring page had no bounded view of the application's recorded topology before a user prepared a review. Added an injected eager-loaded query collaborator and immutable secret-safe environment read model covering servers, websites, branch-matched repositories, latest build status, processes, resources and masked variable counts. | Focused overview/web coverage: 5 passed, 59 assertions. Full configuration/API/ownership batch: 183 passed, 1,775 assertions. The query-count regression proves eager-loaded reads remain constant as environments grow; sensitive command, resource configuration, variable value/ciphertext and foreign-project data are excluded. Full Pint, Vite build and `git diff --check` passed. No schema or review/apply behavior changed. | `1d5b571` — `feat: add configuration environment overview` | Pushed to GitHub `origin/main` on 2026-09-13. | Add the next smallest Phase 2 authoring slice: schema-aware starter guidance and review-safe authoring feedback using the existing version-2 parser, without flashing submitted commands or bindings. |
 
 ## Phase 1 exit verification
 
