@@ -2,10 +2,11 @@
 
 ## Product expansion current checkpoint — 2026-09-13
 
-The product-expansion sequence is active on `main`. Phase 7F's shared website
-health probe extraction is complete locally at feature commit `3e4c337`, after
-the revision-aware post-deployment observation characterization and the Phase
-7E stable alert identity and occurrence-metadata slice
+The product-expansion sequence is active on `main`. Phase 7F's disabled-by-default
+revision-aware post-deployment observation aggregate is complete locally at
+feature commit `32c3947`, following the shared website health probe extraction
+at `3e4c337`, the revision-aware post-deployment observation characterization
+and the Phase 7E stable alert identity and occurrence-metadata slice
 at feature commit `aae111c`, the alert-grouping characterization commit
 `43d4e43`, the
 Phase 7D canonical shareable investigation URL at feature commit `c757413`,
@@ -170,10 +171,13 @@ retain their previous fallback; inbox delivery, webhook frequency, retries and
 recovery behavior remain unchanged. The deployment plan's health stage is one
 immediate retried HTTP probe, while periodic website checks are separate,
 website-scoped records with no revision relationship or post-deployment
-observation window. Phase 7F characterization confirms that these must remain
-separate: a future observation aggregate needs its own build/revision/path
-identity, explicit opt-in configuration, post-commit scheduling and locked
-supersession/expiry guards rather than reusing periodic website history.
+observation window. Phase 7F keeps these separate and now adds an opt-in,
+monitoring-entitled observation aggregate with its own build/revision/path
+identity. The successful-build callback snapshots the non-secret target in the
+encrypted build payload, creates one pending record after commit, is idempotent
+for duplicate callbacks and supersedes older active observations for the same
+website/repository under a locked transaction. No remote probe, retry or lease
+job is dispatched yet; those execution semantics are the next slice.
 
 The fresh isolated full PHP suite at the Phase 4B feature commit passed **1,374 tests /
 11,885 assertions**, with the unchanged `ProvisioningHardeningTest` baseline
@@ -246,11 +250,19 @@ full PHP suite passed **1,416 tests / 12,274 assertions**, with the same
 unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
 failure. Required-PHP Composer validation/platform checks, PHP lint, full Pint,
 route-cache creation, `git diff --check` and the required-PHP asset/browser
-suite (**9 passed**) passed. No provider/cloud or live acceptance claim is
-made. The exact next task is to add the disabled-by-default revision-aware
-observation aggregate and lifecycle using the extracted probe, with explicit
-build/revision/path identity, post-commit scheduling and duplicate,
-supersession, retry, expiry and failure coverage.
+suite (**9 passed**) passed. The Phase 7F shared probe extraction then passed
+**35 tests / 441 assertions**; the subsequent observation aggregate slice
+passed **68 tests / 517 assertions** in its focused/regression run. The fresh
+strict isolated full PHP suite at `32c3947` passed **1,421 tests / 12,301
+assertions**, with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). Required-PHP Composer validation/platform checks, PHP lint,
+full Pint, route-cache creation, `git diff --check` and the required-PHP
+asset/browser suite (**9 passed**) passed. No provider/cloud or live
+acceptance claim is made. The exact next task is to add leased remote
+observation execution using the shared probe, with bounded retry, expiry,
+failure, duplicate-dispatch and stale-claim coverage.
 The progress ledger is [here](verification/product-expansion-progress.md), the
 template contract is [here](service-templates.md), and the roadmap is [here](NEXT_ROADMAP.md). Older handoff entries below are historical and are superseded by this checkpoint.
 
