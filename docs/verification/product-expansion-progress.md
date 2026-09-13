@@ -1,7 +1,8 @@
 # BuildPusher product expansion progress
 
-Status: Phase 1E complete. Phase 0 and the preview safety/navigation/guidance
-slices are complete; the multi-service preview lifecycle remains incomplete.
+Status: Phase 1 complete. Preview safety, trust/secret boundaries,
+responsive navigation and first-deployment guidance are complete; the
+multi-service preview lifecycle remains incomplete.
 
 Date: 2026-09-13
 
@@ -494,6 +495,27 @@ The exact feature commit and push are recorded in the slice ledger below.
 | Phase 1D | The responsive layout opened the command palette at tablet width without a visible focus-restoration trigger, and mobile navigation omitted the desktop Settings shortcut. Added named tablet/mobile palette triggers, shared visible-trigger focus restoration and the existing account Settings destination while keeping Account as the sole current route. | `DashboardTest.php` and `LocalUiAssetTest.php`: 36 passed, 737 assertions. Accessibility browser suite: 3 passed across mobile/tablet/desktop. Mobile visual crawl: 1 passed. Vite build, Pint and `git diff --check` passed. | `9a0bea8` — `fix: restore responsive navigation focus` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
 | Phase 1D test contract | The broad visual audit checked the mobile dialog ID at desktop width even though the layout intentionally uses the desktop sidebar there. Selected `#primary-navigation` below the desktop breakpoint and `#desktop-navigation` at desktop widths; no application behavior changed. | Mobile and tablet visual-audit runs passed; corrected desktop visual-audit run: 1 passed in 1.4 minutes. | `575d86f` — `test: align responsive visual navigation audit` | Pushed to GitHub `origin/main` on 2026-09-13. | Add actionable first-deployment preflight guidance with focused browser evidence. |
 | Phase 1E | The repository page showed a technical snapshot without actionable recovery links or sanitized distinction between invalid provider credentials, insufficient scopes and plan denial. Added injected `DeploymentPreflightGuidance`, preserved the persisted preflight shape, and rechecked the existing deployment entitlement inside `DeployRepositoryAction` before writes. | `RepositoryDeploymentTest.php`: 11 passed, 70 assertions. Adjacent deployment/preflight/environment/authorization/configuration coverage: 32 passed, 269 assertions. Mobile/tablet visual audit and corrected desktop audit passed; Vite, Pint and `git diff --check` passed. | `e1f985d` — `feat: add actionable first deployment guidance` | Pushed to GitHub `origin/main` on 2026-09-13. | Complete the Phase 2 configuration authoring/editor, dependency overview, secret-safe environment comparison and read-only observable-drift slice. |
+
+## Phase 1 exit verification
+
+The corrected isolated full PHP suite ran with the repository's testing
+configuration, including `APP_DEBUG=true` so existing validation-feedback
+assertions exercise their intended rendered response. It passed **1,334 tests
+and 11,533 assertions**, with the one unchanged Phase 0 failure in
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` (the
+test expects three `localhost` occurrences and the current script contains
+four). An earlier run with `APP_DEBUG=false` produced four additional response
+rendering failures; those were environment-induced and the affected classes
+passed when rerun with `APP_DEBUG=true`. No Phase 1 regression was found.
+
+Phase 1 therefore meets its local exit gate for the implemented scope:
+preview configuration is explicit and secret-safe, trusted preview admission
+and revision-bound secret approval are enforced, responsive navigation and
+focus restoration work at supported breakpoints, and first-deployment
+guidance distinguishes actionable provider and entitlement blockers. The
+planned dependent Postgres/Valkey preview stack, initialization, quota and
+durable partial-cleanup work remain Phase 3. Local evidence still does not
+establish the separate live acceptance drill or cloud/provider acceptance.
 
 ## External acceptance still outstanding
 
