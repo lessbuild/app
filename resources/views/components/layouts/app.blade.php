@@ -4,8 +4,8 @@
     </a>
     <div
         class="flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
-        x-data="{ menu: false, palette: false, paletteQuery: '', paletteIndex: 0 }"
-        @keydown.escape.window="if (palette) { palette = false; $nextTick(() => $refs.paletteToggle?.focus()) } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
+        x-data="{ menu: false, palette: false, paletteQuery: '', paletteIndex: 0, restorePaletteFocus() { this.$nextTick(() => { const trigger = [this.$refs.paletteToggle, this.$refs.mobilePaletteToggle, this.$refs.mobileQuickPaletteToggle].find((element) => element && element.offsetParent !== null); trigger?.focus(); }) } }"
+        @keydown.escape.window="if (palette) { palette = false; restorePaletteFocus() } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
         @keydown.window.prevent.cmd.k="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"
         @keydown.window.prevent.ctrl.k="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"
     >
@@ -35,6 +35,7 @@
             <div class="sticky top-0 z-30 bg-gray-800 text-gray-100">
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}" class="font-bold text-lg text-white">{{ config('app.name') }}</a>
+                    <button type="button" x-ref="mobilePaletteToggle" class="hidden min-h-[44px] items-center justify-center rounded-lg border border-gray-600 bg-gray-700 px-3 text-xs font-semibold text-gray-100 shadow-xs hover:bg-gray-600 sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-sm border border-gray-500 px-1.5 py-0.5 text-[10px] text-gray-200">Ctrl K</kbd></button>
                     <button type="button" x-ref="navigationToggle" class="flex min-h-[44px] items-center gap-2 rounded-lg border border-gray-600 bg-gray-700 px-3 text-sm font-semibold text-gray-100 shadow-xs hover:bg-gray-600" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
                 <div class="w-full h-14 px-6 border-b border-gray-700 hidden lg:flex items-center justify-between">
@@ -65,13 +66,13 @@
         <nav class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
             <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
             <a href="{{ route('projects.create') }}" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('Create') }}</span></a>
-            <button type="button" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
+            <button type="button" x-ref="mobileQuickPaletteToggle" class="flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = 0; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
             <a href="{{ route('notifications.index') }}" class="relative flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(auth()->user()->unreadNotifications()->exists())<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
 
-        <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" @click.self="palette = false; $nextTick(() => $refs.paletteToggle?.focus())">
+        <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" @click.self="palette = false; restorePaletteFocus()">
             <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" @keydown.arrow-down.prevent="paletteIndex++" @keydown.arrow-up.prevent="paletteIndex = Math.max(0, paletteIndex - 1)">
-                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Command palette') }}</h2><button type="button" class="button tertiary" aria-label="{{ __('Close command palette') }}" @click="palette = false; $nextTick(() => $refs.paletteToggle?.focus())">×</button></div>
+                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Command palette') }}</h2><button type="button" class="button tertiary" aria-label="{{ __('Close command palette') }}" @click="palette = false; restorePaletteFocus()">×</button></div>
                 <form method="GET" action="{{ route('search.index') }}" class="border-b border-primary p-3">
                     <label for="command-palette-query" class="sr-only">{{ __('Search commands and resources') }}</label>
                     <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" name="q" type="search" maxlength="100" autocomplete="off" class="input secondary w-full rounded-xl text-base" placeholder="{{ __('Type a command or resource name…') }}">

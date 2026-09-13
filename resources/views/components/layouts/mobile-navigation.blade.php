@@ -14,6 +14,7 @@
         [
             ['Workspace', 'organizations.index', 'user-circle'], ['Costs', 'costs.index', 'chip'],
             ['Billing', 'billing.index', 'information-circle'], ['Account', 'account.index', 'user-circle'],
+            ['Settings', 'account.index', 'cog'],
             ['Help and guides', 'docs', 'information-circle'], ['Send feedback', 'feedback.index', 'information-circle'],
         ],
     ];
@@ -34,7 +35,7 @@
         @foreach($mobileGroups as $group)
             <nav class="grid grid-cols-2 gap-2 border-b border-primary pb-4 mb-4" aria-label="{{ $loop->first ? __('Workspace navigation') : __('Settings and support') }}">
                 @foreach($group as [$label, $route, $icon])
-                    @php($active = request()->routeIs($route === 'dashboard' ? 'dashboard' : preg_replace('/\.[^.]+$/', '.*', $route)) || ($route === 'projects.index' && request()->routeIs('environments.*')))
+                    @php($active = $label !== 'Settings' && (request()->routeIs($route === 'dashboard' ? 'dashboard' : preg_replace('/\.[^.]+$/', '.*', $route)) || ($route === 'projects.index' && request()->routeIs('environments.*'))))
                     <a href="{{ route($route) }}" @if($active) aria-current="page" @endif @class(['flex min-h-[46px] min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-semibold shadow-xs', 'border-slate-700 bg-slate-700 text-white' => $active, 'border-primary bg-primary text-primary hover:bg-secondary' => !$active])><svg class="h-4 w-4 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use></svg><span class="break-words">{{ __($label) }}</span></a>
                 @endforeach
             </nav>

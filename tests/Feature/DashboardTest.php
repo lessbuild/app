@@ -57,7 +57,8 @@ class DashboardTest extends TestCase
             ->assertSee('grid grid-cols-2 gap-2', false)
             ->assertSee('Search workspace')
             ->assertSee('Current workspace')
-            ->assertSee('Settings and support');
+            ->assertSee('Settings and support')
+            ->assertSee('>Settings<', false);
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
     }
 
