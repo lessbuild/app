@@ -42,7 +42,7 @@ class AdminAnalyticsTest extends TestCase
         $admin = User::factory()->create(['email' => 'owner@example.com']);
 
         try {
-            app(Entitlements::class)->enforce($admin->currentOrganization, 'api');
+            app(Entitlements::class)->enforce($admin->currentOrganization, 'backups');
         } catch (ValidationException) {
             // Expected: the denial is the event being measured.
         }
