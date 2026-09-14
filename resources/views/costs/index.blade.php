@@ -118,6 +118,37 @@
             </section>
 
             <section class="rounded-2xl border border-primary bg-primary p-5">
+                <h2 class="font-black text-primary">{{ __('Preview lifetime') }}</h2>
+                <p class="mt-2 text-sm text-secondary">
+                    @if($previewUsage->limit === null)
+                        {{ trans_choice(':count active preview environment; no configured plan quota.|:count active preview environments; no configured plan quota.', $previewUsage->used, ['count' => $previewUsage->used]) }}
+                    @else
+                        {{ __(':used of :limit preview environments in use; quota is not a monetary limit.', ['used' => $previewUsage->used, 'limit' => $previewUsage->limit]) }}
+                    @endif
+                </p>
+                @if($previewUsage->previews->isEmpty())
+                    <p class="mt-3 text-sm text-secondary">{{ __('No active previews are using workspace capacity.') }}</p>
+                @else
+                    <ul class="mt-3 space-y-3 text-sm">
+                        @foreach($previewUsage->previews as $lifetime)
+                            <li class="border-t border-primary pt-3 first:border-0 first:pt-0">
+                                <p class="font-bold text-primary">{{ $lifetime->project->name }} · PR #{{ $lifetime->preview->pull_request_number }}</p>
+                                <p class="mt-1 text-secondary">{{ $lifetime->preview->status }} · {{ __(':count-hour configured lifetime', ['count' => $lifetime->ttlHours]) }}</p>
+                                @if($lifetime->expired)
+                                    <p class="mt-1 font-bold text-amber-700">{{ __('Past configured lifetime; cleanup is pending.') }}</p>
+                                @else
+                                    <p class="mt-1 text-secondary">{{ __('Expires :date', ['date' => $lifetime->expiresAt->toDayDateTimeString()]) }}</p>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if($previewUsage->hiddenCount > 0)
+                    <p class="mt-3 text-xs text-secondary">{{ __('Showing the first :count active previews; quota usage includes all active previews.', ['count' => $previewUsage->previews->count()]) }}</p>
+                @endif
+            </section>
+
+            <section class="rounded-2xl border border-primary bg-primary p-5">
                 <h2 class="font-black text-primary">{{ __('Optimization signals') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-secondary">
                     <li>• {{ __('Servers without websites are flagged.') }}</li>

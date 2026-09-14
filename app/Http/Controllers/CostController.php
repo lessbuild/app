@@ -6,6 +6,7 @@ use App\Actions\Cost\UpdateInfrastructureBudgetAction;
 use App\Http\Requests\UpdateInfrastructureBudgetRequest;
 use App\Services\Entitlements;
 use App\Services\InfrastructureCostQuery;
+use App\Services\PreviewUsageQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -18,6 +19,7 @@ class CostController extends Controller
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly InfrastructureCostQuery $costs,
+        private readonly PreviewUsageQuery $previewUsage,
     ) {}
 
     /**
@@ -27,12 +29,14 @@ class CostController extends Controller
     {
         $organization = $request->user()->currentOrganization;
         $report = $this->costs->for($organization);
+        $previewUsage = $this->previewUsage->for($organization);
 
         return view('costs.index', [
             'rows' => $report->rows,
             'estimated' => $report->estimated,
             'unknownCount' => $report->unknownCount,
             'idleCount' => $report->idleCount,
+            'previewUsage' => $previewUsage,
             'budget' => $organization->monthly_infrastructure_budget,
             'canManage' => $organization->permits($request->user(), 'manage')
                 && $this->entitlements->allows($organization, 'cost_controls'),

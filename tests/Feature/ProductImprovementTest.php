@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\Repository\RollbackReleaseJob;
 use App\Models\Build;
+use App\Models\PreviewDeployment;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\Size;
@@ -103,6 +104,39 @@ class ProductImprovementTest extends TestCase
             ->assertSee('$0.00')
             ->assertSee('Price source unavailable')
             ->assertSee('Unknown prices');
+    }
+
+    public function test_cost_view_shows_preview_quota_and_expiry_without_treating_quota_as_cost(): void
+    {
+        config([
+            'billing.enforce_entitlements' => false,
+            'billing.plans.free.limits.preview_deployments' => 3,
+        ]);
+        [$owner, $environment, $repository] = $this->application();
+        $project = $owner->currentOrganization->projects()->firstOrFail();
+        $project->update(['preview_enabled' => true, 'preview_ttl_hours' => 24]);
+        $lastActivityAt = now()->subHours(2)->startOfMinute();
+        $project->previews()->create([
+            'source_repository_id' => $repository->id,
+            'environment_id' => $environment->id,
+            'website_id' => $repository->website_id,
+            'repository_id' => $repository->id,
+            'pull_request_number' => 42,
+            'title' => 'Preview',
+            'source_branch' => 'feature/costs',
+            'revision' => str_repeat('a', 40),
+            'status' => PreviewDeployment::STATUS_READY,
+            'url' => 'preview.example.com',
+            'last_activity_at' => $lastActivityAt,
+        ]);
+
+        $this->actingAs($owner)->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('Preview lifetime')
+            ->assertSee('1 of 3 preview environments in use; quota is not a monetary limit.')
+            ->assertSee('Application · PR #42')
+            ->assertSee('24-hour configured lifetime')
+            ->assertSee('Expires '.$lastActivityAt->copy()->addHours(24)->toDayDateTimeString());
     }
 
     private function application(): array
