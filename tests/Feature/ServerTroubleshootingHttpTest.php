@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Server\OpenServerTroubleshootingSessionAction;
+use App\Actions\Server\RevokeServerTroubleshootingSessionAction;
 use App\Enums\ServerTroubleshootingFrameDirection;
 use App\Models\Provider;
 use App\Models\Server;
@@ -177,6 +178,34 @@ class ServerTroubleshootingHttpTest extends TestCase
 
         $this->assertNull($session->fresh()->broker_lease_hash);
         $this->assertNull($session->fresh()->broker_process_id);
+    }
+
+    public function test_revoked_grants_cannot_be_reused_and_reconnect_requires_a_new_session(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+
+        app(RevokeServerTroubleshootingSessionAction::class)->handle($session);
+
+        $this->actingAs($owner)
+            ->postJson(
+                route('servers.troubleshooting-sessions.input', [$server, $session]),
+                ['input' => "whoami\n"],
+                ['Authorization' => 'Bearer '.$token],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('session');
+
+        $replacement = $this->actingAs($owner)
+            ->postJson(route('servers.troubleshooting-sessions.store', $server))
+            ->assertCreated();
+
+        $this->assertNotSame($session->public_id, $replacement->json('data.id'));
+        $this->assertNotSame($token, $replacement->json('data.token'));
+        $this->assertSame(
+            ServerTroubleshootingSession::STATUS_REVOKED,
+            $session->fresh()->status,
+        );
     }
 
     public function test_owner_can_queue_input_without_echoing_the_sensitive_payload(): void

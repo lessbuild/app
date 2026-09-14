@@ -168,6 +168,45 @@ class ServerTroubleshootingBrokerTest extends TestCase
         $this->assertTrue(app(RenewServerTroubleshootingBrokerLeaseAction::class)->handle($second));
     }
 
+    public function test_broker_renewal_revokes_the_session_when_membership_is_removed(): void
+    {
+        [$owner, $server] = $this->resources();
+        $operator = $this->member($owner, 'operator');
+        $grant = app(OpenServerTroubleshootingSessionAction::class)->handle($server, $operator);
+        $lease = $this->claim($grant->session, 1201);
+
+        $owner->currentOrganization->members()->detach($operator);
+
+        $this->assertFalse(app(RenewServerTroubleshootingBrokerLeaseAction::class)->handle($lease));
+
+        $updated = $grant->session->fresh();
+        $this->assertSame(ServerTroubleshootingSession::STATUS_REVOKED, $updated->status);
+        $this->assertSame(ServerTroubleshootingSession::CLOSE_REASON_REVOKED, $updated->close_reason);
+        $this->assertNull($updated->broker_lease_hash);
+        $this->assertNull($updated->broker_process_id);
+    }
+
+    public function test_execute_role_downgrade_keeps_connectivity_but_denies_new_shell_input(): void
+    {
+        [$owner, $server] = $this->resources();
+        $operator = $this->member($owner, 'operator');
+        $grant = app(OpenServerTroubleshootingSessionAction::class)->handle($server, $operator);
+        $lease = $this->claim($grant->session, 1201);
+
+        $owner->currentOrganization->members()->updateExistingPivot($operator->id, ['role' => 'viewer']);
+
+        $this->assertTrue(app(RenewServerTroubleshootingBrokerLeaseAction::class)->handle($lease));
+        $this->assertSame(ServerTroubleshootingSession::STATUS_CONNECTING, $grant->session->fresh()->status);
+
+        $this->expectException(AuthorizationException::class);
+        app(QueueServerTroubleshootingInputFrameAction::class)->handle(
+            $grant->session,
+            $operator,
+            $grant->token,
+            "whoami\n",
+        );
+    }
+
     public function test_expired_broker_lease_fails_closed_instead_of_starting_a_second_process(): void
     {
         [$owner, $server] = $this->resources();
@@ -323,6 +362,14 @@ class ServerTroubleshootingBrokerTest extends TestCase
         ]);
 
         return [$owner, $server];
+    }
+
+    private function member(User $owner, string $role): User
+    {
+        $member = User::factory()->create(['current_organization_id' => $owner->current_organization_id]);
+        $owner->currentOrganization->members()->attach($member, ['role' => $role]);
+
+        return $member;
     }
 }
 

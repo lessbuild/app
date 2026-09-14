@@ -5,14 +5,19 @@ namespace App\Actions\Server;
 use App\Data\ServerTroubleshootingBrokerLease;
 use App\Models\Server;
 use App\Models\ServerTroubleshootingSession;
+use App\Policies\ServerTroubleshootingSessionPolicy;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 class RenewServerTroubleshootingBrokerLeaseAction
 {
+    public function __construct(
+        private readonly ServerTroubleshootingSessionPolicy $sessions,
+    ) {}
+
     /**
-     * Revalidate broker ownership and renew only its short lease. User idle
-     * time is not extended by this heartbeat.
+     * Revalidate broker ownership and current actor access before renewing only
+     * its short lease. User idle time is not extended by this heartbeat.
      */
     public function handle(ServerTroubleshootingBrokerLease $lease): bool
     {
@@ -29,9 +34,15 @@ class RenewServerTroubleshootingBrokerLeaseAction
                 return false;
             }
 
-            $session->load('server');
+            $session->load(['server', 'user']);
             if ($session->server->provisioning_status !== Server::STATUS_ACTIVE) {
                 $this->fail($session, $now, ServerTroubleshootingSession::CLOSE_REASON_SERVER_INACTIVE);
+
+                return false;
+            }
+
+            if (! $session->user || ! $this->sessions->connect($session->user, $session)) {
+                $this->revoke($session, $now);
 
                 return false;
             }
@@ -90,6 +101,18 @@ class RenewServerTroubleshootingBrokerLeaseAction
             'status' => ServerTroubleshootingSession::STATUS_FAILED,
             'closed_at' => $now,
             'close_reason' => $reason,
+            'broker_lease_hash' => null,
+            'broker_lease_expires_at' => null,
+            'broker_process_id' => null,
+        ]);
+    }
+
+    private function revoke(ServerTroubleshootingSession $session, CarbonInterface $now): void
+    {
+        $session->update([
+            'status' => ServerTroubleshootingSession::STATUS_REVOKED,
+            'closed_at' => $now,
+            'close_reason' => ServerTroubleshootingSession::CLOSE_REASON_REVOKED,
             'broker_lease_hash' => null,
             'broker_lease_expires_at' => null,
             'broker_process_id' => null,
