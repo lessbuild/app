@@ -3566,6 +3566,15 @@ bounded UUID unit construction, pre-start policy revocation, broker relay,
 HTTP authorization and transport cleanup; they do not install systemd units or
 connect to a remote host.
 
+Two additional disposable-host checks passed outside the PHP suite. A
+transient systemd unit with `KillMode=control-group` removed its child after
+`systemctl stop`, and an ephemeral local `sshd` accepted an encrypted-key SSH
+connection whose trap/process-group wrapper removed a controlled remote worker
+after the client was hard-killed. These checks strengthen the local process
+ownership evidence, but they do not prove the application on an installed
+provider host, worker loss in the deployed daemon, network-partition recovery
+or cleanup of an uncooperative remote shell.
+
 Feature commit `e9b1ed1` (`feat: supervise troubleshooting brokers`) was
 fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
 2026-09-14. The fresh strict isolated full suite after this slice passed

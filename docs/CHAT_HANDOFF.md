@@ -113,6 +113,10 @@ The post-supervision complete strict isolated suite passed **1,514 tests /
 12,797 assertions** with the same single provisioning baseline failure.
 Repository-wide Pint, Composer validation/platform checks, route-cache
 creation, installer shell syntax and `git diff --check` passed.
+Additional disposable local checks confirmed that a transient systemd
+control-group stop removes its child and that the SSH trap/process-group
+pattern removes a controlled worker after a hard-killed client. These do not
+replace installed provider-host or network-partition evidence.
 
 The supervisor wiring slice passed the combined supervisor/broker/HTTP/
 transport suite (**40 tests / 209 assertions**) and the daemon-installer
