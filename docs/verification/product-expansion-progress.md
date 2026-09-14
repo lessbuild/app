@@ -3568,12 +3568,12 @@ connect to a remote host.
 
 Feature commit `e9b1ed1` (`feat: supervise troubleshooting brokers`) was
 fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
-2026-09-14. The full strict PHP baseline immediately before this narrow
-installer/supervision slice remains **1,509 passed / 12,762 assertions** with
-the unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
-failure; the focused slice did not alter that result. No installed-host,
-worker-crash, network-partition, remote-orphan, provider/cloud or
-live-acceptance claim is made.
+2026-09-14. The fresh strict isolated full suite after this slice passed
+**1,514 tests / 12,797 assertions** with the unchanged
+`ProvisioningHardeningTest::test_website_database_user_is_local_only` failure
+(the test expects three `localhost` occurrences and the current script
+contains four). No installed-host, worker-crash, network-partition,
+remote-orphan, provider/cloud or live-acceptance claim is made.
 
 The exact next task is to obtain authorized installed-host evidence for normal
 disconnect, broker restart, worker loss, network partition and remote process

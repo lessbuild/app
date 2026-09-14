@@ -76,6 +76,11 @@ task is authorized installed-host verification of normal and abnormal cleanup,
 then safe new-session-only reconnect; browser-terminal exposure and the
 separate live/provider acceptance track remain outstanding.
 
+After the supervision slice, the complete strict isolated suite passed **1,514
+tests / 12,797 assertions** with the same single provisioning baseline failure.
+Repository-wide Pint, Composer validation/platform checks, route-cache
+creation, installer shell syntax and `git diff --check` also passed.
+
 ## Deferred release gates
 
 - Independent monitoring endpoints and live heartbeat/status verification.
