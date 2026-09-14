@@ -3747,11 +3747,74 @@ production credentials, cloud resources or acceptance-drill files were used.
 task is Phase 9 inventory and characterization for resource usage and cost
 visibility. Keep terminal UI exposure and provider/cloud acceptance separate.
 
+## Phase 9 — resource usage and cost visibility characterization (completed investigation)
+
+### Concrete problem and affected entry points
+
+The existing `CostController` reports a workspace-scoped sum of stored
+`Size.price_monthly` values and a low-use signal derived from the latest twelve
+server metric samples. That is useful planning information, but the current
+projection does not identify the estimate's observation time, distinguish
+measured telemetry from provider billing, or explain when a price is unknown.
+The relevant entry points are `CostController`, the cost view and budget
+request/action, `Size`, `GenerateSizesAndRegionsAction`, `Server`,
+`Organization`, `Environment`, `PreviewDeployment`, `PlanLimits` and the
+preview-expiry command.
+
+### Existing boundaries and findings
+
+- `Size` is the persisted DigitalOcean catalog used by the current cost view.
+  `GenerateSizesAndRegionsAction` refreshes its capacity and price fields, but
+  there is no first-class timestamp saying when that catalog observation was
+  made. `updated_at` is not a safe substitute because fixtures, seeders or
+  future administrative edits can update the row without observing a provider
+  price.
+- The current monthly number is a **catalog estimate**, not measured usage and
+  not provider billing. Server CPU samples are measured telemetry used only for
+  an attention signal. There is no provider invoice contract or billing import,
+  so the application must not infer taxes, bandwidth, storage, discounts or a
+  spending cap.
+- Server-level attribution is known because servers belong to the workspace.
+  Environment-to-project allocation is not always known: multiple websites or
+  environments may share a server, while `Environment.server_id` can be null.
+  The product must not invent fractional allocations. A later allocation view
+  should expose only direct ownership and mark shared/unknown cases explicitly.
+- Preview lifetime and concurrent quota are already persisted/configured:
+  `Project.preview_ttl_hours`, `PreviewDeployment.last_activity_at`, status and
+  `closed_at`, plus `PlanLimits::usageForOrganization(...,
+  'preview_deployments')`. The expiry command is the authority for lifecycle
+  cleanup. A cost/readiness projection may summarize this data, but must not
+  mutate previews or imply that quota is a monetary limit.
+- `ServerProvider` exposes lifecycle and catalog capabilities, not provider
+  invoices. Adding billing methods to that shared contract solely for the cost
+  page would force unrelated adapters to implement unsupported behavior and
+  violate interface segregation. Provider billing remains a separate,
+  justified contract when an actual provider integration is available.
+
+### Chosen first slice
+
+The smallest justified implementation is an explicit, read-only cost
+projection: record the local observation time when the existing catalog refresh
+stores a price, extract the server estimate/telemetry query from the controller
+into an injected query collaborator, and label the view as catalog-estimate,
+measured-telemetry and provider-billing-unavailable. Unknown prices retain the
+existing safe behavior and remain excluded from the total. This applies single
+responsibility and dependency inversion without introducing a repository,
+generic action or provider-specific billing abstraction. Preview lifetime/quota
+summary and review-only cleanup recommendations remain the next Phase 9 slices
+after this source-semantics boundary is tested.
+
+No application behavior or schema has changed in this characterization. The
+next implementation must preserve current routes, budget validation and
+authorization, ordering, metric sample bounds, unknown-price count, estimate
+sum and provider-invoice disclaimer.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
 | Phase 8 disposable installed-host-equivalent verification | The real adapter and transient process checks needed an isolated installed host with systemd, SSH and a controllable network boundary. A disposable Debian 12 LXD system container was configured with a dedicated key and pinned host identity; the actual application broker then exercised encrypted frames, normal systemd stop, exact broker-PID loss/restart, network-interface partition and new-session-only reconnect. No application code or public contract changed. | Real application broker marker delivery succeeded; normal stop, worker-loss restart and interface-detach cleanup left no remote interactive shell; the stale lease remained until revocation; a newly authorized replacement session connected and delivered a new marker. Focused supervisor/broker/HTTP/transport/session/installer suite: **55 tests / 311 assertions**. Full strict baseline remains **1,510 passing / 5 failing / 12,780 assertions** with the documented unrelated failures. | Documentation evidence checkpoint | To be committed and pushed with the progress update. | Start Phase 9 resource-usage and cost-visibility inventory; keep browser-terminal exposure and cloud/provider acceptance separate. |
+| Phase 9 resource usage and cost visibility characterization | The existing cost page combines server queries, catalog estimate lookup, measured CPU signals and projection semantics in `CostController`; it has no first-class price observation timestamp, provider billing source, safe environment allocation rule or preview quota/lifetime summary. Catalog prices come from `GenerateSizesAndRegionsAction`/`Size`; provider billing is not part of `ServerProvider`; preview lifetime/quota already live in `Project`, `PreviewDeployment` and `PlanLimits`. | Read-only source and schema characterization completed. No application behavior, schema, provider contract or runtime state changed. | Documentation checkpoint | To be committed and pushed with the investigation record. | Implement the explicit catalog-observation/source-semantics slice, then test preview lifetime/quota visibility without inventing shared-resource allocations or provider billing. |
 | Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
 | Phase 8 troubleshooting broker supervision wiring | The bounded broker had no daemon lifecycle owner. Added a bounded UUID-only supervisor scan that policy-revokes ineligible sessions and starts per-session systemd units, plus installer units with restart and control-group cleanup semantics. Existing broker/actions retain lease, actor, frame and transport invariants; the foreground SSH/PTTY process is owned by the local Symfony/systemd lifecycle. | Supervisor/broker/HTTP/transport suite: **40 tests / 209 assertions**. Installer suite: **2 tests / 56 assertions**. `bash -n`, required-PHP lint, Pint and `git diff --check` passed. No systemd installation or provider host was used in this slice. | `e9b1ed1` — `feat: supervise troubleshooting brokers` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-14. | Obtain authorized installed-host evidence for disconnect, worker loss, network partition, remote cleanup and safe new-session reconnect; keep browser-terminal exposure gated. |
 | Phase 8 local application transport verification | The pinned SSH adapter needed one deterministic end-to-end local exercise beyond process/unit tests. Used an ephemeral `sshd`, generated keys and an active `Server` model to run the real `SshServerTroubleshootingTransport` through five sequential sessions; no code or production state changed. | Five real local adapter connections accepted bounded input and returned a proof marker. Focused supervisor/broker/HTTP/transport/session/installer suite: **55 tests / 311 assertions**. Scoped Pint, required-PHP execution, `bash -n` and `git diff --check` passed. | Documentation evidence checkpoint | Recorded in this progress update and pushed with the documentation commit. | Obtain authorized installed-host evidence for normal disconnect, broker restart, worker loss, network partition and remote cleanup, then verify safe new-session-only reconnect; keep browser-terminal exposure and Phase 9 gated. |
