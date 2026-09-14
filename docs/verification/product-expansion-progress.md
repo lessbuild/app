@@ -3443,11 +3443,82 @@ into canonical main and pushed to GitHub origin/main on 2026-09-14. The
 exact next task is to characterize remote cleanup, membership revocation and
 safe reconnect semantics before exposing a terminal UI.
 
+The latest characterization found one current authorization gap: HTTP activity
+rechecks current membership, but the long-running broker heartbeat currently
+rechecks only the session lease and server state. A role downgrade or member
+removal therefore does not yet revoke an already-connected broker promptly.
+Local process-group and temporary-credential cleanup is covered, but the SSH
+command has no durable remote session identity or server-side supervisor, so
+worker death, network partition and remote orphan cleanup are not proven. The
+next implementation slice is to add broker-side membership revalidation and
+prove that reconnect means a newly authorized session rather than reuse of a
+revoked grant.
+
+## Phase 8 — remote cleanup and reconnect characterization (completed investigation)
+
+### Existing ownership chain and responsibility problem
+
+The current troubleshooting ownership chain is:
+
+ServerTroubleshootingSession lease -> supervisor-oriented broker process ->
+local Symfony Process group -> SSH PTY -> remote setsid bash.
+
+During a normal broker return, ServerTroubleshootingBroker closes the
+connection and ProcessServerTroubleshootingConnection asks Symfony Process to
+stop the local process group. The connection then releases the managed SSH
+temporary private-key and known-host files. These local operations are
+idempotent and bounded by the configured process-stop timeout.
+
+ManagedSsh::close() only removes local temporary credential files. The remote
+command currently has no durable session identifier, remote PID record,
+server-side cleanup helper or supervisor installation. Symfony Process's
+process-group option governs the local child process; it does not prove that a
+remote process created through SSH and setsid is terminated after a worker
+crash, network partition or supervisor restart. A real remote cleanup claim
+therefore requires an explicit remote lifecycle protocol and deployment
+support, not a stronger controller or policy check.
+
+### Revocation and reconnect findings
+
+HTTP heartbeat, input, output and resize actions already recheck the presented
+grant and current actor/server policy under a session lock. Internal
+revocation clears the broker lease and is idempotent. A broker heartbeat,
+however, currently validates only exact lease ownership, session deadlines and
+server activity; it does not load the session actor and re-evaluate current
+workspace membership. Membership removal or an execute-role downgrade can
+therefore leave a broker-owned connection running until another lifecycle
+transition, although subsequent HTTP input is denied.
+
+The session state machine has no resume or reconnect route. This is the safe
+default: a terminal session is not reusable, and opening a new session creates
+a new opaque grant, new lease attempt and new frame ownership. Any future
+reconnect operation must repeat server policy and current membership checks,
+must never accept a terminal session's old grant, and must not clear or replace
+an old broker lease while its remote process remains unaccounted for.
+
+### Boundary decision and verification
+
+The next local implementation should put actor authorization revalidation in
+the broker lease-renewal action, where the long-running operation already
+performs its heartbeat and owns the terminal transition. A failed check should
+revoke the exact session lease and make the broker close its local connection;
+the HTTP boundary remains responsible for bearer protocol and response
+semantics. Reconnect remains a new-session operation until remote cleanup has
+an explicit server-side contract.
+
+This characterization changed no application behavior, schema, queue state or
+remote resource. Read-only source and dependency inspection confirmed the
+local cleanup seam and the missing remote contract. The exact next task is to
+implement broker-side membership revalidation and test role downgrade,
+membership removal, revoked-grant rejection and new-session-only reconnect;
+keep remote cleanup proof, supervisor installation and terminal UI deferred.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
 | Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
+| Phase 8 remote cleanup and reconnect characterization | The normal broker path stops the local Symfony Process group and releases temporary SSH files, but the remote setsid bash process has no durable identity, remote cleanup helper or installed supervisor contract. HTTP actions recheck current membership, while broker lease renewal did not; reconnect is intentionally absent, so a terminal grant cannot be revived. No application behavior changed. | Read-only source, dependency and runtime-capability characterization completed; no SSH host, network partition, worker crash, supervisor restart or remote resource was used. | This documentation checkpoint | Will be fast-forwarded into canonical main and pushed before the broker revalidation implementation. | Implement broker-side actor/membership revalidation and prove revoked or downgraded sessions cannot keep a broker connection; retain new-session-only reconnect until remote cleanup is supported. |
 | Phase 8 troubleshooting session HTTP lifecycle | The durable session, transport, frame and broker boundaries had no safe HTTP consumer. Added authenticated JSON create, status/heartbeat and idempotent close routes with policy checks, bearer-grant validation, nested scoped binding, private no-store responses and an immutable secret-safe metadata projection. Existing lifecycle actions retain locks, ownership revalidation, expiry, broker cleanup and remote-free behavior; no frame, job, SSH or credential side effect is introduced. | HTTP lifecycle suite: **8 tests / 51 assertions**. Combined HTTP/session/transport/broker suite: **41 tests / 186 assertions**. Fresh strict isolated full PHP suite: **1,502 passed / 12,720 assertions / 1 unchanged baseline failure**. Required-PHP lint, Pint test mode, route-cache creation and git diff check passed. | ee62249 — feat: expose troubleshooting session lifecycle | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Add bounded policy-authorized frame input, output polling/acknowledgment and resize operations; retain the remote cleanup/revocation gate before Livewire terminal exposure. |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |

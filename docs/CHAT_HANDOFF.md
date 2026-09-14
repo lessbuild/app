@@ -66,6 +66,15 @@ browser-terminal exposure remain outstanding. The exact next task is to
 characterize and verify those cleanup, revocation and safe reconnect semantics
 before exposing a terminal UI.
 
+The remote-cleanup/reconnect characterization is now recorded in the progress
+ledger. Normal broker return stops the local process group and releases
+temporary SSH files, but no durable remote session identity, remote cleanup
+helper or installed supervisor exists; worker death, network partition and
+remote orphan cleanup therefore remain unproven. HTTP activity rechecks
+membership, while broker renewal currently does not, so the next code slice
+adds broker-side actor revalidation. Reconnect remains intentionally
+new-session-only: a terminal or revoked grant must never be resumed.
+
 The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
 server/import/log/command/observability regressions passed **45 tests / 373
 assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
