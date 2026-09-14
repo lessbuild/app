@@ -107,8 +107,14 @@ assertions**, the combined transport set passed **35 tests / 183 assertions**
 and the fresh strict isolated suite passed **1,509 tests / 12,762 assertions**
 with the same unchanged baseline failure. The local installed-host-equivalent
 evidence is recorded below; provider/cloud acceptance, the separate live drill
-and browser-terminal exposure remain outstanding. The next implementation task
-is Phase 9 resource-usage and cost-visibility inventory.
+and browser-terminal exposure remain outstanding. The Phase 9 source-attribution
+slice is complete in `fab31ef`: the cost page now uses an injected
+`InfrastructureCostQuery`, records `sizes.catalog_synced_at` during catalog
+refresh and distinguishes catalog estimates, measured CPU telemetry and
+unavailable provider billing. The focused cost/catalog/provider set passed
+**10 tests / 39 assertions** with strict warning/deprecation flags.
+The next implementation task is read-only preview lifetime/quota visibility
+and direct-versus-shared server/environment attribution.
 
 The earlier post-supervision complete strict isolated suite passed **1,514
 tests / 12,797 assertions** with the same single provisioning baseline failure.
