@@ -109,6 +109,6 @@ used.
 - `6749fed test: keep analytics denial fixture paid` — pushed to
   `origin/feat/api-access-all-plans-20260914`.
 
-Documentation is being committed and pushed on the same feature branch before
-the verified branch is fast-forwarded into `main`. After integration, use
+Verification/documentation commit `c1122c3` was pushed on the feature branch.
+The branch is ready to be fast-forwarded into `main`; after integration, use
 `main` for subsequent work and start with a new scoped inventory.

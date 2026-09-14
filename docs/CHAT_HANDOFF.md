@@ -10,8 +10,9 @@ the existing Sanctum abilities, organization authorization, network policy and
 non-API feature entitlements still apply. Exceeding the quota retains the
 standard HTTP 429 response and rate-limit headers.
 
-The implementation is in feature commits `139fc1f` and `6749fed`, both pushed
-to `origin/feat/api-access-all-plans-20260914`. Focused coverage passed **58
+The implementation is in feature commits `139fc1f` and `6749fed`, and
+documentation is in `c1122c3`; all three are pushed to
+`origin/feat/api-access-all-plans-20260914`. Focused coverage passed **58
 tests / 273 assertions** and the complete strict PHP suite passed **1,525 tests
 / 12,860 assertions**. The required-PHP Pint, platform, diff and dependency
 checks passed. The verification ledger is
