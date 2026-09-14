@@ -63,6 +63,14 @@ class DaemonInstallerTest extends TestCase
         $this->assertStringContainsString('TimeoutStartSec=600', $installer);
         $this->assertStringContainsString('OnCalendar=*-*-* *:0/5:00', $installer);
         $this->assertStringContainsString('systemctl enable --now "${HEALTH_TIMER_NAME}.timer"', $installer);
+        $this->assertStringContainsString('Description=Run one BuildPusher troubleshooting broker', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan buildpusher:troubleshooting:broker %i --cycles=600 --poll-ms=100', $installer);
+        $this->assertStringContainsString('Restart=on-failure', $installer);
+        $this->assertStringContainsString('KillMode=control-group', $installer);
+        $this->assertStringContainsString('Description=Start active BuildPusher troubleshooting brokers', $installer);
+        $this->assertStringContainsString('ExecStart=${PHP_BIN} artisan buildpusher:troubleshooting:supervise --limit=100', $installer);
+        $this->assertStringContainsString('OnUnitActiveSec=15s', $installer);
+        $this->assertStringContainsString('systemctl enable --now "${TROUBLESHOOTING_TIMER_NAME}.timer"', $installer);
 
         $syntaxCheck = new Process(['bash', '-n', dirname(__DIR__, 2).'/scripts/install-daemon.sh']);
         $syntaxCheck->run();

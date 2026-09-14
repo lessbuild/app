@@ -30,6 +30,11 @@ CONFIGURATION_SERVICE_NAME="lessbuild-configuration"
 CONFIGURATION_SERVICE_FILE="/etc/systemd/system/${CONFIGURATION_SERVICE_NAME}.service"
 CONFIGURATION_TIMER_NAME="lessbuild-configuration"
 CONFIGURATION_TIMER_FILE="/etc/systemd/system/${CONFIGURATION_TIMER_NAME}.timer"
+TROUBLESHOOTING_SUPERVISOR_SERVICE_NAME="lessbuild-troubleshooting-supervisor"
+TROUBLESHOOTING_SUPERVISOR_SERVICE_FILE="/etc/systemd/system/${TROUBLESHOOTING_SUPERVISOR_SERVICE_NAME}.service"
+TROUBLESHOOTING_TIMER_NAME="lessbuild-troubleshooting-supervisor"
+TROUBLESHOOTING_TIMER_FILE="/etc/systemd/system/${TROUBLESHOOTING_TIMER_NAME}.timer"
+TROUBLESHOOTING_BROKER_SERVICE_FILE="/etc/systemd/system/lessbuild-troubleshooting-broker@.service"
 PUBLIC_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 if [[ "${EUID}" -ne 0 ]]; then
@@ -260,11 +265,67 @@ Unit=${CONFIGURATION_SERVICE_NAME}.service
 WantedBy=timers.target
 TIMER
 
+cat > "${TROUBLESHOOTING_BROKER_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Run one BuildPusher troubleshooting broker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan buildpusher:troubleshooting:broker %i --cycles=600 --poll-ms=100
+Restart=on-failure
+RestartSec=2
+TimeoutStopSec=15
+KillMode=control-group
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+
+[Install]
+WantedBy=multi-user.target
+SERVICE
+
+cat > "${TROUBLESHOOTING_SUPERVISOR_SERVICE_FILE}" <<SERVICE
+[Unit]
+Description=Start active BuildPusher troubleshooting brokers
+After=network-online.target lessbuild-worker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+WorkingDirectory=${APP_DIR}
+ExecStart=${PHP_BIN} artisan buildpusher:troubleshooting:supervise --limit=100
+TimeoutStartSec=120
+Nice=5
+Environment=APP_ENV=production
+Environment=APP_DEBUG=false
+SERVICE
+
+cat > "${TROUBLESHOOTING_TIMER_FILE}" <<TIMER
+[Unit]
+Description=Reconcile active BuildPusher troubleshooting brokers
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=15s
+Persistent=true
+Unit=${TROUBLESHOOTING_SUPERVISOR_SERVICE_NAME}.service
+
+[Install]
+WantedBy=timers.target
+TIMER
+
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service" "${WORKER_SERVICE_NAME}.service"
 systemctl enable --now "${WATCHDOG_TIMER_NAME}.timer"
 systemctl enable --now "${HEALTH_TIMER_NAME}.timer"
 systemctl enable --now "${CONFIGURATION_TIMER_NAME}.timer"
+systemctl enable --now "${TROUBLESHOOTING_TIMER_NAME}.timer"
 DATABASE_CONNECTION="$(sed -n 's/^DB_CONNECTION=//p' "${APP_DIR}/.env" | tail -n 1 | tr -d "\"'")"
 if [[ "${DATABASE_CONNECTION}" == "sqlite" ]]; then
     systemctl enable --now "${BACKUP_TIMER_NAME}.timer"
