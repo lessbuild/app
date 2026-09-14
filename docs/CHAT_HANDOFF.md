@@ -116,10 +116,14 @@ unavailable provider billing. The focused cost/catalog/provider set passed
 Feature commit `b4fa99f` adds the bounded, read-only preview quota/lifetime
 projection through `PreviewUsageQuery`; the cost and preview regression set
 passed **28 tests / 272 assertions** with strict warning/deprecation flags.
-The next implementation task is direct-versus-shared server/environment
-attribution and review-only cleanup signals for explicitly owned temporary
-resources. Provider billing, automatic cleanup and provider/cloud acceptance
-remain separate.
+Attribution and review-only cleanup commits `907811d` and `e6ff82c` now
+label direct/shared/unallocated server relationships and link expired
+previews to the policy-protected project review page. The final cost
+regression set passed **8 tests / 40 assertions**, including assertions that
+expired preview reads do not change status, closure or the queue. Phase 9
+local scope is complete. The next implementation task is the final
+cross-feature verification and requirement audit; provider billing, automatic
+cleanup and provider/cloud acceptance remain separate.
 
 The earlier post-supervision complete strict isolated suite passed **1,514
 tests / 12,797 assertions** with the same single provisioning baseline failure.
