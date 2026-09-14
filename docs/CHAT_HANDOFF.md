@@ -69,15 +69,15 @@ UI.
 
 The remote-cleanup/reconnect characterization is now recorded in the progress
 ledger. Normal broker return stops the local process group and releases
-temporary SSH files; the SSH wrapper also requests remote child-group
-termination when its channel receives a termination signal. The new daemon
-installer declares a UUID-addressed broker template with restart and
+temporary SSH files. The SSH command now runs a foreground interactive Bash
+process in the allocated PTY, so local channel closure provides the tested
+normal remote-shell cleanup path without the earlier nested wrapper. The new
+daemon installer declares a UUID-addressed broker template with restart and
 control-group semantics plus a bounded 15-second reconciliation timer, but no
-real host has installed it. Worker death, network partition and remote orphan
-cleanup therefore remain unproven. HTTP activity and broker renewal now
-recheck membership; removed members are revoked, while an execute-role
-downgrade denies subsequent shell input. Reconnect remains intentionally
-new-session-only: a terminal or revoked grant must never be resumed.
+provider host has installed it. HTTP activity and broker renewal recheck
+membership; removed members are revoked, while an execute-role downgrade
+denies subsequent shell input. Reconnect remains intentionally new-session-
+only: a terminal or revoked grant must never be resumed.
 
 The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
 server/import/log/command/observability regressions passed **45 tests / 373
@@ -109,19 +109,24 @@ browser-terminal exposure remain outstanding. The exact next task is
 authorized installed-host verification of normal and abnormal cleanup, then
 safe new-session-only reconnect before exposing a terminal UI.
 
-The post-supervision complete strict isolated suite passed **1,514 tests /
-12,797 assertions** with the same single provisioning baseline failure.
+The earlier post-supervision complete strict isolated suite passed **1,514
+tests / 12,797 assertions** with the same single provisioning baseline failure.
+A fresh strict run after the PTY-lifetime fix completed with **1,510 passing
+and 5 failing tests / 12,780 assertions**: four unrelated existing
+validation-message response assertions in the incident and organization
+management tests, plus the same provisioning baseline mismatch.
 Repository-wide Pint, Composer validation/platform checks, route-cache
 creation, installer shell syntax and `git diff --check` passed.
 Additional disposable local checks confirmed that a transient systemd
-control-group stop removes its child and that the SSH trap/process-group
-pattern removes a controlled worker after a hard-killed client. These do not
-replace installed provider-host or network-partition evidence. A deterministic
-disposable local `sshd` check then exercised the real
+control-group stop removes its child. After the PTY-lifetime fix in `8ad2e52`,
+the actual broker remained live through short input, normal transient-systemd
+stop removed the remote process, and exact broker-PID loss caused one restart
+with control-group cleanup. These do not replace installed provider-host or
+network-partition evidence. A deterministic disposable local `sshd` check then exercised the real
 `SshServerTroubleshootingTransport` across five sequential encrypted-key
 connections; each accepted bounded input and returned a proof marker. This is
-local adapter evidence only, not installed-host, worker-loss,
-network-partition or remote-orphan proof.
+local adapter evidence only, not installed-host, network-partition or
+uncooperative-remote proof.
 
 The supervisor wiring slice passed the combined supervisor/broker/HTTP/
 transport suite (**40 tests / 209 assertions**) and the daemon-installer
