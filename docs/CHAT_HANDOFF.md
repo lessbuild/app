@@ -113,8 +113,13 @@ slice is complete in `fab31ef`: the cost page now uses an injected
 refresh and distinguishes catalog estimates, measured CPU telemetry and
 unavailable provider billing. The focused cost/catalog/provider set passed
 **10 tests / 39 assertions** with strict warning/deprecation flags.
-The next implementation task is read-only preview lifetime/quota visibility
-and direct-versus-shared server/environment attribution.
+Feature commit `b4fa99f` adds the bounded, read-only preview quota/lifetime
+projection through `PreviewUsageQuery`; the cost and preview regression set
+passed **28 tests / 272 assertions** with strict warning/deprecation flags.
+The next implementation task is direct-versus-shared server/environment
+attribution and review-only cleanup signals for explicitly owned temporary
+resources. Provider billing, automatic cleanup and provider/cloud acceptance
+remain separate.
 
 The earlier post-supervision complete strict isolated suite passed **1,514
 tests / 12,797 assertions** with the same single provisioning baseline failure.
