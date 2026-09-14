@@ -70,7 +70,8 @@ class ManagedSsh extends Ssh
 
     /**
      * Build a PTY command without Spatie's one-shot bash heredoc transport.
-     * The remote command is fixed apart from validated terminal dimensions.
+     * The remote command is fixed apart from validated terminal dimensions and
+     * terminates its shell process group when the SSH channel is signalled.
      *
      * @return list<string> An argv-safe SSH command for Symfony Process.
      *
@@ -83,7 +84,7 @@ class ManagedSsh extends Ssh
         }
 
         $remoteCommand = sprintf(
-            'stty rows %d cols %d 2>/dev/null || true; exec setsid bash --noprofile --norc -i',
+            'stty rows %d cols %d 2>/dev/null || true; child=; trap \'if [ -n "$child" ]; then kill -TERM -- -"$child" 2>/dev/null || kill -TERM "$child" 2>/dev/null || true; fi; exit 143\' HUP TERM INT; setsid bash --noprofile --norc -i & child=$!; wait "$child"; status=$?; trap - HUP TERM INT; exit "$status"',
             $size->rows,
             $size->columns,
         );

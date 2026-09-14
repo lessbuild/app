@@ -155,7 +155,14 @@ class ServerTroubleshootingTransportTest extends TestCase
             $this->assertContains('StrictHostKeyChecking=yes', $command);
             $this->assertContains('EscapeChar=none', $command);
             $this->assertStringContainsString('stty rows 40 cols 120', $rendered);
+            $this->assertStringContainsString('trap ', $rendered);
+            $this->assertStringContainsString('kill -TERM -- -"$child"', $rendered);
+            $this->assertStringContainsString('wait "$child"', $rendered);
             $this->assertStringContainsString('setsid bash --noprofile --norc -i', $rendered);
+            $remoteCommand = $command[array_key_last($command)];
+            $syntax = new Process(['sh', '-n', '-c', $remoteCommand]);
+            $syntax->run();
+            $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
             $this->assertStringNotContainsString('EOF-SPATIE-SSH', $rendered);
             $this->assertStringNotContainsString('private-key', $rendered);
         } finally {
