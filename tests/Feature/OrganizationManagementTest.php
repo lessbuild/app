@@ -63,14 +63,24 @@ class OrganizationManagementTest extends TestCase
         $organization->update(['allowed_email_domains' => ['example.com']]);
         $organization->members()->attach($existing, ['role' => 'developer']);
 
-        $this->actingAs($owner)->post(route('organizations.invitations.store'), [
+        $domainRejection = $this->actingAs($owner)->post(route('organizations.invitations.store'), [
             'email' => 'person@other.example',
             'role' => 'developer',
-        ])->assertStatus(422)->assertSee('This email domain is not allowed by the workspace security policy.');
-        $this->actingAs($owner)->post(route('organizations.invitations.store'), [
+        ]);
+        $domainRejection->assertStatus(422);
+        $this->assertSame(
+            'This email domain is not allowed by the workspace security policy.',
+            $domainRejection->baseResponse->exception?->getMessage(),
+        );
+        $memberRejection = $this->actingAs($owner)->post(route('organizations.invitations.store'), [
             'email' => 'EXISTING@EXAMPLE.COM',
             'role' => 'developer',
-        ])->assertStatus(422)->assertSee('This person is already a member.');
+        ]);
+        $memberRejection->assertStatus(422);
+        $this->assertSame(
+            'This person is already a member.',
+            $memberRejection->baseResponse->exception?->getMessage(),
+        );
         $this->assertDatabaseCount('organization_invitations', 0);
         Notification::assertNothingSent();
     }
@@ -177,10 +187,13 @@ class OrganizationManagementTest extends TestCase
         $organization = $owner->currentOrganization;
         $organization->members()->attach($member, ['role' => 'developer']);
 
-        $this->actingAs($owner)
-            ->patch(route('organizations.members.update', $owner), ['role' => 'admin'])
-            ->assertStatus(422)
-            ->assertSee('The owner role cannot be changed.');
+        $ownerUpdateRejection = $this->actingAs($owner)
+            ->patch(route('organizations.members.update', $owner), ['role' => 'admin']);
+        $ownerUpdateRejection->assertStatus(422);
+        $this->assertSame(
+            'The owner role cannot be changed.',
+            $ownerUpdateRejection->baseResponse->exception?->getMessage(),
+        );
         $this->actingAs($owner)
             ->patch(route('organizations.members.update', $foreign), ['role' => 'admin'])
             ->assertNotFound();
@@ -208,10 +221,13 @@ class OrganizationManagementTest extends TestCase
         $this->assertFalse($organization->fresh()->members()->whereKey($member->id)->exists());
         Queue::assertPushed(SyncOrganizationSeatQuantityJob::class, 1);
 
-        $this->actingAs($owner)
-            ->delete(route('organizations.members.destroy', $owner))
-            ->assertStatus(422)
-            ->assertSee('The workspace owner cannot be removed.');
+        $ownerRemovalRejection = $this->actingAs($owner)
+            ->delete(route('organizations.members.destroy', $owner));
+        $ownerRemovalRejection->assertStatus(422);
+        $this->assertSame(
+            'The workspace owner cannot be removed.',
+            $ownerRemovalRejection->baseResponse->exception?->getMessage(),
+        );
         $this->actingAs($owner)
             ->delete(route('organizations.members.destroy', $foreign))
             ->assertNotFound();

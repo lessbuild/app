@@ -122,10 +122,13 @@ class OperationalIncidentTest extends TestCase
         $operator->update(['current_organization_id' => $owner->current_organization_id]);
         $nonResponder = User::factory()->create();
 
-        $this->actingAs($operator)
-            ->patch(route('observability.operational-incidents.assign', $incident), ['assigned_to' => $nonResponder->id])
-            ->assertStatus(422)
-            ->assertSee('The selected responder is not a member of this workspace.');
+        $assignmentRejection = $this->actingAs($operator)
+            ->patch(route('observability.operational-incidents.assign', $incident), ['assigned_to' => $nonResponder->id]);
+        $assignmentRejection->assertStatus(422);
+        $this->assertSame(
+            'The selected responder is not a member of this workspace.',
+            $assignmentRejection->baseResponse->exception?->getMessage(),
+        );
         $this->assertNull($incident->fresh()->assigned_to);
         $this->assertSame(1, $incident->events()->count());
 
@@ -134,10 +137,13 @@ class OperationalIncidentTest extends TestCase
             'active_key' => null,
             'resolved_at' => now(),
         ]);
-        $this->actingAs($operator)
-            ->post(route('observability.operational-incidents.acknowledge', $incident))
-            ->assertStatus(422)
-            ->assertSee('A resolved incident cannot be acknowledged.');
+        $acknowledgementRejection = $this->actingAs($operator)
+            ->post(route('observability.operational-incidents.acknowledge', $incident));
+        $acknowledgementRejection->assertStatus(422);
+        $this->assertSame(
+            'A resolved incident cannot be acknowledged.',
+            $acknowledgementRejection->baseResponse->exception?->getMessage(),
+        );
         $this->assertSame(OperationalIncident::STATUS_RESOLVED, $incident->fresh()->status);
         $this->assertSame(1, $incident->events()->count());
 

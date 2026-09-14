@@ -90,8 +90,9 @@ class ProvisioningHardeningTest extends TestCase
             'name' => 'site', 'description' => 'Test site', 'environment' => 'APP_ENV=test', 'url' => 'site.example.test',
             'deployment_slug' => 'site-test', 'database_password' => 'database-secret']);
         $script = (new CreateMysqlDatabase)->script(1, $website);
-        $this->assertSame(3, substr_count($script, 'localhost'));
-        $this->assertDoesNotMatchRegularExpression('/site_test[^\n]*%/', $script);
+        // The isolated callback URL may also contain localhost; count SQL host literals only.
+        $this->assertSame(3, substr_count($script, "'localhost'"));
+        $this->assertStringNotContainsString("@'%'", $script);
     }
 
     public function test_every_server_role_renders_as_valid_strict_bash(): void
