@@ -51,6 +51,7 @@ use App\Http\Controllers\RepositoryWebhookSettingsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ServerCommandsController;
 use App\Http\Controllers\ServersController;
+use App\Http\Controllers\ServerTroubleshootingController;
 use App\Http\Controllers\SignInHistoryController;
 use App\Http\Controllers\StatusSubscriptionController;
 use App\Http\Controllers\SystemHealthController;
@@ -344,6 +345,17 @@ Route::middleware('auth')->group(function () {
         Route::get('servers/{server}', ServerShow::class)
             ->middleware('can:view,server')
             ->name('servers.show');
+        Route::post('servers/{server}/troubleshooting-sessions', [ServerTroubleshootingController::class, 'store'])
+            ->middleware('throttle:6,1')
+            ->name('servers.troubleshooting-sessions.store');
+        Route::get('servers/{server}/troubleshooting-sessions/{troubleshootingSession}', [ServerTroubleshootingController::class, 'show'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.show');
+        Route::delete('servers/{server}/troubleshooting-sessions/{troubleshootingSession}', [ServerTroubleshootingController::class, 'destroy'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.destroy');
         Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
             ->whereIn('type', CollectServerLogAction::TYPES)
             ->name('servers.logs.download');
