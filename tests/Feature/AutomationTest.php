@@ -576,14 +576,18 @@ class AutomationTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_free_plan_rejects_token_creation_before_validation_and_persistence(): void
+    public function test_free_plan_can_create_token_before_validation_and_persistence(): void
     {
         config(['billing.enforce_entitlements' => true]);
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('automation.tokens.store'), [])->assertSessionHasErrors('plan');
+        $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Free plan automation',
+            'abilities' => ['read'],
+            'expires_in_days' => 30,
+        ])->assertRedirect()->assertSessionHas('plainTextToken');
 
-        $this->assertDatabaseCount('personal_access_tokens', 0);
+        $this->assertDatabaseCount('personal_access_tokens', 1);
     }
 
     public function test_token_revocation_uses_owner_policy_and_keeps_foreign_tokens_hidden(): void

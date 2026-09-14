@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Server;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -49,8 +50,17 @@ class RouteServiceProvider extends ServiceProvider
      */
     protected function configureRateLimiting(): void
     {
+        // Authentication is prioritized before throttling, allowing workspace plans to share one quota.
         RateLimiter::for('api', function (Request $request): Limit {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            $user = $request->user();
+            $organization = $user instanceof User ? $user->currentOrganization : null;
+            $plan = $organization?->owner?->billingPlan() ?? ($user instanceof User ? $user->billingPlan() : 'free');
+            $perMinute = (int) config("billing.plans.{$plan}.limits.api_requests_per_minute", 60);
+            $key = $organization
+                ? 'organization:'.$organization->id
+                : 'ip:'.$request->ip();
+
+            return Limit::perMinute(max(1, $perMinute))->by($key);
         });
 
         RateLimiter::for('sensitive-account', function (Request $request): Limit|array {

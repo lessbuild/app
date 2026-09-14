@@ -21,6 +21,8 @@ class BillingTest extends TestCase
             ->assertSee('$99')
             ->assertSee('$199')
             ->assertSee('Unlimited servers')
+            ->assertSee('Scoped API tokens')
+            ->assertSee('60 API requests per minute')
             ->assertSee('fair-use policy');
     }
 

@@ -18,14 +18,15 @@ class EntitlementTest extends TestCase
         config(['billing.enforce_entitlements' => true]);
     }
 
-    public function test_free_plan_keeps_core_deployments_but_blocks_paid_capabilities(): void
+    public function test_free_plan_keeps_core_deployments_and_api_but_blocks_paid_capabilities(): void
     {
         $user = User::factory()->create();
         $entitlements = app(Entitlements::class);
 
         $this->assertTrue($entitlements->allows($user, 'deployments'));
+        $this->assertTrue($entitlements->allows($user, 'api'));
         foreach ([
-            'previews', 'api', 'scheduled_deployments', 'resources', 'status_pages',
+            'previews', 'scheduled_deployments', 'resources', 'status_pages',
             'cost_controls', 'teams', 'alerts', 'audit', 'high_availability', 'sso',
         ] as $feature) {
             $this->assertFalse($entitlements->allows($user, $feature), $feature.' should be paid.');
