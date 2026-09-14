@@ -3,10 +3,11 @@
 Status: Phase 8's fixed server-host diagnostic implementation, minimal
 persisted troubleshooting-session authorization/lifecycle boundary, bounded
 server-side transport/process-ownership boundary, durable encrypted frame
-relay and bounded broker ownership command are complete locally; the typed
+relay, bounded broker ownership command and policy-authorized troubleshooting
+session lifecycle HTTP boundary are complete locally; the typed
 category-aware control-plane report is also complete. Supervisor installation
-wiring, remote cleanup/reconnect proof and an interactive terminal route/UI
-remain outstanding.
+wiring, remote cleanup/reconnect proof, frame input/output/resize HTTP
+operations and an interactive terminal route/UI remain outstanding.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -50,7 +51,7 @@ existing arbitrary server command, metrics, log, provisioning and
 provider-health paths remain separate. Interactive terminal execution is not
 implied by this diagnostic.
 
-Date: 2026-09-13
+Date: 2026-09-14
 
 Integration branch: `main`
 
@@ -3331,14 +3332,64 @@ Feature commit `5b54f3b` was fast-forwarded into canonical `main` and pushed
 to GitHub `origin/main` on 2026-09-13.
 
 The exact next task is to characterize and implement the policy-authorized
-HTTP/Livewire boundary for connect, bounded input, output polling/acknowledgment,
-resize, close and reconnect; keep user exposure gated until remote cleanup and
-revocation behavior has been tested.
+bounded frame input/output polling/acknowledgment and resize boundary; keep
+user exposure gated until remote cleanup and revocation behavior has been
+tested.
+
+## Phase 8 — troubleshooting session HTTP lifecycle boundary (completed slice)
+
+### Problem and responsibility boundary
+
+The durable session, transport, frame and broker boundaries had no consumer
+that could safely issue a grant or report lifecycle state. Added a small
+authenticated JSON boundary for session creation, status/heartbeat and
+idempotent close. The controller coordinates the server/session policies,
+bearer-header protocol and existing lifecycle actions; the immutable view data
+object exposes only safe timestamps, finite status, sequence counters and the
+execute capability. No controller owns persistence or remote process work.
+
+Nested scoped binding keeps a session attached to the requested server.
+Creation returns the opaque grant once over a private, no-store response;
+status and close require the bearer grant and never return it. Status uses the
+existing touch action as the polling heartbeat, so membership, server state,
+absolute/idle expiry and the grant are revalidated under the action's lock.
+Close preserves the existing idempotent terminal transition and clears broker
+ownership. Missing/invalid grants are rejected after resource authorization,
+foreign nested sessions are concealed as not found, and no SSH connection,
+frame, job or credential is created by this boundary.
+
+This applies single responsibility and dependency inversion without introducing
+a request object for an empty body or a generic API repository. Bearer-token
+parsing is deliberately kept at the HTTP protocol boundary; the actions remain
+usable from jobs, commands and future Livewire operations.
+
+### Verification and limitations
+
+The focused HTTP lifecycle suite passed **8 tests / 51 assertions**. The
+combined HTTP/session/transport/broker regression set passed **41 tests / 186
+assertions**. The fresh strict isolated full PHP suite passed **1,502 tests /
+12,720 assertions**, with the unchanged
+ProvisioningHardeningTest::test_website_database_user_is_local_only failure
+(the test expects three localhost occurrences and the current script contains
+four). Required-PHP changed-file lint, Pint test mode, git diff --check and
+isolated route-cache creation passed. The prior required-PHP asset/browser
+evidence (9 passed) remains unchanged and was not rerun because this is a
+PHP/route-only slice.
+
+Feature commit ee62249 (feat: expose troubleshooting session lifecycle) was
+fast-forwarded into canonical main and pushed to GitHub origin/main on
+2026-09-14. No provider, cloud, remote-host, supervisor, reconnect or
+live-acceptance claim is made. The routes do not yet accept input, output
+acknowledgments, resize or reconnect requests, and no Livewire terminal is
+exposed. The exact next task is to characterize and add the policy-authorized
+bounded frame input/output polling/acknowledgment and resize contract,
+retaining the remote-cleanup and revocation gate before terminal UI.
 
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
+| Phase 8 troubleshooting session HTTP lifecycle | The durable session, transport, frame and broker boundaries had no safe HTTP consumer. Added authenticated JSON create, status/heartbeat and idempotent close routes with policy checks, bearer-grant validation, nested scoped binding, private no-store responses and an immutable secret-safe metadata projection. Existing lifecycle actions retain locks, ownership revalidation, expiry, broker cleanup and remote-free behavior; no frame, job, SSH or credential side effect is introduced. | HTTP lifecycle suite: **8 tests / 51 assertions**. Combined HTTP/session/transport/broker suite: **41 tests / 186 assertions**. Fresh strict isolated full PHP suite: **1,502 passed / 12,720 assertions / 1 unchanged baseline failure**. Required-PHP lint, Pint test mode, route-cache creation and git diff check passed. | ee62249 — feat: expose troubleshooting session lifecycle | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Add bounded policy-authorized frame input, output polling/acknowledgment and resize operations; retain the remote cleanup/revocation gate before Livewire terminal exposure. |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |
 | Phase 6B characterization | The existing restore mutates the live website and `BackupRestore` records no isolated target, overwrite mode, integrity/smoke result, failure stage, cleanup result or duration. Characterized a same-server temporary Restic directory/database protocol, exact snapshot binding, Laravel smoke boundary, fail-closed unsupported runtimes, EXIT-trap cleanup and separation from control-plane recovery. No application behavior changed. | Read-only source/protocol characterization completed; no runtime state or external resource changed. | `5bed78d` — `docs: characterize isolated restore verification` | Documentation commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement the persisted isolated verification attempt and safe request/action/policy/job boundary. |

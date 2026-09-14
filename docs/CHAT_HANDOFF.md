@@ -1,6 +1,6 @@
 # BuildPusher chat handoff
 
-## Product expansion current checkpoint — 2026-09-13
+## Product expansion current checkpoint — 2026-09-14
 
 The product-expansion sequence is active on `main`. Phase 7F's disabled-by-default
 revision-aware post-deployment observation aggregate, leased execution/read
@@ -40,6 +40,16 @@ typed safe checks, and protects duplicate requests, retries, leases and stale
 attempts. The existing arbitrary command, metrics, logs, provisioning and
 provider-health paths remain separate; this is not an interactive terminal.
 
+The policy-authorized troubleshooting-session HTTP lifecycle boundary is now
+complete at feature commit ee62249. Its JSON routes create a short-lived
+opaque grant, return safe status/heartbeat metadata and close idempotently
+using nested scoped binding, bearer validation and private no-store responses.
+The focused HTTP suite passed 8 tests / 51 assertions; the combined
+HTTP/session/transport/broker regression set passed 41 tests / 186 assertions;
+the fresh strict isolated suite passed 1,502 tests / 12,720 assertions with
+the same unchanged provisioning baseline failure. No frame payloads, lease
+hashes, credentials or tokens after creation are returned.
+
 The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
 server/import/log/command/observability regressions passed **45 tests / 373
 assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
@@ -63,9 +73,9 @@ before remote write for at-most-once semantics; output is sequenced,
 acknowledgeable and bounded, and exact lease/attempt/process guards fail closed
 on expiry or stale callbacks. Supervisor installation, real remote cleanup,
 reconnect and browser-terminal exposure remain outstanding. The exact next
-task is to characterize and implement the policy-authorized HTTP/Livewire
-connect, input, output polling/acknowledgment, resize, close and reconnect
-boundary while keeping exposure gated on remote cleanup and revocation proof.
+task is to characterize and implement the policy-authorized bounded frame
+input, output polling/acknowledgment and resize boundary while keeping
+exposure gated on remote cleanup and revocation proof.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit
