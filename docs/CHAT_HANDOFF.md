@@ -125,6 +125,32 @@ local scope is complete. The next implementation task is the final
 cross-feature verification and requirement audit; provider billing, automatic
 cleanup and provider/cloud acceptance remain separate.
 
+The final local verification gate is now complete from the durable isolated
+checkout `/root/Documents/Codex/2026-09-14/buildpusher-product-expansion-final`
+at `614a0ae`. The strict PHP suite recorded **1,515 passed, 5 failed and 12,809
+assertions**. Those five failures reproduce the fresh pre-Phase 9 baseline:
+four existing incident/organization validation-message response assertions and
+the known provisioning `localhost` count mismatch. No Phase 9 test failed.
+Required-PHP Pint, Composer validation/platform checks, fresh migration/seed,
+config/route/view caching, `npm run build` and `git diff --check` passed. The
+required-PHP asset/browser suite passed **9 tests**; the cached served-Livewire
+smoke passed **1**; accessibility passed **3** across mobile/tablet/desktop;
+and the broad authenticated visual audit passed **3** across mobile, tablet and
+desktop. The earlier tablet focus and mobile Settings-link discrepancies are
+resolved in the current main line. The first discarded visual attempt used a
+temporary `/tmp` worktree whose optional Telescope table was absent; the durable
+rerun disabled only optional Telescope recording and is the valid evidence.
+
+Phase 9's safe local scope and the complete local product-expansion verification
+gate are complete. The cost surface remains estimate/telemetry/provider-billing
+honest, preview quota/lifetime and attribution are read-only, and cleanup
+signals do not delete or dispatch. Remaining release work is explicitly
+external: authorized cloud/provider deployment and cleanup evidence, production
+mail, GitHub App, billing, monitoring, SSO/provider acceptance and the separate
+live drill. The interactive terminal UI remains deliberately gated. The exact
+documentation commit and push status are recorded in GitHub and the progress
+ledger; canonical `main` remains the integration branch.
+
 The earlier post-supervision complete strict isolated suite passed **1,514
 tests / 12,797 assertions** with the same single provisioning baseline failure.
 A fresh strict run after the PTY-lifetime fix completed with **1,510 passing

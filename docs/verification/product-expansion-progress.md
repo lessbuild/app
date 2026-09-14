@@ -4044,3 +4044,67 @@ provision/deploy/rollback/backup/restore/cleanup, production SMTP, independent
 monitoring/heartbeat destinations, production GitHub App configuration, approved
 Stripe activation and live SSO/provider acceptance. Do not claim these as passing
 until the appropriate evidence is recorded.
+
+## Final cross-feature verification and requirement audit — 2026-09-14
+
+### Isolation and runtime
+
+The final audit used the pushed `product-expansion/phase8-local-verification`
+checkout at `614a0ae` in
+`/root/Documents/Codex/2026-09-14/buildpusher-product-expansion-final`.
+It has independent locked Composer and npm dependencies, a new application key,
+file-backed SQLite database, storage, sessions, cache and built assets. The
+database was freshly migrated and seeded through
+`2026_09_14_010000_add_catalog_synced_at_to_sizes`. A path assertion before the
+cache commands resolved the database, storage, cache, sessions and filesystem
+under that checkout only. No production credentials, cloud resources or
+acceptance-drill files were used.
+
+The browser server used `TELESCOPE_ENABLED=false` because the disposable seeded
+database intentionally does not include Telescope's optional tables. This only
+disabled optional local request recording; it did not change application routes,
+provider behavior or feature configuration.
+
+### Verification results
+
+| Check | Result |
+| --- | --- |
+| Strict PHP suite | **1,515 passed, 5 failed, 12,809 assertions**. The five failures reproduce the fresh pre-Phase 9 baseline: four existing validation-message response assertions in `OperationalIncidentTest`/`OrganizationManagementTest`, plus the `ProvisioningHardeningTest` `localhost` occurrence mismatch. No Phase 9 test failed. |
+| Required-PHP Pint | **Passed** with `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/pint --test`. |
+| Required-PHP Composer manifest/platform | `validate --no-check-publish` passed; `check-platform-reqs` passed through the pinned PHP 8.5.10 runtime. The system Composer libraries emit PHP 8.5 deprecation notices; no dependency or lockfile was changed. |
+| Migration and cache rehearsal | **Passed**: fresh migration/seed, resolved-path assertion, `config:cache`, `route:cache` and `view:cache`. |
+| Asset build | **Passed**: `npm run build`. |
+| Built asset/layout and no-JavaScript browser checks | **9 passed** with the required PHP fixture runner. |
+| Served Livewire/runtime smoke after route/config/view caching | **1 passed**. The actual versioned Livewire JavaScript returned HTTP 200 with a JavaScript content type and mobile navigation opened/closed without page errors. |
+| Accessibility browser checks | **3 passed** across mobile, tablet and desktop. The previously documented tablet focus discrepancy is resolved in the current main line. |
+| Broad visual route audit | **3 passed** across mobile, tablet and desktop, including the authenticated route crawl. The previously documented missing mobile Settings link is resolved. |
+| Repository integrity | **Passed**: `git diff --check`; the isolated branch has no tracked changes after verification. |
+
+The first visual-audit attempt was discarded as evidence because the temporary
+`/tmp` worktree was removed while the server had Telescope enabled. The audit was
+repeated from the durable isolated checkout with Telescope disabled, and all
+three crawls passed. This final audit validates local behavior only; it does not
+establish provider/cloud or live acceptance.
+
+### Requirement audit and handoff
+
+Phase 9's safe local scope is complete: cost reads are organization-scoped and
+injected, catalog estimates are timestamped and distinguished from measured
+telemetry, provider billing remains explicitly unavailable, preview quota and
+lifetime are visible, server attribution is labeled without fractional cost
+invention, and cleanup guidance remains review-only. The GET surface performs no
+deletion, hibernation, status transition or job dispatch.
+
+Across the product-expansion slices, routes, response envelopes, validation keys,
+flash behavior, persisted status values, queued-job payloads, provider contracts,
+tenant checks, leases, locks, stale-attempt guards and remote-call boundaries
+were preserved. The remaining release gates are the authorized disposable cloud
+drill, restricted provider credentials and cleanup evidence, production mail,
+GitHub App configuration, approved billing activation, live monitoring and live
+SSO/provider acceptance. Interactive terminal UI exposure also remains
+deliberately gated. These are external work, not local test failures.
+
+**Local implementation and verification gate: complete.** The final
+documentation commit records this audit; its exact hash and push status are
+reported in the handoff. The next task is to schedule the separately authorized
+external acceptance work, not to claim it as complete locally.
