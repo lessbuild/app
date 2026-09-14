@@ -155,10 +155,10 @@ class ServerTroubleshootingTransportTest extends TestCase
             $this->assertContains('StrictHostKeyChecking=yes', $command);
             $this->assertContains('EscapeChar=none', $command);
             $this->assertStringContainsString('stty rows 40 cols 120', $rendered);
-            $this->assertStringContainsString('trap ', $rendered);
-            $this->assertStringContainsString('kill -TERM -- -"$child"', $rendered);
-            $this->assertStringContainsString('wait "$child"', $rendered);
-            $this->assertStringContainsString('setsid bash --noprofile --norc -i', $rendered);
+            $this->assertStringContainsString('exec bash --noprofile --norc -i', $rendered);
+            $this->assertStringNotContainsString('trap ', $rendered);
+            $this->assertStringNotContainsString('kill -TERM -- -"$child"', $rendered);
+            $this->assertStringNotContainsString('wait "$child"', $rendered);
             $remoteCommand = $command[array_key_last($command)];
             $syntax = new Process(['sh', '-n', '-c', $remoteCommand]);
             $syntax->run();
