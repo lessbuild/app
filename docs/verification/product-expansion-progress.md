@@ -6,8 +6,10 @@ server-side transport/process-ownership boundary, durable encrypted frame
 relay, bounded broker ownership command and policy-authorized troubleshooting
 session lifecycle HTTP boundary are complete locally; the typed
 category-aware control-plane report is also complete. Supervisor installation
-wiring is now complete in the daemon installer contract, while installed-host
-remote cleanup/reconnect proof and an interactive terminal route/UI remain
+wiring is now complete in the daemon installer contract. A deterministic
+disposable-host exercise also verified the real application SSH adapter across
+five sequential local connections, while installed-host remote
+cleanup/reconnect proof and an interactive terminal route/UI remain
 outstanding.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
@@ -3589,12 +3591,52 @@ disconnect, broker restart, worker loss, network partition and remote process
 cleanup, then characterize safe new-session reconnect. Keep the browser
 terminal gated until those behaviors are proven.
 
+## Phase 8 — local application transport verification (completed evidence)
+
+### Problem and boundary
+
+The existing unit and feature tests proved the bounded process connection and
+the argv-safe pinned SSH command, but they did not exercise the actual
+`SshServerTroubleshootingTransport` against an SSH daemon. A local adapter
+check was justified as a verification boundary, not as a reason to add a
+second transport abstraction or weaken the installed-host gate.
+
+### Verification
+
+In the isolated worktree on 2026-09-14, an ephemeral local `sshd` was started
+with newly generated ED25519 client and host keys. A `Server` model was given
+the encrypted client key, pinned known-host entry, active status and loopback
+port, and the real `SshServerTroubleshootingTransport` was used to open five
+sequential sessions. Each session remained running before and after input and
+returned its bounded shell proof marker. No application production database,
+provider host, acceptance-drill checkout or persistent credential was used.
+
+The focused supervisor/broker/HTTP/transport/session/installer suite passed
+**55 tests / 311 assertions** with strict warning/deprecation flags. Scoped
+Pint, required-PHP execution, `bash -n` and `git diff --check` passed. The
+fresh worktree's first run emitted only the expected missing-`.env` test-harness
+warning; an isolated empty `.env` was then created and the strict rerun was
+clean.
+
+This evidence validates the local application adapter and its pinned-host
+boundary. It does not prove a deployed systemd installation, broker restart,
+worker-loss recovery, network-partition behavior, remote orphan cleanup or an
+uncooperative remote shell. Reconnect remains intentionally new-session-only,
+and the browser terminal remains gated.
+
+**Local transport evidence gate: complete.** The exact next task is authorized
+installed-host verification of normal disconnect, broker restart, worker loss,
+network partition and remote process cleanup, followed by safe new-session
+reconnect verification. Do not move to Phase 9 or expose terminal UI until
+that external gate is satisfied.
+
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
 | Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
 | Phase 8 troubleshooting broker supervision wiring | The bounded broker had no daemon lifecycle owner. Added a bounded UUID-only supervisor scan that policy-revokes ineligible sessions and starts per-session systemd units, plus installer units with restart and control-group cleanup semantics. Existing broker/actions retain lease, actor, frame and transport invariants; the SSH wrapper requests remote child-group termination on channel signals. | Supervisor/broker/HTTP/transport suite: **40 tests / 209 assertions**. Installer suite: **2 tests / 56 assertions**. `bash -n`, required-PHP lint, Pint and `git diff --check` passed. No systemd installation or remote host was used. | `e9b1ed1` — `feat: supervise troubleshooting brokers` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-14. | Obtain authorized installed-host evidence for disconnect, worker loss, network partition, remote cleanup and safe new-session reconnect; keep browser-terminal exposure gated. |
+| Phase 8 local application transport verification | The pinned SSH adapter needed one deterministic end-to-end local exercise beyond process/unit tests. Used an ephemeral `sshd`, generated keys and an active `Server` model to run the real `SshServerTroubleshootingTransport` through five sequential sessions; no code or production state changed. | Five real local adapter connections accepted bounded input and returned a proof marker. Focused supervisor/broker/HTTP/transport/session/installer suite: **55 tests / 311 assertions**. Scoped Pint, required-PHP execution, `bash -n` and `git diff --check` passed. | Documentation evidence checkpoint | Recorded in this progress update and pushed with the documentation commit. | Obtain authorized installed-host evidence for normal disconnect, broker restart, worker loss, network partition and remote cleanup, then verify safe new-session-only reconnect; keep browser-terminal exposure and Phase 9 gated. |
 | Phase 8 remote cleanup and reconnect characterization | The normal broker path stops the local Symfony Process group and releases temporary SSH files; the SSH wrapper now requests remote child-group termination on channel termination. A server-side remote identity/helper is still absent, so worker death, network partition and remote orphan cleanup remain unproven. HTTP and broker activity now recheck membership; reconnect remains intentionally new-session-only. | Read-only source/dependency characterization plus local process/command tests; no SSH host, network partition, worker crash, supervisor restart or remote resource was used. | Documentation checkpoint preceding `e9b1ed1` | Fast-forwarded into canonical `main` and pushed with the supervision slice. | Obtain authorized installed-host proof of normal and abnormal cleanup, then verify that reconnect always creates a newly authorized session. |
 | Phase 8 troubleshooting session HTTP lifecycle | The durable session, transport, frame and broker boundaries had no safe HTTP consumer. Added authenticated JSON create, status/heartbeat and idempotent close routes with policy checks, bearer-grant validation, nested scoped binding, private no-store responses and an immutable secret-safe metadata projection. Existing lifecycle actions retain locks, ownership revalidation, expiry, broker cleanup and remote-free behavior; no frame, job, SSH or credential side effect is introduced. | HTTP lifecycle suite: **8 tests / 51 assertions**. Combined HTTP/session/transport/broker suite: **41 tests / 186 assertions**. Fresh strict isolated full PHP suite: **1,502 passed / 12,720 assertions / 1 unchanged baseline failure**. Required-PHP lint, Pint test mode, route-cache creation and git diff check passed. | ee62249 — feat: expose troubleshooting session lifecycle | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Add bounded policy-authorized frame input, output polling/acknowledgment and resize operations; retain the remote cleanup/revocation gate before Livewire terminal exposure. |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |

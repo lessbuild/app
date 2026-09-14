@@ -116,7 +116,12 @@ creation, installer shell syntax and `git diff --check` passed.
 Additional disposable local checks confirmed that a transient systemd
 control-group stop removes its child and that the SSH trap/process-group
 pattern removes a controlled worker after a hard-killed client. These do not
-replace installed provider-host or network-partition evidence.
+replace installed provider-host or network-partition evidence. A deterministic
+disposable local `sshd` check then exercised the real
+`SshServerTroubleshootingTransport` across five sequential encrypted-key
+connections; each accepted bounded input and returned a proof marker. This is
+local adapter evidence only, not installed-host, worker-loss,
+network-partition or remote-orphan proof.
 
 The supervisor wiring slice passed the combined supervisor/broker/HTTP/
 transport suite (**40 tests / 209 assertions**) and the daemon-installer

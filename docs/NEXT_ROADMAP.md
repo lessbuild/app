@@ -83,7 +83,12 @@ creation, installer shell syntax and `git diff --check` also passed.
 Additional disposable local checks confirmed that a transient systemd
 control-group stop removes its child and that the SSH trap/process-group
 pattern removes a controlled worker after a hard-killed client. These do not
-replace installed provider-host or network-partition evidence.
+replace installed provider-host or network-partition evidence. A separate
+deterministic disposable `sshd` exercise used the real
+`SshServerTroubleshootingTransport` and five sequential encrypted-key sessions;
+each accepted bounded input and returned a proof marker. This validates the
+local adapter boundary only and does not replace installed-host, worker-loss,
+network-partition or remote-orphan evidence.
 
 ## Deferred release gates
 
