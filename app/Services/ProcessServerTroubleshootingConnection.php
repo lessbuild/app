@@ -107,7 +107,7 @@ class ProcessServerTroubleshootingConnection implements ServerTroubleshootingCon
      */
     public function resize(ServerTroubleshootingTerminalSize $size): void
     {
-        $this->write(sprintf("stty rows %d cols %d\n", $size->rows, $size->columns));
+        $this->write($size->controlFrame());
     }
 
     public function isRunning(): bool

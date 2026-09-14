@@ -15,5 +15,7 @@ class TrimStrings extends Middleware
         'current_password',
         'password',
         'password_confirmation',
+        // Shell input is a byte-preserving protocol field; trailing newlines are meaningful.
+        'input',
     ];
 }

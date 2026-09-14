@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Actions\Server\OpenServerTroubleshootingSessionAction;
+use App\Enums\ServerTroubleshootingFrameDirection;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerTroubleshootingFrame;
 use App\Models\ServerTroubleshootingSession;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class ServerTroubleshootingHttpTest extends TestCase
@@ -174,6 +177,197 @@ class ServerTroubleshootingHttpTest extends TestCase
 
         $this->assertNull($session->fresh()->broker_lease_hash);
         $this->assertNull($session->fresh()->broker_process_id);
+    }
+
+    public function test_owner_can_queue_input_without_echoing_the_sensitive_payload(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+        $payload = "echo sensitive-input\n";
+
+        $response = $this->actingAs($owner)->postJson(
+            route('servers.troubleshooting-sessions.input', [$server, $session]),
+            ['input' => $payload],
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $response
+            ->assertAccepted()
+            ->assertJsonPath('data.accepted', true)
+            ->assertJsonPath('data.sequence', 1)
+            ->assertJsonPath('data.bytes', strlen($payload))
+            ->assertJsonMissingPath('data.payload');
+        $this->assertStringNotContainsString($payload, $response->getContent());
+        $this->assertDatabaseCount('server_troubleshooting_frames', 1);
+        $response->assertSessionMissing('_old_input');
+    }
+
+    public function test_execute_is_required_before_malformed_input_is_parsed_and_no_frame_is_written(): void
+    {
+        [$owner, $server] = $this->resources();
+        $viewer = $this->member($owner, 'viewer');
+        $open = $this->actingAs($viewer)->postJson(
+            route('servers.troubleshooting-sessions.store', $server),
+        )->assertCreated();
+        $session = ServerTroubleshootingSession::query()
+            ->where('public_id', $open->json('data.id'))
+            ->firstOrFail();
+        $token = (string) $open->json('data.token');
+
+        $this->actingAs($viewer)
+            ->postJson(
+                route('servers.troubleshooting-sessions.input', [$server, $session]),
+                ['input' => ['not-a-string' => 'should-not-be-read']],
+                ['Authorization' => 'Bearer '.$token],
+            )
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('server_troubleshooting_frames', 0);
+    }
+
+    public function test_input_validation_is_bounded_without_flashing_or_persisting_the_payload(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+        $payload = str_repeat('sensitive-command', 500);
+
+        $response = $this->actingAs($owner)->postJson(
+            route('servers.troubleshooting-sessions.input', [$server, $session]),
+            ['input' => $payload],
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $response
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('input');
+        $this->assertStringNotContainsString($payload, $response->getContent());
+        $response->assertSessionMissing('_old_input');
+        $this->assertDatabaseCount('server_troubleshooting_frames', 0);
+    }
+
+    public function test_output_polling_is_bounded_ordered_and_does_not_return_ciphertext(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+        $first = $session->frames()->create([
+            'direction' => ServerTroubleshootingFrameDirection::Output,
+            'sequence' => 1,
+            'payload' => "first-output\n",
+            'payload_bytes' => strlen("first-output\n"),
+        ]);
+        $session->frames()->create([
+            'direction' => ServerTroubleshootingFrameDirection::Output,
+            'sequence' => 2,
+            'payload' => "second-output\n",
+            'payload_bytes' => strlen("second-output\n"),
+        ]);
+        $session->update(['output_sequence' => 2]);
+
+        $response = $this->actingAs($owner)->getJson(
+            route('servers.troubleshooting-sessions.output', [$server, $session]).'?after=0&limit=1',
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.after', 0)
+            ->assertJsonPath('data.next_after', 1)
+            ->assertJsonPath('data.frames.0.sequence', 1)
+            ->assertJsonPath('data.frames.0.payload', "first-output\n")
+            ->assertJsonPath('data.frames.0.bytes', strlen("first-output\n"))
+            ->assertJsonMissingPath('data.frames.0.id');
+        $this->assertNotSame(
+            "first-output\n",
+            DB::table('server_troubleshooting_frames')->whereKey($first->id)->value('payload'),
+        );
+    }
+
+    public function test_output_acknowledgment_removes_only_acknowledged_output_from_future_polls(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+        $session->frames()->createMany([
+            [
+                'direction' => ServerTroubleshootingFrameDirection::Output,
+                'sequence' => 1,
+                'payload' => "first-output\n",
+                'payload_bytes' => strlen("first-output\n"),
+            ],
+            [
+                'direction' => ServerTroubleshootingFrameDirection::Output,
+                'sequence' => 2,
+                'payload' => "second-output\n",
+                'payload_bytes' => strlen("second-output\n"),
+            ],
+        ]);
+        $session->update(['output_sequence' => 2]);
+
+        $response = $this->actingAs($owner)->postJson(
+            route('servers.troubleshooting-sessions.output.acknowledge', [$server, $session]),
+            ['through' => 1],
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('data.acknowledged', 1)
+            ->assertJsonPath('data.through', 1);
+        $this->assertNotNull(
+            ServerTroubleshootingFrame::query()
+                ->where('server_troubleshooting_session_id', $session->id)
+                ->where('sequence', 1)
+                ->value('acknowledged_at'),
+        );
+
+        $remaining = $this->actingAs($owner)->getJson(
+            route('servers.troubleshooting-sessions.output', [$server, $session]).'?after=0&limit=10',
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $remaining
+            ->assertOk()
+            ->assertJsonCount(1, 'data.frames')
+            ->assertJsonPath('data.frames.0.sequence', 2);
+    }
+
+    public function test_resize_is_queued_as_a_validated_control_frame_without_exposing_the_frame_payload(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+
+        $response = $this->actingAs($owner)->postJson(
+            route('servers.troubleshooting-sessions.resize', [$server, $session]),
+            ['columns' => 120, 'rows' => 40],
+            ['Authorization' => 'Bearer '.$token],
+        );
+
+        $response
+            ->assertAccepted()
+            ->assertJsonPath('data.accepted', true)
+            ->assertJsonPath('data.sequence', 1)
+            ->assertJsonPath('data.bytes', strlen("stty rows 40 cols 120\n"))
+            ->assertJsonMissingPath('data.payload');
+        $this->assertSame(
+            "stty rows 40 cols 120\n",
+            $session->frames()->firstOrFail()->payload,
+        );
+    }
+
+    public function test_resize_rejects_unsupported_dimensions_without_queuing_a_control_frame(): void
+    {
+        [$owner, $server] = $this->resources();
+        [$session, $token] = $this->openSession($server, $owner);
+
+        $this->actingAs($owner)
+            ->postJson(
+                route('servers.troubleshooting-sessions.resize', [$server, $session]),
+                ['columns' => 10, 'rows' => 24],
+                ['Authorization' => 'Bearer '.$token],
+            )
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('terminal');
+
+        $this->assertDatabaseCount('server_troubleshooting_frames', 0);
     }
 
     /** @return array{0: ServerTroubleshootingSession, 1: string} */

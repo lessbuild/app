@@ -356,6 +356,22 @@ Route::middleware('auth')->group(function () {
             ->scopeBindings()
             ->whereUuid('troubleshootingSession')
             ->name('servers.troubleshooting-sessions.destroy');
+        Route::post('servers/{server}/troubleshooting-sessions/{troubleshootingSession}/input', [ServerTroubleshootingController::class, 'input'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.input');
+        Route::get('servers/{server}/troubleshooting-sessions/{troubleshootingSession}/output', [ServerTroubleshootingController::class, 'output'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.output');
+        Route::post('servers/{server}/troubleshooting-sessions/{troubleshootingSession}/output/acknowledge', [ServerTroubleshootingController::class, 'acknowledgeOutput'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.output.acknowledge');
+        Route::post('servers/{server}/troubleshooting-sessions/{troubleshootingSession}/resize', [ServerTroubleshootingController::class, 'resize'])
+            ->scopeBindings()
+            ->whereUuid('troubleshootingSession')
+            ->name('servers.troubleshooting-sessions.resize');
         Route::get('servers/{server}/logs/{type}', [ServersController::class, 'downloadLog'])
             ->whereIn('type', CollectServerLogAction::TYPES)
             ->name('servers.logs.download');

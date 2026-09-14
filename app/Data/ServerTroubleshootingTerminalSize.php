@@ -23,4 +23,10 @@ final readonly class ServerTroubleshootingTerminalSize
             throw new InvalidArgumentException('The terminal row count is outside the supported range.');
         }
     }
+
+    /** Serialize validated dimensions as the bounded control frame consumed by the broker. */
+    public function controlFrame(): string
+    {
+        return sprintf("stty rows %d cols %d\n", $this->rows, $this->columns);
+    }
 }
