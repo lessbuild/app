@@ -6,8 +6,8 @@ server-side transport/process-ownership boundary, durable encrypted frame
 relay, bounded broker ownership command and policy-authorized troubleshooting
 session lifecycle HTTP boundary are complete locally; the typed
 category-aware control-plane report is also complete. Supervisor installation
-wiring, remote cleanup/reconnect proof, frame input/output/resize HTTP
-operations and an interactive terminal route/UI remain outstanding.
+wiring, remote cleanup/reconnect proof and an interactive terminal route/UI
+remain outstanding.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -3379,16 +3379,75 @@ PHP/route-only slice.
 Feature commit ee62249 (feat: expose troubleshooting session lifecycle) was
 fast-forwarded into canonical main and pushed to GitHub origin/main on
 2026-09-14. No provider, cloud, remote-host, supervisor, reconnect or
-live-acceptance claim is made. The routes do not yet accept input, output
-acknowledgments, resize or reconnect requests, and no Livewire terminal is
-exposed. The exact next task is to characterize and add the policy-authorized
-bounded frame input/output polling/acknowledgment and resize contract,
-retaining the remote-cleanup and revocation gate before terminal UI.
+live-acceptance claim is made. The lifecycle routes are now supplemented by
+bounded input, output polling, output acknowledgment and resize operations;
+no Livewire terminal is exposed. The exact next task is to characterize and
+implement remote cleanup, membership revocation and safe reconnect semantics,
+retaining the supervisor-installation and terminal-UI gates until those
+behaviors are tested.
+
+## Phase 8 — troubleshooting frame HTTP transport boundary (completed slice)
+
+### Problem and responsibility boundary
+
+The durable frame relay and broker already protected encrypted input/output,
+sequence cursors, backpressure and exact lease/attempt/process ownership, but
+there was no policy-authorized HTTP consumer for a browser or future Livewire
+client. Added four small protocol operations to the existing session boundary:
+input enqueue, output polling, output acknowledgment and terminal resize.
+
+The controller coordinates nested scoped binding, the appropriate connect or
+execute policy, bearer-grant validation, protocol parsing and the existing
+actions, then returns the existing JSON-safe transport metadata. It does not
+persist frames, perform SSH work or own workflow transitions. Input and resize
+reuse the transaction-time action boundary, while output and acknowledgment
+reuse the locked frame-store actions. The resize action is deliberately a
+small cohesive adapter that delegates to the bounded input path; no generic
+transport interface or repository was added.
+
+Input is accepted only from the explicit byte-preserving input field and
+returns 202 with sequence/size metadata, never the submitted payload.
+Laravel's global TrimStrings middleware exempts this protocol field because
+trailing newlines are shell data; the action still validates it again after
+authorization and locking. Output is decrypted by the existing store,
+returned in bounded sequence order with after/next_after cursors and never
+exposes ciphertext, frame identifiers or an inaccurate has_more claim.
+Acknowledgment removes only output through the requested sequence. Resize
+validates an immutable terminal-size object and serializes a bounded stty
+control frame through the same ordered input path, so the HTTP request never
+performs a remote call.
+
+All routes are nested and scoped to the server, require private no-store
+responses and recheck the bearer grant on every operation. Execute permission
+is required before input/resize validation; connect permission is required
+before output/ack validation. This preserves safe authorization ordering,
+secret-safe failure behavior and the broker's fail-closed stale-owner rules.
+
+### Verification and limitations
+
+The focused frame HTTP suite passed 15 tests / 94 assertions. The combined
+HTTP/session/transport/broker regression set passed 35 tests / 183 assertions.
+The broader server/provisioning set passed 185 tests, with the one unchanged
+provisioning baseline failure, and 1,384 assertions. The fresh strict isolated
+full suite passed 1,509 tests / 12,762 assertions, with the unchanged
+ProvisioningHardeningTest::test_website_database_user_is_local_only failure
+(the test expects three localhost occurrences and the current script contains
+four). Required-PHP changed-file lint, Pint, git diff --check and route-cache
+recreation passed.
+
+No supervisor installation, real remote host, network partition, supervisor
+restart, remote process-group cleanup, reconnect protocol, provider/cloud
+acceptance, live drill or browser terminal was exercised. Feature commit
+188f3b9 (feat: expose troubleshooting frame transport) was fast-forwarded
+into canonical main and pushed to GitHub origin/main on 2026-09-14. The
+exact next task is to characterize remote cleanup, membership revocation and
+safe reconnect semantics before exposing a terminal UI.
 
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
+| Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
 | Phase 8 troubleshooting session HTTP lifecycle | The durable session, transport, frame and broker boundaries had no safe HTTP consumer. Added authenticated JSON create, status/heartbeat and idempotent close routes with policy checks, bearer-grant validation, nested scoped binding, private no-store responses and an immutable secret-safe metadata projection. Existing lifecycle actions retain locks, ownership revalidation, expiry, broker cleanup and remote-free behavior; no frame, job, SSH or credential side effect is introduced. | HTTP lifecycle suite: **8 tests / 51 assertions**. Combined HTTP/session/transport/broker suite: **41 tests / 186 assertions**. Fresh strict isolated full PHP suite: **1,502 passed / 12,720 assertions / 1 unchanged baseline failure**. Required-PHP lint, Pint test mode, route-cache creation and git diff check passed. | ee62249 — feat: expose troubleshooting session lifecycle | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Add bounded policy-authorized frame input, output polling/acknowledgment and resize operations; retain the remote cleanup/revocation gate before Livewire terminal exposure. |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |

@@ -50,6 +50,22 @@ the fresh strict isolated suite passed 1,502 tests / 12,720 assertions with
 the same unchanged provisioning baseline failure. No frame payloads, lease
 hashes, credentials or tokens after creation are returned.
 
+The bounded frame HTTP transport is now complete at feature commit 188f3b9.
+Nested scoped JSON routes accept byte-preserving input and validated resize
+frames for execute-authorized sessions, and return bounded decrypted output or
+acknowledge output sequences for connect-authorized sessions. Existing locked
+actions retain frame encryption, limits, broker ownership and stale-attempt
+guards; no SSH work occurs in the request. Payloads, ciphertext, frame IDs,
+lease hashes and bearer grants are not returned, and protocol responses are
+private and no-store. The focused transport suite passed 15 tests / 94
+assertions; the combined HTTP/session/transport/broker set passed 35 tests /
+183 assertions; the fresh strict isolated suite passed 1,509 tests / 12,762
+assertions with the same unchanged provisioning baseline failure. Supervisor
+installation, real remote cleanup, membership revocation/reconnect proof and
+browser-terminal exposure remain outstanding. The exact next task is to
+characterize and verify those cleanup, revocation and safe reconnect semantics
+before exposing a terminal UI.
+
 The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
 server/import/log/command/observability regressions passed **45 tests / 373
 assertions**. The fresh strict isolated full PHP suite passed **1,461 tests /
@@ -71,11 +87,13 @@ same unchanged baseline failure. The new migration pair passed a disposable
 SQLite fresh/rollback/reapply rehearsal. Input is encrypted and marked sent
 before remote write for at-most-once semantics; output is sequenced,
 acknowledgeable and bounded, and exact lease/attempt/process guards fail closed
-on expiry or stale callbacks. Supervisor installation, real remote cleanup,
-reconnect and browser-terminal exposure remain outstanding. The exact next
-task is to characterize and implement the policy-authorized bounded frame
-input, output polling/acknowledgment and resize boundary while keeping
-exposure gated on remote cleanup and revocation proof.
+on expiry or stale callbacks. The frame HTTP slice passed **15 tests / 94
+assertions**, the combined transport set passed **35 tests / 183 assertions**
+and the fresh strict isolated suite passed **1,509 tests / 12,762 assertions**
+with the same unchanged baseline failure. Supervisor installation, real remote
+cleanup, membership revocation/reconnect proof and browser-terminal exposure
+remain outstanding. The exact next task is to characterize and verify those
+cleanup, revocation and safe reconnect semantics before exposing a terminal UI.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit
