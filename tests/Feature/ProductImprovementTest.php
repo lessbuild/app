@@ -60,10 +60,18 @@ class ProductImprovementTest extends TestCase
     {
         config(['billing.enforce_entitlements' => false]);
         [$owner] = $this->application();
-        Size::query()->create(['slug' => 's-1', 'description' => 'Small', 'memory' => 1024, 'vcpus' => 1, 'disk' => 25, 'transfer' => 1, 'price_monthly' => 12, 'price_hourly' => 0.02]);
+        $catalogObservedAt = now()->subHours(2)->startOfMinute();
+        Size::query()->create(['slug' => 's-1', 'description' => 'Small', 'memory' => 1024, 'vcpus' => 1, 'disk' => 25, 'transfer' => 1, 'price_monthly' => 12, 'price_hourly' => 0.02, 'catalog_synced_at' => $catalogObservedAt]);
         $owner->servers()->firstOrFail()->update(['size' => 's-1']);
 
-        $this->actingAs($owner)->get(route('costs.index'))->assertOk()->assertSee('$12.00')->assertSee('No CPU sample');
+        $this->actingAs($owner)->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('$12.00')
+            ->assertSee('No CPU sample')
+            ->assertSee('Provider-catalog estimates')
+            ->assertSee('Measured CPU telemetry')
+            ->assertSee('Provider billing: not connected')
+            ->assertSee($catalogObservedAt->toDayDateTimeString());
         $this->actingAs($owner)->patch(route('costs.update'), ['monthly_infrastructure_budget' => 100])->assertRedirect();
         $this->assertSame('100.00', $owner->currentOrganization->fresh()->monthly_infrastructure_budget);
     }
@@ -82,6 +90,19 @@ class ProductImprovementTest extends TestCase
             ->assertForbidden();
 
         $this->assertNull($organization->fresh()->monthly_infrastructure_budget);
+    }
+
+    public function test_cost_view_does_not_invent_a_price_for_an_unmapped_server_size(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        [$owner] = $this->application();
+        $owner->servers()->firstOrFail()->update(['size' => 'unmapped-size']);
+
+        $this->actingAs($owner)->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('$0.00')
+            ->assertSee('Price source unavailable')
+            ->assertSee('Unknown prices');
     }
 
     private function application(): array

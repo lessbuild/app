@@ -40,6 +40,7 @@ class GenerateSizesAndRegionsAction
         }
 
         $sizes = $provider->sizes();
+        $catalogSyncedAt = now();
 
         foreach ($sizes as $size) {
             $created = Size::updateOrCreate([
@@ -52,6 +53,7 @@ class GenerateSizesAndRegionsAction
                 'transfer' => $size['transfer'],
                 'price_monthly' => $size['price_monthly'],
                 'price_hourly' => $size['price_hourly'],
+                'catalog_synced_at' => $catalogSyncedAt,
                 'description' => $size['description'],
             ]);
 

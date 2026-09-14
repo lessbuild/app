@@ -26,6 +26,11 @@ class Size extends Model
         'transfer',
         'price_monthly',
         'price_hourly',
+        'catalog_synced_at',
+    ];
+
+    protected $casts = [
+        'catalog_synced_at' => 'datetime',
     ];
 
     /** @return BelongsToMany<Region, $this> */
