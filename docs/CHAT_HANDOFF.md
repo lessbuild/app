@@ -60,19 +60,23 @@ lease hashes and bearer grants are not returned, and protocol responses are
 private and no-store. The focused transport suite passed 15 tests / 94
 assertions; the combined HTTP/session/transport/broker set passed 35 tests /
 183 assertions; the fresh strict isolated suite passed 1,509 tests / 12,762
-assertions with the same unchanged provisioning baseline failure. Supervisor
-installation, real remote cleanup, membership revocation/reconnect proof and
+assertions with the same unchanged provisioning baseline failure. The local
+supervisor installer contract is now complete in `e9b1ed1`, but it has not
+been installed on a real host. Remote cleanup, reconnect proof and
 browser-terminal exposure remain outstanding. The exact next task is to
-characterize and verify those cleanup, revocation and safe reconnect semantics
-before exposing a terminal UI.
+verify those cleanup and safe reconnect semantics before exposing a terminal
+UI.
 
 The remote-cleanup/reconnect characterization is now recorded in the progress
 ledger. Normal broker return stops the local process group and releases
-temporary SSH files, but no durable remote session identity, remote cleanup
-helper or installed supervisor exists; worker death, network partition and
-remote orphan cleanup therefore remain unproven. HTTP activity rechecks
-membership, while broker renewal currently does not, so the next code slice
-adds broker-side actor revalidation. Reconnect remains intentionally
+temporary SSH files; the SSH wrapper also requests remote child-group
+termination when its channel receives a termination signal. The new daemon
+installer declares a UUID-addressed broker template with restart and
+control-group semantics plus a bounded 15-second reconciliation timer, but no
+real host has installed it. Worker death, network partition and remote orphan
+cleanup therefore remain unproven. HTTP activity and broker renewal now
+recheck membership; removed members are revoked, while an execute-role
+downgrade denies subsequent shell input. Reconnect remains intentionally
 new-session-only: a terminal or revoked grant must never be resumed.
 
 The focused diagnostic suite passed **16 tests / 90 assertions**; adjacent
@@ -99,10 +103,19 @@ acknowledgeable and bounded, and exact lease/attempt/process guards fail closed
 on expiry or stale callbacks. The frame HTTP slice passed **15 tests / 94
 assertions**, the combined transport set passed **35 tests / 183 assertions**
 and the fresh strict isolated suite passed **1,509 tests / 12,762 assertions**
-with the same unchanged baseline failure. Supervisor installation, real remote
-cleanup, membership revocation/reconnect proof and browser-terminal exposure
-remain outstanding. The exact next task is to characterize and verify those
-cleanup, revocation and safe reconnect semantics before exposing a terminal UI.
+with the same unchanged baseline failure. Supervisor wiring is locally tested
+but not installed on a real host; real remote cleanup, reconnect proof and
+browser-terminal exposure remain outstanding. The exact next task is
+authorized installed-host verification of normal and abnormal cleanup, then
+safe new-session-only reconnect before exposing a terminal UI.
+
+The supervisor wiring slice passed the combined supervisor/broker/HTTP/
+transport suite (**40 tests / 209 assertions**) and the daemon-installer
+contract suite (**2 tests / 56 assertions**), plus required-PHP lint, scoped
+Pint, `bash -n` and `git diff --check`. It proves bounded UUID unit discovery,
+pre-start policy revocation and local process-lifecycle declarations; it does
+not prove an installed systemd host, worker-loss cleanup, network-partition
+cleanup or remote process termination.
 
 Phase 8's structured-diagnostics characterization is complete at `f084951`,
 and the typed control-plane diagnostic report is complete at feature commit

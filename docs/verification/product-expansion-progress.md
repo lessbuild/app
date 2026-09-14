@@ -6,8 +6,9 @@ server-side transport/process-ownership boundary, durable encrypted frame
 relay, bounded broker ownership command and policy-authorized troubleshooting
 session lifecycle HTTP boundary are complete locally; the typed
 category-aware control-plane report is also complete. Supervisor installation
-wiring, remote cleanup/reconnect proof and an interactive terminal route/UI
-remain outstanding.
+wiring is now complete in the daemon installer contract, while installed-host
+remote cleanup/reconnect proof and an interactive terminal route/UI remain
+outstanding.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -3435,7 +3436,7 @@ ProvisioningHardeningTest::test_website_database_user_is_local_only failure
 four). Required-PHP changed-file lint, Pint, git diff --check and route-cache
 recreation passed.
 
-No supervisor installation, real remote host, network partition, supervisor
+No installed supervisor, real remote host, network partition, supervisor
 restart, remote process-group cleanup, reconnect protocol, provider/cloud
 acceptance, live drill or browser terminal was exercised. Feature commit
 188f3b9 (feat: expose troubleshooting frame transport) was fast-forwarded
@@ -3443,16 +3444,16 @@ into canonical main and pushed to GitHub origin/main on 2026-09-14. The
 exact next task is to characterize remote cleanup, membership revocation and
 safe reconnect semantics before exposing a terminal UI.
 
-The latest characterization found one current authorization gap: HTTP activity
-rechecks current membership, but the long-running broker heartbeat currently
-rechecks only the session lease and server state. A role downgrade or member
-removal therefore does not yet revoke an already-connected broker promptly.
-Local process-group and temporary-credential cleanup is covered, but the SSH
-command has no durable remote session identity or server-side supervisor, so
-worker death, network partition and remote orphan cleanup are not proven. The
-next implementation slice is to add broker-side membership revalidation and
-prove that reconnect means a newly authorized session rather than reuse of a
-revoked grant.
+The latest characterization found that HTTP activity and broker lease renewal
+must both recheck current membership. Broker renewal now loads the session
+actor and uses the existing session policy: removed members are revoked and
+their local broker lease is cleared, while an execute-role downgrade keeps a
+connect-capable session alive but denies subsequent shell input. Local
+process-group and temporary-credential cleanup is covered, and the SSH
+command now asks its remote child process group to terminate when the channel
+receives a termination signal. The remote command still has no durable session
+identity or server-side cleanup helper, so worker death, network partition and
+remote orphan cleanup are not proven.
 
 ## Phase 8 — remote cleanup and reconnect characterization (completed investigation)
 
@@ -3498,27 +3499,94 @@ an old broker lease while its remote process remains unaccounted for.
 
 ### Boundary decision and verification
 
-The next local implementation should put actor authorization revalidation in
-the broker lease-renewal action, where the long-running operation already
-performs its heartbeat and owns the terminal transition. A failed check should
-revoke the exact session lease and make the broker close its local connection;
-the HTTP boundary remains responsible for bearer protocol and response
-semantics. Reconnect remains a new-session operation until remote cleanup has
-an explicit server-side contract.
+The local implementation following this characterization puts actor
+authorization revalidation in the broker lease-renewal action, where the
+long-running operation already performs its heartbeat and owns the terminal
+transition. The daemon-supervisor wiring added afterward starts only eligible
+UUID-addressed brokers and gives their local process groups explicit stop and
+restart semantics; the HTTP boundary remains responsible for bearer protocol
+and response semantics. Reconnect remains a new-session operation until
+remote cleanup has an explicit server-side contract.
 
-This characterization changed no application behavior, schema, queue state or
-remote resource. Read-only source and dependency inspection confirmed the
-local cleanup seam and the missing remote contract. The exact next task is to
-implement broker-side membership revalidation and test role downgrade,
-membership removal, revoked-grant rejection and new-session-only reconnect;
-keep remote cleanup proof, supervisor installation and terminal UI deferred.
+This characterization itself changed no application behavior, schema, queue
+state or remote resource. The follow-up implementation and tests are recorded
+in the supervision slice below. The exact next task is authorized installed-
+host verification of normal and abnormal remote cleanup plus safe
+new-session-only reconnect; keep the terminal UI deferred.
+
+## Phase 8 — troubleshooting broker supervision wiring (completed slice)
+
+### Problem and responsibility boundary
+
+The bounded broker command and encrypted frame transport had a clear
+supervisor-oriented contract, but the daemon installer did not start one for
+an active session or place its local SSH child in a restart/stop cgroup. That
+left process cleanup and restart behavior as an uninstalled design rather than
+an operational boundary.
+
+`SuperviseServerTroubleshootingBrokersCommand` now scans only active,
+non-expired sessions whose broker lease is absent or expired. The scan is
+bounded, eager-loads the server and actor, rechecks the existing connect policy
+and revokes ineligible sessions through the existing action before any broker
+start. Eligible units contain only the opaque UUID instance identifier and are
+started with Symfony Process argument arrays, so the bridge does not perform
+shell interpolation or remote work. Lease claims, actor revalidation, frame
+ordering and transport ownership remain in the existing actions and broker.
+
+The daemon installer now writes a templated
+`lessbuild-troubleshooting-broker@.service` with bounded broker polling,
+restart-on-failure, a 15-second stop timeout and `KillMode=control-group`.
+It also installs a bounded supervisor service and a persistent 15-second timer.
+The SSH PTY wrapper traps channel termination and asks the remote child process
+group to terminate, which is best-effort cleanup at the remote protocol
+boundary. Normal broker shutdown therefore has explicit local cgroup and
+remote-channel cleanup hooks; it does not claim cleanup after a dead worker or
+network partition.
+
+This applies single responsibility and dependency inversion at the actual
+runtime seam: the console command owns bounded database-to-systemd discovery,
+systemd owns local process lifecycle, and the broker/actions retain business
+state, authorization and lease invariants. No generic supervisor abstraction,
+new queue payload or browser terminal was introduced.
+
+The broker actor revalidation and remote-channel termination changes that this
+slice wires into the installed lifecycle were delivered immediately before it
+as `5a452fc` (`fix: revoke troubleshooting brokers after access changes`) and
+`e54add0` (`fix: terminate remote troubleshooting shells on disconnect`).
+They are included in the local evidence below but remain separate cohesive
+commits.
+
+### Verification and limitations
+
+The supervisor, broker, HTTP and transport suite passed **40 tests / 209
+assertions**. The installer contract suite passed **2 tests / 56 assertions**;
+the shell installer passed `bash -n`, changed PHP files passed the required
+runtime lint, scoped Pint passed and `git diff --check` passed. The tests prove
+bounded UUID unit construction, pre-start policy revocation, broker relay,
+HTTP authorization and transport cleanup; they do not install systemd units or
+connect to a remote host.
+
+Feature commit `e9b1ed1` (`feat: supervise troubleshooting brokers`) was
+fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on
+2026-09-14. The full strict PHP baseline immediately before this narrow
+installer/supervision slice remains **1,509 passed / 12,762 assertions** with
+the unchanged `ProvisioningHardeningTest::test_website_database_user_is_local_only`
+failure; the focused slice did not alter that result. No installed-host,
+worker-crash, network-partition, remote-orphan, provider/cloud or
+live-acceptance claim is made.
+
+The exact next task is to obtain authorized installed-host evidence for normal
+disconnect, broker restart, worker loss, network partition and remote process
+cleanup, then characterize safe new-session reconnect. Keep the browser
+terminal gated until those behaviors are proven.
 
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
 | Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
-| Phase 8 remote cleanup and reconnect characterization | The normal broker path stops the local Symfony Process group and releases temporary SSH files, but the remote setsid bash process has no durable identity, remote cleanup helper or installed supervisor contract. HTTP actions recheck current membership, while broker lease renewal did not; reconnect is intentionally absent, so a terminal grant cannot be revived. No application behavior changed. | Read-only source, dependency and runtime-capability characterization completed; no SSH host, network partition, worker crash, supervisor restart or remote resource was used. | This documentation checkpoint | Will be fast-forwarded into canonical main and pushed before the broker revalidation implementation. | Implement broker-side actor/membership revalidation and prove revoked or downgraded sessions cannot keep a broker connection; retain new-session-only reconnect until remote cleanup is supported. |
+| Phase 8 troubleshooting broker supervision wiring | The bounded broker had no daemon lifecycle owner. Added a bounded UUID-only supervisor scan that policy-revokes ineligible sessions and starts per-session systemd units, plus installer units with restart and control-group cleanup semantics. Existing broker/actions retain lease, actor, frame and transport invariants; the SSH wrapper requests remote child-group termination on channel signals. | Supervisor/broker/HTTP/transport suite: **40 tests / 209 assertions**. Installer suite: **2 tests / 56 assertions**. `bash -n`, required-PHP lint, Pint and `git diff --check` passed. No systemd installation or remote host was used. | `e9b1ed1` — `feat: supervise troubleshooting brokers` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-14. | Obtain authorized installed-host evidence for disconnect, worker loss, network partition, remote cleanup and safe new-session reconnect; keep browser-terminal exposure gated. |
+| Phase 8 remote cleanup and reconnect characterization | The normal broker path stops the local Symfony Process group and releases temporary SSH files; the SSH wrapper now requests remote child-group termination on channel termination. A server-side remote identity/helper is still absent, so worker death, network partition and remote orphan cleanup remain unproven. HTTP and broker activity now recheck membership; reconnect remains intentionally new-session-only. | Read-only source/dependency characterization plus local process/command tests; no SSH host, network partition, worker crash, supervisor restart or remote resource was used. | Documentation checkpoint preceding `e9b1ed1` | Fast-forwarded into canonical `main` and pushed with the supervision slice. | Obtain authorized installed-host proof of normal and abnormal cleanup, then verify that reconnect always creates a newly authorized session. |
 | Phase 8 troubleshooting session HTTP lifecycle | The durable session, transport, frame and broker boundaries had no safe HTTP consumer. Added authenticated JSON create, status/heartbeat and idempotent close routes with policy checks, bearer-grant validation, nested scoped binding, private no-store responses and an immutable secret-safe metadata projection. Existing lifecycle actions retain locks, ownership revalidation, expiry, broker cleanup and remote-free behavior; no frame, job, SSH or credential side effect is introduced. | HTTP lifecycle suite: **8 tests / 51 assertions**. Combined HTTP/session/transport/broker suite: **41 tests / 186 assertions**. Fresh strict isolated full PHP suite: **1,502 passed / 12,720 assertions / 1 unchanged baseline failure**. Required-PHP lint, Pint test mode, route-cache creation and git diff check passed. | ee62249 — feat: expose troubleshooting session lifecycle | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Add bounded policy-authorized frame input, output polling/acknowledgment and resize operations; retain the remote cleanup/revocation gate before Livewire terminal exposure. |
 | Phase 6 characterization | Managed-backup dashboard reads and labels conflated completed backups, HTTPS transport evidence and completed in-place restores; the existing fields do not establish isolated integrity/smoke/cleanup verification, and control-plane SQLite backup evidence is a separate scope. Characterized actions, schedule locks, job transitions, safety rollback, failure persistence, destination encryption and acceptance-audit limits. No application behavior changed. | Read-only source/instruction characterization completed; no tests or runtime state changed. | `1607749` — `docs: characterize backup recovery evidence` | Fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Implement and verify the read-only recovery summary and honest dashboard indicators. |
 | Phase 6 read-only evidence | Backup metrics were calculated from only the latest 50 mixed-status rows and a completed in-place restore was labeled as drill evidence. Added an injected tenant-scoped evidence query and immutable summary that separate completed backups, HTTPS transport evidence, completed in-place restores and measured duration; the independent verification field remains explicitly unrecorded. | New recovery-evidence plus managed-backup/release-audit regression set: **12 passed, 120 assertions**. Fresh isolated full PHP suite: **1,402 passed, 1 unchanged baseline failure, 12,129 assertions**. Changed-file lint, Pint and `git diff --check` passed. | `764588e` — `feat: clarify backup recovery evidence` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-13. | Characterize and implement isolated restore verification with target, overwrite, integrity, smoke, failure-stage and cleanup contracts. |
