@@ -256,7 +256,7 @@ An explicit retry preserves the old operation/build and creates one durable repl
 
 Workspace owners and administrators can open **Configuration as code** from an application page. Submit YAML and JSON bindings, review the named changes, then apply the saved review. The binding reference lists workspace website IDs, secret-variable IDs and repository IDs without exposing credentials. Reviews expire after 15 minutes. Changed state or revoked access requires a new review; submitted commands are not flashed into the browser session on validation errors.
 
-API requests use the existing `/api/v1` authentication, API entitlement and workspace network policy. A token needs the `manage` ability and its user must have workspace management access.
+API requests use the existing `/api/v1` authentication and workspace network policy. Every billing plan includes the `api` entitlement with a plan-specific per-workspace request quota; the current limits are documented in `config/billing.php`. A token still needs the `manage` ability and its user must have workspace management access.
 
 | Method and path (under `/api/v1/projects/{project}`) | Request | Result |
 | --- | --- | --- |

@@ -1,5 +1,22 @@
 # BuildPusher chat handoff
 
+## API access follow-up — 2026-09-14
+
+All billing plans now include the existing scoped control-plane API. The
+workspace quota is plan-based and uses the following per-minute limits: Free
+60, Starter 120, Pro 300, Team 600, Business 1,200 and Unlimited 3,000.
+Authenticated workspace members share the current workspace owner's quota;
+the existing Sanctum abilities, organization authorization, network policy and
+non-API feature entitlements still apply. Exceeding the quota retains the
+standard HTTP 429 response and rate-limit headers.
+
+The implementation is in feature commits `139fc1f` and `6749fed`, both pushed
+to `origin/feat/api-access-all-plans-20260914`. Focused coverage passed **58
+tests / 273 assertions** and the complete strict PHP suite passed **1,525 tests
+/ 12,860 assertions**. The required-PHP Pint, platform, diff and dependency
+checks passed. The verification ledger is
+`docs/verification/api-access-all-plans-progress.md`.
+
 ## Latest follow-up — 2026-09-14
 
 The previously recorded five final-audit failures were test-contract issues,

@@ -4140,3 +4140,60 @@ The product-expansion local implementation and verification gate remains
 complete. The next task is the separately authorized external acceptance work;
 provider/cloud credentials, production integrations, billing, live monitoring,
 SSO/provider acceptance and the live drill remain outstanding.
+
+## Follow-up product slice — API access on every plan — 2026-09-14
+
+### User problem and boundary
+
+The control-plane API and scoped personal access-token workflow were previously
+gated by the `api` entitlement, while only higher plans exposed that
+entitlement. This prevented Free and lower-tier workspaces from using the same
+automation surface. The change opens the existing API capability to every
+configured billing plan and adds explicit plan-level request quotas. It does
+not make paid deployment, scaling, backup, monitoring or other feature
+entitlements available on lower plans.
+
+### Implementation and preserved contracts
+
+- `config/billing.php` grants `api` to Free, Starter, Pro and Team; Business
+  already had it and Unlimited continues to use its wildcard entitlement.
+- The named `api` rate limiter reads the configured plan quota and keys
+  authenticated requests by current workspace, so workspace members share the
+  owner plan's quota. Unauthenticated API endpoints retain the safe IP/free
+  fallback.
+- Existing Sanctum token abilities, token ownership and expiry, organization
+  scoping, network policy, request authorization ordering and operation-specific
+  entitlements remain unchanged.
+- Pricing and billing screens show the quota. Exceeding it retains Laravel's
+  normal HTTP 429 response and rate-limit headers.
+
+| Plan | API requests per minute |
+| --- | ---: |
+| Free | 60 |
+| Starter | 120 |
+| Pro | 300 |
+| Team | 600 |
+| Business | 1,200 |
+| Unlimited | 3,000 |
+
+This is a focused configuration and middleware change rather than a new
+interface, repository or action. The existing `Entitlements` and
+`ControlPlaneAccess` collaborators remain the single access boundary; the
+rate limiter is responsible only for request volume. This keeps the
+responsibilities separate and avoids changing API response contracts.
+
+### Verification and handoff
+
+- Focused API, automation, entitlement, billing and analytics coverage:
+  **58 passed / 273 assertions**.
+- Complete strict PHP suite: **1,525 passed / 12,860 assertions** in 541.67
+  seconds, with no warnings, risky tests or deprecations.
+- Required-PHP Pint, `composer validate`, `composer check-platform-reqs` and
+  `git diff --check` passed. Dependency lockfiles were unchanged.
+- Feature commits `139fc1f` and `6749fed` were pushed to
+  `origin/feat/api-access-all-plans-20260914`.
+- The separate dev acceptance checkout and live/provider acceptance were not
+  modified or claimed as complete.
+
+The next task is to integrate this verified slice into `main`, push `main`,
+and continue only with a separately scoped request.
