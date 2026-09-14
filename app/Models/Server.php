@@ -139,6 +139,12 @@ class Server extends Model
         return $this->hasMany(Website::class);
     }
 
+    /** @return HasMany<Environment, $this> */
+    public function environments(): HasMany
+    {
+        return $this->hasMany(Environment::class);
+    }
+
     /** @return HasMany<ServerLogSnapshot, $this> */
     public function logSnapshots(): HasMany
     {

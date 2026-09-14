@@ -72,6 +72,7 @@ class ProductImprovementTest extends TestCase
             ->assertSee('Provider-catalog estimates')
             ->assertSee('Measured CPU telemetry')
             ->assertSee('Provider billing: not connected')
+            ->assertSee('Linked to Application')
             ->assertSee($catalogObservedAt->toDayDateTimeString());
         $this->actingAs($owner)->patch(route('costs.update'), ['monthly_infrastructure_budget' => 100])->assertRedirect();
         $this->assertSame('100.00', $owner->currentOrganization->fresh()->monthly_infrastructure_budget);
@@ -137,6 +138,35 @@ class ProductImprovementTest extends TestCase
             ->assertSee('Application · PR #42')
             ->assertSee('24-hour configured lifetime')
             ->assertSee('Expires '.$lastActivityAt->copy()->addHours(24)->toDayDateTimeString());
+    }
+
+    public function test_cost_view_labels_shared_and_unallocated_server_relationships_without_splitting_costs(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        [$owner, $environment] = $this->application();
+        $organization = $owner->currentOrganization;
+        $sharedProject = $organization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Shared',
+            'slug' => 'shared',
+        ]);
+        $sharedProject->environments()->create([
+            'server_id' => $environment->server_id,
+            'name' => 'Staging',
+            'slug' => 'staging',
+            'type' => 'staging',
+            'branch' => 'main',
+        ]);
+        $owner->servers()->create([
+            'provider_id' => $owner->providers()->where('provider', Provider::TYPE_DIGITALOCEAN)->value('id'),
+            'name' => 'Unallocated',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($owner)->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('Shared across 2 projects')
+            ->assertSee('No project attribution; cost remains at server level.');
     }
 
     private function application(): array

@@ -48,6 +48,13 @@
                                 · {{ $row->server->size ?: __('Unknown size') }}
                                 · {{ trans_choice(':count website|:count websites', $row->server->websites_count, ['count' => $row->server->websites_count]) }}
                             </p>
+                            @if($row->attribution === 'direct')
+                                <p class="text-xs text-secondary">{{ __('Linked to :project', ['project' => $row->projectNames[0]]) }}</p>
+                            @elseif($row->attribution === 'shared')
+                                <p class="text-xs text-secondary">{{ __('Shared across :count projects: :projects', ['count' => count($row->projectNames), 'projects' => implode(', ', $row->projectNames)]) }}</p>
+                            @else
+                                <p class="text-xs text-amber-700">{{ __('No project attribution; cost remains at server level.') }}</p>
+                            @endif
                         </div>
 
                         <div class="text-sm text-secondary">

@@ -8,6 +8,12 @@ use Carbon\CarbonInterface;
 
 class InfrastructureCostRow
 {
+    public const ATTRIBUTION_UNALLOCATED = 'unallocated';
+
+    public const ATTRIBUTION_DIRECT = 'direct';
+
+    public const ATTRIBUTION_SHARED = 'shared';
+
     public readonly ?CarbonImmutable $catalogObservedAt;
 
     /**
@@ -21,6 +27,10 @@ class InfrastructureCostRow
         public readonly ?float $monthly,
         public readonly ?float $averageCpu,
         public readonly bool $idle,
+        public readonly string $attribution,
+        public readonly int $environmentCount,
+        /** @var list<string> */
+        public readonly array $projectNames,
         ?CarbonInterface $catalogObservedAt,
     ) {
         $this->catalogObservedAt = $catalogObservedAt?->toImmutable();

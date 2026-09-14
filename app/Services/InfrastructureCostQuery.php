@@ -22,7 +22,14 @@ class InfrastructureCostQuery
     {
         $servers = $organization->servers()
             ->withCount('websites')
-            ->with(['provider:id,name', 'metrics' => fn ($query) => $query->latest('recorded_at')->limit(12)])
+            ->with([
+                'provider:id,name',
+                'metrics' => fn ($query) => $query->latest('recorded_at')->limit(12),
+                'environments' => fn ($query) => $query
+                    ->whereHas('project', fn ($project) => $project->where('organization_id', $organization->id))
+                    ->with('project:id,organization_id,name')
+                    ->select(['id', 'server_id', 'project_id', 'name']),
+            ])
             ->orderBy('name')
             ->get();
 
@@ -36,6 +43,18 @@ class InfrastructureCostQuery
             $averageCpu = $samples->whereNotNull('cpu_percent')->avg('cpu_percent');
             $size = $sizes->get($server->size);
             $monthly = $size?->price_monthly === null ? null : (float) $size->price_monthly;
+            $environments = $server->environments;
+            $projectNames = $environments
+                ->map(fn ($environment): ?string => $environment->project?->name)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+            $attribution = match (count($projectNames)) {
+                0 => InfrastructureCostRow::ATTRIBUTION_UNALLOCATED,
+                1 => InfrastructureCostRow::ATTRIBUTION_DIRECT,
+                default => InfrastructureCostRow::ATTRIBUTION_SHARED,
+            };
 
             return new InfrastructureCostRow(
                 server: $server,
@@ -43,6 +62,9 @@ class InfrastructureCostQuery
                 averageCpu: $averageCpu === null ? null : (float) $averageCpu,
                 idle: $server->websites_count === 0
                     || ($samples->count() >= 6 && $averageCpu !== null && $averageCpu < 10),
+                attribution: $attribution,
+                environmentCount: $environments->count(),
+                projectNames: $projectNames,
                 catalogObservedAt: $monthly === null ? null : $size?->catalog_synced_at,
             );
         });
