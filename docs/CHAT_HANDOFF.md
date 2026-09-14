@@ -61,11 +61,13 @@ private and no-store. The focused transport suite passed 15 tests / 94
 assertions; the combined HTTP/session/transport/broker set passed 35 tests /
 183 assertions; the fresh strict isolated suite passed 1,509 tests / 12,762
 assertions with the same unchanged provisioning baseline failure. The local
-supervisor installer contract is now complete in `e9b1ed1`, but it has not
-been installed on a real host. Remote cleanup, reconnect proof and
-browser-terminal exposure remain outstanding. The exact next task is to
-verify those cleanup and safe reconnect semantics before exposing a terminal
-UI.
+supervisor installer contract is complete in `e9b1ed1`. A disposable Debian 12
+LXD system container with systemd, OpenSSH and an isolated network namespace
+has since exercised the actual application broker through normal stop,
+broker-PID loss/restart, network-interface partition cleanup and
+new-session-only reconnect. This is installed-host-equivalent local evidence,
+not a full VM or cloud/provider acceptance claim; browser-terminal exposure
+remains deliberately gated.
 
 The remote-cleanup/reconnect characterization is now recorded in the progress
 ledger. Normal broker return stops the local process group and releases
@@ -73,8 +75,8 @@ temporary SSH files. The SSH command now runs a foreground interactive Bash
 process in the allocated PTY, so local channel closure provides the tested
 normal remote-shell cleanup path without the earlier nested wrapper. The new
 daemon installer declares a UUID-addressed broker template with restart and
-control-group semantics plus a bounded 15-second reconciliation timer, but no
-provider host has installed it. HTTP activity and broker renewal recheck
+control-group semantics plus a bounded 15-second reconciliation timer. HTTP
+activity and broker renewal recheck
 membership; removed members are revoked, while an execute-role downgrade
 denies subsequent shell input. Reconnect remains intentionally new-session-
 only: a terminal or revoked grant must never be resumed.
@@ -103,11 +105,10 @@ acknowledgeable and bounded, and exact lease/attempt/process guards fail closed
 on expiry or stale callbacks. The frame HTTP slice passed **15 tests / 94
 assertions**, the combined transport set passed **35 tests / 183 assertions**
 and the fresh strict isolated suite passed **1,509 tests / 12,762 assertions**
-with the same unchanged baseline failure. Supervisor wiring is locally tested
-but not installed on a real host; real remote cleanup, reconnect proof and
-browser-terminal exposure remain outstanding. The exact next task is
-authorized installed-host verification of normal and abnormal cleanup, then
-safe new-session-only reconnect before exposing a terminal UI.
+with the same unchanged baseline failure. The local installed-host-equivalent
+evidence is recorded below; provider/cloud acceptance, the separate live drill
+and browser-terminal exposure remain outstanding. The next implementation task
+is Phase 9 resource-usage and cost-visibility inventory.
 
 The earlier post-supervision complete strict isolated suite passed **1,514
 tests / 12,797 assertions** with the same single provisioning baseline failure.
@@ -121,12 +122,24 @@ Additional disposable local checks confirmed that a transient systemd
 control-group stop removes its child. After the PTY-lifetime fix in `8ad2e52`,
 the actual broker remained live through short input, normal transient-systemd
 stop removed the remote process, and exact broker-PID loss caused one restart
-with control-group cleanup. These do not replace installed provider-host or
-network-partition evidence. A deterministic disposable local `sshd` check then exercised the real
+with control-group cleanup. These do not establish cloud/provider acceptance.
+A deterministic disposable local `sshd` check then exercised the real
 `SshServerTroubleshootingTransport` across five sequential encrypted-key
-connections; each accepted bounded input and returned a proof marker. This is
-local adapter evidence only, not installed-host, network-partition or
-uncooperative-remote proof.
+connections; each accepted bounded input and returned a proof marker. The
+later Debian LXD host-like exercise added installed systemd, worker-loss,
+partition and reconnect evidence. No production credentials, cloud resources
+or acceptance-drill files were used.
+
+The LXD host-like verification delivered encrypted marker input/output through
+the real broker, left no remote interactive shell after normal systemd stop,
+cleaned the remote shell after exact broker-PID loss and restart, and left no
+shell after an isolated `eth0` detach/reattach partition test. The stale lease
+remained until explicit revocation. A newly authorized session received a new
+opaque identity, connected after reattachment and released its lease. The
+current strict isolated full-suite baseline remains **1,510 passing and 5
+failing tests / 12,780 assertions**: four existing incident/organization
+validation-message assertions and the known provisioning `localhost` count
+mismatch.
 
 The supervisor wiring slice passed the combined supervisor/broker/HTTP/
 transport suite (**40 tests / 209 assertions**) and the daemon-installer

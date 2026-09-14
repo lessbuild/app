@@ -9,8 +9,13 @@ category-aware control-plane report is also complete. Supervisor installation
 wiring is complete in the daemon installer contract. Deterministic disposable
 host checks have verified the real application SSH adapter across five
 sequential local connections, normal transient-systemd disconnect cleanup and
-local worker-loss restart cleanup. Installed provider-host, network-partition
-and reconnect proof, and an interactive terminal route/UI remain outstanding.
+local worker-loss restart cleanup. An isolated Debian 12 LXD system
+container with systemd, OpenSSH and its own network namespace has now also
+verified installed-style normal stop, worker-loss restart, network-partition
+cleanup and new-session-only reconnect. A full VM could not fit in the
+available workspace disk, so this is host-equivalent local evidence rather
+than a VM or cloud-provider claim. The interactive terminal route/UI
+remains deliberately gated.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -42,7 +47,9 @@ bounded queue budget, recovers due work and expired leases every minute and
 rejects stale claim/revision/target results. Build detail shows bounded status
 metadata only; claim tokens and remote error text are not rendered.
 Provider-side cloud acceptance, the separate live drill and broader runtime/
-target recovery coverage remain outstanding.
+target recovery coverage remain outstanding. The local installed-host-equivalent
+troubleshooting lifecycle gate is recorded below; no production or
+acceptance-drill resource was used.
 
 The fixed server-host diagnostic now has its own policy-authorized,
 asynchronous snapshot boundary. It requires the stored SSH host identity,
@@ -3677,15 +3684,74 @@ terminal remains gated.
 
 Feature commit `8ad2e52` (`fix: keep troubleshooting ssh sessions
 interactive`) was fast-forwarded into canonical `main` and pushed to GitHub
-`origin/main` on 2026-09-14. The exact next task is to obtain authorized
-installed-host evidence for normal disconnect, broker restart, worker loss,
-network partition and remote process cleanup, then verify safe new-session
-reconnect before exposing the terminal UI or starting Phase 9.
+`origin/main` on 2026-09-14. The disposable installed-host-equivalent and
+network-partition evidence is recorded in the next section. The exact next
+task is the Phase 9 resource-usage and cost-visibility inventory; the browser
+terminal remains deliberately gated and provider/cloud acceptance remains
+separate.
+
+## Phase 8 — disposable installed-host-equivalent verification (completed evidence)
+
+### Problem and responsibility boundary
+
+The local adapter and transient systemd checks needed one repeatable host-like
+environment before the troubleshooting lifecycle could advance. A full VM
+could not fit on the available 24 GB workspace disk, so an explicitly named,
+disposable Debian 12 LXD system container was used instead. It has its own
+root filesystem, systemd instance, SSH daemon, network namespace and firewall
+tools; the BuildPusher application remained in the isolated worktree and its
+SQLite runtime stayed outside the container. This verifies host/process and
+network lifecycle semantics without introducing cloud credentials or provider
+resources.
+
+The container was configured with a dedicated ephemeral ED25519 key and a
+verified pinned ED25519 host entry. The real
+`SshServerTroubleshootingTransport` connected to the container through the
+application's encrypted `Server` fields. The application broker remained the
+owner of lease, frame and session state; systemd owned the local broker
+process group; SSH/PTTY closure owned the remote foreground shell. No
+controller, route, persisted contract or provider adapter was changed.
+
+### Verification and limitations
+
+The actual application broker delivered marker input/output through encrypted
+frames and completed a 30-cycle run with a connected session and released
+lease. A broker running under a restart-enabled systemd unit connected and
+accepted input; a normal systemd stop left no remote interactive shell while
+the lease correctly remained until explicit revocation. Killing the exact
+broker PID caused one systemd restart; the replacement returned `not_claimed`
+while the original lease remained, and the container had no surviving remote
+shell. A second long-window run also verified remote-shell cleanup after the
+disposable shell process was killed.
+
+For the partition case, the container's LXD `eth0` was detached while a live
+broker was running, the broker was stopped under systemd, and the interface
+was reattached. The session's queued marker was present, no interactive shell
+survived inspection through the container boundary, and the old lease remained
+until revocation. A newly opened session received a different opaque identity,
+connected after reattachment, delivered a new marker through the real broker
+and released its lease. Existing HTTP regression coverage separately proves
+that revoked grants cannot be reused and reconnect requires a new session.
+
+The focused supervisor/broker/HTTP/transport/session/installer suite remains
+**55 tests / 311 assertions** with strict warning/deprecation flags. The
+current fresh strict isolated PHP baseline remains **1,510 passing and 5
+failing tests / 12,780 assertions**: four existing incident/organization
+validation-message response assertions and the known provisioning
+`localhost`-count mismatch. These local checks do not establish a full VM,
+cloud/provider acceptance, an uncooperative remote shell protocol, production
+deployment, the separate live drill or browser-terminal usability. No
+production credentials, cloud resources or acceptance-drill files were used.
+
+**Local installed-host-equivalent lifecycle gate: complete.** The exact next
+task is Phase 9 inventory and characterization for resource usage and cost
+visibility. Keep terminal UI exposure and provider/cloud acceptance separate.
 
 ## Slice ledger
 
 | Slice | Problem and boundary | Tests/evidence | Commit | Push status | Exact next task |
 | --- | --- | --- | --- | --- | --- |
+| Phase 8 disposable installed-host-equivalent verification | The real adapter and transient process checks needed an isolated installed host with systemd, SSH and a controllable network boundary. A disposable Debian 12 LXD system container was configured with a dedicated key and pinned host identity; the actual application broker then exercised encrypted frames, normal systemd stop, exact broker-PID loss/restart, network-interface partition and new-session-only reconnect. No application code or public contract changed. | Real application broker marker delivery succeeded; normal stop, worker-loss restart and interface-detach cleanup left no remote interactive shell; the stale lease remained until revocation; a newly authorized replacement session connected and delivered a new marker. Focused supervisor/broker/HTTP/transport/session/installer suite: **55 tests / 311 assertions**. Full strict baseline remains **1,510 passing / 5 failing / 12,780 assertions** with the documented unrelated failures. | Documentation evidence checkpoint | To be committed and pushed with the progress update. | Start Phase 9 resource-usage and cost-visibility inventory; keep browser-terminal exposure and cloud/provider acceptance separate. |
 | Phase 8 troubleshooting frame HTTP transport | The durable encrypted frame relay and broker had no policy-authorized HTTP consumer. Added nested scoped input, output polling, output acknowledgment and resize routes. The controller owns only HTTP parsing, policy/grant checks and response projection; existing actions retain authorization revalidation, locks, encryption, bounds and broker ordering. Shell input remains byte-preserving, payloads are never echoed, output is cursor-based/decrypted without ciphertext or model identifiers, and resize uses a validated control frame through the same bounded input path. | Focused frame HTTP suite: 15 tests / 94 assertions. Combined HTTP/session/transport/broker suite: 35 tests / 183 assertions. Broader server/provisioning set: 185 passed / 1 unchanged baseline failure / 1,384 assertions. Fresh strict isolated full suite: 1,509 passed / 12,762 assertions / 1 unchanged baseline failure. Required-PHP lint, Pint, route-cache recreation and git diff --check passed. | 188f3b9 — feat: expose troubleshooting frame transport | Feature commit fast-forwarded into canonical main and pushed to GitHub origin/main on 2026-09-14. | Characterize and implement remote cleanup, membership revocation and safe reconnect semantics; keep supervisor installation and the browser terminal gated. |
 | Phase 8 troubleshooting broker supervision wiring | The bounded broker had no daemon lifecycle owner. Added a bounded UUID-only supervisor scan that policy-revokes ineligible sessions and starts per-session systemd units, plus installer units with restart and control-group cleanup semantics. Existing broker/actions retain lease, actor, frame and transport invariants; the foreground SSH/PTTY process is owned by the local Symfony/systemd lifecycle. | Supervisor/broker/HTTP/transport suite: **40 tests / 209 assertions**. Installer suite: **2 tests / 56 assertions**. `bash -n`, required-PHP lint, Pint and `git diff --check` passed. No systemd installation or provider host was used in this slice. | `e9b1ed1` — `feat: supervise troubleshooting brokers` | Feature commit fast-forwarded into canonical `main` and pushed to GitHub `origin/main` on 2026-09-14. | Obtain authorized installed-host evidence for disconnect, worker loss, network partition, remote cleanup and safe new-session reconnect; keep browser-terminal exposure gated. |
 | Phase 8 local application transport verification | The pinned SSH adapter needed one deterministic end-to-end local exercise beyond process/unit tests. Used an ephemeral `sshd`, generated keys and an active `Server` model to run the real `SshServerTroubleshootingTransport` through five sequential sessions; no code or production state changed. | Five real local adapter connections accepted bounded input and returned a proof marker. Focused supervisor/broker/HTTP/transport/session/installer suite: **55 tests / 311 assertions**. Scoped Pint, required-PHP execution, `bash -n` and `git diff --check` passed. | Documentation evidence checkpoint | Recorded in this progress update and pushed with the documentation commit. | Obtain authorized installed-host evidence for normal disconnect, broker restart, worker loss, network partition and remote cleanup, then verify safe new-session-only reconnect; keep browser-terminal exposure and Phase 9 gated. |
