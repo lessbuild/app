@@ -130,6 +130,20 @@ browser discrepancies are resolved on the current main line. This remains
 local evidence; the authorized cloud/provider drill, production integrations,
 billing, monitoring and live acceptance remain deferred release gates.
 
+## Latest local verification follow-up — 2026-09-14
+
+The five failures recorded by the final audit were resolved as test-contract
+corrections in `711af3c`, without changing application behavior. Incident and
+organization tests now assert the preserved message on the production-safe 422
+exception while retaining the existing status and no-write checks. The website
+database hardening test now counts only quoted SQL `localhost` host literals,
+excluding the isolated callback URL, and rejects wildcard grants explicitly.
+
+The complete strict PHP suite now passes **1,520 tests / 12,827 assertions**;
+the focused follow-up set passed **28 tests / 177 assertions**. The commit was
+pushed after creation and fast-forwarded into canonical `main`, which was then
+pushed to GitHub. This does not change the separate external acceptance status.
+
 ## Deferred release gates
 
 - Independent monitoring endpoints and live heartbeat/status verification.

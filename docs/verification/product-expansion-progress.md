@@ -4108,3 +4108,35 @@ deliberately gated. These are external work, not local test failures.
 documentation commit records this audit; its exact hash and push status are
 reported in the handoff. The next task is to schedule the separately authorized
 external acceptance work, not to claim it as complete locally.
+
+## Follow-up baseline test-contract cleanup — 2026-09-14
+
+### Problem and boundary
+
+The final cross-feature audit identified five failures that predated the Phase 9
+cost work. Four incident and organization tests asserted that a production-safe
+HTTP 422 error page rendered the operation message, even though the existing
+controllers intentionally preserve the message on the attached HTTP exception
+while Laravel's non-debug page remains generic. The fifth assertion counted the
+isolated callback URL's `localhost` along with the three SQL host literals in the
+website database script.
+
+This was a test-contract correction, not an application behavior change. The
+existing 422 statuses, exception messages, no-write guarantees and local-only
+database user grants remain unchanged. The provisioning test now scopes its
+assertion to quoted SQL host literals and explicitly rejects wildcard grants.
+
+### Verification and handoff
+
+- Focused incident, organization and provisioning set: **28 passed / 177 assertions**.
+- Complete strict PHP suite: **1,520 passed / 12,827 assertions** in 834.96 seconds.
+- Required-PHP Pint and all strict warning, risky-test, deprecation and PHPUnit
+  deprecation checks passed.
+- Commit `711af3c` (`test: align baseline rejection assertions`) was pushed to
+  `origin/fix/baseline-test-failures-20260914`, fast-forwarded into canonical
+  `main` and pushed to `origin/main`.
+
+The product-expansion local implementation and verification gate remains
+complete. The next task is the separately authorized external acceptance work;
+provider/cloud credentials, production integrations, billing, live monitoring,
+SSO/provider acceptance and the live drill remain outstanding.

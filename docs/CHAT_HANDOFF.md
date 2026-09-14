@@ -1,5 +1,25 @@
 # BuildPusher chat handoff
 
+## Latest follow-up — 2026-09-14
+
+The previously recorded five final-audit failures were test-contract issues,
+not Phase 9 application regressions. Commit `711af3c` updates the four
+incident/organization assertions to inspect the preserved operation message on
+the production-safe HTTP 422 exception while retaining the existing status and
+no-write guarantees. It also scopes the website database hardening assertion to
+quoted SQL `localhost` literals so the isolated callback URL is not counted.
+
+The focused follow-up set passed **28 tests / 177 assertions**. A complete
+strict run from the isolated PHP 8.5 checkout passed **1,520 tests / 12,827
+assertions** with no warnings, risky tests or deprecations. The commit was
+pushed to `origin/fix/baseline-test-failures-20260914`, fast-forwarded into
+canonical `main` and pushed to `origin/main`.
+
+The product-expansion local implementation and verification gate is complete.
+The authorized cloud/provider drill, production integrations, billing, live
+monitoring, SSO/provider acceptance and the separate live drill remain external
+release gates; no local test is being represented as live acceptance.
+
 ## Product expansion current checkpoint — 2026-09-14
 
 The product-expansion sequence is active on `main`. Phase 7F's disabled-by-default
@@ -700,7 +720,14 @@ The contract and completion criteria are in `docs/application-configuration.md`.
 - Models: `ConfigurationReview`, `ConfigurationOwnership`, `ConfigurationApplication`, `ConfigurationOperation`.
 - Five new migrations dated `2026_09_06_010000` through `050000` create reviews, ownerships, applications, operations and shared operation receipts. Prior work did not apply these to the live/local main database; recheck actual migration status before any rollout. Do not run the processor against real operations casually.
 
-## Exact interruption point: environment removal is UNTESTED
+## Historical interruption point: environment removal (superseded)
+
+The following section records an earlier handoff state. Whole-environment
+removal was subsequently implemented, tested and documented on the current
+main line, including `ApplicationConfigurationEnvironmentRemovalTest`,
+`ApplicationConfigurationRemovalWorkflowTest` and the application-configuration
+contract documentation. Do not use the historical checklist below as the
+current implementation status.
 
 Immediately before the handoff request, a patch added initial whole-environment removal. It was not tested, finalized or documented in the main contract yet. `docs/application-configuration.md` still says whole-environment removal is unimplemented; treat that as stale wording, not evidence the new patch is finished.
 
@@ -724,9 +751,12 @@ Changes already written:
 6. API plan/review validation changed bindings from `required` to `present` array, allowing empty bindings for removal-only documents while still requiring the field.
 7. Review UI warns that local config/secret-version history is deleted, remote services/data remain, and provider charges do not stop.
 
-No environment-removal test file had been added at handoff. No tests or build were run after this patch. Its safety, syntax and integration must be verified before any real application or completion claim.
+At that earlier handoff no environment-removal test file had been added and no
+tests or build had been run after the patch. That historical gap is closed on
+the current main line; live migration rollout and external acceptance remain
+separate concerns.
 
-## Next work when the user asks to resume implementation
+## Historical next-work list (superseded)
 
 1. Inspect the interruption patch. Add focused removal tests: valid/remove-only/mixed schemas, duplicates/conflicts/unknown keys, read-only plan, each child shown, manual/foreign/stale ownership rejection, production/protected rejection, active builds and operations, automation/load-balancer/preview safeguards, post-review state/access changes, rollback, absent-target/same-review/new-review retries, and preservation of remote target records/build history.
 2. Exercise equivalent web/API removal-only workflows with empty bindings and the explicit warning. Audit FK cascade effects and deployment/dependency races; do not infer concurrency safety from sequential tests.
@@ -734,6 +764,14 @@ No environment-removal test file had been added at handoff. No tests or build we
 4. Finish operator recovery/retry controls, broader deduplication/repository-change coverage, true database concurrency/deployment-start races, resource credential/managed-resource audit, parser pre-expansion limits and runtime-validator parity.
 5. Run full configuration suites and the whole application regression suite, plus rendered UX checks. No complete full-suite passing result was recovered from the earlier long run; do not claim one.
 6. Finish migration/rollout verification and requirement-by-requirement completion audit before moving to full-stack previews. Deferred live release gates remain deferred, not passed.
+
+## Current next work
+
+The planned local product-expansion slices and their final verification are
+complete. Continue only with the separately authorized external acceptance
+work, or begin a separately scoped product request with its own inventory and
+verification ledger. Do not provision paid cloud resources or use production
+credentials without explicit authorization and restricted access details.
 
 Useful commands, from the actual repository:
 
