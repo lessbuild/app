@@ -143,6 +143,7 @@
                                 <p class="mt-1 text-secondary">{{ $lifetime->preview->status }} · {{ __(':count-hour configured lifetime', ['count' => $lifetime->ttlHours]) }}</p>
                                 @if($lifetime->expired)
                                     <p class="mt-1 font-bold text-amber-700">{{ __('Past configured lifetime; cleanup is pending.') }}</p>
+                                    <a class="mt-1 inline-block text-xs font-bold text-ternary underline" href="{{ route('projects.show', $lifetime->project) }}">{{ __('Review preview') }}</a>
                                 @else
                                     <p class="mt-1 text-secondary">{{ __('Expires :date', ['date' => $lifetime->expiresAt->toDayDateTimeString()]) }}</p>
                                 @endif

@@ -140,6 +140,37 @@ class ProductImprovementTest extends TestCase
             ->assertSee('Expires '.$lastActivityAt->copy()->addHours(24)->toDayDateTimeString());
     }
 
+    public function test_expired_preview_is_a_review_only_recommendation(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        Queue::fake();
+        [$owner, $environment, $repository] = $this->application();
+        $project = $owner->currentOrganization->projects()->firstOrFail();
+        $project->update(['preview_enabled' => true, 'preview_ttl_hours' => 24]);
+        $preview = $project->previews()->create([
+            'source_repository_id' => $repository->id,
+            'environment_id' => $environment->id,
+            'website_id' => $repository->website_id,
+            'repository_id' => $repository->id,
+            'pull_request_number' => 43,
+            'title' => 'Expired preview',
+            'source_branch' => 'feature/expired',
+            'revision' => str_repeat('b', 40),
+            'status' => PreviewDeployment::STATUS_READY,
+            'url' => 'expired.example.com',
+            'last_activity_at' => now()->subHours(25),
+        ]);
+
+        $this->actingAs($owner)->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('Past configured lifetime; cleanup is pending.')
+            ->assertSee('Review preview');
+
+        Queue::assertNothingPushed();
+        $this->assertSame(PreviewDeployment::STATUS_READY, $preview->fresh()->status);
+        $this->assertNull($preview->fresh()->closed_at);
+    }
+
     public function test_cost_view_labels_shared_and_unallocated_server_relationships_without_splitting_costs(): void
     {
         config(['billing.enforce_entitlements' => false]);
