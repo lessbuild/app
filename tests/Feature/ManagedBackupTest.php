@@ -19,6 +19,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use RuntimeException;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
@@ -112,6 +113,37 @@ class ManagedBackupTest extends TestCase
         $this->assertStringContainsString('mysqldump --single-transaction', $command);
         $this->assertStringContainsString('restic backup --json', $command);
         $this->assertStringContainsString('RESTIC_PASSWORD=', $command);
+    }
+
+    public function test_remote_failure_returns_the_backup_to_the_queue_for_a_retry(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+        $destination = $this->destination($owner);
+        $backup = $website->backups()->create([
+            'backup_destination_id' => $destination->id,
+            'status' => WebsiteBackup::STATUS_QUEUED,
+        ]);
+        $process = Mockery::mock(Process::class);
+        $process->shouldReceive('isSuccessful')->once()->andReturnFalse();
+        $process->shouldReceive('getErrorOutput')->once()->andReturn('temporary remote failure');
+        $process->shouldReceive('getOutput')->zeroOrMoreTimes()->andReturn('');
+        $ssh = Mockery::mock(ManagedSsh::class);
+        $ssh->shouldReceive('execute')->once()->andReturn($process);
+        $runner = Mockery::mock(Runner::class);
+        $runner->shouldReceive('server')->once()->andReturnSelf();
+        $runner->shouldReceive('create')->once()->andReturn($ssh);
+
+        try {
+            (new CreateWebsiteBackupJob($backup->id))->handle($runner, app(ResticRepository::class));
+            $this->fail('Expected the remote backup to fail.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('temporary remote failure', $exception->getMessage());
+        }
+
+        $backup->refresh();
+        $this->assertSame(WebsiteBackup::STATUS_QUEUED, $backup->status);
+        $this->assertNull($backup->started_at);
+        $this->assertNull($backup->error);
     }
 
     public function test_restore_requires_exact_confirmation_and_queues_safety_restore(): void

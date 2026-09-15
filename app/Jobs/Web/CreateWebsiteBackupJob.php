@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use RuntimeException;
+use Throwable;
 
 class CreateWebsiteBackupJob implements ShouldQueue
 {
@@ -73,15 +74,29 @@ class CreateWebsiteBackupJob implements ShouldQueue
         {$restic['environment']} restic backup --json --tag {$tagArgument} database.sql .env storage
         {$restic['environment']} restic forget --keep-last {$retention} --tag {$tagArgument} --prune
         BASH;
-        $result = $runner->server($server)->create()->execute($command);
-        if (! $result->isSuccessful()) {
-            throw new RuntimeException(trim($result->getErrorOutput() ?: $result->getOutput()) ?: 'Remote backup failed.');
+        try {
+            $result = $runner->server($server)->create()->execute($command);
+            if (! $result->isSuccessful()) {
+                throw new RuntimeException(trim($result->getErrorOutput() ?: $result->getOutput()) ?: 'Remote backup failed.');
+            }
+            $output = $result->getOutput();
+            if (! preg_match('/"snapshot_id"\s*:\s*"([a-f0-9]{8,64})"/i', $output, $snapshot)) {
+                throw new RuntimeException('Restic did not return a snapshot identifier.');
+            }
+            preg_match('/"total_bytes_processed"\s*:\s*(\d+)/', $output, $bytes);
+        } catch (Throwable $exception) {
+            // A retry must be able to reclaim a remote failure. The queue's
+            // final failed hook will persist the terminal error after the
+            // configured attempts are exhausted.
+            $backup->update([
+                'status' => WebsiteBackup::STATUS_QUEUED,
+                'started_at' => null,
+                'error' => null,
+            ]);
+
+            throw $exception;
         }
-        $output = $result->getOutput();
-        if (! preg_match('/"snapshot_id"\s*:\s*"([a-f0-9]{8,64})"/i', $output, $snapshot)) {
-            throw new RuntimeException('Restic did not return a snapshot identifier.');
-        }
-        preg_match('/"total_bytes_processed"\s*:\s*(\d+)/', $output, $bytes);
+
         $backup->update([
             'status' => WebsiteBackup::STATUS_SUCCEEDED,
             'https_verified_at' => parse_url($backup->destination->endpoint, PHP_URL_SCHEME) === 'https' ? now() : null,
@@ -95,9 +110,9 @@ class CreateWebsiteBackupJob implements ShouldQueue
     /**
      * Mark the backup failed with a completion timestamp and bounded error when queue handling fails.
      *
-     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     * @param  Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
      */
-    public function failed(\Throwable $exception): void
+    public function failed(Throwable $exception): void
     {
         WebsiteBackup::query()->whereKey($this->backupId)->update([
             'status' => WebsiteBackup::STATUS_FAILED,
