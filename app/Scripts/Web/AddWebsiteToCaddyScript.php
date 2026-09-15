@@ -51,11 +51,15 @@ class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
         $configPath = escapeshellarg("/etc/caddy/websites/{$slug}.conf");
         $cronPath = escapeshellarg("/etc/cron.d/{$slug}");
         $logDirectory = escapeshellarg('/var/log/caddy');
+        $accessLogPath = escapeshellarg("/var/log/caddy/{$slug}.access.log");
 
         return <<<SCRIPT
 
         rm -f -- {$cronPath}
         install -d -o caddy -g caddy -m 750 -- {$logDirectory}
+        touch -- {$accessLogPath}
+        chown caddy:caddy -- {$accessLogPath}
+        chmod 640 -- {$accessLogPath}
 
         # Decode a fixed configuration payload rather than evaluating user input.
         printf '%s' {$encodedConfig} | base64 --decode > {$configPath}

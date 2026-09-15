@@ -13,6 +13,7 @@ use App\Scripts\Languages\InstallPHPScript;
 use App\Scripts\Server\ConfigureServerScript;
 use App\Scripts\Server\EndScript;
 use App\Scripts\Server\UpdateDependenciesScript;
+use App\Scripts\Web\AddWebsiteToCaddyScript;
 use App\Scripts\Web\InstallCaddyScript;
 use App\Services\ProvisioningScriptRenderer;
 use App\Services\ServerProvisioningPlan;
@@ -73,6 +74,25 @@ class ProvisioningHardeningTest extends TestCase
         $this->assertStringNotContainsString('echo "import /etc/caddy/websites/*" > /etc/caddy/Caddyfile', $script);
         $this->assertStringContainsString("grep -qxF 'import /etc/caddy/websites/*'", $script);
         $this->assertStringContainsString('caddy validate --config /etc/caddy/Caddyfile', $script);
+    }
+
+    public function test_website_caddy_script_owns_access_log_before_reload(): void
+    {
+        $server = $this->server();
+        $website = $server->websites()->create([
+            'user_id' => $server->user_id,
+            'organization_id' => $server->organization_id,
+            'name' => 'site',
+            'description' => 'Test site',
+            'environment' => 'APP_ENV=test',
+            'url' => 'site.example.test',
+            'deployment_slug' => 'site-test',
+            'database_password' => 'database-secret',
+        ]);
+        $script = (new AddWebsiteToCaddyScript)->script(1, $website);
+
+        $this->assertStringContainsString('chown caddy:caddy', $script);
+        $this->assertStringContainsString('chmod 640', $script);
     }
 
     public function test_provisioning_uses_supported_php_and_writes_a_management_marker(): void
