@@ -84,8 +84,8 @@ class ServerTypeProvisioningTest extends TestCase
             ->handle($server, $provider, ['name' => 'cache-server']);
 
         $script = $payload['user_data'];
-        $this->assertStringContainsString('yes | sudo apt install redis-server', $script);
-        $this->assertStringContainsString('yes | sudo apt install memcached', $script);
+        $this->assertStringContainsString('DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y redis-server', $script);
+        $this->assertStringContainsString('DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y memcached supervisor', $script);
         $this->assertStringNotContainsString('apt install mysql-server', $script);
         $this->assertStringNotContainsString('apt install php8.1 php8.1-fpm', $script);
     }

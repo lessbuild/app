@@ -54,6 +54,8 @@ class ProvisioningHardeningTest extends TestCase
         $this->assertStringNotContainsString('cp /root/.ssh/authorized_keys', $script);
         $this->assertStringContainsString('visudo -cf', $script);
         $this->assertStringContainsString('ufw default deny incoming', $script);
+        $this->assertStringContainsString('SSH_PORT="${SSH_CONNECTION:-}"', $script);
+        $this->assertStringContainsString('ufw allow OpenSSH', $script);
         $this->assertStringContainsString('ufw allow 80/tcp', $script);
         $this->assertStringContainsString('ufw allow 443/tcp', $script);
         $this->assertStringContainsString('ufw --force enable', $script);

@@ -87,7 +87,13 @@ class ConfigureServerScript implements ServerScript
         # access. Databases and caches remain loopback-only by default.
         ufw default deny incoming
         ufw default allow outgoing
-        ufw allow "\${SSH_CONNECTION##* }/tcp" 2>/dev/null || ufw allow OpenSSH
+        SSH_PORT="\${SSH_CONNECTION:-}"
+        SSH_PORT="\${SSH_PORT##* }"
+        if [ -n "\$SSH_PORT" ]; then
+            ufw allow "\$SSH_PORT/tcp"
+        else
+            ufw allow OpenSSH
+        fi
         {$webFirewallRules}
         ufw --force enable
 
