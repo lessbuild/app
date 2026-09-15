@@ -853,6 +853,8 @@ The configured Spaces destination rejected its stored access key because the
 key does not exist in the provider account. No snapshot or restore evidence
 exists, and no cloud release-acceptance pass is claimed. A DigitalOcean
 control-plane API token is not a Spaces S3 access-key/secret-key pair.
+A read-only Spaces-key API probe with the connected provider token returned
+HTTP 403; no account credential was created or modified.
 
 Cleanup was independently verified: the disposable droplet is absent, the
 unrelated existing droplet remains, all disposable local application records

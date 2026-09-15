@@ -4319,6 +4319,9 @@ no restore, restored-data comparison or health check after restore was run or
 claimed. The destination record remains available in the isolated dev
 application; it needs a valid DigitalOcean Spaces access-key/secret-key pair.
 A DigitalOcean control-plane API token is not a Spaces S3 credential.
+A read-only request to the DigitalOcean Spaces-key API using the connected
+provider token returned HTTP 403, so no Spaces key was created or modified and
+the account was left unchanged.
 
 After the audit, the supported server deletion action removed the exact
 disposable droplet and its owned SSH key. Independent provider lookups showed
