@@ -39,6 +39,7 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $type = $runtime['type'] ?? 'php';
         $progress = $this->progress($step, $build);
         if (! in_array($type, ['node', 'python', 'docker'], true)) {
+            $phpFpmService = escapeshellarg('php'.config('lessbuild.default_php_version', '8.4').'-fpm');
             if ($build->deploymentRoot() !== '.') {
                 $website = $build->repository->website;
                 $documentRoot = $build->deploymentPath('current').'/public';
@@ -53,12 +54,13 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
                 printf '%s' {$encodedConfig} | base64 --decode > {$configPath}
                 caddy validate --config /etc/caddy/Caddyfile
                 systemctl reload caddy
+                systemctl reload {$phpFpmService}
                 # PHP-FPM continues to serve the selected service root
                 {$progress}
                 SCRIPT;
             }
 
-            return "# PHP remains served by Caddy and PHP-FPM\n{$progress}";
+            return "# PHP remains served by Caddy and PHP-FPM\nsystemctl reload {$phpFpmService}\n{$progress}";
         }
 
         $website = $build->repository->website;

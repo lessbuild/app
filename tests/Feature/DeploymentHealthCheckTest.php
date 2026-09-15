@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Scripts\Repository\ActivateReleaseScript;
 use App\Scripts\Repository\ArtisanCommandsScript;
+use App\Scripts\Repository\ConfigureWebRuntimeScript;
 use App\Scripts\Repository\PurgeOldReleasesScript;
 use App\Scripts\Repository\VerifyDeploymentHealthScript;
 use App\Services\RepositoryDeploymentPlan;
@@ -106,6 +107,14 @@ class DeploymentHealthCheckTest extends TestCase
             array_search(PurgeOldReleasesScript::class, $scripts, true),
             array_search(VerifyDeploymentHealthScript::class, $scripts, true),
         );
+    }
+
+    public function test_php_runtime_refreshes_fpm_after_release_activation(): void
+    {
+        $script = (new ConfigureWebRuntimeScript)->script(9, $this->build());
+
+        $this->assertStringContainsString("systemctl reload 'php8.4-fpm'", $script);
+        $this->assertShellSyntax($script);
     }
 
     /** @return array{User, Server} */
