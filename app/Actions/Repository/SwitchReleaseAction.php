@@ -29,6 +29,12 @@ class SwitchReleaseAction
         $root = "/var/www/{$website->deployment_slug}";
         $releaseName = $build->release_name;
         $releasePath = $build->release_path;
+        $runtimeType = $build->environment_payload['runtime']['type']
+            ?? $build->environment?->runtime_type
+            ?? 'php';
+        $refreshPhpFpm = in_array($runtimeType, ['node', 'python', 'docker'], true)
+            ? ''
+            : 'systemctl reload '.escapeshellarg('php'.config('lessbuild.default_php_version', '8.4').'-fpm')."\n";
 
         if (! is_string($releaseName) || ! preg_match('/\A[a-zA-Z0-9._-]+\z/D', $releaseName)) {
             throw new RuntimeException('The retained release identifier is invalid.');
@@ -67,6 +73,7 @@ class SwitchReleaseAction
         PREVIOUS_PATH="$(readlink -f -- "\$CURRENT_PATH" 2>/dev/null || true)"
         ln -sfn -- "\$TARGET_PATH" "\$NEXT_LINK"
         mv -Tf -- "\$NEXT_LINK" "\$CURRENT_PATH"
+        {$refreshPhpFpm}
         {$healthCheck}
         printf 'Activated retained release: %s\n' "\$TARGET_PATH"
         BASH;

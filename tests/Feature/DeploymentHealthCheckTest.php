@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Repository\SwitchReleaseAction;
 use App\Jobs\Web\AddWebsiteJob;
 use App\Models\Build;
 use App\Models\Enums\Server\ServerTypeEnum;
@@ -14,9 +15,12 @@ use App\Scripts\Repository\ArtisanCommandsScript;
 use App\Scripts\Repository\ConfigureWebRuntimeScript;
 use App\Scripts\Repository\PurgeOldReleasesScript;
 use App\Scripts\Repository\VerifyDeploymentHealthScript;
+use App\Services\ManagedSsh;
 use App\Services\RepositoryDeploymentPlan;
+use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
@@ -117,6 +121,26 @@ class DeploymentHealthCheckTest extends TestCase
         $this->assertShellSyntax($script);
     }
 
+    public function test_rollback_refreshes_php_fpm_before_health_validation(): void
+    {
+        $build = $this->build(healthCheckEnabled: true);
+        $build->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'release_name' => '20260915-build-previous',
+            'release_path' => '/var/www/application/releases/20260915-build-previous',
+        ]);
+        $command = '';
+        $runner = $this->runner($command, "Activated retained release: /var/www/application/releases/20260915-build-previous\n");
+
+        (new SwitchReleaseAction($runner))->handle($build->fresh());
+
+        $reloadPosition = strpos($command, "systemctl reload 'php8.4-fpm'");
+        $healthPosition = strpos($command, 'BuildPusher-release-rollback');
+        $this->assertIsInt($reloadPosition);
+        $this->assertIsInt($healthPosition);
+        $this->assertLessThan($healthPosition, $reloadPosition);
+    }
+
     /** @return array{User, Server} */
     private function infrastructure(): array
     {
@@ -177,5 +201,24 @@ class DeploymentHealthCheckTest extends TestCase
         $syntax->setInput($script);
         $syntax->run();
         $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
+    }
+
+    private function runner(string &$command, string $output = ''): Runner
+    {
+        $process = Mockery::mock(Process::class);
+        $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
+        $process->shouldReceive('getErrorOutput')->zeroOrMoreTimes()->andReturn('');
+        $process->shouldReceive('getOutput')->zeroOrMoreTimes()->andReturn($output);
+        $ssh = Mockery::mock(ManagedSsh::class);
+        $ssh->shouldReceive('execute')->once()->with(Mockery::on(function (string $value) use (&$command): bool {
+            $command = $value;
+
+            return true;
+        }))->andReturn($process);
+        $runner = Mockery::mock(Runner::class);
+        $runner->shouldReceive('server')->once()->andReturnSelf();
+        $runner->shouldReceive('create')->once()->andReturn($ssh);
+
+        return $runner;
     }
 }
