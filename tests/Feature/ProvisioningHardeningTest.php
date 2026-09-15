@@ -95,6 +95,28 @@ class ProvisioningHardeningTest extends TestCase
         $this->assertStringContainsString('chmod 640', $script);
     }
 
+    public function test_website_caddy_script_keeps_literal_ip_hosts_on_http(): void
+    {
+        $server = $this->server();
+        $website = $server->websites()->create([
+            'user_id' => $server->user_id,
+            'organization_id' => $server->organization_id,
+            'name' => 'site',
+            'description' => 'Test site',
+            'environment' => 'APP_ENV=test',
+            'url' => '192.0.2.10',
+            'deployment_slug' => 'site-test',
+            'database_password' => 'database-secret',
+        ]);
+        $script = (new AddWebsiteToCaddyScript)->script(1, $website);
+
+        $this->assertSame(1, preg_match("/printf '%s' '([^']+)' \\| base64 --decode/", $script, $matches));
+        $configuration = base64_decode($matches[1], true);
+
+        $this->assertIsString($configuration);
+        $this->assertStringStartsWith('http://192.0.2.10 {', ltrim($configuration));
+    }
+
     public function test_provisioning_uses_supported_php_and_writes_a_management_marker(): void
     {
         config(['lessbuild.default_php_version' => '8.4']);

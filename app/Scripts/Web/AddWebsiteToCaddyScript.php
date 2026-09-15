@@ -4,9 +4,12 @@ namespace App\Scripts\Web;
 
 use App\Abstracts\Scripts\WebsiteProvisioningScript;
 use App\Models\Website;
+use App\Services\WebsiteCaddyConfiguration;
 
 class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
 {
+    public function __construct(private readonly ?WebsiteCaddyConfiguration $caddy = null) {}
+
     /**
      * Title of the script
      */
@@ -27,11 +30,13 @@ class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
      */
     public function script(int $step, Website $website): string
     {
+        $caddy = $this->caddy ?? new WebsiteCaddyConfiguration;
         $slug = $website->deployment_slug;
         $documentRoot = $website->deploymentPath('current').'/public';
+        $siteAddress = $caddy->siteAddress($website->url);
         $progress = $this->progress($step, $website);
         $config = <<<CADDY
-        {$website->url} {
+        {$siteAddress} {
             root * {$documentRoot}
             encode zstd gzip
             log {

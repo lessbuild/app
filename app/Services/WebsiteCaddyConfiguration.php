@@ -50,13 +50,36 @@ class WebsiteCaddyConfiguration
     private function render(Website $website, string $body): string
     {
         $website->loadMissing('domains');
-        $hostnames = $website->domains->where('type', 'alias')->pluck('hostname')->prepend($website->url)->unique()->implode(', ');
+        $hostnames = $website->domains
+            ->where('type', 'alias')
+            ->pluck('hostname')
+            ->map(fn (string $hostname): string => $this->siteAddress($hostname))
+            ->prepend($this->siteAddress($website->url))
+            ->unique()
+            ->implode(', ');
         $blocks = ["{$hostnames} {\n{$body}\n}"];
         foreach ($website->domains->where('type', 'redirect') as $domain) {
             $blocks[] = "{$domain->hostname} {\n    redir ".rtrim((string) $domain->redirect_url, '/')."{uri} permanent\n}";
         }
 
         return implode("\n\n", $blocks)."\n";
+    }
+
+    /**
+     * Keep literal IP sites on HTTP because they cannot obtain a trusted automatic HTTPS certificate.
+     *
+     * @param  string  $hostname  Configured website hostname or literal IP address.
+     * @return string Caddy site address with an explicit HTTP scheme for IP hosts.
+     */
+    public function siteAddress(string $hostname): string
+    {
+        if (filter_var($hostname, FILTER_VALIDATE_IP) === false) {
+            return $hostname;
+        }
+
+        $host = str_contains($hostname, ':') ? "[{$hostname}]" : $hostname;
+
+        return "http://{$host}";
     }
 
     /**
