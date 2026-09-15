@@ -6,6 +6,7 @@ use App\Contracts\Scripts\BuildScript;
 use App\Contracts\Scripts\ServerScript;
 use App\Contracts\Scripts\WebsiteScript;
 use App\Models\Server;
+use App\Models\Website;
 use App\Services\ProvisioningScriptRenderer;
 use App\Services\RepositoryDeploymentPlan;
 use App\Services\ServerProvisioningPlan;
@@ -55,6 +56,16 @@ class ProvisioningPlanTest extends TestCase
 
         app(ProvisioningScriptRenderer::class)->server(new Server, [InvalidProvisioningScript::class]);
     }
+
+    public function test_renderer_separates_website_script_fragments(): void
+    {
+        $rendered = app(ProvisioningScriptRenderer::class)->website(new Website, [
+            FirstWebsiteScript::class,
+            SecondWebsiteScript::class,
+        ]);
+
+        $this->assertSame("first\nsecond\n", $rendered);
+    }
 }
 
 class InvalidProvisioningScript
@@ -62,5 +73,21 @@ class InvalidProvisioningScript
     public function script(): string
     {
         return 'unsafe';
+    }
+}
+
+class FirstWebsiteScript implements WebsiteScript
+{
+    public function script(int $step, Website $website): string
+    {
+        return 'first';
+    }
+}
+
+class SecondWebsiteScript implements WebsiteScript
+{
+    public function script(int $step, Website $website): string
+    {
+        return 'second';
     }
 }

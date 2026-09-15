@@ -59,7 +59,7 @@ class ProvisioningScriptRenderer
         return $this->render(
             $scripts,
             WebsiteScript::class,
-            fn (WebsiteScript $script, int $step): string => $script->script($step, $website),
+            fn (WebsiteScript $script, int $step): string => $script->script($step, $website)."\n",
         );
     }
 
