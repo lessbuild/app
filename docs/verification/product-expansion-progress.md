@@ -4198,3 +4198,54 @@ responsibilities separate and avoids changing API response contracts.
 
 The next task is to integrate this verified slice into `main`, push `main`,
 and continue only with a separately scoped request.
+
+## External provider acceptance attempt — 2026-09-15
+
+### Scope and authorization
+
+An explicitly authorized disposable DigitalOcean drill was run against the
+isolated development application. The authorization was limited to the
+smallest available droplet size and a maximum total spend of $10; no
+production credentials, infrastructure or billing resources were used. The
+drill started at the first disposable-server event,
+`2026-09-15T20:37:35Z`, and the exact disposable server was deleted at
+`2026-09-15T21:18:45Z`.
+
+The controlled fixture was `natecorkish/Deployer-Test`. Its initial revision
+was followed by pushed revision `dcdd54fdd2c7407531db9f8df0a9aecf4d5d4033`
+(`test: add second deployment revision`). The fixture commit was pushed to
+the requested repository; no application secrets were committed.
+
+### Evidence and outcome
+
+- The final disposable DigitalOcean droplet used the `s-1vcpu-512mb-10gb`
+  size in `nyc1`; provisioning reached all stages and the website reached
+  active status. An acceptance-only script newline workaround was needed for
+  the current deployed application and is not recorded as a product fix.
+- The first deployment cloned the fixture but failed when the signed revision
+  callback received HTTP 419. The callback route was missing from the web
+  CSRF exception list. This was corrected in commit `95db81e` and pushed to
+  `origin/main`; the isolated dev checkout was intentionally not modified.
+- The backup destination record was present and used over HTTPS, but the real
+  backup attempt was rejected by the storage provider because its stored
+  access key does not exist. No snapshot, restore or recovery verification was
+  claimed. The retry-state defect found during this attempt was covered by
+  commit `71e4ddb` and pushed to `origin/main`.
+- The release audit was not run because its required successful deployment,
+  two-revision rollback chain and verified backup did not exist. This attempt
+  therefore does not establish cloud release acceptance.
+- Cleanup was verified independently: provider lookup reported the
+  disposable droplet absent while the unrelated pre-existing droplet remained
+  present; the disposable local server, website, repository, build and backup
+  records were removed by the server cleanup workflow. The user-created
+  backup destination record remains.
+
+### Resumption requirements
+
+Deploy `origin/main` commits `95db81e` and `71e4ddb` to the isolated dev
+application before repeating the deployment drill. Replace the backup
+destination credentials through the dev application with valid S3-compatible
+DigitalOcean Spaces access credentials; a DigitalOcean control-plane token is
+not itself a Spaces access key. Then repeat the full disposable workflow and
+run the acceptance audit before cleanup. Do not treat this failed attempt as
+live acceptance.

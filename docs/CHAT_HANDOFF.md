@@ -803,6 +803,27 @@ git diff --check
 
 `phpunit.xml` configures an isolated in-memory SQLite database and testing cache paths. Verify test isolation before running destructive migration tests. Local `playwright` is available in `node_modules`; Chromium was launched headlessly with `--no-sandbox`. Do not assume old server/browser/test sessions are still alive; inspect live handles before reusing or restarting them.
 
+## External provider acceptance attempt — 2026-09-15
+
+An explicitly authorized disposable DigitalOcean drill used the smallest
+available droplet size with a $10 maximum-spend limit. The fixture repository
+`natecorkish/Deployer-Test` received and pushed a second revision
+(`dcdd54fdd2c7407531db9f8df0a9aecf4d5d4033`). The disposable server reached
+active provisioning and the website reached active status, but the first
+deployment failed at the signed revision callback with HTTP 419 because that
+route was missing from the CSRF exception list. Commit `95db81e` fixes the
+callback boundary and is pushed to `origin/main`; commit `71e4ddb` separately
+fixes remote backup retry state and is also pushed to `origin/main`.
+
+The configured HTTPS backup destination rejected its stored access key, so no
+backup, restore or recovery verification was claimed. The exact disposable
+droplet and provisioning key were deleted and provider lookup confirmed the
+disposable resource was absent while the unrelated existing droplet remained.
+The isolated dev checkout was not modified. Before resuming, deploy the two
+main commits to that dev app and replace the destination with valid Spaces
+S3 credentials. The real-provider release audit and live acceptance remain
+outstanding.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
