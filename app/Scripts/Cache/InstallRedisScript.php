@@ -34,7 +34,7 @@ class InstallRedisScript implements ServerScript
 
         # Install Redis
         apt_wait
-        yes | sudo apt install redis-server
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y redis-server
 
         # Configure Redis
         backupManagedFile /etc/redis/redis.conf
@@ -46,7 +46,7 @@ class InstallRedisScript implements ServerScript
         # Use the distribution package rather than compiling an unpinned PECL release.
         if [ -d /etc/php/{$phpVersion} ]; then
             apt_wait
-            yes | sudo apt install php{$phpVersion}-redis
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y php{$phpVersion}-redis
         fi
         SCRIPT;
     }

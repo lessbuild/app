@@ -32,7 +32,7 @@ class InstallComposerScript implements ServerScript
         provisionPing {$server->id} {$step}
 
         apt_wait
-        apt install -y composer
+        DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y composer
         SCRIPT;
     }
 }

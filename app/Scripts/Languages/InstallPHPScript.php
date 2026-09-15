@@ -37,7 +37,7 @@ class InstallPHPScript implements ServerScript
         provisionPing {$server->id} $step
 
         apt_wait
-        yes | sudo apt install php{$version} php{$version}-fpm php{$version}-cli php{$version}-curl \
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y php{$version} php{$version}-fpm php{$version}-cli php{$version}-curl \
         php{$version}-pgsql php{$version}-dev php{$version}-gd php{$version}-mbstring php{$version}-mysql php{$version}-xml php{$version}-zip \
         php{$version}-sqlite3 php{$version}-memcached php{$version}-imap php{$version}-bcmath php{$version}-soap php{$version}-curl \
         php{$version}-intl php{$version}-readline php{$version}-msgpack php{$version}-igbinary php{$version}-gmp \

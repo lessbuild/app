@@ -32,7 +32,7 @@ class InstallCaddyScript implements ServerScript
 
         # Install Dependencies
         apt_wait
-        yes | sudo apt install debian-keyring debian-archive-keyring apt-transport-https
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y debian-keyring debian-archive-keyring apt-transport-https
 
         # Add Caddy GPG
         curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -42,11 +42,11 @@ class InstallCaddyScript implements ServerScript
 
         # Install Caddy
         apt_wait
-        sudo apt-get update
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get update
         apt_wait
-        sudo apt-get upgrade -y
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold upgrade -y
         apt_wait
-        yes | sudo apt install caddy
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y caddy
 
         # Enable Caddy Service
         sudo systemctl enable --now caddy

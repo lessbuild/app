@@ -111,6 +111,9 @@ class ProvisioningHardeningTest extends TestCase
             $this->assertTrue($syntax->isSuccessful(), "{$type->value}: ".$syntax->getErrorOutput());
             $this->assertStringContainsString('set -Eeuo pipefail', $script);
             $this->assertStringContainsString('backupManagedFile()', $script);
+            $this->assertStringNotContainsString('yes | sudo apt', $script);
+            $this->assertStringNotContainsString('sudo apt install', $script);
+            $this->assertStringContainsString('DEBIAN_FRONTEND=noninteractive', $script);
         }
     }
 

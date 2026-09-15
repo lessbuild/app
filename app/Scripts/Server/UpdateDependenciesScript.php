@@ -32,11 +32,11 @@ class UpdateDependenciesScript implements ServerScript
         provisionPing {$server->id} {$step}
 
         apt_wait
-        sudo apt-get update
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get update
         apt_wait
-        sudo apt-get upgrade -y
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold upgrade -y
         apt_wait
-        sudo apt-get install -y software-properties-common ca-certificates curl gnupg ufw
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y software-properties-common ca-certificates curl gnupg ufw
         sudo apt-add-repository ppa:ondrej/php -y
         SCRIPT;
     }

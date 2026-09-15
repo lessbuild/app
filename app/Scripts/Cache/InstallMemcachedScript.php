@@ -32,7 +32,7 @@ class InstallMemcachedScript implements ServerScript
 
         # Install Memcached
         apt_wait
-        yes | sudo apt install memcached supervisor
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y memcached supervisor
         backupManagedFile /etc/memcached.conf
         sed -i -E 's/^-l .*/-l 127.0.0.1/' /etc/memcached.conf
         service memcached restart

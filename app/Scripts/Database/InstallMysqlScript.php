@@ -43,7 +43,7 @@ class InstallMysqlScript implements ServerScript
 
         # Install MySQL
         apt_wait
-        sudo apt-get install -y mysql-server
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y mysql-server
 
         # Configure MySQL through an application-owned, rerunnable config file
         backupManagedFile /etc/mysql/mysql.conf.d/99-lessbuild.cnf

@@ -33,7 +33,7 @@ class InstallNodeScript implements ServerScript
 
         # Install Node
         apt_wait
-        yes | sudo apt install nodejs npm
+        sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y nodejs npm
 
         # Update node
         sudo npm install -g n
