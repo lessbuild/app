@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Contracts\Scripts\BuildScript;
 use App\Contracts\Scripts\ServerScript;
 use App\Contracts\Scripts\WebsiteScript;
+use App\Models\Build;
 use App\Models\Server;
 use App\Models\Website;
 use App\Services\ProvisioningScriptRenderer;
@@ -66,6 +67,16 @@ class ProvisioningPlanTest extends TestCase
 
         $this->assertSame("first\nsecond\n", $rendered);
     }
+
+    public function test_renderer_separates_build_script_fragments(): void
+    {
+        $rendered = app(ProvisioningScriptRenderer::class)->build(new Build, [
+            FirstBuildScript::class,
+            SecondBuildScript::class,
+        ]);
+
+        $this->assertSame("first\nsecond\n", $rendered);
+    }
 }
 
 class InvalidProvisioningScript
@@ -87,6 +98,22 @@ class FirstWebsiteScript implements WebsiteScript
 class SecondWebsiteScript implements WebsiteScript
 {
     public function script(int $step, Website $website): string
+    {
+        return 'second';
+    }
+}
+
+class FirstBuildScript implements BuildScript
+{
+    public function script(int $step, Build $build): string
+    {
+        return 'first';
+    }
+}
+
+class SecondBuildScript implements BuildScript
+{
+    public function script(int $step, Build $build): string
     {
         return 'second';
     }

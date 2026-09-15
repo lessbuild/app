@@ -71,7 +71,7 @@ class ProvisioningScriptRenderer
         return $this->render(
             $scripts,
             BuildScript::class,
-            fn (BuildScript $script, int $step): string => $script->script($step, $build),
+            fn (BuildScript $script, int $step): string => $script->script($step, $build)."\n",
         );
     }
 
