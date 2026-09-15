@@ -824,6 +824,44 @@ main commits to that dev app and replace the destination with valid Spaces
 S3 credentials. The real-provider release audit and live acceptance remain
 outstanding.
 
+## External provider acceptance attempt — 2026-09-15 (second run)
+
+The disposable drill was resumed in the isolated main runtime
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with its own
+database, application key, storage, caches, assets and queue worker. The
+authorized target was the smallest DigitalOcean droplet with a `$10` maximum
+spend, using `natecorkish/Deployer-Test` as the controlled fixture. The second
+run started at `2026-09-15T21:49:29Z` and the server deletion event was recorded
+at `2026-09-15T22:39:50Z`.
+
+The main-line fixes used by the runtime were pushed after verification:
+`a78b32c`, `1348e92`, `e144566`, `3a3e9b1`, `40240f9`, `5825e04`, `419b34c`
+and `b243d11`. They cover noninteractive package provisioning, missing SSH
+environment handling, separated provisioning stages, Caddy log permissions,
+literal-IP HTTP behavior, PHP-FPM refresh after activation and PHP-FPM refresh
+before rollback health validation.
+
+Real evidence from droplet `600822789` in `nyc1` included active provisioning,
+active website setup, v4 deployment (`c8f83ff04567b88b5bbc1caa40109e1b880dc2f2`),
+distinct v5 deployment (`393772b29709449bb1f5b7aa6a80c1801f45cbe8`) and a
+successful rollback to v4. Direct HTTP checks returned the expected v4/v5
+fixture responses with status 200. The acceptance audit passed provisioning,
+website setup, two-revision deployment and rollback, but reported backup,
+restore and post-restore health as missing.
+
+The configured Spaces destination rejected its stored access key because the
+key does not exist in the provider account. No snapshot or restore evidence
+exists, and no cloud release-acceptance pass is claimed. A DigitalOcean
+control-plane API token is not a Spaces S3 access-key/secret-key pair.
+
+Cleanup was independently verified: the disposable droplet is absent, the
+unrelated existing droplet remains, all disposable local application records
+were removed, the user-configured destination remains, and the isolated web
+service/worker were stopped. To resume, update the destination in the dev app
+with valid Spaces credentials, then repeat backup, exact restore, restored-data
+comparison, post-restore health and the audit before deleting the next
+disposable target.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

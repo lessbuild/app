@@ -4249,3 +4249,89 @@ DigitalOcean Spaces access credentials; a DigitalOcean control-plane token is
 not itself a Spaces access key. Then repeat the full disposable workflow and
 run the acceptance audit before cleanup. Do not treat this failed attempt as
 live acceptance.
+
+## External provider acceptance attempt — 2026-09-15 (second run)
+
+### Scope and responsibility boundaries
+
+The separately authorized disposable drill was resumed in the isolated main
+runtime at `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`. The
+runtime had its own SQLite database, application key, storage, caches, built
+assets, web service and database queue worker. The canonical live checkout and
+the separate acceptance-drill checkout were not used for runtime state.
+
+The user-authorized target remained the smallest available DigitalOcean
+droplet and a maximum total spend of `$10`. The controlled source repository
+was `natecorkish/Deployer-Test`; all fixture changes were pushed there through
+the connected source-control provider without committing application secrets.
+The second run started with disposable server record creation at
+`2026-09-15T21:49:29Z` and the server deletion event was recorded at
+`2026-09-15T22:39:50Z`.
+
+The application fixes found during the first and second attempts were kept in
+small, cohesive commits. They preserve the existing provider contract,
+callback identity, provisioning stages, release paths and cleanup ownership:
+
+- `a78b32c` — make server package provisioning noninteractive;
+- `1348e92` — tolerate an absent `SSH_CONNECTION` variable in the server
+  provisioning script;
+- `e144566` — separate website provisioning script stages;
+- `3a3e9b1` — prepare Caddy access logs with the Caddy-owned permissions;
+- `40240f9` — separate build provisioning script stages;
+- `5825e04` — serve literal IP websites over HTTP while preserving HTTPS for
+  named domains;
+- `419b34c` — refresh PHP workers after normal release activation; and
+- `b243d11` — refresh PHP workers before rollback health validation.
+
+Each commit was tested in proportion to its change and pushed to
+`origin/main`. The rollback change specifically keeps the runtime refresh in
+the release-switch operation, where it applies to both queued rollback jobs
+and their health check, rather than adding provider-specific behavior to the
+controller or job.
+
+### Real-provider evidence
+
+- DigitalOcean droplet `600822789` used size `s-1vcpu-512mb-10gb` in `nyc1`,
+  received address `206.189.234.122`, completed provisioning and reached the
+  active state.
+- Website provisioning reached active status on that server.
+- The fixture's v4 revision
+  `c8f83ff04567b88b5bbc1caa40109e1b880dc2f2` deployed successfully and served
+  `hello world v4` with HTTP 200.
+- A distinct v5 fixture revision
+  `393772b29709449bb1f5b7aa6a80c1801f45cbe8` deployed successfully and served
+  `hello world v5` with HTTP 200.
+- The rollback action created a rollback build linked to the v4 build,
+  completed successfully, refreshed PHP-FPM before health validation and
+  served `hello world v4` with HTTP 200 after the switch.
+- The built-in audit was run for the disposable project and provider with
+  `--since=2026-09-15T21:49:29Z`. It passed cloud provisioning, website
+  provisioning, two-revision deployment and rollback. It correctly reported
+  offsite backup, restore drill and post-restore health verification as
+  missing.
+
+### Backup blocker and cleanup
+
+The existing HTTPS backup destination was exercised, but DigitalOcean Spaces
+rejected its stored access key with the sanitized provider error that the
+access key does not exist in its records. No snapshot was produced. Therefore
+no restore, restored-data comparison or health check after restore was run or
+claimed. The destination record remains available in the isolated dev
+application; it needs a valid DigitalOcean Spaces access-key/secret-key pair.
+A DigitalOcean control-plane API token is not a Spaces S3 credential.
+
+After the audit, the supported server deletion action removed the exact
+disposable droplet and its owned SSH key. Independent provider lookups showed
+the disposable identifier absent and the unrelated pre-existing droplet still
+present. Local server, website, repository, build, project and environment
+records were removed; the user-configured backup destination was intentionally
+preserved. The isolated web service and worker were stopped, and no queued
+jobs remained.
+
+This second run establishes real disposable provisioning, deployment,
+revision change, rollback and provider cleanup evidence, but it does not
+establish complete cloud release acceptance. The next external task is to
+replace the destination with valid Spaces credentials, repeat the backup,
+restore and post-restore health portion, and rerun the audit before cleanup.
+Do not claim the release gate as passed until those checks and independent
+restored-data evidence exist.
