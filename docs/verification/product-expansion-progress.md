@@ -4660,3 +4660,91 @@ actual website backup, restore or post-restore health evidence has been
 created yet. The next task is the separately authorized real backup and
 recovery drill, which may use its existing managed website only for the actual
 Restic workflow—not for connection verification.
+
+## External provider acceptance — 2026-09-16 (successful backup and recovery drill)
+
+### Responsibility boundary and scope
+
+The remaining external acceptance slice exercised the existing provider,
+website, deployment, rollback, backup, restore and health operations together
+on an isolated `main` runtime. The runtime used its own SQLite database,
+storage, cache, application key, dependencies and database queue worker. The
+worker was configured with the asynchronous database queue before provisioning
+so server initialization retained its normal retry and lease behavior. No
+production credentials, infrastructure or the separate acceptance-drill
+checkout were used.
+
+The authorized run started at `2026-09-16T21:14:48Z` with the smallest
+DigitalOcean droplet size, `s-1vcpu-512mb-10gb`, in `nyc1`, under the existing
+`$10` maximum total-spend limit. The pre-existing `Codex` droplet was inventoried
+and left untouched. The disposable provider identifier was `601196607`; it was
+removed before this record was written.
+
+### Deployment and rollback evidence
+
+The controlled fixture `natecorkish/Deployer-Test` was used through the
+connected GitHub provider. The clean release chain was:
+
+- Build `27`, revision `5e61e1c69016b179f49d25c4f4ae2010738b06ad`, served
+  `hello world v8` with HTTP 200.
+- Build `28`, revision `375d556fa50e4f76b880f59f075995bf554036a8`, served
+  `hello world v9` with HTTP 200.
+- Build `29` rolled back to build `27` and restored `hello world v8` with
+  HTTP 200.
+
+An intermediate successful build changed an unused repository-root fixture
+file. It was not counted as release evidence; the fixture was corrected to its
+actual `public/index.php` document root before the clean v8/v9/rollback chain.
+This preserves the distinction between recorded deployment success and the
+served application result.
+
+### Backup, restore and health evidence
+
+Destination `2` was serverlessly reverified against the configured Spaces
+endpoint before the actual backup. Backup `3` completed over HTTPS. A second
+backup, `4`, captured a disposable marker in both shared storage and the
+website database. After both values were changed, restore request `1` applied
+the exact snapshot from backup `4` successfully. Independent checks confirmed
+that both markers returned to their pre-backup values. A separate post-restore
+health check returned HTTP 200 and persisted a healthy result.
+
+The bounded audit was captured before cleanup:
+
+```text
+php artisan buildpusher:acceptance:audit 8 --provider=digitalocean --since=2026-09-16T21:14:48Z --json
+```
+
+It returned `passed` for all seven recorded checks: cloud provisioning,
+website provisioning, deployment, rollback, offsite backup, restore drill and
+health verification. The audit remains a lifecycle record; the independent
+restored-data comparison above supplies the data-integrity evidence.
+
+### Cleanup and result
+
+The two drill snapshots were forgotten and Restic subsequently reported zero
+snapshots and zero raw data after pruning. The supported server deletion
+workflow removed the disposable cloud server, website, repository, project
+and environment records. Independent verification found provider identifier
+`601196607` absent while the pre-existing `Codex` droplet remained active. The
+configured Spaces destination was preserved, the queue had no pending jobs,
+and `https://buildpusher.com/` continued to return HTTP 200.
+
+The Spaces key did not permit the separate ListObjects diagnostic used to
+enumerate repository metadata, so this record does not claim that empty Restic
+repository metadata was removed from the exact disposable prefix. No broader
+bucket deletion was attempted. No credentials or raw remote output were
+recorded.
+
+This establishes one disposable provider deployment, rollback, backup, exact
+restore, restored-data comparison, health and cleanup cycle. It does not
+establish production acceptance, billing behavior, multi-provider behavior,
+provider-backed preview-stack readiness, PostgreSQL/Valkey recovery or
+independent monitoring destinations.
+
+### Commit and exact next task
+
+This evidence-only update requires no application-code change. After the
+verification record is committed and pushed, the next task is release-gate
+review: keep production mail, independent monitoring/heartbeat destinations,
+GitHub App configuration, billing/SSO acceptance and provider-backed preview
+acceptance explicitly separate from this successful disposable drill.

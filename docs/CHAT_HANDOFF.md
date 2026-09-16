@@ -1047,6 +1047,50 @@ Actual website backup, restore, post-restore health and cloud acceptance are
 still outstanding. The next real recovery drill may use the managed website
 for Restic execution, but connection verification no longer needs it.
 
+## External provider acceptance — 2026-09-16 (successful backup and recovery drill)
+
+The authorized disposable acceptance run succeeded on the isolated `main`
+runtime. It used the smallest DigitalOcean droplet size
+`s-1vcpu-512mb-10gb` in `nyc1`, with a `$10` maximum total-spend limit. The
+run started at `2026-09-16T21:14:48Z`; disposable provider identifier
+`601196607` was deleted afterward. The existing `Codex` droplet was inventoried
+and left untouched. The isolated worker used the database queue so provisioning
+and retry semantics remained asynchronous.
+
+Using `natecorkish/Deployer-Test`, the clean release chain deployed revision
+`5e61e1c` and served `hello world v8` (HTTP 200), deployed revision `375d556`
+and served `hello world v9` (HTTP 200), then rollback build `29` restored the
+v8 release (HTTP 200). An earlier successful build changed an unused fixture
+root file and was excluded from the chain after correcting the actual
+`public/index.php` document root.
+
+Spaces destination `2` was reverified serverlessly before backup. Backup `3`
+completed over HTTPS; backup `4` captured a disposable storage marker and
+database marker. After mutation, restore request `1` successfully restored the
+exact backup, and independent checks confirmed both markers returned to their
+pre-backup values. A separate post-restore health check returned HTTP 200.
+
+The pre-cleanup command
+`buildpusher:acceptance:audit 8 --provider=digitalocean --since=2026-09-16T21:14:48Z --json`
+returned `passed` for cloud provisioning, website provisioning, deployment,
+rollback, offsite backup, restore and health verification. The two snapshots
+were forgotten; Restic then reported zero snapshots and zero raw data. The
+disposable server, website, repository, project and environment records are
+gone; provider inventory shows only the pre-existing droplet; destination `2`
+remains; the queue is empty; and the dev domain still returns HTTP 200.
+
+The Spaces key denied the separate ListObjects diagnostic, so empty Restic
+repository metadata may remain under the exact disposable website prefix. No
+broader bucket deletion was attempted, and no credentials or raw remote output
+were recorded. This proves one disposable provider deployment/recovery cycle,
+not production, billing, multi-provider, preview-stack, PostgreSQL/Valkey or
+independent-monitoring acceptance.
+
+The next task is release-gate review and handoff. Keep production mail,
+monitoring/heartbeat destinations, GitHub App configuration, billing/SSO and
+provider-backed preview acceptance explicitly separate from this successful
+disposable drill.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
