@@ -895,6 +895,33 @@ backup, restore, restored-data comparison and post-restore health checks. The
 previous control-plane token mismatch means this acceptance is still
 outstanding.
 
+## Dev host and test baseline correction — 2026-09-16
+
+The dev domain was switched back to the BuildPusher `main` runtime at
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`. The unrelated
+temporary `/tmp/jobsite-quality` process that had been serving port 8010 was
+stopped without changing its files. The existing Caddy reverse proxy already
+targeted port 8010; `buildpusher-dev-main.service` is now active and enabled,
+with HTTPS `APP_URL` and `ASSET_URL` in the isolated runtime. Fresh Vite assets
+were built. `https://buildpusher.com/` returned HTTP 200, the CSS asset
+returned HTTP 200, and a real-domain headless browser check confirmed the
+stylesheet was applied. The old mixed-content HTTP asset URL is gone.
+
+The fresh strict suite initially found that the isolated runtime's
+`CACHE_STORE=file` and registration flags leaked into PHPUnit because the
+test configuration only overrode legacy cache settings. Commit `564157b`
+adds explicit `CACHE_STORE=array`, `REGISTRATION_ENABLED=false` and
+`REGISTRATION_ALLOW_FIRST_USER=true` test settings. The focused correction
+set passed 125 tests / 902 assertions; the complete strict suite passed
+1,543 tests / 12,959 assertions with no errors, failures, risky tests or
+deprecations. The commit was pushed to `origin/main`.
+
+The product-expansion implementation remains locally complete through Phase
+9. The only outstanding planned acceptance is real DigitalOcean Spaces
+backup, restore, restored-data comparison, post-restore health and cleanup;
+valid Spaces S3 credentials are still required. A DigitalOcean control-plane
+token cannot perform that acceptance.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

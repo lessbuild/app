@@ -4421,3 +4421,36 @@ scoping remain the integration and persistence foundations.
   backup and restore verification, and record the result. The prior
   control-plane token failure means that external acceptance remains
   outstanding; local tests do not establish it.
+
+## Test-environment isolation correction — 2026-09-16
+
+### Problem and boundary
+
+The fresh strict baseline exposed a test-harness mismatch rather than a
+product regression. The application cache configuration correctly prefers
+Laravel's current `CACHE_STORE` setting, but `phpunit.xml` only overrode the
+legacy `CACHE_DRIVER`. The isolated runtime `.env` therefore made the test
+suite use file-backed cache, leaking rate-limit state between tests. The
+runtime registration flags also needed explicit test values so registration
+protocol tests did not inherit development settings.
+
+This is a test-only correction. `phpunit.xml` now explicitly sets
+`CACHE_STORE=array`, `REGISTRATION_ENABLED=false` and
+`REGISTRATION_ALLOW_FIRST_USER=true`, while retaining the legacy cache
+override for compatibility. No application, persistence, API or production
+runtime behavior changed.
+
+### Verification and handoff
+
+- The focused isolation, account, registration, recipe-notification,
+  authentication, two-factor, access-request, sign-in-history and
+  troubleshooting set passed **125 tests / 902 assertions**.
+- The complete strict PHP suite passed **1,543 tests / 12,959 assertions**
+  with no errors, failures, risky tests or deprecations.
+- Commit `564157b` (`test: isolate Laravel testing cache settings`) was pushed
+  to `origin/main`.
+- The next task remains the separately authorized external acceptance drill:
+  enter valid DigitalOcean Spaces S3 credentials in the isolated dev
+  application, then run backup, restore, restored-data comparison,
+  post-restore health verification and cleanup. The control-plane token is
+  not a Spaces access-key/secret-key pair.
