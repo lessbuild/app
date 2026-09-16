@@ -4797,6 +4797,7 @@ provider-specific acceptance. The Spaces key also did not permit the separate
 ListObjects metadata diagnostic, so empty Restic metadata under the disposable
 prefix is not claimed removed; no broader bucket deletion was attempted.
 
-Commit this documentation update and push it to `origin/main`. The exact next
-task is separately authorized release-gate acceptance when those integrations
-and credentials are available; it is not a local-test completion claim.
+Documentation commit `5e76bf0` was pushed to `origin/main`, and canonical
+`main` was fast-forwarded to the same commit. The exact next task is separately
+authorized release-gate acceptance when those integrations and credentials are
+available; it is not a local-test completion claim.
