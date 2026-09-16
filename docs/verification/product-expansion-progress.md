@@ -4521,3 +4521,31 @@ the backup, exact restore, restored-data comparison, post-restore health and
 audit, and clean up before claiming completion. Credentials must not be
 posted in chat. This external attempt produced no backup spend or release
 acceptance pass.
+
+## Additional Spaces verification retry — 2026-09-16
+
+The destination was retried from a fresh disposable DigitalOcean host using
+the smallest authorized size, `s-1vcpu-512mb-10gb`, in `nyc1`. The provider
+identifier was `601169375`. Its initial SSH identity scan ran before the host
+was ready; the existing remote-provisioning retry action then resumed from
+stage 3 and completed provisioning at stage 12. A disposable website record
+was created on that active host solely to provide the supported destination
+test entry point.
+
+Restic again reached `https://lon1.digitaloceanspaces.com` and failed while
+initializing `builder-backup` with `Access Denied`. The destination remained
+unverified (`last_verified_at` is null), and no backup, restore or
+post-restore health evidence was created. This is consistent with an invalid
+Spaces access-key pair or insufficient bucket permissions; it is not evidence
+of a host or endpoint reachability failure.
+
+The disposable server was deleted through `DeleteServerAction`, an
+independent provider lookup confirmed identifier `601169375` was absent, and
+the unrelated provider droplet remained. The disposable website was removed
+with the server, the stale queued website job was consumed after restarting
+the isolated worker that had reached its configured max runtime, and the
+backup destination was preserved. This retry does not establish cloud
+release acceptance. The next task remains replacing the stored pair through
+the dev UI with a Spaces S3 key that has read/write/delete access to
+`builder-backup`, then repeating backup, exact restore, restored-data
+comparison and post-restore health verification.

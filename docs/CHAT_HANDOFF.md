@@ -965,6 +965,29 @@ task is to enter a Spaces S3 pair with read/write/delete access to
 backup, exact restore, restored-data comparison, post-restore health and the
 audit before cleanup.
 
+## Additional Spaces verification retry — 2026-09-16
+
+A fresh disposable DigitalOcean host was created with the smallest
+authorized size, `s-1vcpu-512mb-10gb`, in `nyc1` (provider identifier
+`601169375`). Its first SSH identity scan raced host readiness; the existing
+remote-provisioning retry action resumed at stage 3 and completed the host at
+stage 12. A disposable website provided the active-server entry point for the
+supported backup-destination test.
+
+Restic reached `https://lon1.digitaloceanspaces.com` but again received
+`Access Denied` while initializing `builder-backup`. The destination remains
+unverified, with no backup, restore or post-restore health evidence. The
+stored pair is therefore still invalid or lacks the required bucket
+permissions; it was not printed or copied into this handoff.
+
+The disposable server and website were removed through the supported cleanup
+workflow, provider absence was independently confirmed, the unrelated
+provider droplet remained, the stale queue job was consumed after restarting
+the isolated worker, and the destination was preserved. This retry does not
+establish cloud release acceptance. Replace the Spaces S3 pair through the
+dev UI, then repeat the backup, exact restore, restored-data comparison and
+post-restore health checks before claiming completion.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
