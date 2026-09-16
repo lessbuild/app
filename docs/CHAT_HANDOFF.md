@@ -1034,6 +1034,19 @@ assertions, and Pint/lint/diff checks passed. The commit is pushed to
 Next: save a matching Spaces key pair with Read/Write/Delete object permission
 for `builder-backup`, retry Verify, then run the real backup/restore acceptance.
 
+## Successful serverless Spaces verification — 2026-09-16
+
+After the destination was updated in the dev application, Verify succeeded
+against `https://lon1.digitaloceanspaces.com` / `builder-backup`. The direct
+probe wrote, read and deleted its generated temporary object without selecting
+or contacting a website server; destination `2` now has `last_verified_at` set
+and `last_error` is null. The earlier `InvalidAccessKeyId` response belonged
+to the older stored value. No credential material was printed or recorded.
+
+Actual website backup, restore, post-restore health and cloud acceptance are
+still outstanding. The next real recovery drill may use the managed website
+for Restic execution, but connection verification no longer needs it.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

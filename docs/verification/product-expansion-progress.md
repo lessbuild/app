@@ -4643,3 +4643,20 @@ destination, with Read/Write/Delete object permission for `builder-backup`,
 then run Verify again. Do not post either value in chat. A successful check
 will write, read and delete only its generated temporary object; real backup,
 restore and cloud acceptance remain outstanding until those workflows pass.
+
+## Successful serverless Spaces verification — 2026-09-16
+
+After the destination was updated in the dev application, the final retry
+completed successfully against `https://lon1.digitaloceanspaces.com` and the
+`builder-backup` bucket. The direct application-host probe wrote, read and
+deleted its generated temporary object without selecting or contacting a
+website server. Destination `2` now has a populated `last_verified_at` and a
+null `last_error`.
+
+This confirms the new verification path works with the currently stored Spaces
+pair. The preceding `InvalidAccessKeyId` result came from the older value that
+was stored at that time; no credential material was printed or recorded. No
+actual website backup, restore or post-restore health evidence has been
+created yet. The next task is the separately authorized real backup and
+recovery drill, which may use its existing managed website only for the actual
+Restic workflow—not for connection verification.
