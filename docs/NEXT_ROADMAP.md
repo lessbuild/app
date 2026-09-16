@@ -144,6 +144,28 @@ the focused follow-up set passed **28 tests / 177 assertions**. The commit was
 pushed after creation and fast-forwarded into canonical `main`, which was then
 pushed to GitHub. This does not change the separate external acceptance status.
 
+## Final release-gate review — 2026-09-16
+
+The integrated isolated `main` runtime passed the strict PHP suite with
+**1,544 tests / 12,956 assertions**, required-PHP Pint, Composer validation and
+platform checks, and `git diff --check`. The required-PHP asset fixture suite
+passed **9 tests**. The corrected complete browser run, with
+`BROWSER_PHP_BINARY` pinned to PHP 8.5.10, passed **16 tests** across
+accessibility, asset layouts, no-JavaScript provider submission, served
+Livewire, and mobile/tablet/desktop product-page crawls. After route,
+configuration and view caches were created in the isolated checkout, the
+served Livewire/mobile smoke passed **1 test** and the isolated application
+continued to return HTTP 200.
+
+An earlier aggregate browser command omitted the required PHP override and was
+discarded after its fixture hook selected system PHP 8.3.6; it is not counted
+as application evidence. No dependencies or application code changed in this
+review. Local Phase 9 scope and the authorized disposable provider
+deployment/rollback/backup/restore/cleanup evidence are complete. Production
+mail, independent monitoring/heartbeat destinations, GitHub App configuration,
+billing/SSO, provider-backed preview readiness and PostgreSQL/Valkey recovery
+remain separate acceptance gates.
+
 ## Deferred release gates
 
 - Independent monitoring endpoints and live heartbeat/status verification.

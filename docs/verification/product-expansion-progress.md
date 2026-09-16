@@ -1,21 +1,24 @@
 # BuildPusher product expansion progress
 
-Status: Phase 8's fixed server-host diagnostic implementation, minimal
-persisted troubleshooting-session authorization/lifecycle boundary, bounded
-server-side transport/process-ownership boundary, durable encrypted frame
-relay, bounded broker ownership command and policy-authorized troubleshooting
-session lifecycle HTTP boundary are complete locally; the typed
-category-aware control-plane report is also complete. Supervisor installation
-wiring is complete in the daemon installer contract. Deterministic disposable
-host checks have verified the real application SSH adapter across five
-sequential local connections, normal transient-systemd disconnect cleanup and
-local worker-loss restart cleanup. An isolated Debian 12 LXD system
-container with systemd, OpenSSH and its own network namespace has now also
-verified installed-style normal stop, worker-loss restart, network-partition
-cleanup and new-session-only reconnect. A full VM could not fit in the
-available workspace disk, so this is host-equivalent local evidence rather
-than a VM or cloud-provider claim. The interactive terminal route/UI
-remains deliberately gated.
+Status: Local product-expansion implementation through Phase 9 and the
+authorized disposable provider deployment/rollback/backup/restore/cleanup
+drill are complete. The fixed server-host diagnostic, minimal persisted
+troubleshooting-session authorization/lifecycle boundary, bounded server-side
+transport/process-ownership boundary, durable encrypted frame relay, bounded
+broker ownership command and policy-authorized troubleshooting session
+lifecycle HTTP boundary are complete locally; the typed category-aware
+control-plane report is also complete. Supervisor installation wiring is
+complete in the daemon installer contract. Deterministic disposable host
+checks have verified the real application SSH adapter across five sequential
+local connections, normal transient-systemd disconnect cleanup and local
+worker-loss restart cleanup. An isolated Debian 12 LXD system container with
+systemd, OpenSSH and its own network namespace has also verified installed-
+style normal stop, worker-loss restart, network-partition cleanup and
+new-session-only reconnect. A full VM could not fit in the available
+workspace disk, so this is host-equivalent local evidence rather than a VM or
+cloud-provider claim. The interactive terminal route/UI remains deliberately
+gated. Final local release-gate checks are recorded below; production and
+provider-specific acceptance gates remain separate.
 Phase 7G's organization-owned named investigation views and Phase 7F's
 disabled-by-default revision-aware post-deployment
 observation aggregate, leased execution, bounded build-detail read surface and
@@ -61,7 +64,7 @@ existing arbitrary server command, metrics, log, provisioning and
 provider-health paths remain separate. Interactive terminal execution is not
 implied by this diagnostic.
 
-Date: 2026-09-14
+Date: 2026-09-16
 
 Integration branch: `main`
 
@@ -4748,3 +4751,52 @@ verification record is committed and pushed, the next task is release-gate
 review: keep production mail, independent monitoring/heartbeat destinations,
 GitHub App configuration, billing/SSO acceptance and provider-backed preview
 acceptance explicitly separate from this successful disposable drill.
+
+## Final release-gate review — 2026-09-16
+
+### Scope and responsibility boundary
+
+This review verifies the integrated `main` tree after the local Phase 9 work
+and the disposable provider drill. It makes no application-code or dependency
+change. The isolated runtime remained separate from the canonical live
+checkout, with its own SQLite database, storage, cache, application key,
+dependencies, route/config/view caches and database queue worker.
+
+The initial aggregate browser invocation was intentionally discarded because
+its fixture hook omitted `BROWSER_PHP_BINARY` and selected system PHP 8.3.6.
+The required-PHP asset suite had already passed independently; the complete
+browser run was then repeated with PHP 8.5.10 explicitly configured.
+
+### Verification evidence
+
+- The strict PHP suite passed **1,544 tests / 12,956 assertions** with no
+  failures, errors, risky tests or deprecations.
+- Required-PHP Pint, Composer manifest validation, Composer platform checks
+  and `git diff --check` passed. Composer emitted only deprecation notices
+  from the system Composer libraries; lockfiles were unchanged.
+- The required-PHP asset fixture suite passed **9 tests**, including all light
+  and dark 320/390/768/1440 layouts and no-JavaScript provider submission.
+- The complete browser suite passed **16 tests**: accessibility at mobile,
+  tablet and desktop sizes; all asset fixtures; no-JavaScript provider
+  submission; served Livewire runtime; and mobile/tablet/desktop product-page
+  crawls.
+- After creating route, configuration and view caches and restarting only the
+  isolated services, the served Livewire/mobile smoke passed **1 test**. The
+  isolated web and worker services were active and `https://buildpusher.com/`
+  returned HTTP 200. The runtime resolved to the isolated SQLite database,
+  file cache, database queue and isolated storage path.
+
+### Result and exact next task
+
+The local implementation and the authorized disposable provider evidence are
+complete. No additional local feature slice is justified by the current
+evidence. Remaining release gates are production mail, independent
+monitoring/heartbeat destinations, GitHub App configuration, billing/SSO,
+provider-backed preview readiness, PostgreSQL/Valkey recovery and other
+provider-specific acceptance. The Spaces key also did not permit the separate
+ListObjects metadata diagnostic, so empty Restic metadata under the disposable
+prefix is not claimed removed; no broader bucket deletion was attempted.
+
+Commit this documentation update and push it to `origin/main`. The exact next
+task is separately authorized release-gate acceptance when those integrations
+and credentials are available; it is not a local-test completion claim.

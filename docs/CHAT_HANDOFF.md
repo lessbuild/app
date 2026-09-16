@@ -1091,6 +1091,33 @@ monitoring/heartbeat destinations, GitHub App configuration, billing/SSO and
 provider-backed preview acceptance explicitly separate from this successful
 disposable drill.
 
+## Final release-gate review — 2026-09-16
+
+The isolated `main` runtime completed the final local checks after the
+disposable drill: the strict PHP suite passed **1,544 tests / 12,956
+assertions**; required-PHP Pint, Composer validation/platform checks and
+`git diff --check` passed; the asset fixture suite passed **9 tests**; and the
+corrected complete browser run passed **16 tests** across accessibility,
+responsive layouts, no-JavaScript provider submission, served Livewire and the
+mobile/tablet/desktop product crawl. Route/config/view caches were then
+created only in the isolated checkout, its services restarted, and the served
+Livewire/mobile smoke passed **1 test** with the dev domain returning HTTP
+200.
+
+The first aggregate browser command was discarded because it omitted the
+required `BROWSER_PHP_BINARY` and selected system PHP 8.3.6 for its fixture
+hook; the complete run was repeated with PHP 8.5.10. No application code,
+dependencies, production infrastructure or credentials changed in this
+review. The local product-expansion scope and authorized disposable provider
+drill are complete. Production mail, independent monitoring/heartbeat
+destinations, GitHub App configuration, billing/SSO, provider-backed preview
+readiness, PostgreSQL/Valkey recovery and other provider-specific acceptance
+remain outstanding. Spaces ListObjects metadata cleanup is also unverified
+because the key denied that diagnostic; no broader deletion was attempted.
+
+The exact next task is separately authorized release-gate acceptance when the
+remaining integrations and credentials are available.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
