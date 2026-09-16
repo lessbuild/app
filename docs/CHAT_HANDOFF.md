@@ -923,6 +923,48 @@ backup, restore, restored-data comparison, post-restore health and cleanup;
 valid Spaces S3 credentials are still required. A DigitalOcean control-plane
 token cannot perform that acceptance.
 
+## External provider acceptance attempt — 2026-09-16 (third run)
+
+The separately authorized disposable drill resumed in the isolated main
+runtime with the smallest DigitalOcean droplet size
+`s-1vcpu-512mb-10gb` and the `$10` maximum total-spend limit. The existing
+provider droplet was inventoried and left untouched. The run started at
+`2026-09-16T19:14:52Z`; disposable droplet `601159938` was created in `nyc1`,
+reached active provisioning, and was later deleted through the supported
+server workflow.
+
+The controlled fixture `natecorkish/Deployer-Test` received revisions
+`9d6fe6b` (`v6`) and `7f72430` (`v7`). After creating a disposable project and
+staging environment before the audit chain, BuildPusher recorded:
+
+- build `22`: environment-linked redeploy of revision
+  `393772b29709449bb1f5b7aa6a80c1801f45cbe8` (`v5`);
+- build `23`: distinct revision
+  `7f724303d4f1a3dcdff3b4ec93107a00f6142fd9` (`v7`); and
+- build `24`: successful rollback linked to build `22`.
+
+Direct HTTP checks returned `hello world v5`, `hello world v7`, and
+`hello world v5` after rollback, all with HTTP 200. The acceptance audit,
+captured before cleanup with `--since=2026-09-16T19:14:52Z`, passed cloud
+provisioning, website provisioning, two-revision deployment and rollback.
+
+The encrypted Spaces fields were populated, but verification reached the
+bucket and failed during Restic initialization with `Access Denied` on two
+attempts. `last_verified_at` remains null; no snapshot, backup, restore or
+post-restore health evidence exists. The stored pair is mismatched or lacks
+the required bucket permissions and must be replaced through the dev UI; it
+was not printed or copied into this record.
+
+Cleanup was independently verified: droplet `601159938` is absent while the
+unrelated existing provider droplet remains, disposable local infrastructure
+records are gone, the backup destination is preserved, the queue is empty,
+and the dev web/worker services remain active with the domain returning HTTP
+200. This run does not establish complete cloud release acceptance. The next
+task is to enter a Spaces S3 pair with read/write/delete access to
+`builder-backup`, then repeat the bounded drill from the start and capture
+backup, exact restore, restored-data comparison, post-restore health and the
+audit before cleanup.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

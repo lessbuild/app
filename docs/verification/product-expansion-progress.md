@@ -4454,3 +4454,70 @@ runtime behavior changed.
   application, then run backup, restore, restored-data comparison,
   post-restore health verification and cleanup. The control-plane token is
   not a Spaces access-key/secret-key pair.
+
+## External provider acceptance attempt — 2026-09-16 (third run)
+
+### Scope and lifecycle evidence
+
+The separately authorized disposable DigitalOcean drill resumed in the
+isolated main runtime with the smallest available droplet size
+`s-1vcpu-512mb-10gb` and the existing maximum total spend of `$10`. The
+pre-existing provider droplet was inventoried and left untouched. The run
+started at `2026-09-16T19:14:52Z`; the disposable provider identifier was
+`601159938` in `nyc1` and its address was `157.245.139.91`.
+
+The controlled fixture repository `natecorkish/Deployer-Test` received and
+published revisions `9d6fe6b` (`v6`) and `7f72430` (`v7`). A disposable
+BuildPusher project/environment was created before the audit-eligible build
+chain, preserving the earlier build history instead of rewriting it:
+
+- Build `22` redeployed the retained `v5` revision
+  `393772b29709449bb1f5b7aa6a80c1801f45cbe8` into environment `12`.
+- Build `23` deployed the distinct `v7` revision
+  `7f724303d4f1a3dcdff3b4ec93107a00f6142fd9` into that environment.
+- Build `24` completed a rollback linked to build `22` and restored the
+  exact `v5` revision and retained release.
+
+Cloud provisioning completed at stage 12, website provisioning completed at
+stage 3, and each deployment completed at stage 15. Direct HTTP checks served
+`hello world v5`, then `hello world v7`, then `hello world v5` again, each with
+HTTP 200.
+
+### Backup outcome
+
+The encrypted Spaces credential fields were populated in the destination,
+but both destination probes reached DigitalOcean Spaces and failed during
+Restic repository initialization with `Access Denied`. This indicates that
+the stored pair is mismatched or lacks the required bucket permissions; it
+does not establish a host or HTTPS endpoint failure. `last_verified_at` stayed
+null, no `WebsiteBackup` or `BackupRestore` record was created, and no restored
+data or post-restore health claim is made.
+
+The audit was captured before cleanup with:
+
+```text
+php artisan buildpusher:acceptance:audit 7 --provider=digitalocean --since=2026-09-16T19:14:52Z --json
+```
+
+It returned `incomplete`: cloud provisioning, website provisioning,
+two-revision deployment and rollback passed; offsite backup, restore drill
+and post-restore health verification were missing. This is recorded lifecycle
+evidence only and does not claim release acceptance.
+
+### Cleanup and exact next task
+
+The supported server deletion action completed successfully. An independent
+provider lookup confirmed identifier `601159938` absent while the unrelated
+provider droplet remained. Disposable server, website, repository, project
+and environment records were removed; the user-configured backup destination
+was preserved; the queue is empty; and the dev web/worker services still
+serve the domain successfully.
+
+The next task is to replace the destination through the dev UI with a valid
+DigitalOcean Spaces S3 access-key/secret-key pair that has the required
+read/write/delete access to `builder-backup`, then repeat the bounded drill
+from the start (creating the project/environment before deployment), capture
+the backup, exact restore, restored-data comparison, post-restore health and
+audit, and clean up before claiming completion. Credentials must not be
+posted in chat. This external attempt produced no backup spend or release
+acceptance pass.
