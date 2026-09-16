@@ -902,8 +902,9 @@ The dev domain was switched back to the BuildPusher `main` runtime at
 temporary `/tmp/jobsite-quality` process that had been serving port 8010 was
 stopped without changing its files. The existing Caddy reverse proxy already
 targeted port 8010; `buildpusher-dev-main.service` is now active and enabled,
-with HTTPS `APP_URL` and `ASSET_URL` in the isolated runtime. Fresh Vite assets
-were built. `https://buildpusher.com/` returned HTTP 200, the CSS asset
+and its matching database queue worker is active and enabled, with no pending
+jobs. The isolated runtime has HTTPS `APP_URL` and `ASSET_URL`. Fresh Vite
+assets were built. `https://buildpusher.com/` returned HTTP 200, the CSS asset
 returned HTTP 200, and a real-domain headless browser check confirmed the
 stylesheet was applied. The old mixed-content HTTP asset URL is gone.
 
