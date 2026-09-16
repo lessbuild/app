@@ -1011,6 +1011,29 @@ access-key/secret-key pair with bucket read/write/delete permissions in the dev
 UI, then repeat the real backup, exact restore, comparison, health and cleanup
 drill without provisioning a server merely to verify the destination.
 
+## Spaces 403 diagnostic — 2026-09-16
+
+The real isolated probe returned HTTP 403 with the provider code
+`InvalidAccessKeyId`. The request reached Spaces directly; the access-key value
+currently stored for the dev destination is not recognized. If the control
+panel shows a valid key, save that exact current key and its matching secret in
+the destination together. A regenerated/revoked key, a regular DigitalOcean
+control-plane token, or a key from another account will produce this result.
+
+The connected DigitalOcean control-plane credential returned HTTP 401 on the
+read-only Spaces-key listing endpoint, so no account-side comparison was made
+and no credential was changed.
+
+Commit `8e40ede` makes the UI show only a safe provider error code, such as
+`InvalidAccessKeyId`, `SignatureDoesNotMatch` or `AccessDenied`; response XML
+and credentials are still excluded. The exact-tree strict suite passed 1,544
+tests / 12,956 assertions, focused backup coverage passed 9 tests / 43
+assertions, and Pint/lint/diff checks passed. The commit is pushed to
+`origin/main`.
+
+Next: save a matching Spaces key pair with Read/Write/Delete object permission
+for `builder-backup`, retry Verify, then run the real backup/restore acceptance.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

@@ -4604,3 +4604,42 @@ access to the configured bucket through the dev UI, then run the real backup,
 exact restore, restored-data comparison, post-restore health check and cleanup
 drill. That external acceptance remains separate from this locally verified
 serverless connection check.
+
+## Spaces 403 diagnostic — 2026-09-16
+
+### Finding
+
+The real isolated probe was repeated after the serverless verification change.
+Spaces returned the bounded XML code `InvalidAccessKeyId` with HTTP 403:
+the access-key value currently stored on destination `2` is not recognized by
+the Spaces endpoint. This is not an active-server, network or temporary-file
+failure. If the control panel shows a valid key, the dev destination needs to
+be updated with that exact current key and its matching secret; a regenerated
+or revoked key, a regular DigitalOcean control-plane token, or a key from a
+different account will produce this result.
+
+The connected DigitalOcean control-plane credential was also checked with the
+read-only Spaces-key listing endpoint, but it returned HTTP 401, so no
+account-side key comparison was made and no credential was changed.
+
+### Diagnostic boundary and verification
+
+Commit `8e40ede` (`fix: expose safe backup provider errors`) now extracts only
+the provider's bounded error code into the existing sanitized destination
+error. Response bodies and all credential material remain excluded. The UI
+therefore distinguishes `InvalidAccessKeyId`, `SignatureDoesNotMatch`,
+`AccessDenied` and other provider outcomes without exposing XML responses.
+
+- Destination-focused coverage: **9 passed / 43 assertions**.
+- Exact committed-tree strict PHP suite: **1,544 passed / 12,956 assertions**
+  with no errors, failures, risky tests or deprecations.
+- Full Pint, changed-file PHP lint and `git diff --check`: passed.
+- Commit `8e40ede` was pushed to `origin/main`.
+
+### Exact next task
+
+Save the current Spaces access key and matching secret together in the dev
+destination, with Read/Write/Delete object permission for `builder-backup`,
+then run Verify again. Do not post either value in chat. A successful check
+will write, read and delete only its generated temporary object; real backup,
+restore and cloud acceptance remain outstanding until those workflows pass.
