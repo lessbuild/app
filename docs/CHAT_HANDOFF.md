@@ -988,6 +988,29 @@ establish cloud release acceptance. Replace the Spaces S3 pair through the
 dev UI, then repeat the backup, exact restore, restored-data comparison and
 post-restore health checks before claiming completion.
 
+## Serverless backup destination verification — 2026-09-16
+
+The backup connection check no longer requires an active website or managed
+server. Commit `0ab3365` adds `S3CompatibleStorageProbe`, which writes a
+generated marker from a 0600 local temporary file to a temporary S3-compatible
+object over signed HTTPS, reads it back, deletes it, and cleans up the local
+file. The controller, Form Request, policy, flash messages, encrypted fields
+and verification-state persistence remain compatible. Actual backup and
+restore jobs still use the existing remote Restic workflow.
+
+The destination page now has one serverless Verify action per destination.
+Focused coverage passed 9 tests / 43 assertions; related backup coverage passed
+28 tests / 241 assertions; and the exact committed tree passed the strict full
+PHP suite with 1,544 tests / 12,956 assertions. Full Pint, PHP lint and
+`git diff --check` passed. A real isolated-dev probe reached the configured
+Spaces endpoint directly and received sanitized HTTP 403, so the stored Spaces
+pair still needs replacement and no cloud backup/restore acceptance is claimed.
+
+Commit `0ab3365` is pushed to `origin/main`. Next task: enter a valid Spaces S3
+access-key/secret-key pair with bucket read/write/delete permissions in the dev
+UI, then repeat the real backup, exact restore, comparison, health and cleanup
+drill without provisioning a server merely to verify the destination.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

@@ -4549,3 +4549,58 @@ release acceptance. The next task remains replacing the stored pair through
 the dev UI with a Spaces S3 key that has read/write/delete access to
 `builder-backup`, then repeating backup, exact restore, restored-data
 comparison and post-restore health verification.
+
+## Serverless backup destination verification — 2026-09-16
+
+### Responsibility problem and boundary
+
+The previous destination check coupled storage credential verification to an
+active managed website, its server connection and remote Restic installation.
+That made a storage setup check unavailable until unrelated infrastructure had
+already been provisioned, and the check also initialized a real Restic
+repository as a side effect.
+
+Commit `0ab3365` (`feat: verify backup destinations without servers`) moves the
+storage-specific responsibility into `S3CompatibleStorageProbe`. It creates a
+0600 local temporary file, sends its marker through signed HTTPS S3-compatible
+`PUT`, `GET` and `DELETE` requests under a generated connection-test key, and
+removes the local file in all outcomes. `TestBackupDestinationAction` remains
+responsible for recording verification state and sanitized errors. The
+controller, request and policy retain the existing authorization and response
+boundary; the page no longer asks for a website or server.
+
+### Preserved contracts and intentional change
+
+- Existing route names, redirect responses, flash messages, authorization,
+  encrypted credential fields and `last_verified_at`/`last_error` state are
+  unchanged.
+- Failed probes attempt remote cleanup after a successful write and never
+  include response bodies or credential material in the recorded error.
+- Real backup and restore jobs still use the existing per-website Restic
+  repository on a managed server; this change only removes that dependency
+  from connection verification. The first actual backup remains responsible
+  for initializing its encrypted repository.
+- No schema, API, YAML or queued-job serialization contract changed.
+
+### Verification evidence
+
+- Destination-focused coverage: **9 passed / 43 assertions**.
+- Related backup, restore, recovery-evidence and acceptance coverage after the
+  final hardening: **28 passed / 241 assertions**.
+- Exact committed-tree strict PHP suite: **1,544 passed / 12,956 assertions**
+  with no errors, failures, risky tests or deprecations.
+- Full Pint, changed-file PHP lint and `git diff --check`: passed.
+- The isolated dev destination probe reached the configured Spaces endpoint
+  directly without selecting a website or server and returned a sanitized
+  HTTP 403. The destination remains unverified; no backup or restore evidence
+  is claimed because the stored Spaces pair still lacks valid access or
+  permissions.
+
+### Commit and exact next task
+
+Implementation commit `0ab3365` was pushed to `origin/main`. The next task is
+to enter a valid Spaces S3 access-key/secret-key pair with read/write/delete
+access to the configured bucket through the dev UI, then run the real backup,
+exact restore, restored-data comparison, post-restore health check and cleanup
+drill. That external acceptance remains separate from this locally verified
+serverless connection check.
