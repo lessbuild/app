@@ -5,10 +5,13 @@ namespace App\Actions\Backup;
 use App\Models\BackupDestination;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\BackupDestinationCatalog;
 use Illuminate\Support\Str;
 
 class CreateBackupDestinationAction
 {
+    public function __construct(private readonly BackupDestinationCatalog $destinations) {}
+
     /**
      * Persist an encrypted destination and its generated repository password for a workspace.
      *
@@ -16,6 +19,8 @@ class CreateBackupDestinationAction
      */
     public function handle(Organization $organization, User $actor, array $attributes): BackupDestination
     {
+        $attributes = $this->destinations->normalize($attributes);
+
         return $organization->backupDestinations()->create([
             ...$attributes,
             'created_by' => $actor->id,

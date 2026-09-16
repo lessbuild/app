@@ -32,13 +32,16 @@ class Handler extends ExceptionHandler
 
     /**
      * A list of the inputs that are never flashed to the session on validation exceptions.
+     * This includes backup credentials because Laravel applies this list at the exception boundary.
      *
      * @var array<int, string>
      */
     protected $dontFlash = [
+        'access_key',
         'current_password',
         'password',
         'password_confirmation',
+        'secret_key',
         'token',
     ];
 

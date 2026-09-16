@@ -9,18 +9,25 @@ use App\Actions\Backup\QueueWebsiteBackupAction;
 use App\Actions\Backup\RequestWebsiteBackupRestoreAction;
 use App\Actions\Backup\RequestWebsiteBackupVerificationAction;
 use App\Actions\Backup\SaveBackupScheduleAction;
+use App\Actions\Backup\TestBackupDestinationAction;
+use App\Actions\Backup\UpdateBackupDestinationAction;
+use App\Exceptions\BackupDestinationConnectionException;
 use App\Exceptions\BackupDestinationInUseException;
+use App\Exceptions\BackupDestinationUpdateException;
 use App\Exceptions\BackupRestoreException;
 use App\Http\Requests\RestoreWebsiteBackupRequest;
 use App\Http\Requests\RunWebsiteBackupRequest;
 use App\Http\Requests\StoreBackupDestinationRequest;
 use App\Http\Requests\StoreBackupScheduleRequest;
+use App\Http\Requests\TestBackupDestinationRequest;
+use App\Http\Requests\UpdateBackupDestinationRequest;
 use App\Http\Requests\VerifyWebsiteBackupRequest;
 use App\Models\BackupDestination;
 use App\Models\Organization;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
+use App\Services\BackupDestinationCatalog;
 use App\Services\BackupRecoveryEvidenceQuery;
 use App\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
@@ -35,6 +42,7 @@ class BackupController extends Controller
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly BackupRecoveryEvidenceQuery $recoveryEvidence,
+        private readonly BackupDestinationCatalog $destinationCatalog,
     ) {}
 
     /**
@@ -48,9 +56,11 @@ class BackupController extends Controller
 
         return view('backups.index', [
             'destinations' => $organization->backupDestinations()->latest()->get(),
-            'websites' => $organization->websites()->with(['backupSchedules.destination'])->orderBy('name')->get(),
+            'websites' => $organization->websites()->with(['backupSchedules.destination', 'server'])->orderBy('name')->get(),
             'backups' => $backups,
             'recoverySummary' => $recoverySummary,
+            'destinationCatalog' => $this->destinationCatalog,
+            'destinationPresets' => $this->destinationCatalog->all(),
             'canManage' => $organization->permits($request->user(), 'manage'),
         ]);
     }
@@ -68,6 +78,40 @@ class BackupController extends Controller
         $createDestination->handle($organization, $request->user(), $request->validated());
 
         return back()->with('success', __('Encrypted backup destination created.'));
+    }
+
+    /**
+     * Validate editable destination details and preserve retained snapshot locations while rotating its connection.
+     *
+     * @return RedirectResponse The unverified updated destination, or the existing safety rejection.
+     */
+    public function updateDestination(UpdateBackupDestinationRequest $request, BackupDestination $destination, UpdateBackupDestinationAction $updateDestination): RedirectResponse
+    {
+        $this->authorize('update', $destination);
+        try {
+            $updateDestination->handle($destination, $request->validated());
+        } catch (BackupDestinationUpdateException $exception) {
+            return back()->with('error', __($exception->getMessage()));
+        }
+
+        return back()->with('success', __('Backup destination updated. Verify it before the next backup.'));
+    }
+
+    /**
+     * Verify a destination through a selected active website server and initialize its empty Restic repository when needed.
+     */
+    public function testDestination(TestBackupDestinationRequest $request, BackupDestination $destination, TestBackupDestinationAction $testDestination): RedirectResponse
+    {
+        $this->authorize('test', $destination);
+        $organization = $request->user()->currentOrganization;
+        $website = $organization->websites()->with('server')->findOrFail($request->validated('website_id'));
+        try {
+            $testDestination->handle($destination, $website);
+        } catch (BackupDestinationConnectionException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', __('Backup destination verified and ready for backups.'));
     }
 
     /**

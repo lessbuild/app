@@ -31,4 +31,10 @@ class BackupDestination extends Model
     {
         return $this->hasMany(WebsiteBackupSchedule::class);
     }
+
+    /** @return HasMany<WebsiteBackup, $this> */
+    public function backups(): HasMany
+    {
+        return $this->hasMany(WebsiteBackup::class, 'backup_destination_id');
+    }
 }

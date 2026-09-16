@@ -8,16 +8,37 @@
             <div class="flex items-start justify-between gap-4"><div><h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p></div><span class="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary">{{ $destinations->count() }}</span></div>
             <div class="mt-4 space-y-3">
                 @forelse($destinations as $destination)
-                    <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-4"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $destination->name }}</p><p class="truncate text-xs text-secondary">{{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}</p>@if($destination->last_error)<p class="mt-1 text-xs text-red-700">{{ $destination->last_error }}</p>@endif</div>@if($canManage)<form method="POST" action="{{ route('backups.destinations.destroy', $destination) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete') }}</button></form>@endif</div>
+                    <article class="rounded-xl border border-primary bg-secondary p-4">
+                        <div class="flex items-start gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $destination->name }}</p><p class="truncate text-xs text-secondary">{{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}</p>@if($destination->last_error)<p class="mt-1 text-xs text-red-700">{{ $destination->last_error }}</p>@endif</div>@if($canManage)<form method="POST" action="{{ route('backups.destinations.destroy', $destination) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete') }}</button></form>@endif</div>
+                        @if($canManage)
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Edit connection') }}</summary>
+                                    @include('backups._destination-form', ['action' => route('backups.destinations.update', $destination), 'formId' => 'edit-destination-'.$destination->id, 'submitLabel' => __('Save connection'), 'destination' => $destination])
+                                </details>
+                                @if($websites->isNotEmpty())
+                                    <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
+                                        <div class="mt-3 space-y-2">
+                                            <p class="max-w-md text-xs text-secondary">{{ __('Verification runs from an active website server. It checks the credentials and initializes an empty Restic repository when this destination has not been used before.') }}</p>
+                                            @foreach($websites as $website)
+                                                @if($website->server)
+                                                    <form method="POST" action="{{ route('backups.destinations.test', $destination) }}" class="flex items-center gap-2">@csrf<input type="hidden" name="website_id" value="{{ $website->id }}"><span class="min-w-0 flex-1 truncate text-sm text-primary">{{ $website->name }}</span><button type="submit" class="button secondary">{{ __('Verify') }}</button></form>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </details>
+                                @else
+                                    <span class="self-center text-xs text-secondary">{{ __('Add an active website to verify this destination.') }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    </article>
                 @empty
                     <div class="rounded-xl border border-dashed border-primary p-4 text-sm text-secondary">{{ __('Add an offsite destination to begin.') }}</div>
                 @endforelse
             </div>
             @if($canManage)
                 <details class="mt-4 rounded-xl border border-primary bg-secondary p-4"><summary class="cursor-pointer font-bold text-primary">{{ __('Add destination') }}</summary>
-                    <form method="POST" action="{{ route('backups.destinations.store') }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf
-                        <input name="name" placeholder="Offsite backups" class="input secondary rounded-sm" required><input type="url" name="endpoint" placeholder="https://s3.example.com" class="input secondary rounded-sm" required><input name="bucket" placeholder="my-backups" class="input secondary rounded-sm" required><input name="region" value="us-east-1" class="input secondary rounded-sm" required><input name="access_key" placeholder="Access key" autocomplete="off" class="input secondary rounded-sm" required><input type="password" name="secret_key" placeholder="Secret key" autocomplete="new-password" class="input secondary rounded-sm" required><input name="path_prefix" value="buildpusher" class="input secondary rounded-sm sm:col-span-2" required><button type="submit" class="button primary sm:col-span-2">{{ __('Create encrypted destination') }}</button>
-                    </form>
+                    @include('backups._destination-form', ['action' => route('backups.destinations.store'), 'formId' => 'new-destination', 'submitLabel' => __('Create encrypted destination'), 'destination' => null])
                 </details>
             @endif
         </section>

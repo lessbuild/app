@@ -23,4 +23,18 @@ class BackupDestinationPolicy
         return (int) $destination->organization_id === (int) $user->current_organization_id
             && ($destination->organization?->permits($user, 'manage') ?? false);
     }
+
+    /** Allow a manager in the selected workspace to verify a destination through an owned website. */
+    public function test(User $user, BackupDestination $destination): bool
+    {
+        return (int) $destination->organization_id === (int) $user->current_organization_id
+            && ($destination->organization?->permits($user, 'manage') ?? false);
+    }
+
+    /** Allow a manager in the selected workspace to rotate credentials or connection details. */
+    public function update(User $user, BackupDestination $destination): bool
+    {
+        return (int) $destination->organization_id === (int) $user->current_organization_id
+            && ($destination->organization?->permits($user, 'manage') ?? false);
+    }
 }

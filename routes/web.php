@@ -264,6 +264,8 @@ Route::middleware('auth')->group(function () {
         Route::delete('automation/tokens/{token}', [AutomationController::class, 'destroyToken'])->name('automation.tokens.destroy');
         Route::get('backups', [BackupController::class, 'index'])->name('backups.index');
         Route::post('backups/destinations', [BackupController::class, 'storeDestination'])->name('backups.destinations.store');
+        Route::patch('backups/destinations/{destination}', [BackupController::class, 'updateDestination'])->name('backups.destinations.update');
+        Route::post('backups/destinations/{destination}/test', [BackupController::class, 'testDestination'])->name('backups.destinations.test');
         Route::delete('backups/destinations/{destination}', [BackupController::class, 'destroyDestination'])->name('backups.destinations.destroy');
         Route::post('backups/schedules', [BackupController::class, 'storeSchedule'])->name('backups.schedules.store');
         Route::delete('backups/schedules/{schedule}', [BackupController::class, 'destroySchedule'])->name('backups.schedules.destroy');

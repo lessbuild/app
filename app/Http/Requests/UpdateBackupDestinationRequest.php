@@ -8,25 +8,29 @@ use App\Services\Entitlements;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreBackupDestinationRequest extends FormRequest
+class UpdateBackupDestinationRequest extends FormRequest
 {
     /**
      * Preserve manager and backup-entitlement checks before destination validation.
      */
     public function authorize(): bool
     {
+        $destination = $this->route('destination');
         $user = $this->user();
-        if ($user === null || ! $user->can('create', BackupDestination::class) || $user->currentOrganization === null) {
+        if (! $destination instanceof BackupDestination
+            || $user === null
+            || ! $user->can('update', $destination)
+            || $user->currentOrganization === null) {
             return false;
         }
 
-        app(Entitlements::class)->enforce($user->currentOrganization, 'backups');
+        app(Entitlements::class)->enforce($destination->organization, 'backups');
 
         return true;
     }
 
     /**
-     * Validate the encrypted S3-compatible destination connection.
+     * Validate an editable S3-compatible destination while allowing blank credentials to retain their encrypted values.
      *
      * @return array<string, list<mixed>>
      */
@@ -38,8 +42,8 @@ class StoreBackupDestinationRequest extends FormRequest
             'endpoint' => ['required', 'url:https', 'max:255'],
             'bucket' => ['required', 'string', 'max:63', 'regex:/\A[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]\z/i'],
             'region' => ['required', 'string', 'max:100'],
-            'access_key' => ['required', 'string', 'max:1000'],
-            'secret_key' => ['required', 'string', 'max:1000'],
+            'access_key' => ['nullable', 'string', 'max:1000'],
+            'secret_key' => ['nullable', 'string', 'max:1000'],
             'path_prefix' => ['required', 'string', 'max:200', 'regex:/\A[a-zA-Z0-9._\/\-]+\z/'],
         ];
     }
