@@ -177,15 +177,15 @@ class BackupDestinationSetupTest extends TestCase
     {
         $owner = User::factory()->create();
         $destination = $this->destination($owner);
-        Http::fake(fn () => Http::response('<Error><Code>AccessDenied</Code></Error>', 403));
+        Http::fake(fn () => Http::response('<Error><Code>InvalidAccessKeyId</Code><Message>secret-key was rejected</Message></Error>', 403));
 
         $this->actingAs($owner)->post(route('backups.destinations.test', $destination))
             ->assertSessionHas('error', function (string $message): bool {
-                return str_contains($message, 'HTTP 403') && ! str_contains($message, 'secret-key');
+                return str_contains($message, 'HTTP 403, InvalidAccessKeyId') && ! str_contains($message, 'secret-key');
             });
 
         $updated = $destination->fresh();
-        $this->assertStringContainsString('HTTP 403', (string) $updated->last_error);
+        $this->assertStringContainsString('HTTP 403, InvalidAccessKeyId', (string) $updated->last_error);
         $this->assertStringNotContainsString('secret-key', (string) $updated->last_error);
         $this->assertNull($updated->last_verified_at);
     }

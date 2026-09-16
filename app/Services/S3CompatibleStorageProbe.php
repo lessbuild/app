@@ -237,6 +237,21 @@ class S3CompatibleStorageProbe
             return;
         }
 
-        throw new RuntimeException("Backup destination {$operation} request failed (HTTP {$response->status()}).");
+        $providerCode = $this->providerErrorCode($response);
+        $detail = $providerCode === null ? '' : ", {$providerCode}";
+
+        throw new RuntimeException("Backup destination {$operation} request failed (HTTP {$response->status()}{$detail}).");
+    }
+
+    /**
+     * Extract only the provider's bounded machine-readable error code; never persist its response body.
+     */
+    private function providerErrorCode(Response $response): ?string
+    {
+        if (preg_match('/<Code>\s*([A-Za-z][A-Za-z0-9_-]{0,99})\s*<\/Code>/i', $response->body(), $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[1];
     }
 }
