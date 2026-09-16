@@ -56,7 +56,7 @@
     </div>
     <div class="rounded-lg border border-primary bg-primary p-3 text-sm text-secondary sm:col-span-2">
         <p class="font-bold text-primary">{{ __('Before you save') }}</p>
-        <p class="mt-1">{{ __('Create a Spaces access key in DigitalOcean Spaces, not a regular DigitalOcean API token. After saving, verify this destination against an active website; the first verification initializes an empty encrypted Restic repository.') }}</p>
+        <p class="mt-1">{{ __('Create a Spaces access key in DigitalOcean Spaces, not a regular DigitalOcean API token. After saving, verify this destination; BuildPusher writes, reads, and deletes a temporary object without needing an active website or server. The first real backup initializes the encrypted Restic repository.') }}</p>
         @if($isEdit)
             <p class="mt-1">{{ __('Leave both credential fields blank to retain the encrypted values. Changing the bucket or folder is blocked when retained snapshots already use this destination.') }}</p>
         @endif

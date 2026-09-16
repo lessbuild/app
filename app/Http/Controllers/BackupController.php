@@ -97,16 +97,12 @@ class BackupController extends Controller
         return back()->with('success', __('Backup destination updated. Verify it before the next backup.'));
     }
 
-    /**
-     * Verify a destination through a selected active website server and initialize its empty Restic repository when needed.
-     */
+    /** Verify a destination with a temporary S3-compatible object without requiring a managed website server. */
     public function testDestination(TestBackupDestinationRequest $request, BackupDestination $destination, TestBackupDestinationAction $testDestination): RedirectResponse
     {
         $this->authorize('test', $destination);
-        $organization = $request->user()->currentOrganization;
-        $website = $organization->websites()->with('server')->findOrFail($request->validated('website_id'));
         try {
-            $testDestination->handle($destination, $website);
+            $testDestination->handle($destination);
         } catch (BackupDestinationConnectionException $exception) {
             return back()->with('error', $exception->getMessage());
         }

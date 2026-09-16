@@ -15,20 +15,12 @@
                                 <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Edit connection') }}</summary>
                                     @include('backups._destination-form', ['action' => route('backups.destinations.update', $destination), 'formId' => 'edit-destination-'.$destination->id, 'submitLabel' => __('Save connection'), 'destination' => $destination])
                                 </details>
-                                @if($websites->isNotEmpty())
-                                    <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
-                                        <div class="mt-3 space-y-2">
-                                            <p class="max-w-md text-xs text-secondary">{{ __('Verification runs from an active website server. It checks the credentials and initializes an empty Restic repository when this destination has not been used before.') }}</p>
-                                            @foreach($websites as $website)
-                                                @if($website->server)
-                                                    <form method="POST" action="{{ route('backups.destinations.test', $destination) }}" class="flex items-center gap-2">@csrf<input type="hidden" name="website_id" value="{{ $website->id }}"><span class="min-w-0 flex-1 truncate text-sm text-primary">{{ $website->name }}</span><button type="submit" class="button secondary">{{ __('Verify') }}</button></form>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </details>
-                                @else
-                                    <span class="self-center text-xs text-secondary">{{ __('Add an active website to verify this destination.') }}</span>
-                                @endif
+                                <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
+                                    <div class="mt-3 space-y-2">
+                                        <p class="max-w-md text-xs text-secondary">{{ __('BuildPusher writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.') }}</p>
+                                        <form method="POST" action="{{ route('backups.destinations.test', $destination) }}">@csrf<button type="submit" class="button secondary">{{ __('Verify') }}</button></form>
+                                    </div>
+                                </details>
                             </div>
                         @endif
                     </article>

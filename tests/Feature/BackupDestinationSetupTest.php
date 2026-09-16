@@ -8,12 +8,10 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
-use Mockery;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class BackupDestinationSetupTest extends TestCase
@@ -28,20 +26,22 @@ class BackupDestinationSetupTest extends TestCase
 
     public function test_backup_page_explains_spaces_setup_and_offers_presets(): void
     {
-        [$owner] = $this->infrastructure();
+        $owner = User::factory()->create();
+        $this->destination($owner);
 
         $response = $this->actingAs($owner)->get(route('backups.index'));
 
         $response->assertOk()
             ->assertSee('DigitalOcean Spaces')
             ->assertSee('A DigitalOcean control-plane token is different.')
+            ->assertSee('No active website or server is required.')
             ->assertSee('https://&lt;region&gt;.digitaloceanspaces.com', false)
             ->assertViewHas('destinationPresets');
     }
 
     public function test_spaces_preset_derives_its_endpoint_without_persisting_form_metadata(): void
     {
-        [$owner] = $this->infrastructure();
+        $owner = User::factory()->create();
 
         $this->actingAs($owner)->post(route('backups.destinations.store'), [
             'storage_provider' => 'digitalocean_spaces',
@@ -63,7 +63,7 @@ class BackupDestinationSetupTest extends TestCase
 
     public function test_invalid_destination_credentials_are_not_flashed_on_validation_failure(): void
     {
-        [$owner] = $this->infrastructure();
+        $owner = User::factory()->create();
 
         $response = $this->from(route('backups.index'))->actingAs($owner)->post(route('backups.destinations.store'), [
             'storage_provider' => 'digitalocean_spaces',
@@ -130,53 +130,92 @@ class BackupDestinationSetupTest extends TestCase
         $this->assertSame('buildpusher-backups', $destination->fresh()->bucket);
     }
 
-    public function test_connection_test_initializes_and_records_a_destination(): void
+    public function test_connection_test_writes_reads_and_deletes_a_temporary_object_without_a_server(): void
     {
-        [$owner, $website] = $this->infrastructure();
+        $owner = User::factory()->create();
         $destination = $this->destination($owner);
-        $command = '';
-        $this->app->instance(Runner::class, $this->runner($command));
+        $methods = [];
+        $urls = [];
+        $payload = '';
+        Http::fake(function (HttpRequest $request) use (&$methods, &$urls, &$payload) {
+            $methods[] = $request->method();
+            $urls[] = $request->url();
 
-        $this->actingAs($owner)->post(route('backups.destinations.test', $destination), [
-            'website_id' => $website->id,
-        ])->assertSessionHas('success', 'Backup destination verified and ready for backups.');
+            if ($request->method() === 'PUT') {
+                $payload = $request->body();
+
+                return Http::response('', 200);
+            }
+
+            if ($request->method() === 'GET') {
+                return Http::response($payload, 200);
+            }
+
+            return Http::response('', 204);
+        });
+
+        $this->actingAs($owner)
+            ->post(route('backups.destinations.test', $destination))
+            ->assertSessionHas('success', 'Backup destination verified and ready for backups.');
 
         $this->assertNotNull($destination->fresh()->last_verified_at);
         $this->assertNull($destination->fresh()->last_error);
-        $this->assertStringContainsString('restic init', $command);
-        $this->assertStringContainsString('restic snapshots --json', $command);
+        $this->assertSame(['PUT', 'GET', 'DELETE'], $methods);
+        $this->assertCount(3, $urls);
+        $this->assertSame($urls[0], $urls[1]);
+        $this->assertSame($urls[1], $urls[2]);
+        $this->assertStringContainsString('/buildpusher-backups/buildpusher/connection-tests/', $urls[0]);
+        $this->assertNotSame('', $payload);
+        Http::assertSent(function (HttpRequest $request): bool {
+            return $request->method() === 'PUT'
+                && $request->hasHeader('Authorization')
+                && str_starts_with((string) $request->header('Authorization')[0], 'AWS4-HMAC-SHA256 Credential=access-key/');
+        });
     }
 
     public function test_connection_failure_is_sanitized_and_recorded(): void
     {
-        [$owner, $website] = $this->infrastructure();
+        $owner = User::factory()->create();
         $destination = $this->destination($owner);
-        $process = Mockery::mock(Process::class);
-        $process->shouldReceive('isSuccessful')->once()->andReturnFalse();
-        $process->shouldReceive('getErrorOutput')->once()->andReturn('AWS_SECRET_ACCESS_KEY=secret-key');
-        $process->shouldReceive('getOutput')->zeroOrMoreTimes()->andReturn('');
-        $ssh = Mockery::mock(ManagedSsh::class);
-        $ssh->shouldReceive('execute')->once()->andReturn($process);
-        $runner = Mockery::mock(Runner::class);
-        $runner->shouldReceive('server')->once()->andReturnSelf();
-        $runner->shouldReceive('create')->once()->andReturn($ssh);
-        $this->app->instance(Runner::class, $runner);
+        Http::fake(fn () => Http::response('<Error><Code>AccessDenied</Code></Error>', 403));
 
-        $this->actingAs($owner)->post(route('backups.destinations.test', $destination), [
-            'website_id' => $website->id,
-        ])->assertSessionHas('error', function (string $message): bool {
-            return str_contains($message, '[redacted]') && ! str_contains($message, 'secret-key');
-        });
+        $this->actingAs($owner)->post(route('backups.destinations.test', $destination))
+            ->assertSessionHas('error', function (string $message): bool {
+                return str_contains($message, 'HTTP 403') && ! str_contains($message, 'secret-key');
+            });
 
         $updated = $destination->fresh();
-        $this->assertStringContainsString('[redacted]', (string) $updated->last_error);
+        $this->assertStringContainsString('HTTP 403', (string) $updated->last_error);
         $this->assertStringNotContainsString('secret-key', (string) $updated->last_error);
         $this->assertNull($updated->last_verified_at);
     }
 
+    public function test_connection_failure_cleans_up_the_temporary_object_after_a_read_error(): void
+    {
+        $owner = User::factory()->create();
+        $destination = $this->destination($owner);
+        $methods = [];
+        Http::fake(function (HttpRequest $request) use (&$methods) {
+            $methods[] = $request->method();
+
+            return match ($request->method()) {
+                'PUT' => Http::response('', 200),
+                'GET' => Http::response('', 200),
+                'DELETE' => Http::response('', 204),
+                default => Http::response('', 405),
+            };
+        });
+
+        $this->actingAs($owner)->post(route('backups.destinations.test', $destination))
+            ->assertSessionHas('error', 'Backup destination read verification returned unexpected content.');
+
+        $this->assertSame(['PUT', 'GET', 'DELETE'], $methods);
+        $this->assertNull($destination->fresh()->last_verified_at);
+    }
+
     public function test_non_manager_cannot_edit_or_test_a_destination(): void
     {
-        [$owner, $website] = $this->infrastructure();
+        $owner = User::factory()->create();
         $destination = $this->destination($owner);
         $developer = User::factory()->create(['current_organization_id' => $owner->current_organization_id]);
         $owner->currentOrganization->members()->attach($developer->id, ['role' => 'developer']);
@@ -189,9 +228,7 @@ class BackupDestinationSetupTest extends TestCase
             'region' => $destination->region,
             'path_prefix' => $destination->path_prefix,
         ])->assertForbidden();
-        $this->actingAs($developer)->post(route('backups.destinations.test', $destination), [
-            'website_id' => $website->id,
-        ])->assertForbidden();
+        $this->actingAs($developer)->post(route('backups.destinations.test', $destination))->assertForbidden();
 
         $this->assertSame('Spaces', $destination->fresh()->name);
     }
@@ -226,24 +263,5 @@ class BackupDestinationSetupTest extends TestCase
             'region' => 'lon1', 'access_key' => 'access-key', 'secret_key' => 'secret-key',
             'repository_password' => 'repository-secret', 'path_prefix' => 'buildpusher',
         ]);
-    }
-
-    private function runner(string &$command): Runner
-    {
-        $process = Mockery::mock(Process::class);
-        $process->shouldReceive('isSuccessful')->once()->andReturnTrue();
-        $process->shouldReceive('getOutput')->zeroOrMoreTimes()->andReturn('Backup destination verified.');
-        $process->shouldReceive('getErrorOutput')->zeroOrMoreTimes()->andReturn('');
-        $ssh = Mockery::mock(ManagedSsh::class);
-        $ssh->shouldReceive('execute')->once()->with(Mockery::on(function (string $value) use (&$command): bool {
-            $command = $value;
-
-            return true;
-        }))->andReturn($process);
-        $runner = Mockery::mock(Runner::class);
-        $runner->shouldReceive('server')->once()->andReturnSelf();
-        $runner->shouldReceive('create')->once()->andReturn($ssh);
-
-        return $runner;
     }
 }
