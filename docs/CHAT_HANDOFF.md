@@ -864,6 +864,37 @@ with valid Spaces credentials, then repeat backup, exact restore, restored-data
 comparison, post-restore health and the audit before deleting the next
 disposable target.
 
+## Backup/Spaces setup improvement — 2026-09-16
+
+The isolated `main` runtime implemented and pushed `d0dca6c` (`feat: simplify
+backup destination setup`). The backup destination screen now provides
+DigitalOcean Spaces, Amazon S3, Cloudflare R2 and generic S3-compatible setup
+presets, derives the standard Spaces/Amazon endpoint from the region, and
+explains that Spaces S3 credentials are separate from a DigitalOcean
+control-plane token. The form is shared by create/edit, never repopulates
+credentials, and links to provider setup guidance.
+
+Managers can now edit a destination and explicitly verify it through an active
+managed website. Credential rotation preserves blank fields and the generated
+Restic repository password; active backups and retained-snapshot location
+changes are guarded. Verification reuses the existing runner and Restic
+configuration, initializes an empty repository when needed, records bounded
+sanitized errors, and updates verification state only after success. No schema,
+API, YAML or queued-job contract changed.
+
+Focused backup coverage passed: 22 tests and 188 assertions. Full Pint, PHP
+lint and `git diff --check` passed. The full PHP run recorded 1,468 passing
+tests and 75 unrelated baseline failures; the backup suites passed. The
+isolated asset build could not start because Vite is not installed in that
+checkout, and no asset files changed. No cloud resources or production
+credentials were used.
+
+The next external task remains to enter a valid DigitalOcean Spaces S3
+access-key/secret-key pair in the isolated dev application and repeat real
+backup, restore, restored-data comparison and post-restore health checks. The
+previous control-plane token mismatch means this acceptance is still
+outstanding.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

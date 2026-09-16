@@ -4338,3 +4338,86 @@ replace the destination with valid Spaces credentials, repeat the backup,
 restore and post-restore health portion, and rerun the audit before cleanup.
 Do not claim the release gate as passed until those checks and independent
 restored-data evidence exist.
+
+## Backup destination setup improvement — 2026-09-16
+
+### User problem and responsibility boundaries
+
+The existing backup screen required users to know that a DigitalOcean Spaces
+S3 access key is different from a DigitalOcean control-plane API token, find
+the region-specific S3 endpoint, and discover connection failures only after a
+backup job ran. Destination creation also had no edit or explicit verification
+step.
+
+This slice keeps the HTTP boundary in `BackupController`,
+`StoreBackupDestinationRequest`, `UpdateBackupDestinationRequest` and
+`TestBackupDestinationRequest`. `BackupDestinationPolicy` owns the manager,
+workspace and destination abilities. `BackupDestinationCatalog` and the
+immutable `BackupDestinationPreset` data object own provider setup guidance
+and form-only endpoint derivation. `CreateBackupDestinationAction`,
+`UpdateBackupDestinationAction` and `TestBackupDestinationAction` own
+creation, safe credential rotation and remote verification respectively.
+The shared destination form is used for both creation and editing.
+
+This applies single responsibility and dependency inversion without adding a
+generic repository or provider abstraction. The existing `Runner`,
+`ResticRepository`, encrypted model casts, backup jobs and organization
+scoping remain the integration and persistence foundations.
+
+### Preserved behavior and safety guarantees
+
+- DigitalOcean Spaces, Amazon S3, Cloudflare R2 and generic S3-compatible
+  setup paths are presented without persisting a new provider column or
+  changing YAML, API or queued-job schemas.
+- Spaces and Amazon endpoints can be derived from a validated region; custom
+  S3-compatible endpoints remain explicit. Bucket, prefix, HTTPS and existing
+  validation constraints remain enforced.
+- Access and secret values remain encrypted and are never repopulated into
+  create/edit forms. They are excluded from validation old input at the global
+  exception boundary, including failures before controller execution.
+- Editing with blank credential fields preserves the encrypted values and the
+  generated Restic repository password. Any edit resets verification and
+  requires a fresh check.
+- Active or queued backups block edits. Location changes are blocked when
+  retained snapshots use the destination, preserving snapshot reachability;
+  users are directed to create a new destination.
+- Verification uses an active managed website server, performs the existing
+  Restic availability/repository initialization flow outside a database
+  transaction, records bounded sanitized failure evidence, and records
+  successful verification only after the remote command succeeds.
+- Policy and request checks preserve current-workspace authorization,
+  organization-scoped website selection, backup entitlements and no-write
+  behavior for denied actors.
+
+### Verification evidence
+
+- Focused destination, managed-backup, recovery-evidence and restore-
+  verification suite: **22 passed / 188 assertions**.
+- Full Pint: passed.
+- PHP lint for all changed PHP files: passed.
+- `git diff --check`: passed.
+- Backup route listing: passed; the update and verification routes are
+  registered under the existing authenticated web boundary.
+- Full PHP suite: **1,468 passed / 12,575 assertions; 75 failed**. The
+  failures are existing isolated-suite baseline findings concentrated in
+  testing-environment cache configuration, rate-limit-sensitive account and
+  security tests, recipe feedback, troubleshooting HTTP/transport, social
+  authentication and two-factor flows. The four backup-related suites passed
+  within that run; no unrelated failures were changed for this slice.
+- `npm run build` was attempted in the isolated checkout but could not start
+  because `node_modules/.bin/vite` is absent. No asset files were changed.
+- No cloud resources, production credentials or acceptance-drill checkout
+  were used.
+
+### Commit and next task
+
+- Implementation commit `d0dca6c` (`feat: simplify backup destination
+  setup`) was pushed to `origin/main`.
+- This documentation update is the next cohesive commit and will be pushed
+  separately as required.
+- Local implementation is complete. The next task is the separately
+  authorized dev/provider acceptance: enter a valid DigitalOcean Spaces
+  access-key/secret-key pair in the isolated dev application, run a real
+  backup and restore verification, and record the result. The prior
+  control-plane token failure means that external acceptance remains
+  outstanding; local tests do not establish it.
