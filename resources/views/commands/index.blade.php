@@ -5,7 +5,8 @@
         :description="__('Review command activity across every server without exposing command text or retained output.')"
     />
 
-    <form method="GET" action="{{ route('commands.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4">
+        <form method="GET" action="{{ route('commands.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <div>
                 <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
@@ -49,19 +50,19 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
             @if ($metrics['active'] > 0)
-                <a
-                    href="{{ route('commands.index', [...array_filter($filters, fn ($value) => $value !== null), 'page' => $executions->currentPage()]) }}"
-                    class="button primary"
+                <x-ui.button
+                    :href="route('commands.index', [...array_filter($filters, fn ($value) => $value !== null), 'page' => $executions->currentPage()])"
+                    variant="secondary"
                     aria-describedby="command-refresh-help"
                 >
                     {{ __('Refresh status') }}
-                </a>
+                </x-ui.button>
             @endif
-            <a href="{{ route('commands.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">{{ __('Export CSV') }}</a>
+            <x-ui.button :href="route('commands.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('commands.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('commands.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
         @if ($metrics['active'] > 0)
@@ -69,7 +70,8 @@
                 {{ __('Queued or running commands may change. Refresh to load their latest state.') }}
             </p>
         @endif
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         @foreach ([
@@ -79,18 +81,13 @@
             ['label' => __('Failed'), 'value' => $metrics['failed']],
             ['label' => __('Canceled'), 'value' => $metrics['canceled']],
         ] as $metric)
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ $metric['label'] }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">{{ $metric['value'] }}</dd>
-            </div>
+            <x-ui.stat :label="$metric['label']" :value="$metric['value']" />
         @endforeach
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching') }}</dt>
-            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
-        </div>
+        <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
     </dl>
 
-    <div class="mt-6 overflow-x-auto rounded-lg border border-primary bg-primary">
+    <div class="ui-card mt-6 overflow-hidden">
+        <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-primary">
             <thead class="bg-secondary">
                 <tr>
@@ -107,8 +104,12 @@
                     <tr>
                         <td class="px-4 py-4 text-sm font-medium text-primary">#{{ $execution->id }}</td>
                         <td class="px-4 py-4 text-sm text-primary">{{ $execution->server->label }}</td>
-                        <td class="px-4 py-4 text-xs font-semibold uppercase text-secondary">{{ $execution->status }}</td>
-                        <td class="px-4 py-4 text-xs text-secondary">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</td>
+                        <td class="px-4 py-4">
+                            <x-ui.badge tone="{{ in_array($execution->status, ['succeeded', 'completed'], true) ? 'success' : (in_array($execution->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ $execution->status }}</x-ui.badge>
+                        </td>
+                        <td class="px-4 py-4 text-xs text-secondary">
+                            <x-ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-ui.badge>
+                        </td>
                         <td class="px-4 py-4 text-xs text-secondary">
                             <span class="block">{{ __('Queued :time', ['time' => $execution->created_at->diffForHumans()]) }}</span>
                             @if ($execution->started_at)
@@ -120,9 +121,9 @@
                             <span class="mt-1 block">{{ __('Duration: :duration', ['duration' => $execution->durationLabel() ?? __('Not recorded')]) }}</span>
                         </td>
                         <td class="px-4 py-4 text-right">
-                            <a href="{{ route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id]) }}" class="button primary">
+                            <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary">
                                 {{ __('Open server history') }}
-                            </a>
+                            </x-ui.button>
                         </td>
                     </tr>
                 @empty
@@ -135,6 +136,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="mt-6">{{ $executions->links() }}</div>
