@@ -28,8 +28,13 @@ unit now uses the repository installer's `Restart=always` policy. A real
 Laravel queue-restart signal caused a clean exit and an automatic replacement
 three seconds later; the queue was empty. See
 [the runtime record](verification/dev-worker-restart-2026-09-17.md).
-Next: recheck the exact disposable Spaces repository prefix, then continue
-preview-stack and recovery acceptance.
+The Spaces follow-up is also complete: a correctly signed, prefix-scoped
+listing succeeded with the existing key. The three empty-repository metadata
+objects left by the September 16 drill were explicitly deleted; a fresh listing
+found zero current objects under `buildpusher/websites/10/`. Earlier wording
+blaming key permissions for the diagnostic 403 was not established. See
+[the cleanup record](verification/spaces-drill-cleanup-2026-09-17.md).
+Next: continue preview-stack and recovery acceptance.
 
 ## API access follow-up — 2026-09-14
 
@@ -1110,8 +1115,10 @@ disposable server, website, repository, project and environment records are
 gone; provider inventory shows only the pre-existing droplet; destination `2`
 remains; the queue is empty; and the dev domain still returns HTTP 200.
 
-The Spaces key denied the separate ListObjects diagnostic, so empty Restic
-repository metadata may remain under the exact disposable website prefix. No
+The separate ListObjects diagnostic returned HTTP 403, leaving metadata
+cleanup unverified at this checkpoint. The September 17 follow-up above
+successfully listed and removed the three remaining metadata objects using
+the existing key; the earlier attribution to key permissions was unproven. No
 broader bucket deletion was attempted, and no credentials or raw remote output
 were recorded. This proves one disposable provider deployment/recovery cycle,
 not production, billing, multi-provider, preview-stack, PostgreSQL/Valkey or
@@ -1143,8 +1150,8 @@ review. The local product-expansion scope and authorized disposable provider
 drill are complete. Production mail, independent monitoring/heartbeat
 destinations, GitHub App configuration, billing/SSO, provider-backed preview
 readiness, PostgreSQL/Valkey recovery and other provider-specific acceptance
-remain outstanding. Spaces ListObjects metadata cleanup is also unverified
-because the key denied that diagnostic; no broader deletion was attempted.
+remain outstanding. The then-unverified Spaces metadata cleanup was completed
+on September 17 for the exact drill prefix, as recorded above.
 
 The exact next task is separately authorized release-gate acceptance when the
 remaining integrations and credentials are available.

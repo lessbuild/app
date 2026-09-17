@@ -4738,11 +4738,11 @@ and environment records. Independent verification found provider identifier
 configured Spaces destination was preserved, the queue had no pending jobs,
 and `https://buildpusher.com/` continued to return HTTP 200.
 
-The Spaces key did not permit the separate ListObjects diagnostic used to
-enumerate repository metadata, so this record does not claim that empty Restic
-repository metadata was removed from the exact disposable prefix. No broader
-bucket deletion was attempted. No credentials or raw remote output were
-recorded.
+The separate ListObjects diagnostic returned HTTP 403, so metadata cleanup
+was unverified at this checkpoint. The September 17 follow-up below successfully
+listed and removed the three remaining metadata objects with the existing key;
+the earlier attribution to key permissions was unproven. No broader bucket
+deletion was attempted. No credentials or raw remote output were recorded.
 
 This establishes one disposable provider deployment, rollback, backup, exact
 restore, restored-data comparison, health and cleanup cycle. It does not
@@ -4799,9 +4799,9 @@ complete. No additional local feature slice is justified by the current
 evidence. Remaining release gates are production mail, independent
 monitoring/heartbeat destinations, GitHub App configuration, billing/SSO,
 provider-backed preview readiness, PostgreSQL/Valkey recovery and other
-provider-specific acceptance. The Spaces key also did not permit the separate
-ListObjects metadata diagnostic, so empty Restic metadata under the disposable
-prefix is not claimed removed; no broader bucket deletion was attempted.
+provider-specific acceptance. Spaces metadata cleanup was unverified at this
+checkpoint and was subsequently completed on September 17 for the exact drill
+prefix, as recorded below; no broader bucket deletion was attempted.
 
 Documentation commit `5e76bf0` was pushed to `origin/main`, and canonical
 `main` was fast-forwarded to the same commit. The exact next task is separately
@@ -4847,4 +4847,27 @@ This runtime-only correction and its verification are recorded in
 queue semantics and credentials did not change. The prior complete strict
 suite remains 1,547 tests / 12,962 assertions. The exact next task is to
 recheck the earlier drill's exact disposable Spaces repository prefix, then
-resume preview-stack and recovery acceptance.
+resume preview-stack and recovery acceptance. This runtime record was committed
+and pushed as `7e461a5`, then integrated into canonical `main` and the dev runtime.
+
+## Disposable Spaces metadata cleanup — 2026-09-17
+
+A prefix-scoped ListObjectsV2 request using libcurl signing and the existing
+dev credentials returned HTTP 200. The earlier diagnostic's 403 did not prove
+incorrect credentials or missing permissions; its cause remains undetermined.
+The exact disposable prefix `buildpusher/websites/10/` contained three metadata
+objects totaling 825 bytes, with no snapshot, data or lock objects. Their
+timestamps matched the September 16 drill and the website was already absent.
+
+A fresh inventory had to match the three exact keys, sizes and timestamps
+before deletion. Each explicit deletion returned HTTP 204; a subsequent
+non-truncated listing returned HTTP 200 and zero current objects. No broader
+prefix, configured destination, credentials or server was changed. Historical
+versions and multipart uploads were not inspected or purged, and no recovery
+copy of the empty metadata was retained.
+
+See [the evidence record](spaces-drill-cleanup-2026-09-17.md). This slice changes
+documentation only; the application remains covered by the strict 1,547-test /
+12,962-assertion run and full Pint. After this record is committed and pushed,
+the exact next task is preview-stack acceptance, including PostgreSQL/Valkey
+readiness and cleanup, distinct from the completed generic recovery drill.
