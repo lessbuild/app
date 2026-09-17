@@ -211,6 +211,7 @@ class DeploymentLogTest extends TestCase
         $this->assertStringContainsString('restore_previous_release()', $script);
         $this->assertStringContainsString('ln -sfn -- "$PREVIOUS_RELEASE_PATH" "$rollback_link"', $script);
         $this->assertStringContainsString('mv -Tf -- "$rollback_link" "$DEPLOY_ROOT/current"', $script);
+        $this->assertStringContainsString("systemctl reload 'php8.4-fpm'", $script);
         $this->assertStringContainsString("stop_deployment_log_stream\n    restore_previous_release\n    upload_deployment_log", $script);
         $this->assertSame(4, substr_count($script, 'upload_deployment_log'));
 

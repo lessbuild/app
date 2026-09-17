@@ -65,6 +65,7 @@ class PublishRepositoryAction extends Publishable
         $logUploadFile = escapeshellarg("/tmp/lessbuild-deployment-{$this->build->id}.upload.log");
         $logLimit = max(1, (int) config('lessbuild.deployment_log_max_characters'));
         $processUnitPrefix = escapeshellarg('buildpusher-'.$this->repository->website->deployment_slug.'-');
+        $phpFpmService = escapeshellarg('php'.config('lessbuild.default_php_version', '8.4').'-fpm');
         $this->script = <<<SCRIPT
         #!/bin/bash
         set -Eeuo pipefail
@@ -109,6 +110,8 @@ class PublishRepositoryAction extends Publishable
             rollback_link="\$DEPLOY_ROOT/current.rollback"
             if ln -sfn -- "\$PREVIOUS_RELEASE_PATH" "\$rollback_link" \
                 && mv -Tf -- "\$rollback_link" "\$DEPLOY_ROOT/current"; then
+                # PHP-FPM may retain the failed release through opcache after the symlink changes.
+                systemctl reload {$phpFpmService} 2>/dev/null || true
                 echo "Restored previous release: \$PREVIOUS_RELEASE_PATH"
                 unit_prefix={$processUnitPrefix}
                 for unit_file in /etc/systemd/system/"\$unit_prefix"*.service; do
