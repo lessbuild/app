@@ -314,6 +314,28 @@ class LocalUiAssetTest extends TestCase
         ], true)));
     }
 
+    public function test_mobile_navigation_retains_the_original_direct_destinations(): void
+    {
+        $user = User::factory()->create();
+        $navigation = (new WorkspaceNavigation)->for($user);
+        $items = collect($navigation['mobile']['groups'])
+            ->flatMap(fn (array $group): array => $group['items'])
+            ->merge($navigation['mobile']['profile']);
+
+        $this->assertSame('builds.index', $items->firstWhere('label', 'Deployments')['route']);
+        $this->assertSame('repositories.index', $items->firstWhere('label', 'Repositories')['route']);
+        $this->assertSame('recipes.index', $items->firstWhere('label', 'Recipes')['route']);
+        $this->assertSame('gallery.index', $items->firstWhere('label', 'Gallery')['route']);
+        $this->assertSame('costs.index', $items->firstWhere('label', 'Costs and usage')['route']);
+        $this->assertSame('billing.index', $items->firstWhere('label', 'Billing')['route']);
+        $this->assertSame('#password', $items->firstWhere('label', 'Settings')['anchor']);
+        $this->assertFalse($items->contains(fn (array $item): bool => in_array($item['label'], [
+            'Template library',
+            'Billing and usage',
+            'Account and security',
+        ], true)));
+    }
+
     public function test_merged_sections_keep_related_surfaces_reachable(): void
     {
         $user = User::factory()->create();
@@ -357,37 +379,56 @@ class LocalUiAssetTest extends TestCase
         config(['lessbuild.diagnostics.systemd_timers' => false]);
 
         foreach ([
-            'dashboard' => 'dashboard',
-            'system-health.index' => 'system-health.index',
-            'activity.index' => 'activity.index',
-            'commands.index' => 'commands.index',
-            'websites.index' => 'websites.index',
-            'servers.index' => 'servers.index',
-            'builds.index' => 'projects.index',
-            'repositories.index' => 'projects.index',
-            'notifications.index' => 'notifications.index',
-            'providers.index' => 'providers.index',
-            'recipes.index' => 'recipes.index',
-            'gallery.index' => 'recipes.index',
-            'account.index' => 'account.index',
-            'costs.index' => 'billing.index',
-            'billing.index' => 'billing.index',
-        ] as $routeName => $navigationRouteName) {
-            $url = route($routeName);
-            $navigationUrl = route($navigationRouteName);
-            $html = $this->actingAs($user)->get($url)
-                ->assertSuccessful()
-                ->getContent();
+            'desktop-navigation' => [
+                'dashboard' => 'dashboard',
+                'system-health.index' => 'system-health.index',
+                'activity.index' => 'activity.index',
+                'commands.index' => 'commands.index',
+                'websites.index' => 'websites.index',
+                'servers.index' => 'servers.index',
+                'builds.index' => 'projects.index',
+                'repositories.index' => 'projects.index',
+                'notifications.index' => 'notifications.index',
+                'providers.index' => 'providers.index',
+                'recipes.index' => 'recipes.index',
+                'gallery.index' => 'recipes.index',
+                'account.index' => 'account.index',
+                'costs.index' => 'billing.index',
+                'billing.index' => 'billing.index',
+            ],
+            'primary-navigation' => [
+                'dashboard' => 'dashboard',
+                'system-health.index' => 'system-health.index',
+                'activity.index' => 'activity.index',
+                'commands.index' => 'commands.index',
+                'websites.index' => 'websites.index',
+                'servers.index' => 'servers.index',
+                'builds.index' => 'builds.index',
+                'repositories.index' => 'repositories.index',
+                'notifications.index' => 'notifications.index',
+                'providers.index' => 'providers.index',
+                'recipes.index' => 'recipes.index',
+                'gallery.index' => 'gallery.index',
+                'account.index' => 'account.index',
+                'costs.index' => 'costs.index',
+                'billing.index' => 'billing.index',
+            ],
+        ] as $navigation => $routes) {
+            foreach ($routes as $routeName => $navigationRouteName) {
+                $url = route($routeName);
+                $navigationUrl = route($navigationRouteName);
+                $html = $this->actingAs($user)->get($url)
+                    ->assertSuccessful()
+                    ->getContent();
 
-            $this->assertMatchesRegularExpression(
-                '/<a href="'.preg_quote($navigationUrl, '/').'"[^>]*aria-current="page"[^>]*>/s',
-                $html,
-                "The {$routeName} route did not mark its {$navigationRouteName} navigation link as current.",
-            );
-            $dom = new \DOMDocument;
-            @$dom->loadHTML($html);
-            $xpath = new \DOMXPath($dom);
-            foreach (['desktop-navigation', 'primary-navigation'] as $navigation) {
+                $this->assertMatchesRegularExpression(
+                    '/<a href="'.preg_quote($navigationUrl, '/').'"[^>]*aria-current="page"[^>]*>/s',
+                    $html,
+                    "The {$routeName} route did not mark its {$navigationRouteName} navigation link as current.",
+                );
+                $dom = new \DOMDocument;
+                @$dom->loadHTML($html);
+                $xpath = new \DOMXPath($dom);
                 $current = $xpath->query('//*[@id="'.$navigation.'"]//a[@aria-current="page"]');
                 $this->assertCount(1, $current, "The {$navigation} menu must mark exactly one current destination.");
                 $this->assertSame($navigationUrl, $current->item(0)->getAttribute('href'));

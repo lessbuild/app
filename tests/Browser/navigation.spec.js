@@ -28,12 +28,19 @@ for (const viewport of viewports) {
         await expect(navigation.getByRole('link', { name: 'Applications', exact: true })).toBeVisible();
         if (viewport.width < 1024) {
             await navigation.locator('summary').filter({ hasText: 'Templates' }).click();
-        }
-        await expect(navigation.getByRole('link', { name: 'Template library', exact: true })).toBeVisible();
-        await expect(navigation.getByRole('link', { name: 'Billing and usage', exact: true })).toBeVisible();
-        await expect(navigation.getByRole('link', { name: 'Account and security', exact: true })).toBeVisible();
-        for (const mergedLink of ['Deployments', 'Repositories', 'Recipes', 'Gallery', 'Billing', 'Costs and usage', 'Settings']) {
-            await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
+            for (const mobileLink of ['Deployments', 'Repositories', 'Recipes', 'Gallery', 'Billing', 'Costs and usage', 'Account', 'Settings']) {
+                await expect(navigation.getByRole('link', { name: mobileLink, exact: true })).toBeVisible();
+            }
+            for (const mergedLink of ['Template library', 'Billing and usage', 'Account and security']) {
+                await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
+            }
+        } else {
+            await expect(navigation.getByRole('link', { name: 'Template library', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('link', { name: 'Billing and usage', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('link', { name: 'Account and security', exact: true })).toBeVisible();
+            for (const mergedLink of ['Deployments', 'Repositories', 'Recipes', 'Gallery', 'Billing', 'Costs and usage', 'Settings']) {
+                await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
+            }
         }
         await expect(navigation.getByRole('navigation', { name: 'Build and release', exact: true })).toBeVisible();
         await expect(navigation.getByRole('navigation', { name: 'Workspace', exact: true })).toBeVisible();

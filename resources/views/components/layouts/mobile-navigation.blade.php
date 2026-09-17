@@ -30,7 +30,7 @@
         </a>
 
         <div class="space-y-2">
-            @foreach ($navigation['groups'] ?? [] as $group)
+            @foreach ($navigation['mobile']['groups'] ?? $navigation['groups'] ?? [] as $group)
                 @php($groupActive = collect($group['items'])->contains(fn (array $item): bool => ($item['active'] ?? []) !== [] && request()->routeIs(...$item['active'])) )
                 <details class="overflow-hidden rounded-xl border border-primary bg-primary" @if ($group['mobile_expanded'] || $groupActive) open @endif>
                     <summary class="flex min-h-[46px] cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-primary [&::-webkit-details-marker]:hidden">
@@ -64,7 +64,7 @@
                 <svg class="ui-nav-chevron h-4 w-4 shrink-0 stroke-2 text-secondary" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
             </summary>
             <nav class="grid grid-cols-2 gap-2 border-t border-primary p-2" aria-label="{{ __('Workspace') }}">
-                @foreach ($navigation['profile'] ?? [] as $item)
+                @foreach ($navigation['mobile']['profile'] ?? $navigation['profile'] ?? [] as $item)
                     <x-layouts.partials.navigation-link :item="$item" mobile />
                 @endforeach
             </nav>

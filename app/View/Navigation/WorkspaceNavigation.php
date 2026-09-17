@@ -18,6 +18,10 @@ final class WorkspaceNavigation
      *     groups: list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>,
      *     support: list<array<string, mixed>>,
      *     profile: list<array<string, mixed>>,
+     *     mobile: array{
+     *         groups: list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>,
+     *         profile: list<array<string, mixed>>,
+     *     },
      *     unread_notifications: int,
      * }
      */
@@ -79,19 +83,62 @@ final class WorkspaceNavigation
             $groups[] = $this->group(__('Administration'), $administrationItems);
         }
 
+        $profile = [
+            $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
+            $this->item(__('Billing and usage'), 'billing.index', 'information-circle', ['billing.*', 'costs.*']),
+            $this->item(__('Account and security'), 'account.index', 'user-circle', ['account.*']),
+        ];
+
+        $mobileProfile = [
+            $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
+            $this->item(__('Costs and usage'), 'costs.index', 'chip', ['costs.*']),
+            $this->item(__('Billing'), 'billing.index', 'information-circle', ['billing.*']),
+            $this->item(__('Account'), 'account.index', 'user-circle', ['account.*']),
+            $this->item(__('Settings'), 'account.index', 'cog', [], null, '#password'),
+        ];
+
         return [
             'groups' => $groups,
             'support' => [
                 $this->item(__('Help and guides'), 'docs', 'information-circle', ['docs']),
                 $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']),
             ],
-            'profile' => [
-                $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
-                $this->item(__('Billing and usage'), 'billing.index', 'information-circle', ['billing.*', 'costs.*']),
-                $this->item(__('Account and security'), 'account.index', 'user-circle', ['account.*']),
+            'profile' => $profile,
+            'mobile' => [
+                'groups' => $this->mobileGroups($groups),
+                'profile' => $mobileProfile,
             ],
             'unread_notifications' => $unreadNotifications,
         ];
+    }
+
+    /**
+     * Restore the mobile menu's direct destinations while keeping the desktop
+     * sidebar's consolidated sections.
+     *
+     * @param  list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>  $groups
+     * @return list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>
+     */
+    private function mobileGroups(array $groups): array
+    {
+        foreach ($groups as $index => $group) {
+            if ($group['label'] === __('Build and release')) {
+                $groups[$index] = $this->group(__('Build and release'), [
+                    $this->item(__('Applications'), 'projects.index', 'view-grid', ['projects.*', 'environments.*']),
+                    $this->item(__('Deployments'), 'builds.index', 'cloud-upload', ['builds.*']),
+                    $this->item(__('Repositories'), 'repositories.index', 'code', ['repositories.*']),
+                ], true);
+            }
+
+            if ($group['label'] === __('Templates')) {
+                $groups[$index] = $this->group(__('Templates'), [
+                    $this->item(__('Recipes'), 'recipes.index', 'terminal', ['recipes.*']),
+                    $this->item(__('Gallery'), 'gallery.index', 'view-grid', ['gallery.*']),
+                ]);
+            }
+        }
+
+        return $groups;
     }
 
     /**
