@@ -136,6 +136,7 @@ removing or renaming existing routes.
 | Phase 5A: reporting and automation | Complete | Activity, command lifecycle and automation coverage: 69 tests / 466 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4233ad9` and `763223d` pushed to `origin/main` | Modernize observability and environment investigation |
 | Phase 5B: observability and investigation | Complete | Observability, incident, status and environment-context coverage: 40 tests / 291 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `1e60a90` pushed to `origin/main` | Modernize notifications, cost visibility and account administration |
 | Phase 5C: notifications and cost visibility | Complete | Notification, bulk-action, inbox, incident, recipe-notification and cost coverage: 47 tests / 356 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `a961903` and `91b7e7e` pushed to `origin/main` | Modernize account, workspace and administration pages |
+| Phase 6A: workspace, account and administration surfaces | Complete | Workspace, billing, access-request, analytics and account security matrix: 140 tests / 891 assertions; view cache; Pint; Vite build; 7/9 responsive asset fixtures passed, with the two 390px screenshots ending in browser target/artifact crashes; diff check | `ef63629` pushed to `origin/main` | Modernize templates, gallery, reports, feedback and remaining product pages |
 
 ## Phase 1 record — shared visual system
 
@@ -175,6 +176,56 @@ not changed. No production runtime, credentials or cloud resources were used.
   responsive fixture widths plus provider submission with JavaScript disabled.
 - `npm run build` — passed with the updated Vite bundle.
 - `git diff --check` — passed.
+
+## Phase 6A record — workspace, account and administration surfaces
+
+### Responsibility problem
+
+Workspace membership, security policy, billing, account recovery, sign-in
+history and platform administration were visually inconsistent with the newer
+operational pages. Dense inline security forms also made destructive actions,
+credential prompts and workspace boundaries harder to scan on smaller screens.
+
+### Boundaries and benefit
+
+- Existing controllers, policies, Form Requests, named error bags, session
+  flows and billing/provider boundaries remain unchanged; the work stays in the
+  presentation layer.
+- Workspace administration now separates members, security policy, SSO,
+  notification preferences, invitations, workspace switching and deletion
+  into clearly labeled responsive sections.
+- Account security uses shared semantic alerts, cards, badges and action
+  variants for verification, passwords, 2FA, sessions, connected providers,
+  sign-in history, export and deletion. Sensitive inputs remain password or
+  one-time-code fields and are not copied into new UI state.
+- Billing, access-request review, analytics and full sign-in history now share
+  the same metric/card/status vocabulary. A reusable `x-ui.alert` component
+  was added for consistent semantic feedback without adding business logic.
+
+### Preserved contracts
+
+All routes, response behavior, validation names, named error bags, flash text,
+authorization and entitlement decisions, invitation/member pivot behavior,
+Stripe interactions, account/session/2FA semantics and secret-safe rendering
+remain unchanged. No database writes, queue dispatches, remote calls or
+production credentials were introduced.
+
+### Verification
+
+- Workspace, billing, access-request and platform analytics matrix — **45
+  passed, 234 assertions**.
+- Account, security activity, sign-in, session, social, 2FA, verification and
+  password-confirmation matrix — **95 passed, 657 assertions**.
+- Combined focused evidence — **140 passed, 891 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite — **7 passed, 2 incomplete due browser target or
+  artifact crashes at the 390px screenshot step**; 320px, 768px, 1440px and
+  the no-JavaScript provider submission passed. This is recorded as incomplete
+  browser evidence, not a passing claim or an application assertion failure.
+- `git diff --check` — passed.
+- Commit `ef63629` pushed to `origin/main`.
 
 ## Phase 3C record — builds and deployment status
 
