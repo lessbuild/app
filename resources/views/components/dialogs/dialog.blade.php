@@ -25,12 +25,12 @@
                         </div>
                     </div>
                     <div class="bg-tertiary px-4 py-3 sm:px-6 space-x-2 flex justify-end">
-                        <button type="button" class="button primary" onclick="this.closest('dialog').close('cancel')">
+                        <x-ui.button type="button" variant="secondary" onclick="this.closest('dialog').close('cancel')">
                             Cancel
-                        </button>
-                        <button type="submit" class="button danger">
+                        </x-ui.button>
+                        <x-ui.button type="submit" variant="danger">
                             Delete
-                        </button>
+                        </x-ui.button>
                     </div>
                 </form>
             </div>

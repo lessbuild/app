@@ -1,13 +1,25 @@
 .button {
-    @apply rounded-sm;
+    @apply rounded-lg;
     @apply text-xs;
     @apply font-medium;
     @apply inline-flex;
     @apply items-center;
     @apply justify-center;
+    @apply gap-2;
     @apply border;
     @apply px-3;
     @apply py-2;
+    min-height: 2.5rem;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+    }
+
+    &:hover:not(:disabled) {
+        box-shadow: 0 2px 8px rgb(15 23 42 / 0.1);
+    }
 
     &.primary {
         @apply bg-primary;
@@ -37,6 +49,52 @@
         @apply bg-red-500;
         @apply text-white;
         @apply border-red-700;
+    }
+
+    /* Semantic variants for new and migrated views. Keep the historical
+       primary/secondary/ternary classes above for incremental compatibility. */
+    &.button--primary {
+        background-color: var(--ui-accent);
+        border-color: var(--ui-accent);
+        color: white;
+    }
+
+    &.button--primary:hover:not(:disabled) {
+        background-color: var(--ui-accent-hover);
+        border-color: var(--ui-accent-hover);
+    }
+
+    &.button--secondary {
+        background-color: var(--ui-surface);
+        border-color: var(--ui-border-strong);
+        color: var(--ui-text);
+    }
+
+    &.button--secondary:hover:not(:disabled),
+    &.button--ghost:hover:not(:disabled) {
+        background-color: var(--ui-surface-muted);
+    }
+
+    &.button--ghost {
+        background-color: transparent;
+        border-color: transparent;
+        color: var(--ui-text-muted);
+    }
+
+    &.button--danger {
+        background-color: var(--ui-danger);
+        border-color: var(--ui-danger);
+        color: white;
+    }
+
+    &.button--danger:hover:not(:disabled) {
+        filter: brightness(0.92);
+    }
+
+    &.button--inverse {
+        background-color: var(--ui-surface-inverse);
+        border-color: var(--ui-surface-inverse);
+        color: white;
     }
 
 }

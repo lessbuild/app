@@ -1,15 +1,15 @@
 <div class="px-3">
-    <div class="w-full bg-primary border-primary border text-blue-400 rounded-lg flex items-center p-6 mb-6 xl:mb-0">
-        <svg class="w-16 h-16 fill-current mr-4 hidden lg:block">
+    <x-ui.card class="ui-stat flex w-full items-center gap-4 p-5 text-blue-400" tone="default">
+        <svg class="hidden h-12 w-12 shrink-0 fill-current lg:block" aria-hidden="true">
             <use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use>
         </svg>
-        <div>
-            <p class="font-semibold text-3xl text-primary">
+        <div class="min-w-0">
+            <p class="ui-stat__value">
                 {{ $title }}
             </p>
-            <p class="text-secondary">
+            <p class="ui-stat__label">
                 {{ $description }}
             </p>
         </div>
-    </div>
+    </x-ui.card>
 </div>

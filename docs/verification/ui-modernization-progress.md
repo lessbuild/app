@@ -124,7 +124,47 @@ removing or renaming existing routes.
 
 | Slice | Status | Tests | Commit / push | Next task |
 | --- | --- | --- | --- | --- |
-| Phase 0: inventory and fresh baseline | Complete | 1,556 PHP tests / 13,004 assertions; Pint; asset build; 9 asset-layout tests; 6 accessibility/visual tests | Pending commit and push | Add semantic design tokens and shared Blade UI primitives |
+| Phase 0: inventory and fresh baseline | Complete | 1,556 PHP tests / 13,004 assertions; Pint; asset build; 9 asset-layout tests; 6 accessibility/visual tests | `2c43276` pushed to `origin/main` | Add semantic design tokens and shared Blade UI primitives |
+| Phase 1: shared visual system | Complete | Blade view cache; Pint; diff check; Vite build; 9 asset-layout tests including mobile, tablet, desktop, dark mode and no-JS provider submission | Pending commit and push | Consolidate desktop/mobile navigation into grouped workspace IA |
+
+## Phase 1 record — shared visual system
+
+### Responsibility problem
+
+Pages were independently choosing headings, breadcrumbs, cards, empty states,
+alerts, buttons, radii and focus behavior. That made the interface feel like a
+collection of feature-specific screens and made responsive/accessibility fixes
+hard to apply consistently.
+
+### Boundaries and benefit
+
+- Semantic color, surface, border, text, status and focus tokens live in the
+  theme, while the established `bg-*`, `text-*` and border aliases remain
+  available for incremental migration.
+- Presentation-only `x-ui` components provide page headers, buttons, cards,
+  badges and empty states. They do not contain authorization, persistence or
+  business rules, keeping the view layer focused on presentation.
+- Shared heading, breadcrumb, stat, alert, form-section and empty-list partials
+  now consume the same visual primitives. Destructive dialogs use the semantic
+  button component, and the applications index uses the shared badge.
+- Buttons have visible keyboard focus, 40px minimum touch height, disabled
+  treatment and reduced-motion-safe transitions. Existing button class names
+  remain compatible while their visual migration is staged.
+
+### Preserved contracts
+
+Routes, controllers, Livewire behavior, authorization, validation, flash text,
+named error bags, response formats, persisted values and queued operations were
+not changed. No production runtime, credentials or cloud resources were used.
+
+### Verification
+
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run test:assets` — **9 passed**, including four light and four dark
+  responsive fixture widths plus provider submission with JavaScript disabled.
+- `npm run build` — passed with the updated Vite bundle.
+- `git diff --check` — passed.
 
 ## Remaining external scope
 

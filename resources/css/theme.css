@@ -84,6 +84,35 @@
     --placeholder-ternary: var(--color-blue-600);
     --border-ternary: var(--color-blue-700);
     --divide-ternary: var(--color-blue-700);
+
+    /* Semantic UI tokens for new and migrated views. Legacy aliases above
+       remain unchanged so existing pages can move incrementally. */
+    --ui-surface: var(--color-gray-800);
+    --ui-surface-muted: var(--color-gray-700);
+    --ui-surface-subtle: var(--color-gray-600);
+    --ui-surface-inverse: var(--color-gray-900);
+    --ui-border: var(--color-gray-600);
+    --ui-border-strong: var(--color-gray-500);
+    --ui-text: var(--color-gray-100);
+    --ui-text-muted: var(--color-gray-300);
+    --ui-text-subtle: var(--color-gray-400);
+    --ui-accent: var(--color-blue-400);
+    --ui-accent-hover: var(--color-blue-300);
+    --ui-accent-soft: var(--color-blue-900);
+    --ui-accent-text: var(--color-blue-300);
+    --ui-focus: var(--color-blue-400);
+    --ui-success: #86efac;
+    --ui-success-soft: #14532d;
+    --ui-success-text: #bbf7d0;
+    --ui-warning: #fbbf24;
+    --ui-warning-soft: #78350f;
+    --ui-warning-text: #fde68a;
+    --ui-danger: #fca5a5;
+    --ui-danger-soft: #7f1d1d;
+    --ui-danger-text: #fecaca;
+    --ui-info: #93c5fd;
+    --ui-info-soft: #1e3a8a;
+    --ui-info-text: #bfdbfe;
 }
 
 @utility light {
@@ -110,6 +139,33 @@
     --placeholder-ternary: var(--color-blue-600);
     --border-ternary: var(--color-blue-700);
     --divide-ternary: var(--color-blue-700);
+
+    --ui-surface: var(--color-white);
+    --ui-surface-muted: var(--color-gray-50);
+    --ui-surface-subtle: var(--color-gray-100);
+    --ui-surface-inverse: var(--color-gray-900);
+    --ui-border: var(--color-gray-200);
+    --ui-border-strong: var(--color-gray-300);
+    --ui-text: var(--color-gray-900);
+    --ui-text-muted: var(--color-gray-600);
+    --ui-text-subtle: var(--color-gray-500);
+    --ui-accent: var(--color-blue-600);
+    --ui-accent-hover: var(--color-blue-700);
+    --ui-accent-soft: var(--color-blue-50);
+    --ui-accent-text: var(--color-blue-700);
+    --ui-focus: var(--color-blue-600);
+    --ui-success: #16a34a;
+    --ui-success-soft: #f0fdf4;
+    --ui-success-text: #166534;
+    --ui-warning: #d97706;
+    --ui-warning-soft: #fffbeb;
+    --ui-warning-text: #92400e;
+    --ui-danger: #dc2626;
+    --ui-danger-soft: #fef2f2;
+    --ui-danger-text: #991b1b;
+    --ui-info: #2563eb;
+    --ui-info-soft: #eff6ff;
+    --ui-info-text: #1e40af;
 }
 
 @utility text-primary {
