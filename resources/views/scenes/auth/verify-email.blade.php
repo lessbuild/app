@@ -8,22 +8,22 @@
     </x-slot>
 
     @if (session('status') === 'verification-link-sent')
-        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <x-ui.alert tone="success" role="status">
             {{ __('A new verification link has been sent.') }}
-        </div>
+        </x-ui.alert>
     @endif
 
-    <div class="mt-6 flex flex-wrap items-center justify-end gap-3">
+    <div class="mt-6 flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-end">
         <a href="{{ route('account.index') }}" class="text-sm text-secondary underline hover:text-primary">
             {{ __('Correct my email') }}
         </a>
         <form method="POST" action="{{ route('verification.send') }}">
             @csrf
-            <button type="submit" class="button tertiary">{{ __('Resend email') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Resend email') }}</x-ui.button>
         </form>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <button type="submit" class="button tertiary">{{ __('Logout') }}</button>
+            <x-ui.button type="submit" variant="secondary">{{ __('Logout') }}</x-ui.button>
         </form>
     </div>
 </x-layouts.auth>

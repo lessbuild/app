@@ -7,51 +7,29 @@
         {{ __('Set a new password for your account using the emailed reset link.') }}
     </x-slot>
 
-    <form method="POST" action="{{ route('password.update') }}" class="mt-5">
+    <form method="POST" action="{{ route('password.update') }}" class="space-y-5">
         @csrf
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-        <div class="space-y-5">
-            <label class="block">
-                <span class="block pb-1 text-sm text-secondary">{{ __('Email') }}</span>
-                <input
-                    class="input secondary rounded-sm"
-                    type="email"
-                    name="email"
-                    value="{{ old('email', $request->email) }}"
-                    autocomplete="email"
-                    required
-                    autofocus
-                >
-            </label>
+        <div>
+            <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
+            <input id="email" class="input secondary mt-2 rounded-lg" type="email" name="email" value="{{ old('email', $request->email) }}" autocomplete="email" required autofocus>
             <x-forms.errors name="email" />
-
-            <label class="block">
-                <span class="block pb-1 text-sm text-secondary">{{ __('New password') }}</span>
-                <input
-                    class="input secondary rounded-sm"
-                    type="password"
-                    name="password"
-                    autocomplete="new-password"
-                    required
-                >
-            </label>
-            <x-forms.errors name="password" />
-
-            <label class="block">
-                <span class="block pb-1 text-sm text-secondary">{{ __('Confirm new password') }}</span>
-                <input
-                    class="input secondary rounded-sm"
-                    type="password"
-                    name="password_confirmation"
-                    autocomplete="new-password"
-                    required
-                >
-            </label>
         </div>
 
-        <div class="mt-5 flex justify-end">
-            <button type="submit" class="button tertiary rounded-sm">{{ __('Reset password') }}</button>
+        <div>
+            <label for="password" class="block text-sm font-semibold text-primary">{{ __('New password') }}</label>
+            <input id="password" class="input secondary mt-2 rounded-lg" type="password" name="password" autocomplete="new-password" required>
+            <x-forms.errors name="password" />
+        </div>
+
+        <div>
+            <label for="password_confirmation" class="block text-sm font-semibold text-primary">{{ __('Confirm new password') }}</label>
+            <input id="password_confirmation" class="input secondary mt-2 rounded-lg" type="password" name="password_confirmation" autocomplete="new-password" required>
+        </div>
+
+        <div class="flex justify-end border-t border-primary pt-5">
+            <x-ui.button type="submit" variant="primary">{{ __('Reset password') }}</x-ui.button>
         </div>
     </form>
 </x-layouts.auth>

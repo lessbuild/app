@@ -1,5 +1,4 @@
 <x-layouts.auth>
-
     <x-slot name="title">
         {{ __('Sign in to your account') }}
     </x-slot>
@@ -10,91 +9,39 @@
         <x-auth.social-providers action="in" />
     </x-slot>
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login') }}" class="space-y-5">
         @csrf
 
-        <div class="grid grid-cols-6 gap-6">
-
-            <!--
-             ! ------------------------------------------------------------
-             ! Email Address
-             ! ------------------------------------------------------------
-             !-->
-            <div class="col-span-6">
-                <label>
-                    <span class="text-secondary text-sm">
-                        {{ __('Email') }}
-                    </span>
-                    <input
-                        id="email"
-                        class="input primary rounded-sm"
-                        type="email"
-                        name="email"
-                        value="{{ old('email') }}"
-                        placeholder="{{ __('Example: johndoe@mail.com') }}"
-                        required autofocus/>
-                </label>
-            </div>
-
-            <!--
-             ! ------------------------------------------------------------
-             ! Password
-             ! ------------------------------------------------------------
-             !-->
-            <div class="col-span-6">
-                <label>
-                    <span class="text-secondary text-sm">
-                        {{ __('Password') }}
-                    </span>
-                    <input
-                        id="password"
-                        class="input primary rounded-sm"
-                        type="password"
-                        name="password"
-                        placeholder="**********"
-                        required
-                        autocomplete="current-password" />
-                </label>
-            </div>
+        <div>
+            <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
+            <input id="email" class="input primary mt-2 rounded-lg" type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('Example: johndoe@mail.com') }}" autocomplete="email" required autofocus>
         </div>
 
-        <!--
-         ! ------------------------------------------------------------
-         ! Remember Me
-         ! ------------------------------------------------------------
-         !-->
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox"
-                    class="bg-primary rounded-sm border-primary text-secondary shadow-xs"
-                    name="remember">
-                <span class="ml-2 text-sm text-primary">{{ __('Remember me') }}</span>
-            </label>
+        <div>
+            <label for="password" class="block text-sm font-semibold text-primary">{{ __('Password') }}</label>
+            <input id="password" class="input primary mt-2 rounded-lg" type="password" name="password" autocomplete="current-password" required>
         </div>
 
-        <div class="flex items-center gap-2 lg:justify-end mt-4">
-            @if (app(\App\Services\RegistrationAccess::class)->allowsNewUser())
-                <a
-                    href="{{ route('register') }}"
-                    class="mr-4 underline tracking-tight text-sm text-secondary hover:text-primary"
-                >
-                    {{ __('Need an account?') }}
-                </a>
-            @else
-                <a href="{{ route('access-request.create') }}" class="mr-4 underline tracking-tight text-sm text-secondary hover:text-primary">{{ __('Request an account') }}</a>
-            @endif
-            @if (Route::has('password.request'))
-                <a
-                    class="underline tracking-tight text-sm text-secondary hover:text-primary"
-                    href="{{ route('password.request') }}"
-                >
-                    {{ __('Forgot your password?') }}
-                </a>
-            @endif
+        <label for="remember_me" class="inline-flex items-center gap-2 text-sm text-secondary">
+            <input id="remember_me" type="checkbox" class="rounded border-primary bg-primary text-ternary" name="remember">
+            <span>{{ __('Remember me') }}</span>
+        </label>
 
-            <button type="submit" class="button tertiary rounded-sm ml-3">
+        <div class="flex flex-col gap-4 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+                @if (app(\App\Services\RegistrationAccess::class)->allowsNewUser())
+                    <a href="{{ route('register') }}" class="text-secondary underline hover:text-primary">{{ __('Need an account?') }}</a>
+                @else
+                    <a href="{{ route('access-request.create') }}" class="text-secondary underline hover:text-primary">{{ __('Request an account') }}</a>
+                @endif
+                @if (Route::has('password.request'))
+                    <a href="{{ route('password.request') }}" class="text-secondary underline hover:text-primary">{{ __('Forgot your password?') }}</a>
+                @endif
+            </div>
+
+            <x-ui.button type="submit" variant="primary" class="shrink-0">
                 {{ __('Login') }}
-            </button>
+            </x-ui.button>
         </div>
     </form>
 

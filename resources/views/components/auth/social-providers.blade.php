@@ -13,9 +13,9 @@
 @endphp
 
 @if ($errors->has('social_auth'))
-    <div class="mt-6 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+    <x-ui.alert class="mt-6" tone="danger" role="alert">
         {{ $errors->first('social_auth') }}
-    </div>
+    </x-ui.alert>
 @endif
 
 @if ($providers->isNotEmpty())
@@ -26,18 +26,18 @@
         'sm:grid-cols-3' => $providers->count() === 3,
     ])>
         @foreach ($providers as $provider => $label)
-            <a href="{{ route('social.login', $provider) }}" class="button tertiary w-full">
-                <svg class="w-6 h-6 text-secondary stroke-2 mr-2">
+            <x-ui.button :href="route('social.login', $provider)" variant="secondary" class="w-full">
+                <svg class="h-5 w-5 stroke-2 text-secondary" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#{{ $provider }}"></use>
                 </svg>
                 <span>{{ $label }}</span>
-            </a>
+            </x-ui.button>
         @endforeach
     </div>
 
-    <div class="my-7 flex items-center space-x-3">
-        <div class="h-px flex-1 bg-secondary border border-secondary"></div>
-        <p class="text-xs text-primary uppercase">{{ __("or sign {$action} with email") }}</p>
-        <div class="h-px flex-1 bg-secondary border border-secondary"></div>
+    <div class="my-7 flex items-center gap-3" role="presentation">
+        <div class="h-px flex-1 bg-tertiary"></div>
+        <p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __("or sign {$action} with email") }}</p>
+        <div class="h-px flex-1 bg-tertiary"></div>
     </div>
 @endif

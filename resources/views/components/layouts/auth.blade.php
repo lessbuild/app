@@ -1,36 +1,36 @@
 <x-layouts.core>
-    <div class="min-h-screen bg-secondary flex">
-        <div class="border border-primary bg-primary w-full lg:w-2/6 flex flex-col justify-center py-6 px-4 sm:px-6 lg:flex-none lg:px-10">
-            <div>
-                <a href="/" class="flex items-center">
-                    <span class="font-bold text-3xl text-primary">{{ config('app.name') }}</span>
+    <div class="min-h-screen bg-secondary lg:grid lg:grid-cols-[minmax(24rem,0.82fr)_minmax(28rem,1.18fr)]">
+        <main id="main-content" tabindex="-1" class="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
+            <div class="w-full max-w-lg">
+                <a href="{{ url('/') }}" class="inline-flex min-h-[2.5rem] items-center text-lg font-black uppercase tracking-tight text-primary">
+                    {{ config('app.name') }}
                 </a>
-                <h2 class="mt-6 text-xl font-extrabold text-primary">
-                    {{ $title }}
-                </h2>
-                <p class="mt-1 text-secondary">
-                    {{ $description }}
-                </p>
 
-                @if ($errors->any())
-                    <div {{ $attributes }} class="mt-5">
-                        <div class="font-medium text-ternary">
-                            {{ __('Whoops! Something went wrong.') }}
-                        </div>
+                <x-ui.card class="mt-6 p-6 sm:p-8">
+                    <header>
+                        <h1 class="text-2xl font-black tracking-tight text-primary">{{ $title }}</h1>
+                        <p class="mt-2 leading-6 text-secondary">{{ $description }}</p>
+                    </header>
 
-                        <ul class="mt-3 list-disc list-inside text-sm text-ternary">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+                    @if ($errors->any())
+                        <x-ui.alert class="mt-5" tone="danger" role="alert">
+                            <p class="font-bold">{{ __('Whoops! Something went wrong.') }}</p>
+                            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </x-ui.alert>
+                    @endif
+
+                    <div class="mt-6">
+                        {{ $slot }}
                     </div>
-                @endif
+                </x-ui.card>
             </div>
-            <div class="mt-2">
-                {{ $slot }}
-            </div>
-        </div>
-        <div class="relative hidden w-4/6 items-center justify-center overflow-hidden bg-slate-900 lg:flex">
+        </main>
+
+        <aside class="relative hidden items-center justify-center overflow-hidden bg-slate-900 lg:flex" aria-label="{{ __('BuildPusher overview') }}">
             <div
                 class="absolute inset-0 opacity-30"
                 style="background-image: radial-gradient(circle, rgb(148 163 184) 1px, transparent 1px); background-size: 24px 24px;"
@@ -44,7 +44,7 @@
                     {{ __('Provision infrastructure, release applications, and review operational history from one control panel.') }}
                 </p>
             </div>
-        </div>
+        </aside>
     </div>
 
 </x-layouts.core>

@@ -7,26 +7,20 @@
         {{ __('Confirm your password before linking a new social sign-in method.') }}
     </x-slot>
 
-    <form method="POST" action="{{ route('password.confirm') }}" class="mt-6">
+    <form method="POST" action="{{ route('password.confirm') }}" class="space-y-5">
         @csrf
 
-        <label class="block">
-            <span class="block pb-1 text-sm text-secondary">{{ __('Password') }}</span>
-            <input
-                class="input primary w-full rounded-sm"
-                type="password"
-                name="password"
-                autocomplete="current-password"
-                required
-                autofocus
-            >
-        </label>
+        <div>
+            <label for="password" class="block text-sm font-semibold text-primary">{{ __('Password') }}</label>
+            <input id="password" class="input primary mt-2 rounded-lg" type="password" name="password" autocomplete="current-password" required autofocus>
+            <x-forms.errors name="password" />
+        </div>
 
-        <div class="mt-4 flex items-center justify-end gap-3">
+        <div class="flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-end">
             <a href="{{ route('account.index') }}" class="text-sm text-secondary underline hover:text-primary">
                 {{ __('Cancel') }}
             </a>
-            <button type="submit" class="button tertiary">{{ __('Confirm password') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Confirm password') }}</x-ui.button>
         </div>
     </form>
 </x-layouts.auth>

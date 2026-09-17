@@ -98,3 +98,22 @@
     }
 
 }
+
+/* Utility display classes must still win when a control also uses the
+   shared button primitive. These selectors keep responsive navigation actions
+   hidden at the intended breakpoints without weakening the base button rule. */
+.button.hidden {
+    display: none;
+}
+
+@media (width >= 40rem) {
+    .button.sm\:inline-flex {
+        display: inline-flex;
+    }
+}
+
+@media (width >= 64rem) {
+    .button.lg\:hidden {
+        display: none;
+    }
+}

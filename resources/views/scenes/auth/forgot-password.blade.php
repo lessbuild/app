@@ -8,33 +8,25 @@
     </x-slot>
 
     @if (session('status'))
-        <div class="mt-5 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <x-ui.alert class="mb-5" tone="success" role="status">
             {{ session('status') }}
-        </div>
+        </x-ui.alert>
     @endif
 
-    <form method="POST" action="{{ route('password.email') }}" class="mt-5">
+    <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
         @csrf
 
-        <label class="block">
-            <span class="block pb-1 text-sm text-secondary">{{ __('Email') }}</span>
-            <input
-                class="input secondary rounded-sm"
-                type="email"
-                name="email"
-                value="{{ old('email') }}"
-                autocomplete="email"
-                required
-                autofocus
-            >
-        </label>
+        <div>
+            <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
+            <input id="email" class="input secondary mt-2 rounded-lg" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus>
+        </div>
         <x-forms.errors name="email" />
 
-        <div class="mt-5 flex items-center justify-between gap-4">
+        <div class="flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-between">
             <a href="{{ route('login') }}" class="text-sm text-secondary underline hover:text-primary">
                 {{ __('Back to sign in') }}
             </a>
-            <button type="submit" class="button tertiary rounded-sm">{{ __('Send reset link') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Send reset link') }}</x-ui.button>
         </div>
     </form>
 </x-layouts.auth>

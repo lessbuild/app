@@ -109,11 +109,11 @@
                 </ul>
             </nav>
             <div class="ml-auto flex items-center gap-2 lg:ml-5">
-                <a href="{{ route('login') }}" class="button primary">{{ __('Sign in') }}</a>
+                <x-ui.button :href="route('login')" variant="secondary">{{ __('Sign in') }}</x-ui.button>
                 @if ($registrationOpen)
-                    <a href="{{ route('register') }}" class="hidden rounded-lg bg-ternary px-4 py-2 text-xs font-bold text-white sm:inline-flex">{{ __('Get started') }}</a>
+                    <x-ui.button :href="route('register')" variant="primary" class="hidden sm:inline-flex">{{ __('Get started') }}</x-ui.button>
                 @else
-                    <a href="{{ route('access-request.create') }}" class="hidden rounded-lg bg-ternary px-4 py-2 text-xs font-bold text-white sm:inline-flex">{{ __('Request access') }}</a>
+                    <x-ui.button :href="route('access-request.create')" variant="primary" class="hidden sm:inline-flex">{{ __('Request access') }}</x-ui.button>
                 @endif
                 <button id="navbarToggler" type="button" class="button primary lg:hidden" aria-controls="navbarCollapse" :aria-expanded="navigationOpen.toString()" aria-label="{{ __('Toggle navigation') }}" @click="navigationOpen = ! navigationOpen">
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
@@ -147,8 +147,8 @@
                     <h1 class="mt-6 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
                     <p class="mt-6 max-w-xl text-lg leading-8 text-secondary">{{ __('BuildPusher brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.') }}</p>
                     <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-                        <a href="{{ $primaryUrl }}" class="rounded-lg bg-ternary px-6 py-3 text-center text-sm font-bold text-white shadow-lg">{{ $primaryLabel }}</a>
-                        <a href="#product" class="rounded-lg border border-primary bg-secondary px-6 py-3 text-center text-sm font-bold text-primary">{{ __('Explore the product') }}</a>
+                        <x-ui.button :href="$primaryUrl" variant="primary" class="w-full sm:w-auto">{{ $primaryLabel }}</x-ui.button>
+                        <x-ui.button href="#product" variant="secondary" class="w-full sm:w-auto">{{ __('Explore the product') }}</x-ui.button>
                     </div>
                     <div class="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-secondary">
                         @foreach ([__('Encrypted secrets'), __('Tracked releases'), __('Owner-scoped access')] as $promise)
