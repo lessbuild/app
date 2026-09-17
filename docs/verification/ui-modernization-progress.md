@@ -133,6 +133,7 @@ removing or renaming existing routes.
 | Phase 4A: infrastructure inventories | Complete | Website, server and provider coverage: 307 tests / 2,605 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4aa8f64` pushed to `origin/main` | Modernize databases, domains, high availability and backups |
 | Phase 4B: database and traffic operations | Complete | Database, domain and load-balancer coverage: 24 tests / 147 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `681a57c` pushed to `origin/main` | Modernize backup and restore operations |
 | Phase 4C: backup and recovery workflows | Complete | Backup destination, verification and recovery coverage: 17 tests / 129 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `6726ff1` pushed to `origin/main` | Modernize operations and automation pages |
+| Phase 5A: reporting and automation | Complete | Activity, command lifecycle and automation coverage: 69 tests / 466 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4233ad9` and `763223d` pushed to `origin/main` | Modernize observability and environment investigation |
 
 ## Phase 1 record — shared visual system
 
@@ -326,6 +327,48 @@ were introduced.
 ### Verification
 
 - Focused backup matrix — **17 passed, 129 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
+
+## Phase 5A record — reporting and automation
+
+### Responsibility problem
+
+Activity, Command Center and Automation were operationally useful but visually
+fragmented. Filter forms, metric summaries, token controls, scheduled
+workflows, environment runtime controls and command history used different
+surfaces and action treatments. Automation also placed a large number of
+destructive or credential-sensitive controls into dense inline markup.
+
+### Boundaries and benefit
+
+- Existing reporting queries, command authorization and encrypted-output
+  boundaries remain unchanged; shared UI components only improve their
+  presentation.
+- Activity and Command Center now use the shared filter card, metric component,
+  table shell, status badges and empty-state hierarchy.
+- Automation presents API token creation, least-privilege abilities, YAML
+  workflow editing, environment runtime/scaling controls, deployment schedules
+  and encrypted scheduled tasks as distinct sections with explicit labels.
+- Sensitive token values remain in the existing one-time session message, and
+  command text/output remain outside the reporting view.
+
+### Preserved contracts
+
+Existing filters, pagination, CSV entitlement behavior, command refresh links,
+token abilities/expiry/rotation/revocation, YAML defaults and validation,
+schedule/task field names, overlap flags, hibernation/scaling controls,
+authorization ordering, dispatch semantics and flash/error behavior remain
+unchanged. No business logic, writes or queue timing moved into the views.
+
+### Verification
+
+- Activity and command matrix — **35 passed, 302 assertions**.
+- Automation matrix — **34 passed, 164 assertions**.
+- Combined focused evidence — **69 passed, 466 assertions**.
 - `php artisan view:cache` — passed.
 - `vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
