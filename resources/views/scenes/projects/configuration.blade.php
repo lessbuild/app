@@ -102,8 +102,8 @@
                 @php($fromEnvironmentId = isset($comparison) ? $comparison->from->id : (int) request()->query('from_environment_id'))
                 @php($toEnvironmentId = isset($comparison) ? $comparison->to->id : (int) request()->query('to_environment_id'))
                 <form method="GET" action="{{ route('projects.configuration.compare', $project) }}" class="mt-5 grid gap-3 border-t border-primary pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                    <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare from') }}</span><select name="from_environment_id" class="input secondary w-full rounded-sm" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($fromEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
-                    <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare to') }}</span><select name="to_environment_id" class="input secondary w-full rounded-sm" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($toEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
+                    <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare from') }}</span><select name="from_environment_id" class="input secondary w-full rounded-lg" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($fromEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
+                    <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare to') }}</span><select name="to_environment_id" class="input secondary w-full rounded-lg" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($toEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
                     <button type="submit" class="button secondary">{{ __('Compare recorded state') }}</button>
                 </form>
             @endif
@@ -183,8 +183,8 @@
             </div>
         </details>
         <form method="POST" action="{{ route('projects.configuration.store', $project) }}" class="mt-6 space-y-5">@csrf
-            <label class="block"><span class="mb-2 block text-primary">{{ __('Version 2 YAML document') }}</span><textarea required name="document" rows="16" class="input secondary rounded-sm font-mono" spellcheck="false"></textarea></label>
-            <label class="block"><span class="mb-2 block text-primary">{{ __('Workspace bindings (JSON)') }}</span><textarea required name="bindings" rows="5" class="input secondary rounded-sm font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}'></textarea></label>
+            <label class="block"><span class="mb-2 block text-primary">{{ __('Version 2 YAML document') }}</span><textarea required name="document" rows="16" class="input secondary rounded-lg font-mono" spellcheck="false"></textarea></label>
+            <label class="block"><span class="mb-2 block text-primary">{{ __('Workspace bindings (JSON)') }}</span><textarea required name="bindings" rows="5" class="input secondary rounded-lg font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}'></textarea></label>
             <p class="text-secondary">{{ __('Use existing website, secret-variable and repository IDs from this workspace. Do not paste secret values. Inputs are not retained after a validation error.') }}</p>
             <button type="submit" class="button primary">{{ __('Create review') }}</button>
         </form>

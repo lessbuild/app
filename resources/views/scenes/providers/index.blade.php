@@ -35,12 +35,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name or description') }}"
-                    class="input secondary mt-1 w-full rounded-sm"
+                    class="input secondary mt-1 w-full rounded-lg"
                 >
             </div>
             <div>
                 <label for="type" class="block text-xs font-semibold uppercase text-secondary">{{ __('Type') }}</label>
-                <select id="type" name="type" class="input secondary mt-1 w-full rounded-sm">
+                <select id="type" name="type" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All provider types') }}</option>
                     @foreach ($types as $type)
                         <option value="{{ $type }}" @selected($filters['type'] === $type)>
@@ -51,7 +51,7 @@
             </div>
             <div>
                 <label for="usage" class="block text-xs font-semibold uppercase text-secondary">{{ __('Usage') }}</label>
-                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded-sm">
+                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All usage states') }}</option>
                     @foreach ($usages as $usage)
                         <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>
@@ -62,7 +62,7 @@
             </div>
             <div>
                 <label for="connection" class="block text-xs font-semibold uppercase text-secondary">{{ __('Connection') }}</label>
-                <select id="connection" name="connection" class="input secondary mt-1 w-full rounded-sm">
+                <select id="connection" name="connection" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All connection states') }}</option>
                     @foreach ($connectionStatuses as $status)
                         <option value="{{ $status }}" @selected($filters['connection'] === $status)>
@@ -205,11 +205,9 @@
             >
                 <x-slot:button>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <a href="{{ route('providers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                        <x-ui.button :href="route('providers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <a href="{{ route('providers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded-sm text-sm shadow-sm">
-                            {{ __('Add Provider') }}
-                        </a>
+                        <x-ui.button :href="route('providers.create')" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>

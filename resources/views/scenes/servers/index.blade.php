@@ -33,12 +33,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name, identifier, or IP address') }}"
-                    class="input secondary mt-1 w-full rounded-sm"
+                    class="input secondary mt-1 w-full rounded-lg"
                 >
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -48,7 +48,7 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
                     {{ __('Provisioning only') }}
                 </label>
@@ -175,11 +175,9 @@
             >
                 <x-slot:button>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                        <x-ui.button :href="route('servers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <a href="{{ route('servers.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded-sm text-sm shadow-sm">
-                            {{ __('Add Server') }}
-                        </a>
+                        <x-ui.button :href="route('servers.create')" variant="secondary">{{ __('Add Server') }}</x-ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>

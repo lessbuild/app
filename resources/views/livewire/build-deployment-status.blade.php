@@ -325,30 +325,30 @@
     @if (in_array($build->status, [\App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_AWAITING_APPROVAL], true) || ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path))
         <form method="POST" action="{{ route('builds.cancel', $build) }}" class="mt-4">
             @csrf
-            <button
+            <x-ui.button
                 type="submit"
-                class="button primary"
+                variant="primary"
                 onclick="return confirm({{ Illuminate\Support\Js::from($build->status === \App\Models\Build::STATUS_QUEUED
                     ? __('Remove this deployment from the queue?')
                     : __('Stop this deployment on the remote server?')) }})"
             >
                 {{ $build->status === \App\Models\Build::STATUS_QUEUED ? __('Cancel queued deployment') : ($build->status === \App\Models\Build::STATUS_AWAITING_APPROVAL ? __('Cancel deployment request') : __('Cancel deployment')) }}
-            </button>
+            </x-ui.button>
         </form>
     @endif
 
     @if (in_array($build->status, \App\Models\Build::TERMINAL_STATUSES, true))
         <form method="POST" action="{{ route('builds.redeploy', $build) }}" class="mt-4">
             @csrf
-            <button
+            <x-ui.button
                 type="submit"
-                class="button primary"
+                variant="primary"
                 onclick="return confirm({{ Illuminate\Support\Js::from($build->revision
                     ? __('Redeploy this exact revision?')
                     : __('Redeploy the repository branch?')) }})"
             >
                 {{ $build->revision ? __('Redeploy this revision') : __('Retry deployment') }}
-            </button>
+            </x-ui.button>
         </form>
     @endif
 
@@ -356,9 +356,9 @@
         @can('rollback', $build)
             <form method="POST" action="{{ route('builds.rollback', $build) }}" class="mt-4">
                 @csrf
-                <button type="submit" class="button secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately switch traffic back to this retained release?')) }})">
+                <x-ui.button type="submit" variant="secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately switch traffic back to this retained release?')) }})">
                     {{ __('Instant rollback to this release') }}
-                </button>
+                </x-ui.button>
             </form>
         @endcan
     @endif

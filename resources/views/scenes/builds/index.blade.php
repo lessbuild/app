@@ -23,12 +23,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Repository, revision, commit, or note') }}"
-                    class="input secondary mt-1 w-full rounded-sm"
+                    class="input secondary mt-1 w-full rounded-lg"
                 >
             </div>
             <div>
                 <label for="repository_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Repository') }}</label>
-                <select id="repository_id" name="repository_id" class="input secondary mt-1 w-full rounded-sm">
+                <select id="repository_id" name="repository_id" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All repositories') }}</option>
                     @foreach ($repositories as $repository)
                         <option value="{{ $repository->id }}" @selected((int) $filters['repository_id'] === $repository->id)>
@@ -39,7 +39,7 @@
             </div>
             <div>
                 <label for="website_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Website') }}</label>
-                <select id="website_id" name="website_id" class="input secondary mt-1 w-full rounded-sm">
+                <select id="website_id" name="website_id" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All websites') }}</option>
                     @foreach ($websites as $website)
                         <option value="{{ $website->id }}" @selected((int) $filters['website_id'] === $website->id)>
@@ -50,7 +50,7 @@
             </div>
             <div>
                 <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
-                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-sm">
+                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All servers') }}</option>
                     @foreach ($servers as $server)
                         <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>
@@ -61,7 +61,7 @@
             </div>
             <div>
                 <label for="provider_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Source provider') }}</label>
-                <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded-sm">
+                <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All source providers') }}</option>
                     @foreach ($providers as $provider)
                         <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
@@ -72,7 +72,7 @@
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -83,7 +83,7 @@
             </div>
             <div>
                 <label for="trigger" class="block text-xs font-semibold uppercase text-secondary">{{ __('Trigger') }}</label>
-                <select id="trigger" name="trigger" class="input secondary mt-1 w-full rounded-sm">
+                <select id="trigger" name="trigger" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All triggers') }}</option>
                     @foreach ($triggers as $trigger)
                         <option value="{{ $trigger }}" @selected($filters['trigger'] === $trigger)>
@@ -93,13 +93,13 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="latest" value="1" @checked($filters['latest'])>
                     {{ __('Latest per repository only') }}
                 </label>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
                     <input type="checkbox" name="active" value="1" @checked($filters['active'])>
                     {{ __('Active deployments only') }}
                 </label>
@@ -111,7 +111,7 @@
                     name="date_from"
                     type="date"
                     value="{{ $filters['date_from'] }}"
-                    class="input secondary mt-1 w-full rounded-sm"
+                    class="input secondary mt-1 w-full rounded-lg"
                 >
             </div>
             <div>
@@ -121,7 +121,7 @@
                     name="date_to"
                     type="date"
                     value="{{ $filters['date_to'] }}"
-                    class="input secondary mt-1 w-full rounded-sm"
+                    class="input secondary mt-1 w-full rounded-lg"
                 >
             </div>
         </div>
