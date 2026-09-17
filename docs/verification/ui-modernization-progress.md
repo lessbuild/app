@@ -138,6 +138,7 @@ removing or renaming existing routes.
 | Phase 5C: notifications and cost visibility | Complete | Notification, bulk-action, inbox, incident, recipe-notification and cost coverage: 47 tests / 356 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `a961903` and `91b7e7e` pushed to `origin/main` | Modernize account, workspace and administration pages |
 | Phase 6A: workspace, account and administration surfaces | Complete | Workspace, billing, access-request, analytics and account security matrix: 140 tests / 891 assertions; view cache; Pint; Vite build; 7/9 responsive asset fixtures passed, with the two 390px screenshots ending in browser target/artifact crashes; diff check | `ef63629` pushed to `origin/main` | Modernize templates, gallery, reports, feedback and remaining product pages |
 | Phase 6B: templates and community workflows | Complete | Recipe, gallery, report, feedback and inventory matrix: 111 tests / 1,031 assertions; view cache; Pint; Vite build; 9 responsive/no-JS asset fixtures; diff check | `f94c862` pushed to `origin/main` | Audit remaining product, public, documentation and account-adjacent pages |
+| Phase 6C: public, status and authentication surfaces | Complete | Public/auth/status/search/security matrix: 87 tests / 650 assertions; LocalUiAssetTest: 14 tests / 363 assertions; view cache; Pint; Vite build; 9 responsive/no-JS asset fixtures; diff check | `9d46445` pushed to `origin/main` | Modernize remaining operational detail and form surfaces |
 
 ## Phase 1 record — shared visual system
 
@@ -639,6 +640,57 @@ visual surfaces.
 Commit `f94c862` was pushed to `origin/main`. The next slice audits the
 remaining product, public, documentation and account-adjacent pages for
 unmodernized templates and safely reusable UI primitives.
+
+## Phase 6C record — public, status and authentication surfaces
+
+### Responsibility problem
+
+Public entry points, authentication forms and status pages had drifted into
+separate visual systems: legacy button variants, compact labels without
+explicit associations, repeated alerts, and standalone status markup. This
+made the most sensitive journeys—sign-in, invitation registration, password
+recovery, access requests and service degradation—less consistent and harder
+to use at small widths.
+
+### Boundaries and benefit
+
+- The authentication layout now owns the shared responsive split shell,
+  heading hierarchy, error summary and recovery-focused card surface. Auth
+  views retain their existing routes, fields, invitation values and named
+  validation behavior.
+- Public access, pricing, API reference, documentation and landing actions
+  reuse the semantic button/card primitives while keeping the existing public
+  content and destinations.
+- Platform and workspace status views use shared alerts, badges and cards;
+  they remain disclosure-safe read-only projections of the existing status
+  services.
+- The button stylesheet now respects responsive `hidden`/`sm:inline-flex`/
+  `lg:hidden` utilities. This fixes the shared primitive’s tendency to render
+  hidden navigation controls and removes 320px landing-page overflow.
+
+### Preserved contracts
+
+Access-request encryption, honeypot no-op behavior, registration gating,
+invitation binding, password-reset privacy, social-provider visibility,
+two-factor flows, status cache headers, public diagnostic redaction,
+status-component query aggregation, search ownership and security headers
+were unchanged. No production credentials, diagnostic details or secret form
+values were added to public or auth markup.
+
+### Verification
+
+- Public/auth/status/search/security matrix — **87 passed, 650 assertions**.
+- `LocalUiAssetTest` — **14 passed, 363 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed** after fixing the 320px overflow.
+- `git diff --check` — passed.
+
+Commit `9d46445` was pushed to `origin/main`. The next slice modernizes
+remaining operational detail views and shared resource forms, starting with
+repository, website, provider and server journeys.
 
 ## Remaining external scope
 
