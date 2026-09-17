@@ -5,9 +5,9 @@
         :description="__('Manage your profile and sign-in credentials.')"
     />
 
-    <div class="mt-8 space-y-8">
+    <div class="mt-8 max-w-5xl space-y-8">
         @if (! auth()->user()->hasVerifiedEmail())
-            <div class="rounded-sm border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+            <div class="ui-alert ui-alert--warning p-4">
                 <p class="font-semibold">{{ __('Verify your email') }}</p>
                 <p class="mt-1">{{ __('Verify :email before managing infrastructure or deployments.', ['email' => auth()->user()->email]) }}</p>
                 @if (session('status') === 'verification-link-sent')
@@ -18,7 +18,7 @@
                 @endif
                 <form method="POST" action="{{ route('verification.send') }}" class="mt-3">
                     @csrf
-                    <button type="submit" class="button primary">{{ __('Send verification email') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Send verification email') }}</x-ui.button>
                 </form>
             </div>
         @endif
@@ -31,9 +31,9 @@
                 :title="__('Profile information')"
                 :description="__('Update the name and email address associated with your account.')"
             >
-                <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+                <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                     @if (session('profile_status'))
-                        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        <div class="ui-alert ui-alert--success p-3" role="status">
                             {{ session('profile_status') }}
                         </div>
                     @endif
@@ -41,7 +41,7 @@
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Name') }}</span>
                         <input
-                            class="input secondary rounded-sm"
+                            class="input secondary rounded-lg"
                             name="name"
                             type="text"
                             autocomplete="name"
@@ -54,7 +54,7 @@
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Email') }}</span>
                         <input
-                            class="input secondary rounded-sm"
+                            class="input secondary rounded-lg"
                             name="email"
                             type="email"
                             autocomplete="email"
@@ -68,7 +68,7 @@
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
                             <input
-                                class="input secondary rounded-sm"
+                                class="input secondary rounded-lg"
                                 name="current_password"
                                 type="password"
                                 autocomplete="current-password"
@@ -83,7 +83,7 @@
 
                 <x-slot:footer>
                     <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                        <button class="button primary" type="submit">{{ __('Save profile') }}</button>
+                        <x-ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-ui.button>
                     </div>
                 </x-slot:footer>
             </x-forms.section>
@@ -97,40 +97,40 @@
                 :title="__('Update password')"
                 :description="__('Use a long, unique password to keep your account secure.')"
             >
-                <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+                <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                     @if (session('password_status'))
-                        <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                        <div class="ui-alert ui-alert--success p-3" role="status">
                             {{ session('password_status') }}
                         </div>
                     @endif
 
                     @if (! auth()->user()->hasLocalPassword())
-                        <p class="rounded-sm border border-primary bg-secondary p-3 text-sm text-secondary">
+                        <p class="ui-alert ui-alert--info p-3">
                             {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type ?? 'a social provider')]) }}
                         </p>
                     @else
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
-                            <input class="input secondary rounded-sm" name="current_password" type="password" autocomplete="current-password" required>
+                            <input class="input secondary rounded-lg" name="current_password" type="password" autocomplete="current-password" required>
                         </label>
                         <x-forms.errors name="current_password" bag="password" />
                     @endif
 
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('New password') }}</span>
-                        <input class="input secondary rounded-sm" name="password" type="password" autocomplete="new-password" required>
+                    <input class="input secondary rounded-lg" name="password" type="password" autocomplete="new-password" required>
                     </label>
                     <x-forms.errors name="password" bag="password" />
 
                     <label class="block">
                         <span class="text-secondary text-sm pb-1 block">{{ __('Confirm new password') }}</span>
-                        <input class="input secondary rounded-sm" name="password_confirmation" type="password" autocomplete="new-password" required>
+                    <input class="input secondary rounded-lg" name="password_confirmation" type="password" autocomplete="new-password" required>
                     </label>
                 </div>
 
                 <x-slot:footer>
                     <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                        <button class="button primary" type="submit">{{ __('Update password') }}</button>
+                        <x-ui.button type="submit" variant="primary">{{ __('Update password') }}</x-ui.button>
                     </div>
                 </x-slot:footer>
             </x-forms.section>
@@ -142,44 +142,44 @@
         >
             <div class="space-y-5 bg-primary px-4 py-5 sm:p-6">
                 @if (session('two_factor_status'))
-                    <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('two_factor_status') }}</div>
+                    <div class="ui-alert ui-alert--success p-3" role="status">{{ session('two_factor_status') }}</div>
                 @endif
 
                 @if (session('two_factor_recovery_codes'))
-                    <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                    <div class="ui-alert ui-alert--warning p-4">
                         <p class="font-bold">{{ __('Save these one-time recovery codes') }}</p>
                         <p class="mt-1 text-sm">{{ __('They will not be shown again. Store them somewhere separate from your authenticator app.') }}</p>
                         <div class="mt-4 grid gap-2 font-mono text-sm sm:grid-cols-2">
                             @foreach (session('two_factor_recovery_codes') as $recoveryCode)
-                                <code class="rounded-sm bg-white px-3 py-2">{{ $recoveryCode }}</code>
+                            <code class="rounded-lg bg-white px-3 py-2 text-amber-950">{{ $recoveryCode }}</code>
                             @endforeach
                         </div>
                     </div>
                 @endif
 
                 @if (auth()->user()->twoFactorEnabled())
-                    <div class="rounded-xl border border-green-300 bg-green-50 p-4 text-green-800">
+                    <div class="ui-alert ui-alert--success p-4">
                         <p class="font-bold">{{ __('Two-factor authentication is active') }}</p>
                         <p class="mt-1 text-sm">{{ __('Every new sign-in requires your authenticator app or an unused recovery code.') }}</p>
                     </div>
                     <div class="grid gap-5 lg:grid-cols-2">
-                        <form method="POST" action="{{ route('account.two-factor.recovery-codes') }}" class="space-y-3 rounded-xl border border-primary p-4">
+                        <form method="POST" action="{{ route('account.two-factor.recovery-codes') }}" class="ui-card space-y-3 p-4">
                             @csrf
                             <h3 class="font-bold text-primary">{{ __('Replace recovery codes') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
-                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" placeholder="{{ __('Current password') }}" required>
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-lg" placeholder="{{ __('Current password') }}" required>
                             @endif
-                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
-                            <button type="submit" class="button primary">{{ __('Generate new codes') }}</button>
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-lg font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <x-ui.button type="submit" variant="primary">{{ __('Generate new codes') }}</x-ui.button>
                         </form>
-                        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="space-y-3 rounded-xl border border-red-200 p-4">
+                        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="ui-card space-y-3 border-red-200 p-4">
                             @csrf @method('DELETE')
                             <h3 class="font-bold text-primary">{{ __('Disable two-factor authentication') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
-                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" placeholder="{{ __('Current password') }}" required>
+                                <input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-lg" placeholder="{{ __('Current password') }}" required>
                             @endif
-                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
-                            <button type="submit" class="button secondary text-red-700">{{ __('Disable two-factor') }}</button>
+                            <input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-lg font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
+                            <x-ui.button type="submit" variant="danger">{{ __('Disable two-factor') }}</x-ui.button>
                         </form>
                     </div>
                 @elseif (filled(auth()->user()->two_factor_secret))
@@ -187,16 +187,16 @@
                         <h3 class="font-bold text-primary">{{ __('Connect your authenticator app') }}</h3>
                         <p class="mt-1 text-sm text-secondary">{{ __('Add this setup key manually, then enter the generated six-digit code.') }}</p>
                         <code class="mt-3 block break-all rounded-lg bg-secondary p-3 font-mono text-primary">{{ auth()->user()->two_factor_secret }}</code>
-                        <details class="mt-3 text-sm text-secondary"><summary class="cursor-pointer font-semibold text-ternary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-sm bg-secondary p-3 text-xs">{{ $twoFactorProvisioningUri }}</code></details>
+                        <details class="mt-3 text-sm text-secondary"><summary class="cursor-pointer font-semibold text-ternary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-lg bg-secondary p-3 text-xs">{{ $twoFactorProvisioningUri }}</code></details>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <form method="POST" action="{{ route('account.two-factor.confirm') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
                             @csrf
-                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Six-digit code') }}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="input secondary w-full rounded-sm font-mono" required></label>
-                            <button type="submit" class="button primary">{{ __('Confirm and enable') }}</button>
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Six-digit code') }}</span><input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="input secondary w-full rounded-lg font-mono" required></label>
+                            <x-ui.button type="submit" variant="primary">{{ __('Confirm and enable') }}</x-ui.button>
                         </form>
                         <form method="POST" action="{{ route('account.two-factor.cancel') }}">@csrf @method('DELETE')
-                            <button type="submit" class="button secondary">{{ __('Cancel setup') }}</button>
+                            <x-ui.button type="submit" variant="secondary">{{ __('Cancel setup') }}</x-ui.button>
                         </form>
                     </div>
                 @else
@@ -204,9 +204,9 @@
                     <form method="POST" action="{{ route('account.two-factor.enable') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         @csrf
                         @if (auth()->user()->hasLocalPassword())
-                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" required></label>
+                            <label class="block flex-1"><span class="block pb-1 text-sm text-secondary">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-lg" required></label>
                         @endif
-                        <button type="submit" class="button primary">{{ __('Set up authenticator') }}</button>
+                        <x-ui.button type="submit" variant="primary">{{ __('Set up authenticator') }}</x-ui.button>
                     </form>
                 @endif
                 <x-forms.errors name="current_password" bag="twoFactor" />
@@ -229,9 +229,9 @@
             @if (auth()->user()->hasVerifiedEmail())
                 <x-slot:footer>
                     <div class="flex justify-end bg-tertiary px-4 py-3 sm:px-6">
-                        <a href="{{ route('activity.index', ['category' => 'account']) }}" class="button primary">
+                        <x-ui.button href="{{ route('activity.index', ['category' => 'account']) }}" variant="secondary">
                             {{ __('View full account audit') }}
-                        </a>
+                        </x-ui.button>
                     </div>
                 </x-slot:footer>
             @endif
@@ -243,7 +243,7 @@
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('sign_ins_status'))
-                    <div class="m-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <div class="ui-alert ui-alert--success m-4 p-3" role="status">
                         {{ session('sign_ins_status') }}
                     </div>
                 @endif
@@ -252,9 +252,9 @@
                         <div>
                             <div class="flex flex-wrap items-center gap-2">
                                 <p class="font-medium text-primary">{{ $signIn['device'] }}</p>
-                                <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary">
+                                <x-ui.badge tone="neutral">
                                     {{ $signIn['method'] }}
-                                </span>
+                                </x-ui.badge>
                             </div>
                             <p class="mt-1 text-sm text-secondary">{{ $signIn['ip_address'] }}</p>
                         </div>
@@ -279,12 +279,12 @@
             <x-slot:footer>
                 <div class="flex flex-wrap items-end justify-between gap-4 bg-tertiary px-4 py-3 sm:px-6">
                     <div class="flex flex-wrap gap-3">
-                        <a href="{{ route('account.sign-ins.index') }}" class="button primary">
+                        <x-ui.button href="{{ route('account.sign-ins.index') }}" variant="secondary">
                             {{ __('View full history') }}
-                        </a>
-                        <a href="{{ route('account.sign-ins.export') }}" class="button primary">
+                        </x-ui.button>
+                        <x-ui.button href="{{ route('account.sign-ins.export') }}" variant="secondary">
                             {{ __('Export CSV') }}
-                        </a>
+                        </x-ui.button>
                     </div>
 
                     @if ($recentSignIns->isNotEmpty() && auth()->user()->hasLocalPassword())
@@ -296,7 +296,7 @@
                                     {{ __('Current password') }}
                                 </span>
                                 <input
-                                    class="input secondary rounded-sm"
+                                    class="input secondary rounded-lg"
                                     name="current_password"
                                     type="password"
                                     autocomplete="current-password"
@@ -304,13 +304,13 @@
                                 >
                                 <x-forms.errors name="current_password" bag="signIns" />
                             </label>
-                            <button
+                            <x-ui.button
                                 type="submit"
-                                class="button primary"
+                                variant="danger"
                                 onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently clear your successful sign-in history?')) }})"
                             >
                                 {{ __('Clear history') }}
-                            </button>
+                            </x-ui.button>
                         </form>
                     @elseif ($recentSignIns->isNotEmpty())
                         <p class="text-sm text-secondary">
@@ -326,29 +326,29 @@
             :title="__('Browser sessions')"
             :description="__('Review active browsers and log out sessions you no longer recognize.')"
         >
-            <div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+            <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                 @if (session('sessions_status'))
-                    <div class="rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <div class="ui-alert ui-alert--success p-3" role="status">
                         {{ session('sessions_status') }}
                     </div>
                 @endif
                 @if (session('sessions_error'))
-                    <div class="rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                    <div class="ui-alert ui-alert--danger p-3" role="alert">
                         {{ session('sessions_error') }}
                     </div>
                 @endif
 
                 @if ($browserSessionManagementAvailable)
-                    <div class="divide-y divide-primary rounded-sm border border-primary">
+                    <div class="ui-card divide-y divide-primary overflow-hidden">
                         @forelse ($browserSessions as $browserSession)
                             <div class="flex flex-wrap items-start justify-between gap-4 p-4">
                                 <div>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="font-medium text-primary">{{ $browserSession['device'] }}</p>
                                         @if ($browserSession['is_current'])
-                                            <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+                                            <x-ui.badge tone="success">
                                                 {{ __('Current browser') }}
-                                            </span>
+                                            </x-ui.badge>
                                         @endif
                                     </div>
                                     <p class="mt-1 text-sm text-secondary">
@@ -370,7 +370,7 @@
                                                 {{ __('Current password') }}
                                             </span>
                                             <input
-                                                class="input secondary rounded-sm"
+                                                class="input secondary rounded-lg"
                                                 name="current_password"
                                                 type="password"
                                                 autocomplete="current-password"
@@ -380,13 +380,13 @@
                                                 <x-forms.errors name="current_password" bag="sessions" />
                                             @endif
                                         </label>
-                                        <button
+                                        <x-ui.button
                                             type="submit"
-                                            class="button primary"
+                                            variant="danger"
                                             onclick="return confirm({{ Illuminate\Support\Js::from(__('Log out this browser session?')) }})"
                                         >
                                             {{ __('Log out') }}
-                                        </button>
+                                        </x-ui.button>
                                     </form>
                                 @endif
                             </div>
@@ -409,7 +409,7 @@
                         <label class="block">
                             <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
                             <input
-                                class="input secondary rounded-sm"
+                                class="input secondary rounded-lg"
                                 name="current_password"
                                 type="password"
                                 autocomplete="current-password"
@@ -419,7 +419,7 @@
                         @if (blank(old('session_id')))
                             <x-forms.errors name="current_password" bag="sessions" />
                         @endif
-                        <button class="button primary" type="submit">{{ __('Log out other sessions') }}</button>
+                        <x-ui.button type="submit" variant="primary">{{ __('Log out other sessions') }}</x-ui.button>
                     </form>
                 @else
                     <p class="text-sm text-secondary">
@@ -441,7 +441,7 @@
                     </div>
                 @endif
                 @if (session('social_error'))
-                    <div class="m-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+                    <div class="ui-alert ui-alert--danger m-4 p-3" role="alert">
                         {{ session('social_error') }}
                     </div>
                 @endif
@@ -450,9 +450,11 @@
                     <div class="flex flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
                         <div>
                             <p class="font-medium text-primary">{{ $provider['name'] }}</p>
-                            <p class="mt-1 text-sm text-secondary">
-                                {{ $provider['connected'] ? __('Connected') : __('Not connected') }}
-                            </p>
+                            <div class="mt-2">
+                                <x-ui.badge :tone="$provider['connected'] ? 'success' : 'neutral'">
+                                    {{ $provider['connected'] ? __('Connected') : __('Not connected') }}
+                                </x-ui.badge>
+                            </div>
                         </div>
                         @if ($provider['connected'] && $provider['can_disconnect'])
                             <form method="POST" action="{{ route('account.social.destroy', $provider['key']) }}" class="flex flex-wrap items-end justify-end gap-3">
@@ -465,7 +467,7 @@
                                             {{ __('Current password') }}
                                         </span>
                                         <input
-                                            class="input secondary rounded-sm"
+                                            class="input secondary rounded-lg"
                                             name="current_password"
                                             type="password"
                                             autocomplete="current-password"
@@ -476,22 +478,22 @@
                                         @endif
                                     </label>
                                 @endif
-                                <button
+                                <x-ui.button
                                     type="submit"
-                                    class="button primary"
+                                    variant="danger"
                                     onclick="return confirm({{ Illuminate\Support\Js::from(__('Disconnect :provider?', ['provider' => $provider['name']])) }})"
                                 >
                                     {{ __('Disconnect') }}
-                                </button>
+                                </x-ui.button>
                             </form>
                         @elseif ($provider['connected'])
                             <p class="max-w-sm text-right text-xs text-secondary">
                                 {{ __('Set a local password before disconnecting your only sign-in method.') }}
                             </p>
                         @elseif ($provider['configured'])
-                            <a href="{{ route('account.social.connect', $provider['key']) }}" class="button primary">
+                            <x-ui.button href="{{ route('account.social.connect', $provider['key']) }}" variant="secondary">
                                 {{ __('Connect') }}
-                            </a>
+                            </x-ui.button>
                         @else
                             <p class="text-xs text-secondary">{{ __('Not configured') }}</p>
                         @endif
@@ -505,24 +507,24 @@
             :description="__('Export your information or permanently delete your BuildPusher account.')"
         >
             <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
-                <div class="flex flex-col gap-3 rounded-xl border border-primary p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="ui-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div><h3 class="font-bold text-primary">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-secondary">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
-                    <a href="{{ route('account.export') }}" class="button primary shrink-0">{{ __('Download export') }}</a>
+                    <x-ui.button href="{{ route('account.export') }}" variant="secondary" class="shrink-0">{{ __('Download export') }}</x-ui.button>
                 </div>
-                <form method="POST" action="{{ route('account.destroy') }}" class="space-y-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                <form method="POST" action="{{ route('account.destroy') }}" class="ui-card space-y-4 border-red-200 bg-red-50 p-4">
                     @csrf @method('DELETE')
                     <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes BuildPusher control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.') }}</p></div>
-                    <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded-sm" required></label>
+                    <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded-lg" required></label>
                     @if (auth()->user()->hasLocalPassword())
-                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-sm" required></label>
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-lg" required></label>
                     @endif
                     @if (auth()->user()->twoFactorEnabled())
-                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Authenticator or recovery code') }}</span><input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-sm font-mono" required></label>
+                        <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Authenticator or recovery code') }}</span><input name="code" autocomplete="one-time-code" class="input secondary w-full rounded-lg font-mono" required></label>
                     @endif
                     <x-forms.errors name="confirmation" bag="deleteAccount" />
                     <x-forms.errors name="current_password" bag="deleteAccount" />
                     <x-forms.errors name="code" bag="deleteAccount" />
-                    <button type="submit" class="button secondary text-red-700" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</button>
+                    <x-ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</x-ui.button>
                 </form>
             </div>
         </x-forms.section>

@@ -9,7 +9,8 @@
         :description="__('Review successful password and social sign-ins retained for account security.')"
     />
 
-    <form method="GET" action="{{ route('account.sign-ins.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4 sm:p-5">
+        <form method="GET" action="{{ route('account.sign-ins.index') }}">
         <div class="grid gap-4 sm:grid-cols-3">
             <div>
                 <label for="method" class="block text-xs font-semibold uppercase text-secondary">{{ __('Method') }}</label>
@@ -30,15 +31,16 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('account.sign-ins.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button href="{{ route('account.sign-ins.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
+            </x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('account.sign-ins.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button href="{{ route('account.sign-ins.index') }}" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-secondary">
@@ -47,44 +49,18 @@
         <p class="text-xs text-secondary">{{ __('Only successful sign-ins are recorded. Raw browser user agents are never displayed or exported.') }}</p>
     </div>
 
-    <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching sign-ins') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Successful events in this filtered view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Password sign-ins') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['password'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Authenticated with the local password.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Social sign-ins') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['social'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Recognized GitHub, GitLab, or Bitbucket events.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Known IP addresses') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['known_ips'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Distinct validated addresses in this view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching sign-in') }}</dt>
-            <dd class="mt-1 text-lg font-bold text-primary">
-                {{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}
-            </dd>
-            <dd class="mt-1 text-xs text-secondary">
-                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.') }}
-            </dd>
-        </div>
+    <dl class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <x-ui.stat class="ui-card" :label="__('Matching sign-ins')" :value="$metrics['total']" :description="__('Successful events in this filtered view.')" />
+        <x-ui.stat class="ui-card" :label="__('Password sign-ins')" :value="$metrics['password']" :description="__('Authenticated with the local password.')" />
+        <x-ui.stat class="ui-card" :label="__('Social sign-ins')" :value="$metrics['social']" :description="__('Recognized GitHub, GitLab, or Bitbucket events.')" />
+        <x-ui.stat class="ui-card" :label="__('Known IP addresses')" :value="$metrics['known_ips']" :description="__('Distinct validated addresses in this view.')" />
+        <x-ui.stat class="ui-card" :label="__('Latest matching sign-in')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
     </dl>
 
     @if ($signIns->isEmpty())
-        <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
-            {{ array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.') }}
-        </div>
+        <x-ui.empty-state class="mt-4" :title="array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.')" />
     @else
-        <div class="mt-4 overflow-x-auto rounded-lg border border-primary">
+        <div class="ui-card mt-4 overflow-x-auto">
             <table class="min-w-full divide-y divide-primary bg-primary text-sm">
                 <thead>
                     <tr>
