@@ -137,6 +137,7 @@ removing or renaming existing routes.
 | Phase 5B: observability and investigation | Complete | Observability, incident, status and environment-context coverage: 40 tests / 291 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `1e60a90` pushed to `origin/main` | Modernize notifications, cost visibility and account administration |
 | Phase 5C: notifications and cost visibility | Complete | Notification, bulk-action, inbox, incident, recipe-notification and cost coverage: 47 tests / 356 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `a961903` and `91b7e7e` pushed to `origin/main` | Modernize account, workspace and administration pages |
 | Phase 6A: workspace, account and administration surfaces | Complete | Workspace, billing, access-request, analytics and account security matrix: 140 tests / 891 assertions; view cache; Pint; Vite build; 7/9 responsive asset fixtures passed, with the two 390px screenshots ending in browser target/artifact crashes; diff check | `ef63629` pushed to `origin/main` | Modernize templates, gallery, reports, feedback and remaining product pages |
+| Phase 6B: templates and community workflows | Complete | Recipe, gallery, report, feedback and inventory matrix: 111 tests / 1,031 assertions; view cache; Pint; Vite build; 9 responsive/no-JS asset fixtures; diff check | `f94c862` pushed to `origin/main` | Audit remaining product, public, documentation and account-adjacent pages |
 
 ## Phase 1 record — shared visual system
 
@@ -590,6 +591,54 @@ loaded into new components.
 - `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
   npm run test:assets` — **9 passed**.
 - `git diff --check` — passed.
+
+## Phase 6B record — templates and community workflows
+
+### Responsibility problem
+
+Recipe management, the public gallery, report history and product feedback
+used separate generations of cards, filters, status labels, forms and action
+buttons. The resulting visual language made ownership, publication state and
+review actions harder to scan, especially on narrow screens. Dynamic export
+links also exposed a shared button-component escaping defect when query
+parameters were present.
+
+### Boundaries and benefit
+
+- Recipe, gallery and feedback views remain read-only or HTTP-composition
+  surfaces; existing controllers, queries, policies and actions keep their
+  responsibilities.
+- Shared page headers, cards, stats, badges, alerts, buttons and form sections
+  now provide consistent hierarchy across recipe creation/editing, inventory,
+  gallery comparison, report review and feedback inbox workflows.
+- The button primitive normalizes already-encoded route query values before
+  its single HTML escape, preserving safe output while preventing `&amp;amp;`
+  export URLs.
+- Existing legacy color classes remain on report reason badges where feature
+  tests and downstream styling rely on those semantic hooks.
+
+### Preserved contracts
+
+Recipe ownership, publication and installation rules, report privacy and
+notification behavior, feedback encryption, filters, pagination, ordering,
+CSV routes, validation messages, redirects and authorization were unchanged.
+No script contents, credentials or private feedback were introduced into new
+visual surfaces.
+
+### Verification
+
+- Recipe, gallery, report, feedback, inventory and usage matrix — **111 passed,
+  1,031 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `f94c862` was pushed to `origin/main`. The next slice audits the
+remaining product, public, documentation and account-adjacent pages for
+unmodernized templates and safely reusable UI primitives.
 
 ## Remaining external scope
 
