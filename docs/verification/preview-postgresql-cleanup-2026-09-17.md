@@ -98,9 +98,8 @@ stack, provider lifecycle and PostgreSQL/Valkey recovery acceptance remain open.
 
 ## Publication and next task
 
-Publication is recorded in the product-expansion ledger after verification.
-The next concrete runtime correction is the isolated dev queue worker's
-restart policy: its normal one-hour exit currently leaves it stopped. The
-repository installer already declares `Restart=always`; the isolated unit
-must match that contract. Afterwards, continue the remaining preview and
-recovery acceptance checks.
+Commit `70d7c78` was pushed to `origin/main` and integrated into canonical
+`main` and the dev runtime. The isolated dev queue-worker restart correction
+was then completed and verified in
+[its own record](dev-worker-restart-2026-09-17.md). Continue the outstanding
+Spaces cleanup, preview and recovery acceptance checks.

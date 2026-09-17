@@ -18,10 +18,18 @@ a fresh application key, SQLite in memory and separate storage. See
 [the verification record](verification/preview-postgresql-cleanup-2026-09-17.md)
 for the final checks and publication status in the progress ledger.
 
-The dev worker was also found stopped after its normal one-hour exit:
-`Restart=on-failure` does not restart exit status zero. There are no queued
-jobs. The next runtime correction is to match the repository installer's
-`Restart=always` setting, then continue preview-stack acceptance.
+Cleanup fix `70d7c78` is pushed to `origin/main` and integrated into both
+canonical `main` and the dev runtime. The strict full suite passed
+**1,547 tests / 12,962 assertions**, with full Pint and syntax/diff checks
+passing.
+
+The dev worker was found stopped after its normal one-hour exit. Its isolated
+unit now uses the repository installer's `Restart=always` policy. A real
+Laravel queue-restart signal caused a clean exit and an automatic replacement
+three seconds later; the queue was empty. See
+[the runtime record](verification/dev-worker-restart-2026-09-17.md).
+Next: recheck the exact disposable Spaces repository prefix, then continue
+preview-stack and recovery acceptance.
 
 ## API access follow-up — 2026-09-14
 

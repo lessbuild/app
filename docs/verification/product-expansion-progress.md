@@ -4829,7 +4829,22 @@ The full strict PHP suite passed **1,547 tests / 12,962 assertions**; full
 Pint, PHP syntax and diff checks passed. The complete isolation, commands,
 tooling cleanup and limits are in
 [the verification record](preview-postgresql-cleanup-2026-09-17.md).
-This is a separate bug-fix slice on isolated `main`, ready for its verified
-commit and immediate push. The exact next task is to correct the isolated dev
-worker's normal-exit restart policy, then resume the remaining preview and
-recovery acceptance work.
+Bug-fix commit `70d7c78` was pushed to `origin/main` and fast-forwarded into
+canonical `main` and the dev runtime. The exact next task was the isolated
+dev worker's normal-exit restart correction, recorded below.
+
+## Isolated dev worker restart correction — 2026-09-17
+
+The worker exited normally after `--max-time=3600`, but its isolated service
+used `Restart=on-failure` and stayed stopped. The queue was empty. The local
+unit now matches the repository installer's existing `Restart=always`
+contract. Unit validation passed; a real Laravel queue-restart signal caused
+exit status zero and automatic replacement after three seconds, with
+`NRestarts=1` and the service active/running.
+
+This runtime-only correction and its verification are recorded in
+[the runtime record](dev-worker-restart-2026-09-17.md). Source application code,
+queue semantics and credentials did not change. The prior complete strict
+suite remains 1,547 tests / 12,962 assertions. The exact next task is to
+recheck the earlier drill's exact disposable Spaces repository prefix, then
+resume preview-stack and recovery acceptance.
