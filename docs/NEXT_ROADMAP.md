@@ -168,6 +168,13 @@ remain separate acceptance gates.
 
 ## Deferred release gates
 
+The September 17 preview review found and corrected a PostgreSQL cleanup
+transaction error that the earlier script-text tests did not detect. A real
+disposable PostgreSQL 16.15 cluster verified deletion, repeat execution,
+shared-data preservation and partial-failure retry. See
+[the verification record](verification/preview-postgresql-cleanup-2026-09-17.md).
+Full-stack provider and recovery checks below remain necessary.
+
 - Independent monitoring endpoints and live heartbeat/status verification.
 - Provider-backed preview-stack readiness, PostgreSQL/Valkey recovery, independent monitoring/heartbeat destinations and other provider-specific acceptance not covered by the successful disposable backup/recovery drill.
 - Production mail delivery, GitHub App configuration and approved billing activation as recorded in the original roadmap.

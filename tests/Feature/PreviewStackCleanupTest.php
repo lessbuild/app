@@ -129,6 +129,36 @@ class PreviewStackCleanupTest extends TestCase
         $this->assertSame(2, $cleanup->fresh()->attempts);
     }
 
+    public function test_postgresql_cleanup_executes_database_and_role_deletion_in_separate_requests(): void
+    {
+        $process = $this->executePostgresqlCleanup();
+
+        $this->assertTrue($process->isSuccessful(), $process->getErrorOutput());
+        $this->assertSame(
+            "DROP DATABASE IF EXISTS \"Preview_17\";\nDROP ROLE IF EXISTS \"Preview_owner_17\";\n",
+            $process->getOutput(),
+        );
+    }
+
+    public function test_postgresql_database_deletion_failure_stops_before_role_deletion(): void
+    {
+        $process = $this->executePostgresqlCleanup('DATABASE');
+
+        $this->assertSame(1, $process->getExitCode());
+        $this->assertSame("DROP DATABASE IF EXISTS \"Preview_17\";\n", $process->getOutput());
+    }
+
+    public function test_postgresql_role_deletion_failure_is_not_reported_as_success(): void
+    {
+        $process = $this->executePostgresqlCleanup('ROLE');
+
+        $this->assertSame(1, $process->getExitCode());
+        $this->assertSame(
+            "DROP DATABASE IF EXISTS \"Preview_17\";\nDROP ROLE IF EXISTS \"Preview_owner_17\";\n",
+            $process->getOutput(),
+        );
+    }
+
     public function test_cleanup_for_an_older_environment_uses_its_captured_server_and_slug_after_reopen(): void
     {
         Queue::fake();
@@ -267,6 +297,52 @@ class PreviewStackCleanupTest extends TestCase
     private function databaseIdentifier(PreviewDeployment $preview): string
     {
         return $preview->website->databaseIdentifier();
+    }
+
+    /** Execute the generated Bash against a bounded psql protocol double, without touching host services. */
+    private function executePostgresqlCleanup(string $failedOperation = ''): SymfonyProcess
+    {
+        $cleanup = new PreviewStackCleanup([
+            'deployment_slug' => 'preview-app',
+            'process_manifest' => [],
+            'resource_manifest' => [[
+                'type' => 'postgresql', 'database' => 'Preview_17',
+                'username' => 'Preview_owner_17', 'status' => 'ready',
+            ]],
+        ]);
+        $process = new SymfonyProcess(['bash', '-s'], null, ['FAIL_OPERATION' => $failedOperation]);
+        $process->setInput(<<<'BASH'
+        systemctl() { :; }
+        sudo() {
+            [ "$1" = '-u' ] && [ "$2" = 'postgres' ] && [ "$3" = 'psql' ] || return 90
+            shift 3
+            psql "$@"
+        }
+        psql() {
+            local option statement
+            for option in "$@"; do
+                case "$option" in
+                    --command=*)
+                        statement="${option#--command=}"
+                        # PostgreSQL rejects DROP DATABASE inside a multi-statement request.
+                        if [[ "$statement" == *'DROP DATABASE'*'DROP ROLE'* ]]; then
+                            printf '%s\n' 'DROP DATABASE cannot run inside a transaction block' >&2
+                            return 1
+                        fi
+                        printf '%s\n' "$statement"
+                        if [ -n "$FAIL_OPERATION" ] && [[ "$statement" == "DROP $FAIL_OPERATION "* ]]; then
+                            return 1
+                        fi
+                        ;;
+                esac
+            done
+        }
+
+        BASH
+            .app(PreviewStackCleanupScript::class)->render($cleanup));
+        $process->run();
+
+        return $process;
     }
 
     private function runner(bool $successful, ?string &$command, ?int &$serverId = null): Runner

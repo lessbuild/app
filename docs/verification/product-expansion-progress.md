@@ -1,5 +1,11 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 17 preview acceptance found a real PostgreSQL
+cleanup transaction defect. Its correction and real-database evidence are in
+[the dedicated verification record](preview-postgresql-cleanup-2026-09-17.md).
+The previous local completion checkpoint below does not establish complete
+provider-backed preview or recovery acceptance.
+
 Status: Local product-expansion implementation through Phase 9 and the
 authorized disposable provider deployment/rollback/backup/restore/cleanup
 drill are complete. The fixed server-host diagnostic, minimal persisted
@@ -4801,3 +4807,29 @@ Documentation commit `5e76bf0` was pushed to `origin/main`, and canonical
 `main` was fast-forwarded to the same commit. The exact next task is separately
 authorized release-gate acceptance when those integrations and credentials are
 available; it is not a local-test completion claim.
+
+## Preview PostgreSQL cleanup correction — 2026-09-17
+
+Continuing preview acceptance exposed a remote execution error: database and
+role deletion shared one `psql --command`, so PostgreSQL rejected
+`DROP DATABASE` inside the implicit transaction. Repeated command options
+correct the SQL boundary within the existing script service. The queue/action
+responsibilities, owned target identities, error propagation, retries, leases,
+authorization and public contracts are preserved.
+
+The fresh focused baseline passed 13 tests / 136 assertions. Three new Bash
+execution regressions failed against the old generator, then the focused
+cleanup/readiness/template batch passed **16 tests / 142 assertions** after
+the fix. A disposable PostgreSQL 16.15 cluster independently reproduced the
+original failure and verified successful deletion, idempotency, shared-data
+preservation, partial failure/retry and non-owner denial. All test databases
+and roles were removed and the temporary server was stopped.
+
+The full strict PHP suite passed **1,547 tests / 12,962 assertions**; full
+Pint, PHP syntax and diff checks passed. The complete isolation, commands,
+tooling cleanup and limits are in
+[the verification record](preview-postgresql-cleanup-2026-09-17.md).
+This is a separate bug-fix slice on isolated `main`, ready for its verified
+commit and immediate push. The exact next task is to correct the isolated dev
+worker's normal-exit restart policy, then resume the remaining preview and
+recovery acceptance work.

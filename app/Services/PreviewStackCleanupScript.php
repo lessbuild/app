@@ -72,9 +72,11 @@ class PreviewStackCleanupScript
         $databaseSql = '"'.$database.'"';
         $usernameSql = '"'.$username.'"';
 
+        // Each --command is a separate request: PostgreSQL cannot DROP DATABASE
+        // inside the implicit transaction created by a multi-statement request.
         return <<<BASH
         if command -v psql >/dev/null 2>&1; then
-            sudo -u postgres psql --set=ON_ERROR_STOP=1 postgres --command={$this->shell("DROP DATABASE IF EXISTS {$databaseSql}; DROP ROLE IF EXISTS {$usernameSql};")}
+            sudo -u postgres psql --set=ON_ERROR_STOP=1 postgres --command={$this->shell("DROP DATABASE IF EXISTS {$databaseSql};")} --command={$this->shell("DROP ROLE IF EXISTS {$usernameSql};")}
         elif [ "{$this->status($resource)}" != planned ]; then
             exit 1
         fi

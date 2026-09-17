@@ -1,5 +1,28 @@
 # BuildPusher chat handoff
 
+## Preview acceptance continuation — 2026-09-17
+
+The PostgreSQL preview cleanup script had a real execution defect despite the
+earlier passing suite: database and role deletion shared one `psql --command`,
+which PostgreSQL treats as a transaction and rejects for `DROP DATABASE`.
+The fix submits two separate commands with the existing stop-on-error and
+idempotency behavior. The new Bash execution regressions fail before the fix.
+A disposable PostgreSQL 16.15 cluster also reproduced the original failure and
+verified successful/repeated deletion, shared-data preservation, partial
+failure/retry and non-owner denial after the fix.
+
+Work is isolated in
+`/mnt/volume_nyc1_1789401255960/codex-storage/Documents/Codex/buildpusher-preview-cleanup-Amr47o`
+on its own `main`, using independently copied locked dependencies/assets,
+a fresh application key, SQLite in memory and separate storage. See
+[the verification record](verification/preview-postgresql-cleanup-2026-09-17.md)
+for the final checks and publication status in the progress ledger.
+
+The dev worker was also found stopped after its normal one-hour exit:
+`Restart=on-failure` does not restart exit status zero. There are no queued
+jobs. The next runtime correction is to match the repository installer's
+`Restart=always` setting, then continue preview-stack acceptance.
+
 ## API access follow-up — 2026-09-14
 
 All billing plans now include the existing scoped control-plane API. The
