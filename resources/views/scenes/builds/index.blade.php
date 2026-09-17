@@ -6,12 +6,13 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        icon="cloud-upload"
         :title="__('Deployment history')"
         :description="__('Review filtered deployment outcomes, activity, and retained release details.')"
     >
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('builds.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <form method="GET" action="{{ route('builds.index') }}" class="ui-card mt-8 p-4">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -125,38 +126,38 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('builds.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button :href="route('builds.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
+            </x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('builds.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('builds.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
     </form>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching deployments') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
             <dd class="mt-1 text-xs text-secondary">{{ __('Deployments in this filtered view.') }}</dd>
         </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active deployments') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
             <dd class="mt-1 text-xs text-secondary">{{ __('Queued, deploying, running, or timing out.') }}</dd>
         </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Succeeded') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['succeeded'] }}</dd>
             <dd class="mt-1 text-xs text-secondary">{{ __('Matching successful deployments.') }}</dd>
         </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
             <dd class="mt-1 text-xs text-secondary">{{ __('Matching failed deployments.') }}</dd>
         </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed success') }}</dt>
             <dd class="mt-1 text-2xl font-bold text-primary">
                 {{ $metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available') }}
@@ -165,7 +166,7 @@
                 {{ $metrics['success_rate'] !== null ? __('Succeeded versus failed outcomes; active and canceled runs excluded.') : __('No matching success or failure outcome.') }}
             </dd>
         </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card p-4">
             <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching deployment') }}</dt>
             <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
             <dd class="mt-1 text-xs text-secondary">
@@ -182,7 +183,7 @@
     @if(!$builds->isEmpty())
         <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 lg:hidden">
             @foreach($builds as $build)
-                <a href="{{ route('builds.show', $build) }}" class="block min-w-0 w-full rounded-xl border border-primary bg-primary p-4 transition hover:border-secondary">
+                <a href="{{ route('builds.show', $build) }}" class="ui-card ui-card--interactive block min-w-0 w-full p-4">
                     <div class="flex min-w-0 items-start gap-3">
                         <x-avatar :name="$build->repository->name" class="h-10 w-10 flex-none rounded-md text-sm" />
                         <div class="min-w-0 flex-1">
@@ -191,9 +192,15 @@
                                     <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
                                     <p class="mt-0.5 truncate text-xs text-secondary">{{ $build->repository->website->server->label }}</p>
                                 </div>
-                                <span class="flex-none rounded-full border border-primary px-2 py-1 text-[11px] font-semibold uppercase text-secondary">
+                                <x-ui.badge :tone="match ($build->status) {
+                                    \App\Models\Build::STATUS_SUCCEEDED => 'success',
+                                    \App\Models\Build::STATUS_FAILED => 'danger',
+                                    \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'warning',
+                                    \App\Models\Build::STATUS_RUNNING, \App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_TIMING_OUT => 'accent',
+                                    default => 'neutral',
+                                }">
                                     {{ str($build->status)->replace('_', ' ') }}
-                                </span>
+                                </x-ui.badge>
                             </div>
                             <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-secondary">
                                 <span>{{ ucfirst($build->trigger_source) }}</span>
@@ -216,7 +223,7 @@
                 </a>
             @endforeach
         </div>
-        <table class="mt-6 hidden min-w-full divide-y divide-primary border-t border-b border-primary lg:table">
+        <table class="ui-card mt-6 hidden min-w-full divide-y divide-primary overflow-hidden lg:table">
             <thead class="bg-primary border-l border-r border-primary">
                 <tr>
                     <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
@@ -231,7 +238,7 @@
                     <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-primary bg-primary">
+            <tbody class="divide-y divide-primary">
                 @foreach($builds as $build)
                     <tr class="border-l border-r border-primary">
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
@@ -293,7 +300,7 @@
             >
                 @if (array_filter($filters, fn ($value) => $value !== null))
                     <x-slot:button>
-                        <a href="{{ route('builds.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                    <x-ui.button :href="route('builds.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     </x-slot:button>
                 @endif
             </x-lists.empty>

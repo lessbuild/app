@@ -9,18 +9,18 @@
         :description="$build->repository->name"
     >
         <x-slot:buttons>
-            <a href="{{ route('builds.compare', ['build' => $baseline, 'baseline' => $build]) }}" class="button primary">
+            <x-ui.button :href="route('builds.compare', ['build' => $baseline, 'baseline' => $build])" variant="secondary">
                 {{ __('Swap comparison') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <div class="mt-6 rounded-lg border border-primary bg-primary p-4 text-sm text-secondary">
+    <div class="ui-alert ui-alert--info mt-6 p-4">
         {{ __('Compare recorded deployment outcomes and operator context. This view does not fetch source code or contact the repository provider.') }}
     </div>
 
-    <div class="mt-6 overflow-x-auto rounded-lg border border-primary">
-        <table class="min-w-full divide-y divide-primary bg-primary text-sm">
+    <div class="ui-card mt-6 overflow-x-auto">
+        <table class="min-w-full divide-y divide-primary text-sm">
             <thead>
                 <tr>
                     <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Attribute') }}</th>

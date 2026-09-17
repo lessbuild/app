@@ -1,15 +1,24 @@
 <div @if ($shouldPoll) wire:poll.5s @endif>
-    <dl class="mt-6 grid gap-4 rounded-lg border border-primary bg-primary p-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    @php
+        $statusTone = match ($build->status) {
+            \App\Models\Build::STATUS_SUCCEEDED => 'success',
+            \App\Models\Build::STATUS_FAILED, \App\Models\Build::STATUS_REJECTED => 'danger',
+            \App\Models\Build::STATUS_CANCELED => 'warning',
+            \App\Models\Build::STATUS_RUNNING, \App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_AWAITING_APPROVAL, \App\Models\Build::STATUS_TIMING_OUT => 'accent',
+            default => 'neutral',
+        };
+    @endphp
+    <dl class="ui-card mt-6 grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</dt>
-            <dd class="mt-1 font-medium text-primary">{{ str($build->status)->replace('_', ' ')->title() }}</dd>
+            <dt class="ui-stat__label">{{ __('Status') }}</dt>
+            <dd class="mt-2"><x-ui.badge :tone="$statusTone">{{ str($build->status)->replace('_', ' ')->title() }}</x-ui.badge></dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Triggered by') }}</dt>
+            <dt class="ui-stat__label">{{ __('Triggered by') }}</dt>
             <dd class="mt-1 font-medium text-primary">{{ ucfirst($build->trigger_source) }}</dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Revision') }}</dt>
+            <dt class="ui-stat__label">{{ __('Revision') }}</dt>
             <dd class="mt-1 font-mono text-sm text-primary">
                 @if ($revisionUrl = $build->repository->revisionUrl($build->revision))
                     <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ $build->shortRevision() }}</a>
@@ -19,24 +28,24 @@
             </dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Started') }}</dt>
+            <dt class="ui-stat__label">{{ __('Started') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->started_at?->format('Y-m-d H:i:s T') ?? __('Not started') }}</dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Finished') }}</dt>
+            <dt class="ui-stat__label">{{ __('Finished') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Duration') }}</dt>
+            <dt class="ui-stat__label">{{ __('Duration') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
         </div>
         <div>
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last heartbeat') }}</dt>
+            <dt class="ui-stat__label">{{ __('Last heartbeat') }}</dt>
             <dd class="mt-1 text-primary">{{ $build->last_heartbeat_at?->format('Y-m-d H:i:s T') ?? __('Not received') }}</dd>
         </div>
     </dl>
 
-    <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-evidence-title">
+    <section class="ui-card mt-4 p-5" aria-labelledby="deployment-evidence-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</p>
@@ -90,7 +99,7 @@
         </dl>
     </section>
 
-    <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-timeline-title">
+    <section class="ui-card mt-4 p-5" aria-labelledby="deployment-timeline-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</p>
@@ -109,7 +118,7 @@
                         'bg-amber-100 text-amber-800' => $entry->status === 'canceled',
                         'bg-secondary text-secondary' => $entry->status === 'pending',
                     ]) aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
-                    <div class="rounded-lg bg-secondary p-3">
+                    <div class="ui-card ui-card--muted p-3">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h3 class="font-semibold text-primary">{{ __($entry->title) }}</h3>
                             <span class="text-xs font-bold uppercase text-secondary">{{ str($entry->status)->headline() }}</span>
@@ -127,10 +136,10 @@
     </section>
 
     @if($build->promotedFrom)
-        <aside class="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-950"><p class="font-bold">{{ __('Promoted release') }}</p><p class="mt-1 text-sm">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="font-bold underline">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm">{{ $build->promotion_note }}</p>@endif</aside>
+        <aside class="ui-alert ui-alert--info mt-4"><p class="font-bold text-primary">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-secondary">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="font-bold text-ternary underline">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-secondary">{{ $build->promotion_note }}</p>@endif</aside>
     @endif
     @if($build->promotions->isNotEmpty())
-        <aside class="mt-4 rounded-lg border border-primary bg-primary p-4"><p class="font-bold text-primary">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="rounded-lg bg-secondary px-3 py-2 text-sm text-primary">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></aside>
+        <aside class="ui-card mt-4 p-4"><p class="font-bold text-primary">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-primary">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></aside>
     @endif
 
     @php
@@ -147,7 +156,7 @@
 
     <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
         @if ($previousBuild)
-            <a href="{{ route('builds.show', $previousBuild) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
+            <a href="{{ route('builds.show', $previousBuild) }}" class="ui-card ui-card--interactive p-4">
                 <span class="block text-xs font-semibold uppercase text-secondary">{{ __('Previous deployment') }}</span>
                 <span class="mt-1 block font-medium text-primary">
                     {{ __('Build #:id', ['id' => $previousBuild->id]) }}
@@ -161,14 +170,14 @@
                 </span>
             </a>
         @else
-            <div class="rounded-lg border border-primary bg-primary p-4 text-secondary">
+            <div class="ui-card p-4 text-secondary">
                 <span class="block text-xs font-semibold uppercase">{{ __('Previous deployment') }}</span>
                 <span class="mt-1 block text-sm">{{ __('This is the first recorded deployment for this repository.') }}</span>
             </div>
         @endif
 
         @if ($nextBuild)
-            <a href="{{ route('builds.show', $nextBuild) }}" class="rounded-lg border border-primary bg-primary p-4 text-right hover:bg-secondary">
+            <a href="{{ route('builds.show', $nextBuild) }}" class="ui-card ui-card--interactive p-4 text-right">
                 <span class="block text-xs font-semibold uppercase text-secondary">{{ __('Next deployment') }}</span>
                 <span class="mt-1 block font-medium text-primary">
                     {{ __('Build #:id', ['id' => $nextBuild->id]) }}
@@ -182,7 +191,7 @@
                 </span>
             </a>
         @else
-            <div class="rounded-lg border border-primary bg-primary p-4 text-right text-secondary">
+            <div class="ui-card p-4 text-right text-secondary">
                 <span class="block text-xs font-semibold uppercase">{{ __('Next deployment') }}</span>
                 <span class="mt-1 block text-sm">{{ __('This is the latest recorded deployment for this repository.') }}</span>
             </div>
@@ -191,14 +200,14 @@
 
     @if ($previousBuild)
         <div class="mt-3 flex justify-end">
-            <a href="{{ route('builds.compare', ['build' => $build, 'baseline' => $previousBuild]) }}" class="button primary">
+            <x-ui.button :href="route('builds.compare', ['build' => $build, 'baseline' => $previousBuild])" variant="secondary">
                 {{ __('Compare with previous') }}
-            </a>
+            </x-ui.button>
         </div>
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
-        <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="ui-alert ui-alert--warning mt-4 p-4">
             <p>{{ __('This deployment stopped reporting progress. BuildPusher is safely stopping its remote process before allowing another deployment.') }}</p>
             @if ($build->failure_message)
                 <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
@@ -225,7 +234,7 @@
     @endif
 
     @if ($build->release_name)
-        <div class="mt-4 rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card mt-4 p-4">
             <p class="text-xs font-semibold uppercase text-secondary">{{ __('Release artifact') }}</p>
             <p class="mt-1 break-all font-mono text-sm text-primary">{{ $build->release_name }}</p>
             @if ($build->activated_at)
@@ -235,51 +244,51 @@
     @endif
 
     @if ($build->commit_message)
-        <div class="mt-4 rounded-lg border border-primary bg-primary p-4">
+        <div class="ui-card mt-4 p-4">
             <p class="text-xs font-semibold uppercase text-secondary">{{ __('Commit message') }}</p>
             <p class="mt-1 whitespace-pre-wrap break-words text-sm text-primary">{{ $build->commit_message }}</p>
         </div>
     @endif
 
     @if ($build->risk_assessment)
-        <section class="mt-4 rounded-lg border border-primary bg-primary p-4">
+        <section class="ui-card mt-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="text-xs font-semibold uppercase text-secondary">{{ __('Deployment preflight') }}</p><h2 class="mt-1 font-bold text-primary">{{ __('Risk: :level', ['level' => str($build->risk_assessment['level'] ?? 'unknown')->headline()]) }}</h2></div><span class="rounded-full bg-secondary px-3 py-1 text-sm font-black text-primary">{{ $build->risk_assessment['score'] ?? 0 }}/100</span></div>
             <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-lg bg-secondary p-3 text-sm"><span class="font-black {{ $check['status'] === 'passed' ? 'text-green-600' : ($check['status'] === 'warning' ? 'text-amber-600' : 'text-red-600') }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-primary">{{ $check['name'] }}</strong><span class="text-xs text-secondary">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
         </section>
     @endif
 
     @if ($build->automatic_rollback_build_id)
-        <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-950">{{ __('Automatic recovery was queued as') }} <a class="font-bold underline" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</div>
+        <div class="ui-alert ui-alert--warning mt-4">{{ __('Automatic recovery was queued as') }} <a class="font-bold text-ternary underline" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</div>
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_AWAITING_APPROVAL)
-        <section class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950">
-            <h2 class="font-semibold">{{ __('Production approval required') }}</h2>
-            <p class="mt-1 text-sm">{{ __('This protected environment will not receive traffic until an owner or administrator approves the deployment.') }}</p>
+        <section class="ui-alert ui-alert--warning mt-4 p-5">
+            <h2 class="font-semibold text-primary">{{ __('Production approval required') }}</h2>
+            <p class="mt-1 text-sm text-secondary">{{ __('This protected environment will not receive traffic until an owner or administrator approves the deployment.') }}</p>
             @can('approve', $build)
                 <form method="POST" class="mt-4" id="deployment-approval-form">
                     @csrf
                     <label class="block text-sm font-medium">
                         {{ __('Decision note (optional)') }}
-                        <textarea name="approval_note" rows="3" maxlength="2000" class="input secondary mt-2 w-full rounded-sm" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}">{{ old('approval_note') }}</textarea>
+                        <textarea name="approval_note" rows="3" maxlength="2000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}">{{ old('approval_note') }}</textarea>
                     </label>
                     <x-forms.errors name="approval_note" bag="approval" />
                     <div class="mt-3 flex flex-wrap gap-3">
-                        <button type="submit" formaction="{{ route('builds.approve', $build) }}" class="button primary">{{ __('Approve and deploy') }}</button>
-                        <button type="submit" formaction="{{ route('builds.reject', $build) }}" class="button secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Reject this deployment request?')) }})">{{ __('Reject') }}</button>
+                        <x-ui.button type="submit" variant="primary" formaction="{{ route('builds.approve', $build) }}">{{ __('Approve and deploy') }}</x-ui.button>
+                        <x-ui.button type="submit" variant="secondary" formaction="{{ route('builds.reject', $build) }}" onclick="return confirm({{ Illuminate\Support\Js::from(__('Reject this deployment request?')) }})">{{ __('Reject') }}</x-ui.button>
                     </div>
                 </form>
             @endcan
         </section>
     @elseif ($build->status === \App\Models\Build::STATUS_REJECTED)
-        <div class="mt-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
-            <strong>{{ __('Deployment rejected.') }}</strong>
+        <div class="ui-alert ui-alert--danger mt-4 p-4">
+            <strong class="text-primary">{{ __('Deployment rejected.') }}</strong>
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
         </div>
     @elseif ($build->approved_at)
-        <div class="mt-4 rounded-sm border border-green-300 bg-green-50 p-4 text-green-800">
+        <div class="ui-alert ui-alert--success mt-4 p-4">
             {{ __('Approved :time.', ['time' => $build->approved_at->diffForHumans()]) }}
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
@@ -287,7 +296,7 @@
         </div>
     @endif
 
-    <section class="mt-4 rounded-lg border border-primary bg-primary p-4">
+    <section class="ui-card mt-4 p-4">
         <h2 class="font-semibold text-primary">{{ __('Operator note') }}</h2>
         <p class="mt-1 text-sm text-secondary">
             {{ __('Record an incident ticket, rollback reason, approval, or handoff context. Notes are searchable and included in build exports, so do not store secrets.') }}
@@ -301,14 +310,14 @@
                     name="operator_note"
                     rows="4"
                     maxlength="2000"
-                    class="input secondary w-full rounded-sm"
+                    class="input secondary w-full rounded-lg"
                     placeholder="{{ __('Example: Approved rollback for incident INC-1042.') }}"
                 >{{ old('operator_note', $build->operator_note) }}</textarea>
             </label>
             <x-forms.errors name="operator_note" bag="buildNote" />
             <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-xs text-secondary">{{ __('Remove all text and save to clear the note.') }}</p>
-                <button type="submit" class="button primary">{{ __('Save note') }}</button>
+                <x-ui.button type="submit" variant="primary">{{ __('Save note') }}</x-ui.button>
             </div>
         </form>
     </section>
@@ -355,29 +364,29 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
-        <div class="mt-6 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
-            <strong>{{ __('Deployment failed:') }}</strong> {{ $build->failure_message }}
+        <div class="ui-alert ui-alert--danger mt-6 p-4">
+            <strong class="text-primary">{{ __('Deployment failed:') }}</strong> <span class="text-secondary">{{ $build->failure_message }}</span>
         </div>
         @if ($failureGuidance)
-            <section class="mt-4 rounded-lg border border-red-300 bg-primary p-5" aria-labelledby="recovery-guidance-title">
-                <p class="text-xs font-bold uppercase tracking-widest text-red-600">{{ __('Recovery guidance') }}</p>
+            <section class="ui-card mt-4 border-ternary p-5" aria-labelledby="recovery-guidance-title">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recovery guidance') }}</p>
                 <h2 id="recovery-guidance-title" class="mt-1 text-lg font-black text-primary">{{ $failureGuidance['title'] }}</h2>
                 <p class="mt-2 text-sm text-secondary">{{ $failureGuidance['summary'] }}</p>
                 <dl class="mt-4 grid gap-3 sm:grid-cols-2">
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
                 </dl>
-                <div class="mt-4 flex flex-wrap gap-3"><a href="#deployment-log" class="button primary">{{ __('Inspect deployment log') }}</a><a href="{{ route('repositories.edit', $build->repository) }}" class="button secondary">{{ __('Review deployment settings') }}</a><a href="{{ route('websites.show', $build->repository->website) }}" class="button secondary">{{ __('Inspect website health') }}</a></div>
+                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.edit', $build->repository)" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
             </section>
         @endif
         @if ($rollbackCandidate)
             @can('rollback', $rollbackCandidate)
-                <section class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-5 text-amber-950">
-                    <h2 class="font-black">{{ __('Restore the last known-good release') }}</h2>
-                    <p class="mt-1 text-sm">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
+                <section class="ui-alert ui-alert--warning mt-4 p-5">
+                    <h2 class="font-black text-primary">{{ __('Restore the last known-good release') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
                     <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
                         @csrf
-                        <button type="submit" class="button primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</button>
+                        <x-ui.button type="submit" variant="primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</x-ui.button>
                     </form>
                 </section>
             @endcan
@@ -386,21 +395,20 @@
 
     @if ($build->status === \App\Models\Build::STATUS_SUCCEEDED)
         @if ($deploymentObservation)
-            <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-observation-title">
+            <section class="ui-card mt-4 p-5" aria-labelledby="deployment-observation-title">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment observation') }}</p>
                         <h2 id="deployment-observation-title" class="mt-1 text-lg font-black text-primary">{{ __('Revision-linked verification') }}</h2>
                         <p class="mt-1 text-sm text-secondary">{{ __('BuildPusher checks this deployment’s captured health target during a bounded window. This result is separate from continuous website health monitoring.') }}</p>
                     </div>
-                    <span @class([
-                        'rounded-full px-3 py-1 text-xs font-bold uppercase',
-                        'bg-green-100 text-green-700' => $deploymentObservation->statusEnum()?->value === 'healthy',
-                        'bg-blue-100 text-blue-700' => in_array($deploymentObservation->statusEnum()?->value, ['pending', 'observing'], true),
-                        'bg-red-100 text-red-700' => $deploymentObservation->statusEnum()?->value === 'failed',
-                        'bg-amber-100 text-amber-800' => in_array($deploymentObservation->statusEnum()?->value, ['expired', 'superseded'], true),
-                        'bg-gray-100 text-gray-700' => $deploymentObservation->statusEnum() === null,
-                    ])>{{ str($deploymentObservation->status)->replace('_', ' ')->headline() }}</span>
+                    <x-ui.badge :tone="match ($deploymentObservation->statusEnum()?->value) {
+                        'healthy' => 'success',
+                        'failed' => 'danger',
+                        'pending', 'observing' => 'accent',
+                        'expired', 'superseded' => 'warning',
+                        default => 'neutral',
+                    }">{{ str($deploymentObservation->status)->replace('_', ' ')->headline() }}</x-ui.badge>
                 </div>
                 <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
@@ -446,14 +454,14 @@
                 </p>
             </section>
         @endif
-        <section class="mt-4 rounded-lg border border-primary bg-primary p-5" aria-labelledby="deployment-health-title">
-            <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-1 text-lg font-black text-primary">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-secondary">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><span @class(['rounded-full px-3 py-1 text-xs font-bold uppercase','bg-green-100 text-green-700' => $website->health_status === 'healthy','bg-red-100 text-red-700' => $website->health_status === 'unhealthy','bg-gray-100 text-gray-700' => ! in_array($website->health_status, ['healthy','unhealthy'], true)])>{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</span></div>
-            <div class="mt-4 flex flex-wrap gap-3"><a href="https://{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="button primary">{{ __('Open live website') }}</a><a href="{{ route('websites.show', $website) }}#health-history-heading" class="button secondary">{{ __('View health history') }}</a>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<button type="submit" class="button secondary">{{ __('Run health check now') }}</button></form>@else<a href="{{ route('websites.edit', $website) }}" class="button secondary">{{ __('Enable health monitoring') }}</a>@endif</div>
+        <section class="ui-card mt-4 p-5" aria-labelledby="deployment-health-title">
+            <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-1 text-lg font-black text-primary">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-secondary">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><x-ui.badge :tone="$website->health_status === 'healthy' ? 'success' : ($website->health_status === 'unhealthy' ? 'danger' : 'neutral')">{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</x-ui.badge></div>
+            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" variant="secondary">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="route('websites.edit', $website)" variant="secondary">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
         </section>
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_CANCELED)
-        <div class="mt-6 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <div class="ui-alert ui-alert--warning mt-6 p-4">
             {{ __('This deployment was canceled before it completed.') }}
         </div>
     @endif
@@ -474,7 +482,7 @@
         @if ($deploymentLog)
             <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $deploymentLog->log }}</pre>
         @elseif ($shouldPoll)
-            <div class="rounded-lg border border-primary bg-primary p-6 text-center">
+            <div class="ui-card p-6 text-center">
                 <p class="font-medium text-primary">{{ __('Waiting for deployment output…') }}</p>
                 <p class="mt-1 text-sm text-secondary">{{ __('This view updates automatically while the deployment runs.') }}</p>
             </div>
