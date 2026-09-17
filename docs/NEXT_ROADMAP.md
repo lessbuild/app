@@ -186,6 +186,32 @@ mail, independent monitoring/heartbeat destinations, GitHub App configuration,
 billing/SSO, provider-backed preview readiness and PostgreSQL/Valkey recovery
 remain separate acceptance gates.
 
+## UI modernization completion — 2026-09-17
+
+The planned UI modernization work is complete on isolated `main`. Shared
+semantic tokens and Blade UI primitives now support a consistent hierarchy,
+status language, spacing, responsive layout, focus treatment, forms,
+navigation, cards, alerts, badges and empty states. Workspace navigation is
+grouped by user intent while existing routes and destinations remain intact.
+The complete page-family pass covered dashboard, applications, deployments,
+infrastructure, data/recovery, operations, observability, workspace/account,
+templates/community, public/authentication, repositories, websites, providers,
+servers, configuration and remaining compatibility surfaces.
+
+The final strict PHP suite passed **1,556 tests / 12,791 assertions** using
+PHP 8.5.10. Pint, the required-PHP Composer platform check, Vite build,
+`git diff --check`, and the explicit 9-test asset suite passed. The complete
+isolated browser run passed **18 tests** and skipped only the opt-in deployed
+live-runtime check; it covered accessibility, responsive layouts,
+no-JavaScript provider submission, grouped navigation, served Livewire and
+mobile/tablet/desktop product crawls. Generated config/route/view caches and
+the cached served-Livewire/mobile smoke also passed.
+
+No production deployment, dependency upgrade, credential use, paid cloud
+operation or live acceptance is implied. The next task is separately
+authorized release-gate/external acceptance work, or a new product request
+with its own inventory and verification record.
+
 ## Deferred release gates
 
 The September 17 preview review found and corrected a PostgreSQL cleanup

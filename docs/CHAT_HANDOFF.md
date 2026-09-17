@@ -1235,6 +1235,40 @@ on September 17 for the exact drill prefix, as recorded above.
 The exact next task is separately authorized release-gate acceptance when the
 remaining integrations and credentials are available.
 
+## UI modernization completion — 2026-09-17
+
+The UI modernization plan is complete on the isolated `main` checkout. The
+implementation introduced shared semantic design tokens and Blade UI
+primitives, consolidated the workspace navigation into clear groups, and
+modernized every inventoried page family through the final alert, empty-state,
+form, inventory and configuration consistency slices. The changes preserve
+routes, authorization, validation/error bags, flash feedback, Livewire and
+non-JavaScript behavior, persisted values and workflow side effects.
+
+Final local evidence:
+
+- Strict PHP 8.5.10 suite: **1,556 passed / 12,791 assertions**.
+- Pint and PHP 8.5.10 Composer platform checks: passed.
+- Vite build and explicit asset fixture suite: **9 passed**.
+- Complete isolated Playwright suite: **18 passed / 1 skipped** across
+  accessibility, assets, navigation, Livewire, no-JavaScript provider
+  submission and mobile/tablet/desktop product crawls. The skipped case is
+  the intentionally opt-in deployed-runtime check.
+- Cached isolated runtime: config/route/view caches passed and served
+  Livewire/mobile smoke: **1 passed**.
+- `git diff --check`: passed.
+
+The first browser attempt was discarded because its disposable built-in server
+used an in-memory session driver; the corrected isolated file-session run
+passed without an application change. No production checkout, credentials,
+cloud resources or acceptance-drill environment were changed. Cohesive UI
+commits through `299ba20` are pushed to `origin/main`; this synchronized
+documentation slice is the final commit for the plan.
+
+Production release, live acceptance, provider acceptance, billing, mail,
+external monitoring and other integration gates remain separate and are not
+claimed by these local UI results.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

@@ -1057,6 +1057,68 @@ remote calls or policy decisions were added to presentation code.
 
 Commit `7251902` was pushed to `origin/main`.
 
+## Final verification — 2026-09-17
+
+### Scope and handoff
+
+The planned UI modernization slices are complete on isolated `main`. The
+work established shared semantic tokens and Blade UI primitives, consolidated
+workspace navigation, and applied the same hierarchy, spacing, status,
+responsive and feedback patterns across the dashboard, applications,
+deployments, infrastructure, recovery, operations, observability, workspace,
+account, templates, community, public, authentication, repository, website,
+provider, server, configuration and remaining alert/empty-state surfaces.
+
+The work remained presentation-focused. Existing controllers, actions,
+policies, requests, queries, jobs, Livewire behavior, provider contracts and
+workflow guarantees remain responsible for authorization and application
+behavior.
+
+### Preserved contracts
+
+Routes, response status codes, validation keys, named error bags, flash text,
+authorization and tenant scoping, persisted values, API/OpenAPI output, YAML
+and JSON schemas, queued-job serialization, polling, dialog semantics,
+navigation active states, non-JavaScript provider submission and secret-safe
+failure behavior remain unchanged. Native controls retained for the mobile
+logout submit and delete-dialog openers are deliberate compatibility
+exceptions covered by the existing source-level UI test.
+
+### Final verification
+
+- Strict PHP suite using PHP 8.5.10 — **1,556 passed, 12,791 assertions**;
+  no warnings, risky tests, deprecations or PHPUnit deprecations reported.
+- `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/pint --test` —
+  passed.
+- PHP 8.5.10 Composer platform check — passed for PHP 8.5.10 and all
+  required extensions. The initial system-PHP 8.3 check was rejected by the
+  project requirement and was not used as evidence.
+- `npm run build` — passed with Vite 8.2.2.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- Complete isolated Playwright run with PHP 8.5.10 — **18 passed, 1 skipped**
+  in 19 tests: accessibility, asset layouts, no-JavaScript provider
+  submission, served Livewire, grouped navigation and mobile/tablet/desktop
+  product-route crawls. The one skipped test is the deployment-only live
+  runtime check, which requires an explicitly supplied deployed origin.
+- After the isolated runtime was restarted from generated caches,
+  `config:cache`, `route:cache` and `view:cache` passed; the served
+  Livewire/mobile smoke passed **1 test**.
+- `git diff --check` — passed.
+
+The first browser attempt was discarded because the temporary runtime used
+Laravel's in-memory array session driver, which cannot persist login state
+between built-in-server requests. The corrected run used an isolated
+file-backed session directory and passed; no application change was required
+for this setup issue. The temporary SQLite database, cache paths, storage,
+application key and server were disposable and separate from live and
+acceptance-drill environments.
+
+All implementation commits through `299ba20` were pushed to
+`origin/main`; this verification record and the synchronized handoff docs are
+the final documentation slice. The exact next task is separately authorized
+release-gate or external acceptance work, not another UI extraction.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
