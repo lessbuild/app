@@ -129,6 +129,7 @@ removing or renaming existing routes.
 | Phase 2: application shell and navigation | Complete | 3 dedicated navigation tests across mobile/tablet/desktop; 9 asset-layout tests; 36 focused feature tests / 808 assertions; mobile and desktop broad visual audit pass; tablet broad audit timed out at 15 minutes on `/providers/3/edit` | `1661f21` plus compatibility correction `5943ad8`, both pushed to `origin/main` | Modernize dashboard and applications/deployments page family |
 | Phase 3A: dashboard hierarchy | Complete | Dashboard, infrastructure-filter and UI asset feature coverage: 44 tests / 808 assertions; view cache; Pint; Vite build; 9 asset-layout tests with PHP 8.5.10; diff check | `e6eb63f` pushed to `origin/main` | Modernize applications and project pages |
 | Phase 3B: applications and environments | Complete | Project creation, environment, configuration, preview and tenancy coverage: 45 tests / 406 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `df6a56c` pushed to `origin/main` | Modernize builds and deployment pages |
+| Phase 3C: builds and deployment status | Complete | Build history, deployment, approval, cancellation, comparison, observation, log, webhook and repository coverage: 78 tests / 621 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `3d3f24a` pushed to `origin/main` | Modernize websites, servers, providers and infrastructure pages |
 
 ## Phase 1 record — shared visual system
 
@@ -168,6 +169,45 @@ not changed. No production runtime, credentials or cloud resources were used.
   responsive fixture widths plus provider submission with JavaScript disabled.
 - `npm run build` — passed with the updated Vite bundle.
 - `git diff --check` — passed.
+
+## Phase 3C record — builds and deployment status
+
+### Responsibility problem
+
+Deployment history and detail already had the required operational data, but
+the visual hierarchy treated filters, evidence, timeline milestones, recovery
+actions and raw logs as a sequence of similarly weighted bordered blocks. The
+mobile list and desktop table also used separate status treatments.
+
+### Boundaries and benefit
+
+- Query, authorization, Livewire polling, callback handling, log bounds and
+  deployment state remain in their existing controllers, actions, jobs and
+  Livewire component.
+- Shared cards, badges, alerts and buttons now express the same status and
+  action vocabulary in history, comparison, detail, approval and recovery
+  surfaces.
+- Deployment detail presents identity and approval context before the timeline,
+  then recovery/rollback choices, health evidence and the bounded log. This
+  improves incident scanning without changing execution order.
+- Desktop and mobile history retain their existing pagination, filters, export
+  route and links; only the presentation wrapper and status treatment changed.
+
+### Preserved contracts
+
+Revision attestation, webhook metadata, approval/rejection, cancellation,
+redeployment, rollback, observation leases, stale callback protection, log
+escaping/downloads, query scoping and all response behavior remain unchanged.
+No remote calls or database writes were added to the views.
+
+### Verification
+
+- Focused build/deployment matrix — **78 passed, 621 assertions**.
+- artisan view:cache — passed.
+- vendor/bin/pint --test — passed.
+- npm run build — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- git diff --check — passed.
 
 ## Phase 2 record — application shell and navigation
 
