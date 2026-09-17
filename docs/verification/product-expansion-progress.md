@@ -1,12 +1,21 @@
 # BuildPusher product expansion progress
 
-Latest continuation: September 17 final local verification completed after the
-mobile navigation restoration. The strict PHP 8.5.10 suite passed **1,559
+Latest continuation: September 17 external blocker audit completed after the
+final local verification. The isolated GitHub and DigitalOcean provider
+records passed a read-only health check (**2 checked / 0 failed**). Monitoring
+heartbeat/status URLs, Stripe keys, GitHub App settings and workspace SSO are
+not configured in the isolated runtime; email is exempt because it is a local
+environment. The exact next task is to supply or provision those external
+release integrations, then run their isolated acceptance checks. The earlier
+strict PHP/UI verification remains recorded below.
+
+Previous continuation: September 17 final local verification completed after
+the mobile navigation restoration. The strict PHP 8.5.10 suite passed **1,559
 tests / 12,864 assertions**, with Pint, Vite and `git diff --check` passing.
 The authenticated dev-domain mobile/tablet/desktop navigation journey passed
 **3 browser tests**; the isolated dev service is active and enabled and the
 homepage returned HTTP 200. The current isolated `main` checkout is clean at
-`79b689f` and aligned with `origin/main`. The exact next task is separately
+`bc7e773` and aligned with `origin/main`. The exact next task is separately
 authorized release handoff and external acceptance, with production mail,
 independent monitoring/heartbeat, GitHub App, billing/SSO, broader
 provider-specific recovery and the separate live-acceptance gates kept
@@ -5191,3 +5200,49 @@ next task is separately authorized release handoff and external acceptance;
 production mail, independent monitoring/heartbeat destinations, GitHub App
 configuration, billing/SSO, broader provider-specific recovery and the live
 acceptance drill remain outstanding.
+
+## External blocker audit — 2026-09-17
+
+### Scope and responsibility boundary
+
+The isolated dev runtime was audited without modifying production, the
+canonical checkout or the separate acceptance-drill checkout. The configured
+non-demo GitHub and DigitalOcean provider records were checked through the
+existing provider-health operation; the command reported **2 checked / 0
+failed** and created no provider resources. The readiness diagnostic reported
+two historical failed queue jobs for review, while application, URL, database,
+migration, storage, cache, queue and pending-job checks passed.
+
+The external release integrations are not configured locally: monitoring
+heartbeat/status URLs are absent; Stripe key/secret values are absent; all
+GitHub App values are absent; and no workspace has an SSO configuration or
+enforcement flag. `buildpusher:email:diagnose` passes only because the runtime
+is `local` and production email is intentionally not required there. The
+monitoring command correctly reports that its heartbeat is not configured.
+
+### Exact next task and required evidence
+
+No code change can supply these external identities or credentials. Configure
+them through the deployment secret store or supported workspace settings,
+without placing secret values in source control or chat:
+
+- production SMTP credentials and a verified sender, followed by the email
+  diagnostic delivery test;
+- an independently hosted HTTPS heartbeat endpoint and public status endpoint,
+  followed by the heartbeat `--verify-status` check and missed-heartbeat
+  staging test;
+- a GitHub App installation with its app ID, slug, PEM private key and webhook
+  secret, followed by repository discovery/webhook acceptance;
+- approved Stripe test/live keys, webhook secret and plan price IDs, followed
+  by faked/local regression and an explicitly approved billing acceptance run;
+- an OIDC issuer, client ID/secret, callback configuration and target test
+  workspace for SSO acceptance;
+- additional provider credentials and a disposable target for any recovery
+  path beyond the already verified DigitalOcean cycle.
+
+The previously pasted DigitalOcean token should be rotated or revoked after
+the current dev credential is confirmed. No credential value is recorded in
+this ledger. The separate live acceptance drill still requires explicit
+environment, budget and maintenance-window authorization. This audit is
+evidence of missing prerequisites, not a claim that external acceptance
+passed.

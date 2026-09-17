@@ -1,5 +1,37 @@
 # BuildPusher chat handoff
 
+## External blocker audit — 2026-09-17
+
+The isolated `main` runtime was checked without changing production or creating
+cloud resources. The two configured non-demo provider records, GitHub and
+DigitalOcean, passed the read-only health command:
+`lessbuild:providers:health --provider=6 --provider=7` reported **2 checked,
+0 failed**. The local readiness diagnostic passed application key, URL,
+database, migrations, storage, cache, queue and pending-job checks; it reports
+two historical failed queue jobs for review.
+
+The release blockers remain external rather than code failures. The runtime
+has no configured monitoring heartbeat/status URLs, Stripe key/secret, or
+GitHub App ID/slug/private key/webhook secret. No workspace has SSO configured
+or enforced. Email diagnostics pass only because this isolated runtime is
+`local`, where production delivery is intentionally not required.
+
+To clear these gates, configure secrets through the deployment secret store
+(never chat): production SMTP and verified sender; independent HTTPS heartbeat
+and status destinations; the production GitHub App and its installation; and
+Stripe test/live keys, webhook secret and approved plan price IDs. Configure
+OIDC issuer/client credentials and callback settings in the target workspace
+when SSO acceptance is scheduled. Broader provider recovery requires each
+additional provider credential and a disposable target; the separate live
+acceptance drill requires an explicitly authorized environment, budget and
+maintenance window.
+
+The DigitalOcean token previously pasted into chat should be rotated/revoked
+after the current dev credential is confirmed. No token value is recorded
+here. The exact next task is to provision or supply the external monitoring
+and release-integration configuration, then run each acceptance command in an
+isolated release environment.
+
 ## Final local verification after mobile restoration — 2026-09-17
 
 The current `main` tip is `79b689f` and the isolated implementation checkout
