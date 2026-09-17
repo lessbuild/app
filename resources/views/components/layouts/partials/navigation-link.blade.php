@@ -9,8 +9,7 @@
     $href = route($item['route']).($item['anchor'] ?? '');
 @endphp
 
-<a
-    href="{{ $href }}"
+<a href="{{ $href }}"
     @if ($active) aria-current="page" @endif
     @class([
         'group flex min-w-0 items-center gap-3 rounded-lg text-sm transition-colors focus-visible:relative focus-visible:z-10',

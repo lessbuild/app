@@ -77,7 +77,7 @@
             </nav>
         </section>
 
-        <div data-mobile-account class="border-t border-primary px-3 pt-4 lg:hidden">
+        <div data-mobile-account class="mx-4 mt-4 border-t border-primary pt-4 lg:hidden">
             <div class="flex min-w-0 items-center gap-3">
                 <x-avatar :name="auth()->user()->name" class="h-9 w-9 rounded-lg text-xs" />
                 <div class="min-w-0">

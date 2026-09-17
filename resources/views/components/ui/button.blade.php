@@ -10,6 +10,10 @@
 
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</a>
+@elseif ($type === 'submit')
+    <button type="submit" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</button>
+@elseif ($type === 'reset')
+    <button type="reset" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</button>
 @else
-    <button type="{{ $type }}" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</button>
+    <button type="button" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</button>
 @endif

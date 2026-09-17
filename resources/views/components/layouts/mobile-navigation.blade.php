@@ -51,7 +51,7 @@
                 <span>{{ __('Help') }}</span>
                 <svg class="ui-nav-chevron h-4 w-4 shrink-0 stroke-2 text-secondary" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
             </summary>
-            <nav class="grid grid-cols-2 gap-2 border-t border-primary p-2" aria-label="{{ __('Help') }}">
+            <nav class="grid grid-cols-2 gap-2 border-t border-primary p-2" aria-label="{{ __('Settings and support') }}">
                 @foreach ($navigation['support'] ?? [] as $item)
                     <x-layouts.partials.navigation-link :item="$item" mobile />
                 @endforeach
