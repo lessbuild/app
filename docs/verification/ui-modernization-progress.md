@@ -126,7 +126,8 @@ removing or renaming existing routes.
 | --- | --- | --- | --- | --- |
 | Phase 0: inventory and fresh baseline | Complete | 1,556 PHP tests / 13,004 assertions; Pint; asset build; 9 asset-layout tests; 6 accessibility/visual tests | `2c43276` pushed to `origin/main` | Add semantic design tokens and shared Blade UI primitives |
 | Phase 1: shared visual system | Complete | Blade view cache; Pint; diff check; Vite build; 9 asset-layout tests including mobile, tablet, desktop, dark mode and no-JS provider submission | `a5045f0` pushed to `origin/main` | Consolidate desktop/mobile navigation into grouped workspace IA |
-| Phase 2: application shell and navigation | Complete | 3 dedicated navigation tests across mobile/tablet/desktop; 9 asset-layout tests; mobile and desktop broad visual audit pass; tablet broad audit timed out at 15 minutes on `/providers/3/edit` | Pending commit and push | Modernize dashboard and applications/deployments page family |
+| Phase 2: application shell and navigation | Complete | 3 dedicated navigation tests across mobile/tablet/desktop; 9 asset-layout tests; 36 focused feature tests / 808 assertions; mobile and desktop broad visual audit pass; tablet broad audit timed out at 15 minutes on `/providers/3/edit` | `1661f21` plus compatibility correction `5943ad8`, both pushed to `origin/main` | Modernize dashboard and applications/deployments page family |
+| Phase 3A: dashboard hierarchy | Complete | Dashboard, infrastructure-filter and UI asset feature coverage: 44 tests / 808 assertions; view cache; Pint; Vite build; 9 asset-layout tests with PHP 8.5.10; diff check | `e6eb63f` pushed to `origin/main` | Modernize applications and project pages |
 
 ## Phase 1 record — shared visual system
 
@@ -208,6 +209,46 @@ to miss on one surface.
   crawl reached `/providers/3/edit` and exceeded its existing 900-second test
   timeout; it ended with a page crash during teardown. This is recorded as
   incomplete browser evidence, not as a pass or an application defect.
+
+## Phase 3A record — dashboard hierarchy
+
+### Responsibility problem
+
+The dashboard contained many repeated, feature-specific surface treatments:
+neutral cards, colored alerts, status counters and action links each used
+different borders, radii, text colors and interaction affordances. That made
+the most important operational signals compete visually and caused dark-mode
+and responsive improvements to require dashboard-specific CSS decisions.
+
+### Boundaries and benefit
+
+- The dashboard remains a read-only composition of the existing server-side
+  summaries; no query or business responsibility moved into the view.
+- Shared cards, badges, alerts and buttons now provide the visual hierarchy for
+  deployment, provisioning, provider, webhook, command, recipe and failure
+  summaries.
+- Interactive summary rows use the shared interactive-card treatment, while
+  status panels use semantic alert tones and links retain existing destinations.
+- Setup progress uses the shared surface and accent vocabulary without changing
+  its dependency order, widget preferences or completion behavior.
+
+### Preserved contracts
+
+Dashboard queries, organization scoping, widget persistence, route parameters,
+flash behavior, authorization and all displayed labels remained unchanged.
+The update is presentational only; no credentials or operational data are
+loaded into new components.
+
+### Verification
+
+- `DashboardTest`, `InfrastructureListFilterTest` and `LocalUiAssetTest` —
+  **44 passed, 808 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
 
 ## Remaining external scope
 
