@@ -131,6 +131,7 @@ removing or renaming existing routes.
 | Phase 3B: applications and environments | Complete | Project creation, environment, configuration, preview and tenancy coverage: 45 tests / 406 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `df6a56c` pushed to `origin/main` | Modernize builds and deployment pages |
 | Phase 3C: builds and deployment status | Complete | Build history, deployment, approval, cancellation, comparison, observation, log, webhook and repository coverage: 78 tests / 621 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `3d3f24a` pushed to `origin/main` | Modernize infrastructure resource pages |
 | Phase 4A: infrastructure inventories | Complete | Website, server and provider coverage: 307 tests / 2,605 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4aa8f64` pushed to `origin/main` | Modernize databases, domains, high availability and backups |
+| Phase 4B: database and traffic operations | Complete | Database, domain and load-balancer coverage: 24 tests / 147 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `681a57c` pushed to `origin/main` | Modernize backup and restore operations |
 
 ## Phase 1 record — shared visual system
 
@@ -243,6 +244,47 @@ unchanged. No database writes, remote calls or queue dispatches were added.
 ### Verification
 
 - Focused infrastructure matrix — **307 passed, 2,605 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
+
+## Phase 4B record — database and traffic operations
+
+### Responsibility problem
+
+Database, domain and high-availability pages combined resource identity,
+operational status, credentials, destructive workflows and setup forms in
+dense one-line templates. Labels and section hierarchy varied, and destructive
+or recovery actions did not share the same visual language as the rest of the
+application.
+
+### Boundaries and benefit
+
+- Existing controllers, policies, actions, jobs, query scopes and remote
+  integrations remain the behavior boundary; the change is limited to Blade
+  presentation and shared UI primitives.
+- Database operations now separate inspection metrics, credential issuance,
+  credential revocation, clone confirmation and clone history into readable
+  sections. The password notice retains its one-time session behavior.
+- Domains and TLS use consistent website group cards, domain status metadata,
+  labeled setup forms and explicit temporary-domain guidance.
+- High availability uses a clear route creation section, node count/status
+  summary and responsive node management forms. Shared badges distinguish
+  active, pending and failed states without inventing new workflow states.
+
+### Preserved contracts
+
+All original field names, defaults, routes, CSRF/method fields, plan checks,
+organization scoping, confirmation inputs, disabled temporary-domain behavior,
+primary-domain safety, clone restrictions, dispatch timing and response/flash
+behavior remain unchanged. No new writes, queries, remote calls or queue jobs
+were introduced.
+
+### Verification
+
+- Focused database/domain/load-balancer matrix — **24 passed, 147 assertions**.
 - `php artisan view:cache` — passed.
 - `vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
