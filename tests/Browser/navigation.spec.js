@@ -43,8 +43,13 @@ for (const viewport of viewports) {
                 await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
             }
         }
-        await expect(navigation.getByRole('navigation', { name: 'Build and release', exact: true })).toBeVisible();
-        await expect(navigation.getByRole('navigation', { name: 'Workspace', exact: true })).toBeVisible();
+        if (viewport.width < 1024) {
+            await expect(navigation.getByRole('navigation', { name: 'Workspace navigation', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Settings and support', exact: true })).toBeVisible();
+        } else {
+            await expect(navigation.getByRole('navigation', { name: 'Build and release', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Workspace', exact: true })).toBeVisible();
+        }
 
         await page.goto(new URL('/projects', baseURL).toString(), { waitUntil: 'domcontentloaded' });
         if (viewport.width < 1024) {
