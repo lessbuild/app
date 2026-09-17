@@ -938,6 +938,125 @@ Commit `72ae1ae` was pushed to `origin/main`. The next task is the final
 cross-page audit of remaining legacy wrappers and then complete regression
 verification.
 
+## Phase 6I record — shared shell, form and inventory consistency
+
+### Responsibility problem
+
+The major page families had moved to the shared UI language, but the shell,
+form sections and inventory controls still carried a few competing spacing,
+focus and empty-state conventions. That made navigation and repeated resource
+lists feel different even when they represented the same kind of workflow.
+
+### Boundaries and benefit
+
+- The application shell now uses the shared semantic button, surface and
+  focus treatments while retaining the existing Alpine focus restoration,
+  command palette and mobile quick-action behavior.
+- The shared form-section wrapper exposes its heading and description on small
+  screens as well as large screens, and form errors use the shared danger
+  alert. Existing named error bags and section slots remain unchanged.
+- Inventory filters, empty actions and build-status controls use the same
+  rounded fields, responsive action groups and semantic buttons without
+  changing their query parameters or submission behavior.
+
+### Preserved contracts
+
+Navigation routes, active states, keyboard Escape behavior, focus targets,
+command-palette search, mobile quick actions, form slots, named validation
+bags, filters, exports, pagination, disabled controls and source-level UI
+compatibility contracts remain unchanged. Native controls retained in the
+shell are deliberate: the mobile logout submit and delete-dialog openers
+must remain native for their existing form and dialog behavior.
+
+### Verification
+
+- Shell, navigation, asset-contract and global-search matrix — **44 passed,
+  619 assertions**.
+- Account, organization, security and session matrix — **101 passed, 656
+  assertions**.
+- Inventory and dashboard matrix — **98 passed, 882 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commits `a8f691d`, `6b9eda6` and `8e2505e` were pushed to `origin/main`.
+
+## Phase 6J record — configuration workflow presentation
+
+### Responsibility problem
+
+The configuration-as-code screen exposed review, receipt, environment
+overview, observation, comparison and authoring states through a mixture of
+legacy panels and inline controls. The underlying planner, reconciler and
+execution guarantees were already cohesive; the presentation obscured the
+state machine and made recovery actions harder to find.
+
+### Boundaries and benefit
+
+- The view now presents operation status, review warnings, receipt recovery,
+  environment metadata, comparison results and authoring guidance through
+  shared cards, badges, alerts and action buttons.
+- No business logic was moved into the view and no service or action was
+  replaced. The existing configuration collaborators remain responsible for
+  planning, validation, ownership, leases, claims and execution.
+
+### Preserved contracts
+
+Routes, review identity, secret-version revalidation, ownership and recovery
+access, removal safeguards, no-op behavior, API/OpenAPI semantics, YAML and
+JSON fields, validation safety, operation states, retry/cancel behavior,
+atomic claims, lease recovery and stale-callback protection remain unchanged.
+
+### Verification
+
+- Configuration planning, authoring, web/API, removal, resource safety,
+  recovery, concurrency, results and scheduling matrix — **193 passed, 1,842
+  assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Commit `49c802b` was pushed to `origin/main`.
+
+## Phase 6K record — final alert and empty-state consistency
+
+### Responsibility problem
+
+The last user-facing compatibility wrappers left prerequisite guidance,
+social feedback, provisioning outcomes and related-resource empty states with
+older styling and weaker responsive hierarchy. Small controls such as form
+checkboxes and avatars also used inconsistent geometry.
+
+### Boundaries and benefit
+
+- Website prerequisites and plan guidance now use semantic informational and
+  warning alerts with explicit actions.
+- Empty related-resource rows, social feedback, setup failures, deployment
+  cancellation and repository impact results use shared alerts or empty-state
+  components with appropriate status semantics.
+- Form controls and attached-resource avatars now follow the shared geometry
+  without changing their values, loops or Livewire polling behavior.
+
+### Preserved contracts
+
+All routes, links, Turbo opt-outs, validation and flash text, provisioning
+polling, bounded output, status visibility, report selection, impact-preview
+semantics and authorization behavior remain unchanged. No writes, jobs,
+remote calls or policy decisions were added to presentation code.
+
+### Verification
+
+- Website, provisioning, import, placement, deletion, impact-preview, social
+  authentication and account matrix — **64 passed, 467 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Commit `7251902` was pushed to `origin/main`.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
