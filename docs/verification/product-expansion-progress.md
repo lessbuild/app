@@ -3,6 +3,9 @@
 Latest continuation: September 17 preview acceptance found a real PostgreSQL
 cleanup transaction defect. Its correction and real-database evidence are in
 [the dedicated verification record](preview-postgresql-cleanup-2026-09-17.md).
+The managed Valkey failed-start correction also passes the current full strict
+suite (1,551 tests / 12,974 assertions). A first-deployment resource-preparation
+ordering gap is the next local task, before more provider acceptance.
 The previous local completion checkpoint below does not establish complete
 provider-backed preview or recovery acceptance.
 
@@ -4871,3 +4874,27 @@ documentation only; the application remains covered by the strict 1,547-test /
 12,962-assertion run and full Pint. After this record is committed and pushed,
 the exact next task is preview-stack acceptance, including PostgreSQL/Valkey
 readiness and cleanup, distinct from the completed generic recovery drill.
+This evidence was committed and pushed as `c85fc77`, then integrated into
+canonical `main` and the dev runtime.
+
+## Managed Valkey start failure propagation — 2026-09-17
+
+The existing resource script ignored an existing container's failed start and
+continued to its success callback. Removing that suppression preserves the
+existing command-rendering boundary and makes the failure use the deployment's
+existing fail-fast path. No resource identity, credential, callback number,
+schema, serialized job or successful-operation behavior changed.
+
+The fresh focused baseline passed 16 tests / 171 assertions. A new executable
+Bash test failed on the old existing-container failure path; all four new and
+existing-container success/failure cases pass after correction. The related
+resource/configuration/preview/template batch passed **31 tests / 261
+assertions**. The full strict PHP suite passed **1,551 tests / 12,974
+assertions**, with full Pint, syntax, lockfile and diff checks passing.
+See [the verification record](managed-valkey-start-2026-09-17.md).
+
+After this cohesive fix is committed and pushed, the exact next task is to
+prepare managed resources before first-deployment Laravel migrations without
+renumbering persisted callback stages. Separate the shared command-rendering
+extraction from the intentional timing fix. Full configuration/preview and
+recovery acceptance still follows; no cloud host was created for this slice.

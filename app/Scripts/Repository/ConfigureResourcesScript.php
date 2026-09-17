@@ -60,7 +60,8 @@ class ConfigureResourcesScript extends BuildProvisioningScript
             if ! docker container inspect {$containerArg} >/dev/null 2>&1; then
                 docker run --detach --name {$containerArg} --restart unless-stopped --publish 127.0.0.1:{$port}:6379 --volume {$containerArg}-data:/data valkey/valkey:8-alpine valkey-server --appendonly yes{$passwordArgument}
             else
-                docker start {$containerArg} >/dev/null 2>&1 || true
+                # A failed restart must stop before the resource-stage callback.
+                docker start {$containerArg} >/dev/null 2>&1
             fi
             BASH;
         }

@@ -34,7 +34,15 @@ objects left by the September 16 drill were explicitly deleted; a fresh listing
 found zero current objects under `buildpusher/websites/10/`. Earlier wording
 blaming key permissions for the diagnostic 403 was not established. See
 [the cleanup record](verification/spaces-drill-cleanup-2026-09-17.md).
-Next: continue preview-stack and recovery acceptance.
+The managed Valkey resource script also no longer reports success after a
+failed existing-container start. Its new executable regression failed against
+the old code; the full strict suite now passes **1,551 tests / 12,974 assertions**
+with full Pint. See [the verification record](verification/managed-valkey-start-2026-09-17.md).
+Next: correct first-deployment resource preparation before Laravel migrations
+while preserving the 15 callback stages, then continue configuration/preview
+and recovery acceptance. This newly identified ordering gap remains open at
+this checkpoint; the historical local completion claim is not first-deployment
+acceptance evidence.
 
 ## API access follow-up — 2026-09-14
 
