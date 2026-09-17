@@ -129,7 +129,8 @@ removing or renaming existing routes.
 | Phase 2: application shell and navigation | Complete | 3 dedicated navigation tests across mobile/tablet/desktop; 9 asset-layout tests; 36 focused feature tests / 808 assertions; mobile and desktop broad visual audit pass; tablet broad audit timed out at 15 minutes on `/providers/3/edit` | `1661f21` plus compatibility correction `5943ad8`, both pushed to `origin/main` | Modernize dashboard and applications/deployments page family |
 | Phase 3A: dashboard hierarchy | Complete | Dashboard, infrastructure-filter and UI asset feature coverage: 44 tests / 808 assertions; view cache; Pint; Vite build; 9 asset-layout tests with PHP 8.5.10; diff check | `e6eb63f` pushed to `origin/main` | Modernize applications and project pages |
 | Phase 3B: applications and environments | Complete | Project creation, environment, configuration, preview and tenancy coverage: 45 tests / 406 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `df6a56c` pushed to `origin/main` | Modernize builds and deployment pages |
-| Phase 3C: builds and deployment status | Complete | Build history, deployment, approval, cancellation, comparison, observation, log, webhook and repository coverage: 78 tests / 621 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `3d3f24a` pushed to `origin/main` | Modernize websites, servers, providers and infrastructure pages |
+| Phase 3C: builds and deployment status | Complete | Build history, deployment, approval, cancellation, comparison, observation, log, webhook and repository coverage: 78 tests / 621 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `3d3f24a` pushed to `origin/main` | Modernize infrastructure resource pages |
+| Phase 4A: infrastructure inventories | Complete | Website, server and provider coverage: 307 tests / 2,605 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4aa8f64` pushed to `origin/main` | Modernize databases, domains, high availability and backups |
 
 ## Phase 1 record — shared visual system
 
@@ -208,6 +209,45 @@ No remote calls or database writes were added to the views.
 - npm run build — passed.
 - Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
 - git diff --check — passed.
+
+## Phase 4A record — infrastructure inventories
+
+### Responsibility problem
+
+The highest-use infrastructure inventory pages independently repeated filter
+surfaces, metric cards, action links, table containers and provisioning or
+connection status colors. The visual differences made it harder to scan
+capacity and health across Websites, Servers and Providers, especially at
+mobile widths.
+
+### Boundaries and benefit
+
+- `x-ui.stat` now provides one semantic metric presentation for definition-list
+  summaries without moving query or metric calculation into views.
+- Websites, Servers and Providers use shared page-header icons, button variants,
+  filter cards, status badges and table shells. Existing filters, exports,
+  pagination, links and empty states remain in their original view boundaries.
+- Status badges use the shared semantic tones so active, failed, pending,
+  healthy, failed and unchecked states are recognizable across resource types.
+- The presentation changes remain intentionally view-only: controllers,
+  policies, queries, encrypted attributes, jobs and provider contracts were not
+  changed.
+
+### Preserved contracts
+
+Organization scoping, filter normalization, pagination, ordering, CSV export,
+provider connection feedback, provisioning states, health monitoring,
+authorization, secret handling and all resource lifecycle behavior remain
+unchanged. No database writes, remote calls or queue dispatches were added.
+
+### Verification
+
+- Focused infrastructure matrix — **307 passed, 2,605 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
 
 ## Phase 2 record — application shell and navigation
 
