@@ -1,5 +1,30 @@
 # BuildPusher chat handoff
 
+## Configuration-specific provider acceptance — 2026-09-17
+
+The isolated dev runtime completed the configuration-as-code provider
+acceptance sequence using the authorized DigitalOcean/GitHub connections. It
+verified read-only planning, exact review/apply, real delivery, repeated
+apply/review idempotency, source-secret freshness rejection, foreign-binding
+denial, approval/cancellation, explicit retry, a reversible Caddy health
+failure, terminal result refresh, local-only environment removal and
+supported cleanup of the disposable cloud resources.
+
+The detailed non-secret evidence is in
+[verification/configuration-acceptance-2026-09-17.md](verification/configuration-acceptance-2026-09-17.md).
+Project 9, website 11, repository 9 and server 16 were removed; DigitalOcean
+droplet 601315670 and its acceptance SSH key were absent in post-cleanup
+inventory. The fixture revision was
+`375d556fa50e4f76b880f59f075995bf554036a8`; build 30 delivered the real
+`hello world v9` response, build 34 recorded the controlled health failure,
+and explicit retry build 35 succeeded. No credential or secret value is
+recorded.
+
+This closes the configuration-specific gate only. Provider-backed preview
+stack readiness, managed PostgreSQL/Valkey recovery, the generic recovery
+drill, production integrations and the separate live acceptance drill remain
+outstanding. The exact next task is the provider-backed preview-stack cycle.
+
 ## Preview acceptance continuation — 2026-09-17
 
 The PostgreSQL preview cleanup script had a real execution defect despite the
@@ -53,9 +78,10 @@ Timing fix `f3cd675` is pushed and integrated into canonical `main` and the dev
 runtime. Both dev services are active, the queue is empty, and the homepage and
 its rendered CSS/JavaScript assets return HTTP 200. The preparation record above
 documents the intentional timing change and limits.
-Next: the configuration-specific provider acceptance sequence, followed by the
-full preview stack and recovery cycle. These remain separate from the local
-checks and the earlier generic disposable backup/restore drill.
+The configuration-specific provider acceptance sequence is now complete; see
+the section above. Next is the full provider-backed preview stack and recovery
+cycle. These remain separate from the local checks and the earlier generic
+disposable backup/restore drill.
 
 ## API access follow-up — 2026-09-14
 

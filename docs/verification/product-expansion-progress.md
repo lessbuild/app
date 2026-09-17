@@ -1,14 +1,13 @@
 # BuildPusher product expansion progress
 
-Latest continuation: September 17 preview acceptance found a real PostgreSQL
-cleanup transaction defect. Its correction and real-database evidence are in
-[the dedicated verification record](preview-postgresql-cleanup-2026-09-17.md).
-Managed Valkey failed-start handling and first-deployment resource preparation
-are also corrected. The current full strict suite passes **1,555 tests / 12,986
-assertions**. The next task is the configuration-specific provider acceptance
-sequence, before the full preview and recovery cycle.
-The previous local completion checkpoint below does not establish complete
-provider-backed preview or recovery acceptance.
+Latest continuation: September 17 configuration-specific provider acceptance
+completed on the isolated dev runtime. The review/apply, delivery, idempotency,
+freshness, ownership, approval, cancellation, retry, reversible health failure,
+environment removal and disposable-resource cleanup evidence is in
+[the dedicated verification record](configuration-acceptance-2026-09-17.md).
+The next task is provider-backed preview-stack acceptance, including managed
+PostgreSQL/Valkey readiness and cleanup, before the full preview and recovery
+cycle. The previous local completion checkpoints do not establish that gate.
 
 Status: Local product-expansion implementation through Phase 9 and the
 authorized disposable provider deployment/rollback/backup/restore/cleanup
@@ -59,8 +58,8 @@ worker probes outside the transaction, retries unexpected failures within a
 bounded queue budget, recovers due work and expired leases every minute and
 rejects stale claim/revision/target results. Build detail shows bounded status
 metadata only; claim tokens and remote error text are not rendered.
-Provider-side cloud acceptance, the separate live drill and broader runtime/
-target recovery coverage remain outstanding. The local installed-host-equivalent
+Provider-backed preview-stack acceptance, the separate live drill and broader
+runtime/target recovery coverage remain outstanding. The local installed-host-equivalent
 troubleshooting lifecycle gate is recorded below; no production or
 acceptance-drill resource was used.
 
@@ -4986,3 +4985,94 @@ do not interpret the local SQL or Bash checks as complete cloud acceptance.
 Production mail, independent monitoring, GitHub App, billing/SSO and other
 separately scoped release gates remain outstanding. No new droplet was created
 in this continuation, and the separate acceptance-drill checkout was not changed.
+
+## Configuration-specific provider acceptance — 2026-09-17
+
+The isolated dev runtime completed the configuration-as-code acceptance
+sequence against the authorized DigitalOcean and GitHub provider connections.
+The disposable resources were created through the normal application actions,
+not direct provider-only setup, and were removed through the supported cleanup
+workflow before this record was written. No credential material or secret
+values were printed or persisted in this record.
+
+The complete evidence, including exact request shapes, response statuses,
+operation/build identifiers and cleanup checks, is in
+[configuration-acceptance-2026-09-17.md](configuration-acceptance-2026-09-17.md).
+
+### Responsibility boundary and preserved contracts
+
+- The API Form Requests continued to validate the versioned YAML document and
+  binding arrays; the existing planner and reconciler produced the changes;
+  the configuration application/review services retained ownership,
+  freshness, lease, atomic-claim and no-op behavior; and the existing delivery
+  and result services continued to dispatch and reconcile builds.
+- Policies and the `control-plane:manage` middleware remained the authorization
+  boundary. A foreign workspace placement was rejected with the existing
+  generic 422 response before any application, operation, remote resource or
+  secret side effect.
+- The exact review input was revalidated after source-secret rotation. The old
+  review was rejected without a new application or operation, and the rotated
+  value was absent from the response.
+- Reapplying the same review returned the same application and operation. A new
+  unchanged review reused the existing deployment intent and did not create a
+  duplicate secret version or remote deployment.
+- Approval, idempotent cancellation, explicit retry, stale failure handling and
+  terminal result refresh retained their existing statuses and response
+  envelopes. A controlled Caddy outage produced a real health-check failure;
+  no automatic replacement was created. Restoring Caddy and explicitly
+  retrying produced one replacement that succeeded; repeating retry returned
+  that same replacement.
+- Removing the staging environment planned four local changes and marked
+  remote data/services as unchanged. Apply removed the local environment,
+  process, resource, variable and ownership rows while preserving the
+  independently owned website, repository, server and remote data until the
+  separate disposable cleanup step.
+
+### Evidence summary
+
+- Project `9`, disposable staging environment `15`, website `11`, repository
+  `9`, server `16` and DigitalOcean droplet `601315670` were used only for this
+  run. The source fixture revision was
+  `375d556fa50e4f76b880f59f075995bf554036a8`.
+- The initial plan returned HTTP 200 with five changes and no mutation.
+  Review `1` applied as application `1`/operation `1`; build `30` succeeded
+  and the real HTTPS fixture response was `hello world v9` (SHA-256
+  `4c8a16eb64c35d6e94867485acedd39130ff69e2ea17e6ab95917862841bb090`).
+- Same-review apply was idempotent. Unchanged review `2` created application
+  `2` but reused operation `1`; no additional build or secret version was
+  created. Freshness review `3` returned HTTP 422 after source-secret
+  rotation and produced no side effects.
+- Review `4` created application `3`/operation `2`. Approval blocking was
+  observed; two cancellation requests left the operation/build canceled with
+  no remote process. Explicit retry returned operation `3`/build `32`; a
+  repeated retry returned the same replacement, which succeeded.
+- Review `6` created application `5`/operation `5`. With Caddy stopped only on
+  the disposable host, build `34` failed at the final health check with the
+  sanitized message `Deployment health check failed (exit code 1)`. Result
+  refresh marked the operation failed and application `remote_failed` without
+  an automatic replacement. Explicit retry returned operation `6`/build `35`
+  on both first and repeated requests; after Caddy was restored, build `35`
+  and the application succeeded at `2026-09-17T07:09:17Z`.
+- Removal review `7` applied as local-only application `6` with no operations.
+  Reapplying it returned application `6`; a new absent-environment review `8`
+  applied as local-only application `7` with no operations.
+- The website cleanup job completed, the repository and website records were
+  removed, and the server deletion action removed the cloud server and owned
+  SSH key. DigitalOcean inventory returned no matching droplet or acceptance
+  SSH key. Project deletion then removed the disposable project and its
+  source-environment records. The queue was empty after cleanup; two unrelated
+  historical failed jobs remained in the isolated dev database.
+
+### Scope and limitations
+
+This verifies configuration-specific provider behavior and cleanup. It does
+not claim that the same run completed the broader preview-stack lifecycle,
+managed PostgreSQL/Valkey provider readiness, the generic release/rollback/
+backup/restore drill, production acceptance or the separate live acceptance
+drill. Those remain distinct release gates. The existing full strict local
+suite remains **1,555 tests / 12,986 assertions**, with full Pint and
+dependency/platform checks recorded in the preceding verification entries.
+
+The exact next task is provider-backed preview-stack acceptance using the
+already authorized disposable scope, followed by its cleanup and a separate
+record of any provider-specific limitations.
