@@ -19,8 +19,7 @@ final class WorkspaceNavigation
      *     support: list<array<string, mixed>>,
      *     profile: list<array<string, mixed>>,
      *     mobile: array{
-     *         groups: list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>,
-     *         profile: list<array<string, mixed>>,
+     *         groups: list<list<array<string, mixed>>>,
      *     },
      *     unread_notifications: int,
      * }
@@ -89,14 +88,6 @@ final class WorkspaceNavigation
             $this->item(__('Account and security'), 'account.index', 'user-circle', ['account.*']),
         ];
 
-        $mobileProfile = [
-            $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
-            $this->item(__('Costs and usage'), 'costs.index', 'chip', ['costs.*']),
-            $this->item(__('Billing'), 'billing.index', 'information-circle', ['billing.*']),
-            $this->item(__('Account'), 'account.index', 'user-circle', ['account.*']),
-            $this->item(__('Settings'), 'account.index', 'cog', [], null, '#password'),
-        ];
-
         return [
             'groups' => $groups,
             'support' => [
@@ -106,39 +97,58 @@ final class WorkspaceNavigation
             'profile' => $profile,
             'mobile' => [
                 'groups' => $this->mobileGroups($groups),
-                'profile' => $mobileProfile,
             ],
             'unread_notifications' => $unreadNotifications,
         ];
     }
 
     /**
-     * Restore the mobile menu's direct destinations while keeping the desktop
-     * sidebar's consolidated sections.
+     * Restore the original flat two-section mobile menu while keeping the
+     * desktop sidebar's consolidated sections.
      *
      * @param  list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>  $groups
-     * @return list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>
+     * @return list<list<array<string, mixed>>>
      */
     private function mobileGroups(array $groups): array
     {
-        foreach ($groups as $index => $group) {
-            if ($group['label'] === __('Build and release')) {
-                $groups[$index] = $this->group(__('Build and release'), [
-                    $this->item(__('Applications'), 'projects.index', 'view-grid', ['projects.*', 'environments.*']),
-                    $this->item(__('Deployments'), 'builds.index', 'cloud-upload', ['builds.*']),
-                    $this->item(__('Repositories'), 'repositories.index', 'code', ['repositories.*']),
-                ], true);
-            }
+        $primary = [
+            $this->item(__('Dashboard'), 'dashboard', 'view-grid', ['dashboard']),
+            $this->item(__('Applications'), 'projects.index', 'view-grid', ['projects.*', 'environments.*']),
+            $this->item(__('Sites'), 'websites.index', 'link', ['websites.*']),
+            $this->item(__('Servers'), 'servers.index', 'cloud', ['servers.*']),
+            $this->item(__('Deployments'), 'builds.index', 'cloud-upload', ['builds.*']),
+            $this->item(__('Repositories'), 'repositories.index', 'code', ['repositories.*']),
+            $this->item(__('Domains'), 'domains.index', 'link', ['domains.*']),
+            $this->item(__('Databases'), 'databases.index', 'database', ['databases.*']),
+            $this->item(__('Backups'), 'backups.index', 'database', ['backups.*']),
+            $this->item(__('High availability'), 'load-balancers.index', 'cloud', ['load-balancers.*']),
+            $this->item(__('Observability'), 'observability.index', 'chip', ['observability.*']),
+            $this->item(__('Activity'), 'activity.index', 'information-circle', ['activity.*']),
+            $this->item(__('Commands'), 'commands.index', 'code', ['commands.*']),
+            $this->item(__('Automation'), 'automation.index', 'code', ['automation.*']),
+            $this->item(__('Providers'), 'providers.index', 'cloud', ['providers.*']),
+            $this->item(__('Recipes'), 'recipes.index', 'code', ['recipes.*']),
+            $this->item(__('Gallery'), 'gallery.index', 'view-grid', ['gallery.*']),
+            $this->item(__('Alerts'), 'notifications.index', 'information-circle', ['notifications.*']),
+        ];
 
-            if ($group['label'] === __('Templates')) {
-                $groups[$index] = $this->group(__('Templates'), [
-                    $this->item(__('Recipes'), 'recipes.index', 'terminal', ['recipes.*']),
-                    $this->item(__('Gallery'), 'gallery.index', 'view-grid', ['gallery.*']),
-                ]);
+        $secondary = [
+            $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
+            $this->item(__('Costs'), 'costs.index', 'chip', ['costs.*']),
+            $this->item(__('Billing'), 'billing.index', 'information-circle', ['billing.*']),
+            $this->item(__('Account'), 'account.index', 'user-circle', ['account.*']),
+            $this->item(__('Settings'), 'account.index', 'cog', []),
+            $this->item(__('Help and guides'), 'docs', 'information-circle', ['docs']),
+            $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']),
+        ];
+
+        foreach ($groups as $group) {
+            if ($group['label'] === __('Administration')) {
+                $secondary = [...$secondary, ...$group['items']];
             }
         }
 
-        return $groups;
+        return [$primary, $secondary];
     }
 
     /**

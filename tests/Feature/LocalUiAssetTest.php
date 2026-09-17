@@ -318,21 +318,21 @@ class LocalUiAssetTest extends TestCase
     {
         $user = User::factory()->create();
         $navigation = (new WorkspaceNavigation)->for($user);
-        $items = collect($navigation['mobile']['groups'])
-            ->flatMap(fn (array $group): array => $group['items'])
-            ->merge($navigation['mobile']['profile']);
+        $items = collect($navigation['mobile']['groups'])->flatten(1);
 
         $this->assertSame('builds.index', $items->firstWhere('label', 'Deployments')['route']);
         $this->assertSame('repositories.index', $items->firstWhere('label', 'Repositories')['route']);
         $this->assertSame('recipes.index', $items->firstWhere('label', 'Recipes')['route']);
         $this->assertSame('gallery.index', $items->firstWhere('label', 'Gallery')['route']);
-        $this->assertSame('costs.index', $items->firstWhere('label', 'Costs and usage')['route']);
+        $this->assertSame('costs.index', $items->firstWhere('label', 'Costs')['route']);
         $this->assertSame('billing.index', $items->firstWhere('label', 'Billing')['route']);
-        $this->assertSame('#password', $items->firstWhere('label', 'Settings')['anchor']);
+        $this->assertSame('account.index', $items->firstWhere('label', 'Settings')['route']);
         $this->assertFalse($items->contains(fn (array $item): bool => in_array($item['label'], [
             'Template library',
             'Billing and usage',
             'Account and security',
+            'Domains and TLS',
+            'Automation and API',
         ], true)));
     }
 

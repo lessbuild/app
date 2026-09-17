@@ -27,13 +27,14 @@ for (const viewport of viewports) {
 
         await expect(navigation.getByRole('link', { name: 'Applications', exact: true })).toBeVisible();
         if (viewport.width < 1024) {
-            await navigation.locator('summary').filter({ hasText: 'Templates' }).click();
-            for (const mobileLink of ['Deployments', 'Repositories', 'Recipes', 'Gallery', 'Billing', 'Costs and usage', 'Account', 'Settings']) {
+            for (const mobileLink of ['Deployments', 'Repositories', 'Recipes', 'Gallery', 'Billing', 'Costs', 'Account', 'Settings', 'Alerts']) {
                 await expect(navigation.getByRole('link', { name: mobileLink, exact: true })).toBeVisible();
             }
-            for (const mergedLink of ['Template library', 'Billing and usage', 'Account and security']) {
+            for (const mergedLink of ['Template library', 'Billing and usage', 'Account and security', 'Domains and TLS', 'Automation and API']) {
                 await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
             }
+            await expect(navigation.getByRole('navigation', { name: 'Workspace navigation', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Settings and support', exact: true })).toBeVisible();
         } else {
             await expect(navigation.getByRole('link', { name: 'Template library', exact: true })).toBeVisible();
             await expect(navigation.getByRole('link', { name: 'Billing and usage', exact: true })).toBeVisible();

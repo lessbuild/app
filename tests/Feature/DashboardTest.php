@@ -63,7 +63,7 @@ class DashboardTest extends TestCase
             ->assertSee('>Recipes<', false)
             ->assertSee('>Gallery<', false)
             ->assertSee('>Billing<', false)
-            ->assertSee('>Costs and usage<', false)
+            ->assertSee('>Costs<', false)
             ->assertSee('>Settings<', false);
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
     }
