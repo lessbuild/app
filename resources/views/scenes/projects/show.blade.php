@@ -1,17 +1,24 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('projects.index')" :title="__('Back to applications')" />
 
-    <div class="mt-6 flex flex-wrap items-start justify-between gap-4">
-        <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')" />
-        @if($canManage)<a href="{{ route('projects.configuration.create', $project) }}" class="button secondary">{{ __('Configuration as code') }}</a>@endif
-        @if($canManage)<form method="POST" action="{{ route('projects.destroy', $project) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete application') }}</button></form>@endif
-    </div>
+    <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
+        <x-slot:buttons>
+            @if($canManage)
+                <x-ui.button :href="route('projects.configuration.create', $project)" variant="secondary">{{ __('Configuration as code') }}</x-ui.button>
+                <form method="POST" action="{{ route('projects.destroy', $project) }}">
+                    @csrf
+                    @method('DELETE')
+                    <x-ui.button type="submit" variant="danger">{{ __('Delete application') }}</x-ui.button>
+                </form>
+            @endif
+        </x-slot:buttons>
+    </x-layouts.partials.heading>
 
-    <section class="mt-8 grid overflow-hidden rounded-2xl border border-primary bg-primary sm:grid-cols-2 xl:grid-cols-4">
-        <div class="border-b border-primary p-4 sm:border-r xl:border-b-0"><p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('Environments') }}</p><p class="mt-1 text-2xl font-black text-primary">{{ $project->environments->count() }}</p></div>
-        <div class="border-b border-primary p-4 xl:border-b-0 xl:border-r"><p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('Attached sites') }}</p><p class="mt-1 text-2xl font-black text-primary">{{ $project->environments->whereNotNull('website_id')->count() }}</p></div>
-        <div class="border-b border-primary p-4 sm:border-r sm:border-b-0"><p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('Runtime') }}</p><p class="mt-1 font-black text-primary">{{ $project->environments->contains(fn ($environment) => $environment->hibernated_at) ? __('Partially hibernated') : __('Running') }}</p></div>
-        <div class="p-4"><p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __('Previews') }}</p><p class="mt-1 font-black text-primary">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</p></div>
+    <section class="ui-card mt-8 grid overflow-hidden sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ __('Application summary') }}">
+        <div class="border-b border-primary p-4 sm:border-r xl:border-b-0"><p class="ui-stat__label">{{ __('Environments') }}</p><p class="ui-stat__value">{{ $project->environments->count() }}</p></div>
+        <div class="border-b border-primary p-4 xl:border-b-0 xl:border-r"><p class="ui-stat__label">{{ __('Attached sites') }}</p><p class="ui-stat__value">{{ $project->environments->whereNotNull('website_id')->count() }}</p></div>
+        <div class="border-b border-primary p-4 sm:border-r sm:border-b-0"><p class="ui-stat__label">{{ __('Runtime') }}</p><p class="mt-1 font-black text-primary">{{ $project->environments->contains(fn ($environment) => $environment->hibernated_at) ? __('Partially hibernated') : __('Running') }}</p></div>
+        <div class="p-4"><p class="ui-stat__label">{{ __('Previews') }}</p><p class="mt-1 font-black text-primary">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</p></div>
     </section>
 
     <div class="mt-5 space-y-4">
@@ -32,11 +39,11 @@
                         && $repository->provider?->provider === $targetRepository->provider?->provider;
                 });
             @endphp
-            <section class="overflow-hidden rounded-2xl border border-primary bg-primary shadow-xs">
+            <section class="ui-card overflow-hidden shadow-xs" aria-labelledby="environment-{{ $environment->id }}-heading">
                 <div class="flex flex-wrap items-center gap-4 border-b border-primary px-5 py-4">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary font-black text-ternary">{{ strtoupper(substr($environment->name, 0, 1)) }}</div>
-                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 class="text-lg font-black text-primary">{{ $environment->name }}</h2>@if($environment->is_protected)<span class="rounded-full bg-ternary px-2 py-0.5 text-[10px] font-bold uppercase text-white">{{ __('Protected') }}</span>@endif @if($environment->hibernated_at)<span class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase text-secondary">{{ __('Hibernated') }}</span>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-secondary">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
-                    <div class="flex flex-wrap gap-2 text-xs"><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-lg bg-secondary px-3 py-2 font-bold text-secondary">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><a href="{{ route('observability.environments.context', $environment) }}" class="button secondary">{{ __('Investigate evidence') }}</a></div>
+                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 id="environment-{{ $environment->id }}-heading" class="text-lg font-black text-primary">{{ $environment->name }}</h2>@if($environment->is_protected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif @if($environment->hibernated_at)<x-ui.badge tone="neutral">{{ __('Hibernated') }}</x-ui.badge>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-secondary">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
+                    <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-lg bg-secondary px-3 py-2 font-bold text-secondary">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-ui.button></div>
                 </div>
 
                 @if(!$repository?->builds()->where('status', \App\Models\Build::STATUS_SUCCEEDED)->exists())
@@ -47,9 +54,9 @@
                         ['label' => __('Provider credentials available'), 'ready' => (bool) $repository?->provider_id, 'url' => route('providers.index')],
                     ])
                     @php($readyCount = collect($readiness)->where('ready', true)->count())
-                    <aside class="border-b border-primary bg-blue-50 px-5 py-4" aria-label="{{ __('First deployment readiness') }}">
-                        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-blue-950">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-blue-800">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="text-xs font-bold text-blue-800 underline">{{ __('Open setup guide') }}</a></div>
-                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs {{ $check['ready'] ? 'text-green-800' : 'text-blue-900' }}"><span aria-hidden="true" class="font-black">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" class="font-bold underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
+                    <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4" aria-label="{{ __('First deployment readiness') }}">
+                        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-primary">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-secondary">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="text-xs font-bold text-ternary underline">{{ __('Open setup guide') }}</a></div>
+                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-secondary"><span aria-hidden="true" class="font-black text-ternary">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" class="font-bold text-ternary underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
                     </aside>
                 @endif
 
@@ -65,18 +72,18 @@
                         @endif
                     </div>
                     @if($repository)
-                        <a href="{{ route('repositories.show', $repository) }}" class="button secondary">{{ __('View source') }}</a>
-                        @if($canDeploy)<form method="POST" action="{{ route('repositories.deploy', $repository) }}">@csrf<button type="submit" class="button primary" @disabled(!$deploymentReady || $deploymentInProgress)>{{ $deploymentInProgress ? __('Deploying…') : ($deploymentReady ? __('Deploy now') : __('Not ready')) }}</button></form>@endif
+                        <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View source') }}</x-ui.button>
+                        @if($canDeploy)<form method="POST" action="{{ route('repositories.deploy', $repository) }}">@csrf<x-ui.button type="submit" variant="primary" :disabled="! $deploymentReady || $deploymentInProgress">{{ $deploymentInProgress ? __('Deploying…') : ($deploymentReady ? __('Deploy now') : __('Not ready')) }}</x-ui.button></form>@endif
                     @elseif($environment->website && $canDeploy)
-                        <a href="{{ route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch]) }}" class="button primary">{{ __('Connect repository') }}</a>
+                        <x-ui.button :href="route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch])" variant="primary">{{ __('Connect repository') }}</x-ui.button>
                     @elseif($canDeploy)
-                        <a href="{{ route('websites.create') }}" class="button primary">{{ __('Create website') }}</a>
+                        <x-ui.button :href="route('websites.create')" variant="primary">{{ __('Create website') }}</x-ui.button>
                     @endif
                 </div>
 
                 @if($canDeploy && $successfulBuild && $successfulBuild->revision && $promotionTargets->isNotEmpty())
-                    <aside class="border-b border-primary bg-blue-50 px-5 py-4">
-                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-blue-950">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-blue-800">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><form method="POST" action="{{ route('builds.promote',$successfulBuild) }}" class="flex w-full min-w-0 flex-wrap gap-2 lg:w-auto">@csrf<select name="target_environment_id" required class="input secondary min-w-0 rounded-sm" aria-label="{{ __('Target environment') }}"><option value="">{{ __('Choose target') }}</option>@foreach($promotionTargets as $target)<option value="{{ $target->id }}">{{ $target->name }}</option>@endforeach</select><input name="promotion_note" maxlength="2000" class="input secondary min-w-0 rounded-sm" aria-label="{{ __('Change ticket or release note') }}" placeholder="{{ __('Change ticket or release note') }}"><button type="submit" class="button primary">{{ __('Promote') }}</button></form></div>
+                    <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4">
+                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-secondary">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><form method="POST" action="{{ route('builds.promote',$successfulBuild) }}" class="flex w-full min-w-0 flex-wrap gap-2 lg:w-auto">@csrf<select name="target_environment_id" required class="input secondary min-w-0 rounded-lg" aria-label="{{ __('Target environment') }}"><option value="">{{ __('Choose target') }}</option>@foreach($promotionTargets as $target)<option value="{{ $target->id }}">{{ $target->name }}</option>@endforeach</select><input name="promotion_note" maxlength="2000" class="input secondary min-w-0 rounded-lg" aria-label="{{ __('Change ticket or release note') }}" placeholder="{{ __('Change ticket or release note') }}"><x-ui.button type="submit" variant="primary">{{ __('Promote') }}</x-ui.button></form></div>
                     </aside>
                 @endif
 
@@ -99,13 +106,13 @@
                             @if($featureAccess['monitoring'])<label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Observe after deployment') }}</span><select name="post_deployment_observation_minutes" class="input secondary rounded-sm"><option value="">{{ __('Disabled') }}</option>@foreach(\App\Models\Environment::POST_DEPLOYMENT_OBSERVATION_MINUTES as $minutes)<option value="{{ $minutes }}" @selected($environment->post_deployment_observation_minutes === $minutes)>{{ __('For :minutes minutes', ['minutes' => $minutes]) }}</option>@endforeach</select><span class="mt-1 block text-xs text-secondary">{{ __('Check the deployed website for this window and keep the revision-linked result available for troubleshooting.') }}</span></label>@endif
                             <input type="hidden" name="is_protected" value="0"><label class="flex items-center gap-2"><input type="checkbox" name="is_protected" value="1" @checked($environment->is_protected)><span class="text-sm text-secondary">{{ __('Protect') }}</span></label>
                             <input type="hidden" name="requires_deployment_approval" value="0"><label class="flex items-center gap-2"><input type="checkbox" name="requires_deployment_approval" value="1" @checked($environment->requires_deployment_approval)><span class="text-sm text-secondary">{{ __('Require approval') }}</span></label>
-                            @can('update', $environment)<button type="submit" class="button primary sm:col-span-2">{{ __('Save settings') }}</button>@endcan
+                            @can('update', $environment)<x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save settings') }}</x-ui.button>@endcan
                         </form>
                     </details>
 
                     <details class="group bg-primary p-5">
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Deployment controls') }}</span><span class="text-secondary group-open:rotate-45">+</span></summary>
-                        <div class="mt-3 flex flex-wrap gap-2 text-xs"><span class="rounded-full px-2.5 py-1 font-bold {{ $environment->deployment_locked_at ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700' }}">{{ $environment->deployment_locked_at ? __('Locked') : __('Unlocked') }}</span>@if($environment->deployment_window_days)<span class="rounded-full bg-secondary px-2.5 py-1 text-secondary">{{ __('Maintenance window active') }}</span>@endif</div>
+                        <div class="mt-3 flex flex-wrap gap-2 text-xs"><x-ui.badge :tone="$environment->deployment_locked_at ? 'danger' : 'success'">{{ $environment->deployment_locked_at ? __('Locked') : __('Unlocked') }}</x-ui.badge>@if($environment->deployment_window_days)<x-ui.badge tone="neutral">{{ __('Maintenance window active') }}</x-ui.badge>@endif</div>
                         @can('update', $environment)
                             <form method="POST" action="{{ route('environments.deployment-controls.update', $environment) }}" class="mt-4 space-y-4">@csrf @method('PATCH')
                                 <label class="flex items-start gap-3"><input type="hidden" name="deployment_locked" value="0"><input type="checkbox" name="deployment_locked" value="1" class="mt-1" @checked($environment->deployment_locked_at)><span><span class="block text-sm font-bold text-primary">{{ __('Lock deployments') }}</span><span class="text-xs text-secondary">{{ __('Manual, API, scheduled, and webhook deployments will wait.') }}</span></span></label>
@@ -118,7 +125,7 @@
                                 <label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Pause between rolling workers') }}</span><select name="rolling_pause_seconds" class="input secondary mt-1 w-full rounded-sm">@foreach([0,1,2,5,10,30] as $seconds)<option value="{{ $seconds }}" @selected((int) $environment->rolling_pause_seconds === $seconds)>{{ trans_choice(':count second|:count seconds', $seconds, ['count' => $seconds]) }}</option>@endforeach</select></label>
                                 <label class="flex items-start gap-3 rounded-xl border border-primary bg-secondary p-3"><input type="hidden" name="automatic_rollback" value="0"><input type="checkbox" name="automatic_rollback" value="1" class="mt-1" @checked($environment->automatic_rollback)><span><span class="block text-sm font-bold text-primary">{{ __('Automatic rollback') }}</span><span class="text-xs leading-5 text-secondary">{{ __('If an activated release fails, immediately switch back to the most recent retained successful release.') }}</span></span></label>
                                 <x-forms.errors name="deployment_window_days" /><x-forms.errors name="deployment_window_start" /><x-forms.errors name="deployment_window_end" /><x-forms.errors name="deployment_window_timezone" />
-                                <button type="submit" class="button primary">{{ __('Save deployment controls') }}</button>
+                                <x-ui.button type="submit" variant="primary">{{ __('Save deployment controls') }}</x-ui.button>
                             </form>
                         @endcan
                     </details>
@@ -131,7 +138,7 @@
                             <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Maximum') }}</span><input value="{{ $environment->maximum_replicas }}" class="input secondary rounded-sm" disabled></label>
                             <label class="col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Idle hibernation') }}</span><input value="{{ $environment->hibernate_after_minutes ? __('After :minutes minutes', ['minutes' => $environment->hibernate_after_minutes]) : __('Never') }}" class="input secondary rounded-sm" disabled></label>
                         </div>
-                        @if($featureAccess['scaling'] || $featureAccess['hibernation'])<a href="{{ route('automation.index') }}" class="button secondary mt-4">{{ __('Open automation') }}</a>@else<p class="mt-4 text-sm text-secondary"><a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a> {{ __('to unlock runtime controls.') }}</p>@endif
+                        @if($featureAccess['scaling'] || $featureAccess['hibernation'])<x-ui.button :href="route('automation.index')" variant="secondary" class="mt-4">{{ __('Open automation') }}</x-ui.button>@else<p class="mt-4 text-sm text-secondary"><a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a> {{ __('to unlock runtime controls.') }}</p>@endif
                     </details>
 
                     <details class="group bg-primary p-5">
@@ -142,16 +149,16 @@
                 </div>
 
                 <div class="grid gap-5 border-t border-primary p-5 lg:grid-cols-2">
-                    <details class="group rounded-xl border border-primary bg-secondary p-4">
+                    <details class="ui-card ui-card--muted group p-4">
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Workers and scheduler') }} <span class="text-secondary">({{ $environment->processes->count() }})</span></span><span class="text-secondary group-open:rotate-45">+</span></summary>
                         <div class="mt-3 space-y-2">@foreach($environment->processes as $process)<div class="flex items-center gap-3 rounded-lg border border-primary bg-primary p-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $process->name }} <span class="font-normal text-secondary">· {{ $process->type }} · ×{{ $process->replicas }}</span></p><p class="mt-1 text-xs text-secondary">{{ __('Command encrypted · applied on next deployment') }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.processes.destroy', [$environment, $process]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Delete') }}</button></form>@endcan</div>@endforeach</div>
                         @can('update', $environment)@if($featureAccess['workers'])<form method="POST" action="{{ route('environments.processes.store', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input name="name" placeholder="queue" class="input secondary rounded-sm" required><select name="type" class="input secondary rounded-sm"><option value="worker">{{ __('Worker') }}</option><option value="scheduler">{{ __('Scheduler') }}</option></select><input name="command" placeholder="php artisan queue:work" class="input secondary rounded-sm font-mono sm:col-span-2" required><input type="number" name="replicas" min="1" max="20" value="1" class="input secondary rounded-sm"><select name="restart_policy" class="input secondary rounded-sm"><option value="always">{{ __('Always restart') }}</option><option value="on-failure">{{ __('Restart on failure') }}</option><option value="no">{{ __('Never restart') }}</option></select><input type="number" name="restart_delay_seconds" min="0" max="300" value="5" class="input secondary rounded-sm" aria-label="{{ __('Restart delay seconds') }}"><input type="hidden" name="is_enabled" value="1"><button type="submit" class="button primary">{{ __('Save process') }}</button></form>@else<p class="mt-4 text-sm text-secondary">{{ __('Available on Starter and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>@endif @endcan
                     </details>
 
-                    <details class="group rounded-xl border border-primary bg-secondary p-4">
+                    <details class="ui-card ui-card--muted group p-4">
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Attached resources') }} <span class="text-secondary">({{ $environment->resources->count() }})</span></span><span class="text-secondary group-open:rotate-45">+</span></summary>
                         <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<div class="flex items-center gap-3 rounded-lg border border-primary bg-primary p-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $resource->name }}</p><p class="text-xs text-secondary">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Detach') }}</button></form>@endcan</div>@endforeach</div>
-                        @can('update', $environment)@if($featureAccess['resources'])<form method="POST" action="{{ route('environments.resources.store', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input name="name" placeholder="primary-database" class="input secondary rounded-sm" required><select name="type" class="input secondary rounded-sm"><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option><option value="redis">Redis</option><option value="valkey">Valkey</option><option value="object_storage">{{ __('Object storage') }}</option></select><label class="flex items-center gap-2 sm:col-span-2"><input type="hidden" name="is_managed" value="0"><input type="checkbox" name="is_managed" value="1"><span class="text-sm text-secondary">{{ __('Manage on attached server') }}</span></label><textarea name="variables" rows="3" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="input secondary rounded-sm font-mono sm:col-span-2"></textarea><button type="submit" class="button primary sm:col-span-2">{{ __('Attach resource') }}</button></form>@else<p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>@endif @endcan
+                        @can('update', $environment)@if($featureAccess['resources'])<form method="POST" action="{{ route('environments.resources.store', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input name="name" placeholder="primary-database" class="input secondary rounded-lg" required><select name="type" class="input secondary rounded-lg"><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option><option value="redis">Redis</option><option value="valkey">Valkey</option><option value="object_storage">{{ __('Object storage') }}</option></select><label class="flex items-center gap-2 sm:col-span-2"><input type="hidden" name="is_managed" value="0"><input type="checkbox" name="is_managed" value="1"><span class="text-sm text-secondary">{{ __('Manage on attached server') }}</span></label><textarea name="variables" rows="3" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="input secondary rounded-lg font-mono sm:col-span-2"></textarea><x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-ui.button></form>@else<p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>@endif @endcan
                     </details>
                 </div>
             </section>
@@ -160,13 +167,13 @@
 
     <div class="mt-5 grid gap-5 xl:grid-cols-2">
         @if($canDeploy)
-            <details class="rounded-2xl border border-primary bg-primary p-5"><summary class="cursor-pointer font-black text-primary">{{ __('Add environment') }}</summary><form method="POST" action="{{ route('environments.store', $project) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input name="name" placeholder="Staging" class="input secondary rounded-sm" required><select name="type" class="input secondary rounded-sm">@foreach(\App\Models\Environment::TYPES as $type)<option value="{{ $type }}">{{ ucfirst($type) }}</option>@endforeach</select><input name="branch" placeholder="develop" class="input secondary rounded-sm sm:col-span-2" required><input type="hidden" name="is_protected" value="0"><input type="hidden" name="requires_deployment_approval" value="0"><button type="submit" class="button primary sm:col-span-2">{{ __('Create environment') }}</button></form></details>
+            <details class="ui-card p-5"><summary class="cursor-pointer font-black text-primary">{{ __('Add environment') }}</summary><p class="mt-2 text-sm text-secondary">{{ __('Create a separate runtime for a branch, then attach infrastructure and source control.') }}</p><form method="POST" action="{{ route('environments.store', $project) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input name="name" placeholder="Staging" class="input secondary rounded-lg" required><select name="type" class="input secondary rounded-lg">@foreach(\App\Models\Environment::TYPES as $type)<option value="{{ $type }}">{{ ucfirst($type) }}</option>@endforeach</select><input name="branch" placeholder="develop" class="input secondary rounded-lg sm:col-span-2" required><input type="hidden" name="is_protected" value="0"><input type="hidden" name="requires_deployment_approval" value="0"><x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Create environment') }}</x-ui.button></form></details>
         @endif
 
-        <details class="rounded-2xl border border-primary bg-primary p-5" @if($project->previews->isNotEmpty()) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between font-black text-primary"><span>{{ __('Preview environments') }} <span class="text-secondary">({{ $project->previews->count() }})</span></span><span class="rounded-full px-2.5 py-1 text-xs {{ $project->preview_enabled ? 'bg-green-100 text-green-700' : 'bg-secondary text-secondary' }}">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</span></summary>
+        <details class="ui-card p-5" @if($project->previews->isNotEmpty()) open @endif>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-black text-primary"><span>{{ __('Preview environments') }} <span class="text-secondary">({{ $project->previews->count() }})</span></span><x-ui.badge :tone="$project->preview_enabled ? 'success' : 'neutral'">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</x-ui.badge></summary>
             @if($canManage && $featureAccess['previews'])
-                <form method="POST" action="{{ route('projects.previews.update', $project) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf @method('PATCH')<label class="flex items-center gap-2"><input type="hidden" name="preview_enabled" value="0"><input type="checkbox" name="preview_enabled" value="1" @checked($project->preview_enabled)><span class="text-sm text-primary">{{ __('Enable previews') }}</span></label><input type="number" name="preview_ttl_hours" min="1" max="720" value="{{ old('preview_ttl_hours', $project->preview_ttl_hours ?: 72) }}" class="input secondary rounded-sm" aria-label="{{ __('Lifetime in hours') }}"><input name="preview_domain" value="{{ old('preview_domain', $project->preview_domain) }}" placeholder="previews.example.com" class="input secondary rounded-sm sm:col-span-2"><button type="submit" class="button primary sm:col-span-2">{{ __('Save previews') }}</button></form>
+                <form method="POST" action="{{ route('projects.previews.update', $project) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf @method('PATCH')<label class="flex items-center gap-2"><input type="hidden" name="preview_enabled" value="0"><input type="checkbox" name="preview_enabled" value="1" @checked($project->preview_enabled)><span class="text-sm text-primary">{{ __('Enable previews') }}</span></label><input type="number" name="preview_ttl_hours" min="1" max="720" value="{{ old('preview_ttl_hours', $project->preview_ttl_hours ?: 72) }}" class="input secondary rounded-lg" aria-label="{{ __('Lifetime in hours') }}"><input name="preview_domain" value="{{ old('preview_domain', $project->preview_domain) }}" placeholder="previews.example.com" class="input secondary rounded-lg sm:col-span-2"><x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save previews') }}</x-ui.button></form>
             @elseif($canManage)
                 <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
             @endif
@@ -174,8 +181,8 @@
                 @forelse($project->previews->sortByDesc('last_activity_at') as $preview)
                     @php($sourceSecrets = $preview->sourceEnvironment?->variables->where('is_secret', true)->whereIn('scope', ['runtime', 'all'])->whereNotIn('key', \App\Models\PreviewSecretApproval::PROTECTED_KEYS) ?? collect())
                     @php($previewCleanup = $preview->stackCleanups->sortByDesc('id')->first())
-                    <article class="rounded-xl border border-primary bg-secondary p-3">
-                        <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><span class="text-xs font-bold text-secondary">{{ ucfirst($preview->status) }}</span></div>
+                    <article class="ui-card ui-card--muted p-3">
+                        <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><x-ui.badge tone="neutral">{{ ucfirst($preview->status) }}</x-ui.badge></div>
                         @if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-sm font-medium text-ternary">{{ $preview->url }}</a>@endif
                         @if($previewCleanup)
                             <div class="mt-2 border-t border-primary pt-2 text-xs text-secondary">
@@ -183,7 +190,7 @@
                                 @if($previewCleanup->error)<p class="mt-1">{{ $previewCleanup->error }}</p>@endif
                                 @can('retryCleanup', $preview)
                                     @if($previewCleanup->status === \App\Models\PreviewStackCleanup::STATUS_FAILED)
-                                        <form method="POST" action="{{ route('projects.previews.cleanup.retry', [$project, $preview]) }}" class="mt-2">@csrf<button type="submit" class="font-bold text-ternary">{{ __('Retry stack cleanup') }}</button></form>
+                                        <form method="POST" action="{{ route('projects.previews.cleanup.retry', [$project, $preview]) }}" class="mt-2">@csrf<x-ui.button type="submit" variant="ghost" class="px-0">{{ __('Retry stack cleanup') }}</x-ui.button></form>
                                     @endif
                                 @endcan
                             </div>
@@ -199,7 +206,7 @@
                                         <label class="flex items-center gap-2 text-sm text-primary"><input type="checkbox" name="secret_keys[]" value="{{ $secret->key }}"><span>{{ $secret->key }} <span class="text-xs text-secondary">(v{{ $secret->current_version }})</span></span></label>
                                     @endforeach
                                 </fieldset>
-                                <button type="submit" class="button secondary mt-3">{{ __('Approve selected preview secrets') }}</button>
+                                <x-ui.button type="submit" variant="secondary" class="mt-3">{{ __('Approve selected preview secrets') }}</x-ui.button>
                             </form>
                         @endif
                     </article>
