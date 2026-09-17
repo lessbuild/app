@@ -1,46 +1,39 @@
 <x-layouts.app>
-
-    <!--
-     ! ------------------------------------------------------------
-     ! Breadcrumbs
-     ! ------------------------------------------------------------
-     !-->
     <x-layouts.partials.breadcrumbs
         :route="route('servers.index')"
         :title="__('Back to servers')"
-    ></x-layouts.partials.breadcrumbs>
+    />
 
-    <!--
-     ! ------------------------------------------------------------
-     ! Check has provider
-     ! ------------------------------------------------------------
-     !-->
-    @if($providers->isEmpty())
-        <div class="my-4">
-            <x-alerts.info
-                :title="__('You must add a cloud provider before you can add a server')"
-                :link="route('providers.create')"
-                :anchor="__('Add cloud provider')"
-            ></x-alerts.info>
-        </div>
+    @if ($providers->isEmpty())
+        <x-ui.alert tone="warning" class="my-4">
+            <p class="font-semibold">{{ __('You must add a cloud provider before you can add a server') }}</p>
+            <x-ui.button :href="route('providers.create')" variant="secondary" class="mt-3">{{ __('Add cloud provider') }}</x-ui.button>
+        </x-ui.alert>
     @endif
 
-    @if(!$planUsage['allowed'])
-        <div class="my-4"><x-alerts.info :title="__('Your plan’s server limit has been reached')" :link="route('billing.index')" :anchor="__('Upgrade plan')"></x-alerts.info></div>
+    @if (! $planUsage['allowed'])
+        <x-ui.alert tone="warning" class="my-4">
+            <p class="font-semibold">{{ __('Your plan’s server limit has been reached') }}</p>
+            <x-ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-ui.button>
+        </x-ui.alert>
     @endif
-    @error('plan')<div class="my-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></div>@enderror
 
-    <!--
-     ! ------------------------------------------------------------
-     ! Content
-     ! ------------------------------------------------------------
-     !-->
+    @error('plan')
+        <x-ui.alert tone="danger" class="my-4">
+            {{ $message }}
+            <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a>
+        </x-ui.alert>
+    @enderror
+
     <form action="{{ route('servers.store') }}" method="POST">
         @csrf
-        <x-forms.section
-            title="{{ __('Server Information') }}"
-            description="{{ __('Please fill in the information below to create a new server.') }}"
-        >
+        <x-ui.card class="mt-8 overflow-hidden">
+            <div class="border-b border-primary px-5 py-5 sm:px-8">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Infrastructure') }}</p>
+                <h1 class="mt-1 text-xl font-black text-primary">{{ __('Server Information') }}</h1>
+                <p class="mt-1 text-sm text-secondary">{{ __('Please fill in the information below to create a new server.') }}</p>
+            </div>
+
             <x-scenes.servers._form
                 :types="$types"
                 :providers="$providers"
@@ -48,18 +41,14 @@
                 :images="$images"
                 :regions="$regions"
                 :recipes="$recipes"
-            ></x-scenes.servers._form>
+            />
 
-            <x-slot:footer>
-                <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled($providers->isEmpty() || !$planUsage['allowed'])>
-                        <span class="flex items-center justify-between">
-                            {{ __('Create Server') }}
-                        </span>
-                    </button>
-                </div>
-            </x-slot:footer>
-        </x-forms.section>
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-8">
+                <x-ui.button :href="route('servers.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || ! $planUsage['allowed']">
+                    {{ __('Create Server') }}
+                </x-ui.button>
+            </div>
+        </x-ui.card>
     </form>
-
 </x-layouts.app>
