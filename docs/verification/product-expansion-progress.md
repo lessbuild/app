@@ -4951,7 +4951,38 @@ smoke-test data was removed, and the cluster was stopped. This is not a complete
 Laravel deployment, Valkey protocol/persistence test or cloud acceptance claim.
 
 See [the verification record](managed-resource-preparation-2026-09-17.md) and
-the updated operator contract. Commit and push this separate timing fix, then
-integrate deliberately. The exact next task is configuration-specific provider
+the updated operator contract. Timing fix `f3cd675` was pushed and integrated
+into canonical `main` and the dev runtime. The exact next task is configuration-specific provider
 review/apply/delivery/idempotency/recovery acceptance, followed by the complete
 preview stack. No new cloud resource was created in this continuation.
+
+## Publication checkpoint — 2026-09-17
+
+Every cohesive slice below was committed and pushed before advancing:
+
+| Commit | Result |
+| --- | --- |
+| `70d7c78` | PostgreSQL cleanup uses separate database/role requests; real SQL and failure/retry checks pass. |
+| `7e461a5` | Dev worker normal-exit restart recovery is documented and verified. |
+| `c85fc77` | Exact Spaces drill metadata cleanup is verified; earlier permission attribution is corrected. |
+| `14e3bf5` | Failed managed Valkey starts stop before a successful resource callback. |
+| `b3070a3` | Shared managed-resource renderer preserves byte-identical stage output. |
+| `f3cd675` | Resources are prepared before first-deployment hooks and migrations, without callback renumbering. |
+
+The latest application commit is integrated in both canonical `main` and the
+isolated dev runtime. Full strict PHP verification passes **1,555 tests /
+12,986 assertions**; full Pint and dependency/platform/diff checks pass, with
+the system Composer's existing deprecation notices recorded. A fresh dev smoke
+check found both services active, `NRestarts=3` on the automatically recycled
+worker, zero pending jobs and HTTP 200 for the homepage and its actual rendered
+CSS/JavaScript assets. The runtime still resolves its isolated dev SQLite,
+storage, file cache and database queue. The canonical checkout's untracked
+controller modernization plan remains untouched.
+
+The exact next task is the documented configuration-specific disposable
+provider acceptance sequence, then the complete preview stack and recovery
+cycle. Use the already authorized fixture/provider scope and spending limit;
+do not interpret the local SQL or Bash checks as complete cloud acceptance.
+Production mail, independent monitoring, GitHub App, billing/SSO and other
+separately scoped release gates remain outstanding. No new droplet was created
+in this continuation, and the separate acceptance-drill checkout was not changed.

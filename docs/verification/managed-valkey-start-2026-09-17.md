@@ -59,14 +59,13 @@ full preview-stack acceptance or PostgreSQL/Valkey restore recovery.
 
 ## Publication and next task
 
-Commit and push this cohesive bug fix after the checks finish, then deliberately
-fast-forward canonical `main` and the dev runtime. Preserve the canonical
-checkout's existing untracked controller plan.
+Bug-fix commit `14e3bf5` was pushed and integrated into canonical `main` and the
+dev runtime, preserving the existing untracked controller plan.
 
-Next, characterize and correct first-deployment resource preparation before
-Laravel migrations, without renumbering the 15 persisted callback stages.
-Keep the necessary command-rendering extraction separate from that timing fix.
-Then continue the remaining disposable configuration/preview acceptance sequence.
+The separate renderer extraction and first-deployment preparation correction
+subsequently landed as `b3070a3` and `f3cd675`, without renumbering the 15
+callback stages. See [their record](managed-resource-preparation-2026-09-17.md).
+Continue the remaining disposable configuration/preview acceptance sequence.
 The documented configuration-specific review/apply/delivery/idempotency/recovery
 checks precede the full provider-backed preview cycle. No new droplet or other
 billable resource was created for this bug-fix slice.

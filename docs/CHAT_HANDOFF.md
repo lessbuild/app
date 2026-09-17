@@ -49,7 +49,10 @@ The full strict suite passes **1,555 tests / 12,986 assertions**; full Pint,
 syntax, Composer validation/platform and diff checks pass. A disposable real
 PostgreSQL check verified creation before hook/migration doubles, repeat
 execution, shared-data preservation and exact cleanup; the cluster is stopped.
-The preparation record above documents the intentional timing change and limits.
+Timing fix `f3cd675` is pushed and integrated into canonical `main` and the dev
+runtime. Both dev services are active, the queue is empty, and the homepage and
+its rendered CSS/JavaScript assets return HTTP 200. The preparation record above
+documents the intentional timing change and limits.
 Next: the configuration-specific provider acceptance sequence, followed by the
 full preview stack and recovery cycle. These remain separate from the local
 checks and the earlier generic disposable backup/restore drill.

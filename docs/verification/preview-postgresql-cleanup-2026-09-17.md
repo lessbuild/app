@@ -101,5 +101,7 @@ stack, provider lifecycle and PostgreSQL/Valkey recovery acceptance remain open.
 Commit `70d7c78` was pushed to `origin/main` and integrated into canonical
 `main` and the dev runtime. The isolated dev queue-worker restart correction
 was then completed and verified in
-[its own record](dev-worker-restart-2026-09-17.md). Continue the outstanding
-Spaces cleanup, preview and recovery acceptance checks.
+[its own record](dev-worker-restart-2026-09-17.md). The exact Spaces metadata
+cleanup is complete in `c85fc77`; the subsequent resource-preparation correction
+is recorded [here](managed-resource-preparation-2026-09-17.md). Continue the
+configuration-specific provider, preview and recovery acceptance checks.

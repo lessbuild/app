@@ -107,7 +107,15 @@ The private, non-secret harness and fixture are retained below
 as `prepare.php` and `preparation-fixture-cRrTV5/`. Its socket location was
 disposable; recreate a private socket directory before any future rerun.
 
-After this timing fix is committed and pushed, resume the documented
-configuration-specific provider acceptance before the full preview cycle.
+Timing fix `f3cd675` was pushed to `origin/main` and fast-forwarded into both
+canonical `main` and the dev runtime. The dev worker recycled through the
+existing queue-restart signal; both dev services were active with no pending
+jobs. The homepage and its rendered CSS/JavaScript assets returned HTTP 200
+with the expected content types. The runtime retained its own dev SQLite,
+storage, file cache and database queue, and loaded the new renderer correctly.
+The canonical checkout's pre-existing untracked controller plan was preserved.
+
+Resume the documented configuration-specific provider acceptance before the
+full preview cycle.
 Complete Laravel/worker/PostgreSQL/Valkey deployment, provider lifecycle and
 broader recovery acceptance remain distinct from these local checks.
