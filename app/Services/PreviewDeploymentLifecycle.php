@@ -301,7 +301,9 @@ class PreviewDeploymentLifecycle
         ]);
         $environment = $project->environments()->create([
             'name' => $label,
-            'slug' => 'pr-'.$webhook->pullRequestNumber,
+            // Reopened previews retain the old environment for cleanup history. A
+            // fresh slug keeps that cleanup identity disjoint from the new stack.
+            'slug' => $this->environmentSlug($project, $webhook->pullRequestNumber),
             'type' => 'preview',
             'branch' => $webhook->sourceBranch,
             'server_id' => $website->server_id,
@@ -345,6 +347,30 @@ class PreviewDeploymentLifecycle
         }
 
         return PreviewDeployment::query()->create($attributes);
+    }
+
+    /**
+     * Select an unused environment identity for this preview stack generation.
+     *
+     * @param  Project  $project  Project receiving the preview environment.
+     * @param  int  $pullRequestNumber  Pull-request number used for the stable base slug.
+     * @return string A project-unique preview environment slug.
+     */
+    private function environmentSlug(Project $project, int $pullRequestNumber): string
+    {
+        $base = 'pr-'.$pullRequestNumber;
+        $slug = $base;
+        $suffix = 2;
+
+        while (Environment::query()
+            ->where('project_id', $project->id)
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 
     /**

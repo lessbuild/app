@@ -221,6 +221,55 @@ class PreviewDeploymentTest extends TestCase
         Queue::assertPushed(CleanupPreviewStackJob::class, fn (CleanupPreviewStackJob $job): bool => $job->cleanupId === $cleanup->id);
     }
 
+    public function test_reopening_a_closed_preview_uses_a_new_environment_and_cleanup_identity(): void
+    {
+        config(['billing.enforce_limits' => false]);
+        Queue::fake();
+        [, $source] = $this->application();
+        $secret = 'preview-webhook-'.str_repeat('x', 48);
+        $source->update(['webhook_enabled' => true, 'webhook_secret' => $secret]);
+        $revision = str_repeat('c', 40);
+
+        $this->send($source, $this->payload('opened', $revision), $secret, 'preview-reopen-open')
+            ->assertAccepted();
+        $preview = PreviewDeployment::query()->sole();
+        $firstEnvironment = $preview->environment;
+        $firstWebsiteId = $preview->website_id;
+
+        $this->send($source, $this->payload('closed', $revision), $secret, 'preview-reopen-close')
+            ->assertOk()
+            ->assertJson(['status' => PreviewDeployment::STATUS_CLOSED]);
+        $firstCleanup = PreviewStackCleanup::query()->sole();
+
+        $this->send($source, $this->payload('reopened', $revision), $secret, 'preview-reopen-reopened')
+            ->assertAccepted()
+            ->assertJson(['status' => PreviewDeployment::STATUS_PROVISIONING]);
+
+        $reopened = $preview->fresh(['environment', 'website']);
+        $this->assertNotSame($firstEnvironment->id, $reopened->environment_id);
+        $this->assertSame('pr-17-2', $reopened->environment->slug);
+        $this->assertNotSame($firstWebsiteId, $reopened->website_id);
+        $this->assertDatabaseHas('environments', [
+            'id' => $firstEnvironment->id,
+            'slug' => 'pr-17',
+        ]);
+        $this->assertNotSame(
+            $reopened->website_id,
+            DB::table('environments')->where('id', $firstEnvironment->id)->value('website_id'),
+        );
+        $this->assertSame($firstEnvironment->id, $firstCleanup->environment_id);
+        Queue::assertPushed(AddWebsiteJob::class, 2);
+
+        $this->send($source, $this->payload('closed', $revision), $secret, 'preview-reopen-close-again')
+            ->assertOk()
+            ->assertJson(['status' => PreviewDeployment::STATUS_CLOSED]);
+
+        $secondCleanup = PreviewStackCleanup::query()->whereKeyNot($firstCleanup->id)->sole();
+        $this->assertSame($reopened->environment_id, $secondCleanup->environment_id);
+        $this->assertNotSame($firstCleanup->id, $secondCleanup->id);
+        Queue::assertPushed(CleanupPreviewStackJob::class, 2);
+    }
+
     public function test_successful_preview_initialization_is_not_repeated_for_a_new_revision(): void
     {
         config(['billing.enforce_limits' => false]);
