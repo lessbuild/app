@@ -1269,6 +1269,24 @@ Production release, live acceptance, provider acceptance, billing, mail,
 external monitoring and other integration gates remain separate and are not
 claimed by these local UI results.
 
+## Navigation consolidation follow-up — 2026-09-17
+
+The previous UI pass grouped navigation but did not fully merge the related
+links. The follow-up in `215da0d` now presents Applications as the delivery
+hub for projects, environments, deployments and repositories; Template
+library as the shared recipes/gallery entry; Billing and usage as the shared
+billing/costs entry; and Account and security as the shared account/settings
+entry. Existing routes remain unchanged, and the Applications, Gallery,
+Billing and Costs pages retain contextual links to the related surfaces.
+
+The focused matrix passed **64 tests / 743 assertions**. Pint, Blade view
+cache and diff checks passed. The locked responsive asset/no-JavaScript suite
+passed **9 tests**, served navigation passed **3 tests** across mobile/tablet/
+desktop, and the accessibility/visual crawl passed **6 tests**. The code
+commit is pushed to `origin/main`; the documentation update is the next
+cohesive commit and will also be pushed. No production checkout, credentials,
+cloud resources or live acceptance were used.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

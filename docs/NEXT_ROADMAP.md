@@ -212,6 +212,25 @@ operation or live acceptance is implied. The next task is separately
 authorized release-gate/external acceptance work, or a new product request
 with its own inventory and verification record.
 
+## Navigation consolidation follow-up — 2026-09-17
+
+The UI modernization follow-up completed the intended hub model rather than
+only grouping the existing links. `WorkspaceNavigation` now exposes
+Applications for the project, environment, deployment and repository family;
+Template library for recipes and gallery; Billing and usage for billing and
+cost visibility; and Account and security for the existing account/settings
+surface. Applications, Gallery, Billing and Costs retain contextual links so
+the underlying route destinations remain discoverable without restoring a
+long duplicate primary menu.
+
+No route, authorization, persistence or workflow contract changed. The
+focused PHP matrix passed **64 tests / 743 assertions**; Pint, view cache,
+diff checks and the Vite build passed; the responsive asset suite passed **9
+tests**; served navigation passed **3 tests** across three viewports; and the
+accessibility/visual crawl passed **6 tests**. Commit `215da0d` is pushed to
+`origin/main`. This is local/dev evidence only; production release and live
+acceptance remain deferred gates.
+
 ## Deferred release gates
 
 The September 17 preview review found and corrected a PostgreSQL cleanup

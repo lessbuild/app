@@ -109,13 +109,13 @@ removing or renaming existing routes.
 | Group | Destinations |
 | --- | --- |
 | Overview | Dashboard |
-| Build and release | Applications, Deployments, Repositories |
+| Build and release | Applications hub (deployments, repositories, environments) |
 | Infrastructure | Sites, Servers, Providers |
 | Data and recovery | Databases, Backups |
 | Traffic | Domains and TLS, High availability |
 | Health and operations | Observability, Commands, Activity, Notifications |
 | Automation | Automation and API |
-| Templates | Recipes and Gallery |
+| Templates | Template library (recipes and gallery) |
 | Workspace | Workspace, Billing and usage, Account and security |
 | Help | Product guide, Feedback |
 | Administration | System health, Analytics, Access requests |
@@ -1118,6 +1118,60 @@ All implementation commits through `299ba20` were pushed to
 `origin/main`; this verification record and the synchronized handoff docs are
 the final documentation slice. The exact next task is separately authorized
 release-gate or external acceptance work, not another UI extraction.
+
+## Navigation consolidation follow-up — 2026-09-17
+
+### Responsibility problem
+
+The earlier UI pass grouped related destinations, but the desktop and mobile
+menus still exposed separate links for Applications, Deployments,
+Repositories, Recipes, Gallery, Billing, Costs and usage, Account and
+Settings. That left the same product areas split across duplicate primary
+navigation choices and did not fully implement the intended hub model.
+
+### Boundaries and benefit
+
+- `WorkspaceNavigation` now exposes one Applications entry for project,
+  environment, deployment-history and repository routes. The Applications
+  page provides contextual links to deployment history and repositories.
+- Recipes and Gallery now share one Template library entry. The recipes page
+  already links to the gallery, and the gallery now links back to the private
+  recipe collection.
+- Billing and costs now share one Billing and usage entry, with reciprocal
+  links between the two existing pages.
+- Account and Settings now share one Account and security entry pointing to
+  the existing account surface.
+
+The change is limited to presentation navigation and contextual page links.
+It does not add a controller, action, policy, query or persistence boundary;
+the navigation view model remains responsible only for labels, destinations
+and active-state patterns.
+
+### Preserved contracts
+
+Existing route names, URLs, authorization, tenant scoping, page responses,
+forms, persisted values, flash messages and underlying workflows remain
+unchanged. The old navigation labels are removed from the primary menus, but
+their pages remain reachable through the merged hub links, contextual links,
+breadcrumbs and existing global search. Mobile groups remain intentionally
+collapsible; the browser check opens Templates before asserting its link.
+
+### Verification
+
+- Focused PHP matrix — **64 passed, 743 assertions**, including navigation
+  active-state coverage for every merged route and hub reachability checks.
+- `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/pint --test` —
+  passed.
+- `artisan view:cache` and `git diff --check` — passed.
+- Locked Vite build and responsive/no-JavaScript asset suite — **9 passed**.
+- Served navigation journey — **3 passed** across mobile, tablet and desktop.
+- Accessibility and visual product crawl — **6 passed** across mobile, tablet
+  and desktop.
+
+Commit `215da0d` (`ui: consolidate workspace navigation links`) was pushed to
+`origin/main`. The exact next task is separately authorized release-gate or
+external acceptance work, not another navigation extraction. Production and
+live acceptance remain separate from this local evidence.
 
 ## Remaining external scope
 
