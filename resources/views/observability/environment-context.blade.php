@@ -17,12 +17,12 @@
             :description="__('A bounded view of deployment, health, runtime-log and incident signals for :environment.', ['environment' => $environment->name])"
         />
         <div class="flex flex-wrap gap-2">
-            <a href="{{ $shareUrl }}" class="button secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</a>
-            <a href="{{ route('observability.index') }}" class="button secondary">{{ __('Observability overview') }}</a>
+            <x-ui.button :href="$shareUrl" variant="secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</x-ui.button>
+            <x-ui.button :href="route('observability.index')" variant="secondary">{{ __('Observability overview') }}</x-ui.button>
         </div>
     </div>
 
-    <section class="mt-8 rounded-2xl border border-primary bg-primary p-6" aria-labelledby="environment-context-heading">
+    <section class="ui-card mt-8 p-6" aria-labelledby="environment-context-heading">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ $environment->project->name }}</p>
@@ -30,25 +30,25 @@
                 <p class="mt-1 text-sm text-secondary">{{ $environment->branch }} · {{ ucfirst((string) ($environment->runtime_type ?: 'php')) }} · {{ str((string) $environment->type)->headline() }}</p>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
-                <span class="rounded-full bg-secondary px-3 py-1.5 font-bold text-secondary">{{ str((string) $environment->status)->headline() }}</span>
+                <x-ui.badge tone="{{ in_array((string) $environment->status, ['active', 'running', 'ready'], true) ? 'success' : 'accent' }}">{{ str((string) $environment->status)->headline() }}</x-ui.badge>
                 @if($environment->is_protected)
-                    <span class="rounded-full bg-ternary px-3 py-1.5 font-bold text-white">{{ __('Protected') }}</span>
+                    <x-ui.badge tone="warning">{{ __('Protected') }}</x-ui.badge>
                 @endif
             </div>
         </div>
 
         <div class="mt-5 grid gap-3 sm:grid-cols-3">
-            <div class="rounded-xl border border-primary bg-secondary p-4">
+            <div class="ui-card ui-card--muted p-4">
                 <p class="text-xs font-bold uppercase text-secondary">{{ __('Website') }}</p>
                 <p class="mt-1 font-bold text-primary">{{ $website?->name ?? __('Not attached') }}</p>
                 <p class="mt-1 text-xs text-secondary">{{ $website ? str((string) $website->health_status)->headline() : __('No website evidence available') }}</p>
             </div>
-            <div class="rounded-xl border border-primary bg-secondary p-4">
+            <div class="ui-card ui-card--muted p-4">
                 <p class="text-xs font-bold uppercase text-secondary">{{ __('Server') }}</p>
                 <p class="mt-1 font-bold text-primary">{{ $server?->label ?? __('Not attached') }}</p>
                 <p class="mt-1 text-xs text-secondary">{{ $server ? str((string) $server->provisioning_status)->headline() : __('No server evidence available') }}</p>
             </div>
-            <div class="rounded-xl border border-primary bg-secondary p-4">
+            <div class="ui-card ui-card--muted p-4">
                 <p class="text-xs font-bold uppercase text-secondary">{{ __('Evidence window') }}</p>
                 <p class="mt-1 font-bold text-primary">{{ $context->window }}</p>
                 <p class="mt-1 text-xs text-secondary">{{ __('Since :time', ['time' => $context->since->utc()->format('M j Y H:i').' UTC']) }}</p>
@@ -58,7 +58,7 @@
         <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-5 grid gap-3 border-t border-primary pt-5 sm:grid-cols-2 lg:grid-cols-4">
             <label>
                 <span class="block text-xs font-bold uppercase text-secondary">{{ __('Evidence window') }}</span>
-                <select name="window" class="input secondary mt-1 rounded-sm">
+                <select name="window" class="input secondary mt-1 rounded-md">
                     @foreach(\App\Data\ObservabilityContextFilters::WINDOWS as $window => $hours)
                         <option value="{{ $window }}" @selected($context->window === $window)>{{ $window }}</option>
                     @endforeach
@@ -66,7 +66,7 @@
             </label>
             <label>
                 <span class="block text-xs font-bold uppercase text-secondary">{{ __('Service') }}</span>
-                <select name="service" class="input secondary mt-1 rounded-sm">
+                <select name="service" class="input secondary mt-1 rounded-md">
                     <option value="all" @selected($context->serviceId === null)>{{ __('All services') }}</option>
                     @foreach($context->services as $service)
                         <option value="{{ $service->id }}" @selected($context->serviceId === (int) $service->id)>{{ $service->name }}</option>
@@ -75,7 +75,7 @@
             </label>
             <label>
                 <span class="block text-xs font-bold uppercase text-secondary">{{ __('Deployments') }}</span>
-                <select name="deployment" class="input secondary mt-1 rounded-sm">
+                <select name="deployment" class="input secondary mt-1 rounded-md">
                     @foreach(['all' => __('All deployments'), 'active' => __('Active'), 'successful' => __('Successful'), 'unsuccessful' => __('Unsuccessful')] as $deployment => $label)
                         <option value="{{ $deployment }}" @selected($context->deployment === $deployment)>{{ $label }}</option>
                     @endforeach
@@ -83,13 +83,13 @@
             </label>
             <label>
                 <span class="block text-xs font-bold uppercase text-secondary">{{ __('Incident severity') }}</span>
-                <select name="severity" class="input secondary mt-1 rounded-sm">
+                <select name="severity" class="input secondary mt-1 rounded-md">
                     @foreach(\App\Data\ObservabilityContextFilters::SEVERITIES as $severity)
                         <option value="{{ $severity }}" @selected($context->severity === $severity)>{{ str($severity)->headline() }}</option>
                     @endforeach
                 </select>
             </label>
-            <button type="submit" class="button primary sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</button>
+            <x-ui.button type="submit" variant="primary" class="sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</x-ui.button>
         </form>
         <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
 
@@ -107,17 +107,17 @@
                     <input type="hidden" name="severity" value="{{ $context->severity }}">
                     <label>
                         <span class="sr-only">{{ __('Investigation name') }}</span>
-                        <input name="name" maxlength="60" required class="input secondary rounded-sm" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
+                        <input name="name" maxlength="60" required class="input secondary rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
                     </label>
                     <label>
                         <span class="sr-only">{{ __('Keep for') }}</span>
-                        <select name="expires_in_days" class="input secondary rounded-sm">
+                        <select name="expires_in_days" class="input secondary rounded-md">
                             @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
                                 <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
                             @endforeach
                         </select>
                     </label>
-                    <button type="submit" class="button primary">{{ __('Save view') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Save view') }}</x-ui.button>
                 </form>
             </div>
             @error('name')
@@ -142,7 +142,7 @@
                                 <form method="POST" action="{{ route('observability.investigations.destroy', $saved) }}">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-xs font-bold text-secondary underline" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</button>
+                                    <x-ui.button type="submit" variant="danger" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</x-ui.button>
                                 </form>
                             @endif
                         </div>
@@ -153,7 +153,7 @@
     </section>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
-        <section class="rounded-2xl border border-primary bg-primary p-6" aria-labelledby="context-deployments-heading">
+        <section class="ui-card p-6" aria-labelledby="context-deployments-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</p>
@@ -168,12 +168,11 @@
                             ? 'bg-red-500'
                             : ($build->status === \App\Models\Build::STATUS_SUCCEEDED ? 'bg-green-500' : 'bg-amber-500');
                         $observation = $context->deploymentObservations->get((int) $build->id);
-                        $observationColor = match ($observation?->status) {
-                            \App\Models\DeploymentObservation::STATUS_HEALTHY => 'bg-green-100 text-green-800',
-                            \App\Models\DeploymentObservation::STATUS_FAILED, \App\Models\DeploymentObservation::STATUS_EXPIRED => 'bg-red-100 text-red-800',
-                            \App\Models\DeploymentObservation::STATUS_SUPERSEDED => 'bg-secondary text-secondary',
-                            \App\Models\DeploymentObservation::STATUS_PENDING, \App\Models\DeploymentObservation::STATUS_OBSERVING => 'bg-amber-100 text-amber-800',
-                            default => 'bg-secondary text-secondary',
+                        $observationTone = match ($observation?->status) {
+                            \App\Models\DeploymentObservation::STATUS_HEALTHY => 'success',
+                            \App\Models\DeploymentObservation::STATUS_FAILED, \App\Models\DeploymentObservation::STATUS_EXPIRED => 'danger',
+                            \App\Models\DeploymentObservation::STATUS_PENDING, \App\Models\DeploymentObservation::STATUS_OBSERVING => 'warning',
+                            default => 'neutral',
                         };
                     @endphp
                     <a href="{{ route('builds.show', $build) }}" class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3 transition hover:border-ternary">
@@ -188,7 +187,7 @@
                         <div class="-mt-1 rounded-b-xl border border-t-0 border-primary bg-secondary px-3 pb-3 pt-2 text-xs" data-testid="deployment-observation-evidence-{{ $build->id }}">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="font-bold text-primary">{{ __('Post-deployment verification') }}</span>
-                                <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase {{ $observationColor }}">{{ str($observation->status)->headline() }}</span>
+                                <x-ui.badge :tone="$observationTone">{{ str($observation->status)->headline() }}</x-ui.badge>
                             </div>
                             <p class="mt-1 text-secondary">
                                 {{ __('Revision-linked · :count successful checks · :duration-minute window', ['count' => $observation->successfulChecks, 'duration' => $observation->durationMinutes]) }}
@@ -208,14 +207,14 @@
             <p class="mt-4 text-xs text-secondary">{{ __('Open a deployment for its exact revision, plan-driven timeline, bounded log and failure guidance.') }}</p>
         </section>
 
-        <section class="rounded-2xl border border-primary bg-primary p-6" aria-labelledby="context-health-heading">
+        <section class="ui-card p-6" aria-labelledby="context-health-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Health evidence') }}</p>
                     <h2 id="context-health-heading" class="mt-1 text-xl font-black text-primary">{{ __('Website observations') }}</h2>
                 </div>
                 @if($website)
-                    <a href="{{ route('websites.health-checks.index', $website) }}" class="text-xs font-bold text-ternary underline">{{ __('View health history') }}</a>
+                    <x-ui.button :href="route('websites.health-checks.index', $website)" variant="ghost" class="text-xs">{{ __('View health history') }}</x-ui.button>
                 @endif
             </div>
             <div class="mt-4 space-y-2">
@@ -235,7 +234,7 @@
             <p class="mt-4 text-xs text-secondary">{{ __('Health history is retained separately and does not represent an SLA calculation.') }}</p>
         </section>
 
-        <section class="rounded-2xl border border-primary bg-primary p-6" aria-labelledby="context-logs-heading">
+        <section class="ui-card p-6" aria-labelledby="context-logs-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime evidence') }}</p>
@@ -262,7 +261,7 @@
             <p class="mt-4 text-xs text-secondary">{{ __('The context never loads log bodies. The existing website route rechecks authorization and applies no-store response headers.') }}</p>
         </section>
 
-        <section class="rounded-2xl border border-primary bg-primary p-6" aria-labelledby="context-incidents-heading">
+        <section class="ui-card p-6" aria-labelledby="context-incidents-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Response evidence') }}</p>
@@ -276,7 +275,7 @@
                     <div class="rounded-xl border border-primary bg-secondary p-3 transition hover:border-ternary">
                         <a href="{{ route('observability.index') }}#operational-incidents" class="block">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase {{ $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED ? 'bg-green-100 text-green-800' : ($incident->severity === 'critical' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800') }}">{{ str((string) $incident->status)->headline() }}</span>
+                                <x-ui.badge tone="{{ $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED ? 'success' : ($incident->severity === 'critical' ? 'danger' : 'warning') }}">{{ str((string) $incident->status)->headline() }}</x-ui.badge>
                                 <span class="text-xs text-secondary">{{ str((string) $incident->severity)->headline() }} · {{ str((string) $incident->category)->headline() }} #{{ $incident->resource_id }}</span>
                             </div>
                             <p class="mt-2 font-bold text-primary">{{ $incident->title }}</p>
