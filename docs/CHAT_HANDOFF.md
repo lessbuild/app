@@ -2,7 +2,7 @@
 
 ## Final local verification after mobile restoration — 2026-09-17
 
-The current `main` tip is `0aec8e9` and the isolated implementation checkout
+The current `main` tip is `79b689f` and the isolated implementation checkout
 is clean and aligned with `origin/main`. The strict PHP 8.5.10 regression
 passed **1,559 tests / 12,864 assertions** with no failures, warnings, risky
 tests or deprecations. Required-PHP Pint, `git diff --check` and the Vite

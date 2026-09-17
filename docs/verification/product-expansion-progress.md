@@ -6,7 +6,7 @@ tests / 12,864 assertions**, with Pint, Vite and `git diff --check` passing.
 The authenticated dev-domain mobile/tablet/desktop navigation journey passed
 **3 browser tests**; the isolated dev service is active and enabled and the
 homepage returned HTTP 200. The current isolated `main` checkout is clean at
-`0aec8e9` and aligned with `origin/main`. The exact next task is separately
+`79b689f` and aligned with `origin/main`. The exact next task is separately
 authorized release handoff and external acceptance, with production mail,
 independent monitoring/heartbeat, GitHub App, billing/SSO, broader
 provider-specific recovery and the separate live-acceptance gates kept
@@ -5169,7 +5169,7 @@ task is separately authorized release handoff and external acceptance.
 
 ## Final local verification after mobile restoration — 2026-09-17
 
-The current isolated implementation checkout on `main` is clean at `0aec8e9`
+The current isolated implementation checkout on `main` is clean at `79b689f`
 and aligned with `origin/main`. The fresh strict PHP 8.5.10 regression passed
 **1,559 tests / 12,864 assertions** in 425.07 seconds with no failures,
 warnings, risky tests or deprecations. Required-PHP Pint, `git diff --check`
