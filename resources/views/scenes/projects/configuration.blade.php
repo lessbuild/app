@@ -1,39 +1,47 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('projects.show', $project)" :title="__('Back to application')" />
-    <div class="mt-6"><x-layouts.partials.heading icon="view-grid" :title="__('Application configuration')" :description="__('Review portable configuration before applying changes.')" /></div>
-    @foreach($errors->all() as $error)<p role="alert" class="mt-3 text-primary">{{ $error }}</p>@endforeach
+    <x-layouts.partials.heading icon="view-grid" :title="__('Application configuration')" :description="__('Review portable configuration before applying changes.')" />
+    @if($errors->any())
+        <x-ui.alert tone="danger" class="mt-4" role="alert">
+            <ul class="list-disc space-y-1 pl-5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </x-ui.alert>
+    @endif
     @if(isset($reviewError))
-        <section class="mt-6 rounded-xl border border-primary bg-primary p-6" role="alert">
+        <x-ui.alert tone="danger" class="mt-6" role="alert">
             <h2 class="font-bold text-primary">{{ __('This review cannot be applied') }}</h2>
             <p class="mt-3 text-secondary">{{ $reviewError }}</p>
             <p class="mt-3 text-secondary">{{ __('No changes were applied. Start a new review using the current configuration.') }}</p>
-        </section>
+        </x-ui.alert>
     @elseif($application)
-        <section class="mt-6 rounded-xl border border-primary bg-primary p-6">
+        <x-ui.card class="mt-6 p-5 sm:p-6">
             <h2 class="font-bold text-primary">{{ __('Application receipt') }} #{{ $application->id }}</h2>
             <p class="mt-3 text-secondary">{{ $application->status }}</p>
             <p class="mt-3 text-secondary">{{ __('Local configuration is saved. Only a succeeded deployment confirms remote completion.') }}</p>
             @foreach($application->relatedOperations()->with(['retry', 'build'])->orderBy('id')->get() as $operation)
                 <div class="mt-4 border-t border-primary pt-3">
-                    <p class="text-secondary">{{ $operation->environment_slug }} · {{ $operation->status }} @if($operation->failure_code) · {{ $operation->failure_code }} @endif</p>
+                    <p class="flex flex-wrap items-center gap-2 text-secondary"><span>{{ $operation->environment_slug }}</span><x-ui.badge>{{ $operation->status }}</x-ui.badge>@if($operation->failure_code)<span>· {{ $operation->failure_code }}</span>@endif</p>
                     @if($operation->retry)<p class="mt-2 text-sm text-secondary">{{ __('Retried by operation') }} #{{ $operation->retry->id }}</p>
                     @elseif((int) $operation->application->review->requested_by === (int) auth()->id() && (($operation->status === 'failed' && $operation->build_id) || $operation->status === 'canceled'))
                         <p class="mt-2 text-sm text-secondary">{{ __('Retry creates one replacement deployment using the exact failed configuration and secret snapshot. Current repository, configuration, access and deployment gates are checked again. Required approval must be granted again.') }}</p>
-                        <form method="POST" action="{{ route('projects.configuration.retry', [$project, $review, $operation]) }}" class="mt-3">@csrf<button class="button primary" type="submit">{{ $operation->status === 'canceled' ? __('Retry canceled deployment') : __('Retry failed deployment') }}</button></form>
+                        <form method="POST" action="{{ route('projects.configuration.retry', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-ui.button type="submit" variant="primary">{{ $operation->status === 'canceled' ? __('Retry canceled deployment') : __('Retry failed deployment') }}</x-ui.button></form>
                     @endif
                     @if(! $operation->retry && ! in_array($operation->status, ['succeeded', 'failed', 'canceled'], true) && (! $operation->build_id || in_array($operation->build?->status, ['queued', 'awaiting_approval'], true)))
                         <p class="mt-2 text-sm text-secondary">{{ __('Cancel stops this pending deployment intent. Saved local configuration and remote services are preserved.') }}</p>
-                        <form method="POST" action="{{ route('projects.configuration.cancel', [$project, $review, $operation]) }}" class="mt-3">@csrf<button class="button secondary" type="submit">{{ __('Cancel pending deployment') }}</button></form>
+                        <form method="POST" action="{{ route('projects.configuration.cancel', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Cancel pending deployment') }}</x-ui.button></form>
                     @endif
                 </div>
             @endforeach
-        </section>
+        </x-ui.card>
     @elseif($review)
-        <section class="mt-6 rounded-xl border border-primary bg-primary p-6">
+        <x-ui.card class="mt-6 p-5 sm:p-6">
             <h2 class="font-bold text-primary">{{ __('Review changes') }}</h2>
             <p class="mt-2 text-secondary">{{ __('Omitted objects are preserved. Resource detachment does not delete remote data.') }}</p>
             @if(collect($plan['changes'])->contains(fn ($change) => $change['kind'] === 'environment' && $change['action'] === 'remove'))
-                <p class="mt-3 rounded-lg border border-amber-500 p-3 text-primary" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</p>
+                <x-ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-ui.alert>
             @endif
             <div class="mt-4 overflow-x-auto">
                 <table class="w-full text-left text-sm">
@@ -55,11 +63,11 @@
             </div>
             <p class="mt-3 text-xs text-secondary">{{ __('Command and credential values are hidden. Fields identify the settings under review, not a plaintext diff.') }}</p>
             <p class="mt-4 text-secondary">{{ __('Expires') }}: {{ $review->expires_at->toIso8601String() }}</p>
-            @if($plan['apply_available'])<form method="POST" action="{{ route('projects.configuration.apply', [$project, $review]) }}" class="mt-4">@csrf<button class="button primary" type="submit">{{ __('Apply reviewed configuration') }}</button></form>@else<p class="mt-4 text-secondary">{{ __('Explicit adoption is required. Submit an updated document for a new review.') }}</p>@endif
-        </section>
+            @if($plan['apply_available'])<form method="POST" action="{{ route('projects.configuration.apply', [$project, $review]) }}" class="mt-4">@csrf<x-ui.button type="submit" variant="primary">{{ __('Apply reviewed configuration') }}</x-ui.button></form>@else<p class="mt-4 text-secondary">{{ __('Explicit adoption is required. Submit an updated document for a new review.') }}</p>@endif
+        </x-ui.card>
     @else
         @if($recentApplications->isNotEmpty())
-            <section class="mt-6 rounded-xl border border-primary bg-primary p-5">
+            <x-ui.card class="mt-6 p-5">
                 <h2 class="font-bold text-primary">{{ __('Recent application receipts') }}</h2>
                 <p class="mt-2 text-secondary">{{ __('Open a receipt to refresh deployment status and recover a pending or failed operation.') }}</p>
                 <ul class="mt-3 space-y-2">
@@ -67,15 +75,15 @@
                         <li><a class="text-primary underline" href="{{ route('projects.configuration.review', [$project, $receipt->configuration_review_id]) }}">{{ __('Application receipt') }} #{{ $receipt->id }} · {{ $receipt->status }}</a></li>
                     @endforeach
                 </ul>
-            </section>
+            </x-ui.card>
         @endif
-        <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-overview-heading">
+        <x-ui.card class="mt-6 p-5" aria-labelledby="environment-overview-heading">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 id="environment-overview-heading" class="font-bold text-primary">{{ __('Current environment overview') }}</h2>
                     <p class="mt-2 text-sm text-secondary">{{ __('Recorded local state for this application. It does not query or claim to represent remote provider drift.') }}</p>
                 </div>
-                <span class="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary">{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</span>
+                <x-ui.badge>{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</x-ui.badge>
             </div>
             @if($environmentOverview->isNotEmpty())
                 <div class="mt-4 overflow-x-auto">
@@ -85,11 +93,11 @@
                         <tbody>
                             @foreach($environmentOverview as $environment)
                                 <tr class="border-b border-primary align-top text-primary">
-                                    <th scope="row" class="p-3"><span class="block font-bold">{{ $environment->name }} @if($environment->isProtected)<span class="ml-1 rounded-full bg-ternary px-2 py-0.5 text-[10px] uppercase text-white">{{ __('Protected') }}</span>@endif</span><span class="mt-1 block text-xs text-secondary">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</span></th>
+                                    <th scope="row" class="p-3"><span class="flex flex-wrap items-center gap-2 font-bold">{{ $environment->name }} @if($environment->isProtected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif</span><span class="mt-1 block text-xs text-secondary">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</span></th>
                                     <td class="p-3 text-secondary">{{ ucfirst($environment->runtimeType) }}</td>
                                     <td class="p-3"><ul class="space-y-1">@foreach($environment->dependencies as $dependency)<li><span class="font-medium text-primary">{{ ucfirst($dependency['kind']) }}:</span> {{ $dependency['name'] }} <span class="text-secondary">· {{ str_replace('_', ' ', $dependency['status']) }} · {{ $dependency['detail'] }}</span></li>@endforeach</ul></td>
                                     <td class="p-3 text-secondary">{{ $environment->processCount }} {{ __('process(es)') }} · {{ $environment->resourceCount }} {{ __('resource(s)') }} · {{ $environment->variableCount }} {{ __('variable(s)') }}<br><span class="text-xs">{{ $environment->secretCount }} {{ __('secret value(s) masked') }}</span></td>
-                                    <td class="p-3"><form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><button type="submit" class="button secondary whitespace-nowrap">{{ __('Observe provider') }}</button></form></td>
+                                    <td class="p-3"><form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><x-ui.button type="submit" variant="secondary" class="whitespace-nowrap">{{ __('Observe provider') }}</x-ui.button></form></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -104,12 +112,12 @@
                 <form method="GET" action="{{ route('projects.configuration.compare', $project) }}" class="mt-5 grid gap-3 border-t border-primary pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
                     <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare from') }}</span><select name="from_environment_id" class="input secondary w-full rounded-lg" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($fromEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
                     <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Compare to') }}</span><select name="to_environment_id" class="input secondary w-full rounded-lg" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($toEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
-                    <button type="submit" class="button secondary">{{ __('Compare recorded state') }}</button>
+                    <x-ui.button type="submit" variant="secondary">{{ __('Compare recorded state') }}</x-ui.button>
                 </form>
             @endif
-        </section>
+        </x-ui.card>
         @isset($observation)
-            <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-observation-heading">
+            <x-ui.card class="mt-6 p-5" aria-labelledby="environment-observation-heading">
                 <h2 id="environment-observation-heading" class="font-bold text-primary">{{ __('Observed provider state') }}</h2>
                 <p class="mt-2 text-sm text-secondary">{{ __('One-time read for :environment through :provider. This is observed remote state, separate from desired configuration and BuildPusher’s recorded local state.', ['environment' => $observation->environmentName, 'provider' => $observation->providerName]) }}</p>
                 <p class="mt-3 text-sm text-secondary">{{ $observation->message }}</p>
@@ -129,10 +137,10 @@
                     </div>
                     @if($observation->hasDifferences())<p class="mt-3 text-xs text-secondary">{{ __('A difference is informational only. Corrective changes must go through the existing configuration review and apply workflow.') }}</p>@endif
                 @endif
-            </section>
+            </x-ui.card>
         @endisset
         @isset($comparison)
-            <section class="mt-6 rounded-xl border border-primary bg-primary p-5" aria-labelledby="environment-comparison-heading">
+            <x-ui.card class="mt-6 p-5" aria-labelledby="environment-comparison-heading">
                 <h2 id="environment-comparison-heading" class="font-bold text-primary">{{ __('Recorded environment comparison') }}</h2>
                 <p class="mt-2 text-sm text-secondary">{{ __('This compares BuildPusher’s recorded local metadata only. It does not query provider state or prove remote drift. Desired configuration changes still require a review and apply.') }}</p>
                 <p class="mt-3 text-sm font-bold text-primary">{{ $comparison->from->name }} <span class="font-normal text-secondary">→</span> {{ $comparison->to->name }}</p>
@@ -152,9 +160,9 @@
                     </div>
                     <p class="mt-3 text-xs text-secondary">{{ __('Only non-secret metadata is shown. Executable commands, variable keys and values, and encrypted resource configuration are excluded.') }}</p>
                 @endif
-            </section>
+            </x-ui.card>
         @endisset
-        <details class="mt-6 rounded-xl border border-primary bg-primary p-5">
+        <details class="ui-card mt-6 p-5">
             <summary class="cursor-pointer font-bold text-primary">{{ __('Version 2 authoring guide') }}</summary>
             <p class="mt-3 text-sm text-secondary">{{ __('Start with the parser-valid example below, replace the illustrative binding ID with a workspace ID from the catalog, then add only the sections you need. Invalid submissions are rejected without retaining this form in session input.') }}</p>
             <div class="mt-4 grid gap-5 lg:grid-cols-2">
@@ -173,7 +181,7 @@
                 @endforeach
             </ul>
         </details>
-        <details class="mt-6 rounded-xl border border-primary bg-primary p-5">
+        <details class="ui-card mt-6 p-5">
             <summary class="cursor-pointer font-bold text-primary">{{ __('Find workspace binding IDs') }}</summary>
             <p class="mt-3 text-secondary">{{ __('Use these IDs in the JSON bindings below. Secret values are never shown.') }}</p>
             <div class="mt-4 grid gap-6 lg:grid-cols-3">
@@ -186,7 +194,7 @@
             <label class="block"><span class="mb-2 block text-primary">{{ __('Version 2 YAML document') }}</span><textarea required name="document" rows="16" class="input secondary rounded-lg font-mono" spellcheck="false"></textarea></label>
             <label class="block"><span class="mb-2 block text-primary">{{ __('Workspace bindings (JSON)') }}</span><textarea required name="bindings" rows="5" class="input secondary rounded-lg font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}'></textarea></label>
             <p class="text-secondary">{{ __('Use existing website, secret-variable and repository IDs from this workspace. Do not paste secret values. Inputs are not retained after a validation error.') }}</p>
-            <button type="submit" class="button primary">{{ __('Create review') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Create review') }}</x-ui.button>
         </form>
     @endif
     <a class="mt-6 inline-block text-secondary" href="{{ route('projects.configuration.create', $project) }}">{{ __('Start a new review') }}</a>
