@@ -4,8 +4,13 @@
         :description="__('Find infrastructure, source control, recipes, and deployments across your account.')"
     />
 
-    <form method="GET" action="{{ route('search.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
-        <label for="search-query" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search account') }}</label>
+    <x-ui.card class="mt-8 p-4 sm:p-5" aria-labelledby="search-form-heading">
+        <div class="mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace search') }}</p>
+            <h2 id="search-form-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Search account') }}</h2>
+        </div>
+        <form method="GET" action="{{ route('search.index') }}">
+            <label for="search-query" class="sr-only">{{ __('Search account') }}</label>
         <div class="mt-2 flex flex-wrap gap-3">
             <input
                 id="search-query"
@@ -14,12 +19,13 @@
                 maxlength="100"
                 value="{{ $query }}"
                 placeholder="{{ __('Name, URL, IP address, revision, or description') }}"
-                class="input secondary min-w-0 flex-1 rounded-sm"
+                class="input secondary min-w-0 flex-1 rounded-lg"
                 autofocus
             >
-            <button type="submit" class="button primary">{{ __('Search') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Search') }}</x-ui.button>
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     @if ($query === '')
         <div class="mt-8">
@@ -44,7 +50,7 @@
             <div class="mt-6 grid gap-6 lg:grid-cols-2">
                 @foreach ($groups as $group)
                     @if ($group['results']->isNotEmpty())
-                        <section class="rounded-lg border border-primary bg-primary p-5">
+                        <x-ui.card class="p-5">
                             <div class="mb-4 flex items-center justify-between gap-3">
                                 <h2 class="text-lg font-semibold text-primary">{{ $group['label'] }}</h2>
                                 @if ($group['has_more'])
@@ -55,7 +61,7 @@
                             </div>
                             <div class="space-y-2">
                                 @foreach ($group['results'] as $result)
-                                    <a href="{{ $result['url'] }}" class="block rounded-sm border border-primary bg-secondary p-3 hover:border-ternary">
+                                    <a href="{{ $result['url'] }}" class="ui-card ui-card--interactive block bg-secondary p-3">
                                         <span class="block font-medium text-primary">{{ $result['title'] }}</span>
                                         @if ($result['subtitle'])
                                             <span class="mt-1 block truncate text-sm text-secondary">{{ $result['subtitle'] }}</span>
@@ -63,7 +69,7 @@
                                     </a>
                                 @endforeach
                             </div>
-                        </section>
+                        </x-ui.card>
                     @endif
                 @endforeach
             </div>

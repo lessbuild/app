@@ -5,21 +5,18 @@
         :description="__('Read-only checks for the application runtime, storage, queue, and production automation.')"
     >
         <x-slot:buttons>
-            <a href="{{ route('system-health.report') }}" class="button primary">
+            <x-ui.button :href="route('system-health.report')" variant="secondary">
                 {{ __('Download report') }}
-            </a>
-            <a href="{{ route('system-health.index') }}" class="button primary">
+            </x-ui.button>
+            <x-ui.button :href="route('system-health.index')" variant="primary">
                 {{ __('Run checks again') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <section
-        @class([
-            'mt-8 rounded-lg border p-5',
-            'border-green-500 bg-green-50' => $passed,
-            'border-red-500 bg-red-50' => ! $passed,
-        ])
+    <x-ui.alert
+        :tone="$passed ? 'success' : 'danger'"
+        class="mt-8"
         role="status"
         aria-labelledby="system-health-summary"
     >
@@ -37,7 +34,7 @@
                 {{ __('Checked :time', ['time' => $checkedAt->toDayDateTimeString()]) }}
             </p>
         </div>
-    </section>
+    </x-ui.alert>
 
     <section class="mt-6" aria-labelledby="system-health-checks">
         <div class="mb-4">
@@ -49,29 +46,27 @@
 
         <ul class="grid gap-4 lg:grid-cols-2" role="list">
             @foreach ($checks as $check)
-                <li class="rounded-lg border border-primary bg-primary p-5">
+                <li>
+                    <x-ui.card class="h-full p-5">
                     <div class="flex items-start gap-3">
-                        <span @class([
-                            'inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase',
-                            'bg-green-100 text-green-800' => $check['passed'],
-                            'bg-red-100 text-red-800' => ! $check['passed'],
-                        ])>
+                        <x-ui.badge :tone="$check['passed'] ? 'success' : 'danger'">
                             {{ $check['passed'] ? __('Pass') : __('Fail') }}
-                        </span>
+                        </x-ui.badge>
                         <div class="min-w-0">
                             <h3 class="font-bold text-primary">{{ $check['name'] }}</h3>
                             <p class="mt-1 text-sm text-secondary">{{ $check['detail'] }}</p>
                         </div>
                     </div>
+                    </x-ui.card>
                 </li>
             @endforeach
         </ul>
     </section>
 
-    <aside class="mt-6 rounded-lg border border-primary bg-secondary p-5" aria-labelledby="system-health-help">
+    <x-ui.card tone="muted" class="mt-6 p-5" aria-labelledby="system-health-help">
         <h2 id="system-health-help" class="font-bold text-primary">{{ __('When a check fails') }}</h2>
         <p class="mt-1 text-sm text-secondary">
             {{ __('Use the failing check and its safe summary to guide investigation. Operators with shell access can run php artisan lessbuild:diagnose for the same current snapshot.') }}
         </p>
-    </aside>
+    </x-ui.card>
 </x-layouts.app>

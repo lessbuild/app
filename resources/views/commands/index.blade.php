@@ -5,12 +5,17 @@
         :description="__('Review command activity across every server without exposing command text or retained output.')"
     />
 
-    <x-ui.card class="mt-8 p-4">
+    <x-ui.card class="mt-8 p-4" aria-labelledby="command-filters-heading">
+        <div class="mb-4">
+            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Find an operation') }}</p>
+            <h2 id="command-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter command activity') }}</h2>
+            <p class="mt-1 text-sm text-secondary">{{ __('Review bounded command metadata across your servers without exposing command text or retained output.') }}</p>
+        </div>
         <form method="GET" action="{{ route('commands.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <div>
                 <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
-                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-sm">
+                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All servers') }}</option>
                     @foreach ($servers as $server)
                         <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>{{ $server->label }}</option>
@@ -19,7 +24,7 @@
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
+                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ str($status)->title() }}</option>
@@ -28,25 +33,25 @@
             </div>
             <div>
                 <label for="output" class="block text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</label>
-                <select id="output" name="output" class="input secondary mt-1 w-full rounded-sm">
+                <select id="output" name="output" class="input secondary mt-1 w-full rounded-lg">
                     <option value="">{{ __('Any output state') }}</option>
                     <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                     <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary">
-                    <input type="checkbox" name="active" value="1" @checked($filters['active'])>
+                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
+                    <input type="checkbox" name="active" value="1" @checked($filters['active']) class="rounded border-primary bg-primary text-ternary">
                     {{ __('Active commands only') }}
                 </label>
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-lg">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-lg">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
@@ -86,17 +91,18 @@
         <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
     </dl>
 
-    <div class="ui-card mt-6 overflow-hidden">
+    <x-ui.card class="mt-6 overflow-hidden">
         <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-primary">
+            <caption class="sr-only">{{ __('Command activity across all servers') }}</caption>
             <thead class="bg-secondary">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Execution') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Timing') }}</th>
-                    <th class="px-4 py-3 text-right text-xs font-semibold uppercase text-secondary">{{ __('Details') }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Execution') }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Server') }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Output') }}</th>
+                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Timing') }}</th>
+                    <th scope="col" class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Details') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-primary">
@@ -129,15 +135,17 @@
                 @empty
                     <tr>
                         <td colspan="6" class="px-6 py-10 text-center">
-                            <p class="font-medium text-primary">{{ array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run yet') }}</p>
-                            <p class="mt-1 text-sm text-secondary">{{ __('Run a command from an active server to see its lifecycle here.') }}</p>
+                            <x-ui.empty-state
+                                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run yet')"
+                                :description="__('Run a command from an active server to see its lifecycle here.')"
+                            />
                         </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
         </div>
-    </div>
+    </x-ui.card>
 
     <div class="mt-6">{{ $executions->links() }}</div>
 </x-layouts.app>

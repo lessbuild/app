@@ -6,20 +6,17 @@
     />
 
     @unless ($featureAvailable)
-        <x-alerts.info
-            class="mt-6"
-            :title="__('Pro feature')"
-            :link="route('pricing')"
-            :anchor="__('Compare plans')"
-        >
-            {{ __('Upgrade to inspect databases, issue credentials, and run safe clones.') }}
-        </x-alerts.info>
+        <x-ui.alert tone="warning" class="mt-6">
+            <p class="font-semibold">{{ __('Pro feature') }}</p>
+            <p class="mt-1">{{ __('Upgrade to inspect databases, issue credentials, and run safe clones.') }}</p>
+            <x-ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('Compare plans') }}</x-ui.button>
+        </x-ui.alert>
     @endunless
 
     @if (session('databasePassword'))
         <div class="ui-alert ui-alert--warning mt-6" role="status">
             <p class="font-bold text-primary">{{ __('Copy this password now') }}</p>
-            <code class="mt-2 block break-all rounded-md bg-primary p-3 text-sm text-primary">{{ session('databasePassword') }}</code>
+            <code class="mt-2 block break-all rounded-lg bg-primary p-3 text-sm text-primary">{{ session('databasePassword') }}</code>
         </div>
     @endif
 
@@ -41,7 +38,7 @@
                 </div>
 
                 <dl class="mt-5 grid grid-cols-2 gap-3">
-                    <div class="ui-card ui-card--muted p-3">
+                        <div class="ui-card ui-card--muted p-3">
                         <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Size') }}</dt>
                         <dd class="mt-1 font-bold text-primary">{{ $latest?->size_bytes ? number_format($latest->size_bytes / 1048576, 1).' MB' : '—' }}</dd>
                     </div>
@@ -70,11 +67,11 @@
                         <div class="grid gap-3 sm:grid-cols-2">
                             <label class="block">
                                 <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Username') }}</span>
-                                <input name="username" class="input secondary w-full rounded-md" placeholder="report_reader" required>
+                            <input name="username" class="input secondary w-full rounded-lg" placeholder="report_reader" required>
                             </label>
                             <label class="block">
                                 <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Privilege') }}</span>
-                                <select name="privilege" class="input secondary w-full rounded-md">
+                                <select name="privilege" class="input secondary w-full rounded-lg">
                                     <option value="read">{{ __('Read only') }}</option>
                                     <option value="write">{{ __('Read/write') }}</option>
                                     <option value="admin">{{ __('Admin') }}</option>
@@ -82,7 +79,7 @@
                             </label>
                             <label class="block">
                                 <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Expires') }}</span>
-                                <select name="expires_in_days" class="input secondary w-full rounded-md">
+                                <select name="expires_in_days" class="input secondary w-full rounded-lg">
                                     <option value="">{{ __('Never expires') }}</option>
                                     <option value="1">1 day</option>
                                     <option value="7">7 days</option>
@@ -122,7 +119,7 @@
                         </div>
                         <label class="block">
                             <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Target environment') }}</span>
-                            <select name="target_resource_id" class="input secondary w-full rounded-md" required>
+                            <select name="target_resource_id" class="input secondary w-full rounded-lg" required>
                                 <option value="">{{ __('Clone into…') }}</option>
                                 @foreach ($resources->where('type', $resource->type)->where('id', '!=', $resource->id)->filter(fn ($target) => $target->environment->type !== 'production') as $target)
                                     <option value="{{ $target->id }}">{{ $target->environment->project->name }} / {{ $target->environment->name }} / {{ $target->name }}</option>
@@ -131,7 +128,7 @@
                         </label>
                         <label class="block">
                             <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Confirmation') }}</span>
-                            <input name="confirmation" class="input secondary w-full rounded-md" placeholder="{{ __('Type the target resource name to confirm') }}" required>
+                            <input name="confirmation" class="input secondary w-full rounded-lg" placeholder="{{ __('Type the target resource name to confirm') }}" required>
                         </label>
                         <x-ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-ui.button>
                     </form>
