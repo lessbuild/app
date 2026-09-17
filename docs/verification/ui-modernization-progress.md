@@ -135,6 +135,7 @@ removing or renaming existing routes.
 | Phase 4C: backup and recovery workflows | Complete | Backup destination, verification and recovery coverage: 17 tests / 129 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `6726ff1` pushed to `origin/main` | Modernize operations and automation pages |
 | Phase 5A: reporting and automation | Complete | Activity, command lifecycle and automation coverage: 69 tests / 466 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4233ad9` and `763223d` pushed to `origin/main` | Modernize observability and environment investigation |
 | Phase 5B: observability and investigation | Complete | Observability, incident, status and environment-context coverage: 40 tests / 291 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `1e60a90` pushed to `origin/main` | Modernize notifications, cost visibility and account administration |
+| Phase 5C: notifications and cost visibility | Complete | Notification, bulk-action, inbox, incident, recipe-notification and cost coverage: 47 tests / 356 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `a961903` and `91b7e7e` pushed to `origin/main` | Modernize account, workspace and administration pages |
 
 ## Phase 1 record — shared visual system
 
@@ -411,6 +412,46 @@ new telemetry queries, writes, remote calls or queue jobs were introduced.
 ### Verification
 
 - Observability and incident matrix — **40 passed, 291 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
+
+## Phase 5C record — notifications and cost visibility
+
+### Responsibility problem
+
+Notifications mixed filtering, saved views, bulk selection, read state and
+destructive deletion in one dense screen. Cost visibility mixed estimates,
+telemetry, budget thresholds, preview quotas and provider-billing caveats with
+different card and alert treatments.
+
+### Boundaries and benefit
+
+- Existing inbox queries, Alpine selection state, policies, bulk operations,
+  saved-filter persistence and notification destinations remain unchanged.
+- Notifications now lead with filter and saved-view controls, summarize the
+  current result set, and clearly distinguish unread severity from read state.
+  Destructive actions use the shared danger treatment while bulk controls stay
+  sticky and keyboard accessible.
+- Cost visibility now uses the shared metric, card, alert, badge and button
+  primitives. Estimate, measured utilization, unknown price, budget and
+  preview-lifetime information remain visibly distinct.
+
+### Preserved contracts
+
+Notification filters, pagination, exports, bulk limits, Alpine field names,
+read/unread/delete behavior, saved filter routes, destination links, cost
+estimation semantics, budget validation/authorization, preview quota wording
+and provider-invoice caveats remain unchanged. No business logic or persisted
+values were changed.
+
+### Verification
+
+- Notification and related inbox matrix — **39 passed, 316 assertions**.
+- Cost visibility matrix — **8 passed, 40 assertions**.
+- Combined focused evidence — **47 passed, 356 assertions**.
 - `php artisan view:cache` — passed.
 - `vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
