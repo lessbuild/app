@@ -7,15 +7,12 @@
      !-->
     @if(session()->has("website:{$website->id}:mysql_password"))
         <div class="my-4">
-            <x-alerts.info>
-                <x-slot name="title">
-                    The root MYSQL password is: <b class="font-bold">
-                        {{ session()->get("website:{$website->id}:mysql_password") }}
-                    </b>
-                    <br>
-                    This will only be shown once, so please save these passwords somewhere safe.
-                </x-slot>
-            </x-alerts.info>
+            <x-ui.alert tone="warning">
+                {{ __('The root MYSQL password is:') }}
+                <b class="font-bold">{{ session()->get("website:{$website->id}:mysql_password") }}</b>
+                <br>
+                {{ __('This will only be shown once, so please save these passwords somewhere safe.') }}
+            </x-ui.alert>
         </div>
     @endif
 
@@ -40,27 +37,27 @@
         :description="$website->description"
     >
         <x-slot:buttons>
-            <a href="{{ route('builds.index', ['website_id' => $website->id]) }}" class="button secondary">
+            <x-ui.button :href="route('builds.index', ['website_id' => $website->id])" variant="secondary">
                 {{ __('Deployment history') }}
-            </a>
+            </x-ui.button>
 
             @if ($website->health_check_enabled
                 && $website->provisioning_status === \App\Models\Website::STATUS_ACTIVE
                 && $website->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
                 <form method="POST" action="{{ route('websites.health.check', $website) }}">
                     @csrf
-                    <button type="submit" class="button primary">
+                    <x-ui.button type="submit" variant="primary">
                         {{ __('Check health now') }}
-                    </button>
+                    </x-ui.button>
                 </form>
             @endif
 
-            <a href="{{ route('websites.edit', $website) }}" class="button primary">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button :href="route('websites.edit', $website)" variant="primary">
+                <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit Website') }}
-            </a>
+            </x-ui.button>
 
             <x-dialogs.delete
                 id="delete-website"
@@ -69,18 +66,18 @@
                 :description="__('Are you sure you want to delete this website?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button primary" onclick="document.getElementById('delete-website').showModal()">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button type="button" variant="danger" onclick="document.getElementById('delete-website').showModal()">
+                <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Website') }}
-            </button>
+            </x-ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
-        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-700">
+        <x-ui.alert tone="danger" class="my-4">
             <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
             <p class="text-sm">{{ $website->provisioning_error }}</p>
             @error('retry')
@@ -88,13 +85,13 @@
             @enderror
             <form method="POST" action="{{ route('websites.provisioning.retry', $website) }}" class="mt-3">
                 @csrf
-                <button type="submit" class="button primary">{{ __('Retry provisioning') }}</button>
+                <x-ui.button type="submit" variant="primary">{{ __('Retry provisioning') }}</x-ui.button>
             </form>
-        </div>
+        </x-ui.alert>
     @endif
 
     @if ($website->previous_server_id)
-        <div class="my-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <x-ui.alert tone="warning" class="my-4">
             <p class="font-semibold">{{ __('Previous server cleanup pending') }}</p>
             <p class="text-sm">
                 @if ($website->placement_cleanup_error)
@@ -110,10 +107,10 @@
             @if ($website->placement_cleanup_error)
                 <form method="POST" action="{{ route('websites.placement.cleanup', $website) }}" class="mt-3">
                     @csrf
-                    <button type="submit" class="button primary">{{ __('Retry cleanup') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Retry cleanup') }}</x-ui.button>
                 </form>
             @endif
-        </div>
+        </x-ui.alert>
     @endif
 
     <!--
@@ -121,69 +118,64 @@
      ! Website information
      ! ------------------------------------------------------------
      !-->
-    <div class="flex items-center mt-4 text-gray-500">
-        <div class="flex items-center mr-6">
-            <svg class="mr-2 w-4 h-4 text-gray-400">
+    <x-ui.card class="mt-6 p-5">
+        <dl class="grid gap-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
+        <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-secondary" aria-hidden="true">
                 <use xlink:href="/assets/images/icons.svg#external-link"></use>
             </svg>
-            <span class="mr-1 text-primary">
-                {{ __('URL') }}
-            </span>
-            <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
-                    {{ $website->url }}
-                </div>
+            <div>
+                <dt class="font-semibold text-primary">{{ __('URL') }}</dt>
+                <dd class="mt-1 break-all font-mono text-xs text-secondary">{{ $website->url }}</dd>
             </div>
         </div>
-        <div class="flex items-center mr-6">
-            <span class="mr-1 text-primary">{{ __('Deployment health check') }}</span>
-            <span class="text-secondary">
-                {{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}
-            </span>
+        <div>
+            <dt class="font-semibold text-primary">{{ __('Deployment health check') }}</dt>
+            <dd class="mt-1 font-mono text-xs text-secondary">{{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}</dd>
         </div>
         @if ($website->health_check_enabled)
-            <div class="flex items-center mr-6">
-                <span class="mr-1 text-primary">{{ __('Current health') }}</span>
-                <span @class([
-                    'font-medium',
-                    'text-green-600' => $website->health_status === \App\Models\Website::HEALTH_HEALTHY,
-                    'text-red-600' => $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY,
-                    'text-secondary' => $website->health_status === \App\Models\Website::HEALTH_UNKNOWN,
-                ])>{{ str($website->health_status)->title() }}</span>
+            <div>
+                <dt class="font-semibold text-primary">{{ __('Current health') }}</dt>
+                <dd class="mt-1 flex flex-wrap items-center gap-2">
+                    @if ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
+                        <x-ui.badge tone="success">{{ str($website->health_status)->title() }}</x-ui.badge>
+                    @elseif ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
+                        <x-ui.badge tone="danger">{{ str($website->health_status)->title() }}</x-ui.badge>
+                    @else
+                        <x-ui.badge>{{ str($website->health_status)->title() }}</x-ui.badge>
+                    @endif
                 @if ($website->health_last_checked_at)
-                    <span class="ml-1 text-secondary">({{ $website->health_last_checked_at->diffForHumans() }})</span>
+                    <span class="text-xs text-secondary">{{ $website->health_last_checked_at->diffForHumans() }}</span>
                 @endif
+                </dd>
             </div>
-            <div class="flex items-center mr-6">
-                <span class="mr-1 text-primary">{{ __('Automatic monitoring') }}</span>
-                <span @class([
-                    'font-medium',
-                    'text-green-600' => $website->health_monitoring_enabled,
-                    'text-amber-700' => ! $website->health_monitoring_enabled,
-                ])>
-                    {{ $website->health_monitoring_enabled ? __('Enabled') : __('Paused') }}
-                </span>
-                <span class="ml-1 text-secondary">
-                    ({{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }})
-                </span>
+            <div>
+                <dt class="font-semibold text-primary">{{ __('Automatic monitoring') }}</dt>
+                <dd class="mt-1 flex flex-wrap items-center gap-2">
+                    @if ($website->health_monitoring_enabled)
+                        <x-ui.badge tone="success">{{ __('Enabled') }}</x-ui.badge>
+                    @else
+                        <x-ui.badge tone="warning">{{ __('Paused') }}</x-ui.badge>
+                    @endif
+                    <span class="text-xs text-secondary">{{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
+                </dd>
             </div>
-            <div class="flex items-center mr-6">
-                <span class="mr-1 text-primary">{{ __('Outage confirmation') }}</span>
-                <span class="text-secondary">
-                    {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $website->health_failure_threshold, ['count' => $website->health_failure_threshold]) }}
-                </span>
+            <div>
+                <dt class="font-semibold text-primary">{{ __('Outage confirmation') }}</dt>
+                <dd class="mt-1 text-xs text-secondary">{{ trans_choice('After :count consecutive failure|After :count consecutive failures', $website->health_failure_threshold, ['count' => $website->health_failure_threshold]) }}</dd>
             </div>
         @endif
-        <div class="flex items-center mr-6">
-            <span class="mr-1 text-primary">{{ __('Retained releases') }}</span>
-            <span class="text-secondary">{{ $website->release_retention }}</span>
+        <div>
+            <dt class="font-semibold text-primary">{{ __('Retained releases') }}</dt>
+            <dd class="mt-1 text-xs text-secondary">{{ $website->release_retention }}</dd>
         </div>
-    </div>
+        </dl>
+    </x-ui.card>
 
     @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY && $website->health_last_error)
-        <div class="mt-4 rounded-sm border border-red-300 bg-red-50 p-4 text-red-800">
+        <x-ui.alert tone="danger" class="mt-4">
             <strong>{{ __('Health check failed:') }}</strong> {{ $website->health_last_error }}
-        </div>
+        </x-ui.alert>
     @endif
 
     <section class="mt-8" aria-labelledby="health-history-heading">
@@ -195,53 +187,28 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <a href="{{ route('websites.health-checks.index', $website) }}" class="button primary">{{ __('View all health checks') }}</a>
+                <x-ui.button :href="route('websites.health-checks.index', $website)" variant="secondary">{{ __('View all health checks') }}</x-ui.button>
                 @if ($healthChecks->isNotEmpty())
-                    <a href="{{ route('websites.health-checks.export', $website) }}" class="button primary">{{ __('Export health history') }}</a>
+                    <x-ui.button :href="route('websites.health-checks.export', $website)" variant="secondary">{{ __('Export health history') }}</x-ui.button>
                 @endif
             </div>
         </div>
 
         <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Retained checks') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">{{ $healthMetrics['total'] }}</dd>
-                <dd class="mt-1 text-xs text-secondary">{{ __('Newest :limit maximum', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE]) }}</dd>
-            </div>
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Observed check success') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">
-                    {{ $healthMetrics['success_rate'] !== null ? $healthMetrics['success_rate'].'%' : __('Not available') }}
-                </dd>
-                <dd class="mt-1 text-xs text-secondary">
-                    {{ trans_choice(':count successful check|:count successful checks', $healthMetrics['successful'], ['count' => $healthMetrics['successful']]) }}
-                </dd>
-            </div>
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Median healthy response') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">
-                    {{ $healthMetrics['median_healthy_duration_ms'] !== null ? $healthMetrics['median_healthy_duration_ms'].' ms' : __('Not recorded') }}
-                </dd>
-                <dd class="mt-1 text-xs text-secondary">{{ __('Failed and unreported timings are excluded.') }}</dd>
-            </div>
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Current failure streak') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">{{ $healthMetrics['failure_streak'] }}</dd>
-                <dd class="mt-1 text-xs text-secondary">
-                    {{ trans_choice(':count consecutive failed check|:count consecutive failed checks', $healthMetrics['failure_streak'], ['count' => $healthMetrics['failure_streak']]) }}
-                </dd>
-            </div>
+            <x-ui.stat :label="__('Retained checks')" :value="$healthMetrics['total']" :description="__('Newest :limit maximum', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE])" />
+            <x-ui.stat :label="__('Observed check success')" :value="$healthMetrics['success_rate'] !== null ? $healthMetrics['success_rate'].'%' : __('Not available')" :description="trans_choice(':count successful check|:count successful checks', $healthMetrics['successful'], ['count' => $healthMetrics['successful']])" />
+            <x-ui.stat :label="__('Median healthy response')" :value="$healthMetrics['median_healthy_duration_ms'] !== null ? $healthMetrics['median_healthy_duration_ms'].' ms' : __('Not recorded')" :description="__('Failed and unreported timings are excluded.')" />
+            <x-ui.stat :label="__('Current failure streak')" :value="$healthMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $healthMetrics['failure_streak'], ['count' => $healthMetrics['failure_streak']])" />
         </dl>
         <p class="mt-3 text-xs text-secondary">
             {{ __('These figures summarize retained observations and are not an SLA uptime calculation.') }}
         </p>
 
         @if ($healthChecks->isEmpty())
-            <div class="mt-4 rounded-lg border border-primary bg-primary p-5 text-sm text-secondary">
-                {{ __('No health checks have been recorded yet.') }}
-            </div>
+            <x-ui.empty-state class="mt-4" :title="__('No health checks have been recorded yet.')" />
         @else
-            <div class="mt-4 overflow-x-auto rounded-lg border border-primary">
+            <div class="ui-card mt-4 overflow-hidden">
+                <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-primary bg-primary text-sm">
                     <thead>
                         <tr>
@@ -256,11 +223,11 @@
                         @foreach ($healthChecks as $check)
                             <tr class="align-top">
                                 <td class="px-4 py-3">
-                                    <span @class([
-                                        'rounded-full px-2 py-1 text-xs font-semibold uppercase',
-                                        'bg-green-100 text-green-700' => $check->successful,
-                                        'bg-red-100 text-red-700' => ! $check->successful,
-                                    ])>{{ $check->successful ? __('Healthy') : __('Failed') }}</span>
+                                    @if ($check->successful)
+                                        <x-ui.badge tone="success">{{ __('Healthy') }}</x-ui.badge>
+                                    @else
+                                        <x-ui.badge tone="danger">{{ __('Failed') }}</x-ui.badge>
+                                    @endif
                                     @if ($check->error)
                                         <p class="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-red-700">{{ $check->error }}</p>
                                     @endif
@@ -284,22 +251,68 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
         @endif
     </section>
 
-    <section class="mt-6 rounded-2xl border border-primary bg-primary p-5" id="runtime-logs" x-data="{ logType: 'application' }">
-        <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p><h2 class="mt-1 text-xl font-black text-primary">{{ __('Live log snapshots') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p></div><div class="flex gap-2">@foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)<button type="button" class="button secondary" @click="logType='{{ $type }}'">{{ ucfirst($type) }}</button>@endforeach</div></div>
-        @foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)
+    <section class="ui-card mt-6 p-5" id="runtime-logs" x-data="{ logType: 'application' }">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p>
+                <h2 class="mt-1 text-xl font-black text-primary">{{ __('Live log snapshots') }}</h2>
+                <p class="mt-1 text-sm text-secondary">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p>
+            </div>
+            <div class="flex flex-wrap gap-2" role="tablist" aria-label="{{ __('Log type') }}">
+                @foreach (\App\Models\WebsiteLogSnapshot::TYPES as $type)
+                    <button type="button" class="button button--secondary" role="tab" @click="logType='{{ $type }}'">{{ ucfirst($type) }}</button>
+                @endforeach
+            </div>
+        </div>
+        @foreach (\App\Models\WebsiteLogSnapshot::TYPES as $type)
             @php($snapshot = $runtimeLogs->get($type))
             <div x-show="logType === '{{ $type }}'" class="mt-4" data-runtime-log-console data-refresh-url="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}" data-report-url="{{ route('websites.runtime-logs.show', [$website, $type]) }}">
-                <div class="mb-3 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p><form method="POST" action="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}">@csrf<button type="submit" class="button primary">{{ __('Refresh :type log', ['type' => $type]) }}</button></form></div>
-                <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]"><input type="search" data-log-search class="input secondary rounded-sm" placeholder="{{ __('Search log lines') }}"><select data-log-level class="input secondary rounded-sm"><option value="">{{ __('All levels') }}</option><option value="emergency">Emergency</option><option value="error">Error</option><option value="warning">Warning</option><option value="info">Info</option><option value="debug">Debug</option></select><label class="flex items-center gap-2 rounded-sm border border-primary px-3 text-sm text-primary"><input type="checkbox" data-log-live> {{ __('Live') }}</label></div>
-                @if($snapshot?->error)<div class="mb-3 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-800">{{ $snapshot->error }}</div>@endif
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p>
+                    <form method="POST" action="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}">
+                        @csrf
+                        <x-ui.button type="submit" variant="primary">{{ __('Refresh :type log', ['type' => $type]) }}</x-ui.button>
+                    </form>
+                </div>
+                <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]">
+                    <input type="search" data-log-search class="input secondary min-h-[2.75rem] rounded-lg" placeholder="{{ __('Search log lines') }}">
+                    <select data-log-level class="input secondary min-h-[2.75rem] rounded-lg">
+                        <option value="">{{ __('All levels') }}</option>
+                        <option value="emergency">Emergency</option>
+                        <option value="error">Error</option>
+                        <option value="warning">Warning</option>
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                    </select>
+                    <label class="flex min-h-[2.75rem] items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
+                        <input type="checkbox" data-log-live>
+                        {{ __('Live') }}
+                    </label>
+                </div>
+                @if($snapshot?->error)
+                    <x-ui.alert tone="danger" class="mb-3">{{ $snapshot->error }}</x-ui.alert>
+                @endif
                 <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
             </div>
         @endforeach
-        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">@csrf @method('PATCH')<label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span><select name="log_retention_lines" class="input secondary mt-1 rounded-sm">@foreach([100, 500, 1000, 5000, 10000] as $lines)<option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>@endforeach</select></label><button class="button secondary" type="submit">{{ __('Save retention') }}</button></form>
+        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">
+            @csrf
+            @method('PATCH')
+            <label>
+                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span>
+                <select name="log_retention_lines" class="input secondary mt-2 min-h-[2.75rem] rounded-lg">
+                    @foreach([100, 500, 1000, 5000, 10000] as $lines)
+                        <option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>
+                    @endforeach
+                </select>
+            </label>
+            <x-ui.button type="submit" variant="secondary">{{ __('Save retention') }}</x-ui.button>
+        </form>
     </section>
 
     <livewire:website-provisioning-log :website="$website" />
@@ -309,46 +322,37 @@
      ! Quick Actions
      ! ------------------------------------------------------------
      !-->
-    <div class="py-4 grid grid-cols-3 gap-6">
-        <div class="col-span-3 lg:col-span-1 space-y-4">
-            <div class="p-4 bg-primary rounded-lg border shadow-md border-primary">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-bold leading-none text-primary">
-                        {{ __('Attached Repositories') }}
-                    </h3>
-                    <a href="{{ route('repositories.create') }}" class="text-ternary text-xs font-semibold underline">
-                        Add Repo
-                    </a>
+    <section class="mt-8" aria-labelledby="attached-repositories-heading">
+        <x-ui.card class="p-5">
+            <div class="flex items-center justify-between gap-3">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployments') }}</p>
+                    <h2 id="attached-repositories-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Attached Repositories') }}</h2>
                 </div>
-                <div class="flow-root">
-                    <ul role="list" class="divide-y divide-primary">
-                        @forelse($repositories as $repository)
-                            <a href="{{ route('repositories.show', $repository) }}" class="py-3">
-                                <div class="flex items-center space-x-4">
-                                    <div class="shrink-0">
-                                        <x-avatar :name="$repository->name" class="h-8 w-8 rounded-full text-xs" />
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-ternary truncate">
-                                            {{ $repository->name }}
-                                        </p>
-                                        <p class="text-sm truncate text-secondary">
-                                            {{ $repository->url }}
-                                        </p>
-                                    </div>
-                                    <div class="inline-flex items-center text-md font-semibold text-primary dark:text-white uppercase">
-                                        {{ $repository->latestBuild?->status ?? __('Not deployed') }}
-                                    </div>
-                                </div>
-                            </a>
-                        @empty
-                            <x-alerts.info :title="__('No repositories attached to server')"></x-alerts.info>
-                        @endforelse
-                    </ul>
-                </div>
+                <x-ui.button :href="route('repositories.create')" variant="ghost">{{ __('Add Repo') }}</x-ui.button>
             </div>
-        </div>
-    </div>
+            <ul role="list" class="mt-4 divide-y divide-primary">
+                @forelse($repositories as $repository)
+                    <li>
+                        <a href="{{ route('repositories.show', $repository) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
+                            <x-avatar :name="$repository->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
+                            <span class="min-w-0 flex-1">
+                                <span class="block truncate text-sm font-medium text-ternary">{{ $repository->name }}</span>
+                                <span class="block truncate text-sm text-secondary">{{ $repository->url }}</span>
+                            </span>
+                            @if ($repository->latestBuild)
+                                <x-ui.badge>{{ str($repository->latestBuild->status)->replace('_', ' ') }}</x-ui.badge>
+                            @else
+                                <x-ui.badge>{{ __('Not deployed') }}</x-ui.badge>
+                            @endif
+                        </a>
+                    </li>
+                @empty
+                    <li class="pt-3"><x-alerts.info :title="__('No repositories attached to server')" /></li>
+                @endforelse
+            </ul>
+        </x-ui.card>
+    </section>
 
     <!--
      ! ------------------------------------------------------------

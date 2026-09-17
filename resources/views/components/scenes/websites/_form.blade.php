@@ -1,11 +1,11 @@
-<div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+<div class="space-y-8 bg-primary p-6 sm:p-8">
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="server_id" class="block text-sm font-medium text-primary">
             {{ __('Server') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
-            <select id="server_id" name="server_id" class="input secondary rounded-sm" required>
+        <div class="mt-2 flex rounded-lg shadow-xs">
+            <select id="server_id" name="server_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($servers as $server)
                     <option value="{{ $server->id }}"
                         @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)
@@ -18,27 +18,27 @@
         <x-forms.errors name="server_id"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Website Name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <input
                 value="{{ old('name') ?? ($website->name ?? null) }}"
                 type="text"
                 name="name"
                 id="name"
-                class="input secondary rounded-sm"
+                class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="Example: Deployer">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="url" class="block text-sm font-medium text-primary">
             {{ __('Website URL') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-primary bg-tertiary text-primary text-sm">
                 http://
             </span>
@@ -47,7 +47,7 @@
                 type="text"
                 name="url"
                 id="url"
-                class="input secondary rounded-none rounded-r-md"
+                class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                 placeholder="www.example.com">
         </div>
         <x-forms.errors name="url"></x-forms.errors>
@@ -57,12 +57,12 @@
         <label for="environment" class="block text-sm font-medium text-primary">
             {{ __('Environment') }}
         </label>
-        <div class="mt-1">
+        <div class="mt-2">
             <textarea
                 id="environment"
                 name="environment"
                 rows="3"
-                class="input secondary rounded-sm"
+                class="input secondary w-full rounded-lg"
                 placeholder="APP_ENV=production....">{{ old('environment') ?? ($website->environment ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -71,11 +71,11 @@
         <x-forms.errors name="environment"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="release_retention" class="block text-sm font-medium text-primary">
             {{ __('Retained releases') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <input
                 value="{{ old('release_retention', $website->release_retention ?? 5) }}"
                 type="number"
@@ -85,7 +85,7 @@
                 max="20"
                 step="1"
                 inputmode="numeric"
-                class="input secondary rounded-sm"
+                class="input secondary min-h-[2.75rem] w-full rounded-lg"
             >
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -94,7 +94,7 @@
         <x-forms.errors name="release_retention"></x-forms.errors>
     </div>
 
-    <div class="rounded-lg border border-primary p-4">
+    <div class="ui-card ui-card--muted p-5">
         <div class="flex items-start gap-3">
             <input type="hidden" name="health_check_enabled" value="0">
             <input
@@ -119,7 +119,7 @@
             <label for="health_check_path" class="block text-sm font-medium text-primary">
                 {{ __('Health check path') }}
             </label>
-            <div class="mt-1 flex rounded-md shadow-xs">
+            <div class="mt-2 flex rounded-lg shadow-xs">
                 <span class="inline-flex items-center rounded-l-md border border-r-0 border-primary bg-tertiary px-3 text-sm text-primary">
                     http://{{ old('url', $website->url ?? __('website')) }}
                 </span>
@@ -128,7 +128,7 @@
                     type="text"
                     name="health_check_path"
                     id="health_check_path"
-                    class="input secondary rounded-none rounded-r-md"
+                    class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                     placeholder="/health"
                 >
             </div>
@@ -167,7 +167,7 @@
             <select
                 id="health_check_interval_minutes"
                 name="health_check_interval_minutes"
-                class="input secondary mt-1 rounded-sm"
+                class="input secondary mt-2 min-h-[2.75rem] rounded-lg"
             >
                 @foreach (\App\Models\Website::HEALTH_CHECK_INTERVALS as $minutes)
                     <option
@@ -191,7 +191,7 @@
             <select
                 id="health_failure_threshold"
                 name="health_failure_threshold"
-                class="input secondary mt-1 rounded-sm"
+                class="input secondary mt-2 min-h-[2.75rem] rounded-lg"
             >
                 @foreach (\App\Models\Website::HEALTH_FAILURE_THRESHOLDS as $failures)
                     <option
@@ -213,12 +213,12 @@
         <label for="description" class="block text-sm font-medium text-primary">
             {{ __('Description') }}
         </label>
-        <div class="mt-1">
+        <div class="mt-2">
             <textarea
                 id="description"
                 name="description"
                 rows="3"
-                class="input secondary rounded-sm"
+                class="input secondary w-full rounded-lg"
                 placeholder="My website">{{ old('description') ?? ($website->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
