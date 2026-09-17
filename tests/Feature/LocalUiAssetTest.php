@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\View\Navigation\WorkspaceNavigation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
@@ -284,6 +285,57 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString("@vite('resources/js/alpine.js')", $coreLayout);
     }
 
+    public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
+    {
+        $user = User::factory()->create();
+        $navigation = (new WorkspaceNavigation)->for($user);
+        $items = collect($navigation['groups'])
+            ->flatMap(fn (array $group): array => $group['items'])
+            ->merge($navigation['profile']);
+
+        $this->assertSame('projects.index', $items->firstWhere('label', 'Applications')['route']);
+        $this->assertSame(
+            ['projects.*', 'environments.*', 'builds.*', 'repositories.*'],
+            $items->firstWhere('label', 'Applications')['active'],
+        );
+        $this->assertSame('recipes.index', $items->firstWhere('label', 'Template library')['route']);
+        $this->assertSame(['recipes.*', 'gallery.*'], $items->firstWhere('label', 'Template library')['active']);
+        $this->assertSame('billing.index', $items->firstWhere('label', 'Billing and usage')['route']);
+        $this->assertSame(['billing.*', 'costs.*'], $items->firstWhere('label', 'Billing and usage')['active']);
+        $this->assertSame('account.index', $items->firstWhere('label', 'Account and security')['route']);
+        $this->assertFalse($items->contains(fn (array $item): bool => in_array($item['label'], [
+            'Deployments',
+            'Repositories',
+            'Recipes',
+            'Gallery',
+            'Billing',
+            'Costs and usage',
+            'Settings',
+        ], true)));
+    }
+
+    public function test_merged_sections_keep_related_surfaces_reachable(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('projects.index'))
+            ->assertSuccessful()
+            ->assertSee(route('builds.index'), false)
+            ->assertSee(route('repositories.index'), false);
+
+        $this->actingAs($user)->get(route('gallery.index'))
+            ->assertSuccessful()
+            ->assertSee(route('recipes.index'), false);
+
+        $this->actingAs($user)->get(route('billing.index'))
+            ->assertSuccessful()
+            ->assertSee(route('costs.index'), false);
+
+        $this->actingAs($user)->get(route('costs.index'))
+            ->assertSuccessful()
+            ->assertSee(route('billing.index'), false);
+    }
+
     public function test_activity_is_discoverable_and_marked_current_in_primary_navigation(): void
     {
         $user = User::factory()->create();
@@ -305,29 +357,32 @@ class LocalUiAssetTest extends TestCase
         config(['lessbuild.diagnostics.systemd_timers' => false]);
 
         foreach ([
-            'dashboard',
-            'system-health.index',
-            'activity.index',
-            'commands.index',
-            'websites.index',
-            'servers.index',
-            'builds.index',
-            'repositories.index',
-            'notifications.index',
-            'providers.index',
-            'recipes.index',
-            'gallery.index',
-            'account.index',
-        ] as $routeName) {
+            'dashboard' => 'dashboard',
+            'system-health.index' => 'system-health.index',
+            'activity.index' => 'activity.index',
+            'commands.index' => 'commands.index',
+            'websites.index' => 'websites.index',
+            'servers.index' => 'servers.index',
+            'builds.index' => 'projects.index',
+            'repositories.index' => 'projects.index',
+            'notifications.index' => 'notifications.index',
+            'providers.index' => 'providers.index',
+            'recipes.index' => 'recipes.index',
+            'gallery.index' => 'recipes.index',
+            'account.index' => 'account.index',
+            'costs.index' => 'billing.index',
+            'billing.index' => 'billing.index',
+        ] as $routeName => $navigationRouteName) {
             $url = route($routeName);
+            $navigationUrl = route($navigationRouteName);
             $html = $this->actingAs($user)->get($url)
                 ->assertSuccessful()
                 ->getContent();
 
             $this->assertMatchesRegularExpression(
-                '/<a href="'.preg_quote($url, '/').'"[^>]*aria-current="page"[^>]*>/s',
+                '/<a href="'.preg_quote($navigationUrl, '/').'"[^>]*aria-current="page"[^>]*>/s',
                 $html,
-                "The {$routeName} sidebar link was not marked as the current page.",
+                "The {$routeName} route did not mark its {$navigationRouteName} navigation link as current.",
             );
             $dom = new \DOMDocument;
             @$dom->loadHTML($html);
@@ -335,7 +390,7 @@ class LocalUiAssetTest extends TestCase
             foreach (['desktop-navigation', 'primary-navigation'] as $navigation) {
                 $current = $xpath->query('//*[@id="'.$navigation.'"]//a[@aria-current="page"]');
                 $this->assertCount(1, $current, "The {$navigation} menu must mark exactly one current destination.");
-                $this->assertSame($url, $current->item(0)->getAttribute('href'));
+                $this->assertSame($navigationUrl, $current->item(0)->getAttribute('href'));
             }
         }
     }

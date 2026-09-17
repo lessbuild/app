@@ -30,9 +30,12 @@ final class WorkspaceNavigation
                 $this->item(__('Dashboard'), 'dashboard', 'view-grid', ['dashboard']),
             ], true),
             $this->group(__('Build and release'), [
-                $this->item(__('Applications'), 'projects.index', 'view-grid', ['projects.*', 'environments.*']),
-                $this->item(__('Deployments'), 'builds.index', 'cloud-upload', ['builds.*']),
-                $this->item(__('Repositories'), 'repositories.index', 'code', ['repositories.*']),
+                $this->item(__('Applications'), 'projects.index', 'view-grid', [
+                    'projects.*',
+                    'environments.*',
+                    'builds.*',
+                    'repositories.*',
+                ]),
             ], true),
             $this->group(__('Infrastructure'), [
                 $this->item(__('Sites'), 'websites.index', 'link', ['websites.*']),
@@ -57,8 +60,7 @@ final class WorkspaceNavigation
                 $this->item(__('Automation and API'), 'automation.index', 'terminal', ['automation.*']),
             ]),
             $this->group(__('Templates'), [
-                $this->item(__('Recipes'), 'recipes.index', 'terminal', ['recipes.*']),
-                $this->item(__('Gallery'), 'gallery.index', 'view-grid', ['gallery.*']),
+                $this->item(__('Template library'), 'recipes.index', 'terminal', ['recipes.*', 'gallery.*']),
             ]),
         ];
 
@@ -85,10 +87,8 @@ final class WorkspaceNavigation
             ],
             'profile' => [
                 $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
-                $this->item(__('Costs and usage'), 'costs.index', 'chip', ['costs.*']),
-                $this->item(__('Billing'), 'billing.index', 'information-circle', ['billing.*']),
-                $this->item(__('Account'), 'account.index', 'user-circle', ['account.*']),
-                $this->item(__('Settings'), 'account.index', 'cog', [], null, '#password'),
+                $this->item(__('Billing and usage'), 'billing.index', 'information-circle', ['billing.*', 'costs.*']),
+                $this->item(__('Account and security'), 'account.index', 'user-circle', ['account.*']),
             ],
             'unread_notifications' => $unreadNotifications,
         ];

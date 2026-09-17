@@ -4,6 +4,7 @@
         :description="__('Discover reusable provisioning scripts shared by other operators.')"
     >
         <x-slot:buttons>
+            <x-ui.button href="{{ route('recipes.index') }}" variant="secondary">{{ __('My recipes') }}</x-ui.button>
             <x-ui.button href="{{ route('gallery.reports.mine') }}" variant="secondary">{{ __('My Reports') }}</x-ui.button>
             <x-ui.button href="{{ route('gallery.reports.index') }}" variant="secondary">{{ __('Feedback Inbox') }}</x-ui.button>
             <x-ui.button href="{{ route('recipes.create') }}" variant="primary">{{ __('Publish a Recipe') }}</x-ui.button>

@@ -3,7 +3,11 @@
         icon="chip"
         :title="__('Cost visibility')"
         :description="__('Provider-catalog estimates, measured utilization signals, and budget awareness. Your provider invoice remains authoritative.')"
-    />
+    >
+        <x-slot:buttons>
+            <x-ui.button :href="route('billing.index')" variant="secondary">{{ __('Manage billing') }}</x-ui.button>
+        </x-slot:buttons>
+    </x-layouts.partials.heading>
 
     @unless($featureAvailable)
         <div class="ui-alert ui-alert--info mt-6" role="status">

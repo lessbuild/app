@@ -58,7 +58,7 @@ class DashboardTest extends TestCase
             ->assertSee('Search workspace')
             ->assertSee('Current workspace')
             ->assertSee('Settings and support')
-            ->assertSee('>Settings<', false);
+            ->assertSee('>Account and security<', false);
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
     }
 

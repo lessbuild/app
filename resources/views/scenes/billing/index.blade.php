@@ -3,7 +3,11 @@
         icon="cog"
         :title="__('Billing')"
         :description="__('Plans and payments for :workspace.', ['workspace' => auth()->user()->currentOrganization->name])"
-    />
+    >
+        <x-slot:buttons>
+            <x-ui.button :href="route('costs.index')" variant="secondary">{{ __('Cost visibility') }}</x-ui.button>
+        </x-slot:buttons>
+    </x-layouts.partials.heading>
 
     <div class="mt-6 space-y-3">
         @if (request('checkout') === 'success')
