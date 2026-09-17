@@ -134,6 +134,7 @@ removing or renaming existing routes.
 | Phase 4B: database and traffic operations | Complete | Database, domain and load-balancer coverage: 24 tests / 147 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `681a57c` pushed to `origin/main` | Modernize backup and restore operations |
 | Phase 4C: backup and recovery workflows | Complete | Backup destination, verification and recovery coverage: 17 tests / 129 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `6726ff1` pushed to `origin/main` | Modernize operations and automation pages |
 | Phase 5A: reporting and automation | Complete | Activity, command lifecycle and automation coverage: 69 tests / 466 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4233ad9` and `763223d` pushed to `origin/main` | Modernize observability and environment investigation |
+| Phase 5B: observability and investigation | Complete | Observability, incident, status and environment-context coverage: 40 tests / 291 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `1e60a90` pushed to `origin/main` | Modernize notifications, cost visibility and account administration |
 
 ## Phase 1 record — shared visual system
 
@@ -369,6 +370,47 @@ unchanged. No business logic, writes or queue timing moved into the views.
 - Activity and command matrix — **35 passed, 302 assertions**.
 - Automation matrix — **34 passed, 164 assertions**.
 - Combined focused evidence — **69 passed, 466 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
+
+## Phase 5B record — observability and investigation
+
+### Responsibility problem
+
+Observability combined telemetry, metric rules, operational incidents, alert
+destinations, public status pages, maintenance updates and investigation
+context. These were presented as dense, similarly weighted blocks, making it
+hard to distinguish private response actions from public communication and
+read-only evidence.
+
+### Boundaries and benefit
+
+- Existing observability queries, bounded evidence collections, policies,
+  incident transitions, notification fan-out, encrypted destinations and
+  shareable investigation links remain unchanged.
+- The overview now separates telemetry, correlation signals, environment
+  context, alert integrations, public status pages and incident communication
+  into semantic cards with clear headings and empty states.
+- Operational incidents expose status/severity consistently and place timeline,
+  assignment, notes and resolution controls behind progressive disclosure.
+- Environment investigation uses shared cards, badges and actions while still
+  showing that its links are read-only, bounded evidence and not proof of
+  causation.
+
+### Preserved contracts
+
+Tenant scoping, policy checks, saved investigation expiry, share-link
+authorization rechecks, evidence windows, service/deployment/severity filters,
+log-body exclusion, alert destination fields, status-page membership,
+incident/status/severity values and notification timing remain unchanged. No
+new telemetry queries, writes, remote calls or queue jobs were introduced.
+
+### Verification
+
+- Observability and incident matrix — **40 passed, 291 assertions**.
 - `php artisan view:cache` — passed.
 - `vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
