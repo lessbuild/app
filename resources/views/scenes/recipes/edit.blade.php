@@ -9,9 +9,9 @@
 
     @if ($recipe->source)
         <div @class([
-            'my-4 rounded-sm border p-4 text-sm',
-            'border-yellow-300 bg-yellow-50 text-yellow-800' => $recipe->hasGalleryUpdate(),
-            'border-blue-300 bg-blue-50 text-blue-800' => ! $recipe->hasGalleryUpdate(),
+            'ui-alert my-4 p-4',
+            'ui-alert--warning' => $recipe->hasGalleryUpdate(),
+            'ui-alert--info' => ! $recipe->hasGalleryUpdate(),
         ])>
             <p class="font-semibold">
                 {{ __('Imported from :recipe by :author', ['recipe' => $recipe->source->name, 'author' => $recipe->source->user->name]) }}
@@ -19,11 +19,11 @@
             @if ($recipe->hasGalleryUpdate())
                 <p class="mt-1">{{ __('A newer gallery revision is available. Inspect it before replacing your private snapshot.') }}</p>
                 <div class="mt-3 flex flex-wrap gap-3">
-                    <a href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" class="button secondary">{{ __('Review Changes') }}</a>
+                    <x-ui.button href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" variant="secondary">{{ __('Review Changes') }}</x-ui.button>
                     @if (! $recipe->is_published)
                         <form method="POST" action="{{ route('recipes.gallery.refresh', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with the reviewed gallery version?', ['recipe' => $recipe->name])) }})">
                             @csrf
-                            <button type="submit" class="button primary">{{ __('Update Private Copy') }}</button>
+                            <x-ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-ui.button>
                         </form>
                     @else
                         <span class="text-xs">{{ __('Unpublish this copy before refreshing it.') }}</span>
@@ -35,7 +35,7 @@
             @endif
         </div>
     @elseif ($recipe->source_recipe_id)
-        <div class="my-4 rounded-sm border border-primary bg-secondary p-4 text-sm text-secondary">
+        <div class="ui-alert ui-alert--info my-4 p-4">
             <p class="font-semibold text-primary">{{ __('Gallery source unavailable') }}</p>
             <p class="mt-1">{{ __('The contributor removed or unpublished the source. Your encrypted private snapshot is unchanged and remains editable.') }}</p>
         </div>
@@ -52,7 +52,7 @@
 
             <x-slot:footer>
                 <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="button primary" type="submit">{{ __('Save Recipe') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Save Recipe') }}</x-ui.button>
                 </div>
             </x-slot:footer>
         </x-forms.section>

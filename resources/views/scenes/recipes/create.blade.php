@@ -11,7 +11,7 @@
 
             <x-slot:footer>
                 <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="button primary" type="submit">{{ __('Create Recipe') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Create Recipe') }}</x-ui.button>
                 </div>
             </x-slot:footer>
         </x-forms.section>

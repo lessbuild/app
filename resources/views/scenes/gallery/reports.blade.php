@@ -7,27 +7,28 @@
     />
 
     @if (session('status'))
-        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">{{ session('status') }}</div>
+        <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
 
     @if ($filters['report'] || $filters['recipe'])
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+        <x-ui.alert class="mt-4 flex flex-wrap items-center justify-between gap-3 p-3" tone="info">
             <span>{{ $filters['report']
                 ? __('Showing the community report opened from your notification.')
                 : __('Showing all matching feedback for the selected recipe.') }}</span>
             <a href="{{ route('gallery.reports.index', ['status' => 'all']) }}" class="font-semibold underline">{{ __('Show all feedback') }}</a>
-        </div>
+        </x-ui.alert>
     @endif
 
-    <form method="GET" action="{{ route('gallery.reports.index') }}" class="mt-6 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-6 p-4 sm:p-5">
+        <form method="GET" action="{{ route('gallery.reports.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-2 w-full rounded-lg">
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Review status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
+                <select id="status" name="status" class="input secondary mt-2 w-full rounded-lg">
                     <option value="unresolved" @selected($filters['status'] === 'unresolved')>{{ __('Needs review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved') }}</option>
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All reports') }}</option>
@@ -35,7 +36,7 @@
             </div>
             <div>
                 <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded-sm">
+                <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach ($reasons as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -44,15 +45,15 @@
             </div>
             <div>
                 <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-2 w-full rounded-lg">
             </div>
             <div>
                 <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported to') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-2 w-full rounded-lg">
             </div>
             <div>
                 <label for="age" class="block text-xs font-semibold uppercase text-secondary">{{ __('Minimum age') }}</label>
-                <select id="age" name="age" class="input secondary mt-1 w-full rounded-sm">
+                <select id="age" name="age" class="input secondary mt-2 w-full rounded-lg">
                     <option value="" @selected($filters['age'] === null)>{{ __('Any age') }}</option>
                     <option value="24h" @selected($filters['age'] === '24h')>{{ __('At least 24 hours') }}</option>
                     <option value="7d" @selected($filters['age'] === '7d')>{{ __('At least 7 days') }}</option>
@@ -61,7 +62,7 @@
             </div>
             <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded-sm">
+                <select id="sort" name="sort" class="input secondary mt-2 w-full rounded-lg">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
@@ -70,31 +71,20 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('gallery.reports.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">{{ __('Export CSV') }}</a>
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button href="{{ route('gallery.reports.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
             @if ($filters['search'] || $filters['status'] !== 'unresolved' || $filters['reason'] || $filters['date_from'] || $filters['date_to'] || $filters['age'] || $filters['sort'] !== 'newest' || $filters['recipe'] || $filters['report'])
-                <a href="{{ route('gallery.reports.index') }}" class="button secondary">{{ __('Clear filters') }}</a>
+                <x-ui.button href="{{ route('gallery.reports.index') }}" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching reports') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['matching'] }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Needs review') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unresolved'] }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Resolved') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['resolved'] }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Affected recipes') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['recipes'] }}</dd>
-        </div>
+        <x-ui.stat class="ui-card" :label="__('Matching reports')" :value="$metrics['matching']" />
+        <x-ui.stat class="ui-card" :label="__('Needs review')" :value="$metrics['unresolved']" />
+        <x-ui.stat class="ui-card" :label="__('Resolved')" :value="$metrics['resolved']" />
+        <x-ui.stat class="ui-card" :label="__('Affected recipes')" :value="$metrics['recipes']" />
     </dl>
 
     @if ($reports->isEmpty())
@@ -115,11 +105,11 @@
             <form id="bulk-resolve-form" method="POST" action="{{ route('gallery.reports.resolve-many') }}" class="mt-6 flex flex-wrap items-center gap-3" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Mark the selected community reports as resolved?')) }})">
                 @csrf
                 @method('PATCH')
-                <button type="submit" class="button secondary disabled:cursor-not-allowed disabled:opacity-50" x-bind:disabled="openSelected.length === 0">{{ __('Resolve Selected') }}</button>
-                <button type="button" class="button tertiary" x-on:click="openSelected = openSelected.length === openIds.length ? [] : [...openIds]">
+                <x-ui.button type="submit" variant="secondary" x-bind:disabled="openSelected.length === 0">{{ __('Resolve Selected') }}</x-ui.button>
+                <x-ui.button type="button" variant="ghost" x-on:click="openSelected = openSelected.length === openIds.length ? [] : [...openIds]">
                     <span x-show="openSelected.length !== openIds.length">{{ __('Select All Open') }}</span>
                     <span x-show="openSelected.length === openIds.length" style="display: none">{{ __('Clear Open Selection') }}</span>
-                </button>
+                </x-ui.button>
                 <span class="text-xs font-semibold text-secondary"><span x-text="openSelected.length">0</span> {{ __('selected') }}</span>
                 <span class="text-xs text-secondary">{{ __('Select up to 20 reports on this page.') }}</span>
                 <x-forms.errors name="reports" bag="bulkResolve" />
@@ -129,11 +119,11 @@
             <form id="bulk-reopen-form" method="POST" action="{{ route('gallery.reports.reopen-many') }}" class="mt-3 flex flex-wrap items-center gap-3" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Reopen the selected community reports? Resolution notes will be cleared.')) }})">
                 @csrf
                 @method('PATCH')
-                <button type="submit" class="button secondary disabled:cursor-not-allowed disabled:opacity-50" x-bind:disabled="resolvedSelected.length === 0">{{ __('Reopen Selected') }}</button>
-                <button type="button" class="button tertiary" x-on:click="resolvedSelected = resolvedSelected.length === resolvedIds.length ? [] : [...resolvedIds]">
+                <x-ui.button type="submit" variant="secondary" x-bind:disabled="resolvedSelected.length === 0">{{ __('Reopen Selected') }}</x-ui.button>
+                <x-ui.button type="button" variant="ghost" x-on:click="resolvedSelected = resolvedSelected.length === resolvedIds.length ? [] : [...resolvedIds]">
                     <span x-show="resolvedSelected.length !== resolvedIds.length">{{ __('Select All Resolved') }}</span>
                     <span x-show="resolvedSelected.length === resolvedIds.length" style="display: none">{{ __('Clear Resolved Selection') }}</span>
-                </button>
+                </x-ui.button>
                 <span class="text-xs font-semibold text-secondary"><span x-text="resolvedSelected.length">0</span> {{ __('selected') }}</span>
                 <span class="text-xs text-secondary">{{ __('Select up to 20 resolved reports on this page.') }}</span>
                 <x-forms.errors name="reports" bag="bulkReopen" />
@@ -141,7 +131,7 @@
         @endif
         <div class="mt-6 space-y-4">
             @foreach ($reports as $report)
-                <article id="report-{{ $report->id }}" class="scroll-mt-6 rounded-lg border border-primary bg-primary p-5">
+                <x-ui.card id="report-{{ $report->id }}" class="scroll-mt-6 p-5 sm:p-6">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <div class="flex flex-wrap items-center gap-2">
@@ -166,19 +156,17 @@
                                         class="rounded-sm border-primary"
                                     >
                                 @endif
-                                <span @class([
-                                    'rounded-full px-2 py-1 text-xs font-semibold',
-                                    'bg-red-100 text-red-700' => $report->reason === 'security',
-                                    'bg-orange-100 text-orange-700' => $report->reason === 'broken',
-                                    'bg-yellow-100 text-yellow-800' => $report->reason === 'misleading',
-                                    'bg-purple-100 text-purple-700' => $report->reason === 'outdated',
-                                    'bg-blue-100 text-blue-700' => $report->reason === 'other',
-                                ])>{{ str($report->reason)->headline() }}</span>
-                                <span @class([
-                                    'rounded-full px-2 py-1 text-xs font-semibold',
-                                    'bg-red-100 text-red-700' => $report->resolved_at === null,
-                                    'bg-green-100 text-green-700' => $report->resolved_at !== null,
-                                ])>{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</span>
+                                <x-ui.badge
+                                    :tone="$report->reason === 'security' ? 'danger' : ($report->reason === 'misleading' ? 'warning' : 'accent')"
+                                    @class([
+                                        'bg-red-100 text-red-700' => $report->reason === 'security',
+                                        'bg-orange-100 text-orange-700' => $report->reason === 'broken',
+                                        'bg-yellow-100 text-yellow-800' => $report->reason === 'misleading',
+                                        'bg-purple-100 text-purple-700' => $report->reason === 'outdated',
+                                        'bg-blue-100 text-blue-700' => $report->reason === 'other',
+                                    ])
+                                >{{ str($report->reason)->headline() }}</x-ui.badge>
+                                <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
                             </div>
                             <h2 class="mt-3 text-lg font-bold text-primary">
                                 <a href="{{ $report->recipe->is_published ? route('gallery.show', $report->recipe) : route('recipes.edit', $report->recipe) }}" class="text-ternary">{{ $report->recipe->name }}</a>
@@ -198,9 +186,9 @@
                     </div>
                     <p class="mt-4 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
                     @if ($report->resolved_at && $report->resolution_note)
-                        <div class="mt-3 rounded-sm border border-green-200 bg-green-50 p-3">
-                            <p class="text-xs font-semibold uppercase text-green-700">{{ __('Resolution note') }}</p>
-                            <p class="mt-1 whitespace-pre-line text-sm text-green-800">{{ $report->resolution_note }}</p>
+                        <div class="ui-alert ui-alert--success mt-3 p-3">
+                            <p class="text-xs font-semibold uppercase">{{ __('Resolution note') }}</p>
+                            <p class="mt-1 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
                         </div>
                     @endif
                     <div class="mt-4">
@@ -210,9 +198,9 @@
                                 @method('PATCH')
                                 <div>
                                     <label for="resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note (optional)') }}</label>
-                                    <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
+                                    <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
                                 </div>
-                                <button type="submit" class="button secondary">{{ __('Mark Resolved') }}</button>
+                                <x-ui.button type="submit" variant="secondary">{{ __('Mark Resolved') }}</x-ui.button>
                             </form>
                         @else
                             <form method="POST" action="{{ route('gallery.reports.resolution-note.update', [$report->recipe, $report]) }}" class="space-y-3">
@@ -220,20 +208,20 @@
                                 @method('PATCH')
                                 <div>
                                     <label for="edit_resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note') }}</label>
-                                    <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-1 w-full rounded-sm" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
+                                    <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
                                     <p class="mt-1 text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
                                     <x-forms.errors name="resolution_note" />
                                 </div>
-                                <button type="submit" class="button secondary">{{ $report->resolution_note ? __('Update Resolution Note') : __('Add Resolution Note') }}</button>
+                                <x-ui.button type="submit" variant="secondary">{{ $report->resolution_note ? __('Update Resolution Note') : __('Add Resolution Note') }}</x-ui.button>
                             </form>
                             <form method="POST" action="{{ route('gallery.reports.reopen', [$report->recipe, $report]) }}" class="mt-3">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="button secondary">{{ __('Reopen Report') }}</button>
+                                <x-ui.button type="submit" variant="secondary">{{ __('Reopen Report') }}</x-ui.button>
                             </form>
                         @endif
                     </div>
-                </article>
+                </x-ui.card>
             @endforeach
         </div>
 

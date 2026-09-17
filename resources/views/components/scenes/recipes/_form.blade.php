@@ -1,9 +1,9 @@
-<div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+<div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
     <div>
         <label for="name" class="block text-sm font-medium text-primary">{{ __('Name') }}</label>
         <input
             id="name"
-            class="input secondary mt-1 rounded-sm"
+            class="input secondary mt-2 rounded-lg"
             name="name"
             type="text"
             value="{{ old('name', $recipe->name ?? '') }}"
@@ -17,7 +17,7 @@
         <label for="description" class="block text-sm font-medium text-primary">{{ __('Description') }}</label>
         <textarea
             id="description"
-            class="input secondary mt-1 rounded-sm"
+            class="input secondary mt-2 rounded-lg"
             name="description"
             rows="3"
             placeholder="Describe what this recipe changes on a server."
@@ -32,7 +32,7 @@
         </p>
         <textarea
             id="script"
-            class="input secondary rounded-sm font-mono"
+            class="input secondary rounded-lg font-mono"
             name="script"
             rows="14"
             spellcheck="false"
@@ -42,7 +42,7 @@
         <x-forms.errors name="script" />
     </div>
 
-    <div class="rounded-lg border border-primary bg-secondary p-4">
+    <div class="ui-card bg-secondary p-4">
         <div class="flex items-start gap-3">
             <input type="hidden" name="is_published" value="0">
             <input
@@ -62,7 +62,7 @@
         </div>
         <div class="mt-4">
             <label for="category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
-            <select id="category" name="category" class="input secondary mt-1 w-full rounded-sm sm:max-w-xs">
+            <select id="category" name="category" class="input secondary mt-2 w-full rounded-lg sm:max-w-xs">
                 <option value="">{{ __('Select a category') }}</option>
                 @foreach (\App\Models\Recipe::CATEGORIES as $category)
                     <option value="{{ $category }}" @selected(old('category', $recipe->category ?? '') === $category)>

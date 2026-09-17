@@ -9,23 +9,24 @@
             <x-slot:buttons>
                 <form method="POST" action="{{ route('gallery.reports.mine.review-updates') }}">
                     @csrf
-                    <button type="submit" class="button primary">
+                    <x-ui.button type="submit" variant="primary">
                         {{ trans_choice('Review :count update|Review all :count updates', $metrics['unread_updates'], ['count' => $metrics['unread_updates']]) }}
-                    </button>
+                    </x-ui.button>
                 </form>
             </x-slot:buttons>
         @endif
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('gallery.reports.mine') }}" class="mt-6 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-6 p-4 sm:p-5">
+        <form method="GET" action="{{ route('gallery.reports.mine') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-1 w-full rounded-sm">
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-2 w-full rounded-lg">
             </div>
             <div>
                 <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Report status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-sm">
+                <select id="status" name="status" class="input secondary mt-2 w-full rounded-lg">
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All statuses') }}</option>
                     <option value="open" @selected($filters['status'] === 'open')>{{ __('Needs contributor review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved by contributor') }}</option>
@@ -33,7 +34,7 @@
             </div>
             <div>
                 <label for="availability" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe availability') }}</label>
-                <select id="availability" name="availability" class="input secondary mt-1 w-full rounded-sm">
+                <select id="availability" name="availability" class="input secondary mt-2 w-full rounded-lg">
                     <option value="all" @selected($filters['availability'] === 'all')>{{ __('Published and unpublished') }}</option>
                     <option value="published" @selected($filters['availability'] === 'published')>{{ __('Published') }}</option>
                     <option value="unpublished" @selected($filters['availability'] === 'unpublished')>{{ __('No longer published') }}</option>
@@ -41,7 +42,7 @@
             </div>
             <div>
                 <label for="updates" class="block text-xs font-semibold uppercase text-secondary">{{ __('Contributor updates') }}</label>
-                <select id="updates" name="updates" class="input secondary mt-1 w-full rounded-sm">
+                <select id="updates" name="updates" class="input secondary mt-2 w-full rounded-lg">
                     <option value="all" @selected($filters['updates'] === 'all')>{{ __('Reviewed and unread') }}</option>
                     <option value="unread" @selected($filters['updates'] === 'unread')>{{ __('Unread updates') }}</option>
                     <option value="reviewed" @selected($filters['updates'] === 'reviewed')>{{ __('No unread update') }}</option>
@@ -49,7 +50,7 @@
             </div>
             <div>
                 <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-1 w-full rounded-sm">
+                <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach (\App\Models\RecipeReport::REASONS as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -58,7 +59,7 @@
             </div>
             <div>
                 <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-1 w-full rounded-sm">
+                <select id="sort" name="sort" class="input secondary mt-2 w-full rounded-lg">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
@@ -66,13 +67,14 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('gallery.reports.mine.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">{{ __('Export CSV') }}</a>
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button href="{{ route('gallery.reports.mine.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
             @if ($filters['search'] || $filters['status'] !== 'all' || $filters['availability'] !== 'all' || $filters['updates'] !== 'all' || $filters['reason'] || $filters['sort'] !== 'newest')
-                <a href="{{ route('gallery.reports.mine') }}" class="button secondary">{{ __('Clear filters') }}</a>
+                <x-ui.button href="{{ route('gallery.reports.mine') }}" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         @foreach ([
@@ -82,10 +84,7 @@
             ['label' => __('No longer published'), 'value' => $metrics['unpublished']],
             ['label' => __('Unread updates'), 'value' => $metrics['unread_updates']],
         ] as $metric)
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ $metric['label'] }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">{{ $metric['value'] }}</dd>
-            </div>
+            <x-ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
         @endforeach
     </dl>
 
@@ -100,25 +99,21 @@
         <div class="mt-6 space-y-4">
             @foreach ($reports as $report)
                 @php($unreadUpdate = $unreadUpdates->get($report->id))
-                <article @class([
-                    'rounded-lg border bg-primary p-5',
+                <x-ui.card @class([
+                    'p-5',
                     'border-blue-400 ring-1 ring-blue-200' => $unreadUpdate,
                     'border-primary' => ! $unreadUpdate,
                 ])>
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{{ str($report->reason)->headline() }}</span>
-                                <span @class([
-                                    'rounded-full px-2 py-1 text-xs font-semibold',
-                                    'bg-red-100 text-red-700' => $report->resolved_at === null,
-                                    'bg-green-100 text-green-700' => $report->resolved_at !== null,
-                                ])>{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</span>
+                                <x-ui.badge tone="accent">{{ str($report->reason)->headline() }}</x-ui.badge>
+                                <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</x-ui.badge>
                                 @if (! $report->recipe->is_published || $report->recipe->published_at === null)
-                                    <span class="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">{{ __('No longer published') }}</span>
+                                    <x-ui.badge tone="warning">{{ __('No longer published') }}</x-ui.badge>
                                 @endif
                                 @if ($unreadUpdate)
-                                    <span class="rounded-full bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{{ __('New update') }}</span>
+                                    <x-ui.badge tone="accent">{{ __('New update') }}</x-ui.badge>
                                 @endif
                             </div>
                             <h2 class="mt-3 text-lg font-bold text-primary">
@@ -135,13 +130,13 @@
                         @if ($unreadUpdate)
                             <form method="POST" action="{{ route('notifications.read', $unreadUpdate) }}">
                                 @csrf
-                                <button type="submit" class="button primary">{{ __('Review new update') }}</button>
+                                <x-ui.button type="submit" variant="primary">{{ __('Review new update') }}</x-ui.button>
                             </form>
                         @else
-                            <a href="{{ route('gallery.report.status', $report) }}" class="button secondary">{{ __('View report status') }}</a>
+                            <x-ui.button href="{{ route('gallery.report.status', $report) }}" variant="secondary">{{ __('View report status') }}</x-ui.button>
                         @endif
                     </div>
-                </article>
+                </x-ui.card>
             @endforeach
         </div>
 
