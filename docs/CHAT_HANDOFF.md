@@ -1,5 +1,19 @@
 # BuildPusher chat handoff
 
+## Provider selector text treatment — 2026-09-17
+
+The provider creation/edit selector now presents all seven provider options as
+clear text radio cards without brand SVGs. Native radio names and values,
+edit-state selection, required semantics and the no-JavaScript submission
+fallback are unchanged. The focused provider matrix passed **42 tests / 604
+assertions**, required-PHP Pint and the Vite build passed, and the locked
+browser provider-submission journey passed. Commit `1c8e2c6` is pushed to
+`origin/main` and deployed to the isolated dev runtime; the service is active
+and enabled and `https://buildpusher.com/` returned HTTP 200.
+
+This is a presentation-only change. The external release-integration blockers
+below remain unchanged and still require separate authorization and credentials.
+
 ## External blocker audit — 2026-09-17
 
 The isolated `main` runtime was checked without changing production or creating

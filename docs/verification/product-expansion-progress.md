@@ -1,6 +1,16 @@
 # BuildPusher product expansion progress
 
-Latest continuation: September 17 external blocker audit completed after the
+Latest continuation: September 17 provider selector text treatment completed
+after the external blocker audit. Provider type options now use clear text
+radio cards without brand SVGs, while the native radio names, values, edit
+selection and no-JavaScript submission remain unchanged. The focused provider
+matrix passed **42 tests / 604 assertions**, the required-PHP Pint check and
+Vite build passed, and the locked browser provider-submission journey passed.
+Commit `1c8e2c6` is pushed to `origin/main` and deployed to the isolated dev
+runtime. The exact next task remains the separately authorized external
+release-integration acceptance recorded below.
+
+Previous continuation: September 17 external blocker audit completed after the
 final local verification. The isolated GitHub and DigitalOcean provider
 records passed a read-only health check (**2 checked / 0 failed**). Monitoring
 heartbeat/status URLs, Stripe keys, GitHub App settings and workspace SSO are
@@ -5246,3 +5256,31 @@ this ledger. The separate live acceptance drill still requires explicit
 environment, budget and maintenance-window authorization. This audit is
 evidence of missing prerequisites, not a claim that external acceptance
 passed.
+
+## Provider selector text treatment — 2026-09-17
+
+### Responsibility and boundary
+
+The provider creation and edit form already had native radio inputs, but four
+provider options also rendered brand SVGs while the remaining options were
+text-only. That made the selector visually inconsistent and gave the options
+an icon-first presentation. The change stays within the Blade form boundary:
+it removes only the option icons and tightens the shared card height. Provider
+selection remains an accessible radio group; no controller, request, policy,
+action, route, persistence, credential or response behavior changed.
+
+### Preserved behavior and verification
+
+The seven existing provider values and labels, edit-state selection, required
+radio semantics and no-JavaScript form submission remain intact. The feature
+regression now asserts that the provider radio group contains seven radios and
+no nested SVG icons. Provider capability, submission-feedback, connection and
+local UI tests passed **42 tests / 604 assertions**. Required-PHP Pint, the
+Vite build, `git diff --check` and the locked browser test for provider
+submission without JavaScript passed. Commit `1c8e2c6` was pushed to
+`origin/main`; the isolated dev runtime was fast-forwarded, its Blade cache
+rebuilt, the service restarted, and the domain returned HTTP 200.
+
+The exact next task is the separately authorized external release-integration
+acceptance described in the blocker audit; this UI refinement does not change
+that status.
