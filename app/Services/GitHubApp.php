@@ -7,15 +7,27 @@ use RuntimeException;
 
 class GitHubApp
 {
+    public function __construct(private readonly GitHubAppPrivateKeyStore $privateKeys) {}
+
     /**
      * Check whether every required GitHub App credential setting is populated.
      *
-     * @return bool Whether app ID, slug, private key and webhook secret are present.
+     * @return bool Whether app ID, slug, a valid RSA private key and webhook secret are present.
      */
     public function configured(): bool
     {
         return filled(config('github-app.id')) && filled(config('github-app.slug'))
-            && filled(config('github-app.private_key')) && filled(config('github-app.webhook_secret'));
+            && $this->hasPrivateKey() && filled(config('github-app.webhook_secret'));
+    }
+
+    /**
+     * Check whether a usable RSA private key is available without exposing its contents.
+     *
+     * @return bool Whether the configured or isolated setup key can sign GitHub App requests.
+     */
+    public function hasPrivateKey(): bool
+    {
+        return $this->privateKeys->read() !== null;
     }
 
     /**
@@ -146,10 +158,11 @@ class GitHubApp
         $encoded = $this->base64Url(json_encode(['alg' => 'RS256', 'typ' => 'JWT'], JSON_THROW_ON_ERROR)).'.'.$this->base64Url(json_encode([
             'iat' => $now - 60, 'exp' => $now + 540, 'iss' => (string) config('github-app.id'),
         ], JSON_THROW_ON_ERROR));
-        $key = str_replace('\\n', "\n", (string) config('github-app.private_key'));
-        if (! str_contains($key, 'BEGIN') && is_file($key)) {
-            $key = (string) file_get_contents($key);
+        $key = $this->privateKeys->read();
+        if ($key === null) {
+            throw new RuntimeException('GitHub App is not configured.');
         }
+
         if (! openssl_sign($encoded, $signature, $key, OPENSSL_ALGO_SHA256)) {
             throw new RuntimeException('Unable to sign the GitHub App request.');
         }

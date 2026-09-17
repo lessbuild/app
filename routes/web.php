@@ -26,6 +26,7 @@ use App\Http\Controllers\DomainController;
 use App\Http\Controllers\EnterpriseSsoController;
 use App\Http\Controllers\EnvironmentController;
 use App\Http\Controllers\GitHubAppController;
+use App\Http\Controllers\GitHubAppSetupController;
 use App\Http\Controllers\ImportServerController;
 use App\Http\Controllers\ImportWebsiteController;
 use App\Http\Controllers\LoadBalancerController;
@@ -107,6 +108,10 @@ Route::middleware('auth')->group(function () {
     Route::get('github-app/connect', [GitHubAppController::class, 'connect'])->name('github-app.connect');
     Route::get('github-app/callback', [GitHubAppController::class, 'callback'])->name('github-app.callback');
     Route::get('github-app/providers/{provider}/repositories', [GitHubAppController::class, 'repositories'])->name('github-app.repositories');
+    Route::get('admin/github-app/setup', [GitHubAppSetupController::class, 'create'])->name('admin.github-app.setup');
+    Route::post('admin/github-app/setup', [GitHubAppSetupController::class, 'store'])
+        ->middleware('throttle:sensitive-account')
+        ->name('admin.github-app.setup.store');
     Route::patch('organization/notification-preferences', [OrganizationController::class, 'updateNotificationPreferences'])->name('organizations.notification-preferences.update');
     Route::patch('organization/security-policy', [OrganizationController::class, 'updateSecurityPolicy'])->name('organizations.security-policy.update');
     Route::get('organization/sso/connect', [EnterpriseSsoController::class, 'connect'])->name('organizations.sso.connect');

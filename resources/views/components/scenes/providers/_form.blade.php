@@ -7,6 +7,12 @@
             <p class="mt-1">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p>
             <x-ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-ui.button>
         </x-ui.alert>
+    @elseif (! isset($provider) && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Services\GitHubApp::class)->hasPrivateKey())
+        <x-ui.alert tone="warning" class="sm:col-span-2">
+            <p class="font-semibold">{{ __('GitHub App setup is incomplete') }}</p>
+            <p class="mt-1">{{ __('A platform administrator can upload the downloaded private key from a phone.') }}</p>
+            <x-ui.button :href="route('admin.github-app.setup')" variant="secondary" class="mt-3">{{ __('Set up GitHub App') }}</x-ui.button>
+        </x-ui.alert>
     @endif
 
     <fieldset class="sm:col-span-2">
