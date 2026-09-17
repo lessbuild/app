@@ -38,6 +38,10 @@ The managed Valkey resource script also no longer reports success after a
 failed existing-container start. Its new executable regression failed against
 the old code; the full strict suite now passes **1,551 tests / 12,974 assertions**
 with full Pint. See [the verification record](verification/managed-valkey-start-2026-09-17.md).
+Valkey correction `14e3bf5` is pushed and integrated. The preparatory managed-
+resource renderer extraction now preserves byte-identical output across five
+snapshot variants; 36 focused tests / 391 assertions pass. See
+[the preparation record](verification/managed-resource-preparation-2026-09-17.md).
 Next: correct first-deployment resource preparation before Laravel migrations
 while preserving the 15 callback stages, then continue configuration/preview
 and recovery acceptance. This newly identified ordering gap remains open at

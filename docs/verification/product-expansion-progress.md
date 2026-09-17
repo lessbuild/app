@@ -4898,3 +4898,26 @@ prepare managed resources before first-deployment Laravel migrations without
 renumbering persisted callback stages. Separate the shared command-rendering
 extraction from the intentional timing fix. Full configuration/preview and
 recovery acceptance still follows; no cloud host was created for this slice.
+
+Valkey correction `14e3bf5` was committed, pushed and integrated into canonical
+`main` and the dev runtime; the dev worker recycled successfully afterward.
+
+## Managed-resource command renderer — 2026-09-17
+
+First-deployment review found that migrations precede managed-resource
+creation. The preparatory extraction separates snapshot-based resource command
+rendering into an injected `ManagedResourceScript`, while the existing
+`ConfigureResourcesScript` retains stage reporting. It changes no timing and
+preserves the 15-stage protocol. This applies single responsibility and explicit
+constructor collaboration to a concrete reuse requirement, without adding an
+interface or generic orchestration layer.
+
+Five frozen-time script comparisons are byte-identical; the relevant execution,
+resource-safety, preview and provisioning suites passed **36 tests / 391
+assertions**. Changed-file Pint and diff checks passed. The preceding full
+baseline remains 1,551 tests / 12,974 assertions. See
+[the verification record](managed-resource-preparation-2026-09-17.md).
+
+Commit/push this pure extraction before adding the first-deployment regression
+and early resource preparation. The exact next task is that separate timing fix;
+configuration/preview provider acceptance remains outstanding.
