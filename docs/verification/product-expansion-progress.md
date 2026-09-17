@@ -5124,3 +5124,24 @@ separately authorized external acceptance. Production deployment, all-provider
 parity, independent monitoring/heartbeat destinations, GitHub App
 configuration, billing/SSO, deeper PostgreSQL/Valkey recovery and the live
 acceptance drill remain outstanding.
+
+## Dev runtime navigation deployment — 2026-09-17
+
+The isolated dev runtime serving `https://buildpusher.com` was fast-forwarded
+on `main` to `1750222`, following the pushed implementation commit `215da0d`.
+The runtime remains the local/dev Caddy target at `127.0.0.1:8010` with its
+isolated SQLite database, storage, file cache and database queue. The canonical
+checkout and separate acceptance-drill checkout were not changed.
+
+Laravel config, route and view caches were rebuilt; the Vite production assets
+were rebuilt; and the PHP 8.5.10 dev server was restarted with `--no-reload`.
+The local runtime and `https://buildpusher.com/login` both returned HTTP 200.
+Runtime navigation inspection confirmed the merged Applications, Template
+library, Billing and usage, and Account and security entries, with no legacy
+standalone Environments, Builds, Repositories, Recipes, Gallery, Billing,
+Costs and usage or Settings entries. The authenticated browser journey against
+the dev domain passed on mobile, tablet and desktop (**3 tests**).
+
+This is dev-runtime deployment evidence only. It does not claim production
+release or completion of the separate live acceptance drill. The exact next
+task is separately authorized release handoff and external acceptance.

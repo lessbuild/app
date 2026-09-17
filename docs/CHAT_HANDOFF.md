@@ -1,5 +1,28 @@
 # BuildPusher chat handoff
 
+## Dev runtime navigation deployment — 2026-09-17
+
+The isolated dev runtime serving `https://buildpusher.com` was fast-forwarded
+on its `main` branch to `1750222`, after the pushed navigation consolidation
+commit `215da0d`. The runtime remains the local/dev Caddy target at
+`127.0.0.1:8010`, with its isolated SQLite database, storage, file cache and
+database queue; the canonical checkout and acceptance-drill checkout were not
+changed.
+
+Laravel config, route and view caches were rebuilt, the Vite production assets
+were rebuilt, and the PHP 8.5.10 dev server was restarted with the required
+`--no-reload` mode. The domain and local runtime both returned HTTP 200 for
+`/login`. Runtime navigation inspection confirmed the merged Applications,
+Template library, Billing and usage, and Account and security entries, with no
+legacy standalone Environments, Builds, Repositories, Recipes, Gallery,
+Billing, Costs and usage or Settings entries. The authenticated browser
+journey against the dev domain passed on mobile, tablet and desktop (**3
+tests**).
+
+This is dev-runtime deployment evidence only; it is not production release or
+the separate live acceptance drill. The next task remains separately
+authorized release handoff and external acceptance.
+
 ## Latest continuation — provider-backed preview-stack acceptance — 2026-09-17
 
 The representative Laravel preview stack passed on the isolated dev runtime
