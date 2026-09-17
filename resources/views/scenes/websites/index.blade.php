@@ -6,24 +6,23 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        icon="globe-alt"
         :title="__('Websites')"
         :description="__('Manage deployment targets and review filtered provisioning and health state.')"
     >
         <x-slot:buttons>
-            <a href="{{ route('websites.import.create') }}" class="button secondary">{{ __('Import existing') }}</a>
-            <a
-                href="{{ route('websites.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
-            >
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button :href="route('websites.import.create')" variant="secondary">{{ __('Import existing') }}</x-ui.button>
+            <x-ui.button :href="route('websites.create')" variant="primary">
+                <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Website') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('websites.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4">
+        <form method="GET" action="{{ route('websites.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -73,47 +72,24 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('websites.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button :href="route('websites.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
+            </x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('websites.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('websites.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching websites') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Websites in this filtered view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active websites') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioned websites.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Provisioning') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['provisioning'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Queued or provisioning websites.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed websites') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioning failures.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unhealthy websites') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unhealthy'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Enabled health checks reporting unhealthy.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Needs attention') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['attention'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Provisioning failures or enabled unhealthy checks.') }}</dd>
-        </div>
+        <x-ui.stat :label="__('Matching websites')" :value="$metrics['total']" :description="__('Websites in this filtered view.')" />
+        <x-ui.stat :label="__('Active websites')" :value="$metrics['active']" :description="__('Matching provisioned websites.')" />
+        <x-ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued or provisioning websites.')" />
+        <x-ui.stat :label="__('Failed websites')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
+        <x-ui.stat :label="__('Unhealthy websites')" :value="$metrics['unhealthy']" :description="__('Enabled health checks reporting unhealthy.')" />
+        <x-ui.stat :label="__('Needs attention')" :value="$metrics['attention']" :description="__('Provisioning failures or enabled unhealthy checks.')" />
     </dl>
 
     <!--
@@ -122,7 +98,8 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$websites->isEmpty())
-        <div class="mt-6 overflow-x-auto">
+        <div class="ui-card mt-6 overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -168,23 +145,25 @@
                                 </a>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <span @class([
-                                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
-                                    'bg-green-100 text-green-700' => $website->provisioning_status === \App\Models\Website::STATUS_ACTIVE,
-                                    'bg-red-100 text-red-700' => $website->provisioning_status === \App\Models\Website::STATUS_FAILED,
-                                    'bg-blue-100 text-blue-700' => ! in_array($website->provisioning_status, [\App\Models\Website::STATUS_ACTIVE, \App\Models\Website::STATUS_FAILED], true),
-                                ])>{{ str($website->provisioning_status)->replace('_', ' ') }}</span>
+                                    @if ($website->provisioning_status === \App\Models\Website::STATUS_ACTIVE)
+                                        <x-ui.badge tone="success">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @elseif ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
+                                        <x-ui.badge tone="danger">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @else
+                                        <x-ui.badge tone="accent">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @endif
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
                                 @if (! $website->health_check_enabled)
-                                    {{ __('Disabled') }}
+                                    <x-ui.badge>{{ __('Disabled') }}</x-ui.badge>
                                 @else
-                                    <span @class([
-                                        'font-medium uppercase',
-                                        'text-green-600' => $website->health_status === \App\Models\Website::HEALTH_HEALTHY,
-                                        'text-red-600' => $website->health_status === \App\Models\Website::HEALTH_UNHEALTHY,
-                                        'text-secondary' => $website->health_status === \App\Models\Website::HEALTH_UNKNOWN,
-                                    ])>{{ $website->health_status }}</span>
+                                    @if ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
+                                        <x-ui.badge tone="success">{{ $website->health_status }}</x-ui.badge>
+                                    @elseif ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
+                                        <x-ui.badge tone="danger">{{ $website->health_status }}</x-ui.badge>
+                                    @else
+                                        <x-ui.badge>{{ $website->health_status }}</x-ui.badge>
+                                    @endif
                                     @unless ($website->health_monitoring_enabled)
                                         <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
                                     @else
@@ -210,6 +189,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="py-4">
             {{ $websites->links() }}

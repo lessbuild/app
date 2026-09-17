@@ -6,29 +6,25 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        icon="cloud"
         :title="__('Providers')"
         :description="__('Manage infrastructure integrations and review their filtered connection state.')"
     >
         <x-slot:buttons>
-            <a
-                href="{{ route('providers.export', array_filter($filters, fn ($value) => $value !== null)) }}"
-                class="button secondary"
-            >
+            <x-ui.button :href="route('providers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
-            <a
-                href="{{ route('providers.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
-            >
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            </x-ui.button>
+            <x-ui.button :href="route('providers.create')" variant="primary">
+                <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Provider') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('providers.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4">
+        <form method="GET" action="{{ route('providers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -77,44 +73,21 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('providers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('providers.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching providers') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Providers in this filtered view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('In use') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['in_use'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching providers with attached resources.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unused') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unused'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching providers ready for a resource.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Healthy connections') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['healthy'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Latest credential check succeeded.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed connections') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Latest credential check failed.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unchecked connections') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['unchecked'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('No credential result is recorded yet.') }}</dd>
-        </div>
+        <x-ui.stat :label="__('Matching providers')" :value="$metrics['total']" :description="__('Providers in this filtered view.')" />
+        <x-ui.stat :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching providers with attached resources.')" />
+        <x-ui.stat :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching providers ready for a resource.')" />
+        <x-ui.stat :label="__('Healthy connections')" :value="$metrics['healthy']" :description="__('Latest credential check succeeded.')" />
+        <x-ui.stat :label="__('Failed connections')" :value="$metrics['failed']" :description="__('Latest credential check failed.')" />
+        <x-ui.stat :label="__('Unchecked connections')" :value="$metrics['unchecked']" :description="__('No credential result is recorded yet.')" />
     </dl>
 
     <!--
@@ -123,7 +96,8 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$providers->isEmpty())
-        <div class="mt-6 overflow-x-auto">
+        <div class="ui-card mt-6 overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-primary border-t border-b">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -177,14 +151,13 @@
                                 </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                <div @class([
-                                    'font-medium',
-                                    'text-green-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY,
-                                    'text-red-600' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED,
-                                    'text-secondary' => $provider->connectionHealth() === \App\Models\Provider::CONNECTION_UNCHECKED,
-                                ])>
-                                    {{ str($provider->connectionHealth())->title() }}
-                                </div>
+                                @if ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY)
+                                    <x-ui.badge tone="success">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
+                                @elseif ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED)
+                                    <x-ui.badge tone="danger">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
+                                @else
+                                    <x-ui.badge>{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
+                                @endif
                                 @if ($provider->connection_checked_at)
                                     <div class="text-xs text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</div>
                                 @endif
@@ -219,6 +192,7 @@
                     <!-- More people... -->
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="py-4">
             {{ $providers->links() }}

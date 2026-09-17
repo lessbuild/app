@@ -6,26 +6,23 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        icon="server"
         :title="__('Servers')"
         :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
         <x-slot:buttons>
-            <a href="{{ route('servers.import.create') }}" class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary">
-                {{ __('Import existing') }}
-            </a>
-            <a
-                href="{{ route('servers.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
-            >
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button :href="route('servers.import.create')" variant="secondary">{{ __('Import existing') }}</x-ui.button>
+            <x-ui.button :href="route('servers.create')" variant="primary">
+                <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Server') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('servers.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4">
+        <form method="GET" action="{{ route('servers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -58,49 +55,24 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('servers.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button :href="route('servers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
+            </x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('servers.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('servers.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching servers') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Servers in this filtered view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Ready servers') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['ready'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Active servers ready for workloads.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Provisioning') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['provisioning'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Queued, awaiting an IP, or provisioning.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed servers') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching provisioning failures.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Hosted websites') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['websites'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Websites attached to matching servers.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest matching server') }}</dt>
-            <dd class="mt-1 text-lg font-bold text-primary">{{ $metrics['latest_at']?->diffForHumans() ?? __('Not available') }}</dd>
-            <dd class="mt-1 text-xs text-secondary">
-                {{ $metrics['latest_at']?->toDayDateTimeString() ?? __('No matching server recorded.') }}
-            </dd>
-        </div>
+        <x-ui.stat :label="__('Matching servers')" :value="$metrics['total']" :description="__('Servers in this filtered view.')" />
+        <x-ui.stat :label="__('Ready servers')" :value="$metrics['ready']" :description="__('Active servers ready for workloads.')" />
+        <x-ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued, awaiting an IP, or provisioning.')" />
+        <x-ui.stat :label="__('Failed servers')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
+        <x-ui.stat :label="__('Hosted websites')" :value="$metrics['websites']" :description="__('Websites attached to matching servers.')" />
+        <x-ui.stat :label="__('Latest matching server')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching server recorded.')" />
     </dl>
 
     <!--
@@ -109,7 +81,8 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$servers->isEmpty())
-        <div class="mt-6 overflow-x-auto">
+        <div class="ui-card mt-6 overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -170,12 +143,13 @@
                                 </div>
                             </td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <span @class([
-                                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
-                                    'bg-green-100 text-green-700' => $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE,
-                                    'bg-red-100 text-red-700' => $server->provisioning_status === \App\Models\Server::STATUS_FAILED,
-                                    'bg-blue-100 text-blue-700' => ! in_array($server->provisioning_status, [\App\Models\Server::STATUS_ACTIVE, \App\Models\Server::STATUS_FAILED], true),
-                                ])>{{ str($server->provisioning_status)->replace('_', ' ') }}</span>
+                                    @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+                                        <x-ui.badge tone="success">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @elseif ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
+                                        <x-ui.badge tone="danger">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @else
+                                        <x-ui.badge tone="accent">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                    @endif
                             </td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                 <a href="{{ route('servers.show', $server) }}" aria-label="{{ __('View :name', ['name' => $server->label]) }}">
@@ -188,6 +162,7 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="py-4">
             {{ $servers->links() }}
