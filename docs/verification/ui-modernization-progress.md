@@ -125,7 +125,8 @@ removing or renaming existing routes.
 | Slice | Status | Tests | Commit / push | Next task |
 | --- | --- | --- | --- | --- |
 | Phase 0: inventory and fresh baseline | Complete | 1,556 PHP tests / 13,004 assertions; Pint; asset build; 9 asset-layout tests; 6 accessibility/visual tests | `2c43276` pushed to `origin/main` | Add semantic design tokens and shared Blade UI primitives |
-| Phase 1: shared visual system | Complete | Blade view cache; Pint; diff check; Vite build; 9 asset-layout tests including mobile, tablet, desktop, dark mode and no-JS provider submission | Pending commit and push | Consolidate desktop/mobile navigation into grouped workspace IA |
+| Phase 1: shared visual system | Complete | Blade view cache; Pint; diff check; Vite build; 9 asset-layout tests including mobile, tablet, desktop, dark mode and no-JS provider submission | `a5045f0` pushed to `origin/main` | Consolidate desktop/mobile navigation into grouped workspace IA |
+| Phase 2: application shell and navigation | Complete | 3 dedicated navigation tests across mobile/tablet/desktop; 9 asset-layout tests; mobile and desktop broad visual audit pass; tablet broad audit timed out at 15 minutes on `/providers/3/edit` | Pending commit and push | Modernize dashboard and applications/deployments page family |
 
 ## Phase 1 record — shared visual system
 
@@ -165,6 +166,48 @@ not changed. No production runtime, credentials or cloud resources were used.
   responsive fixture widths plus provider submission with JavaScript disabled.
 - `npm run build` — passed with the updated Vite bundle.
 - `git diff --check` — passed.
+
+## Phase 2 record — application shell and navigation
+
+### Responsibility problem
+
+Desktop and mobile navigation each owned a separate list of destinations,
+active-route rules and permission conditionals. The mobile surface presented
+nearly every destination as an equal tile, while the desktop sidebar used a
+long flat list. That duplication made grouping and accessibility changes easy
+to miss on one surface.
+
+### Boundaries and benefit
+
+- `App\View\Navigation\WorkspaceNavigation` now produces one presentation
+  model for grouped workspace, support, profile and administration links.
+- A shared navigation-link component owns active state, route anchors, icons,
+  badge rendering and responsive link treatment.
+- The desktop sidebar renders grouped sections; the mobile drawer uses the same
+  items with native, keyboard-accessible disclosure groups. Overview and build
+  navigation remain open by default, while less frequent groups collapse to
+  reduce scanning length.
+- Authorization visibility remains based on the existing organization manage
+  permission and platform-admin check. The navigation does not become an
+  authorization boundary; routes and policies continue to enforce access.
+- The unread notification count is computed once by the navigation model and
+  reused by the desktop link and mobile quick action.
+- Existing route names, URLs, Settings compatibility link, command palette,
+  menu Escape/focus behavior, bottom quick actions and non-JavaScript forms are
+  preserved.
+
+### Verification and limitation
+
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run test:assets` — **9 passed**.
+- `tests/Browser/navigation.spec.js` — **3 passed** at 390px, 768px and
+  1440px, covering grouped access, Settings visibility, active state and
+  overflow.
+- `tests/Browser/visual-audit.spec.js` — mobile and desktop passed. The tablet
+  crawl reached `/providers/3/edit` and exceeded its existing 900-second test
+  timeout; it ended with a page crash during teardown. This is recorded as
+  incomplete browser evidence, not as a pass or an application defect.
 
 ## Remaining external scope
 

@@ -12,8 +12,11 @@ use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
 use App\Models\User;
 use App\Services\SshServerTroubleshootingTransport;
+use App\View\Navigation\WorkspaceNavigation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewInstance;
 use Laravel\Cashier\Cashier;
 use Livewire\Livewire;
 
@@ -49,5 +52,14 @@ class AppServiceProvider extends ServiceProvider
         Livewire::component('server-show', ServerShow::class);
         Livewire::component('website-setup', WebsiteSetup::class);
         Livewire::component('website-provisioning-log', WebsiteProvisioningLog::class);
+
+        View::composer('components.layouts.app', function (ViewInstance $view): void {
+            $user = auth()->user();
+
+            $view->with(
+                'navigation',
+                $user instanceof User ? app(WorkspaceNavigation::class)->for($user) : [],
+            );
+        });
     }
 }

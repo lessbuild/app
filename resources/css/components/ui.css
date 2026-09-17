@@ -99,6 +99,14 @@
         color: var(--ui-text);
     }
 
+    .ui-nav-chevron {
+        transition: transform 150ms ease;
+    }
+
+    details[open] > summary .ui-nav-chevron {
+        transform: rotate(90deg);
+    }
+
     .ui-breadcrumb__icon {
         width: 1rem;
         height: 1rem;
