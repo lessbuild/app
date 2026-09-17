@@ -692,6 +692,56 @@ Commit `9d46445` was pushed to `origin/main`. The next slice modernizes
 remaining operational detail views and shared resource forms, starting with
 repository, website, provider and server journeys.
 
+## Phase 6D record — repository source and deployment workflows
+
+### Responsibility problem
+
+Repository inventory, source configuration and deployment detail pages still
+used older card, metric, status and action treatments than the neighboring
+server and website workflows. The dense webhook and deployment-history page
+also gave filters, recovery actions and operational state the same visual
+weight, while the shared source form had small controls and an unnecessarily
+constrained layout on narrow screens.
+
+### Boundaries and benefit
+
+- Repository views remain presentation boundaries; existing inventory queries,
+  deployment actions, webhook operations, Livewire setup progress and scoped
+  authorization remain unchanged.
+- Repository lists and metrics now use shared cards, stats, badges, buttons and
+  empty states, with an overflow-safe table wrapper for small screens.
+- Repository create/edit pages use a single responsive card structure around
+  the existing shared form partial. The form keeps its current values,
+  provider/website choices, path filters, hook fields and validation slots.
+- Deployment preflight, webhook delivery history, repository metadata and
+  build history use the same status vocabulary and clearer grouping without
+  changing deployment, replay, filtering, export or recovery semantics.
+- GitHub App repository selection and impact preview now share the same
+  interactive cards and semantic controls.
+
+### Preserved contracts
+
+Repository ownership and tenancy, provider and website filtering, pagination,
+CSV escaping, deployment entitlement and preflight guidance, path safety,
+webhook signing/replay/coalescing, delivery filters and export URLs, service
+root values, build hooks, Livewire progress and all existing response copy
+remain unchanged. No credentials or webhook payloads were added to the UI.
+
+### Verification
+
+- Repository inventory, deployment, impact-preview, webhook, safety and
+  deployment-root matrix — **56 passed, 512 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `76d27bb` was pushed to `origin/main`. The next slice continues the
+operational-detail audit across website, provider and server detail pages and
+their shared forms.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
