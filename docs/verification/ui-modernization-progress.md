@@ -891,6 +891,53 @@ safe diagnostic summaries remain unchanged.
 Commit `85496fe` was pushed to `origin/main`. The next task is the remaining
 form/detail consistency audit, then final full-suite and browser verification.
 
+## Phase 6H record — integration and setup forms
+
+### Responsibility problem
+
+Provider, repository, website-import, application, recipe and sign-in setup
+forms mixed older alert components, form-section wrappers, compact controls and
+inconsistent footer actions. Important setup prerequisites and credential
+boundaries were therefore harder to scan, especially on narrow screens.
+
+### Boundaries and benefit
+
+- Existing requests, policies, controllers, actions, encrypted models and
+  provider contracts remain the behavior boundary; this slice changes only
+  Blade composition and shared UI primitives.
+- Provider setup now presents supported integrations and monitoring controls as
+  a responsive fieldset while preserving entitlement notices, defaults and
+  secret-safe validation feedback.
+- Repository and website-import prerequisites use the shared alert/action
+  treatment, and application and recipe creation/editing use the same card
+  header, content and action-footer hierarchy.
+- Recipe usage and sign-in history use shared stats, badges, empty states and
+  accessible table semantics. Sign-in filters retain their derived metadata
+  and export behavior.
+
+### Preserved contracts
+
+All routes, CSRF/method fields, input names, defaults, validation messages,
+plan gating, provider type restrictions, encrypted credential handling,
+repository path normalization, recipe snapshots, sign-in filters and export
+URLs remain unchanged. No writes, jobs, remote calls or authorization rules
+were added to the views.
+
+### Verification
+
+- Integration, setup, recipe and sign-in matrix — **94 passed, 780
+  assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `72ae1ae` was pushed to `origin/main`. The next task is the final
+cross-page audit of remaining legacy wrappers and then complete regression
+verification.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
