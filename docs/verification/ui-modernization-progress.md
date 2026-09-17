@@ -742,6 +742,58 @@ Commit `76d27bb` was pushed to `origin/main`. The next slice continues the
 operational-detail audit across website, provider and server detail pages and
 their shared forms.
 
+## Phase 6E record — website and provider detail workflows
+
+### Responsibility problem
+
+Website and provider detail pages had the right operational information but
+presented it as dense legacy rows, mixed-priority buttons and repeated custom
+status markup. Their forms also inherited compact controls and a desktop-first
+section wrapper, which made health, credential and provisioning settings harder
+to scan and use on smaller screens.
+
+### Boundaries and benefit
+
+- Detail views remain read-only projections of the existing health,
+  provisioning, connection-history, repository and server data. Existing
+  actions, jobs, Livewire components and policies remain the workflow boundary.
+- Website and provider actions now use the shared button hierarchy, while
+  retry, deletion and health/connection checks retain their existing forms and
+  confirmation behavior.
+- Health and credential summaries use shared cards, stats, alerts and badges so
+  current state, monitoring state, evidence and failure guidance are distinct.
+- Runtime log snapshots retain their Alpine data attributes, bounded output,
+  filters, refresh routes and retention controls while using accessible grouped
+  controls and consistent surfaces.
+- Website and provider source forms use responsive spacing, full-width touch
+  targets and visible card headers without changing fields, defaults, hidden
+  checkbox values or secret handling.
+- Attached repositories and provider resources use valid list semantics and
+  shared interactive surfaces instead of clickable anchors directly inside
+  unordered lists.
+
+### Preserved contracts
+
+Provisioning and relocation retries, cleanup safeguards, encrypted website
+environment and MySQL values, health monitoring intervals and thresholds,
+manual checks, provider connection probes, monitoring entitlements, retained
+history, pagination, exports, authorization, response copy and redaction
+behavior remain unchanged. No remote calls or credentials were added to the
+view layer.
+
+### Verification
+
+- Website/provider operational matrix — **157 passed, 1,540 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `eecde72` was pushed to `origin/main`. The next slice audits server
+command history, import/provisioning forms and Livewire operational surfaces.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
