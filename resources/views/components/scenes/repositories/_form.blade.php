@@ -1,11 +1,11 @@
-<div class="px-4 py-5 bg-primary space-y-6 sm:p-6">
+<div class="space-y-8 bg-primary p-6 sm:p-8">
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="website_id" class="block text-sm font-medium text-primary">
             {{ __('Website') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
-            <select id="website_id" name="website_id" class="input secondary rounded-sm" required>
+        <div class="mt-2 flex rounded-lg shadow-xs">
+            <select id="website_id" name="website_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($websites as $website)
                     <option value="{{ $website->id }}"
                         @selected((string) old('website_id', $repository->website_id ?? request()->query('website_id', '')) === (string) $website->id)
@@ -18,12 +18,12 @@
         <x-forms.errors name="website_id"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="provider_id" class="block text-sm font-medium text-primary">
             {{ __('Provider') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
-            <select id="provider_id" name="provider_id" class="input secondary rounded-sm" required>
+        <div class="mt-2 flex rounded-lg shadow-xs">
+            <select id="provider_id" name="provider_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
@@ -37,27 +37,27 @@
         <x-forms.errors name="provider_id"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="name" class="block text-sm font-medium text-primary">
             {{ __('Repository Name') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <input
                 value="{{ old('name', $repository->name ?? request()->query('name')) }}"
                 type="text"
                 name="name"
                 id="name"
-                class="input secondary rounded-sm"
+                class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="Example: Deployer">
         </div>
         <x-forms.errors name="name"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="url" class="block text-sm font-medium text-primary">
             {{ __('Repository URL') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-primary bg-tertiary text-primary text-sm">
                 https://
             </span>
@@ -66,33 +66,33 @@
                 type="text"
                 name="url"
                 id="url"
-                class="input secondary rounded-none rounded-r-md"
+                class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                 placeholder="github.com, gitlab.com, or bitbucket.org">
         </div>
         <x-forms.errors name="url"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="branch" class="block text-sm font-medium text-primary">
             {{ __('Deployment Branch') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <input
                 value="{{ old('branch', $repository->branch ?? request()->query('branch', 'main')) }}"
                 type="text"
                 name="branch"
                 id="branch"
-                class="input secondary rounded-sm"
+                class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="main">
         </div>
         <x-forms.errors name="branch"></x-forms.errors>
     </div>
 
-    <div class="col-span-3 sm:col-span-2">
+    <div>
         <label for="deployment_root" class="block text-sm font-medium text-primary">
             {{ __('Service root directory') }}
         </label>
-        <div class="mt-1 flex rounded-md shadow-xs">
+        <div class="mt-2 flex rounded-lg shadow-xs">
             <input
                 value="{{ old('deployment_root', $repository->deployment_root ?? '') }}"
                 type="text"
@@ -100,7 +100,7 @@
                 id="deployment_root"
                 maxlength="512"
                 autocomplete="off"
-                class="input secondary rounded-sm font-mono"
+                class="input secondary min-h-[2.75rem] w-full rounded-lg font-mono"
                 placeholder="Repository root (.)"
             >
         </div>
@@ -120,7 +120,7 @@
         <p class="mt-1 text-sm text-secondary">
             {{ __('Each repository record is one deployment target. Include shared dependency files explicitly for every target that depends on them.') }}
         </p>
-        <div class="mt-3 grid gap-4 md:grid-cols-2">
+        <div class="mt-4 grid gap-4 md:grid-cols-2">
             <div>
                 <label for="auto_deploy_include_paths" class="block text-sm font-medium text-primary">
                     {{ __('Include paths') }}
@@ -131,7 +131,7 @@
                     rows="5"
                     maxlength="5000"
                     autocomplete="off"
-                    class="input secondary mt-1 rounded-sm font-mono"
+                    class="input secondary mt-2 min-h-[2.75rem] w-full rounded-lg font-mono"
                     placeholder="apps/storefront/**&#10;packages/shared/**">{{ is_array($autoDeployIncludePaths) ? collect($autoDeployIncludePaths)->map(fn (mixed $path): string => (string) $path)->implode("\n") : $autoDeployIncludePaths }}</textarea>
                 <x-forms.errors name="auto_deploy_include_paths"></x-forms.errors>
                 <x-forms.errors name="auto_deploy_include_paths.*"></x-forms.errors>
@@ -146,7 +146,7 @@
                     rows="5"
                     maxlength="5000"
                     autocomplete="off"
-                    class="input secondary mt-1 rounded-sm font-mono"
+                    class="input secondary mt-2 min-h-[2.75rem] w-full rounded-lg font-mono"
                     placeholder="docs/**&#10;*.md">{{ is_array($autoDeployExcludePaths) ? collect($autoDeployExcludePaths)->map(fn (mixed $path): string => (string) $path)->implode("\n") : $autoDeployExcludePaths }}</textarea>
                 <x-forms.errors name="auto_deploy_exclude_paths"></x-forms.errors>
                 <x-forms.errors name="auto_deploy_exclude_paths.*"></x-forms.errors>
@@ -165,7 +165,7 @@
                 rows="6"
                 maxlength="10000"
                 autocomplete="off"
-                class="input secondary rounded-sm font-mono"
+                class="input secondary mt-2 w-full rounded-lg font-mono"
                 placeholder="php artisan test&#10;npm run build">{{ old('build_commands', $repository->build_commands ?? '') }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -185,7 +185,7 @@
                 rows="6"
                 maxlength="10000"
                 autocomplete="off"
-                class="input secondary rounded-sm font-mono"
+                class="input secondary mt-2 w-full rounded-lg font-mono"
                 placeholder="php artisan queue:restart">{{ old('post_deployment_commands', $repository->post_deployment_commands ?? '') }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
@@ -206,7 +206,7 @@
                 id="description"
                 name="description"
                 rows="3"
-                class="input secondary rounded-sm"
+                class="input secondary mt-2 w-full rounded-lg"
                 placeholder="you@example.com">{{ old('description') ?? ($repository->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">

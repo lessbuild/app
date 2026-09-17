@@ -23,20 +23,20 @@
 
             <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                 @csrf
-                <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked)>
-                    <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                <x-ui.button type="submit" variant="primary" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">
+                    <svg class="h-4 w-4" aria-hidden="true">
                         <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
                     </svg>
-                {{ ! $deploymentReady || $deploymentPlanBlocked ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
-                </button>
+                    {{ ! $deploymentReady || $deploymentPlanBlocked ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
+                </x-ui.button>
             </form>
 
-            <a href="{{ route('repositories.edit', $repository) }}" class="button primary">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button :href="route('repositories.edit', $repository)" variant="secondary">
+                <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit') }}
-            </a>
+            </x-ui.button>
 
             <x-dialogs.delete
                 id="delete-repository"
@@ -45,43 +45,44 @@
                 :description="__('Are you sure you want to delete this repository?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button primary" onclick="document.getElementById('delete-repository').showModal()">
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            <x-ui.button type="button" variant="danger" onclick="document.getElementById('delete-repository').showModal()">
+                <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete') }}
-            </button>
+            </x-ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @if (! $deploymentReady)
-        <div class="my-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-800">
+        <x-ui.alert tone="warning" class="my-4">
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
-        </div>
+        </x-ui.alert>
     @endif
 
     @error('plan')
-        <div class="my-4 rounded-sm border border-red-300 bg-red-50 p-3 text-sm text-red-800">
+        <x-ui.alert tone="danger" class="my-4">
             {{ $message }}
             <a href="{{ route('billing.index') }}" class="font-bold underline">{{ __('View plans') }}</a>
-        </div>
+        </x-ui.alert>
     @enderror
 
     @if ($isFirstDeployment)
-        <section class="my-6 rounded-2xl border border-primary bg-primary p-5" aria-labelledby="first-deployment-title">
+        <section class="ui-card my-6 p-5" aria-labelledby="first-deployment-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('First deployment') }}</p>
                     <h2 id="first-deployment-title" class="mt-1 text-xl font-black text-primary">{{ __('Review the launch checks') }}</h2>
                     <p class="mt-1 max-w-2xl text-sm text-secondary">{{ __('Required checks must pass before launch. Recommended checks improve verification, recovery, and automatic delivery but can be completed later.') }}</p>
                 </div>
-                <span @class([
-                    'rounded-full px-3 py-1 text-sm font-black uppercase',
-                    'bg-green-100 text-green-700' => $deploymentPreflight['level'] === 'ready',
-                    'bg-amber-100 text-amber-800' => $deploymentPreflight['level'] === 'review',
-                    'bg-red-100 text-red-700' => $deploymentPreflight['level'] === 'blocked',
-                ])>{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</span>
+                @if ($deploymentPreflight['level'] === 'ready')
+                    <x-ui.badge tone="success">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                @elseif ($deploymentPreflight['level'] === 'blocked')
+                    <x-ui.badge tone="danger">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                @else
+                    <x-ui.badge tone="warning">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                @endif
             </div>
 
             <ul class="mt-5 grid gap-3 md:grid-cols-2">
@@ -101,10 +102,10 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                     @csrf
-                    <button type="submit" class="button primary" @disabled($deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked)>{{ __('Launch first deployment') }}</button>
+                    <x-ui.button type="submit" variant="primary" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">{{ __('Launch first deployment') }}</x-ui.button>
                 </form>
-                <a href="{{ route('repositories.edit', $repository) }}" class="button secondary">{{ __('Review source settings') }}</a>
-                <a href="{{ route('websites.edit', $repository->website) }}" class="button secondary">{{ __('Review website settings') }}</a>
+                <x-ui.button :href="route('repositories.edit', $repository)" variant="secondary">{{ __('Review source settings') }}</x-ui.button>
+                <x-ui.button :href="route('websites.edit', $repository->website)" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
             </div>
 
             @if ($deploymentGuidance['steps'])
@@ -142,7 +143,7 @@
         </section>
     @endif
 
-    <section class="my-6 rounded-lg border border-primary bg-primary p-5" aria-labelledby="repository-layout-title">
+    <section class="ui-card my-6 p-5" aria-labelledby="repository-layout-title">
         <h2 id="repository-layout-title" class="text-xl font-semibold text-primary">{{ __('Deployment layout') }}</h2>
         <p class="mt-1 text-sm text-secondary">
             {{ __('This target deploys from :root. The repository root is used when no service directory is configured.', ['root' => $repository->deploymentRoot() === '.' ? __('the repository root') : $repository->deploymentRoot()]) }}
@@ -155,7 +156,7 @@
     </section>
 
     @php($oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret"))
-    <section id="deployment-webhook" class="my-6 rounded-lg border border-primary bg-primary p-5">
+    <section id="deployment-webhook" class="ui-card my-6 p-5">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-xl font-semibold text-primary">{{ __('Automatic push deployments') }}</h2>
@@ -163,11 +164,11 @@
                     {{ __('Deploy the configured branch after an authenticated source-control push.') }}
                 </p>
             </div>
-            <span @class([
-                'rounded-full px-3 py-1 text-xs font-semibold uppercase',
-                'bg-green-100 text-green-700' => $repository->webhook_enabled,
-                'bg-gray-100 text-gray-700' => ! $repository->webhook_enabled,
-            ])>{{ $repository->webhook_enabled ? __('Enabled') : __('Disabled') }}</span>
+            @if ($repository->webhook_enabled)
+                <x-ui.badge tone="success">{{ __('Enabled') }}</x-ui.badge>
+            @else
+                <x-ui.badge>{{ __('Disabled') }}</x-ui.badge>
+            @endif
         </div>
 
         <div class="mt-4">
@@ -182,7 +183,7 @@
         </div>
 
         @if ($oneTimeWebhookSecret)
-            <div class="mt-4 rounded-sm border border-amber-300 bg-amber-50 p-4 text-amber-900">
+            <x-ui.alert tone="warning" class="mt-4">
                 <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
                 <input
                     type="text"
@@ -190,7 +191,7 @@
                     value="{{ $oneTimeWebhookSecret }}"
                     class="input secondary mt-2 w-full rounded-sm font-mono text-sm"
                 >
-            </div>
+            </x-ui.alert>
         @endif
 
         <div class="mt-4 text-sm text-secondary">
@@ -234,7 +235,7 @@
                 @endif
                 <button
                     type="submit"
-                    class="button primary"
+                    class="button button--primary"
                     @if ($repository->webhook_enabled)
                         onclick="return confirm({{ Illuminate\Support\Js::from(__('Rotate the webhook secret for :repository? The current secret will stop working immediately.', ['repository' => $repository->name])) }})"
                     @endif
@@ -251,7 +252,7 @@
                 >
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="button primary">{{ __('Disable webhook') }}</button>
+                    <x-ui.button type="submit" variant="danger">{{ __('Disable webhook') }}</x-ui.button>
                 </form>
             @endif
         </div>
@@ -292,43 +293,22 @@
                             class="input secondary mt-1 rounded-sm"
                         >
                     </div>
-                    <button type="submit" class="button primary">{{ __('Apply') }}</button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Apply') }}</x-ui.button>
                     @if (array_filter($deliveryFilters, fn ($value) => $value !== null))
-                        <a href="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="button tertiary">{{ __('Clear') }}</a>
+                        <x-ui.button :href="route('repositories.show', $repository).'#webhook-deliveries'" variant="ghost">{{ __('Clear') }}</x-ui.button>
                     @endif
-                    <a href="{{ route('repositories.webhook-deliveries.export', [$repository, ...array_filter($deliveryFilters, fn ($value) => $value !== null)]) }}" class="button tertiary">{{ __('Export CSV') }}</a>
+                    <x-ui.button :href="route('repositories.webhook-deliveries.export', [$repository, ...array_filter($deliveryFilters, fn ($value) => $value !== null)])" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
                 </form>
             </div>
 
             <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['total'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Queued deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['queued'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Pending deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['pending'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Skipped deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['skipped'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Unavailable deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['unavailable'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Superseded deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['superseded'] }}</dd>
-                </div>
-                <div class="rounded-lg border border-primary bg-primary p-3">
-                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Received deliveries') }}</dt>
-                    <dd class="mt-1 text-2xl font-bold text-primary">{{ $deliveryMetrics['received'] }}</dd>
-                </div>
+                <x-ui.stat :label="__('Matching deliveries')" :value="$deliveryMetrics['total']" />
+                <x-ui.stat :label="__('Queued deliveries')" :value="$deliveryMetrics['queued']" />
+                <x-ui.stat :label="__('Pending deliveries')" :value="$deliveryMetrics['pending']" />
+                <x-ui.stat :label="__('Skipped deliveries')" :value="$deliveryMetrics['skipped']" />
+                <x-ui.stat :label="__('Unavailable deliveries')" :value="$deliveryMetrics['unavailable']" />
+                <x-ui.stat :label="__('Superseded deliveries')" :value="$deliveryMetrics['superseded']" />
+                <x-ui.stat :label="__('Received deliveries')" :value="$deliveryMetrics['received']" />
             </dl>
 
             <div id="webhook-deliveries" class="mt-4">
@@ -369,17 +349,17 @@
                                             @endif
                                         </td>
                                         <td class="whitespace-nowrap px-3 py-3 text-sm">
-                                            <span @class([
-                                                'rounded-full px-2 py-1 text-xs font-semibold uppercase',
-                                                'bg-green-100 text-green-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED,
-                                                'bg-amber-100 text-amber-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING,
-                                                'bg-blue-100 text-blue-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED,
-                                                'bg-red-100 text-red-700' => $delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
-                                                'bg-gray-100 text-gray-700' => in_array($delivery->status, [
-                                                    \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED,
-                                                    \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED,
-                                                ], true),
-                                            ])>{{ str($delivery->status)->replace('_', ' ') }}</span>
+                                            @if ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED)
+                                                <x-ui.badge tone="success">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING)
+                                                <x-ui.badge tone="warning">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE)
+                                                <x-ui.badge tone="danger">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED)
+                                                <x-ui.badge tone="accent">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                            @else
+                                                <x-ui.badge>{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                            @endif
                                         </td>
                                         <td class="whitespace-nowrap px-3 py-3 text-sm text-secondary">
                                             @if ($delivery->build)
@@ -415,38 +395,44 @@
      ! Repository information
      ! ------------------------------------------------------------
      !-->
-    <div class="flex items-center mt-4 text-gray-500">
-        <div class="flex items-center mr-6">
-            <svg class="mr-2 w-4 h-4 text-gray-400">
+    <x-ui.card class="mt-6 p-5">
+        <div class="grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
+        <div class="flex items-start gap-3 text-secondary">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-secondary" aria-hidden="true">
                 <use xlink:href="/assets/images/icons.svg#external-link"></use>
             </svg>
-            <span class="mr-1 text-primary">
+            <div>
+            <span class="font-semibold text-primary">
                 {{ __('URL') }}
             </span>
-            <div class="text-secondary">
-                <div class="-mx-1 px-1 rounded-xs cursor-pointer">
+                <div class="mt-1 break-all font-mono text-xs">
                     {{ $repository->url }}
                 </div>
             </div>
         </div>
-        <div class="flex items-center mr-6">
-            <svg class="mr-2 w-4 h-4 text-gray-400">
+        <div class="flex items-start gap-3 text-secondary">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-secondary" aria-hidden="true">
                 <use xlink:href="/assets/images/icons.svg#external-link"></use>
             </svg>
-            <span class="mr-1 text-primary">{{ __('Branch') }}</span>
-            <span class="text-secondary">{{ $repository->branch }}</span>
+            <div>
+                <span class="font-semibold text-primary">{{ __('Branch') }}</span>
+                <span class="mt-1 block font-mono text-xs">{{ $repository->branch }}</span>
+            </div>
         </div>
         @if ($repository->build_commands)
-            <div class="flex items-center mr-6">
-                <span class="text-secondary">{{ __('Build hook configured') }}</span>
+            <div class="flex items-start gap-3 text-secondary">
+                <span class="mt-0.5 text-green-600" aria-hidden="true">✓</span>
+                <span>{{ __('Build hook configured') }}</span>
             </div>
         @endif
         @if ($repository->post_deployment_commands)
-            <div class="flex items-center mr-6">
-                <span class="text-secondary">{{ __('Post-deployment hook configured') }}</span>
+            <div class="flex items-start gap-3 text-secondary">
+                <span class="mt-0.5 text-green-600" aria-hidden="true">✓</span>
+                <span>{{ __('Post-deployment hook configured') }}</span>
             </div>
         @endif
-    </div>
+        </div>
+    </x-ui.card>
 
     <div class="col-span-3">
         <livewire:repository-setup :model="$repository"></livewire:repository-setup>
@@ -460,27 +446,27 @@
             </p>
         </div>
         <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Total deployments') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">{{ $deploymentMetrics['total'] }}</dd>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="ui-card ui-card--interactive p-4">
+                <dt class="ui-stat__label">{{ __('Total deployments') }}</dt>
+                <dd class="ui-stat__value">{{ $deploymentMetrics['total'] }}</dd>
             </a>
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_SUCCEEDED]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Succeeded') }}</dt>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_SUCCEEDED]) }}" class="ui-card ui-card--interactive p-4">
+                <dt class="ui-stat__label">{{ __('Succeeded') }}</dt>
                 <dd class="mt-1 text-2xl font-bold text-green-600">{{ $deploymentMetrics['succeeded'] }}</dd>
             </a>
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_FAILED]) }}" class="rounded-lg border border-primary bg-primary p-4 hover:bg-secondary">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Failed') }}</dt>
+            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_FAILED]) }}" class="ui-card ui-card--interactive p-4">
+                <dt class="ui-stat__label">{{ __('Failed') }}</dt>
                 <dd class="mt-1 text-2xl font-bold text-red-600">{{ $deploymentMetrics['failed'] }}</dd>
             </a>
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Completed-run success rate') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-primary">
+            <div class="ui-card p-4">
+                <dt class="ui-stat__label">{{ __('Completed-run success rate') }}</dt>
+                <dd class="ui-stat__value">
                     {{ $deploymentMetrics['success_rate'] !== null ? $deploymentMetrics['success_rate'].'%' : __('Not available') }}
                 </dd>
                 <p class="mt-1 text-xs text-secondary">{{ __('Canceled and active runs are excluded.') }}</p>
             </div>
-            <div class="rounded-lg border border-primary bg-primary p-4">
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Recent median duration') }}</dt>
+            <div class="ui-card p-4">
+                <dt class="ui-stat__label">{{ __('Recent median duration') }}</dt>
                 <dd class="mt-1 text-2xl font-bold text-primary">
                     {{ $deploymentMetrics['median_duration_seconds'] !== null ? \App\Models\Build::formatDuration($deploymentMetrics['median_duration_seconds']) : __('Not recorded') }}
                 </dd>
@@ -494,12 +480,12 @@
     <section class="mt-10">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <h2 class="text-2xl font-bold text-primary">{{ __('Deployment history') }}</h2>
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="button primary">
+            <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary">
                 {{ __('View all deployments') }}
-            </a>
+            </x-ui.button>
         </div>
         @forelse ($builds as $build)
-            <div class="mb-3 flex items-center justify-between rounded-lg border border-primary bg-primary p-4">
+            <div class="ui-card mb-3 flex items-center justify-between gap-4 p-4">
                 <div>
                     <a href="{{ route('builds.show', $build) }}" class="font-medium text-primary hover:underline">
                         {{ __('Build #:id', ['id' => $build->id]) }}
@@ -523,20 +509,20 @@
                         @endif
                     </p>
                 </div>
-                <span @class([
-                    'rounded-full px-3 py-1 text-xs font-semibold uppercase',
-                    'bg-green-100 text-green-700' => $build->status === \App\Models\Build::STATUS_SUCCEEDED,
-                    'bg-red-100 text-red-700' => $build->status === \App\Models\Build::STATUS_FAILED,
-                    'bg-amber-100 text-amber-700' => in_array($build->status, [
-                        \App\Models\Build::STATUS_CANCELED,
-                        \App\Models\Build::STATUS_TIMING_OUT,
-                    ], true),
-                    'bg-blue-100 text-blue-700' => in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING]),
-                    'bg-gray-100 text-gray-700' => $build->status === \App\Models\Build::STATUS_QUEUED,
-                ])>{{ str($build->status)->replace('_', ' ') }}</span>
+                @if ($build->status === \App\Models\Build::STATUS_SUCCEEDED)
+                    <x-ui.badge tone="success">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                @elseif ($build->status === \App\Models\Build::STATUS_FAILED)
+                    <x-ui.badge tone="danger">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                @elseif (in_array($build->status, [\App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_TIMING_OUT], true))
+                    <x-ui.badge tone="warning">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                @elseif (in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING], true))
+                    <x-ui.badge tone="accent">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                @else
+                    <x-ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                @endif
             </div>
         @empty
-            <x-lists.empty
+            <x-ui.empty-state
                 :title="__('No deployments yet')"
                 :description="__('Deploy this repository to create its first build.')"
             />

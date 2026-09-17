@@ -5,11 +5,12 @@
     ></x-layouts.partials.breadcrumbs>
 
     <x-layouts.partials.heading
+        icon="code"
         :title="__('Deployment impact preview')"
         :description="__('See which enabled repository targets are affected by a changed-file set before any automatic push deployment.')"
     ></x-layouts.partials.heading>
 
-    <section class="mt-8 rounded-xl border border-primary bg-primary p-5" aria-labelledby="impact-preview-form-heading">
+    <x-ui.card class="mt-8 p-5" aria-labelledby="impact-preview-form-heading">
         <h2 id="impact-preview-form-heading" class="font-bold text-primary">{{ __('Preview changed paths') }}</h2>
         <p class="mt-2 text-sm text-secondary">
             {{ __('This is a read-only preview. It does not create builds, dispatch jobs, contact providers or change repository settings. Paths are relative to the repository root; each enabled repository is one automatic deployment target.') }}
@@ -23,7 +24,7 @@
                     name="changed_paths"
                     rows="8"
                     maxlength="{{ \App\Http\Requests\RepositoryImpactPreviewRequest::MAX_INPUT_BYTES }}"
-                    class="input secondary mt-1 w-full rounded-sm font-mono"
+                    class="input secondary mt-2 min-h-[12rem] w-full rounded-lg font-mono"
                     placeholder="apps/storefront/resources/views/home.blade.php&#10;packages/shared/src/Client.php"
                     @disabled($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN))
                 >{{ old('changed_paths', $changedPathsInput) }}</textarea>
@@ -41,9 +42,9 @@
                 <span>{{ __('Changed paths are unavailable from the provider; show the conservative result.') }}</span>
             </label>
             <x-forms.errors name="changed_paths_unavailable"></x-forms.errors>
-            <button type="submit" class="button primary">{{ __('Preview deployment impact') }}</button>
+            <x-ui.button type="submit" variant="primary">{{ __('Preview deployment impact') }}</x-ui.button>
         </form>
-    </section>
+    </x-ui.card>
 
     @if ($preview)
         <section class="mt-8" aria-labelledby="impact-preview-results-heading">
@@ -59,9 +60,9 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-xs font-semibold">
-                    <span class="rounded-full bg-green-100 px-3 py-1 text-green-700">{{ __('Affected: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::AFFECTED]]) }}</span>
-                    <span class="rounded-full bg-blue-100 px-3 py-1 text-blue-700">{{ __('Unaffected: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::UNAFFECTED]]) }}</span>
-                    <span class="rounded-full bg-amber-100 px-3 py-1 text-amber-700">{{ __('Unknown: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::UNKNOWN]]) }}</span>
+                    <x-ui.badge tone="success">{{ __('Affected: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::AFFECTED]]) }}</x-ui.badge>
+                    <x-ui.badge tone="accent">{{ __('Unaffected: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::UNAFFECTED]]) }}</x-ui.badge>
+                    <x-ui.badge tone="warning">{{ __('Unknown: :count', ['count' => $preview->counts[\App\Data\RepositoryChangeImpact::UNKNOWN]]) }}</x-ui.badge>
                 </div>
             </div>
 

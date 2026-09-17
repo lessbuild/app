@@ -6,29 +6,25 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        icon="code"
         :title="__('Repositories')"
         :description="__('Manage source targets and review their latest filtered deployment state.')"
     >
         <x-slot:buttons>
-            <a
-                href="{{ route('repositories.impact-preview') }}"
-                class="flex items-center bg-secondary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
-            >
+            <x-ui.button :href="route('repositories.impact-preview')" variant="secondary">
                 {{ __('Preview push impact') }}
-            </a>
-            <a
-                href="{{ route('repositories.create') }}"
-                class="flex items-center bg-primary px-3 py-2 text-primary text-xs rounded-sm border border-primary"
-            >
-                <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+            </x-ui.button>
+            <x-ui.button :href="route('repositories.create')" variant="primary">
+                <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Repository') }}
-            </a>
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('repositories.index') }}" class="mt-8 rounded-lg border border-primary bg-primary p-4">
+    <x-ui.card class="mt-8 p-4">
+        <form method="GET" action="{{ route('repositories.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -77,56 +73,34 @@
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <button type="submit" class="button primary">{{ __('Apply filters') }}</button>
-            <a href="{{ route('repositories.export', array_filter($filters, fn ($value) => $value !== null)) }}" class="button primary">
+            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-ui.button :href="route('repositories.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </a>
+            </x-ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <a href="{{ route('repositories.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                <x-ui.button :href="route('repositories.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
-    </form>
+        </form>
+    </x-ui.card>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Matching repositories') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['total'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Repositories in this filtered view.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Never deployed') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['never_deployed'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching repositories without a build.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Active deployments') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['active'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment is still active.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest succeeded') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['succeeded'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment completed successfully.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Latest failed') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['failed'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Latest deployment failed.') }}</dd>
-        </div>
-        <div class="rounded-lg border border-primary bg-primary p-4">
-            <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Push webhooks') }}</dt>
-            <dd class="mt-1 text-2xl font-bold text-primary">{{ $metrics['webhooks'] }}</dd>
-            <dd class="mt-1 text-xs text-secondary">{{ __('Matching repositories with webhooks enabled.') }}</dd>
-        </div>
+        <x-ui.stat :label="__('Matching repositories')" :value="$metrics['total']" :description="__('Repositories in this filtered view.')" />
+        <x-ui.stat :label="__('Never deployed')" :value="$metrics['never_deployed']" :description="__('Matching repositories without a build.')" />
+        <x-ui.stat :label="__('Active deployments')" :value="$metrics['active']" :description="__('Latest deployment is still active.')" />
+        <x-ui.stat :label="__('Latest succeeded')" :value="$metrics['succeeded']" :description="__('Latest deployment completed successfully.')" />
+        <x-ui.stat :label="__('Latest failed')" :value="$metrics['failed']" :description="__('Latest deployment failed.')" />
+        <x-ui.stat :label="__('Push webhooks')" :value="$metrics['webhooks']" :description="__('Matching repositories with webhooks enabled.')" />
     </dl>
 
     <!--
      ! ------------------------------------------------------------
-     ! List Repositories
+    ! List Repositories
      ! ------------------------------------------------------------
      !-->
     @if(!$repositories->isEmpty())
-        <div class="mt-6 overflow-x-auto">
+        <div class="ui-card mt-6 overflow-hidden">
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
                 <thead class="bg-primary border-l border-r border-primary">
                     <tr>
@@ -154,7 +128,7 @@
                                         <x-avatar :name="$repository->name" class="h-10 w-10 rounded-md text-sm" />
                                     </div>
                                     <a href="{{ route('repositories.show', $repository) }}" class="ml-4">
-                                        <div class="font-medium text-primary">
+                                        <div class="font-medium text-ternary">
                                             {{ $repository->name }}
                                         </div>
                                         <div class="text-secondary">
@@ -210,26 +184,27 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
         <div class="py-4">
             {{ $repositories->links() }}
         </div>
     @else
         <div class="max-w-3xl mx-auto">
-            <x-lists.empty
+            <x-ui.empty-state
                 :title="array_filter($filters, fn ($value) => $value !== null) ? __('No repositories match these filters') : __('You have no repositories')"
                 :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('You have no repositories. Click the button below to add one.')"
             >
-                <x-slot:button>
+                <x-slot:action>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <a href="{{ route('repositories.index') }}" class="button primary">{{ __('Clear filters') }}</a>
+                        <x-ui.button :href="route('repositories.index')" variant="secondary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <a href="{{ route('repositories.create') }}" class="px-3 py-2 bg-secondary border border-primary text-primary rounded-sm text-sm shadow-sm">
+                        <x-ui.button :href="route('repositories.create')" variant="primary">
                             {{ __('Add Repository') }}
-                        </a>
+                        </x-ui.button>
                     @endif
-                </x-slot:button>
-            </x-lists.empty>
+                </x-slot:action>
+            </x-ui.empty-state>
         </div>
     @endif
 </x-layouts.app>

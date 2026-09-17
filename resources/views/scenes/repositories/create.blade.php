@@ -45,27 +45,27 @@
      ! Content
      ! ------------------------------------------------------------
      !-->
-    <form action="{{ route('repositories.store') }}" method="POST">
-        @csrf
-        <x-forms.section
-            title="{{ __('Repository Information') }}"
-            description="{{ __('Please fill in the information below to add a new repository.') }}"
-        >
+    <div class="mx-auto max-w-4xl">
+        <form action="{{ route('repositories.store') }}" method="POST">
+            @csrf
+            <x-ui.card class="mt-8 overflow-hidden">
+                <div class="border-b border-primary px-6 py-5 sm:px-8">
+                    <h2 class="text-xl font-bold text-primary">{{ __('Repository Information') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Please fill in the information below to add a new repository.') }}</p>
+                </div>
             <x-scenes.repositories._form
                 :providers="$providers"
                 :websites="$websites"
             ></x-scenes.repositories._form>
 
-            <x-slot:footer>
-                <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary disabled:cursor-not-allowed disabled:opacity-50" type="submit" @disabled($providers->isEmpty() || $websites->isEmpty())>
-                        <span class="flex items-center justify-between">
-                            {{ __('Create Repository') }}
-                        </span>
-                    </button>
+                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-6 py-4 sm:px-8">
+                    <x-ui.button :href="route('repositories.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                    <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || $websites->isEmpty()">
+                        {{ __('Create Repository') }}
+                    </x-ui.button>
                 </div>
-            </x-slot:footer>
-        </x-forms.section>
-    </form>
+            </x-ui.card>
+        </form>
+    </div>
 
 </x-layouts.app>
