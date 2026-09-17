@@ -75,12 +75,12 @@
                 :description="__('Are you sure you want to delete this server?')"
             ></x-dialogs.delete>
 
-            <x-ui.button type="button" variant="danger" onclick="document.getElementById('delete-server').showModal()">
+            <button type="button" class="button button--danger" onclick="document.getElementById('delete-server').showModal()">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Server') }}
-            </x-ui.button>
+            </button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 

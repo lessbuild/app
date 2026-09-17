@@ -66,12 +66,12 @@
                 :description="__('Are you sure you want to delete this website?')"
             ></x-dialogs.delete>
 
-            <x-ui.button type="button" variant="danger" onclick="document.getElementById('delete-website').showModal()">
+            <button type="button" class="button button--danger" onclick="document.getElementById('delete-website').showModal()">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Website') }}
-            </x-ui.button>
+            </button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>

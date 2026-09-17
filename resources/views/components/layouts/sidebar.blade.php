@@ -15,7 +15,7 @@
         <button
             type="button"
             x-ref="desktopCloseNavigation"
-            class="button tertiary lg:hidden"
+            class="button secondary lg:hidden"
             aria-label="{{ __('Close navigation') }}"
             @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())"
         >
@@ -36,7 +36,7 @@
             placeholder="{{ __('Search or jump to…') }}"
             class="input secondary min-w-0 flex-1 rounded-lg"
         >
-        <button type="submit" class="button primary">{{ __('Go') }}</button>
+        <x-ui.button type="submit" variant="primary">{{ __('Go') }}</x-ui.button>
     </form>
 
     <div class="space-y-5 px-3 pb-4">

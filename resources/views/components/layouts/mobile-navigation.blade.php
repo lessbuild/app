@@ -11,13 +11,13 @@
     aria-modal="true"
     aria-label="{{ __('Primary navigation') }}"
 >
-    <div class="flex shrink-0 items-center gap-3 border-b border-gray-700 bg-gray-800 px-4 py-3 text-gray-100 shadow-xs">
-        <a href="{{ route('dashboard') }}" class="max-w-[35%] truncate text-sm font-bold text-white">{{ config('app.name') }}</a>
+    <div class="flex shrink-0 items-center gap-3 border-b border-primary bg-primary px-4 py-3 text-primary shadow-xs">
+        <a href="{{ route('dashboard') }}" class="max-w-[35%] truncate text-sm font-bold text-primary">{{ config('app.name') }}</a>
         <form method="GET" action="{{ route('search.index') }}" class="min-w-0 flex-1">
             <label for="mobile-workspace-search" class="sr-only">{{ __('Search workspace') }}</label>
-            <input id="mobile-workspace-search" type="search" name="q" maxlength="100" placeholder="{{ __('Search workspace') }}" class="h-11 w-full rounded-lg border border-gray-600 bg-gray-700 px-3 text-sm text-gray-100 placeholder-gray-300">
+            <input id="mobile-workspace-search" type="search" name="q" maxlength="100" placeholder="{{ __('Search workspace') }}" class="input secondary h-11 w-full rounded-lg text-sm">
         </form>
-        <button type="button" x-ref="closeNavigation" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl text-white hover:bg-gray-700" aria-label="{{ __('Close navigation') }}" @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())">×</button>
+        <button type="button" x-ref="closeNavigation" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl text-secondary hover:bg-secondary hover:text-primary" aria-label="{{ __('Close navigation') }}" @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())">×</button>
     </div>
 
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -72,7 +72,7 @@
 
         <form method="POST" action="{{ route('logout') }}" class="mt-4">
             @csrf
-            <button type="submit" class="button secondary w-full min-h-[44px]">{{ __('Logout') }}</button>
+            <x-ui.button type="submit" variant="secondary" class="min-h-[44px] w-full">{{ __('Logout') }}</x-ui.button>
         </form>
     </div>
 </section>
