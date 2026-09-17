@@ -5109,12 +5109,18 @@ droplet. Full non-secret evidence is in
 [the dedicated acceptance record](preview-stack-acceptance-2026-09-17.md).
 
 Focused deployment/health checks passed **14 tests / 119 assertions** and
-preview/cleanup/readiness checks passed **35 tests / 337 assertions**. Pint and
-`git diff --check` passed for the changed application slice. The complete
-strict suite and final release-gate checks are tracked separately; this record
-does not claim production, all-provider, independent-monitoring, billing/SSO
-or live-acceptance completion.
+preview/cleanup/readiness checks passed **35 tests / 337 assertions**. The
+fresh complete strict PHP suite passed **1,556 tests / 13,004 assertions** with
+no failures, warnings, risky tests or deprecations. Required-PHP Pint,
+Composer validation/platform checks, the asset build and `git diff --check`
+passed. The rebuilt asset/layout browser suite passed **9 tests**, and the
+served Livewire/mobile smoke passed **1 test**; the isolated dev service and
+worker were active and the homepage plus both rendered assets returned HTTP
+200.
 
-The exact next task is final cross-feature verification and release handoff,
-including a fresh complete PHP/quality run and an explicit list of remaining
-external acceptance prerequisites.
+This completes the local cross-feature verification and the representative
+provider-backed acceptance scope. The exact next task is release handoff and
+separately authorized external acceptance. Production deployment, all-provider
+parity, independent monitoring/heartbeat destinations, GitHub App
+configuration, billing/SSO, deeper PostgreSQL/Valkey recovery and the live
+acceptance drill remain outstanding.

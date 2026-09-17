@@ -16,13 +16,21 @@ The detailed non-secret evidence is in
 The application fixes are `3895a31` and `c582dd8`; both are pushed to
 `origin/main`. Focused deployment/health checks passed **14 tests / 119
 assertions**, and preview/cleanup/readiness checks passed **35 tests / 337
-assertions**. The disposable server, source website, repository, project,
-preview resources and provider droplet were removed through supported cleanup.
+assertions**. The fresh complete strict PHP suite passed **1,556 tests /
+13,004 assertions**; required-PHP Pint, Composer validation/platform checks,
+the asset build, `git diff --check`, the rebuilt asset/layout browser suite
+(**9 tests**) and the served Livewire/mobile smoke (**1 test**) also passed.
+The isolated dev service and worker were active, and the homepage plus both
+rendered assets returned HTTP 200. The disposable server, source website,
+repository, project, preview resources and provider droplet were removed
+through supported cleanup.
 
-The exact next task is final cross-feature verification and release handoff.
-Keep production mail, independent monitoring/heartbeat destinations, GitHub
-App configuration, billing/SSO, broader provider-specific recovery and the
-separate live acceptance drill explicitly outstanding.
+This completes local cross-feature verification and the representative
+provider-backed acceptance scope. The next task is separately authorized
+release handoff and external acceptance. Keep production mail, independent
+monitoring/heartbeat destinations, GitHub App configuration, billing/SSO,
+broader provider-specific recovery and the separate live acceptance drill
+explicitly outstanding.
 
 ## Configuration-specific provider acceptance — 2026-09-17
 

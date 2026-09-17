@@ -1,6 +1,6 @@
 # Next development sequence
 
-Reviewed 2026-09-14. Work one item at a time; passing a narrow test does not establish completion of a whole workflow. The original roadmap checkmarks describe existing implementation, not demonstrated production parity.
+Reviewed 2026-09-17. Work one item at a time; passing a narrow test does not establish completion of a whole workflow. The original roadmap checkmarks describe existing implementation, not demonstrated production parity.
 
 ## Current acceptance checkpoint — 2026-09-17
 
@@ -13,9 +13,14 @@ managed PostgreSQL/Valkey readiness, revision updates, close/reopen generation
 isolation and exact cleanup. See
 [configuration acceptance](verification/configuration-acceptance-2026-09-17.md)
 and [preview-stack acceptance](verification/preview-stack-acceptance-2026-09-17.md).
-The next task is final cross-feature verification and release handoff. This is
-separate from broader provider-specific recovery, production/live acceptance,
-independent monitoring, GitHub App configuration and billing/SSO.
+The final local cross-feature verification is now complete: the strict PHP
+suite passed **1,556 tests / 13,004 assertions**, required-PHP Pint and
+Composer checks passed, the assets rebuilt successfully, the asset/layout
+browser suite passed **9 tests**, and the served Livewire/mobile smoke passed
+**1 test**. The next task is separately authorized release handoff and
+external acceptance. This remains separate from broader provider-specific
+recovery, production/live acceptance, independent monitoring, GitHub App
+configuration and billing/SSO.
 
 ## Competitor comparison
 

@@ -109,7 +109,12 @@ The following focused checks passed on the required PHP runtime
 - preview deployment, stack cleanup and readiness: 35 tests / 337 assertions;
 - full Pint and `git diff --check` for the changed application slice.
 
-The complete strict suite and final release-gate checks remain separate from
-this provider-specific record. Production deployment, paid cloud acceptance,
-other provider adapters, independent monitoring, billing/SSO, and the separate
-live acceptance drill remain outside this run.
+The fresh complete strict PHP suite passed **1,556 tests / 13,004 assertions**
+with no failures, warnings, risky tests or deprecations. Required-PHP Pint,
+Composer validation/platform checks, the asset build and `git diff --check`
+passed. The rebuilt asset/layout browser suite passed **9 tests**, and the
+served Livewire/mobile smoke passed **1 test**; the isolated dev service and
+worker were active and the homepage plus both rendered assets returned HTTP
+200. Production deployment, paid cloud acceptance, other provider adapters,
+independent monitoring, billing/SSO, and the separate live acceptance drill
+remain outside this run.
