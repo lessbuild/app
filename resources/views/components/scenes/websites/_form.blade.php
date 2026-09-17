@@ -102,7 +102,7 @@
                 name="health_check_enabled"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded-sm border-primary"
+                class="mt-1 rounded-md border-primary"
                 @checked((bool) old('health_check_enabled', $website->health_check_enabled ?? false))
             >
             <div>
@@ -146,7 +146,7 @@
                 name="health_monitoring_enabled"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded-sm border-primary"
+                class="mt-1 rounded-md border-primary"
                 @checked((bool) old('health_monitoring_enabled', $website->health_monitoring_enabled ?? true))
             >
             <div>

@@ -67,7 +67,11 @@
             </div>
 
             @if ($preview->isEmpty())
-                <p class="mt-4 rounded-sm border border-primary p-4 text-sm text-secondary">{{ __('No repositories with enabled push webhooks are available in this workspace.') }}</p>
+                <x-ui.empty-state
+                    class="mt-4"
+                    icon="information-circle"
+                    :title="__('No repositories with enabled push webhooks are available in this workspace.')"
+                />
             @else
                 <div class="mt-4 overflow-x-auto">
                     <table class="min-w-full divide-y divide-primary border-y border-primary">

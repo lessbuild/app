@@ -143,7 +143,7 @@
                                         form="bulk-resolve-form"
                                         x-model.number="openSelected"
                                         aria-label="{{ __('Select report for :recipe', ['recipe' => $report->recipe->name]) }}"
-                                        class="rounded-sm border-primary"
+                                        class="rounded-md border-primary"
                                     >
                                 @else
                                     <input
@@ -153,7 +153,7 @@
                                         form="bulk-reopen-form"
                                         x-model.number="resolvedSelected"
                                         aria-label="{{ __('Select resolved report for :recipe', ['recipe' => $report->recipe->name]) }}"
-                                        class="rounded-sm border-primary"
+                                        class="rounded-md border-primary"
                                     >
                                 @endif
                                 <x-ui.badge

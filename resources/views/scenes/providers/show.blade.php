@@ -206,7 +206,9 @@
                             </a>
                         </li>
                     @empty
-                        <li class="pt-3"><x-alerts.info :title="__('No Repositories using this provider')" /></li>
+                        <li class="pt-3">
+                            <x-ui.alert tone="info" role="status">{{ __('No Repositories using this provider') }}</x-ui.alert>
+                        </li>
                     @endforelse
                 </ul>
                 @if ($repositories->hasPages())
@@ -234,7 +236,9 @@
                             </a>
                         </li>
                     @empty
-                        <li class="pt-3"><x-alerts.info :title="__('No Servers using this provider')" /></li>
+                        <li class="pt-3">
+                            <x-ui.alert tone="info" role="status">{{ __('No Servers using this provider') }}</x-ui.alert>
+                        </li>
                     @endforelse
                 </ul>
                 @if ($servers->hasPages())

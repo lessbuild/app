@@ -348,7 +348,9 @@
                         </a>
                     </li>
                 @empty
-                    <li class="pt-3"><x-alerts.info :title="__('No repositories attached to server')" /></li>
+                    <li class="pt-3">
+                        <x-ui.alert tone="info" role="status">{{ __('No repositories attached to server') }}</x-ui.alert>
+                    </li>
                 @endforelse
             </ul>
         </x-ui.card>

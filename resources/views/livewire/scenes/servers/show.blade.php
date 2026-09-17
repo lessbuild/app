@@ -245,7 +245,7 @@
                 @forelse ($websites as $website)
                     <li>
                         <a href="{{ route('websites.show', $website) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
-                            <x-avatar :name="$website->name" class="h-8 w-8 shrink-0 rounded-sm text-xs" />
+                            <x-avatar :name="$website->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-sm font-medium text-ternary">{{ $website->name }}</span>
                                 <span class="block truncate text-sm text-secondary">{{ $website->url }}</span>
@@ -254,7 +254,9 @@
                         </a>
                     </li>
                 @empty
-                    <li class="pt-3"><x-alerts.info :title="__('No websites attached to server')" /></li>
+                    <li class="pt-3">
+                        <x-ui.alert tone="info" role="status">{{ __('No websites attached to server') }}</x-ui.alert>
+                    </li>
                 @endforelse
             </ul>
         </x-ui.card>

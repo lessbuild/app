@@ -12,21 +12,31 @@
 
     <!--
      ! ------------------------------------------------------------
-     ! Check has server
+    ! Check has server
      ! ------------------------------------------------------------
      !-->
     @if($servers->isEmpty())
-        <div class="my-4">
-            <x-alerts.info
-                :title="__('You need an active application server with MySQL before you can add a website')"
-                :link="route('servers.create')"
-                :anchor="__('Create Server')"
-            ></x-alerts.info>
-        </div>
+        <x-ui.alert tone="info" class="my-4" role="status">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>{{ __('You need an active application server with MySQL before you can add a website') }}</p>
+                <a data-turbo="false" href="{{ route('servers.create') }}" class="shrink-0 font-semibold underline">
+                    {{ __('Create Server') }}
+                    <span aria-hidden="true">→</span>
+                </a>
+            </div>
+        </x-ui.alert>
     @endif
 
     @if(!$planUsage['allowed'])
-        <div class="my-4"><x-alerts.info :title="__('Your plan’s website limit has been reached')" :link="route('billing.index')" :anchor="__('Upgrade plan')"></x-alerts.info></div>
+        <x-ui.alert tone="warning" class="my-4" role="status">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <p>{{ __('Your plan’s website limit has been reached') }}</p>
+                <a data-turbo="false" href="{{ route('billing.index') }}" class="shrink-0 font-semibold underline">
+                    {{ __('Upgrade plan') }}
+                    <span aria-hidden="true">→</span>
+                </a>
+            </div>
+        </x-ui.alert>
     @endif
     @error('plan')
         <x-ui.alert tone="danger" class="my-4">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></x-ui.alert>

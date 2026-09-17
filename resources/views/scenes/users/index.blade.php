@@ -436,9 +436,9 @@
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('social_status'))
-                    <div class="m-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+                    <x-ui.alert tone="success" class="m-4" role="status">
                         {{ session('social_status') }}
-                    </div>
+                    </x-ui.alert>
                 @endif
                 @if (session('social_error'))
                     <div class="ui-alert ui-alert--danger m-4 p-3" role="alert">
