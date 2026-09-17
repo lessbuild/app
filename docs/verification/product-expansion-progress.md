@@ -1,5 +1,18 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 17 phone-friendly GitHub App key setup
+implemented and deployed to the isolated `main` development runtime. The new
+local-only platform-admin flow accepts a downloaded unencrypted RSA PEM,
+validates it, stores it atomically outside the public directory with mode
+`0600`, and does not flash or log the key. `GitHubApp` now ignores unusable key
+fingerprints and reports the existing unavailable-configuration response
+before OpenSSL signing. Focused coverage passed **12 tests / 54 assertions**;
+required-PHP Pint and `git diff --check` passed. Commit `ad5df22` is pushed to
+`origin/main`. The runtime-only setup flag is enabled for the phone flow; the
+default remains disabled for production. The exact next task is the
+administrator's `.pem` upload followed by a fresh GitHub App installation
+callback verification. No live acceptance is claimed.
+
 Latest continuation: September 17 provider selector text treatment completed
 after the external blocker audit. Provider type options now use clear text
 radio cards without brand SVGs, while the native radio names, values, edit

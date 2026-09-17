@@ -1,5 +1,27 @@
 # BuildPusher chat handoff
 
+## Phone-friendly GitHub App key setup — 2026-09-17
+
+The isolated development runtime now has a platform-admin-only, local-only
+upload page at `/admin/github-app/setup`. It accepts only an unencrypted RSA
+PEM, validates it before storage, writes it atomically outside the public
+directory with mode `0600`, and never flashes, renders or logs the key. The
+setup flag is disabled by default, and a valid key disables the one-time page.
+
+The invalid configured fingerprint is now treated as an unusable key, so the
+GitHub App connection returns the existing configuration-unavailable response
+instead of reaching an OpenSSL warning. Focused coverage passed **12 tests / 54
+assertions**, Pint passed, and the implementation is pushed as `ad5df22` on
+`origin/main` and deployed to the isolated dev runtime. The runtime setup flag
+is enabled only there; no production configuration was changed.
+
+The exact next task is for the platform administrator to open
+`https://buildpusher.com/admin/github-app/setup`, choose the private `.pem`
+downloaded from the GitHub App settings, and then start a fresh connection at
+`/github-app/connect`. The key must not be pasted into chat. GitHub App
+installation and live acceptance remain external work until that upload and
+callback verification succeed.
+
 ## Provider selector text treatment — 2026-09-17
 
 The provider creation/edit selector now presents all seven provider options as
