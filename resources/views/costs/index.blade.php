@@ -6,7 +6,7 @@
     />
 
     @unless($featureAvailable)
-        <div class="mt-6 rounded-xl border border-ternary bg-primary p-4 text-sm text-secondary">
+        <div class="ui-alert ui-alert--info mt-6" role="status">
             <strong class="text-primary">{{ __('Pro feature') }}</strong>
             · {{ __('Upgrade to save workspace budgets. Read-only estimates remain available.') }}
             <a href="{{ route('pricing') }}" class="font-bold text-ternary underline">{{ __('Compare plans') }}</a>
@@ -20,15 +20,12 @@
             [__('Needs attention'), $idleCount],
             [__('Unknown prices'), $unknownCount],
         ] as [$label, $value])
-            <div class="rounded-2xl border border-primary bg-primary p-5">
-                <p class="text-xs font-bold uppercase text-secondary">{{ $label }}</p>
-                <p class="mt-2 text-3xl font-black text-primary">{{ $value }}</p>
-            </div>
+            <x-ui.stat :label="$label" :value="$value" />
         @endforeach
     </div>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
-        <section class="overflow-hidden rounded-2xl border border-primary bg-primary">
+        <section class="ui-card overflow-hidden">
             <div class="border-b border-primary p-5">
                 <h2 class="text-xl font-black text-primary">{{ __('Resource estimates') }}</h2>
                 <p class="mt-1 text-sm text-secondary">
@@ -38,7 +35,7 @@
 
             <div class="divide-y divide-primary">
                 @forelse($rows as $row)
-                    <article class="grid gap-3 p-5 sm:grid-cols-[1fr_auto_auto] sm:items-center">
+                    <article class="grid gap-4 p-5 sm:grid-cols-[1fr_auto_auto] sm:items-center">
                         <div>
                             <a class="font-bold text-primary hover:underline" href="{{ route('servers.show', $row->server) }}">
                                 {{ $row->server->label }}
@@ -57,7 +54,7 @@
                             @endif
                         </div>
 
-                        <div class="text-sm text-secondary">
+                        <div class="text-sm text-secondary sm:text-right">
                             <span class="block">
                                 {{ $row->averageCpu === null ? __('No CPU sample') : __(':value% average CPU', ['value' => round($row->averageCpu)]) }}
                             </span>
@@ -80,22 +77,22 @@
                                 <span class="block text-xs text-amber-700">{{ __('Price source unavailable') }}</span>
                             @endif
                             @if($row->idle)
-                                <span class="text-xs font-bold text-amber-700">{{ __('Review or hibernate') }}</span>
+                                <x-ui.badge tone="warning">{{ __('Review or hibernate') }}</x-ui.badge>
                             @endif
                         </div>
                     </article>
                 @empty
-                    <div class="p-6 text-sm text-secondary">{{ __('Provision or import a server to begin tracking estimates.') }}</div>
+                    <x-ui.empty-state :title="__('No resource estimates')" :description="__('Provision or import a server to begin tracking estimates.')" icon="server" />
                 @endforelse
             </div>
         </section>
 
         <aside class="space-y-5">
-            <section class="rounded-2xl border border-primary bg-primary p-5">
+            <section class="ui-card p-5">
                 <h2 class="font-black text-primary">{{ __('Monthly budget') }}</h2>
                 @if($budget)
                     <p class="mt-2 text-2xl font-black text-primary">{{ '$'.number_format($budget, 2) }}</p>
-                    <p class="mt-1 text-sm {{ $estimated > $budget ? 'text-red-700' : 'text-secondary' }}">
+                    <p class="mt-1 text-sm {{ $estimated > $budget ? 'text-danger' : 'text-secondary' }}">
                         {{ $estimated > $budget ? __('Estimate exceeds budget by $:amount.', ['amount' => number_format($estimated - $budget, 2)]) : __('$:amount estimated headroom.', ['amount' => number_format($budget - $estimated, 2)]) }}
                     </p>
                 @else
@@ -108,14 +105,14 @@
                         @method('PATCH')
                         <label>
                             <span class="block text-xs font-bold uppercase text-secondary">{{ __('Budget in USD') }}</span>
-                            <input type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ $budget }}" class="input secondary mt-1 rounded-sm">
+                            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ $budget }}" class="input secondary mt-1 w-full rounded-md">
                         </label>
-                        <button type="submit" class="button primary mt-3 w-full">{{ __('Save budget') }}</button>
+                        <x-ui.button type="submit" variant="primary" class="mt-3 w-full">{{ __('Save budget') }}</x-ui.button>
                     </form>
                 @endif
             </section>
 
-            <section class="rounded-2xl border border-primary bg-tertiary p-5 text-white">
+            <section class="ui-card border-primary bg-tertiary p-5 text-white">
                 <h2 class="font-black">{{ __('Cost basis') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-tertiary">
                     <li>• {{ __('Monthly amount: stored provider-catalog estimate.') }}</li>
@@ -124,7 +121,7 @@
                 </ul>
             </section>
 
-            <section class="rounded-2xl border border-primary bg-primary p-5">
+            <section class="ui-card p-5">
                 <h2 class="font-black text-primary">{{ __('Preview lifetime') }}</h2>
                 <p class="mt-2 text-sm text-secondary">
                     @if($previewUsage->limit === null)
@@ -156,7 +153,7 @@
                 @endif
             </section>
 
-            <section class="rounded-2xl border border-primary bg-primary p-5">
+            <section class="ui-card p-5">
                 <h2 class="font-black text-primary">{{ __('Optimization signals') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-secondary">
                     <li>• {{ __('Servers without websites are flagged.') }}</li>
