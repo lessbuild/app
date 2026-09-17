@@ -1,13 +1,14 @@
 # BuildPusher product expansion progress
 
-Latest continuation: September 17 configuration-specific provider acceptance
-completed on the isolated dev runtime. The review/apply, delivery, idempotency,
-freshness, ownership, approval, cancellation, retry, reversible health failure,
-environment removal and disposable-resource cleanup evidence is in
-[the dedicated verification record](configuration-acceptance-2026-09-17.md).
-The next task is provider-backed preview-stack acceptance, including managed
-PostgreSQL/Valkey readiness and cleanup, before the full preview and recovery
-cycle. The previous local completion checkpoints do not establish that gate.
+Latest continuation: September 17 provider-backed preview-stack acceptance
+completed on the isolated dev runtime. The signed webhook, independent preview
+configuration, managed PostgreSQL/Valkey readiness, revision update, health
+failure recovery, close/reopen generation isolation and exact cleanup evidence
+are in [the dedicated verification record](preview-stack-acceptance-2026-09-17.md).
+The disposable server, source website, repository, project and preview
+resources were removed. The next task is final cross-feature verification and
+release handoff, with the remaining production, monitoring, billing/SSO,
+GitHub App, other-provider and live-acceptance gates kept explicit.
 
 Status: Local product-expansion implementation through Phase 9 and the
 authorized disposable provider deployment/rollback/backup/restore/cleanup
@@ -46,6 +47,10 @@ timeline, incident links from deployment cards, the conservative monorepo
 path-filter slice, per-service
 repository-root execution boundary and read-only multi-target impact preview
 are complete. No additional service is published without lifecycle support.
+The representative provider-backed Laravel preview stack is now also verified
+through the real signed webhook and disposable DigitalOcean lifecycle; this
+does not imply acceptance for every provider, production integration or the
+separate live drill.
 Phase 7D characterization confirms that the existing notification saved-filter
 preference is not an appropriate cross-resource observability store, and the
 initial shareable link is deliberately stateless and non-secret. Phase 7F now
@@ -5076,3 +5081,40 @@ dependency/platform checks recorded in the preceding verification entries.
 The exact next task is provider-backed preview-stack acceptance using the
 already authorized disposable scope, followed by its cleanup and a separate
 record of any provider-specific limitations.
+
+## Provider-backed preview-stack acceptance — 2026-09-17
+
+The representative Laravel preview stack passed provider-backed acceptance on
+the isolated dev runtime. The run used the normal signed repository webhook,
+preview lifecycle, deployment, managed-resource readiness and cleanup paths
+with the authorized DigitalOcean/GitHub connections. It verified that preview
+configuration does not copy source secrets, that generated PostgreSQL and
+Valkey credentials are independent, and that queue, scheduler, PostgreSQL and
+Valkey resources become ready before the application is considered healthy.
+
+The fixture exercised an initial open, a revision update, an intentional HTTP
+503 health failure, restoration to the previous release without a manual
+PHP-FPM reload, a healthy retry, close and reopen. The reopen cycle exposed
+and then verified the fix for stale environment-slug collision: commit
+`c582dd8` creates the next unused preview slug so a later cleanup record cannot
+target a newly reopened stack. Commit `3895a31` refreshes the configured
+PHP-FPM service after failed-release restoration so opcache does not continue
+serving the failed candidate.
+
+Both cleanup generations removed their owned process units, Valkey containers
+and volumes, PostgreSQL databases and roles, deployment directories and queue
+work. The disposable server and project were then removed through the normal
+application actions, and provider inventory contained no remaining acceptance
+droplet. Full non-secret evidence is in
+[the dedicated acceptance record](preview-stack-acceptance-2026-09-17.md).
+
+Focused deployment/health checks passed **14 tests / 119 assertions** and
+preview/cleanup/readiness checks passed **35 tests / 337 assertions**. Pint and
+`git diff --check` passed for the changed application slice. The complete
+strict suite and final release-gate checks are tracked separately; this record
+does not claim production, all-provider, independent-monitoring, billing/SSO
+or live-acceptance completion.
+
+The exact next task is final cross-feature verification and release handoff,
+including a fresh complete PHP/quality run and an explicit list of remaining
+external acceptance prerequisites.

@@ -1,5 +1,29 @@
 # BuildPusher chat handoff
 
+## Latest continuation — provider-backed preview-stack acceptance — 2026-09-17
+
+The representative Laravel preview stack passed on the isolated dev runtime
+through the real signed repository webhook and disposable DigitalOcean
+lifecycle. The run verified independent preview credentials and secret
+boundaries, queue/scheduler plus managed PostgreSQL/Valkey readiness, revision
+updates, an intentional HTTP 503 health failure, previous-release recovery
+without a manual PHP-FPM reload, a healthy retry, close, reopen and exact
+cleanup. The reopened stack used a new environment generation, so its cleanup
+could not target the original generation.
+
+The detailed non-secret evidence is in
+[verification/preview-stack-acceptance-2026-09-17.md](verification/preview-stack-acceptance-2026-09-17.md).
+The application fixes are `3895a31` and `c582dd8`; both are pushed to
+`origin/main`. Focused deployment/health checks passed **14 tests / 119
+assertions**, and preview/cleanup/readiness checks passed **35 tests / 337
+assertions**. The disposable server, source website, repository, project,
+preview resources and provider droplet were removed through supported cleanup.
+
+The exact next task is final cross-feature verification and release handoff.
+Keep production mail, independent monitoring/heartbeat destinations, GitHub
+App configuration, billing/SSO, broader provider-specific recovery and the
+separate live acceptance drill explicitly outstanding.
+
 ## Configuration-specific provider acceptance — 2026-09-17
 
 The isolated dev runtime completed the configuration-as-code provider
