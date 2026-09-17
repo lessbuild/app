@@ -847,6 +847,50 @@ Commit `59218f5` was pushed to `origin/main`. The next task is a final
 cross-page audit of remaining detail, form and Livewire surfaces, followed by
 full-suite verification and handoff updates.
 
+## Phase 6G record — operational history and diagnostic surfaces
+
+### Responsibility problem
+
+Website health history, provider connection history, global command activity,
+database operations, system health and account search had accumulated similar
+but inconsistent filter panels, metric tiles, status pills, empty states and
+tables. This made read-only evidence harder to scan and left small-screen
+controls with different spacing and focus targets.
+
+### Boundaries and benefit
+
+- These views remain read-only projections of their existing query
+  collaborators, scopes, policies, exports and diagnostic services.
+- Health and connection history now share filter cards, stat tiles, retained
+  evidence summaries, semantic tables and result badges without changing
+  filter normalization or pagination links.
+- Global command activity and database operations use the same hierarchy for
+  bounded metadata, capability notices, destructive database actions and
+  safe empty states.
+- System health and account search use shared alerts, cards, buttons and
+  empty-state guidance while preserving redaction and response behavior.
+
+### Preserved contracts
+
+Organization scoping, authorization and deliberate denial responses, query
+filters, status/date values, export URLs, pagination, retained error text,
+secret exclusion, database plan gating, destructive clone safeguards and
+safe diagnostic summaries remain unchanged.
+
+### Verification
+
+- Operational history, command, database, search and system-health matrix —
+  **84 passed, 965 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  `npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `85496fe` was pushed to `origin/main`. The next task is the remaining
+form/detail consistency audit, then final full-suite and browser verification.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
