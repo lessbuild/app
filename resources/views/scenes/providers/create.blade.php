@@ -1,40 +1,28 @@
 <x-layouts.app>
-
-    <!--
-     ! ------------------------------------------------------------
-     ! Breadcrumbs
-     ! ------------------------------------------------------------
-     !-->
     <x-layouts.partials.breadcrumbs
         :title="__('Back to Providers')"
         :route="route('providers.index')"
-    ></x-layouts.partials.breadcrumbs>
+    />
 
-    <!--
-     ! ------------------------------------------------------------
-     ! Content
-     ! ------------------------------------------------------------
-     !-->
     <x-scenes.providers.validation-errors />
 
-    <form action="{{ route('providers.store') }}" method="POST">
-        @csrf
-        <x-forms.section
-            title="{{ __('Provider Information') }}"
-            description="{{ __('Please fill in the information below to add a new provider.') }}"
-        >
-            <x-scenes.providers._form></x-scenes.providers._form>
-
-            <x-slot:footer>
-                <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <button class="cursor-pointer button primary" type="submit">
-                        <span class="flex items-center justify-between">
-                            {{ __('Create Provider') }}
-                        </span>
-                    </button>
+    <div class="mx-auto max-w-4xl">
+        <form action="{{ route('providers.store') }}" method="POST">
+            @csrf
+            <x-ui.card class="mt-8 overflow-hidden">
+                <div class="border-b border-primary px-5 py-5 sm:px-8">
+                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Integrations') }}</p>
+                    <h1 class="mt-1 text-xl font-black text-primary">{{ __('Provider Information') }}</h1>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Please fill in the information below to add a new provider.') }}</p>
                 </div>
-            </x-slot:footer>
-        </x-forms.section>
-    </form>
 
+                <x-scenes.providers._form />
+
+                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-8">
+                    <x-ui.button :href="route('providers.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                    <x-ui.button type="submit" variant="primary">{{ __('Create Provider') }}</x-ui.button>
+                </div>
+            </x-ui.card>
+        </form>
+    </div>
 </x-layouts.app>

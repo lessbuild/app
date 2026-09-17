@@ -2,9 +2,9 @@
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
     @if (session('status'))
-        <div class="my-4 rounded-sm border border-green-300 bg-green-50 p-3 text-sm text-green-700">
+        <x-ui.alert tone="success" class="my-4">
             {{ session('status') }}
-        </div>
+        </x-ui.alert>
     @endif
 
     @if ($recipe->source)
@@ -41,20 +41,20 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('recipes.update', $recipe) }}">
+    <form method="POST" action="{{ route('recipes.update', $recipe) }}" class="mx-auto mt-8 max-w-4xl">
         @csrf
         @method('PATCH')
-        <x-forms.section
-            :title="__('Edit Recipe')"
-            :description="__('Changes apply when this recipe is used for a new server.')"
-        >
+        <x-ui.card class="overflow-hidden">
+            <div class="border-b border-primary px-5 py-5 sm:px-8">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Server operations') }}</p>
+                <h1 class="mt-1 text-xl font-black text-primary">{{ __('Edit Recipe') }}</h1>
+                <p class="mt-1 text-sm text-secondary">{{ __('Changes apply when this recipe is used for a new server.') }}</p>
+            </div>
             <x-scenes.recipes._form :recipe="$recipe" />
-
-            <x-slot:footer>
-                <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                    <x-ui.button type="submit" variant="primary">{{ __('Save Recipe') }}</x-ui.button>
-                </div>
-            </x-slot:footer>
-        </x-forms.section>
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-8">
+                <x-ui.button :href="route('recipes.show', $recipe)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary">{{ __('Save Recipe') }}</x-ui.button>
+            </div>
+        </x-ui.card>
     </form>
 </x-layouts.app>

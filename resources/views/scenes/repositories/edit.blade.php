@@ -17,11 +17,10 @@
      !-->
     @if($providers->isEmpty())
         <div class="my-4">
-            <x-alerts.info
-                :title="__('You must add a provider before you can add a repository')"
-                :link="route('providers.create')"
-                :anchor="__('Add Provider')"
-            ></x-alerts.info>
+            <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+                <p>{{ __('You must add a provider before you can add a repository') }}</p>
+                <x-ui.button :href="route('providers.create')" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
+            </x-ui.alert>
         </div>
     @endif
 
@@ -39,11 +38,11 @@
                     <h2 class="text-xl font-bold text-primary">{{ __('Repository Information') }}</h2>
                     <p class="mt-1 text-sm text-secondary">{{ __('Please fill in the information below to update your repository.') }}</p>
                 </div>
-            <x-scenes.repositories._form
-                :providers="$providers"
-                :repository="$repository"
-                :websites="$websites"
-            ></x-scenes.repositories._form>
+                <x-scenes.repositories._form
+                    :providers="$providers"
+                    :repository="$repository"
+                    :websites="$websites"
+                />
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-6 py-4 sm:px-8">
                     <x-ui.button :href="route('repositories.show', $repository)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
