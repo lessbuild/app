@@ -1,80 +1,197 @@
 <x-layouts.app>
-    <x-layouts.partials.heading icon="database" :title="__('Managed backups')" :description="__('Encrypted, offsite restic snapshots of site databases, persistent storage, and environment configuration.')" />
+    <x-layouts.partials.heading
+        icon="database"
+        :title="__('Managed backups')"
+        :description="__('Encrypted, offsite restic snapshots of site databases, persistent storage, and environment configuration.')"
+    />
 
-    <section class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">@foreach([[__('Latest completed backup'),$recoverySummary->latestBackupCompletedAt?->diffForHumans() ?? __('No completed backup')],[__('Latest HTTPS transport evidence'),$recoverySummary->latestTransportVerifiedAt?->diffForHumans() ?? __('Not recorded')],[__('Latest in-place restore'),$recoverySummary->latestRestoreCompletedAt?->diffForHumans() ?? __('No completed restore')],[__('Independent restore verification'),$recoverySummary->latestIndependentRecoveryVerificationAt?->diffForHumans() ?? __('Not recorded')],[__('Observed restore time'),$recoverySummary->latestRestoreSeconds === null ? __('Not measured') : trans_choice(':count second|:count seconds',$recoverySummary->latestRestoreSeconds,['count'=>$recoverySummary->latestRestoreSeconds])]] as [$label,$value])<div class="rounded-2xl border border-primary bg-primary p-4"><p class="text-xs font-bold uppercase text-secondary">{{ $label }}</p><p class="mt-2 font-black text-primary">{{ $value }}</p></div>@endforeach</section>
+    <dl class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">
+        @foreach ([
+            [__('Latest completed backup'), $recoverySummary->latestBackupCompletedAt?->diffForHumans() ?? __('No completed backup')],
+            [__('Latest HTTPS transport evidence'), $recoverySummary->latestTransportVerifiedAt?->diffForHumans() ?? __('Not recorded')],
+            [__('Latest in-place restore'), $recoverySummary->latestRestoreCompletedAt?->diffForHumans() ?? __('No completed restore')],
+            [__('Independent restore verification'), $recoverySummary->latestIndependentRecoveryVerificationAt?->diffForHumans() ?? __('Not recorded')],
+            [__('Observed restore time'), $recoverySummary->latestRestoreSeconds === null ? __('Not measured') : trans_choice(':count second|:count seconds', $recoverySummary->latestRestoreSeconds, ['count' => $recoverySummary->latestRestoreSeconds])],
+        ] as [$label, $value])
+            <x-ui.stat :label="$label" :value="$value" />
+        @endforeach
+    </dl>
 
-    <div class="mt-5 grid gap-5 xl:grid-cols-2">
-        <section class="rounded-2xl border border-primary bg-primary p-6">
-            <div class="flex items-start justify-between gap-4"><div><h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p></div><span class="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary">{{ $destinations->count() }}</span></div>
-            <div class="mt-4 space-y-3">
-                @forelse($destinations as $destination)
+    <div class="mt-6 grid gap-5 xl:grid-cols-2">
+        <section class="ui-card p-6">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p>
+                </div>
+                <x-ui.badge>{{ $destinations->count() }}</x-ui.badge>
+            </div>
+
+            <div class="mt-5 space-y-3">
+                @forelse ($destinations as $destination)
                     <article class="rounded-xl border border-primary bg-secondary p-4">
-                        <div class="flex items-start gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $destination->name }}</p><p class="truncate text-xs text-secondary">{{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}</p>@if($destination->last_error)<p class="mt-1 text-xs text-red-700">{{ $destination->last_error }}</p>@endif</div>@if($canManage)<form method="POST" action="{{ route('backups.destinations.destroy', $destination) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete') }}</button></form>@endif</div>
-                        @if($canManage)
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Edit connection') }}</summary>
+                        <div class="flex items-start gap-3">
+                            <div class="min-w-0 flex-1">
+                                <p class="font-bold text-primary">{{ $destination->name }}</p>
+                                <p class="break-all text-xs text-secondary">
+                                    {{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}
+                                </p>
+                                @if ($destination->last_error)
+                                    <p class="ui-alert ui-alert--danger mt-2 text-xs">{{ $destination->last_error }}</p>
+                                @endif
+                            </div>
+                            @if ($canManage)
+                                <form method="POST" action="{{ route('backups.destinations.destroy', $destination) }}" class="shrink-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
+                                </form>
+                            @endif
+                        </div>
+
+                        @if ($canManage)
+                            <div class="mt-4 flex flex-wrap gap-2">
+                                <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
+                                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Edit connection') }}</summary>
                                     @include('backups._destination-form', ['action' => route('backups.destinations.update', $destination), 'formId' => 'edit-destination-'.$destination->id, 'submitLabel' => __('Save connection'), 'destination' => $destination])
                                 </details>
-                                <details class="rounded-lg border border-primary bg-primary px-3 py-2"><summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
-                                    <div class="mt-3 space-y-2">
-                                        <p class="max-w-md text-xs text-secondary">{{ __('BuildPusher writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.') }}</p>
-                                        <form method="POST" action="{{ route('backups.destinations.test', $destination) }}">@csrf<button type="submit" class="button secondary">{{ __('Verify') }}</button></form>
+                                <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
+                                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
+                                    <div class="mt-3 space-y-3">
+                                        <p class="text-xs leading-5 text-secondary">{{ __('BuildPusher writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.') }}</p>
+                                        <form method="POST" action="{{ route('backups.destinations.test', $destination) }}">
+                                            @csrf
+                                            <x-ui.button type="submit" variant="secondary">{{ __('Verify') }}</x-ui.button>
+                                        </form>
                                     </div>
                                 </details>
                             </div>
                         @endif
                     </article>
                 @empty
-                    <div class="rounded-xl border border-dashed border-primary p-4 text-sm text-secondary">{{ __('Add an offsite destination to begin.') }}</div>
+                    <x-ui.empty-state
+                        :title="__('No backup destinations')"
+                        :description="__('Add an offsite destination to begin.')"
+                        icon="database"
+                    />
                 @endforelse
             </div>
-            @if($canManage)
-                <details class="mt-4 rounded-xl border border-primary bg-secondary p-4"><summary class="cursor-pointer font-bold text-primary">{{ __('Add destination') }}</summary>
+
+            @if ($canManage)
+                <details class="mt-5 rounded-xl border border-primary bg-secondary p-4">
+                    <summary class="cursor-pointer font-bold text-primary">{{ __('Add destination') }}</summary>
                     @include('backups._destination-form', ['action' => route('backups.destinations.store'), 'formId' => 'new-destination', 'submitLabel' => __('Create encrypted destination'), 'destination' => null])
                 </details>
             @endif
         </section>
 
-        <section class="rounded-2xl border border-primary bg-primary p-6">
-            <div class="flex items-start justify-between gap-4"><div><h2 class="text-xl font-black text-primary">{{ __('Schedules') }}</h2><p class="mt-1 text-sm text-secondary">{{ __('Automate retention without managing cron jobs.') }}</p></div><span class="rounded-full bg-secondary px-2.5 py-1 text-xs font-bold text-secondary">{{ $websites->sum(fn ($website) => $website->backupSchedules->count()) }}</span></div>
-            <div class="mt-4 space-y-3">
-                @forelse($websites->flatMap->backupSchedules as $schedule)
-                    <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-4"><div class="flex-1"><p class="font-bold text-primary">{{ $schedule->website->name }}</p><p class="text-xs text-secondary">{{ ucfirst($schedule->frequency) }} at {{ substr($schedule->run_at, 0, 5) }} UTC · keep {{ $schedule->retention_count }} · {{ $schedule->destination->name }}</p></div>@if($canManage)<form method="POST" action="{{ route('backups.schedules.destroy', $schedule) }}">@csrf @method('DELETE')<button type="submit" class="button tertiary">{{ __('Delete') }}</button></form>@endif</div>
+        <section class="ui-card p-6">
+            @php
+                $scheduleCount = $websites->sum(fn ($website) => $website->backupSchedules->count());
+            @endphp
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-black text-primary">{{ __('Schedules') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Automate retention without managing cron jobs.') }}</p>
+                </div>
+                <x-ui.badge>{{ $scheduleCount }}</x-ui.badge>
+            </div>
+
+            <div class="mt-5 space-y-3">
+                @forelse ($websites->flatMap->backupSchedules as $schedule)
+                    <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-4">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate font-bold text-primary">{{ $schedule->website->name }}</p>
+                            <p class="text-xs text-secondary">{{ ucfirst($schedule->frequency) }} at {{ substr($schedule->run_at, 0, 5) }} UTC · keep {{ $schedule->retention_count }} · {{ $schedule->destination->name }}</p>
+                        </div>
+                        @if ($canManage)
+                            <form method="POST" action="{{ route('backups.schedules.destroy', $schedule) }}" class="shrink-0">
+                                @csrf
+                                @method('DELETE')
+                                <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
+                            </form>
+                        @endif
+                    </div>
                 @empty
-                    <div class="rounded-xl border border-dashed border-primary p-4 text-sm text-secondary">{{ __('No recurring schedules yet.') }}</div>
+                    <x-ui.empty-state
+                        :title="__('No recurring schedules')"
+                        :description="__('No recurring schedules yet.')"
+                        icon="clock"
+                    />
                 @endforelse
             </div>
-            @if($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
-                <details class="mt-4 rounded-xl border border-primary bg-secondary p-4"><summary class="cursor-pointer font-bold text-primary">{{ __('Add schedule') }}</summary>
-                    <form method="POST" action="{{ route('backups.schedules.store') }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf
-                        <select name="website_id" class="input secondary rounded-sm">@foreach($websites as $website)<option value="{{ $website->id }}">{{ $website->name }}</option>@endforeach</select><select name="backup_destination_id" class="input secondary rounded-sm">@foreach($destinations as $destination)<option value="{{ $destination->id }}">{{ $destination->name }}</option>@endforeach</select><select name="frequency" class="input secondary rounded-sm"><option value="daily">{{ __('Daily') }}</option><option value="weekly">{{ __('Weekly') }}</option></select><input type="time" name="run_at" value="02:00" class="input secondary rounded-sm"><input type="number" name="weekday" min="0" max="6" value="0" class="input secondary rounded-sm" title="{{ __('Sunday is 0') }}"><input type="number" name="retention_count" min="1" max="365" value="14" class="input secondary rounded-sm"><button type="submit" class="button primary sm:col-span-2">{{ __('Save schedule') }}</button>
+
+            @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
+                <details class="mt-5 rounded-xl border border-primary bg-secondary p-4">
+                    <summary class="cursor-pointer font-bold text-primary">{{ __('Add schedule') }}</summary>
+                    <form method="POST" action="{{ route('backups.schedules.store') }}" class="mt-5 grid gap-4 sm:grid-cols-2">
+                        @csrf
+                        <label class="block" for="backup-schedule-website">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
+                            <select id="backup-schedule-website" name="website_id" class="input secondary w-full rounded-md">
+                                @foreach ($websites as $website)
+                                    <option value="{{ $website->id }}">{{ $website->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block" for="backup-schedule-destination">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Destination') }}</span>
+                            <select id="backup-schedule-destination" name="backup_destination_id" class="input secondary w-full rounded-md">
+                                @foreach ($destinations as $destination)
+                                    <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="block" for="backup-schedule-frequency">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Frequency') }}</span>
+                            <select id="backup-schedule-frequency" name="frequency" class="input secondary w-full rounded-md">
+                                <option value="daily">{{ __('Daily') }}</option>
+                                <option value="weekly">{{ __('Weekly') }}</option>
+                            </select>
+                        </label>
+                        <label class="block" for="backup-schedule-time">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Run at (UTC)') }}</span>
+                            <input id="backup-schedule-time" type="time" name="run_at" value="02:00" class="input secondary w-full rounded-md">
+                        </label>
+                        <label class="block" for="backup-schedule-weekday">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Weekday') }}</span>
+                            <input id="backup-schedule-weekday" type="number" name="weekday" min="0" max="6" value="0" class="input secondary w-full rounded-md" title="{{ __('Sunday is 0') }}">
+                        </label>
+                        <label class="block" for="backup-schedule-retention">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Retention count') }}</span>
+                            <input id="backup-schedule-retention" type="number" name="retention_count" min="1" max="365" value="14" class="input secondary w-full rounded-md">
+                        </label>
+                        <div class="sm:col-span-2">
+                            <x-ui.button type="submit" variant="primary">{{ __('Save schedule') }}</x-ui.button>
+                        </div>
                     </form>
                 </details>
             @endif
         </section>
     </div>
 
-    <section class="mt-5 rounded-2xl border border-primary bg-primary p-6">
-        <div class="flex flex-wrap items-start justify-between gap-4">
+    <section class="ui-card mt-6 overflow-hidden">
+        <div class="flex flex-wrap items-start justify-between gap-4 p-6">
             <div>
                 <h2 class="text-xl font-black text-primary">{{ __('Backup history and restore') }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
+                <p class="mt-1 max-w-4xl text-sm leading-6 text-secondary">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
             </div>
-            @if($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
+            @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
                 <details class="rounded-xl border border-primary bg-secondary px-4 py-2">
                     <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Run backup') }}</summary>
-                    <div class="mt-3 w-72 space-y-2">
-                        @foreach($websites as $website)
+                    <div class="mt-3 w-72 max-w-[calc(100vw-3rem)] space-y-2">
+                        @foreach ($websites as $website)
                             <form method="POST" action="{{ route('backups.run', $website) }}" class="rounded-lg border border-primary bg-primary p-3">
                                 @csrf
                                 <p class="mb-2 truncate text-sm font-bold text-primary">{{ $website->name }}</p>
                                 <div class="flex gap-2">
-                                    <select name="backup_destination_id" class="input secondary min-w-0 flex-1 rounded-sm">
-                                        @foreach($destinations as $destination)
+                                    <label class="sr-only" for="backup-destination-{{ $website->id }}">{{ __('Backup destination') }}</label>
+                                    <select id="backup-destination-{{ $website->id }}" name="backup_destination_id" class="input secondary min-w-0 flex-1 rounded-md">
+                                        @foreach ($destinations as $destination)
                                             <option value="{{ $destination->id }}">{{ $destination->name }}</option>
                                         @endforeach
                                     </select>
-                                    <button type="submit" class="button primary">{{ __('Run') }}</button>
+                                    <x-ui.button type="submit" variant="primary">{{ __('Run') }}</x-ui.button>
                                 </div>
                             </form>
                         @endforeach
@@ -83,65 +200,74 @@
             @endif
         </div>
 
-        <div class="mt-5 overflow-x-auto">
-            <table class="w-full text-left text-sm">
-                <thead>
-                    <tr class="border-b border-primary text-xs uppercase text-secondary">
-                        <th class="p-3">{{ __('Website') }}</th>
-                        <th class="p-3">{{ __('Status') }}</th>
-                        <th class="p-3">{{ __('Snapshot') }}</th>
-                        <th class="p-3">{{ __('Completed') }}</th>
-                        <th class="p-3">{{ __('Verification') }}</th>
-                        <th class="p-3">{{ __('Restore') }}</th>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm">
+                <thead class="bg-secondary">
+                    <tr class="border-y border-primary text-xs uppercase text-secondary">
+                        <th scope="col" class="p-3">{{ __('Website') }}</th>
+                        <th scope="col" class="p-3">{{ __('Status') }}</th>
+                        <th scope="col" class="p-3">{{ __('Snapshot') }}</th>
+                        <th scope="col" class="p-3">{{ __('Completed') }}</th>
+                        <th scope="col" class="p-3">{{ __('Verification') }}</th>
+                        <th scope="col" class="p-3">{{ __('Restore') }}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($backups as $backup)
+                    @forelse ($backups as $backup)
                         @php
                             $verification = $backup->verifications->sortByDesc('id')->first();
                             $canVerify = $canManage && $backup->status === \App\Models\WebsiteBackup::STATUS_SUCCEEDED;
+                            $backupTone = match ($backup->status) {
+                                \App\Models\WebsiteBackup::STATUS_SUCCEEDED => 'success',
+                                \App\Models\WebsiteBackup::STATUS_FAILED => 'danger',
+                                default => 'accent',
+                            };
                         @endphp
-                        <tr class="border-b border-primary">
+                        <tr class="border-b border-primary align-top">
                             <td class="p-3 font-medium text-primary">{{ $backup->website->name }}</td>
                             <td class="p-3">
-                                {{ ucfirst($backup->status) }}
-                                @if($backup->error)
-                                    <span class="block max-w-xs text-xs text-red-700">{{ $backup->error }}</span>
+                                <x-ui.badge :tone="$backupTone">{{ ucfirst($backup->status) }}</x-ui.badge>
+                                @if ($backup->error)
+                                    <span class="mt-2 block max-w-xs text-xs text-danger">{{ $backup->error }}</span>
                                 @endif
                             </td>
                             <td class="p-3 font-mono text-xs">{{ $backup->snapshot_id ? substr($backup->snapshot_id, 0, 12) : '—' }}</td>
                             <td class="p-3 text-secondary">{{ $backup->completed_at?->diffForHumans() ?? '—' }}</td>
-                            <td class="p-3">
-                                @if($verification)
-                                    <span>{{ ucfirst($verification->status) }}</span>
-                                    <span class="block text-xs text-secondary">{{ ucfirst($verification->integrity_status) }} integrity · {{ ucfirst($verification->smoke_status) }} smoke · {{ ucfirst($verification->cleanup_status) }} cleanup</span>
-                                    @if($verification->failure_stage)
-                                        <span class="block text-xs text-red-700">{{ __('Failed at :stage', ['stage' => $verification->failure_stage]) }}</span>
+                            <td class="min-w-56 p-3">
+                                @if ($verification)
+                                    @php($verificationTone = $verification->status === \App\Models\BackupRestoreVerification::STATUS_SUCCEEDED ? 'success' : ($verification->status === \App\Models\BackupRestoreVerification::STATUS_FAILED ? 'danger' : 'accent'))
+                                    <x-ui.badge :tone="$verificationTone">{{ ucfirst($verification->status) }}</x-ui.badge>
+                                    <span class="mt-2 block text-xs text-secondary">{{ ucfirst($verification->integrity_status) }} integrity · {{ ucfirst($verification->smoke_status) }} smoke · {{ ucfirst($verification->cleanup_status) }} cleanup</span>
+                                    @if ($verification->failure_stage)
+                                        <span class="mt-1 block text-xs text-danger">{{ __('Failed at :stage', ['stage' => $verification->failure_stage]) }}</span>
                                     @endif
-                                    @if($canVerify && $verification->status === \App\Models\BackupRestoreVerification::STATUS_FAILED)
-                                        <form method="POST" action="{{ route('backups.verify', $backup) }}" class="mt-2 space-y-2">
+                                    @if ($canVerify && $verification->status === \App\Models\BackupRestoreVerification::STATUS_FAILED)
+                                        <form method="POST" action="{{ route('backups.verify', $backup) }}" class="mt-3 space-y-2">
                                             @csrf
-                                            <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
-                                            <button type="submit" class="button secondary">{{ __('Retry verification') }}</button>
+                                            <label class="sr-only" for="retry-verification-{{ $backup->id }}">{{ __('Confirmation') }}</label>
+                                            <input id="retry-verification-{{ $backup->id }}" name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary w-full rounded-md" required>
+                                            <x-ui.button type="submit" variant="secondary">{{ __('Retry verification') }}</x-ui.button>
                                         </form>
                                     @endif
-                                @elseif($canVerify)
+                                @elseif ($canVerify)
                                     <form method="POST" action="{{ route('backups.verify', $backup) }}" class="space-y-2">
                                         @csrf
-                                        <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
-                                        <button type="submit" class="button secondary">{{ __('Verify safely') }}</button>
+                                        <label class="sr-only" for="verification-{{ $backup->id }}">{{ __('Confirmation') }}</label>
+                                        <input id="verification-{{ $backup->id }}" name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary w-full rounded-md" required>
+                                        <x-ui.button type="submit" variant="secondary">{{ __('Verify safely') }}</x-ui.button>
                                         <span class="block max-w-xs text-xs text-secondary">{{ __('Temporary database and storage only; no live overwrite.') }}</span>
                                     </form>
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td class="p-3">
-                                @if($canVerify)
-                                    <form method="POST" action="{{ route('backups.restore', $backup) }}" class="flex gap-2">
+                            <td class="min-w-56 p-3">
+                                @if ($canVerify)
+                                    <form method="POST" action="{{ route('backups.restore', $backup) }}" class="space-y-2">
                                         @csrf
-                                        <input name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary max-w-44 rounded-sm" required>
-                                        <button type="submit" class="button secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Restore this backup and replace the current database and persistent files?')) }})">{{ __('Restore') }}</button>
+                                        <label class="sr-only" for="restore-{{ $backup->id }}">{{ __('Confirmation') }}</label>
+                                        <input id="restore-{{ $backup->id }}" name="confirmation" placeholder="{{ $backup->website->name }}" class="input secondary w-full rounded-md" required>
+                                        <x-ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Restore this backup and replace the current database and persistent files?')) }})">{{ __('Restore') }}</x-ui.button>
                                     </form>
                                 @else
                                     —
@@ -149,7 +275,9 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="p-6 text-center text-secondary">{{ __('No backups have run yet.') }}</td></tr>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-secondary">{{ __('No backups have run yet.') }}</td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
