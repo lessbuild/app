@@ -794,6 +794,59 @@ view layer.
 Commit `eecde72` was pushed to `origin/main`. The next slice audits server
 command history, import/provisioning forms and Livewire operational surfaces.
 
+## Phase 6F record — server operations, import and provisioning surfaces
+
+### Responsibility problem
+
+Server detail and command workflows exposed important remote-operation state
+through dense legacy rows, uniform buttons and compact forms. Command output,
+destructive actions, provisioning failures, diagnostics and import approval
+were not visually separated enough for safe scanning, especially on narrow
+screens.
+
+### Boundaries and benefit
+
+- Server detail remains a read-only projection of the existing Livewire
+  metrics, diagnostics, log snapshots, provisioning and relationship data.
+  Existing actions, jobs, callbacks, leases and policies remain the workflow
+  boundary.
+- Command history filters and metrics are separated from row-level download,
+  cancel, rerun and delete actions. Terminal statuses use shared badges and
+  remote output remains bounded and code-oriented.
+- The Livewire command dialog keeps its polling, cancellation, rerun and
+  command validation behavior while adding a labeled dialog, explicit close
+  controls and responsive action grouping.
+- Server creation, display-name editing and import inspection use responsive
+  cards and shared controls. Import review distinguishes read-only discovery,
+  SSH trust identity, takeover impact and explicit confirmation.
+- Existing catalog data attributes, form fields, defaults, validation slots,
+  confirmation prompts, route parameters and secret-handling behavior remain
+  intact.
+
+### Preserved contracts
+
+Server ownership and tenancy, provider catalog loading, plan limits, command
+encryption and output retention, command idempotency, rerun lineage,
+provisioning retries, diagnostic authorization, pinned SSH identity, bounded
+logs, import assessment expiry/single-use behavior, encrypted import
+credentials, callback ordering and no-remote-work-on-denial behavior remain
+unchanged.
+
+### Verification
+
+- Server command, import, log, diagnostics, provisioning, provider,
+  troubleshooting and lifecycle matrix — **214 passed, 1,599 assertions**.
+- `artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php
+  `npm run test:assets` — **9 passed**.
+- `git diff --check` — passed.
+
+Commit `59218f5` was pushed to `origin/main`. The next task is a final
+cross-page audit of remaining detail, form and Livewire surfaces, followed by
+full-suite verification and handoff updates.
+
 ## Remaining external scope
 
 UI verification is local/dev evidence. Production release, live acceptance,
