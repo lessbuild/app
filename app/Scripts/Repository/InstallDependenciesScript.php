@@ -4,6 +4,7 @@ namespace App\Scripts\Repository;
 
 use App\Abstracts\Scripts\BuildProvisioningScript;
 use App\Models\Build;
+use App\Services\ManagedResourceScript;
 
 class InstallDependenciesScript extends BuildProvisioningScript
 {
@@ -22,6 +23,8 @@ class InstallDependenciesScript extends BuildProvisioningScript
      */
     public static string $identifier = 'installed-repository-dependencies';
 
+    public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
+
     /**
      * The script to run
      */
@@ -36,11 +39,17 @@ class InstallDependenciesScript extends BuildProvisioningScript
         $dockerfile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'Dockerfile'));
         $image = escapeshellarg("buildpusher/{$repository->website->deployment_slug}:build-{$build->id}");
         $runtimeVersion = escapeshellarg((string) ($runtime['version'] ?? ''));
+        $resourcePreparation = $this->resources->render($build->environment_payload['resources'] ?? []);
         $progress = $this->progress($step, $build);
 
         return <<<SCRIPT
 
             cd -- {$setupPath}
+
+            # Dependency hooks and migrations may need resources on the first deployment.
+            # The normal resource stage still reconciles and reports its original callback.
+            {$resourcePreparation}
+
             RUNTIME_TYPE={$runtimeType}
             RUNTIME_VERSION={$runtimeVersion}
 

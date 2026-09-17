@@ -175,6 +175,15 @@ shared-data preservation and partial-failure retry. See
 [the verification record](verification/preview-postgresql-cleanup-2026-09-17.md).
 Full-stack provider and recovery checks below remain necessary.
 
+The same continuation corrected false success after a managed Valkey restart
+failure and prepares managed resources before first-deployment dependency hooks
+and Laravel migrations. A separately committed command-rendering extraction
+keeps the original 15-stage callback protocol intact. The current strict suite
+passes **1,555 tests / 12,986 assertions**, with full Pint and dependency/platform
+checks passing. Real disposable PostgreSQL creation/repeat/cleanup checks pass;
+they do not establish full Laravel/Valkey or provider acceptance. See
+[the preparation record](verification/managed-resource-preparation-2026-09-17.md).
+
 - Independent monitoring endpoints and live heartbeat/status verification.
 - Provider-backed preview-stack readiness, PostgreSQL/Valkey recovery, independent monitoring/heartbeat destinations and other provider-specific acceptance not covered by the successful disposable backup/recovery drill.
 - Production mail delivery, GitHub App configuration and approved billing activation as recorded in the original roadmap.

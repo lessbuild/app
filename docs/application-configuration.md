@@ -163,6 +163,15 @@ Changing an existing resource's type or management mode requires detaching it in
 
 New deployment snapshots record whether each resource is managed. External resources never request managed provisioning, including external connection references using localhost. Historical snapshots without this flag retain their original behavior. An environment supports one managed Valkey resource because its port is assigned per environment; omitted existing resources count toward that limit. Detachment preserves the remote container and its occupied port: use the remote service's cleanup workflow before deploying a replacement under another name.
 
+Managed runtime resources are prepared from that captured snapshot before
+dependency installation, build hooks and Laravel migrations. The existing
+resource stage later reconciles the same identities and records its normal
+progress callback; callback stage numbers are unchanged. A failed preparation
+stops deployment before dependency hooks. A later application failure does not
+automatically destroy already-prepared resources: retry reuses their identities,
+and preview cleanup removes only explicitly owned resources. Planning and the
+local reconciliation transaction still perform no remote provisioning.
+
 ## Validation and ownership
 
 - Reject unknown fields, unsupported versions, malformed names, duplicate YAML keys, invalid runtime combinations and unresolved references before planning changes.

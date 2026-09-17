@@ -42,11 +42,17 @@ Valkey correction `14e3bf5` is pushed and integrated. The preparatory managed-
 resource renderer extraction now preserves byte-identical output across five
 snapshot variants; 36 focused tests / 391 assertions pass. See
 [the preparation record](verification/managed-resource-preparation-2026-09-17.md).
-Next: correct first-deployment resource preparation before Laravel migrations
-while preserving the 15 callback stages, then continue configuration/preview
-and recovery acceptance. This newly identified ordering gap remains open at
-this checkpoint; the historical local completion claim is not first-deployment
-acceptance evidence.
+Extraction `b3070a3` is pushed and integrated. First-deployment resource
+preparation now runs before dependency hooks and migrations, with all 15
+callback stages preserved and stage 11 retaining its normal reconciliation.
+The full strict suite passes **1,555 tests / 12,986 assertions**; full Pint,
+syntax, Composer validation/platform and diff checks pass. A disposable real
+PostgreSQL check verified creation before hook/migration doubles, repeat
+execution, shared-data preservation and exact cleanup; the cluster is stopped.
+The preparation record above documents the intentional timing change and limits.
+Next: the configuration-specific provider acceptance sequence, followed by the
+full preview stack and recovery cycle. These remain separate from the local
+checks and the earlier generic disposable backup/restore drill.
 
 ## API access follow-up — 2026-09-14
 

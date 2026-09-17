@@ -3,9 +3,10 @@
 Latest continuation: September 17 preview acceptance found a real PostgreSQL
 cleanup transaction defect. Its correction and real-database evidence are in
 [the dedicated verification record](preview-postgresql-cleanup-2026-09-17.md).
-The managed Valkey failed-start correction also passes the current full strict
-suite (1,551 tests / 12,974 assertions). A first-deployment resource-preparation
-ordering gap is the next local task, before more provider acceptance.
+Managed Valkey failed-start handling and first-deployment resource preparation
+are also corrected. The current full strict suite passes **1,555 tests / 12,986
+assertions**. The next task is the configuration-specific provider acceptance
+sequence, before the full preview and recovery cycle.
 The previous local completion checkpoint below does not establish complete
 provider-backed preview or recovery acceptance.
 
@@ -4921,3 +4922,36 @@ baseline remains 1,551 tests / 12,974 assertions. See
 Commit/push this pure extraction before adding the first-deployment regression
 and early resource preparation. The exact next task is that separate timing fix;
 configuration/preview provider acceptance remains outstanding.
+
+Extraction commit `b3070a3` was pushed and integrated before the timing fix.
+
+## First-deployment resource preparation — 2026-09-17
+
+`InstallDependenciesScript` now uses the shared injected renderer to prepare
+captured managed resources before dependency hooks, runtime build commands and
+Laravel migrations. Stage 11 still reconciles the same identities and emits its
+original callback; the plan, callback validation, build model and serialized
+job formats are unchanged. This intentionally advances remote creation, so a
+later application failure may leave resources for identity-preserving retry or
+the existing ownership-aware preview cleanup. External resources stay excluded.
+
+Three new executable cases failed before the correction; all four managed,
+legacy, external and failure-path cases pass afterward. The related deployment,
+resource, callback, approval, health, preview, monorepo and timeline batch passed
+**71 tests / 659 assertions**. The complete strict PHP suite passed **1,555
+tests / 12,986 assertions**, with no failures, errors or skips. Full Pint,
+syntax, manifest validation, locked-platform checks and diff checks passed;
+only the system Composer's existing deprecation notices remain.
+
+A disposable PostgreSQL 16.15 cluster executed the generated creation and
+cleanup commands. Dependency and migration doubles connected to the real
+database and wrote a marker after creation; the sequence passed twice with
+callbacks 4/7/11 and shared data preserved. Exact preview cleanup passed, all
+smoke-test data was removed, and the cluster was stopped. This is not a complete
+Laravel deployment, Valkey protocol/persistence test or cloud acceptance claim.
+
+See [the verification record](managed-resource-preparation-2026-09-17.md) and
+the updated operator contract. Commit and push this separate timing fix, then
+integrate deliberately. The exact next task is configuration-specific provider
+review/apply/delivery/idempotency/recovery acceptance, followed by the complete
+preview stack. No new cloud resource was created in this continuation.
