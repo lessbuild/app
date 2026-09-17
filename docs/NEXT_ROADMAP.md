@@ -14,13 +14,15 @@ isolation and exact cleanup. See
 [configuration acceptance](verification/configuration-acceptance-2026-09-17.md)
 and [preview-stack acceptance](verification/preview-stack-acceptance-2026-09-17.md).
 The final local cross-feature verification is now complete: the strict PHP
-suite passed **1,556 tests / 13,004 assertions**, required-PHP Pint and
+suite passed **1,559 tests / 12,864 assertions**, required-PHP Pint and
 Composer checks passed, the assets rebuilt successfully, the asset/layout
 browser suite passed **9 tests**, and the served Livewire/mobile smoke passed
 **1 test**. The next task is separately authorized release handoff and
 external acceptance. This remains separate from broader provider-specific
 recovery, production/live acceptance, independent monitoring, GitHub App
-configuration and billing/SSO.
+configuration and billing/SSO. The subsequent flat mobile-navigation
+restoration is also pushed on `main` and passed its authenticated
+mobile/tablet/desktop browser journey (**3 tests**).
 
 ## Competitor comparison
 

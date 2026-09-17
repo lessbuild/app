@@ -1,5 +1,25 @@
 # BuildPusher chat handoff
 
+## Final local verification after mobile restoration — 2026-09-17
+
+The current `main` tip is `0aec8e9` and the isolated implementation checkout
+is clean and aligned with `origin/main`. The strict PHP 8.5.10 regression
+passed **1,559 tests / 12,864 assertions** with no failures, warnings, risky
+tests or deprecations. Required-PHP Pint, `git diff --check` and the Vite
+asset build also passed.
+
+The restored flat mobile navigation was exercised against the isolated dev
+domain on mobile, tablet and desktop (**3 browser tests passed**). The
+persistent `buildpusher-dev-main.service` is active and enabled, and
+`https://buildpusher.com/` returned HTTP 200. No production or acceptance-
+drill checkout was changed.
+
+This completes the current local product-expansion and UI verification scope.
+The exact next task is separately authorized release handoff and external
+acceptance. Production mail, independent monitoring/heartbeat destinations,
+GitHub App configuration, billing/SSO, broader provider-specific recovery and
+the separate live acceptance drill remain explicitly outstanding.
+
 ## Mobile navigation restoration — 2026-09-17
 
 The mobile menu has been restored to the flat two-section direct-link layout

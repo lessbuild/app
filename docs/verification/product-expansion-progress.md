@@ -1,14 +1,16 @@
 # BuildPusher product expansion progress
 
-Latest continuation: September 17 provider-backed preview-stack acceptance
-completed on the isolated dev runtime. The signed webhook, independent preview
-configuration, managed PostgreSQL/Valkey readiness, revision update, health
-failure recovery, close/reopen generation isolation and exact cleanup evidence
-are in [the dedicated verification record](preview-stack-acceptance-2026-09-17.md).
-The disposable server, source website, repository, project and preview
-resources were removed. The next task is final cross-feature verification and
-release handoff, with the remaining production, monitoring, billing/SSO,
-GitHub App, other-provider and live-acceptance gates kept explicit.
+Latest continuation: September 17 final local verification completed after the
+mobile navigation restoration. The strict PHP 8.5.10 suite passed **1,559
+tests / 12,864 assertions**, with Pint, Vite and `git diff --check` passing.
+The authenticated dev-domain mobile/tablet/desktop navigation journey passed
+**3 browser tests**; the isolated dev service is active and enabled and the
+homepage returned HTTP 200. The current isolated `main` checkout is clean at
+`0aec8e9` and aligned with `origin/main`. The exact next task is separately
+authorized release handoff and external acceptance, with production mail,
+independent monitoring/heartbeat, GitHub App, billing/SSO, broader
+provider-specific recovery and the separate live-acceptance gates kept
+explicit.
 
 Status: Local product-expansion implementation through Phase 9 and the
 authorized disposable provider deployment/rollback/backup/restore/cleanup
@@ -5164,3 +5166,28 @@ the dev domain passed on mobile, tablet and desktop (**3 tests**).
 This is dev-runtime deployment evidence only. It does not claim production
 release or completion of the separate live acceptance drill. The exact next
 task is separately authorized release handoff and external acceptance.
+
+## Final local verification after mobile restoration — 2026-09-17
+
+The current isolated implementation checkout on `main` is clean at `0aec8e9`
+and aligned with `origin/main`. The fresh strict PHP 8.5.10 regression passed
+**1,559 tests / 12,864 assertions** in 425.07 seconds with no failures,
+warnings, risky tests or deprecations. Required-PHP Pint, `git diff --check`
+and the Vite production asset build passed.
+
+The flat two-section mobile navigation was exercised against
+`https://buildpusher.com` on mobile, tablet and desktop (**3 browser tests
+passed**). `buildpusher-dev-main.service` is active and enabled, and the
+homepage returned HTTP 200. The implementation checkout, canonical checkout
+and separate acceptance-drill checkout remained isolated.
+
+### Responsibility, contracts and exact next task
+
+This verification covers the latest UI change and the complete local
+cross-feature regression; it does not alter routes, response formats,
+authorization, persisted values, queue compatibility or the separate external
+acceptance status. The current local product-expansion scope is complete. The
+next task is separately authorized release handoff and external acceptance;
+production mail, independent monitoring/heartbeat destinations, GitHub App
+configuration, billing/SSO, broader provider-specific recovery and the live
+acceptance drill remain outstanding.
