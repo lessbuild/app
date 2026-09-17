@@ -5125,6 +5125,24 @@ parity, independent monitoring/heartbeat destinations, GitHub App
 configuration, billing/SSO, deeper PostgreSQL/Valkey recovery and the live
 acceptance drill remain outstanding.
 
+## Mobile navigation restoration — 2026-09-17
+
+The mobile menu was restored to the direct-link layout that preceded the
+navigation consolidation. It now shows separate Applications, Deployments,
+Repositories, Recipes, Gallery, Billing, Costs and usage, Account and Settings
+destinations with the original active routes and Settings anchor. The desktop
+sidebar retains the consolidated Applications, Template library, Billing and
+usage, and Account and security entries.
+
+Commit `5f67c07` is pushed to `origin/main` and deployed to the isolated dev
+runtime. Focused PHP coverage passed **39 tests / 608 assertions**; Pint and
+`git diff --check` passed; and the authenticated browser journey against
+`https://buildpusher.com` passed on mobile, tablet and desktop (**3 tests**).
+The persistent `buildpusher-dev-main.service` is active and enabled.
+
+This is a mobile-only navigation change. Routes, contextual page links,
+production status and the separate live acceptance status are unchanged.
+
 ## Dev runtime navigation deployment — 2026-09-17
 
 The isolated dev runtime serving `https://buildpusher.com` was fast-forwarded

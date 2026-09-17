@@ -1,5 +1,23 @@
 # BuildPusher chat handoff
 
+## Mobile navigation restoration — 2026-09-17
+
+The mobile menu has been restored to the direct-link layout that preceded the
+navigation consolidation. Mobile now shows separate Applications,
+Deployments, Repositories, Recipes, Gallery, Billing, Costs and usage,
+Account and Settings destinations, including the original active routes and
+Settings anchor. The desktop sidebar keeps the consolidated Applications,
+Template library, Billing and usage, and Account and security entries.
+
+The implementation is pushed as `5f67c07` on `origin/main` and deployed to the
+isolated dev runtime. Focused PHP coverage passed **39 tests / 608
+assertions**, Pint and diff checks passed, and the authenticated dev-domain
+browser journey passed on mobile, tablet and desktop (**3 tests**). The
+persistent `buildpusher-dev-main.service` is active and enabled.
+
+This is a mobile-only navigation change; routes, contextual page links and
+the separate live acceptance status are unchanged.
+
 ## Dev runtime navigation deployment — 2026-09-17
 
 The isolated dev runtime serving `https://buildpusher.com` was fast-forwarded
