@@ -28,7 +28,7 @@ class ProviderCapabilityTest extends TestCase
     {
         [$user, $github] = $this->providers();
 
-        $this->actingAs($user)->get(route('providers.create'))
+        $response = $this->actingAs($user)->get(route('providers.create'))
             ->assertSuccessful()
             ->assertSee('digitalocean')
             ->assertSee('hetzner')
@@ -37,6 +37,14 @@ class ProviderCapabilityTest extends TestCase
             ->assertSee('gitlab')
             ->assertSee('bitbucket')
             ->assertDontSee('linode');
+
+        $document = new \DOMDocument;
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $selector = '//div[@role="radiogroup" and @aria-label="Provider"]';
+
+        $this->assertCount(7, $xpath->query($selector.'//input[@type="radio" and @name="provider"]'));
+        $this->assertCount(0, $xpath->query($selector.'//svg'));
 
         $response = $this->actingAs($user)->get(route('providers.edit', $github))->assertSuccessful();
         $document = new \DOMDocument;

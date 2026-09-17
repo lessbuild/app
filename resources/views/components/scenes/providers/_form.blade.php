@@ -13,49 +13,37 @@
         <legend class="text-sm font-semibold text-primary">{{ __('Provider') }}</legend>
         <p class="mt-1 text-xs text-secondary">{{ __('Choose the integration that owns this credential.') }}</p>
         <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label="{{ __('Provider') }}">
-            <label class="group relative flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="digitalocean" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'digitalocean')>
-                <svg class="h-10 w-10 text-secondary" aria-hidden="true">
-                    <use xlink:href="/assets/images/icons.svg#digital-ocean"></use>
-                </svg>
                 <span class="text-sm font-semibold text-primary">{{ __('DigitalOcean') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="github" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'github')>
-                <svg class="h-10 w-10 text-secondary" aria-hidden="true">
-                    <use xlink:href="/assets/images/icons.svg#github"></use>
-                </svg>
                 <span class="text-sm font-semibold text-primary">{{ __('GitHub') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="gitlab" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'gitlab')>
-                <svg class="h-10 w-10 text-secondary" aria-hidden="true">
-                    <use xlink:href="/assets/images/icons.svg#gitlab"></use>
-                </svg>
                 <span class="text-sm font-semibold text-primary">{{ __('GitLab') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="bitbucket" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'bitbucket')>
-                <svg class="h-10 w-10 text-secondary" aria-hidden="true">
-                    <use xlink:href="/assets/images/icons.svg#bitbucket"></use>
-                </svg>
                 <span class="text-sm font-semibold text-primary">{{ __('Bitbucket') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
                 <input type="radio" name="provider" value="hetzner" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'hetzner')>
                 <span class="text-sm font-semibold text-primary">{{ __('Hetzner Cloud') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
                 <input type="radio" name="provider" value="vultr" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'vultr')>
                 <span class="text-sm font-semibold text-primary">{{ __('Vultr') }}</span>
             </label>
 
-            <label class="group relative flex min-h-28 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
+            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
                 <input type="radio" name="provider" value="cloudflare" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'cloudflare')>
                 <span class="text-sm font-semibold text-primary">{{ __('Cloudflare DNS') }}</span>
             </label>
