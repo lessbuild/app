@@ -132,6 +132,7 @@ removing or renaming existing routes.
 | Phase 3C: builds and deployment status | Complete | Build history, deployment, approval, cancellation, comparison, observation, log, webhook and repository coverage: 78 tests / 621 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `3d3f24a` pushed to `origin/main` | Modernize infrastructure resource pages |
 | Phase 4A: infrastructure inventories | Complete | Website, server and provider coverage: 307 tests / 2,605 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `4aa8f64` pushed to `origin/main` | Modernize databases, domains, high availability and backups |
 | Phase 4B: database and traffic operations | Complete | Database, domain and load-balancer coverage: 24 tests / 147 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `681a57c` pushed to `origin/main` | Modernize backup and restore operations |
+| Phase 4C: backup and recovery workflows | Complete | Backup destination, verification and recovery coverage: 17 tests / 129 assertions; view cache; Pint; Vite build; 9 responsive asset fixtures with PHP 8.5.10; diff check | `6726ff1` pushed to `origin/main` | Modernize operations and automation pages |
 
 ## Phase 1 record — shared visual system
 
@@ -285,6 +286,46 @@ were introduced.
 ### Verification
 
 - Focused database/domain/load-balancer matrix — **24 passed, 147 assertions**.
+- `php artisan view:cache` — passed.
+- `vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- Browser asset-layout suite with the mandated PHP 8.5.10 binary — **9 passed**.
+- `git diff --check` — passed.
+
+## Phase 4C record — backup and recovery workflows
+
+### Responsibility problem
+
+Backups carried several different risk levels—encrypted destination setup,
+connection verification, scheduled runs, isolated verification and live
+restore—but presented them as dense, similarly weighted rows and forms. This
+made recovery readiness and destructive consequences harder to scan, especially
+on small screens.
+
+### Boundaries and benefit
+
+- Existing backup controllers, actions, jobs, encrypted models, verification
+  state machine and provider adapters remain the workflow boundary.
+- Recovery readiness is presented as a shared metric strip; destinations and
+  schedules use grouped cards with progressive disclosure for setup/editing.
+- Backup history keeps a responsive overflow table, but separates completion,
+  verification, cleanup and restore states with semantic badges and bounded
+  confirmation fields.
+- Destination setup keeps provider presets, endpoint derivation guidance,
+  encrypted credential handling and temporary-object verification guidance in
+  the existing partial. The UI does not add a server dependency or remote call.
+
+### Preserved contracts
+
+All backup, restore, verification and destination routes, field names, default
+values, CSRF/method fields, one-time password behavior, credential redaction,
+recovery confirmations, authorization, snapshot ownership, cleanup state and
+retry behavior remain unchanged. No new database writes, jobs or integrations
+were introduced.
+
+### Verification
+
+- Focused backup matrix — **17 passed, 129 assertions**.
 - `php artisan view:cache` — passed.
 - `vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
