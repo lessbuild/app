@@ -1,5 +1,20 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the high-availability create panel stopped
+showing the same `Create a high-availability route` heading twice when its
+mobile disclosure is open. The mobile summary is now the single visible title
+on small screens, while the form heading remains visible on desktop where the
+summary is hidden. Routes, validation, authorization and form behavior are
+unchanged.
+
+Load-balancer coverage passed **5 tests / 32 assertions**. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+updated to `3806002`, the service is active and the live-runtime smoke passed
+(**1 test**). Commit `3806002` (`Remove duplicated load balancer create title`)
+is pushed to `origin/main`. The exact next task is to visually review the
+high-availability page at mobile and desktop widths; no backend change is
+needed for this UI-only fix.
+
 Latest continuation: September 18 the domains index was reordered so the
 `Add or issue domains` management panel appears immediately below the page
 insights and before the domain inventory. This makes the primary actions
