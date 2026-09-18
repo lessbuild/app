@@ -110,6 +110,33 @@ class BuildHistoryInsightsTest extends TestCase
             ->assertSee('No builds match these filters');
     }
 
+    public function test_history_filters_are_collapsed_for_the_default_results_view_and_open_for_active_filters(): void
+    {
+        [$owner, $repository] = $this->repository('Owner');
+        $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
+
+        $default = $this->actingAs($owner)->get(route('builds.index'));
+        $defaultContent = $default->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*overflow-hidden)[^>]*>/',
+            $defaultContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*open)[^>]*>/',
+            $defaultContent,
+        );
+        $default->assertSee('Filter deployments')->assertSee('Matching deployments');
+
+        $active = $this->actingAs($owner)->get(route('builds.index', ['status' => Build::STATUS_SUCCEEDED]));
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*open)[^>]*>/',
+            $active->getContent(),
+        );
+        $active->assertSee('1 active')->assertSee('value="succeeded" selected', false);
+    }
+
     /** @return array{User, Repository} */
     private function repository(string $prefix): array
     {

@@ -12,7 +12,16 @@
     >
     </x-layouts.partials.heading>
 
-    <form method="GET" action="{{ route('builds.index') }}" class="ui-card mt-8 p-4">
+    @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
+
+    <x-ui.filter-panel
+        id="deployment-filters"
+        class="mt-6"
+        :open="$activeFilterCount > 0"
+        :summary="$activeFilterCount > 0 ? __(':count active', ['count' => $activeFilterCount]) : null"
+        :label="__('Filter deployments')"
+    >
+    <form method="GET" action="{{ route('builds.index') }}" class="space-y-4">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
@@ -125,16 +134,17 @@
                 >
             </div>
         </div>
-        <div class="mt-4 flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3">
             <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
             <x-ui.button :href="route('builds.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
             </x-ui.button>
-            @if (array_filter($filters, fn ($value) => $value !== null))
+            @if ($activeFilterCount > 0)
                 <x-ui.button :href="route('builds.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
             @endif
         </div>
     </form>
+    </x-ui.filter-panel>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <div class="ui-card p-4">
