@@ -1350,6 +1350,43 @@ not communicate why it was expanded.
 
 | Phase 30: admin analytics insight priority | Complete with browser follow-up | 16 focused tests / 111 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `e448fc3` pushed to `origin/main` | Audit public documentation, API documentation, status and authentication page hierarchy |
 
+## Phase 31 — public documentation navigation
+
+### Responsibility problem
+
+The product guide exposed its six sections as a wide row of links, and the API
+reference listed nine operations without a local index. On small screens,
+visitors had to scroll through long public pages to find the relevant section
+or endpoint.
+
+### Boundaries and preserved behavior
+
+- The documentation routes, copy, OpenAPI download, authentication example,
+  endpoint descriptions, guide links and public metadata remain unchanged.
+- The guide now uses a semantic `guide-contents` disclosure with a responsive
+  grid of stable section anchors. The API page defines its operation list once,
+  exposes an `api-contents` disclosure and gives each endpoint a stable
+  `api-operation-*` target.
+- No API behavior, authorization, endpoint path, client-side state or external
+  asset dependency changed.
+
+### Verification
+
+- `LocalUiAssetTest` passed: 18 tests / 389 assertions, including public
+  documentation content, API endpoint anchors, accessibility shell behavior,
+  local assets and navigation invariants. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `b66af35` (`Improve public documentation navigation`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change mobile height or anchor-click result is claimed; stable anchors,
+  semantic disclosures and preserved public content are covered by feature
+  tests and compiled markup.
+
+| Phase 31: public documentation navigation | Complete with browser follow-up | 18 focused tests / 389 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `b66af35` pushed to `origin/main` | Improve authentication page metadata and public status accessibility/focus hierarchy |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
