@@ -109,58 +109,57 @@
     </x-ui.insights>
 
     <x-ui.card class="mt-6 overflow-hidden">
-        <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-primary">
-            <caption class="sr-only">{{ __('Command activity across all servers') }}</caption>
-            <thead class="bg-secondary">
-                <tr>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Execution') }}</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Server') }}</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Output') }}</th>
-                    <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Timing') }}</th>
-                    <th scope="col" class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Details') }}</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-primary">
-                @forelse ($executions as $execution)
-                    <tr>
-                        <td class="px-4 py-4 text-sm font-medium text-primary">#{{ $execution->id }}</td>
-                        <td class="px-4 py-4 text-sm text-primary">{{ $execution->server->label }}</td>
-                        <td class="px-4 py-4">
+        <div class="divide-y divide-primary" aria-label="{{ __('Command activity across all servers') }}">
+            @forelse ($executions as $execution)
+                <article data-command-execution class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
+                            <h2 class="mt-1 text-base font-semibold text-primary">{{ $execution->server->label }}</h2>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
                             <x-ui.badge tone="{{ in_array($execution->status, ['succeeded', 'completed'], true) ? 'success' : (in_array($execution->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ $execution->status }}</x-ui.badge>
-                        </td>
-                        <td class="px-4 py-4 text-xs text-secondary">
                             <x-ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-ui.badge>
-                        </td>
-                        <td class="px-4 py-4 text-xs text-secondary">
-                            <span class="block">{{ __('Queued :time', ['time' => $execution->created_at->diffForHumans()]) }}</span>
-                            @if ($execution->started_at)
-                                <span class="mt-1 block">{{ __('Started :time', ['time' => $execution->started_at->diffForHumans()]) }}</span>
-                            @endif
-                            @if ($execution->finished_at)
-                                <span class="mt-1 block">{{ __('Finished :time', ['time' => $execution->finished_at->diffForHumans()]) }}</span>
-                            @endif
-                            <span class="mt-1 block">{{ __('Duration: :duration', ['duration' => $execution->durationLabel() ?? __('Not recorded')]) }}</span>
-                        </td>
-                        <td class="px-4 py-4 text-right">
-                            <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary">
-                                {{ __('Open server history') }}
-                            </x-ui.button>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-10 text-center">
-                            <x-ui.empty-state
-                                :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run yet')"
-                                :description="__('Run a command from an active server to see its lifecycle here.')"
-                            />
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+                        </div>
+                    </div>
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $execution->created_at->diffForHumans() }}</dd>
+                        </div>
+                        @if ($execution->started_at)
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Started') }}</dt>
+                                <dd class="mt-1 text-primary">{{ $execution->started_at->diffForHumans() }}</dd>
+                            </div>
+                        @endif
+                        @if ($execution->finished_at)
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
+                                <dd class="mt-1 text-primary">{{ $execution->finished_at->diffForHumans() }}</dd>
+                            </div>
+                        @endif
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mt-4 flex justify-start sm:justify-end">
+                        <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary">
+                            {{ __('Open server history') }}
+                        </x-ui.button>
+                    </div>
+                </article>
+            @empty
+                <div class="p-6 text-center">
+                    <x-ui.empty-state
+                        :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run yet')"
+                        :description="__('Run a command from an active server to see its lifecycle here.')"
+                    />
+                </div>
+            @endforelse
         </div>
     </x-ui.card>
 

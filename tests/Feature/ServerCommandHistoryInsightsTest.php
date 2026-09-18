@@ -39,6 +39,8 @@ class ServerCommandHistoryInsightsTest extends TestCase
             ->assertSee('Failed')
             ->assertSee('Canceled')
             ->assertSee('Output retained')
+            ->assertSee('data-command-execution', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('other-server-command')
             ->assertDontSee('partial-output-secret')
             ->assertDontSee('successful-output-secret')

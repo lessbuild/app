@@ -97,101 +97,101 @@
     </x-ui.insights>
 
     <x-ui.card class="overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary">
-                <caption class="sr-only">{{ __('Server command history') }}</caption>
-                <thead class="bg-secondary">
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Command') }}</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</th>
-                        <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Timing') }}</th>
-                        <th scope="col" class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Actions') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary">
-                    @forelse ($executions as $execution)
-                        @php($statusTone = match ($execution->status) {
-                            \App\Models\ServerCommandExecution::STATUS_SUCCEEDED => 'success',
-                            \App\Models\ServerCommandExecution::STATUS_FAILED => 'danger',
-                            \App\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
-                            default => 'accent',
-                        })
-                        <tr class="align-top">
-                            <td class="max-w-xl px-4 py-4">
-                                <code class="break-all text-xs text-primary">{{ $execution->command }}</code>
+        <div class="divide-y divide-primary" aria-label="{{ __('Server command history') }}">
+            @forelse ($executions as $execution)
+                @php($statusTone = match ($execution->status) {
+                    \App\Models\ServerCommandExecution::STATUS_SUCCEEDED => 'success',
+                    \App\Models\ServerCommandExecution::STATUS_FAILED => 'danger',
+                    \App\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
+                    default => 'accent',
+                })
+                <article data-command-execution class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0 flex-1">
+                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
+                            <code class="mt-2 block break-all rounded-lg bg-secondary px-3 py-2 text-xs text-primary">{{ $execution->command }}</code>
+                            <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary">
                                 @if ($execution->exit_code !== null)
-                                    <p class="mt-2 text-xs text-secondary">{{ __('Exit code: :code', ['code' => $execution->exit_code]) }}</p>
+                                    <span>{{ __('Exit code: :code', ['code' => $execution->exit_code]) }}</span>
                                 @endif
                                 @if ($execution->rerun_from_execution_id)
-                                    <p class="mt-2 text-xs text-secondary">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
+                                    <span>{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</span>
                                 @endif
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-4">
-                                <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
-                            </td>
-                            <td class="whitespace-nowrap px-4 py-4 text-xs text-secondary">
-                                <span class="block">{{ __('Queued :time', ['time' => $execution->created_at->diffForHumans()]) }}</span>
-                                @if ($execution->started_at)
-                                    <span class="mt-1 block">{{ __('Started :time', ['time' => $execution->started_at->diffForHumans()]) }}</span>
-                                @endif
-                                @if ($execution->finished_at)
-                                    <span class="mt-1 block">{{ __('Finished :time', ['time' => $execution->finished_at->diffForHumans()]) }}</span>
-                                @endif
-                                <span class="mt-1 block">{{ __('Duration: :duration', ['duration' => $execution->durationLabel() ?? __('Not recorded')]) }}</span>
-                            </td>
-                            <td class="px-4 py-4 text-right align-top text-sm">
-                                <div class="flex flex-wrap justify-end gap-2">
-                                    @if ($execution->output !== null)
-                                        <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="whitespace-nowrap">
-                                            {{ __('Download output') }}
-                                        </x-ui.button>
-                                    @endif
-                                    @if ($execution->status === \App\Models\ServerCommandExecution::STATUS_QUEUED)
-                                        <form method="POST" action="{{ route('servers.commands.cancel', ['server' => $server, 'execution' => $execution]) }}">
-                                            @csrf
-                                            <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
-                                                {{ __('Cancel') }}
-                                            </x-ui.button>
-                                        </form>
-                                    @endif
-                                    @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE
-                                        && in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
-                                        <form method="POST" action="{{ route('servers.commands.rerun', ['server' => $server, 'execution' => $execution]) }}">
-                                            @csrf
-                                            <x-ui.button type="submit" variant="primary" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
-                                                {{ __('Run again') }}
-                                            </x-ui.button>
-                                        </form>
-                                    @endif
-                                    @if (in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
-                                        <form method="POST" action="{{ route('servers.commands.destroy', ['server' => $server, 'execution' => $execution]) }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
-                                                {{ __('Delete') }}
-                                            </x-ui.button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="p-4">
-                                <x-ui.empty-state
-                                    :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet')"
-                                >
-                                    @if (array_filter($filters, fn ($value) => $value !== null))
-                                        <x-slot:action>
-                                            <x-ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-ui.button>
-                                        </x-slot:action>
-                                    @endif
-                                </x-ui.empty-state>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                            </div>
+                        </div>
+                        <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
+                    </div>
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $execution->created_at->diffForHumans() }}</dd>
+                        </div>
+                        @if ($execution->started_at)
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Started') }}</dt>
+                                <dd class="mt-1 text-primary">{{ $execution->started_at->diffForHumans() }}</dd>
+                            </div>
+                        @endif
+                        @if ($execution->finished_at)
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
+                                <dd class="mt-1 text-primary">{{ $execution->finished_at->diffForHumans() }}</dd>
+                            </div>
+                        @endif
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
+                        </div>
+                    </dl>
+
+                    <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
+                        @if ($execution->output !== null)
+                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="whitespace-nowrap">
+                                {{ __('Download output') }}
+                            </x-ui.button>
+                        @endif
+                        @if ($execution->status === \App\Models\ServerCommandExecution::STATUS_QUEUED)
+                            <form method="POST" action="{{ route('servers.commands.cancel', ['server' => $server, 'execution' => $execution]) }}">
+                                @csrf
+                                <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
+                                    {{ __('Cancel') }}
+                                </x-ui.button>
+                            </form>
+                        @endif
+                        @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE
+                            && in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
+                            <form method="POST" action="{{ route('servers.commands.rerun', ['server' => $server, 'execution' => $execution]) }}">
+                                @csrf
+                                <x-ui.button type="submit" variant="primary" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
+                                    {{ __('Run again') }}
+                                </x-ui.button>
+                            </form>
+                        @endif
+                        @if (in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
+                            <form method="POST" action="{{ route('servers.commands.destroy', ['server' => $server, 'execution' => $execution]) }}">
+                                @csrf
+                                @method('DELETE')
+                                <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
+                                    {{ __('Delete') }}
+                                </x-ui.button>
+                            </form>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <div class="p-4">
+                    <x-ui.empty-state
+                        :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet')"
+                    >
+                        @if (array_filter($filters, fn ($value) => $value !== null))
+                            <x-slot:action>
+                                <x-ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-ui.button>
+                            </x-slot:action>
+                        @endif
+                    </x-ui.empty-state>
+                </div>
+            @endforelse
         </div>
     </x-ui.card>
 

@@ -43,6 +43,8 @@ class CommandCenterTest extends TestCase
             })
             ->assertViewHas('metrics', fn (array $metrics): bool => $metrics['total'] === 2 && $metrics['active'] === 2)
             ->assertSee('Command Center')
+            ->assertSee('data-command-execution', false)
+            ->assertDontSee('<table', false)
             ->assertSee('name="active" value="1" checked', false)
             ->assertSee('Refresh status')
             ->assertSee('Queued or running commands may change. Refresh to load their latest state.')
