@@ -158,6 +158,57 @@ class DeploymentLogTest extends TestCase
             ->assertDontSee('Cancel deployment');
     }
 
+    public function test_build_progress_and_logs_open_for_active_or_failed_builds_but_completed_builds_start_concise(): void
+    {
+        [$owner, $build] = $this->build();
+        $build->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'setup_stage' => 15,
+            'finished_at' => now(),
+        ]);
+        $build->logs()->create([
+            'type' => Build::DEPLOYMENT_LOG_TYPE,
+            'log' => 'Completed deployment output',
+        ]);
+
+        $completed = $this->actingAs($owner)->get(route('builds.show', $build));
+        $completedContent = $completed->getContent();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="deployment-progress")(?=[^>]*open)[^>]*>/',
+            $completedContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="deployment-log")(?=[^>]*open)[^>]*>/',
+            $completedContent,
+        );
+        $completed
+            ->assertSee('Deployment progress')
+            ->assertSeeText('Completed deployment output')
+            ->assertSee(route('builds.log.download', $build), false);
+
+        $build->update([
+            'status' => Build::STATUS_FAILED,
+            'failure_message' => 'Build command failed',
+            'finished_at' => now(),
+        ]);
+
+        $failed = $this->actingAs($owner)->get(route('builds.show', $build));
+        $failedContent = $failed->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-progress")(?=[^>]*open)[^>]*>/',
+            $failedContent,
+        );
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-log")(?=[^>]*open)[^>]*>/',
+            $failedContent,
+        );
+        $failed
+            ->assertSee('Deployment failed:')
+            ->assertSeeText('Completed deployment output');
+    }
+
     public function test_late_log_callback_cannot_replace_a_canceled_deployment_log(): void
     {
         [, $build] = $this->build();

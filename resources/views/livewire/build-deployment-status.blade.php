@@ -152,7 +152,31 @@
         });
         $progressModel->setAttribute('provisioning_error', $build->failure_message);
     @endphp
-    @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'heading' => __('Deployment progress')])
+    @php
+        $deploymentProgressNeedsAttention = $build->statusEnum()?->isActive() === true
+            || $build->status === \App\Models\Build::STATUS_FAILED;
+        $completedDeploymentSteps = min(max((int) $build->setup_stage, 0), count($processes));
+        $deploymentStatusLabel = str($build->status)->replace('_', ' ')->headline();
+    @endphp
+    <details
+        id="deployment-progress"
+        class="group ui-card mt-4 overflow-hidden"
+        @if ($deploymentProgressNeedsAttention) open @endif
+    >
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Execution detail') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Deployment progress') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ __(':completed of :total stages recorded · :status', ['completed' => $completedDeploymentSteps, 'total' => count($processes), 'status' => $deploymentStatusLabel]) }}
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="border-t border-primary px-5 pb-5">
+            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'heading' => __('Deployment progress')])
+        </div>
+    </details>
 
     <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
         @if ($previousBuild)
@@ -466,31 +490,53 @@
         </div>
     @endif
 
-    <section id="deployment-log" class="mt-8">
-        <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-2xl font-bold text-primary">{{ __('Deployment log') }}</h2>
-            @if ($deploymentLog)
-                <div class="flex items-center gap-3">
-                    <span class="text-xs text-secondary">{{ __('Updated :time', ['time' => $deploymentLog->updated_at->diffForHumans()]) }}</span>
-                    <a href="{{ route('builds.log.download', $build) }}" class="text-sm font-medium text-ternary hover:underline">
-                        {{ __('Download log') }}
-                    </a>
-                </div>
-            @endif
-        </div>
-
-        @if ($deploymentLog)
-            <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $deploymentLog->log }}</pre>
-        @elseif ($shouldPoll)
-            <div class="ui-card p-6 text-center">
-                <p class="font-medium text-primary">{{ __('Waiting for deployment output…') }}</p>
-                <p class="mt-1 text-sm text-secondary">{{ __('This view updates automatically while the deployment runs.') }}</p>
+    @php($deploymentLogNeedsAttention = $build->statusEnum()?->isActive() === true || $build->status === \App\Models\Build::STATUS_FAILED)
+    <details
+        id="deployment-log"
+        class="group mt-8 overflow-hidden"
+        @if ($deploymentLogNeedsAttention) open @endif
+    >
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Logs') }}</span>
+                <span class="mt-1 block text-2xl">{{ __('Deployment log') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    @if ($deploymentLog)
+                        {{ __('Updated :time · bounded output', ['time' => $deploymentLog->updated_at->diffForHumans()]) }}
+                    @elseif ($shouldPoll)
+                        {{ __('Waiting for deployment output…') }}
+                    @else
+                        {{ __('No remote deployment output was received.') }}
+                    @endif
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <section class="mt-4 border-t border-primary pt-4" aria-labelledby="deployment-log-title">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <h2 id="deployment-log-title" class="sr-only">{{ __('Deployment log') }}</h2>
+                @if ($deploymentLog)
+                    <div class="ml-auto">
+                        <a href="{{ route('builds.log.download', $build) }}" class="text-sm font-medium text-ternary hover:underline">
+                            {{ __('Download log') }}
+                        </a>
+                    </div>
+                @endif
             </div>
-        @else
-            <x-lists.empty
-                :title="__('No deployment log yet')"
-                :description="__('No remote deployment output was received.')"
-            />
-        @endif
-    </section>
+
+            @if ($deploymentLog)
+                <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $deploymentLog->log }}</pre>
+            @elseif ($shouldPoll)
+                <div class="ui-card p-6 text-center">
+                    <p class="font-medium text-primary">{{ __('Waiting for deployment output…') }}</p>
+                    <p class="mt-1 text-sm text-secondary">{{ __('This view updates automatically while the deployment runs.') }}</p>
+                </div>
+            @else
+                <x-lists.empty
+                    :title="__('No deployment log yet')"
+                    :description="__('No remote deployment output was received.')"
+                />
+            @endif
+        </section>
+    </details>
 </div>
