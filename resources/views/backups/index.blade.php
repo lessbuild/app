@@ -200,7 +200,7 @@
             @endif
         </div>
 
-        <div class="overflow-x-auto">
+        <div id="backup-history-table" class="hidden overflow-x-auto sm:block">
             <table class="min-w-full text-left text-sm">
                 <thead class="bg-secondary">
                     <tr class="border-y border-primary text-xs uppercase text-secondary">
@@ -235,7 +235,13 @@
                             <td class="p-3 text-secondary">{{ $backup->completed_at?->diffForHumans() ?? '—' }}</td>
                             <td class="min-w-56 p-3">
                                 @if ($verification)
-                                    @php($verificationTone = $verification->status === \App\Models\BackupRestoreVerification::STATUS_SUCCEEDED ? 'success' : ($verification->status === \App\Models\BackupRestoreVerification::STATUS_FAILED ? 'danger' : 'accent'))
+                                    @php
+                                        $verificationTone = match ($verification->status) {
+                                            \App\Models\BackupRestoreVerification::STATUS_SUCCEEDED => 'success',
+                                            \App\Models\BackupRestoreVerification::STATUS_FAILED => 'danger',
+                                            default => 'accent',
+                                        };
+                                    @endphp
                                     <x-ui.badge :tone="$verificationTone">{{ ucfirst($verification->status) }}</x-ui.badge>
                                     <span class="mt-2 block text-xs text-secondary">{{ ucfirst($verification->integrity_status) }} integrity · {{ ucfirst($verification->smoke_status) }} smoke · {{ ucfirst($verification->cleanup_status) }} cleanup</span>
                                     @if ($verification->failure_stage)
@@ -281,6 +287,27 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <div id="backup-history-mobile" class="space-y-3 p-4 sm:hidden">
+            @forelse ($backups as $backup)
+                @php
+                    $verification = $backup->verifications->sortByDesc('id')->first();
+                    $canVerify = $canManage && $backup->status === \App\Models\WebsiteBackup::STATUS_SUCCEEDED;
+                    $backupTone = match ($backup->status) {
+                        \App\Models\WebsiteBackup::STATUS_SUCCEEDED => 'success',
+                        \App\Models\WebsiteBackup::STATUS_FAILED => 'danger',
+                        default => 'accent',
+                    };
+                @endphp
+                @include('backups._mobile-backup-card', compact('backup', 'verification', 'canVerify', 'backupTone'))
+            @empty
+                <x-ui.empty-state
+                    :title="__('No backups have run yet.')"
+                    :description="__('Run a backup after configuring an offsite destination.')"
+                    icon="database"
+                />
+            @endforelse
         </div>
     </section>
 </x-layouts.app>

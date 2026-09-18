@@ -96,6 +96,30 @@ class BackupRecoveryEvidenceTest extends TestCase
             && $viewSummary->latestIndependentRecoveryVerificationAt === null);
     }
 
+    public function test_backup_history_keeps_the_desktop_table_and_adds_mobile_recovery_cards(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+        $destination = $this->destination($owner);
+        $backup = $website->backups()->create([
+            'backup_destination_id' => $destination->id,
+            'status' => WebsiteBackup::STATUS_SUCCEEDED,
+            'snapshot_id' => 'mobile-backup-snapshot',
+            'completed_at' => now()->subMinute(),
+        ]);
+
+        $content = $this->actingAs($owner)
+            ->get(route('backups.index'))
+            ->assertOk()
+            ->assertSee('id="backup-history-table"', false)
+            ->assertSee('id="backup-history-mobile"', false)
+            ->assertSee('id="backup-mobile-'.$backup->id.'"', false)
+            ->assertSee('Verify safely')
+            ->assertSee('Restore')
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details\s+id="backup-mobile-'.$backup->id.'"[^>]*\bopen\b[^>]*>/', $content);
+    }
+
     public function test_summary_excludes_foreign_workspace_backup_and_restore_evidence(): void
     {
         Carbon::setTestNow('2026-09-13 12:00:00');
