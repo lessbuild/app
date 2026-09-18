@@ -6,6 +6,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Integrations') }}"
         icon="cloud"
         :title="__('Providers')"
         :description="__('Manage infrastructure integrations and review their filtered connection state.')"

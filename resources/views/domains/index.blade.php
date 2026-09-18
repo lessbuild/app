@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Delivery targets') }}"
         icon="link"
         :title="__('Domains & TLS')"
         :description="__('Manage aliases, redirects, Cloudflare DNS, temporary domains, and certificate health.')"

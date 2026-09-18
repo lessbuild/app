@@ -6,6 +6,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Infrastructure') }}"
         icon="server"
         :title="__('Servers')"
         :description="__('Manage cloud capacity and review filtered provisioning state.')"

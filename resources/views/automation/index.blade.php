@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Release automation') }}"
         icon="terminal"
         :title="__('Automation')"
         :description="__('API access, deploy schedules, scaling and versioned workflow configuration.')"
@@ -72,11 +73,11 @@
             </a>
         </div>
 
-        <nav class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-ternary" aria-label="{{ __('Automation sections') }}">
-            <a href="#automation-tokens" class="hover:underline">{{ __('API tokens') }}</a>
-            <a href="#automation-quick-start" class="hover:underline">{{ __('Quick start') }}</a>
-            <a href="#automation-workflows" class="hover:underline">{{ __('Application workflows') }}</a>
-        </nav>
+        <x-ui.local-nav class="mt-5" :label="__('Automation sections')">
+            <a href="#automation-tokens" class="ui-local-nav__link">{{ __('API tokens') }}</a>
+            <a href="#automation-quick-start" class="ui-local-nav__link">{{ __('Quick start') }}</a>
+            <a href="#automation-workflows" class="ui-local-nav__link">{{ __('Application workflows') }}</a>
+        </x-ui.local-nav>
     </x-ui.insights>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">

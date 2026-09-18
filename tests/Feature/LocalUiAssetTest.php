@@ -51,6 +51,28 @@ class LocalUiAssetTest extends TestCase
             ->assertDontSee('ui-avatars.com', false);
     }
 
+    public function test_shared_resource_headers_and_local_navigation_have_accessible_structure(): void
+    {
+        $html = Blade::render(
+            <<<'BLADE'
+            <x-layouts.partials.heading eyebrow="Infrastructure" icon="server" title="Servers" description="Manage capacity.">
+                <x-slot:buttons><x-ui.button href="/servers/create" variant="primary">Add server</x-ui.button></x-slot:buttons>
+            </x-layouts.partials.heading>
+            <x-ui.local-nav label="Server sections">
+                <a class="ui-local-nav__link" href="#inventory">Inventory</a>
+            </x-ui.local-nav>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('data-ui-page-header', $html);
+        $this->assertStringContainsString('ui-page-header__eyebrow', $html);
+        $this->assertStringContainsString('Infrastructure', $html);
+        $this->assertStringContainsString('data-ui-page-header-actions', $html);
+        $this->assertStringContainsString('aria-label="Server sections"', $html);
+        $this->assertStringContainsString('ui-local-nav__scroll', $html);
+        $this->assertStringContainsString('href="#inventory"', $html);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

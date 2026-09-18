@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Audit trail') }}"
         icon="activity"
         :title="__('Activity')"
         :description="__('A chronological history of account security, infrastructure, deployments, recipes, and server commands.')"

@@ -6,6 +6,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Delivery targets') }}"
         icon="globe-alt"
         :title="__('Websites')"
         :description="__('Manage deployment targets and review filtered provisioning and health state.')"

@@ -1,5 +1,6 @@
 <x-layouts.app title="{{ __('Databases') }}">
     <x-layouts.partials.heading
+        eyebrow="{{ __('Data operations') }}"
         icon="database"
         :title="__('Database operations')"
         :description="__('Inspect managed databases, issue expiring credentials, and safely clone data into non-production environments.')"

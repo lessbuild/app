@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Workspace economics') }}"
         icon="chip"
         :title="__('Cost visibility')"
         :description="__('Provider-catalog estimates, measured utilization signals, and budget awareness. Your provider invoice remains authoritative.')"

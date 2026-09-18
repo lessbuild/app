@@ -6,6 +6,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Release operations') }}"
         icon="cloud-upload"
         :title="__('Deployment history')"
         :description="__('Review filtered deployment outcomes, activity, and retained release details.')"

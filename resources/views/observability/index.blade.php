@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Operations') }}"
         icon="chip"
         :title="__('Observability')"
         :description="__('Metrics, runtime logs, alert integrations, and public service health in one place.')"
@@ -50,14 +51,14 @@
             </a>
         </div>
 
-        <nav class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-ternary" aria-label="{{ __('Observability sections') }}">
-            <a href="#operational-incidents" class="hover:underline">{{ __('Incidents') }}</a>
-            <a href="#server-telemetry" class="hover:underline">{{ __('Telemetry') }}</a>
-            <a href="#correlated-signals" class="hover:underline">{{ __('Deployment signals') }}</a>
-            <a href="#alert-destinations" class="hover:underline">{{ __('Alert destinations') }}</a>
-            <a href="#status-pages" class="hover:underline">{{ __('Status pages') }}</a>
-            <a href="#status-incident-timeline" class="hover:underline">{{ __('Status updates') }}</a>
-        </nav>
+        <x-ui.local-nav class="mt-5" :label="__('Observability sections')">
+            <a href="#operational-incidents" class="ui-local-nav__link">{{ __('Incidents') }}</a>
+            <a href="#server-telemetry" class="ui-local-nav__link">{{ __('Telemetry') }}</a>
+            <a href="#correlated-signals" class="ui-local-nav__link">{{ __('Deployment signals') }}</a>
+            <a href="#alert-destinations" class="ui-local-nav__link">{{ __('Alert destinations') }}</a>
+            <a href="#status-pages" class="ui-local-nav__link">{{ __('Status pages') }}</a>
+            <a href="#status-incident-timeline" class="ui-local-nav__link">{{ __('Status updates') }}</a>
+        </x-ui.local-nav>
     </x-ui.insights>
 
     @include('observability._operational-incidents')

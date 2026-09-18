@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Recovery') }}"
         icon="database"
         :title="__('Managed backups')"
         :description="__('Encrypted, offsite restic snapshots of site databases, persistent storage, and environment configuration.')"

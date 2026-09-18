@@ -1,4 +1,7 @@
+@props(['eyebrow' => null])
+
 <x-ui.page-header
+    :eyebrow="$eyebrow"
     :title="$title ?? null"
     :description="$description ?? null"
     :icon="$icon ?? null"

@@ -1,10 +1,11 @@
 @props([
+    'eyebrow' => null,
     'title' => null,
     'description' => null,
     'icon' => null,
 ])
 
-<section {{ $attributes->merge(['class' => 'ui-page-header']) }}>
+<section {{ $attributes->merge(['class' => 'ui-page-header']) }} data-ui-page-header>
     <div class="ui-page-header__layout">
         <div class="ui-page-header__identity">
             @if ($icon)
@@ -13,6 +14,9 @@
                 </svg>
             @endif
             <div class="min-w-0">
+                @if ($eyebrow)
+                    <p class="ui-page-header__eyebrow">{{ $eyebrow }}</p>
+                @endif
                 @if ($title)
                     <h1 class="ui-page-header__title">{{ $title }}</h1>
                 @endif

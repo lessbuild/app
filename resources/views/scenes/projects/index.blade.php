@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading icon="view-grid" :title="__('Applications')" :description="__('Organize infrastructure into isolated production, staging, development, and preview environments.')">
+    <x-layouts.partials.heading eyebrow="{{ __('Application workspace') }}" icon="view-grid" :title="__('Applications')" :description="__('Organize infrastructure into isolated production, staging, development, and preview environments.')">
         <x-slot:buttons>
             <x-ui.button :href="route('builds.index')" variant="secondary">
                 {{ __('Deployment history') }}

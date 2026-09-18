@@ -6,6 +6,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Source control') }}"
         icon="code"
         :title="__('Repositories')"
         :description="__('Manage source targets and review their latest filtered deployment state.')"
