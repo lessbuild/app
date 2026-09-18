@@ -258,6 +258,43 @@ summary-first server information, metrics and diagnostics.
 
 | Phase 4: server operations summary and disclosure | Complete | 30 focused tests / 186 assertions, disclosure-state test, Pint, build, diff check and real mobile interaction passed; page shortened ~1,680px | `735160f` pushed to `origin/main` | Apply the same summary-first treatment to website runtime logs and health history |
 
+## Phase 5 — website health and runtime evidence disclosure
+
+### Responsibility problem
+
+The website detail page rendered the latest twenty health rows and runtime log
+controls immediately after the health summary. On mobile this made a normal
+website page approximately 3,531px tall before users reached attached
+repositories and setup context.
+
+### Boundaries and preserved behavior
+
+- Health metrics and the existing “View all health checks” and export actions
+  remain visible. The latest twenty-row table is behind a native disclosure.
+- Runtime log snapshots are grouped behind a summary that describes bounded
+  retention. Queued, refreshing or failed snapshots automatically open the
+  disclosure so operational work remains visible.
+- Runtime log tabs, refresh forms, retention updates, Livewire provisioning
+  output, health-check escaping and tenant-scoped routes are unchanged.
+- No controller, query, authorization rule, persisted value or API contract
+  changed.
+
+### Verification
+
+- `WebsiteHealthHistoryTest`, `WebsiteHealthInsightsTest` and
+  `ObservabilityTest` passed: 30 tests, 262 assertions; the new four-assertion
+  disclosure-state test passed separately.
+- Pint, Blade cache compilation, Vite build and `git diff --check` passed.
+- A real mobile browser check opened both health and runtime disclosures and
+  confirmed 3 health rows and 2 runtime panels remain available.
+- A real mobile runtime measurement recorded about 2,719px page height versus
+  the ~3,531px baseline, a reduction of about 812px.
+- Commit `a26a970` (`feat: streamline website runtime details`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, rebuilt,
+  cache-refreshed and confirmed healthy.
+
+| Phase 5: website health and runtime evidence disclosure | Complete | 30 focused tests / 262 assertions, disclosure-state test, Pint, build, diff check and real mobile interaction passed; page shortened ~812px | `a26a970` pushed to `origin/main` | Improve repository/build detail pages so release context and recovery actions precede long history and logs |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
