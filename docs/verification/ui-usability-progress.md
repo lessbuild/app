@@ -220,6 +220,44 @@ down the mobile page even though the controller had already computed it.
 
 | Phase 3: dashboard priority and attention context | Complete | Dashboard and UI feature suites, ordering assertion, Pint, build, diff check and mobile visual crawl passed; attention moved from ~4,469px to ~1,681px | `ebca982` pushed to `origin/main` | Improve long resource-detail pages with summary-first sections and purposeful disclosures |
 
+## Phase 4 — server operations summary and disclosure
+
+### Responsibility problem
+
+The server detail page placed log snapshots, log output and setup progress in a
+long lower grid even when an active server had no immediate operational work.
+This made the page approximately 5,002px tall on mobile and buried the
+summary-first server information, metrics and diagnostics.
+
+### Boundaries and preserved behavior
+
+- The existing Livewire server view now groups log snapshot overview, selected
+  log output and setup progress inside a native `Logs and setup` disclosure.
+- Active servers keep the disclosure closed by default; provisioning servers
+  and failed selected log snapshots open it automatically so recovery context
+  is not hidden.
+- The server information card, metrics, diagnostics action, attached websites,
+  log refresh controls, Livewire polling, fixed log allowlist, bounded output,
+  stale-attempt behavior and authorization remain unchanged.
+- No controller, query, job, provider contract, persisted value or response
+  route changed.
+
+### Verification
+
+- Server log snapshot, diagnostic and provisioning-log suites passed: 30 tests,
+  186 assertions; the new disclosure-state test passed separately with four
+  assertions.
+- Pint, Blade cache compilation, Vite build and `git diff --check` passed.
+- A real mobile browser check confirmed the active server starts closed and
+  clicking its summary opens the log overview, log output and setup headings.
+- A real mobile runtime measurement recorded about 3,322px page height versus
+  the ~5,002px baseline, a reduction of about 1,680px.
+- Commit `735160f` (`feat: streamline server operations details`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, rebuilt,
+  cache-refreshed and confirmed healthy.
+
+| Phase 4: server operations summary and disclosure | Complete | 30 focused tests / 186 assertions, disclosure-state test, Pint, build, diff check and real mobile interaction passed; page shortened ~1,680px | `735160f` pushed to `origin/main` | Apply the same summary-first treatment to website runtime logs and health history |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
