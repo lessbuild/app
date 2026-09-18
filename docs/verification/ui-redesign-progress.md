@@ -106,6 +106,35 @@ Current BuildPusher evidence from the development fixture:
 - Next task: polish the deployment, infrastructure and recovery page family,
   starting with long list pages and their mobile filter/action hierarchy.
 
+### Slice 3 — deployment and infrastructure inventory surfaces
+
+- User problem: long deployment and infrastructure pages needed clearer local
+  orientation and a more consistent visual response for inventory rows, while
+  existing filter disclosure behavior was already covered by compatibility
+  tests.
+- Entry points: Deployment history, Servers, Websites and Repositories index
+  views, plus the shared heading partial and UI component styles.
+- Boundary: added a compact deployment local-nav linking filters, overview and
+  history; added a shared inventory-list affordance for hover/focus context;
+  and corrected the shared heading partial to declare its existing title,
+  description and icon inputs alongside the new optional eyebrow.
+- SOLID/Laravel rationale: presentation repetition is handled in shared Blade
+  and CSS boundaries; inventory data, filtering, authorization and route
+  actions remain owned by their existing controllers, requests and queries.
+- Preserved contracts: existing filter semantics and server-rendered open
+  state are unchanged. The attempted responsive-details conversion for filter
+  panels was withdrawn after focused tests showed an active-filter rendering
+  regression; it remains a separately characterized follow-up rather than an
+  unverified behavior change.
+- Verification: 49 focused tests passed with 661 assertions; Pint passed;
+  Vite build passed; the light 390px asset-layout fixture passed; `git
+  diff --check` passed.
+- Commit and push: `788d7fe Polish deployment inventory surfaces`, pushed to
+  `origin/main`.
+- Next task: improve operational, automation, account and public surfaces,
+  beginning with the shared insight/disclosure hierarchy on Observability,
+  Automation and Commands.
+
 ## Remaining sequence
 
 1. Dashboard hierarchy and first-value experience.
