@@ -1,10 +1,15 @@
-@props(['eyebrow' => null])
+@props([
+    'eyebrow' => null,
+    'title' => null,
+    'description' => null,
+    'icon' => null,
+])
 
 <x-ui.page-header
     :eyebrow="$eyebrow"
-    :title="$title ?? null"
-    :description="$description ?? null"
-    :icon="$icon ?? null"
+    :title="$title"
+    :description="$description"
+    :icon="$icon"
 >
     @isset($buttons)
         <x-slot:actions>{{ $buttons }}</x-slot:actions>

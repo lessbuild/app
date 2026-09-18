@@ -106,7 +106,7 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$repositories->isEmpty())
-        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Repository inventory') }}">
+        <div class="ui-card ui-inventory-list mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Repository inventory') }}">
             @foreach($repositories as $repository)
                 <article data-repository-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">

@@ -110,6 +110,16 @@
         color: var(--ui-text);
     }
 
+    .ui-inventory-list > article,
+    .ui-inventory-list > a {
+        transition: background-color 150ms ease;
+    }
+
+    .ui-inventory-list > article:hover,
+    .ui-inventory-list > a:hover {
+        background-color: var(--ui-surface-muted);
+    }
+
     .ui-page-header__actions {
         display: flex;
         flex-wrap: wrap;
@@ -407,7 +417,9 @@
     @media (prefers-reduced-motion: reduce) {
         .ui-card--interactive,
         .ui-breadcrumb__link,
-        .ui-local-nav__link {
+        .ui-local-nav__link,
+        .ui-inventory-list > article,
+        .ui-inventory-list > a {
             transition: none;
         }
     }

@@ -13,6 +13,12 @@
     >
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav :label="__('Deployment sections')">
+        <a href="#deployment-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
+        <a href="#builds-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#deployment-history" class="ui-local-nav__link">{{ __('History') }}</a>
+    </x-ui.local-nav>
+
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
 
     <x-ui.filter-panel
@@ -198,7 +204,7 @@
      ! ------------------------------------------------------------
     !-->
     @if(!$builds->isEmpty())
-        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Deployment history') }}">
+        <div id="deployment-history" class="ui-card ui-inventory-list mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Deployment history') }}">
             @foreach($builds as $build)
                 <a data-build-card href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}" class="ui-card--interactive block p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
