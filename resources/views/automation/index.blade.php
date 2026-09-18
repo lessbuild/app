@@ -27,7 +27,52 @@
         $tokenPanelOpen = session('plainTextToken') || collect($automationErrorKeys)->contains(
             static fn (string $key): bool => in_array($key, ['name', 'expires_in_days'], true) || str_starts_with($key, 'abilities.'),
         );
+        $environmentCount = $projects->sum(fn ($project) => $project->environments->count());
+        $deploymentScheduleCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->deploymentSchedules->count()));
+        $scalingScheduleCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->scalingSchedules->count()));
+        $scheduledTaskCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->scheduledTasks->count()));
+        $scheduledOperationCount = $deploymentScheduleCount + $scalingScheduleCount + $scheduledTaskCount;
     @endphp
+
+    <section id="automation-overview" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="automation-overview-title">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Automation overview') }}</p>
+                <h2 id="automation-overview-title" class="mt-1 text-xl font-black text-primary">{{ __('Automate routine release work') }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-secondary">{{ __('Start with API access or open an application workflow to manage deploys, capacity, runtime state and scheduled tasks.') }}</p>
+            </div>
+            <x-ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-ui.badge>
+        </div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a href="#automation-tokens" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('API access') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $tokens->count() }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count token|:count tokens', $tokens->count(), ['count' => $tokens->count()]) }}</p>
+            </a>
+            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Applications') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $projects->count() }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count workflow|:count workflows', $projects->count(), ['count' => $projects->count()]) }}</p>
+            </a>
+            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Environments') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $environmentCount }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ __('Available for runtime controls') }}</p>
+            </a>
+            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Scheduled operations') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $scheduledOperationCount }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ __('Deploys, scaling and tasks') }}</p>
+            </a>
+        </div>
+
+        <nav class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-ternary" aria-label="{{ __('Automation sections') }}">
+            <a href="#automation-tokens" class="hover:underline">{{ __('API tokens') }}</a>
+            <a href="#automation-quick-start" class="hover:underline">{{ __('Quick start') }}</a>
+            <a href="#automation-workflows" class="hover:underline">{{ __('Application workflows') }}</a>
+        </nav>
+    </section>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
         <details id="automation-tokens" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}">
@@ -125,32 +170,46 @@
             </div>
         </details>
 
-        <section class="ui-card p-6">
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Quick start') }}</p>
-            <h2 class="mt-2 text-xl font-black text-primary">{{ __('CLI-friendly API') }}</h2>
-            <p class="mt-2 text-sm text-secondary">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
-            <pre class="mt-5 overflow-x-auto rounded-xl bg-gray-950 p-4 text-xs leading-6 text-gray-100"><code>export BUILDPUSHER_TOKEN="bp_…"
+        <details id="automation-quick-start" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false">
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
+                <span>
+                    <span class="block font-black text-primary">{{ __('CLI-friendly API') }}</span>
+                    <span class="mt-1 block text-sm font-normal text-secondary">{{ __('A copy-ready starting point for curl and CI.') }}</span>
+                </span>
+                <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+
+            <div class="ui-responsive-details__content p-6 lg:block">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Quick start') }}</p>
+                <h2 class="mt-2 text-xl font-black text-primary">{{ __('CLI-friendly API') }}</h2>
+                <p class="mt-2 text-sm text-secondary">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
+                <pre class="mt-5 overflow-x-auto rounded-xl bg-gray-950 p-4 text-xs leading-6 text-gray-100"><code>export BUILDPUSHER_TOKEN="bp_…"
 curl -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   {{ url('/api/v1/projects') }}
 
 curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   {{ url('/api/v1/environments/1/deploy') }}</code></pre>
-        </section>
+            </div>
+        </details>
     </div>
 
-    <section class="mt-8">
+    <section id="automation-workflows" class="mt-8 scroll-mt-24" aria-labelledby="automation-workflows-title">
         <div class="mb-4">
-            <h2 class="text-2xl font-black text-primary">{{ __('Application workflows') }}</h2>
+            <h2 id="automation-workflows-title" class="text-2xl font-black text-primary">{{ __('Application workflows') }}</h2>
             <p class="mt-1 text-secondary">{{ __('Open an application to configure it. This keeps a large workspace compact.') }}</p>
         </div>
 
         <div class="space-y-4">
             @forelse ($projects as $project)
-                <details class="ui-card group overflow-hidden">
+                <details id="automation-project-{{ $project->id }}" class="ui-card group overflow-hidden">
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
                         <div>
                             <p class="font-black text-primary">{{ $project->name }}</p>
-                            <p class="mt-1 text-sm text-secondary">{{ $project->environments->count() }} {{ __('environments') }}</p>
+                            <p class="mt-1 text-sm text-secondary">
+                                {{ trans_choice(':count environment|:count environments', $project->environments->count(), ['count' => $project->environments->count()]) }}
+                                · {{ $project->environments->sum(fn ($environment) => $environment->deploymentSchedules->count()) }} {{ __('deploy schedules') }}
+                                · {{ $project->environments->sum(fn ($environment) => $environment->scheduledTasks->count()) }} {{ __('tasks') }}
+                            </p>
                         </div>
                         <span class="text-2xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span>
                     </summary>

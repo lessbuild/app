@@ -521,12 +521,16 @@ class AutomationTest extends TestCase
         $content = $this->actingAs($user)
             ->get(route('automation.index'))
             ->assertOk()
+            ->assertSee('Automate routine release work')
             ->assertSee('Application workflows')
             ->assertSee('CLI-friendly API')
             ->assertSee('id="automation-tokens"', false)
+            ->assertSee('id="automation-quick-start"', false)
+            ->assertSee('id="automation-workflows"', false)
             ->getContent();
 
         $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
+        $this->assertMatchesRegularExpression('/<details\s+id="automation-quick-start"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
     }
 
     public function test_owner_can_create_expiring_token_and_rotate_it(): void

@@ -33,7 +33,8 @@ class AssetLayoutFixtureTest extends TestCase
         $this->actingAs($owner);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
-        File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()->getContent());
+        File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
+            ->assertSee('Automate routine release work')->getContent());
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());

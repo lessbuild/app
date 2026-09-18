@@ -198,7 +198,7 @@ for (const colorScheme of ['light', 'dark']) {
                 if (screen === 'organization' || screen === 'automation') {
                     const disclosureIds = screen === 'organization'
                         ? ['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete']
-                        : ['automation-tokens'];
+                        : ['automation-tokens', 'automation-quick-start'];
 
                     for (const id of disclosureIds) {
                         const disclosure = page.locator(`#${id}`);
@@ -211,6 +211,10 @@ for (const colorScheme of ['light', 'dark']) {
                             await disclosure.locator('summary').click();
                             await expect(content).toBeVisible();
                         }
+                    }
+                    if (screen === 'automation') {
+                        await expect(page.locator('#automation-overview')).toBeVisible();
+                        await expect(page.locator('#automation-workflows')).toBeVisible();
                     }
                 }
                 if (width === 390) await page.screenshot({ path: test.info().outputPath(`${screen}.png`), fullPage: true });
