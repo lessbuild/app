@@ -1387,6 +1387,44 @@ or endpoint.
 
 | Phase 31: public documentation navigation | Complete with browser follow-up | 18 focused tests / 389 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `b66af35` pushed to `origin/main` | Improve authentication page metadata and public status accessibility/focus hierarchy |
 
+## Phase 32 — public status and authentication polish
+
+### Responsibility problem
+
+Authentication pages inherited the generic application browser title, and the
+shared auth layout wrapped optional provider controls inside a paragraph. The
+public status pages had a main landmark but no keyboard skip target, while an
+invalid subscription email lost useful input/error association after the
+redirect.
+
+### Boundaries and preserved behavior
+
+- Authentication routes, registration gating, social-provider availability,
+  validation, redirects and security behavior remain unchanged. The shared
+  layout now uses each page's title and a valid block description wrapper; the
+  login copy typo is corrected without changing its workflow.
+- Platform and workspace status data, cache headers, incident ordering,
+  subscription confirmation and public diagnostic redaction remain unchanged.
+  Both public status views now expose a skip link; the subscription email
+  restores non-sensitive old input and associates invalid state with its error.
+
+### Verification
+
+- Targeted authentication/status coverage passed: 3 tests / 49 assertions,
+  including page-specific browser titles, description markup, public status
+  redaction, skip navigation and incident subscription behavior. Pint, Blade
+  view compilation and `git diff --check` passed.
+- Commit `7c43740` (`Polish public and authentication surfaces`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change keyboard or mobile result is claimed; landmark, title, form
+  association and preserved status behavior are covered by feature tests and
+  compiled markup.
+
+| Phase 32: public status and authentication polish | Complete with browser follow-up | 3 targeted tests / 49 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `7c43740` pushed to `origin/main` | Perform final cross-application hierarchy audit and release verification |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
