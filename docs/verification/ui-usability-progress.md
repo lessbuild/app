@@ -630,6 +630,51 @@ members or change one setting occasionally.
 
 | Phase 13: workspace administration hierarchy | Complete | 37 focused tests / 232 assertions, Pint, view compilation, push and real mobile height measurement passed; page height reduced ~1,931px; live click-through deferred by host disk exhaustion | `e7b749f` pushed to `origin/main` | Inspect backups and automation for the next high-value workflow slice |
 
+## Phase 14 — mobile backup recovery workflow
+
+### Responsibility problem
+
+Backup history used a six-column table with verification and restore forms in
+wide cells. At the 390px review width the page measured about 2,105px and the
+recovery controls required horizontal scrolling, making the most consequential
+actions difficult to discover and compare on a phone.
+
+### Boundaries and preserved behavior
+
+- `BackupController`, recovery evidence queries, policies, Form Requests,
+  queued restore/verification actions and temporary-object connection probes
+  remain unchanged. The slice changes only responsive presentation.
+- Desktop users retain the existing table and its column semantics. Mobile
+  users receive one native disclosure card per backup with website, status,
+  snapshot, verification evidence, safe-verification and restore controls.
+- Confirmation fields, CSRF protection, restore confirmation prompts,
+  temporary-target wording, failed-verification retry behavior and credential
+  redaction remain unchanged. Cards reopen when the existing confirmation
+  validation bag contains an error.
+- The existing backup table had a nested `@php` expression that could compile
+  to invalid PHP when a verification record was rendered. It was rewritten as
+  an equivalent explicit `match` block while adding the mobile partial.
+
+### Verification
+
+- Backup destination setup, recovery evidence and restore-verification suites
+  passed: 18 tests / 136 assertions. This includes Spaces endpoint guidance,
+  encrypted credential handling, temporary PUT/GET/DELETE verification,
+  sanitized provider failures, foreign-workspace isolation, retry behavior and
+  the new mobile-card/table rendering contract. Pint, Blade view compilation
+  and `git diff --check` passed.
+- Commit `678c5fc` (`feat: add mobile backup recovery cards`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was updated, view-cached and both
+  service units remained active.
+- The pre-change 390px baseline was about 2,105px. A post-change browser
+  measurement was attempted but the shared isolated host was at 100% root
+  disk usage and Chromium crashed before evaluation. No post-change height or
+  click result is claimed; the responsive branches and error state are covered
+  by Blade compilation and feature tests. Re-run the browser measurement after
+  reclaiming isolated-host storage.
+
+| Phase 14: mobile backup recovery workflow | Complete with browser follow-up | 18 focused tests / 136 assertions, Pint, view compilation, push and responsive rendering contract passed; post-change browser measurement deferred by host disk exhaustion | `678c5fc` pushed to `origin/main` | Inspect automation/API density and separate token management from per-application workflows |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
