@@ -5,7 +5,16 @@
         :description="__('A chronological history of account security, infrastructure, deployments, recipes, and server commands.')"
     />
 
-    <x-ui.card class="mb-6 mt-8 p-4">
+    @php
+        $activityFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="activity-filters"
+        class="mb-6 mt-8"
+        :open="$activityFilterCount > 0"
+        :summary="$activityFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $activityFilterCount, ['count' => $activityFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('activity.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
@@ -54,17 +63,23 @@
             @endif
         </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-        <x-ui.stat :label="__('Matching events')" :value="$metrics['total']" :description="__('Audit events in this filtered view.')" />
-        <x-ui.stat :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
-        <x-ui.stat :label="__('Infrastructure')" :value="$metrics['infrastructure']" :description="__('Website, server, and provider events.')" />
-        <x-ui.stat :label="__('Server commands')" :value="$metrics['commands']" :description="__('Matching command lifecycle events.')" />
-        <x-ui.stat :label="__('Recipes')" :value="$metrics['recipes']" :description="__('Matching recipe and gallery events.')" />
-        <x-ui.stat :label="__('Account security')" :value="$metrics['account']" :description="__('Matching account security events.')" />
-        <x-ui.stat :label="__('Latest matching event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
-    </dl>
+    <details id="activity-insights" class="ui-card group mb-6 overflow-hidden" @if ($metrics['total'] === 0 && $activityFilterCount > 0) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
+            <x-ui.stat :label="__('Matching events')" :value="$metrics['total']" :description="__('Audit events in this filtered view.')" />
+            <x-ui.stat :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
+            <x-ui.stat :label="__('Infrastructure')" :value="$metrics['infrastructure']" :description="__('Website, server, and provider events.')" />
+            <x-ui.stat :label="__('Server commands')" :value="$metrics['commands']" :description="__('Matching command lifecycle events.')" />
+            <x-ui.stat :label="__('Recipes')" :value="$metrics['recipes']" :description="__('Matching recipe and gallery events.')" />
+            <x-ui.stat :label="__('Account security')" :value="$metrics['account']" :description="__('Matching account security events.')" />
+            <x-ui.stat :label="__('Latest matching event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
+        </dl>
+    </details>
 
     <x-activity-feed
         :events="$events"

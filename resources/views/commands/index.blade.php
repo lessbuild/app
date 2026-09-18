@@ -5,7 +5,16 @@
         :description="__('Review command activity across every server without exposing command text or retained output.')"
     />
 
-    <x-ui.card class="mt-8 p-4" aria-labelledby="command-filters-heading">
+    @php
+        $commandFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="command-filters"
+        class="mt-8"
+        :open="$commandFilterCount > 0"
+        :summary="$commandFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $commandFilterCount, ['count' => $commandFilterCount]) : null"
+    >
         <div class="mb-4">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Find an operation') }}</p>
             <h2 id="command-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter command activity') }}</h2>
@@ -76,20 +85,26 @@
             </p>
         @endif
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        @foreach ([
-            ['label' => __('Matching commands'), 'value' => $metrics['total']],
-            ['label' => __('Active'), 'value' => $metrics['active']],
-            ['label' => __('Succeeded'), 'value' => $metrics['succeeded']],
-            ['label' => __('Failed'), 'value' => $metrics['failed']],
-            ['label' => __('Canceled'), 'value' => $metrics['canceled']],
-        ] as $metric)
-            <x-ui.stat :label="$metric['label']" :value="$metric['value']" />
-        @endforeach
-        <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
-    </dl>
+    <details id="command-insights" class="ui-card group mt-6 overflow-hidden" @if ($metrics['active'] > 0) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            @foreach ([
+                ['label' => __('Matching commands'), 'value' => $metrics['total']],
+                ['label' => __('Active'), 'value' => $metrics['active']],
+                ['label' => __('Succeeded'), 'value' => $metrics['succeeded']],
+                ['label' => __('Failed'), 'value' => $metrics['failed']],
+                ['label' => __('Canceled'), 'value' => $metrics['canceled']],
+            ] as $metric)
+                <x-ui.stat :label="$metric['label']" :value="$metric['value']" />
+            @endforeach
+            <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
+        </dl>
+    </details>
 
     <x-ui.card class="mt-6 overflow-hidden">
         <div class="overflow-x-auto">

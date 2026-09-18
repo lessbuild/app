@@ -73,6 +73,28 @@ class ActivityInsightsTest extends TestCase
                 && $metrics['latest_at']->timestamp === $matchingAt->timestamp);
     }
 
+    public function test_activity_prioritizes_events_over_filters_and_metrics(): void
+    {
+        $owner = User::factory()->create();
+        $this->event($owner, 'deployment', 'Visible activity event', now());
+
+        $content = $this->actingAs($owner)
+            ->get(route('activity.index'))
+            ->assertSuccessful()
+            ->assertSee('Visible activity event')
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="activity-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="activity-insights"[^>]*\bopen\b[^>]*>/', $content);
+
+        $filteredContent = $this->actingAs($owner)
+            ->get(route('activity.index', ['category' => 'deployment']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="activity-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+    }
+
     public function test_empty_filtered_activity_has_explicit_zero_and_unknown_metrics(): void
     {
         $owner = User::factory()->create();

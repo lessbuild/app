@@ -74,6 +74,32 @@ class CommandCenterTest extends TestCase
         $this->assertStringNotContainsString('foreign-command-secret', $export);
     }
 
+    public function test_command_center_prioritizes_history_and_reopens_active_context(): void
+    {
+        $owner = User::factory()->create();
+        $server = $this->server($owner, 'History server');
+        $this->execution($owner, $server, ServerCommandExecution::STATUS_SUCCEEDED, 'completed-secret');
+
+        $content = $this->actingAs($owner)
+            ->get(route('commands.index'))
+            ->assertSuccessful()
+            ->assertSee('History server')
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="command-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="command-insights"[^>]*\bopen\b[^>]*>/', $content);
+
+        $running = $this->execution($owner, $server, ServerCommandExecution::STATUS_RUNNING, 'running-secret');
+        $activeContent = $this->actingAs($owner)
+            ->get(route('commands.index', ['active' => 1]))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="command-filters"[^>]*\bopen\b[^>]*>/', $activeContent);
+        $this->assertMatchesRegularExpression('/<details[^>]*id="command-insights"[^>]*\bopen\b[^>]*>/', $activeContent);
+        $this->assertStringContainsString('#'.$running->id, $activeContent);
+    }
+
     public function test_filters_are_combined_normalized_and_preserved_in_pagination(): void
     {
         $owner = User::factory()->create();
