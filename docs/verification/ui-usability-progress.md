@@ -1019,6 +1019,50 @@ inventory and made size, connection and schema information harder to scan.
 
 | Phase 22: database management workflow hierarchy | Complete with browser follow-up | 14 focused tests / 76 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `b942715` pushed to `origin/main` | Inspect domains and load-balancer inventories for side-by-side management forms and error-state discoverability |
 
+## Phase 23 — domain management hierarchy
+
+### Responsibility problem
+
+The Domains & TLS page kept alias/redirect creation and temporary-domain
+issuance as two full-height cards beside every website. On a phone, those
+forms preceded the domain inventory's secondary actions and made the current
+DNS/TLS state harder to scan. Validation failures also returned to a page
+where the relevant controls were not visibly grouped or reopened.
+
+### Boundaries and preserved behavior
+
+- `DomainController`, its Form Requests, website update policy, domain actions,
+  Cloudflare adapters, queue dispatch and sanitized failure behavior remain
+  unchanged. This slice is a presentation and feedback improvement over the
+  existing request boundaries.
+- The website/domain inventory remains visible first. Add-domain and
+  temporary-domain forms now share the stable `domain-management` disclosure;
+  the compact summary is mobile-only while the form body remains visible on
+  large screens.
+- Validation, DNS and operation errors reopen the disclosure and are rendered
+  near the affected controls. Non-sensitive old input restores hostname,
+  redirect and provider selections after validation without exposing tokens.
+- Routes, HTTP methods, authorization ordering, provider scoping, temporary
+  domain configuration checks, TLS/DNS status rendering and queued proxy
+  synchronization are unchanged.
+
+### Verification
+
+- `DomainManagementTest` passed: 8 tests / 49 assertions, including alias
+  creation, temporary-domain configuration, viewer denial before validation,
+  sanitized DNS failures, primary-domain safeguards, queued deletion, routing,
+  and collapsed/reopened management state. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `ee39d5a` (`Improve domain management hierarchy`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; disclosure state and rendered
+  validation feedback are covered by feature tests and compiled markup.
+
+| Phase 23: domain management hierarchy | Complete with browser follow-up | 8 focused tests / 49 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `ee39d5a` pushed to `origin/main` | Inspect load-balancer create/node workflows for dense controls and first-use/error-state hierarchy |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
