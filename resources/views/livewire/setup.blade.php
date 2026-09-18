@@ -3,12 +3,11 @@
     $provisioningFailed = $provisioningStatus === 'failed';
     $provisioningCanceled = $provisioningStatus === 'canceled';
     $provisioningFinished = in_array($provisioningStatus, ['active', 'failed', 'canceled'], true);
-    $showHeading = $showHeading ?? true;
 @endphp
 
 <div @if (! $provisioningFinished && ($poll ?? true)) wire:poll.5s @endif>
-    <div @class(['items-start', 'mb-6' => $showHeading])>
-        @if ($showHeading)
+    <div>
+        <div class="items-start mb-6">
             <div class="mt-4 flex items-center justify-between">
                 <h2 class="text-2xl font-bold text-primary uppercase underline">
                     {{ $heading ?? __('Setup Information') }}
@@ -23,7 +22,6 @@
                     ])>{{ str($provisioningStatus)->replace('_', ' ') }}</span>
                 @endif
             </div>
-        @endif
 
             @if ($provisioningFailed)
                 <x-ui.alert tone="danger" class="mt-4" role="alert">

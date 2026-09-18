@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\ServerTroubleshootingTransport;
 use App\Http\Livewire\BuildDeploymentStatus;
-use App\Http\Livewire\RepositorySetup;
+use App\Http\Livewire\RepositoryDeploymentTimeline;
 use App\Http\Livewire\ServerCommand;
 use App\Http\Livewire\ServerSetup;
 use App\Http\Livewire\ServerShow;
@@ -46,7 +46,8 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
-        Livewire::component('repository-setup', RepositorySetup::class);
+        Livewire::component('repository-deployment-timeline', RepositoryDeploymentTimeline::class);
+        Livewire::component('repository-setup', RepositoryDeploymentTimeline::class);
         Livewire::component('server-command', ServerCommand::class);
         Livewire::component('server-setup', ServerSetup::class);
         Livewire::component('server-show', ServerShow::class);

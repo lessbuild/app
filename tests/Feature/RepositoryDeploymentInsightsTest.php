@@ -103,7 +103,10 @@ class RepositoryDeploymentInsightsTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Latest deployment')
             ->assertSee('Build #'.$latest->id)
-            ->assertSee('View latest deployment');
+            ->assertSee('View latest deployment')
+            ->assertSee('Deployment timeline')
+            ->assertSee('Prepare deployment')
+            ->assertDontSee('Check dependencies and runtime');
         $this->assertDoesNotMatchRegularExpression(
             '/<details(?=[^>]*id="repository-setup")(?=[^>]*open)[^>]*>/',
             $completedContent,

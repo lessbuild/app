@@ -47,7 +47,6 @@ class BuildDeploymentStatus extends Component
             'nextBuild' => $this->build->nextInRepository(),
             'shouldPoll' => $this->build->statusEnum()?->isActive() === true
                 || $this->build->deploymentObservation?->statusEnum()?->isActive() === true,
-            'processes' => $plan->scripts(),
             'failureGuidance' => $this->build->status === Build::STATUS_FAILED
                 ? $guidance->for($this->build, $plan)
                 : null,

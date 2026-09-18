@@ -166,11 +166,11 @@ class RepositoryDeploymentTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Deployment timeline')
             ->assertDontSee('Execution checkpoints')
-            ->assertSee('Check dependencies and runtime')
-            ->assertSee('Install Repository Dependencies')
-            ->assertSee('Run custom build commands')
+            ->assertSee('Prepare deployment')
+            ->assertSee('Build application')
+            ->assertSee('Verify deployment health')
             ->assertSee('Inspect deployment log')
-            ->assertSee('Not completed');
+            ->assertDontSee('Not completed');
     }
 
     public function test_failed_build_offers_last_known_good_release_and_success_shows_health_actions(): void
@@ -236,7 +236,7 @@ class RepositoryDeploymentTest extends TestCase
         $this->assertNotNull($build->finished_at);
     }
 
-    public function test_repository_progress_lists_every_stage_and_stops_polling_when_finished(): void
+    public function test_repository_deployment_timeline_renders_milestones_without_checklist_or_polling(): void
     {
         [$user, $repository] = $this->repository();
         $repository->update(['setup_stage' => app(RepositoryDeploymentPlan::class)->finalStage()]);
@@ -247,10 +247,12 @@ class RepositoryDeploymentTest extends TestCase
 
         $this->actingAs($user)->get(route('repositories.show', $repository))
             ->assertSuccessful()
-            ->assertSee('Symlink files')
-            ->assertSee('Run artisan commands')
+            ->assertSee('Deployment timeline')
+            ->assertSee('Prepare deployment')
+            ->assertSee('Build application')
             ->assertSee('Verify deployment health')
-            ->assertSee('Purge Old Releases')
+            ->assertDontSee('Symlink files')
+            ->assertDontSee('Run artisan commands')
             ->assertDontSee('wire:poll.5s', false);
     }
 

@@ -107,6 +107,7 @@ class DeploymentTimelineTest extends TestCase
             ->assertSee('Deployment evidence')
             ->assertSee('Deployment timeline')
             ->assertDontSee('Execution checkpoints')
+            ->assertDontSee('Check dependencies and runtime')
             ->assertSee('Prepare deployment')
             ->assertSee('Build application')
             ->assertSee('Verify deployment health')

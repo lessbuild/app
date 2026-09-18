@@ -154,17 +154,8 @@
     </details>
 
     @php
-        $progressModel = clone $build;
-        $progressModel->setAttribute('provisioning_status', match ($build->status) {
-            \App\Models\Build::STATUS_SUCCEEDED => 'active',
-            \App\Models\Build::STATUS_FAILED => 'failed',
-            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'canceled',
-            default => $build->status,
-        });
-        $progressModel->setAttribute('provisioning_error', $build->failure_message);
         $deploymentTimelineNeedsAttention = $build->statusEnum()?->isActive() === true
             || $build->status === \App\Models\Build::STATUS_FAILED;
-        $completedDeploymentSteps = min(max((int) $build->setup_stage, 0), count($processes));
         $deploymentStatusLabel = str($build->status)->replace('_', ' ')->headline();
     @endphp
     <details
@@ -180,41 +171,13 @@
                 <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</span>
                 <span id="deployment-timeline-title" class="mt-1 block text-lg font-black text-primary">{{ __('Deployment timeline') }}</span>
                 <span class="mt-1 block text-sm font-normal text-secondary">
-                    {{ __(':completed of :total checkpoints recorded · :status', ['completed' => $completedDeploymentSteps, 'total' => count($processes), 'status' => $deploymentStatusLabel]) }}
+                    {{ __(':count milestones · :status', ['count' => count($deploymentTimeline), 'status' => $deploymentStatusLabel]) }}
                 </span>
             </span>
             <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
         <div class="ui-responsive-details__content border-t border-primary p-5">
-        <ol class="space-y-4">
-            @foreach ($deploymentTimeline as $entry)
-                <li class="relative pl-9">
-                    <span @class([
-                        'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black',
-                        'bg-green-100 text-green-700' => $entry->status === 'completed',
-                        'bg-blue-100 text-blue-700' => $entry->status === 'active',
-                        'bg-red-100 text-red-700' => $entry->status === 'failed',
-                        'bg-amber-100 text-amber-800' => $entry->status === 'canceled',
-                        'bg-secondary text-secondary' => $entry->status === 'pending',
-                    ]) aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
-                    <div class="ui-card ui-card--muted p-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h3 class="font-semibold text-primary">{{ __($entry->title) }}</h3>
-                            <span class="text-xs font-bold uppercase text-secondary">{{ str($entry->status)->headline() }}</span>
-                        </div>
-                        <p class="mt-1 text-sm text-secondary">{{ __($entry->description) }}</p>
-                        @if ($entry->occurredAt)
-                            <time datetime="{{ $entry->occurredAt->toIso8601String() }}" class="mt-2 block text-xs text-secondary">{{ $entry->occurredAt->format('Y-m-d H:i:s T') }}</time>
-                        @else
-                            <span class="mt-2 block text-xs text-secondary">{{ __('No milestone timestamp is recorded.') }}</span>
-                        @endif
-                    </div>
-                </li>
-            @endforeach
-        </ol>
-        <div class="mt-6 border-t border-primary pt-5">
-            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'showHeading' => false])
-        </div>
+        <x-deployment-timeline :entries="$deploymentTimeline" />
         </div>
     </details>
 

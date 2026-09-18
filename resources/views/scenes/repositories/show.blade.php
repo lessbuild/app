@@ -536,7 +536,7 @@
             <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
         <div class="ui-responsive-details__content border-t border-primary p-5">
-            <livewire:repository-setup :model="$repository"></livewire:repository-setup>
+            <livewire:repository-deployment-timeline :model="$repository"></livewire:repository-deployment-timeline>
         </div>
     </details>
 
