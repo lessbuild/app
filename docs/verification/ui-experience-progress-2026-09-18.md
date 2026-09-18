@@ -288,12 +288,65 @@ changing any data source.
 
 Implementation commit `8be1cf2` was pushed to `origin/main`.
 
+## Slice 6 — deployment detail hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+Deployment pages already exposed status, failure guidance, identity, approval,
+timeline, execution progress and logs, but the full identity/approval block
+was expanded in the mobile flow before the user reached the more actionable
+timeline. That made incident investigation require unnecessary scrolling while
+still leaving the metadata visually prominent on desktop.
+
+### Boundaries and principle
+
+The Livewire deployment-status view owns responsive presentation of deployment
+evidence. The component, build policy, timeline service, log loading,
+authorization and operation routes remain unchanged. This applies single
+responsibility at the UI boundary: metadata visibility is separated from
+deployment state and operation semantics, with the existing responsive-details
+mechanism providing the desktop/mobile behavior.
+
+### Implementation
+
+- Converted the deployment evidence block into a responsive disclosure with
+  the existing `deployment-evidence` identity preserved.
+- Kept evidence open by default on desktop and in server-rendered/no-JavaScript
+  output; mobile starts with a concise summary and can expand all fields.
+- Preserved revision, requester, approval, configuration identity and intent
+  digest rendering without exposing configuration payloads.
+- Added a real Livewire build page to the isolated asset fixture and verified
+  desktop visibility plus mobile collapse/expand behavior.
+
+### Verification
+
+- Deployment timeline, log and repository deployment coverage: **20 tests /
+  166 assertions**.
+- Isolated build fixture renderer: **1 test / 21 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including deployment evidence disclosure, dashboard order, responsive
+  disclosures, theme checks, application-card geometry and provider
+  no-JavaScript submission: **9 passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `f50c236` was pushed to `origin/main`.
+
+### Exact next task
+
+Begin Slice 7: shorten and clarify the provider creation form on mobile,
+preserving text provider selection, validation keys, encrypted credentials,
+entitlement checks, connection-probe behavior, flash feedback and the
+no-JavaScript submission path.
+
 ## Remaining planned slices
 
-1. Resource and deployment detail hierarchy.
-2. Setup forms, beginning with provider creation.
-3. Backups, observability and automation hubs.
-4. Remaining page families and final responsive/accessibility verification.
+1. Setup forms, beginning with provider creation.
+2. Backups, observability and automation hubs.
+3. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
