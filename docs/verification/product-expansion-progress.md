@@ -1,5 +1,23 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 backup history and provider inventory were
+converted from wide tables to responsive cards. Backup history now has one
+disclosure-based list for every viewport instead of separate desktop and
+mobile render trees. Provider inventory and both recent/full connection-check
+surfaces use consistent cards, with the shared connection-check partial
+preserving status, source, endpoint, response timing and sanitized failure
+details.
+
+Backup and provider coverage passed **30 tests / 301 assertions**, including
+explicit checks that the affected surfaces no longer emit tables. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+fast-forwarded to `8a43450`, the service is active and the live-runtime smoke
+passed (**1 test**). Commit `8a43450` (`Replace backup and provider tables with
+cards`) is pushed to `origin/main`. No backup/provider routes, exports,
+authorization, credential handling, pagination, queued jobs or remote
+operations changed. The exact next task is to convert the build, repository
+and impact-preview tables as one deployment-focused family.
+
 Latest continuation: September 18 the global Command Center and per-server
 command history were converted from wide tables to responsive execution cards.
 The cards keep the existing metadata-only boundary in the global view, retain
