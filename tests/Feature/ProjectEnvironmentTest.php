@@ -73,6 +73,74 @@ class ProjectEnvironmentTest extends TestCase
             ->assertDontSee('super-secret-value');
     }
 
+    public function test_environment_settings_validation_reopens_only_the_submitted_panel(): void
+    {
+        [$owner, $developer, $project] = $this->workspaceProject();
+        $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+
+        $this->from(route('projects.show', $project))
+            ->actingAs($developer)
+            ->patch(route('environments.update', $environment), [
+                '_environment_id' => $environment->id,
+                '_environment_panel' => 'settings',
+                'name' => '',
+                'type' => 'staging',
+                'branch' => 'develop',
+                'is_protected' => '0',
+                'requires_deployment_approval' => '0',
+                'minimum_replicas' => 1,
+                'maximum_replicas' => 1,
+            ])
+            ->assertRedirect(route('projects.show', $project))
+            ->assertSessionHasErrors('name');
+
+        $response = $this->actingAs($developer)->get(route('projects.show', $project));
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="environment-'.$environment->id.'-settings")(?=[^>]*\bopen\b)[^>]*>/',
+            $content,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="environment-'.$environment->id.'-deployment-controls")(?=[^>]*\bopen\b)[^>]*>/',
+            $content,
+        );
+    }
+
+    public function test_deployment_control_validation_reopens_the_deployment_panel(): void
+    {
+        [$owner, $developer, $project] = $this->workspaceProject();
+        $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+
+        $this->from(route('projects.show', $project))
+            ->actingAs($developer)
+            ->patch(route('environments.deployment-controls.update', $environment), [
+                '_environment_id' => $environment->id,
+                '_environment_panel' => 'deployment-controls',
+                'deployment_locked' => '0',
+                'deployment_window_enabled' => '1',
+                'deployment_strategy' => 'blue_green',
+                'rolling_pause_seconds' => '2',
+                'automatic_rollback' => '0',
+            ])
+            ->assertRedirect(route('projects.show', $project))
+            ->assertSessionHasErrors('deployment_window_days');
+
+        $response = $this->actingAs($developer)->get(route('projects.show', $project));
+        $response->assertOk();
+
+        $content = $response->getContent();
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="environment-'.$environment->id.'-deployment-controls")(?=[^>]*\bopen\b)[^>]*>/',
+            $content,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="environment-'.$environment->id.'-settings")(?=[^>]*\bopen\b)[^>]*>/',
+            $content,
+        );
+    }
+
     private function workspaceProject(): array
     {
         $owner = User::factory()->create();

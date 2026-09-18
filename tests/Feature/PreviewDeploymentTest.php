@@ -404,6 +404,30 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame(48, $project->preview_ttl_hours);
     }
 
+    public function test_preview_settings_validation_reopens_the_preview_panel(): void
+    {
+        [$owner, , $project] = $this->application(previews: false);
+
+        $this->from(route('projects.show', $project))
+            ->actingAs($owner)
+            ->patch(route('projects.previews.update', $project), [
+                '_project_form' => 'previews',
+                'preview_enabled' => '1',
+                'preview_domain' => '',
+                'preview_ttl_hours' => 48,
+            ])
+            ->assertRedirect(route('projects.show', $project))
+            ->assertSessionHasErrors('preview_domain');
+
+        $response = $this->actingAs($owner)->get(route('projects.show', $project));
+        $response->assertOk();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="preview-environments")(?=[^>]*\bopen\b)[^>]*>/',
+            $response->getContent(),
+        );
+    }
+
     public function test_existing_preview_is_sanitized_before_a_revised_revision_is_queued(): void
     {
         config(['billing.enforce_limits' => false]);
