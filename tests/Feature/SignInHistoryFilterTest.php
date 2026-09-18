@@ -58,7 +58,10 @@ class SignInHistoryFilterTest extends TestCase
             ->assertDontSee('Foreign raw agent marker')
             ->assertSee('method=password', false)
             ->assertSee('date_from=2026-09-02', false)
-            ->assertSee('date_to=2026-09-04', false);
+            ->assertSee('date_to=2026-09-04', false)
+            ->assertSee('data-sign-in-cards', false)
+            ->assertSee('data-sign-in-card', false)
+            ->assertDontSee('<table', false);
 
         $this->get(route('account.sign-ins.index', [...$filters, 'page' => 2]))
             ->assertSuccessful()

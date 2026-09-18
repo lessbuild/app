@@ -62,6 +62,9 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('Release and security checklist')
             ->assertSee('Troubleshooting')
             ->assertSee('Unexpected 500 response')
+            ->assertSee('data-troubleshooting-cards', false)
+            ->assertSee('data-troubleshooting-card', false)
+            ->assertDontSee('<table', false)
             ->assertSee(route('platform-status.show'))
             ->assertSee(route('api-docs'));
     }

@@ -66,31 +66,34 @@
     @if ($signIns->isEmpty())
         <x-ui.empty-state class="mt-4" :title="array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.')" />
     @else
-        <div class="ui-card mt-4 overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary bg-primary text-sm">
-                <thead>
-                    <tr>
-                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Browser and device') }}</th>
-                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Method') }}</th>
-                        <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('IP address') }}</th>
-                        <th scope="col" class="px-4 py-3 text-right font-semibold text-secondary">{{ __('Signed in') }}</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary">
-                    @foreach ($signIns as $signIn)
-                        <tr class="align-top">
-                            <td class="px-4 py-3 font-medium text-primary">{{ $signIn['device'] }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-primary">{{ $signIn['method'] }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 font-mono text-xs text-primary">{{ $signIn['ip_address'] }}</td>
-                            <td class="whitespace-nowrap px-4 py-3 text-right text-secondary">
-                                <time datetime="{{ $signIn['signed_in_at']->toIso8601String() }}" title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}">
-                                    {{ $signIn['signed_in_at']->diffForHumans() }}
-                                </time>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div data-sign-in-cards class="ui-card mt-4 divide-y divide-primary">
+            @foreach ($signIns as $signIn)
+                <article data-sign-in-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <h2 class="font-semibold text-primary">{{ $signIn['device'] }}</h2>
+                            <p class="mt-1 text-sm text-secondary">{{ $signIn['method'] }}</p>
+                        </div>
+                        <time class="text-right text-sm text-secondary" datetime="{{ $signIn['signed_in_at']->toIso8601String() }}" title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}">
+                            {{ $signIn['signed_in_at']->diffForHumans() }}
+                        </time>
+                    </div>
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Method') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $signIn['method'] }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('IP address') }}</dt>
+                            <dd class="mt-1 break-all font-mono text-xs text-primary">{{ $signIn['ip_address'] }}</dd>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Signed in') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $signIn['signed_in_at']->toDayDateTimeString() }}</dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
         </div>
         <div class="py-4">{{ $signIns->links() }}</div>
     @endif
