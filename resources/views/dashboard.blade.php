@@ -30,7 +30,7 @@
     @include('dashboard._setup')
 
     @if(in_array('stats', $dashboardWidgets, true))
-    <div class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 -mx-3 mb-12">
+    <div data-dashboard-stats class="grid grid-cols-2 gap-2 -mx-1.5 mb-8 sm:-mx-3 sm:mb-12 sm:gap-0 md:grid-cols-2 lg:grid-cols-4">
         <x-panel.stats icon="link" :title="$stats['websites']" :description="__('Websites')" />
         <x-panel.stats icon="cloud" :title="$stats['servers']" :description="__('Servers')" />
         <x-panel.stats icon="cloud-upload" :title="$stats['builds']" :description="__('Builds')" />

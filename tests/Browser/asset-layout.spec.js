@@ -78,6 +78,11 @@ for (const colorScheme of ['light', 'dark']) {
                     }), `${screen} action must not sit behind the footer`).toBe(true);
                 }
                 if (screen === 'dashboard') {
+                    if (width <= 390) {
+                        const dashboardStats = page.locator('[data-dashboard-stats]');
+                        await expect(dashboardStats).toBeVisible();
+                        expect((await dashboardStats.boundingBox()).height).toBeLessThan(170);
+                    }
                     expect(await page.evaluate(() => {
                         const ids = ['dashboard-attention-title', 'setup-progress-title', 'operations-overview-title'];
                         const elements = ids.map((id) => document.getElementById(id));
