@@ -207,9 +207,14 @@
         @if ($healthChecks->isEmpty())
             <x-ui.empty-state class="mt-4" :title="__('No health checks have been recorded yet.')" />
         @else
-            <div class="ui-card mt-4 overflow-hidden">
-                <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-primary bg-primary text-sm">
+            <details id="website-health-history" class="group ui-card mt-4 overflow-hidden">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                    <span>{{ __('Latest check results') }}</span>
+                    <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <div class="border-t border-primary p-0">
+                    <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-primary bg-primary text-sm">
                     <thead>
                         <tr>
                             <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Result') }}</th>
@@ -250,13 +255,24 @@
                             </tr>
                         @endforeach
                     </tbody>
-                </table>
+                    </table>
+                    </div>
                 </div>
-            </div>
+            </details>
         @endif
     </section>
 
-    <section class="ui-card mt-6 p-5" id="runtime-logs" x-data="{ logType: 'application' }">
+    @php($runtimeLogsNeedAttention = $runtimeLogs->contains(fn ($snapshot) => in_array($snapshot?->status, [\App\Models\WebsiteLogSnapshot::STATUS_QUEUED, \App\Models\WebsiteLogSnapshot::STATUS_REFRESHING, \App\Models\WebsiteLogSnapshot::STATUS_FAILED], true)))
+    <details id="website-runtime-logs" class="group ui-card mt-6 overflow-hidden" @if ($runtimeLogsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Live log snapshots') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">{{ __('Application and access output with bounded retention.') }}</span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <section class="border-t border-primary p-5" id="runtime-logs" x-data="{ logType: 'application' }">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p>
@@ -313,7 +329,8 @@
             </label>
             <x-ui.button type="submit" variant="secondary">{{ __('Save retention') }}</x-ui.button>
         </form>
-    </section>
+        </section>
+    </details>
 
     <livewire:website-provisioning-log :website="$website" />
 

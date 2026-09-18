@@ -7,6 +7,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
+use App\Models\WebsiteLogSnapshot;
 use App\Services\ManagedSsh;
 use App\Services\Runner;
 use App\Services\WebsiteHealthMonitor;
@@ -107,6 +108,46 @@ class WebsiteHealthHistoryTest extends TestCase
             ->assertForbidden();
         $this->actingAs($owner)->get(route('websites.health-checks.index', $website))->assertSuccessful();
         $this->actingAs($owner)->get(route('websites.health-checks.export', $website))->assertSuccessful();
+    }
+
+    public function test_health_rows_are_collapsed_and_runtime_logs_open_when_refresh_is_pending(): void
+    {
+        [$owner, $website] = $this->infrastructure('Disclosure');
+        $website->healthChecks()->create([
+            'successful' => true,
+            'source' => WebsiteHealthCheck::SOURCE_AUTOMATIC,
+            'http_status' => 200,
+            'endpoint' => 'http://disclosure.example.com/health',
+            'checked_at' => now(),
+        ]);
+
+        $default = $this->actingAs($owner)->get(route('websites.show', $website));
+        $defaultContent = $default->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="website-health-history")[^>]*>/',
+            $defaultContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="website-health-history")(?=[^>]*open)[^>]*>/',
+            $defaultContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="website-runtime-logs")(?=[^>]*open)[^>]*>/',
+            $defaultContent,
+        );
+
+        $website->runtimeLogs()->create([
+            'type' => WebsiteLogSnapshot::TYPES[0],
+            'status' => WebsiteLogSnapshot::STATUS_QUEUED,
+        ]);
+
+        $pending = $this->actingAs($owner)->get(route('websites.show', $website));
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="website-runtime-logs")(?=[^>]*open)[^>]*>/',
+            $pending->getContent(),
+        );
     }
 
     public function test_health_history_summarizes_the_filtered_retained_sample(): void
