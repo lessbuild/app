@@ -64,9 +64,15 @@ class DomainManagementTest extends TestCase
         [$owner, $website] = $this->infrastructure();
 
         $default = $this->actingAs($owner)->get(route('domains.index'));
+        $defaultContent = $default->getContent();
+
+        $this->assertLessThan(
+            strpos($defaultContent, 'id="domain-inventory"'),
+            strpos($defaultContent, 'id="domain-management"'),
+        );
         $this->assertDoesNotMatchRegularExpression(
             '/<details(?=[^>]*id="domain-management")(?=[^>]*\bopen\b)[^>]*>/',
-            $default->getContent(),
+            $defaultContent,
         );
 
         $errorPage = $this->from(route('domains.index'))

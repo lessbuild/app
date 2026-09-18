@@ -39,8 +39,108 @@
         </dl>
     </x-ui.insights>
 
-    <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
-        <div class="space-y-5">
+    @if ($canManage)
+        <aside class="mt-6">
+            @php
+                $domainManagementOpen = $errors->hasAny([
+                    'domain',
+                    'hostname',
+                    'type',
+                    'redirect_url',
+                    'dns_provider_id',
+                ]);
+            @endphp
+            <details id="domain-management" class="group" @if ($domainManagementOpen) open @endif>
+                <summary class="ui-card flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
+                    <span>
+                        <span class="block font-black text-primary">{{ __('Add or issue domains') }}</span>
+                        <span class="mt-1 block text-sm text-secondary">{{ __('Attach aliases, redirects, or a temporary shareable address.') }}</span>
+                    </span>
+                    <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+
+                <div class="ui-card overflow-hidden">
+                    <div class="border-b border-primary p-5">
+                        <h2 class="font-black text-primary">{{ __('Add domain') }}</h2>
+                        <p class="mt-1 text-sm text-secondary">{{ __('Attach an alias or redirect to an existing website.') }}</p>
+                        <x-forms.errors name="domain" />
+                        <x-forms.errors name="dns_provider_id" />
+
+                        <form method="POST" action="{{ route('domains.store') }}" class="mt-5 space-y-4">
+                            @csrf
+                            <label class="block" for="domain-website">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
+                                <select id="domain-website" name="website_id" class="input secondary w-full rounded-md" required>
+                                    @foreach ($websites as $website)
+                                        <option value="{{ $website->id }}" @selected((string) old('website_id') === (string) $website->id)>{{ $website->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="block" for="domain-hostname">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Hostname') }}</span>
+                                <input id="domain-hostname" name="hostname" value="{{ old('hostname') }}" placeholder="www.example.com" class="input secondary w-full rounded-md" required>
+                                <x-forms.errors name="hostname" />
+                            </label>
+                            <label class="block" for="domain-type">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Behavior') }}</span>
+                                <select id="domain-type" name="type" class="input secondary w-full rounded-md">
+                                    <option value="alias" @selected(old('type', 'alias') === 'alias')>{{ __('Serve application') }}</option>
+                                    <option value="redirect" @selected(old('type') === 'redirect')>{{ __('Redirect') }}</option>
+                                </select>
+                                <x-forms.errors name="type" />
+                            </label>
+                            <label class="block" for="domain-redirect-url">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Redirect destination') }}</span>
+                                <input id="domain-redirect-url" type="url" name="redirect_url" value="{{ old('redirect_url') }}" placeholder="https://example.com" class="input secondary w-full rounded-md">
+                                <x-forms.errors name="redirect_url" />
+                            </label>
+                            <label class="block" for="domain-dns-provider">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('DNS automation') }}</span>
+                                <select id="domain-dns-provider" name="dns_provider_id" class="input secondary w-full rounded-md">
+                                    <option value="" @selected(blank(old('dns_provider_id')))>{{ __('Manual DNS') }}</option>
+                                    @foreach ($dnsProviders as $provider)
+                                        <option value="{{ $provider->id }}" @selected((string) old('dns_provider_id') === (string) $provider->id)>{{ $provider->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Add domain') }}</x-ui.button>
+                        </form>
+                    </div>
+
+                    <div class="p-5">
+                        <h2 class="font-black text-primary">{{ __('Temporary domain') }}</h2>
+                        <p class="mt-1 text-sm text-secondary">
+                            {{ $temporaryBaseDomain ? __('Issue a shareable :domain address.', ['domain' => '*.' . $temporaryBaseDomain]) : __('Set TEMPORARY_APP_DOMAIN to enable this feature.') }}
+                        </p>
+
+                        <form method="POST" action="{{ route('domains.temporary') }}" class="mt-5 space-y-4">
+                            @csrf
+                            <label class="block" for="temporary-website">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
+                                <select id="temporary-website" name="website_id" class="input secondary w-full rounded-md" required>
+                                    @foreach ($websites as $website)
+                                        <option value="{{ $website->id }}" @selected((string) old('website_id') === (string) $website->id)>{{ $website->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <label class="block" for="temporary-dns-provider">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('DNS provider') }}</span>
+                                <select id="temporary-dns-provider" name="dns_provider_id" class="input secondary w-full rounded-md" required>
+                                    <option value="" @selected(blank(old('dns_provider_id')))>{{ __('Select Cloudflare provider') }}</option>
+                                    @foreach ($dnsProviders as $provider)
+                                        <option value="{{ $provider->id }}" @selected((string) old('dns_provider_id') === (string) $provider->id)>{{ $provider->name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <x-ui.button type="submit" variant="primary" class="w-full" :disabled="! $temporaryBaseDomain">{{ __('Issue domain') }}</x-ui.button>
+                        </form>
+                    </div>
+                </div>
+            </details>
+        </aside>
+    @endif
+
+    <div id="domain-inventory" class="mt-6 space-y-5">
             @forelse ($websites as $website)
                 <section class="ui-card overflow-hidden">
                     <header class="flex flex-wrap items-center justify-between gap-3 border-b border-primary p-5">
@@ -100,107 +200,5 @@
                     icon="link"
                 />
             @endforelse
-        </div>
-
-        @if ($canManage)
-            <aside class="space-y-5">
-                @php
-                    $domainManagementOpen = $errors->hasAny([
-                        'domain',
-                        'hostname',
-                        'type',
-                        'redirect_url',
-                        'dns_provider_id',
-                    ]);
-                @endphp
-                <details id="domain-management" class="group grid gap-5 lg:block" @if ($domainManagementOpen) open @endif>
-                    <summary class="ui-card flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
-                        <span>
-                            <span class="block font-black text-primary">{{ __('Add or issue domains') }}</span>
-                            <span class="mt-1 block text-sm text-secondary">{{ __('Attach aliases, redirects, or a temporary shareable address.') }}</span>
-                        </span>
-                        <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
-                    </summary>
-
-                    <div class="ui-card overflow-hidden lg:block">
-                        <div class="border-b border-primary p-5">
-                            <h2 class="font-black text-primary">{{ __('Add domain') }}</h2>
-                            <p class="mt-1 text-sm text-secondary">{{ __('Attach an alias or redirect to an existing website.') }}</p>
-                            <x-forms.errors name="domain" />
-                            <x-forms.errors name="dns_provider_id" />
-
-                            <form method="POST" action="{{ route('domains.store') }}" class="mt-5 space-y-4">
-                                @csrf
-                                <label class="block" for="domain-website">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
-                                    <select id="domain-website" name="website_id" class="input secondary w-full rounded-md" required>
-                                        @foreach ($websites as $website)
-                                            <option value="{{ $website->id }}" @selected((string) old('website_id') === (string) $website->id)>{{ $website->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <label class="block" for="domain-hostname">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Hostname') }}</span>
-                                    <input id="domain-hostname" name="hostname" value="{{ old('hostname') }}" placeholder="www.example.com" class="input secondary w-full rounded-md" required>
-                                    <x-forms.errors name="hostname" />
-                                </label>
-                                <label class="block" for="domain-type">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Behavior') }}</span>
-                                    <select id="domain-type" name="type" class="input secondary w-full rounded-md">
-                                        <option value="alias" @selected(old('type', 'alias') === 'alias')>{{ __('Serve application') }}</option>
-                                        <option value="redirect" @selected(old('type') === 'redirect')>{{ __('Redirect') }}</option>
-                                    </select>
-                                    <x-forms.errors name="type" />
-                                </label>
-                                <label class="block" for="domain-redirect-url">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Redirect destination') }}</span>
-                                    <input id="domain-redirect-url" type="url" name="redirect_url" value="{{ old('redirect_url') }}" placeholder="https://example.com" class="input secondary w-full rounded-md">
-                                    <x-forms.errors name="redirect_url" />
-                                </label>
-                                <label class="block" for="domain-dns-provider">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('DNS automation') }}</span>
-                                    <select id="domain-dns-provider" name="dns_provider_id" class="input secondary w-full rounded-md">
-                                        <option value="" @selected(blank(old('dns_provider_id')))>{{ __('Manual DNS') }}</option>
-                                        @foreach ($dnsProviders as $provider)
-                                            <option value="{{ $provider->id }}" @selected((string) old('dns_provider_id') === (string) $provider->id)>{{ $provider->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Add domain') }}</x-ui.button>
-                            </form>
-                        </div>
-
-                        <div class="p-5">
-                            <h2 class="font-black text-primary">{{ __('Temporary domain') }}</h2>
-                            <p class="mt-1 text-sm text-secondary">
-                                {{ $temporaryBaseDomain ? __('Issue a shareable :domain address.', ['domain' => '*.' . $temporaryBaseDomain]) : __('Set TEMPORARY_APP_DOMAIN to enable this feature.') }}
-                            </p>
-
-                            <form method="POST" action="{{ route('domains.temporary') }}" class="mt-5 space-y-4">
-                                @csrf
-                                <label class="block" for="temporary-website">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
-                                    <select id="temporary-website" name="website_id" class="input secondary w-full rounded-md" required>
-                                        @foreach ($websites as $website)
-                                            <option value="{{ $website->id }}" @selected((string) old('website_id') === (string) $website->id)>{{ $website->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <label class="block" for="temporary-dns-provider">
-                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('DNS provider') }}</span>
-                                    <select id="temporary-dns-provider" name="dns_provider_id" class="input secondary w-full rounded-md" required>
-                                        <option value="" @selected(blank(old('dns_provider_id')))>{{ __('Select Cloudflare provider') }}</option>
-                                        @foreach ($dnsProviders as $provider)
-                                            <option value="{{ $provider->id }}" @selected((string) old('dns_provider_id') === (string) $provider->id)>{{ $provider->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </label>
-                                <x-ui.button type="submit" variant="primary" class="w-full" :disabled="! $temporaryBaseDomain">{{ __('Issue domain') }}</x-ui.button>
-                            </form>
-                        </div>
-                    </div>
-                </details>
-            </aside>
-        @endif
     </div>
 </x-layouts.app>
