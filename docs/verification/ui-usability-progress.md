@@ -757,6 +757,53 @@ different filter counts and the controls also sat above their summary metrics.
 
 | Phase 16: infrastructure inventory filter hierarchy | Complete with browser follow-up | 13 focused tests / 106 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `d4e34a1` pushed to `origin/main` | Inspect project/application overviews and detail pages for repeated secondary panels, long timelines and action discoverability |
 
+## Phase 17 — project form validation context
+
+### Responsibility problem
+
+The application detail page keeps environment settings, deployment controls,
+variables, processes, resources, environment creation and preview settings in
+native disclosures to keep the overview usable. After a failed submission,
+however, the redirect returned with the relevant validation message while the
+containing disclosure stayed closed. On a long project page this made the
+error and the field that needed correction difficult to find.
+
+### Boundaries and preserved behavior
+
+- `ProjectController`, `EnvironmentController`, existing Form Requests,
+  policies, actions, validation keys, error bags and persistence remain
+  unchanged. This is a presentation-state improvement.
+- Each inline form carries a non-persisted marker identifying its environment
+  and panel. A failed redirect flashes that marker with the existing input;
+  the view uses it to reopen only the submitted panel. The marker is not part
+  of `validated()` data and is never stored or sent to a provider.
+- Settings, deployment controls, encrypted variables, workers/scheduler and
+  attached resources receive stable disclosure ids. Add-environment and
+  preview settings also reopen after their own validation failures. Default
+  successful page loads remain collapsed, and existing preview cards still
+  open when previews exist.
+- No routes, HTTP status codes, success messages, authorization decisions,
+  secret values, queue payloads or deployment behavior changed.
+
+### Verification
+
+- Project and preview regression suites passed: 29 tests / 287 assertions.
+  This includes settings and deployment-control validation reopening only the
+  submitted panel, preview validation reopening, protected environments,
+  tenancy, encrypted variables, preview lifecycle, trust, secret approvals,
+  quotas and cleanup. Pint, Blade view compilation and `git diff --check`
+  passed.
+- Commit `6e8f42e` (`ui: restore project panel validation context`) was pushed
+  to `origin/main`; the isolated HTTPS runtime was fast-forwarded,
+  view-cached and both service units remained active.
+- The pre-change 390px project detail measurement was about 2,614px. A
+  post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; the reopen behavior is
+  covered by the feature suite and compiled markup.
+
+| Phase 17: project form validation context | Complete with browser follow-up | 29 focused tests / 287 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6e8f42e` pushed to `origin/main` | Inspect server, website and provider detail pages for action hierarchy, dense histories and error-state discoverability |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
