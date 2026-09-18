@@ -80,8 +80,8 @@ changing the initial mobile state.
 
 ### Commit and push
 
-Commit and push status is recorded immediately after the implementation commit
-and before the next slice begins.
+Implementation commit `c897cf9` was pushed to `origin/main` before the next
+slice begins. This ledger update records the exact verification handoff.
 
 ### Exact next task
 
