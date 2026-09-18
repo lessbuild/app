@@ -67,6 +67,8 @@ class RepositoryImpactPreviewTest extends TestCase
             ->assertSee('Affected')
             ->assertSee('Unaffected')
             ->assertSee('<details id="repository-impact-insights"', false)
+            ->assertSee('data-impact-target', false)
+            ->assertDontSee('<table', false)
             ->assertSee('apps/storefront');
 
         $this->assertDatabaseCount('builds', 0);

@@ -59,6 +59,8 @@ class RepositoryInventoryFilterTest extends TestCase
             ->assertSee('value="'.$github->id.'" selected', false)
             ->assertSee('value="'.$website->id.'" selected', false)
             ->assertSee('value="failed" selected', false)
+            ->assertSee('data-repository-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Customer Recovered')
             ->assertDontSee('Customer GitLab')
             ->assertDontSee('Customer Admin')

@@ -400,27 +400,29 @@
                         {{ array_filter($deliveryFilters, fn ($value) => $value !== null) ? __('No webhook deliveries match these filters.') : __('No webhook deliveries have been accepted yet.') }}
                     </p>
                 @else
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-primary border-y border-primary">
-                            <thead>
-                                <tr>
-                                    <th class="py-3 pr-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Delivery') }}</th>
-                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Revision') }}</th>
-                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</th>
-                                    <th class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Result') }}</th>
-                                    <th class="py-3 pl-3 text-right text-xs font-semibold uppercase text-secondary">{{ __('Received') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-primary">
-                                @foreach ($webhookDeliveries as $delivery)
-                                    <tr>
-                                        <td class="py-3 pr-3 text-sm">
-                                            <span class="font-mono text-primary">{{ $delivery->delivery_id }}</span>
-                                            @if ($delivery->commit_message)
-                                                <p class="mt-1 max-w-md truncate text-secondary" title="{{ $delivery->commit_message }}">{{ $delivery->commit_message }}</p>
-                                            @endif
-                                        </td>
-                                        <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-secondary">
+                    <div class="ui-card divide-y divide-primary overflow-hidden" aria-label="{{ __('Webhook delivery history') }}">
+                        @foreach ($webhookDeliveries as $delivery)
+                            @php($deliveryTone = match ($delivery->status) {
+                                \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED => 'success',
+                                \App\Models\RepositoryWebhookDelivery::STATUS_PENDING => 'warning',
+                                \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE => 'danger',
+                                \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED => 'accent',
+                                default => 'neutral',
+                            })
+                            <article data-webhook-delivery class="p-4 sm:p-5">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="font-mono text-sm text-primary">{{ $delivery->delivery_id }}</p>
+                                        @if ($delivery->commit_message)
+                                            <p class="mt-1 max-w-2xl truncate text-sm text-secondary" title="{{ $delivery->commit_message }}">{{ $delivery->commit_message }}</p>
+                                        @endif
+                                    </div>
+                                    <x-ui.badge :tone="$deliveryTone">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                </div>
+                                <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
+                                    <div>
+                                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Revision') }}</dt>
+                                        <dd class="mt-1 font-mono text-xs text-primary">
                                             @if ($delivery->revision)
                                                 @if ($revisionUrl = $repository->revisionUrl($delivery->revision))
                                                     <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ str($delivery->revision)->take(12) }}</a>
@@ -430,23 +432,13 @@
                                             @else
                                                 &mdash;
                                             @endif
-                                        </td>
-                                        <td class="whitespace-nowrap px-3 py-3 text-sm">
-                                            @if ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_QUEUED)
-                                                <x-ui.badge tone="success">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
-                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING)
-                                                <x-ui.badge tone="warning">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
-                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_UNAVAILABLE)
-                                                <x-ui.badge tone="danger">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
-                                            @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SKIPPED)
-                                                <x-ui.badge tone="accent">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
-                                            @else
-                                                <x-ui.badge>{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
-                                            @endif
-                                        </td>
-                                        <td class="whitespace-nowrap px-3 py-3 text-sm text-secondary">
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Result') }}</dt>
+                                        <dd class="mt-1 text-primary">
                                             @if ($delivery->build)
-                                                <a href="{{ route('builds.show', $delivery->build) }}" class="font-medium text-primary hover:underline">{{ __('Build #:id', ['id' => $delivery->build->id]) }}</a>
+                                                <a href="{{ route('builds.show', $delivery->build) }}" class="font-medium hover:underline">{{ __('Build #:id', ['id' => $delivery->build->id]) }}</a>
                                             @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED)
                                                 {{ __('Replaced by a newer push') }}
                                             @elseif ($delivery->status === \App\Models\RepositoryWebhookDelivery::STATUS_PENDING)
@@ -458,14 +450,15 @@
                                             @else
                                                 &mdash;
                                             @endif
-                                        </td>
-                                        <td class="whitespace-nowrap py-3 pl-3 text-right text-sm text-secondary" title="{{ $delivery->created_at }}">
-                                            {{ $delivery->created_at->diffForHumans() }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                                        </dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Received') }}</dt>
+                                        <dd class="mt-1 text-primary" title="{{ $delivery->created_at }}">{{ $delivery->created_at->diffForHumans() }}</dd>
+                                    </div>
+                                </dl>
+                            </article>
+                        @endforeach
                     </div>
                     <div class="mt-4">{{ $webhookDeliveries->links() }}</div>
                 @endif

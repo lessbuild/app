@@ -193,118 +193,57 @@
 
     <!--
      ! ------------------------------------------------------------
-     ! List Builds
+    ! List Builds
      ! ------------------------------------------------------------
     !-->
     @if(!$builds->isEmpty())
-        <div class="mt-6 grid min-w-0 grid-cols-1 gap-3 lg:hidden">
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Deployment history') }}">
             @foreach($builds as $build)
-                <a href="{{ route('builds.show', $build) }}" class="ui-card ui-card--interactive block min-w-0 w-full p-4">
-                    <div class="flex min-w-0 items-start gap-3">
-                        <x-avatar :name="$build->repository->name" class="h-10 w-10 flex-none rounded-md text-sm" />
-                        <div class="min-w-0 flex-1">
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
-                                    <p class="mt-0.5 truncate text-xs text-secondary">{{ $build->repository->website->server->label }}</p>
-                                </div>
-                                <x-ui.badge :tone="match ($build->status) {
-                                    \App\Models\Build::STATUS_SUCCEEDED => 'success',
-                                    \App\Models\Build::STATUS_FAILED => 'danger',
-                                    \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'warning',
-                                    \App\Models\Build::STATUS_RUNNING, \App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_TIMING_OUT => 'accent',
-                                    default => 'neutral',
-                                }">
-                                    {{ str($build->status)->replace('_', ' ') }}
-                                </x-ui.badge>
+                <a data-build-card href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}" class="ui-card--interactive block p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-avatar :name="$build->repository->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <div class="min-w-0">
+                                <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
+                                <p class="mt-0.5 truncate text-xs text-secondary">{{ $build->repository->website->server->label }}</p>
                             </div>
-                            <div class="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-secondary">
-                                <span>{{ ucfirst($build->trigger_source) }}</span>
-                                @if ($build->revision)
-                                    <span class="font-mono">{{ $build->shortRevision() }}</span>
-                                @endif
-                                <span>{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</span>
-                                <span>{{ __('Duration: :duration', ['duration' => $build->durationLabel() ?? __('Not recorded')]) }}</span>
-                            </div>
-                            @if ($build->operator_note)
-                                <p class="mt-3 line-clamp-2 text-xs text-secondary">
-                                    {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
-                                </p>
-                            @endif
                         </div>
-                        <svg class="mt-1 h-4 w-4 flex-none text-secondary stroke-2">
-                            <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                        </svg>
+                        <x-ui.badge :tone="match ($build->status) {
+                            \App\Models\Build::STATUS_SUCCEEDED => 'success',
+                            \App\Models\Build::STATUS_FAILED => 'danger',
+                            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'warning',
+                            \App\Models\Build::STATUS_RUNNING, \App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_TIMING_OUT => 'accent',
+                            default => 'neutral',
+                        }">
+                            {{ str($build->status)->replace('_', ' ') }}
+                        </x-ui.badge>
                     </div>
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Trigger') }}</dt>
+                            <dd class="mt-1 text-primary">{{ ucfirst($build->trigger_source) }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Revision') }}</dt>
+                            <dd class="mt-1 font-mono text-xs text-primary">{{ $build->revision ? $build->shortRevision() : __('Current branch') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
+                        </div>
+                    </dl>
+                    @if ($build->operator_note)
+                        <p class="mt-3 line-clamp-2 text-xs text-secondary" title="{{ $build->operator_note }}">
+                            {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
+                        </p>
+                    @endif
                 </a>
             @endforeach
         </div>
-        <table class="ui-card mt-6 hidden min-w-full divide-y divide-primary overflow-hidden lg:table">
-            <thead class="bg-primary border-l border-r border-primary">
-                <tr>
-                    <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                        {{ __('Repository') }}
-                    </th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                        {{ __('Status') }}
-                    </th>
-                    <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                        {{ __('Finished') }}
-                    </th>
-                    <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-primary">
-                @foreach($builds as $build)
-                    <tr class="border-l border-r border-primary">
-                        <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                            <div class="flex items-center">
-                                <div class="h-10 w-10 shrink-0">
-                                    <x-avatar :name="$build->repository->name" class="h-10 w-10 rounded-md text-sm" />
-                                </div>
-                                <a href="{{ route('builds.show', $build) }}" class="ml-4">
-                                    <div class="font-medium text-ternary">
-                                        {{ $build->repository->name }}
-                                    </div>
-                                    <div class="text-secondary">
-                                        #{{ $build->repository->website->server->label }}
-                                    </div>
-                                    <div class="text-secondary">
-                                        {{ ucfirst($build->trigger_source) }}
-                                        @if ($build->revision)
-                                            &middot; <span class="font-mono">{{ $build->shortRevision() }}</span>
-                                        @endif
-                                    </div>
-                                    @if ($build->operator_note)
-                                        <div class="mt-1 max-w-xl truncate text-xs text-secondary" title="{{ $build->operator_note }}">
-                                            {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
-                                        </div>
-                                    @endif
-                                </a>
-                            </div>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                            <span class="uppercase">{{ str($build->status)->replace('_', ' ') }}</span>
-                        </td>
-                        <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                            <div class="text-primary flex flex-col">
-                                {{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}
-                                <span class="mt-1 text-xs text-secondary">
-                                    {{ __('Duration: :duration', ['duration' => $build->durationLabel() ?? __('Not recorded')]) }}
-                                </span>
-                            </div>
-                        </td>
-                        <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                            <a href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}">
-                                <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
-                                    <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                </svg>
-                            </a>
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
         <div class="py-4">
             {{ $builds->links() }}
         </div>

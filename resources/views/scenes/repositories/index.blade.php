@@ -105,92 +105,62 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$repositories->isEmpty())
-        <div class="ui-card mt-6 overflow-hidden">
-            <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
-                <thead class="bg-primary border-l border-r border-primary">
-                    <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                            {{ __('Repository') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Deployment target') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Provider') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Latest deployment') }}
-                        </th>
-                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary bg-primary">
-                    @foreach($repositories as $repository)
-                        <tr class="border-l border-r border-primary">
-                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 shrink-0">
-                                        <x-avatar :name="$repository->name" class="h-10 w-10 rounded-md text-sm" />
-                                    </div>
-                                    <a href="{{ route('repositories.show', $repository) }}" class="ml-4">
-                                        <div class="font-medium text-ternary">
-                                            {{ $repository->name }}
-                                        </div>
-                                        <div class="text-secondary">
-                                            {{ $repository->url }}
-                                        </div>
-                                        @if ($repository->description)
-                                            <div class="max-w-md truncate text-secondary">
-                                                {{ $repository->description }}
-                                            </div>
-                                        @endif
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Repository inventory') }}">
+            @foreach($repositories as $repository)
+                <article data-repository-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-avatar :name="$repository->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <div class="min-w-0">
+                                <a href="{{ route('repositories.show', $repository) }}" class="font-semibold text-primary hover:underline">{{ $repository->name }}</a>
+                                <p class="truncate text-sm text-secondary">{{ $repository->url }}</p>
+                            </div>
+                        </div>
+                        <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View repository') }}</x-ui.button>
+                    </div>
+
+                    @if ($repository->description)
+                        <p class="mt-3 text-sm text-secondary">{{ $repository->description }}</p>
+                    @endif
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Deployment target') }}</dt>
+                            <dd class="mt-1 text-primary">
                                 @if ($repository->website && ! $repository->website->trashed())
-                                    <a href="{{ route('websites.show', $repository->website) }}" class="font-medium text-ternary">
-                                        {{ $repository->website->name }}
-                                    </a>
-                                    <div>{{ $repository->website->server?->label ?? __('Server unavailable') }}</div>
+                                    <a href="{{ route('websites.show', $repository->website) }}" class="font-medium text-ternary hover:underline">{{ $repository->website->name }}</a>
+                                    <span class="mt-1 block text-secondary">{{ $repository->website->server?->label ?? __('Server unavailable') }}</span>
                                 @elseif ($repository->website)
                                     <span class="font-medium text-secondary">{{ __('Deleted website') }}</span>
-                                    <div>{{ $repository->website->name }}</div>
+                                    <span class="mt-1 block text-secondary">{{ $repository->website->name }}</span>
                                 @else
                                     {{ __('Website unavailable') }}
                                 @endif
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                {{ $repository->provider?->name ?? __('Provider unavailable') }}
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Provider') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $repository->provider?->name ?? __('Provider unavailable') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Latest deployment') }}</dt>
+                            <dd class="mt-1 text-primary">
                                 @if ($repository->latestBuild)
                                     <a href="{{ route('builds.show', $repository->latestBuild) }}" @class([
-                                        'font-semibold uppercase',
+                                        'font-semibold uppercase hover:underline',
                                         'text-green-600' => $repository->latestBuild->status === \App\Models\Build::STATUS_SUCCEEDED,
                                         'text-red-600' => $repository->latestBuild->status === \App\Models\Build::STATUS_FAILED,
                                         'text-secondary' => ! in_array($repository->latestBuild->status, [\App\Models\Build::STATUS_SUCCEEDED, \App\Models\Build::STATUS_FAILED], true),
-                                    ])>
-                                        {{ str($repository->latestBuild->status)->replace('_', ' ') }}
-                                    </a>
-                                    <div>{{ $repository->latestBuild->created_at->diffForHumans() }}</div>
+                                    ])>{{ str($repository->latestBuild->status)->replace('_', ' ') }}</a>
+                                    <span class="mt-1 block text-secondary">{{ $repository->latestBuild->created_at->diffForHumans() }}</span>
                                 @else
                                     {{ __('Never deployed') }}
                                 @endif
-                            </td>
-                            <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <a href="{{ route('repositories.show', $repository) }}" aria-label="{{ __('View :name', ['name' => $repository->name]) }}">
-                                    <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
-                                        <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            </div>
+                            </dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
         </div>
         <div class="py-4">
             {{ $repositories->links() }}

@@ -86,6 +86,8 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertSee("https://github.com/example/application/commit/{$revision}")
             ->assertSee(route('builds.show', $build))
             ->assertSee('&lt;script&gt;alert(&quot;delivery&quot;)&lt;/script&gt;', false)
+            ->assertSee('data-webhook-delivery', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee($message, false)
             ->assertDontSee('hidden-pending-delivery')
             ->assertDontSee('before-window-delivery')

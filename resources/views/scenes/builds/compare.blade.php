@@ -62,97 +62,55 @@
         </dl>
     </x-ui.insights>
 
-    <div class="ui-card mt-6 overflow-x-auto">
-        <table class="min-w-full divide-y divide-primary text-sm">
-            <thead>
-                <tr>
-                    <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Attribute') }}</th>
-                    <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">
-                        <a href="{{ route('builds.show', $baseline) }}" class="text-primary hover:underline">
-                            {{ __('Baseline Build #:id', ['id' => $baseline->id]) }}
-                        </a>
-                    </th>
-                    <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">
-                        <a href="{{ route('builds.show', $build) }}" class="text-primary hover:underline">
-                            {{ __('Current Build #:id', ['id' => $build->id]) }}
-                        </a>
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-primary">
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Status') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ str($baseline->status)->replace('_', ' ')->title() }}</td>
-                    <td class="px-4 py-3 text-primary">{{ str($build->status)->replace('_', ' ')->title() }}</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Revision') }}</th>
-                    @foreach ([$baseline, $build] as $comparedBuild)
-                        <td class="px-4 py-3 font-mono text-primary">
-                            @if ($revisionUrl = $comparedBuild->repository->revisionUrl($comparedBuild->revision))
-                                <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">
-                                    {{ $comparedBuild->shortRevision() }}
-                                </a>
-                            @else
-                                {{ __('Current branch') }}
-                            @endif
-                        </td>
+    <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Deployment comparison') }}">
+        @foreach ([
+            ['label' => __('Status'), 'baseline' => str($baseline->status)->replace('_', ' ')->title(), 'current' => str($build->status)->replace('_', ' ')->title()],
+            ['label' => __('Revision'), 'baseline' => $baseline->shortRevision(), 'current' => $build->shortRevision(), 'revision' => true],
+            ['label' => __('Triggered by'), 'baseline' => str($baseline->trigger_source)->title(), 'current' => str($build->trigger_source)->title()],
+            ['label' => __('Created'), 'baseline' => $baseline->created_at?->format('Y-m-d H:i:s T') ?? __('Not recorded'), 'current' => $build->created_at?->format('Y-m-d H:i:s T') ?? __('Not recorded')],
+            ['label' => __('Started'), 'baseline' => $baseline->started_at?->format('Y-m-d H:i:s T') ?? __('Not started'), 'current' => $build->started_at?->format('Y-m-d H:i:s T') ?? __('Not started')],
+            ['label' => __('Finished'), 'baseline' => $baseline->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished'), 'current' => $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished')],
+            ['label' => __('Duration'), 'baseline' => $baseline->durationLabel() ?? __('Not recorded'), 'current' => $build->durationLabel() ?? __('Not recorded'), 'duration' => true],
+            ['label' => __('Commit message'), 'baseline' => $baseline->commit_message ?? __('Not recorded'), 'current' => $build->commit_message ?? __('Not recorded'), 'long' => true],
+            ['label' => __('Operator note'), 'baseline' => $baseline->operator_note ?? __('Not recorded'), 'current' => $build->operator_note ?? __('Not recorded'), 'long' => true],
+            ['label' => __('Failure'), 'baseline' => $baseline->failure_message ?? __('None recorded'), 'current' => $build->failure_message ?? __('None recorded'), 'long' => true],
+        ] as $comparison)
+            <section data-build-comparison-field class="p-4 sm:p-5">
+                <h2 class="text-xs font-bold uppercase tracking-wide text-secondary">{{ $comparison['label'] }}</h2>
+                <dl class="mt-3 grid gap-4 sm:grid-cols-2">
+                    @foreach ([['label' => __('Baseline Build #:id', ['id' => $baseline->id]), 'build' => $baseline, 'value' => $comparison['baseline']], ['label' => __('Current Build #:id', ['id' => $build->id]), 'build' => $build, 'value' => $comparison['current']]] as $side)
+                        <div @class(['min-w-0 rounded-lg bg-secondary p-3' => $comparison['long'] ?? false])>
+                            <dt class="text-xs font-semibold text-secondary">
+                                <a href="{{ route('builds.show', $side['build']) }}" class="text-primary hover:underline">{{ $side['label'] }}</a>
+                            </dt>
+                            <dd @class(['mt-2 text-primary', 'whitespace-pre-wrap break-words' => $comparison['long'] ?? false, 'font-mono text-xs' => $comparison['revision'] ?? false])>
+                                @if ($comparison['revision'] ?? false)
+                                    @if ($revisionUrl = $side['build']->repository->revisionUrl($side['build']->revision))
+                                        <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ $side['value'] }}</a>
+                                    @else
+                                        {{ __('Current branch') }}
+                                    @endif
+                                @else
+                                    {{ $side['value'] }}
+                                @endif
+                                @if (($comparison['duration'] ?? false) && $side['build']->is($build))
+                                    @if ($durationDelta !== null)
+                                        @if ($durationDelta > 0)
+                                            <span class="mt-2 block text-xs text-red-600">{{ __(':duration slower', ['duration' => \App\Models\Build::formatDuration($durationDelta)]) }}</span>
+                                        @elseif ($durationDelta < 0)
+                                            <span class="mt-2 block text-xs text-green-600">{{ __(':duration faster', ['duration' => \App\Models\Build::formatDuration(abs($durationDelta))]) }}</span>
+                                        @else
+                                            <span class="mt-2 block text-xs text-secondary">{{ __('No duration change') }}</span>
+                                        @endif
+                                    @else
+                                        <span class="mt-2 block text-xs text-secondary">{{ __('Comparison unavailable') }}</span>
+                                    @endif
+                                @endif
+                            </dd>
+                        </div>
                     @endforeach
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Triggered by') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ str($baseline->trigger_source)->title() }}</td>
-                    <td class="px-4 py-3 text-primary">{{ str($build->trigger_source)->title() }}</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Created') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ $baseline->created_at?->format('Y-m-d H:i:s T') ?? __('Not recorded') }}</td>
-                    <td class="px-4 py-3 text-primary">{{ $build->created_at?->format('Y-m-d H:i:s T') ?? __('Not recorded') }}</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Started') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ $baseline->started_at?->format('Y-m-d H:i:s T') ?? __('Not started') }}</td>
-                    <td class="px-4 py-3 text-primary">{{ $build->started_at?->format('Y-m-d H:i:s T') ?? __('Not started') }}</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Finished') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ $baseline->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</td>
-                    <td class="px-4 py-3 text-primary">{{ $build->finished_at?->format('Y-m-d H:i:s T') ?? __('Not finished') }}</td>
-                </tr>
-                <tr>
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Duration') }}</th>
-                    <td class="px-4 py-3 text-primary">{{ $baseline->durationLabel() ?? __('Not recorded') }}</td>
-                    <td class="px-4 py-3 text-primary">
-                        {{ $build->durationLabel() ?? __('Not recorded') }}
-                        @if ($durationDelta !== null)
-                            @if ($durationDelta > 0)
-                                <span class="ml-2 text-xs text-red-600">{{ __(':duration slower', ['duration' => \App\Models\Build::formatDuration($durationDelta)]) }}</span>
-                            @elseif ($durationDelta < 0)
-                                <span class="ml-2 text-xs text-green-600">{{ __(':duration faster', ['duration' => \App\Models\Build::formatDuration(abs($durationDelta))]) }}</span>
-                            @else
-                                <span class="ml-2 text-xs text-secondary">{{ __('No duration change') }}</span>
-                            @endif
-                        @else
-                            <span class="ml-2 text-xs text-secondary">{{ __('Comparison unavailable') }}</span>
-                        @endif
-                    </td>
-                </tr>
-                <tr class="align-top">
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Commit message') }}</th>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $baseline->commit_message ?? __('Not recorded') }}</td>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $build->commit_message ?? __('Not recorded') }}</td>
-                </tr>
-                <tr class="align-top">
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Operator note') }}</th>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $baseline->operator_note ?? __('Not recorded') }}</td>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $build->operator_note ?? __('Not recorded') }}</td>
-                </tr>
-                <tr class="align-top">
-                    <th scope="row" class="px-4 py-3 text-left font-medium text-secondary">{{ __('Failure') }}</th>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $baseline->failure_message ?? __('None recorded') }}</td>
-                    <td class="whitespace-pre-wrap break-words px-4 py-3 text-primary">{{ $build->failure_message ?? __('None recorded') }}</td>
-                </tr>
-            </tbody>
-        </table>
+                </dl>
+            </section>
+        @endforeach
     </div>
 </x-layouts.app>

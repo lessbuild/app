@@ -102,20 +102,8 @@
                     :title="__('No repositories with enabled push webhooks are available in this workspace.')"
                 />
             @else
-                <div class="mt-4 overflow-x-auto">
-                    <table class="min-w-full divide-y divide-primary border-y border-primary">
-                        <caption class="sr-only">{{ __('Read-only automatic deployment impact results') }}</caption>
-                        <thead>
-                            <tr>
-                                <th scope="col" class="py-3 pr-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Target') }}</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Service root') }}</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Configured paths') }}</th>
-                                <th scope="col" class="px-3 py-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Impact') }}</th>
-                                <th scope="col" class="py-3 pl-3 text-left text-xs font-semibold uppercase text-secondary">{{ __('Matched paths') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-primary">
-                            @foreach ($preview->targets as $target)
+                <div class="ui-card mt-4 divide-y divide-primary overflow-hidden" aria-label="{{ __('Read-only automatic deployment impact results') }}">
+                    @foreach ($preview->targets as $target)
                                 @php
                                     $repository = $target->repository;
                                     $impact = $target->impact;
@@ -137,41 +125,51 @@
                                         $pathSummary[] = __('Exclude: :paths', ['paths' => implode(', ', $repository->auto_deploy_exclude_paths)]);
                                     }
                                 @endphp
-                                <tr class="align-top">
-                                    <th scope="row" class="py-3 pr-3 text-left text-sm font-medium text-primary">
-                                        <a href="{{ route('repositories.show', $repository) }}" class="hover:underline">{{ $repository->name }}</a>
-                                        <span class="mt-1 block text-xs font-normal text-secondary">{{ $repository->website?->name ?? __('Website unavailable') }} · {{ $repository->branch }}</span>
-                                    </th>
-                                    <td class="whitespace-nowrap px-3 py-3 text-sm font-mono text-secondary">{{ $repository->deploymentRoot() }}</td>
-                                    <td class="min-w-[18rem] px-3 py-3 text-xs text-secondary">{{ $pathSummary === [] ? __('Every path (no filters)') : implode(' · ', $pathSummary) }}</td>
-                                    <td class="whitespace-nowrap px-3 py-3 text-sm">
-                                        <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $impactClass }}">{{ $impactLabel }}</span>
-                                        <span class="mt-2 block text-xs text-secondary">{{ match ($impact->reason) {
-                                            'no_path_filters' => __('No path filters are configured.'),
-                                            'configured_path_changed' => __('A configured path changed.'),
-                                            'no_configured_path_changed' => __('No configured path changed.'),
-                                            'changed_paths_unavailable' => __('The changed-file list was unavailable.'),
-                                            default => __('The target could not be evaluated safely.'),
-                                        } }}</span>
-                                    </td>
-                                    <td class="min-w-[16rem] py-3 pl-3 text-xs font-mono text-secondary">
-                                        @if ($impact->matchedPaths === [])
-                                            &mdash;
-                                        @else
-                                            <ul class="space-y-1">
-                                                @foreach (array_slice($impact->matchedPaths, 0, 5) as $path)
-                                                    <li class="truncate" title="{{ $path }}">{{ $path }}</li>
-                                                @endforeach
-                                            </ul>
-                                            @if (count($impact->matchedPaths) > 5)
-                                                <span class="mt-1 block">{{ __(':count more matched paths', ['count' => count($impact->matchedPaths) - 5]) }}</span>
-                                            @endif
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                        <article data-impact-target class="p-4 sm:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <a href="{{ route('repositories.show', $repository) }}" class="font-semibold text-primary hover:underline">{{ $repository->name }}</a>
+                                    <p class="mt-1 text-xs text-secondary">{{ $repository->website?->name ?? __('Website unavailable') }} · {{ $repository->branch }}</p>
+                                </div>
+                                <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $impactClass }}">{{ $impactLabel }}</span>
+                            </div>
+                            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                                <div>
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Service root') }}</dt>
+                                    <dd class="mt-1 font-mono text-xs text-primary">{{ $repository->deploymentRoot() }}</dd>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Configured paths') }}</dt>
+                                    <dd class="mt-1 text-secondary">{{ $pathSummary === [] ? __('Every path (no filters)') : implode(' · ', $pathSummary) }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Reason') }}</dt>
+                                    <dd class="mt-1 text-secondary">{{ match ($impact->reason) {
+                                        'no_path_filters' => __('No path filters are configured.'),
+                                        'configured_path_changed' => __('A configured path changed.'),
+                                        'no_configured_path_changed' => __('No configured path changed.'),
+                                        'changed_paths_unavailable' => __('The changed-file list was unavailable.'),
+                                        default => __('The target could not be evaluated safely.'),
+                                    } }}</dd>
+                                </div>
+                            </dl>
+                            <div class="mt-4 rounded-lg bg-secondary p-3">
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Matched paths') }}</h3>
+                                @if ($impact->matchedPaths === [])
+                                    <p class="mt-2 text-sm text-secondary">&mdash;</p>
+                                @else
+                                    <ul class="mt-2 space-y-1 font-mono text-xs text-secondary">
+                                        @foreach (array_slice($impact->matchedPaths, 0, 5) as $path)
+                                            <li class="truncate" title="{{ $path }}">{{ $path }}</li>
+                                        @endforeach
+                                    </ul>
+                                    @if (count($impact->matchedPaths) > 5)
+                                        <span class="mt-2 block text-xs text-secondary">{{ __(':count more matched paths', ['count' => count($impact->matchedPaths) - 5]) }}</span>
+                                    @endif
+                                @endif
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
             @endif
         </section>

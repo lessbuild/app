@@ -42,6 +42,8 @@ class BuildHistoryInsightsTest extends TestCase
             ->assertSee('75%')
             ->assertSee('Latest matching deployment')
             ->assertSee('active and canceled runs excluded.')
+            ->assertSee('data-build-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Foreign private deployment');
     }
 
