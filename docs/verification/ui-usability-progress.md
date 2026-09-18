@@ -96,7 +96,55 @@ baseline.
 
 | Slice | Status | Tests / evidence | Commit / push | Exact next task |
 | --- | --- | --- | --- | --- |
-| Phase 0: inventory and fresh baseline | Complete | 1,566 PHP tests / 12,908 assertions; Pint; diff check; 9 asset tests; 6 accessibility/navigation tests; broad crawl limitation documented above | Pending | Reconcile the stale visual-audit mobile navigation expectation, then implement the shared readability and keyboard-navigation slice |
+| Phase 0: inventory and fresh baseline | Complete | 1,566 PHP tests / 12,908 assertions; Pint; diff check; 9 asset tests; 6 accessibility/navigation tests; broad crawl limitation documented above | `26dccf3` pushed to `origin/main` | Shared readability and keyboard-navigation slice |
+
+## Phase 1 — shared readability and keyboard navigation
+
+### Responsibility problem
+
+Global readability and browser metadata were split between legacy color aliases,
+semantic tokens and the shared layouts. The command palette updated an internal
+index without moving focus or exposing the active result, and the visual audit
+still expected the retired grouped mobile label. These were shared-shell
+problems, so the fix belongs at the theme/layout and browser-contract boundary,
+not in individual feature pages.
+
+### Boundaries and preserved behavior
+
+- `PageTitle` owns presentation-only route-to-title mapping. It does not load
+  resources, authorize actors or change response bodies beyond the browser title.
+- The authenticated layout resolves an explicit title first and otherwise uses
+  the current named route. Public, authentication and legal layouts keep their
+  existing explicit titles.
+- Theme aliases now provide readable primary/secondary text and placeholders in
+  both color schemes. Semantic dark buttons use a sufficiently dark blue with
+  white text; routes, forms, flash messages, persisted values and workflow
+  behavior are unchanged.
+- The command palette now cycles visible results with Arrow Up/Down, Home and
+  End, resets selection when filtering, exposes `role="option"` and
+  `aria-selected`, and reports an empty quick-action match. Enter still follows
+  the focused link or submits the existing full-resource search.
+- The mobile menu remains the intentionally restored flat direct-link layout;
+  the stale visual test was updated to assert its direct `Account` and
+  `Settings` destinations.
+
+### Verification
+
+- Focused PHP: `UiPageTitleTest` passed; `LocalUiAssetTest` passed (18 tests,
+  384 assertions).
+- `vendor/bin/pint --test`, `git diff --check` and Blade cache compilation
+  passed.
+- `npm run test:assets` passed with the required PHP override: 9 responsive,
+  dark/light and no-JavaScript checks.
+- Authenticated browser smoke passed: 6/6 accessibility and navigation cases
+  across mobile, tablet and desktop.
+- The corrected mobile visual crawl passed: 1/1 test, 3.2 minutes, with the
+  full product-page traversal completing past the former stale-link blocker.
+- Commit `f9e7488` (`feat: improve shared UI accessibility`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, rebuilt,
+  cache-refreshed and confirmed healthy.
+
+| Phase 1: shared readability and keyboard navigation | Complete | Focused PHP, Pint, diff check, 9 asset tests, 6 browser smoke tests and 1 mobile visual crawl passed | `f9e7488` pushed to `origin/main` | Build the deployment-history results-before-filters slice |
 
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
