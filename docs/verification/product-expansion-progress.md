@@ -1,5 +1,26 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 deployment detail sections were consolidated
+into one `DEPLOYMENT TIMELINE` surface. Build details now combine the recorded
+milestones and execution checkpoints in the existing timeline card, while
+active or failed deployments remain expanded on mobile and completed
+deployments remain concise until opened. Repository details now use the same
+timeline label and responsive disclosure behavior; the existing
+`repository-setup` anchor and Livewire setup/checkpoint behavior remain
+compatible.
+
+Focused deployment coverage passed **24 tests / 203 assertions**. The required
+PHP Pint check, `git diff --check`, Blade view caching and responsive browser
+coverage (**10 tests** across light/dark 320/390/768/1440px viewports plus
+provider journeys) passed. The isolated dev runtime was fast-forwarded to
+`577c169`, its view cache was refreshed and the service is active; the live
+runtime smoke passed (**1 test**). No routes, persistence, queue behavior,
+deployment data, authorization or remote side effects changed. Commit
+`577c169` (`Consolidate deployment timeline sections`) is pushed to
+`origin/main`. The exact next task is to review the rendered build and
+repository timeline at the isolated dev domain and only make another change if
+there is a concrete remaining density or labeling issue.
+
 Latest continuation: September 18 dashboard mobile scroll reduction completed.
 The secondary 14-day deployment, health and plan charts now use the existing
 responsive disclosure behavior: the operational overview remains expanded on
