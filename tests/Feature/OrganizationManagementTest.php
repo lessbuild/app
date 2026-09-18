@@ -39,6 +39,51 @@ class OrganizationManagementTest extends TestCase
         Notification::assertSentOnDemand(OrganizationInvitationNotification::class);
     }
 
+    public function test_workspace_page_keeps_members_visible_and_collapses_secondary_administration_panels(): void
+    {
+        $owner = User::factory()->create();
+
+        $content = $this->actingAs($owner)
+            ->get(route('organizations.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        foreach (['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete'] as $id) {
+            $this->assertStringContainsString('id="'.$id.'"', $content);
+            $this->assertDoesNotMatchRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
+        }
+
+        $this->assertStringContainsString('Members', $content);
+        $this->assertStringContainsString('Save security policy', $content);
+        $this->assertStringContainsString('Permanently delete workspace', $content);
+    }
+
+    public function test_workspace_security_validation_reopens_only_the_relevant_panel(): void
+    {
+        $owner = User::factory()->create();
+
+        $response = $this->from(route('organizations.index'))
+            ->followingRedirects()
+            ->actingAs($owner)
+            ->patch(route('organizations.security-policy.update'), [
+                'allowed_ip_ranges' => '',
+                'allowed_email_domains' => '',
+                'require_two_factor' => 'not-a-boolean',
+                'session_idle_minutes' => '60',
+                'sso_issuer' => '',
+                'sso_client_id' => '',
+                'sso_client_secret' => '',
+                'sso_enforced' => '0',
+            ])
+            ->assertSuccessful();
+
+        $content = $response->getContent();
+
+        $this->assertMatchesRegularExpression('/<details\s+id="organization-security-policy"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details\s+id="organization-notification-preferences"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details\s+id="organization-invite"[^>]*\bopen\b[^>]*>/', $content);
+    }
+
     public function test_only_a_current_workspace_manager_can_invite_and_denial_precedes_malformed_input(): void
     {
         $owner = User::factory()->create();

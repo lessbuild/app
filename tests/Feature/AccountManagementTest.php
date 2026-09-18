@@ -64,7 +64,7 @@ class AccountManagementTest extends TestCase
 
         foreach (['account-two-factor', 'account-security-activity', 'account-sign-ins', 'account-browser-sessions', 'account-connected-accounts', 'account-data'] as $id) {
             $this->assertStringContainsString('id="'.$id.'"', $content);
-            $this->assertDoesNotMatchRegularExpression('/<details id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
+            $this->assertDoesNotMatchRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
         }
 
         $this->assertStringContainsString('Save profile', $content);

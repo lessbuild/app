@@ -5,6 +5,23 @@
         :description="__('Manage members, roles, and workspace access.')"
     />
 
+    @php
+        $organizationDefaultErrorKeys = array_keys($errors->getBag('default')->getMessages());
+        $hasOrganizationError = static fn (array $fields): bool => collect($organizationDefaultErrorKeys)->contains(
+            static fn (string $key): bool => collect($fields)->contains(
+                static fn (string $field): bool => $key === $field || str_starts_with($key, $field.'.'),
+            ),
+        );
+        $securityPolicyOpen = $hasOrganizationError([
+            'allowed_ip_ranges', 'allowed_email_domains', 'require_two_factor',
+            'session_idle_minutes', 'sso_issuer', 'sso_client_id',
+            'sso_client_secret', 'sso_enforced',
+        ]);
+        $notificationPreferencesOpen = $hasOrganizationError(['categories', 'recoveries']);
+        $invitationOpen = $errors->getBag('default')->has('email') || old('email') !== null;
+        $deleteWorkspaceOpen = $errors->getBag('deleteWorkspace')->any();
+    @endphp
+
     <div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <x-forms.section
             :title="__('Members')"
@@ -52,6 +69,9 @@
                 <x-forms.section
                     :title="__('Security policy')"
                     :description="__('Enforce access requirements for everyone in this workspace.')"
+                    :collapsible="true"
+                    id="organization-security-policy"
+                    :open="$securityPolicyOpen"
                 >
                     <form method="POST" action="{{ route('organizations.security-policy.update') }}" class="space-y-5 bg-primary p-5 sm:p-6">
                         @csrf
@@ -124,6 +144,9 @@
                 <x-forms.section
                     :title="__('Notification preferences')"
                     :description="__('Choose which events create inbox notifications for this workspace. Alert destinations are configured separately in Observability.')"
+                    :collapsible="true"
+                    id="organization-notification-preferences"
+                    :open="$notificationPreferencesOpen"
                 >
                     <form method="POST" action="{{ route('organizations.notification-preferences.update') }}" class="space-y-5 bg-primary p-5 sm:p-6">
                         @csrf
@@ -159,6 +182,9 @@
                 <x-forms.section
                     :title="__('Invite member')"
                     :description="__('Invitations expire after seven days.')"
+                    :collapsible="true"
+                    id="organization-invite"
+                    :open="$invitationOpen"
                 >
                     <form method="POST" action="{{ route('organizations.invitations.store') }}" class="space-y-5 bg-primary p-5 sm:p-6">
                         @csrf
@@ -187,6 +213,8 @@
             <x-forms.section
                 :title="__('Your workspaces')"
                 :description="__('Switch the active workspace.')"
+                :collapsible="true"
+                id="organization-workspaces"
             >
                 <div class="space-y-2 bg-primary p-5 sm:p-6">
                     @foreach (auth()->user()->organizations as $workspace)
@@ -204,8 +232,16 @@
     </div>
 
     @if ($organization->owner->is(auth()->user()))
-        <section class="ui-card mt-8 border-red-200 bg-red-50 p-5 sm:p-6" aria-labelledby="delete-workspace-title">
-            <div class="max-w-3xl">
+        <details id="organization-delete" class="group ui-card mt-8 border-red-200 bg-red-50" @if ($deleteWorkspaceOpen) open @endif>
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:p-6 lg:hidden">
+                <span>
+                    <span class="block text-xl font-black text-red-900">{{ __('Delete workspace') }}</span>
+                    <span class="mt-2 block text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its BuildPusher records.') }}</span>
+                </span>
+                <span class="shrink-0 text-xl text-red-700 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <div class="p-5 sm:p-6 lg:block">
+                <div class="max-w-3xl">
                 <div class="flex items-start gap-3">
                     <svg class="mt-0.5 h-6 w-6 shrink-0 text-red-700" aria-hidden="true">
                         <use xlink:href="/assets/images/icons.svg#exclamation"></use>
@@ -239,6 +275,7 @@
                     </div>
                 </form>
             </div>
-        </section>
+            </div>
+        </details>
     @endif
 </x-layouts.app>
