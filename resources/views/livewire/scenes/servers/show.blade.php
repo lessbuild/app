@@ -145,35 +145,73 @@
         </dl>
     </x-ui.card>
 
-    <section class="ui-card mt-8 p-5" aria-labelledby="server-metrics-heading">
-        <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 24 hours') }}</p>
-                <h2 id="server-metrics-heading" class="mt-1 text-xl font-black text-primary">{{ __('Server metrics') }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
+    <details id="server-metrics" class="group ui-card mt-8 overflow-hidden" @if ($latestMetric === null) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 24 hours') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Server metrics') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ $latestMetric?->recorded_at ? __('Latest sample :time', ['time' => $latestMetric->recorded_at->diffForHumans()]) : __('No metric samples yet.') }}
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <section class="border-t border-primary p-5" aria-labelledby="server-metrics-heading">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h2 id="server-metrics-heading" class="text-xl font-black text-primary">{{ __('Server metrics') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
+                </div>
+                <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
             </div>
-            <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
-        </div>
-        <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            @foreach ([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label, $value])
-                <x-ui.stat :label="__($label)" :value="$value ?? '—'" />
-            @endforeach
-        </dl>
-        @if ($metricHistory->isNotEmpty())
-            <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">
-                @foreach ($metricHistory as $metric)
-                    <span class="min-w-px rounded-t bg-surface-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>
+            <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                @foreach ([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label, $value])
+                    <x-ui.stat :label="__($label)" :value="$value ?? '—'" />
                 @endforeach
-            </div>
-        @else
-            <x-ui.empty-state class="mt-4" :title="__('No metric samples yet.')" :description="__('Collection runs automatically every five minutes.')" />
-        @endif
-    </section>
+            </dl>
+            @if ($metricHistory->isNotEmpty())
+                <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">
+                    @foreach ($metricHistory as $metric)
+                        <span class="min-w-px rounded-t bg-surface-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>
+                    @endforeach
+                </div>
+            @else
+                <x-ui.empty-state class="mt-4" :title="__('No metric samples yet.')" :description="__('Collection runs automatically every five minutes.')" />
+            @endif
+        </section>
+    </details>
 
-    <section class="ui-card mt-6 p-5" aria-labelledby="server-diagnostics-heading">
+    @php
+        $diagnosticsNeedAttention = $errors->has('diagnostics')
+            || $diagnosticSnapshot?->isActive()
+            || $diagnosticSnapshot?->status === \App\Models\ServerDiagnosticSnapshot::STATUS_FAILED
+            || ($diagnosticReport !== null && ! $diagnosticReport->passed());
+        $diagnosticsOpen = $diagnosticSnapshot === null || $diagnosticsNeedAttention;
+    @endphp
+    <details id="server-diagnostics" class="group ui-card mt-6 overflow-hidden" @if ($diagnosticsOpen) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Troubleshooting') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Server diagnostics') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    @if ($diagnosticSnapshot === null)
+                        {{ __('Not collected yet.') }}
+                    @elseif ($diagnosticSnapshot->isActive())
+                        {{ str($diagnosticSnapshot->status)->headline() }}
+                    @elseif ($diagnosticSnapshot->status === \App\Models\ServerDiagnosticSnapshot::STATUS_FAILED)
+                        {{ __('Last run failed.') }}
+                    @elseif ($diagnosticReport !== null && ! $diagnosticReport->passed())
+                        {{ __('Attention required.') }}
+                    @else
+                        {{ __('Latest run completed.') }}
+                    @endif
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <section class="border-t border-primary p-5" aria-labelledby="server-diagnostics-heading">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Troubleshooting') }}</p>
                 <h2 id="server-diagnostics-heading" class="mt-1 text-xl font-black text-primary">{{ __('Server diagnostics') }}</h2>
                 <p class="mt-1 max-w-2xl text-sm text-secondary">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
             </div>
@@ -230,7 +268,8 @@
                 <p class="mt-4 text-xs text-secondary">{{ __('Collected :time · attempt :attempt', ['time' => $diagnosticSnapshot->finished_at->diffForHumans(), 'attempt' => $diagnosticSnapshot->attempt]) }}</p>
             @endif
         @endif
-    </section>
+        </section>
+    </details>
 
     <!-- Quick Actions -->
     <div class="mt-8 grid gap-6 lg:grid-cols-2">

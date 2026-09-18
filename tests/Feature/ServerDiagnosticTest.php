@@ -303,6 +303,42 @@ class ServerDiagnosticTest extends TestCase
             ->assertDontSee('wire:poll.5s', false);
     }
 
+    public function test_completed_operational_evidence_is_collapsed_but_first_use_stays_discoverable(): void
+    {
+        [$user, $server] = $this->server();
+
+        $initial = $this->actingAs($user)->get(route('servers.show', $server));
+        $initialContent = $initial->getContent();
+        $this->assertMatchesRegularExpression('/<details id="server-metrics"[^>]*\bopen\b[^>]*>/', $initialContent);
+        $this->assertMatchesRegularExpression('/<details id="server-diagnostics"[^>]*\bopen\b[^>]*>/', $initialContent);
+
+        $server->metrics()->create([
+            'load_1m' => 0.25,
+            'load_5m' => 0.5,
+            'memory_percent' => 37,
+            'disk_percent' => 42,
+            'uptime_seconds' => 3600,
+            'recorded_at' => now(),
+        ]);
+        $server->diagnosticSnapshot()->create([
+            'status' => ServerDiagnosticSnapshot::STATUS_READY,
+            'attempt' => 1,
+            'attempt_token' => (string) Str::uuid(),
+            'checks' => [[
+                'name' => 'PHP runtime',
+                'category' => 'runtime',
+                'passed' => true,
+                'detail' => 'PHP 8.5.10 available',
+            ]],
+            'finished_at' => now(),
+        ]);
+
+        $completed = $this->actingAs($user)->get(route('servers.show', $server));
+        $completedContent = $completed->getContent();
+        $this->assertDoesNotMatchRegularExpression('/<details id="server-metrics"[^>]*\bopen\b[^>]*>/', $completedContent);
+        $this->assertDoesNotMatchRegularExpression('/<details id="server-diagnostics"[^>]*\bopen\b[^>]*>/', $completedContent);
+    }
+
     private function queuedSnapshot(Server $server): ServerDiagnosticSnapshot
     {
         return $server->diagnosticSnapshot()->create([
