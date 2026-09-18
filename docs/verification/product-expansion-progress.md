@@ -1,5 +1,19 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 semantic alert cards were refined to use a
+neutral surface and primary text with a tone-colored border. Success, info,
+warning and danger states retain their meaning without turning an entire page
+section into a saturated colored panel. The shared `.ui-alert` component keeps
+the change consistent across flash messages, validation, setup, deployment,
+provider and operational notices.
+
+The asset build and **19 focused UI tests / 405 assertions** passed, followed
+by a served-site check confirming neutral backgrounds and semantic red, amber
+and blue borders on the isolated dev dashboard. Commit `53acf5d` (`Use neutral
+surfaces for semantic alerts`) is pushed to `origin/main`; the isolated dev
+runtime was rebuilt, cached and restarted successfully. The exact next task is
+the next user-prioritized UI refinement.
+
 Latest continuation: September 18 the responsive table replacement slice is
 complete, including command history and command-center views. A full
 `resources/views` audit now finds no `<table>`, `<thead>` or `<tbody>` markup.
