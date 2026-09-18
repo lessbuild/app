@@ -56,6 +56,75 @@ class LoadBalancerOperationsTest extends TestCase
         Queue::assertPushed(RemoveLoadBalancerJob::class, fn (RemoveLoadBalancerJob $job): bool => $job->serverId === $loadBalancerServer->id && $job->loadBalancerId === $loadBalancer->id);
     }
 
+    public function test_load_balancer_workflows_prioritize_creation_and_incomplete_nodes(): void
+    {
+        [$owner, $environment, $loadBalancerServer, $nodeServer] = $this->infrastructure();
+
+        $emptyContent = $this->actingAs($owner)
+            ->get(route('load-balancers.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details id="load-balancer-create"[^>]*\bopen\b[^>]*>/', $emptyContent);
+
+        $loadBalancer = $owner->currentOrganization->loadBalancers()->create([
+            'environment_id' => $environment->id,
+            'server_id' => $loadBalancerServer->id,
+            'hostname' => 'edge.example.com',
+            'health_path' => '/health',
+            'status' => 'active',
+            'created_by' => $owner->id,
+        ]);
+
+        $initialContent = $this->actingAs($owner)
+            ->get(route('load-balancers.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details id="load-balancer-create"[^>]*\bopen\b[^>]*>/', $initialContent);
+        $this->assertMatchesRegularExpression('/<details id="load-balancer-nodes-'.$loadBalancer->id.'"[^>]*\bopen\b[^>]*>/', $initialContent);
+
+        $this->from(route('load-balancers.index'))
+            ->followingRedirects()
+            ->actingAs($owner)
+            ->post(route('load-balancers.store'), [
+                '_load_balancer_form' => 'create',
+                'environment_id' => $environment->id,
+                'server_id' => $loadBalancerServer->id,
+                'hostname' => '',
+                'health_path' => '/health',
+            ])
+            ->assertSuccessful()
+            ->assertSee('The hostname field is required.');
+
+        $nodeServerTwo = $owner->servers()->create([
+            'provider_id' => $nodeServer->provider_id,
+            'name' => 'Node two',
+            'public_ip' => '203.0.113.40',
+            'ssh_private_key' => 'key',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $loadBalancer->nodes()->create([
+            'server_id' => $nodeServer->id,
+            'upstream_port' => 8080,
+            'weight' => 1,
+            'health_status' => 'healthy',
+        ]);
+        $loadBalancer->nodes()->create([
+            'server_id' => $nodeServerTwo->id,
+            'upstream_port' => 8080,
+            'weight' => 1,
+            'health_status' => 'healthy',
+        ]);
+
+        $completeContent = $this->actingAs($owner)
+            ->get(route('load-balancers.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details id="load-balancer-nodes-'.$loadBalancer->id.'"[^>]*\bopen\b[^>]*>/', $completeContent);
+    }
+
     public function test_dedicated_server_and_self_routing_rules_reject_writes(): void
     {
         [$owner, $environment, $loadBalancerServer] = $this->infrastructure();
