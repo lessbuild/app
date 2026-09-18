@@ -233,7 +233,7 @@
                         </div>
                         <div>
                             <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
+                            <dd class="mt-1 text-primary">{{ __('Duration: :duration', ['duration' => $build->durationLabel() ?? __('Not recorded')]) }}</dd>
                         </div>
                     </dl>
                     @if ($build->operator_note)
