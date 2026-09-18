@@ -295,6 +295,53 @@ repositories and setup context.
 
 | Phase 5: website health and runtime evidence disclosure | Complete | 30 focused tests / 262 assertions, disclosure-state test, Pint, build, diff check and real mobile interaction passed; page shortened ~812px | `a26a970` pushed to `origin/main` | Improve repository/build detail pages so release context and recovery actions precede long history and logs |
 
+## Phase 6 — deployment detail recovery and execution disclosures
+
+### Responsibility problem
+
+Deployment detail already had the required revision evidence, lifecycle timeline,
+recovery actions and bounded output, but the lower-level setup stages and full
+log were visually equivalent to the primary result. On the failed runtime
+fixture, recovery guidance appeared around 5,542px and the log around 6,007px
+in the original review.
+
+### Boundaries and preserved behavior
+
+- `BuildDeploymentStatus` remains the existing Livewire presentation boundary;
+  no deployment query, job, policy, callback, route or persistence behavior
+  changed.
+- The primary status/evidence/timeline remains available. Script-level progress
+  is now a disclosure with a recorded-stage summary and opens automatically for
+  active or failed builds; completed builds start concise.
+- Failed cause, deterministic recovery guidance and retained-release rollback
+  are rendered immediately after the top status block, before evidence and
+  execution history. The existing rollback authorization, forms and routes are
+  unchanged.
+- The bounded deployment log is a separate disclosure. Active builds open it
+  for live work; completed and failed builds keep the verbose output closed by
+  default while preserving the existing download route and anchor. Failure
+  guidance still links directly to the log disclosure.
+- Existing escaped output, polling, cancel/retry/approval/rollback actions,
+  stale callback behavior, release lineage and health links remain unchanged.
+
+### Verification
+
+- `DeploymentLogTest`, `DeploymentTimelineTest`, `RepositoryDeploymentTest` and
+  the timeline unit suite passed: 25 tests / 189 assertions.
+- Pint, Blade view compilation and `git diff --check` passed.
+- Commits `f00e79b` (execution/log disclosures), `4c1c6d8` (failed recovery
+  ordering) and `9250304` (top-level recovery placement) were each pushed to
+  `origin/main`.
+- The isolated HTTPS runtime was rebuilt/cache-refreshed and both service units
+  remained active. A real 390px browser check measured failed recovery at about
+  868px instead of the original ~5,542px; the failed page remains about 6,639px
+  overall because the diagnostic progress disclosure intentionally stays open.
+  The log was closed by default and opened successfully after clicking its
+  summary. A completed build measured about 3,700px and started with both
+  secondary disclosures closed.
+
+| Phase 6: deployment detail recovery and execution disclosures | Complete | 25 focused tests / 189 assertions, Pint, view compilation, push and real mobile disclosure interaction passed; recovery moved to ~868px, with failed-page total-height limitation documented | `f00e79b`, `4c1c6d8`, `9250304` pushed to `origin/main` | Improve repository detail so latest deployment and core setup actions precede webhook history and secondary configuration |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
