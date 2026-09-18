@@ -17,7 +17,19 @@
         @endif
     </x-layouts.partials.heading>
 
-    <x-ui.card class="mt-6 p-4 sm:p-5">
+    @php
+        $reportHistoryFilterCount = collect($filters)->filter(fn ($value, $key) => filled($value)
+            && ($key === 'status' || $key === 'availability' || $key === 'updates'
+                ? $value !== 'all'
+                : ($key === 'sort' ? $value !== 'newest' : true)))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="gallery-report-history-filters"
+        class="mt-6"
+        :open="$reportHistoryFilterCount > 0"
+        :summary="$reportHistoryFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $reportHistoryFilterCount, ['count' => $reportHistoryFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('gallery.reports.mine') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div>
@@ -74,19 +86,25 @@
             @endif
         </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        @foreach ([
-            ['label' => __('Matching reports'), 'value' => $metrics['matching']],
-            ['label' => __('Needs review'), 'value' => $metrics['open']],
-            ['label' => __('Resolved'), 'value' => $metrics['resolved']],
-            ['label' => __('No longer published'), 'value' => $metrics['unpublished']],
-            ['label' => __('Unread updates'), 'value' => $metrics['unread_updates']],
-        ] as $metric)
-            <x-ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
-        @endforeach
-    </dl>
+    <details id="gallery-report-history-insights" class="ui-card group mt-6 overflow-hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count report|:count reports', $metrics['matching'], ['count' => $metrics['matching']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-5">
+            @foreach ([
+                ['label' => __('Matching reports'), 'value' => $metrics['matching']],
+                ['label' => __('Needs review'), 'value' => $metrics['open']],
+                ['label' => __('Resolved'), 'value' => $metrics['resolved']],
+                ['label' => __('No longer published'), 'value' => $metrics['unpublished']],
+                ['label' => __('Unread updates'), 'value' => $metrics['unread_updates']],
+            ] as $metric)
+                <x-ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
+            @endforeach
+        </dl>
+    </details>
 
     @if ($reports->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">

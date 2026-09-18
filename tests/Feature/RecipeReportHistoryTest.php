@@ -87,6 +87,33 @@ class RecipeReportHistoryTest extends TestCase
             ->assertSee(route('gallery.reports.mine'));
     }
 
+    public function test_reporter_history_prioritizes_reports_over_filters_and_metrics(): void
+    {
+        [$reporter, $author] = User::factory()->count(2)->create();
+        $recipe = $this->recipe($author, 'Visible report history', true);
+        $reporter->recipeReports()->create([
+            'recipe_id' => $recipe->id,
+            'reason' => 'broken',
+        ]);
+
+        $content = $this->actingAs($reporter)
+            ->get(route('gallery.reports.mine'))
+            ->assertSuccessful()
+            ->assertSee($recipe->name)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-history-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-history-insights"[^>]*\bopen\b[^>]*>/', $content);
+
+        $filteredContent = $this->actingAs($reporter)
+            ->get(route('gallery.reports.mine', ['reason' => 'broken']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="gallery-report-history-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-history-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
+    }
+
     public function test_reporter_history_combines_filters_and_normalizes_invalid_values(): void
     {
         [$reporter, $author] = User::factory()->count(2)->create();

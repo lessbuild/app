@@ -121,6 +121,34 @@ class RecipeFeedbackInboxTest extends TestCase
         $this->assertSame('oldest', $nextPageQuery['sort']);
     }
 
+    public function test_feedback_inbox_prioritizes_reports_over_filters_and_metrics(): void
+    {
+        [$reporter, $author] = User::factory()->count(2)->create();
+        $recipe = $this->recipe($author, 'Visible feedback recipe');
+        $reporter->recipeReports()->create([
+            'recipe_id' => $recipe->id,
+            'reason' => 'broken',
+            'details' => 'Visible report details.',
+        ]);
+
+        $content = $this->actingAs($author)
+            ->get(route('gallery.reports.index'))
+            ->assertSuccessful()
+            ->assertSee('Visible report details.')
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-insights"[^>]*\bopen\b[^>]*>/', $content);
+
+        $filteredContent = $this->actingAs($author)
+            ->get(route('gallery.reports.index', ['reason' => 'broken']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="gallery-report-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
+    }
+
     public function test_invalid_filters_are_normalized_and_empty_feedback_is_explicit(): void
     {
         $author = User::factory()->create();

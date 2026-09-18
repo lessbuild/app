@@ -19,7 +19,17 @@
         </x-ui.alert>
     @endif
 
-    <x-ui.card class="mt-6 p-4 sm:p-5">
+    @php
+        $reportFilterCount = collect($filters)->filter(fn ($value, $key) => filled($value)
+            && ($key === 'status' ? $value !== 'unresolved' : ($key === 'sort' ? $value !== 'newest' : true)))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="gallery-report-filters"
+        class="mt-6"
+        :open="$reportFilterCount > 0"
+        :summary="$reportFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $reportFilterCount, ['count' => $reportFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('gallery.reports.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
@@ -78,14 +88,20 @@
             @endif
         </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat class="ui-card" :label="__('Matching reports')" :value="$metrics['matching']" />
-        <x-ui.stat class="ui-card" :label="__('Needs review')" :value="$metrics['unresolved']" />
-        <x-ui.stat class="ui-card" :label="__('Resolved')" :value="$metrics['resolved']" />
-        <x-ui.stat class="ui-card" :label="__('Affected recipes')" :value="$metrics['recipes']" />
-    </dl>
+    <details id="gallery-report-insights" class="ui-card group mt-6 overflow-hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count report needs review|:count reports need review', $metrics['unresolved'], ['count' => $metrics['unresolved']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat class="ui-card" :label="__('Matching reports')" :value="$metrics['matching']" />
+            <x-ui.stat class="ui-card" :label="__('Needs review')" :value="$metrics['unresolved']" />
+            <x-ui.stat class="ui-card" :label="__('Resolved')" :value="$metrics['resolved']" />
+            <x-ui.stat class="ui-card" :label="__('Affected recipes')" :value="$metrics['recipes']" />
+        </dl>
+    </details>
 
     @if ($reports->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">
