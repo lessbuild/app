@@ -1,5 +1,24 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 dashboard mobile scroll reduction completed.
+The secondary 14-day deployment, health and plan charts now use the existing
+responsive disclosure behavior: the operational overview remains expanded on
+desktop, while mobile keeps the attention, setup and resource totals visible
+and collapses the secondary chart block until requested. The observability link
+remains available inside the expanded block, and the existing DOM identity and
+ordering are preserved.
+
+Dashboard coverage passed **36 tests / 329 assertions** and the full responsive
+asset/layout suite passed **10 tests** across light/dark 320/390/768/1440
+viewports plus provider journeys. Pint, `git diff --check` and Blade view
+caching passed. Commit `2d749e4` (`Collapse dashboard trends on mobile`) is
+pushed to `origin/main`; the isolated dev runtime is aligned at that commit,
+the view cache was refreshed, the service is active and the live-runtime smoke
+passed (**1 test**). The exact next task is a final mobile-density review of
+the remaining long detail workflows, beginning with repository and website
+secondary sections only if their current disclosure behavior leaves a concrete
+initial-scroll problem.
+
 Latest continuation: September 18 configuration authoring received the final
 justified overview summary for its non-review state. The page now surfaces
 recorded environment, dependency, masked-secret and recent-receipt counts from
