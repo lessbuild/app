@@ -94,10 +94,58 @@ changing the initial mobile state.
 Implementation commit `c897cf9` was pushed to `origin/main` before the next
 slice begins. This ledger update records the exact verification handoff.
 
+## Slice 2 — theme contrast and application-card containment
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The authenticated mobile header used the light-theme `text-primary` token on a
+fixed dark utility bar, producing a low-contrast dark brand name. Application
+cards also placed a non-wrapping environment-count badge beside a flexible
+name block without a wrapping boundary. At narrow widths, long application
+names could force the badge outside the card or clip its text even when the
+document itself had no horizontal overflow.
+
+### Boundaries and principle
+
+The layout templates own presentation constraints, so this slice stays within
+the view/CSS boundary and does not alter controllers, policies, persistence or
+routes. The header now uses the foreground token that matches its deliberately
+dark surface. The card header explicitly separates a shrinkable name region
+from a non-shrinking badge and permits the badge to move to its own line. This
+is single responsibility at the presentation boundary: content and business
+data remain unchanged while each component owns its own readable geometry.
+
+### Implementation
+
+- Made the authenticated mobile brand use `text-gray-100` on the fixed dark
+  header, independent of the page color scheme.
+- Added stable test hooks for the authenticated brand and application card
+  count badge.
+- Made application-card headers `min-w-0`, flexible and wrapping; the name
+  region can shrink and the count badge retains its complete text.
+- Added a long-name project to the isolated layout fixture and included the
+  real application index in the responsive browser matrix.
+
+### Verification
+
+- Isolated fixture renderer: **1 test / 18 assertions**.
+- Local UI feature coverage: **19 tests / 396 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including computed header contrast, badge text containment and the existing
+  provider no-JavaScript journey: **9 passed**.
+- `npm run build`, required-PHP Pint and `git diff --check`: passed.
+
+### Commit and push
+
+Implementation commit `2bb0b8b` was pushed to `origin/main`.
+
 ### Exact next task
 
-Begin Slice 2: repair light-theme header contrast and internal application-card
-clipping, with focused before/after browser assertions.
+Begin Slice 3: audit the shared visual foundation and navigation refinement,
+starting with repeated page-header/action patterns and the intentional flat
+mobile navigation constraint.
 
 ## Remaining planned slices
 
