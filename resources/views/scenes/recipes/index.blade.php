@@ -17,7 +17,16 @@
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <x-ui.card class="mt-8 p-4 sm:p-5">
+    @php
+        $recipeFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="recipe-filters"
+        class="mt-8"
+        :open="$recipeFilterCount > 0"
+        :summary="$recipeFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $recipeFilterCount, ['count' => $recipeFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('recipes.index') }}">
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
@@ -41,16 +50,22 @@
                 @endif
             </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <x-ui.stat class="ui-card" :label="__('Matching recipes')" :value="$metrics['total']" :description="__('Recipes in this filtered view.')" />
-        <x-ui.stat class="ui-card" :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching recipes assigned to servers.')" />
-        <x-ui.stat class="ui-card" :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching recipes without assignments.')" />
-        <x-ui.stat class="ui-card" :label="__('Server assignments')" :value="$metrics['assignments']" :description="__('All matching recipe-to-server links.')" />
-        <x-ui.stat class="ui-card" :label="__('Covered servers')" :value="$metrics['servers']" :description="__('Distinct servers using matching recipes.')" />
-        <x-ui.stat class="ui-card" :label="__('Latest update')" :value="$metrics['latest_at']?->diffForHumans() ?? __('No matching recipe')" :description="__('Most recently updated matching recipe.')" />
-    </dl>
+    <details id="recipe-insights" class="ui-card group mt-6 overflow-hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count matching recipe|:count matching recipes', $metrics['total'], ['count' => $metrics['total']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-3 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <x-ui.stat class="ui-card" :label="__('Matching recipes')" :value="$metrics['total']" :description="__('Recipes in this filtered view.')" />
+            <x-ui.stat class="ui-card" :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching recipes assigned to servers.')" />
+            <x-ui.stat class="ui-card" :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching recipes without assignments.')" />
+            <x-ui.stat class="ui-card" :label="__('Server assignments')" :value="$metrics['assignments']" :description="__('All matching recipe-to-server links.')" />
+            <x-ui.stat class="ui-card" :label="__('Covered servers')" :value="$metrics['servers']" :description="__('Distinct servers using matching recipes.')" />
+            <x-ui.stat class="ui-card" :label="__('Latest update')" :value="$metrics['latest_at']?->diffForHumans() ?? __('No matching recipe')" :description="__('Most recently updated matching recipe.')" />
+        </dl>
+    </details>
 
     @if ($recipes->isEmpty())
         <div class="mx-auto max-w-3xl">

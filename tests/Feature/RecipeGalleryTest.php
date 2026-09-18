@@ -51,6 +51,29 @@ class RecipeGalleryTest extends TestCase
             ->assertDontSee('Ordinary installer');
     }
 
+    public function test_gallery_prioritizes_recipe_cards_over_filters_and_metrics(): void
+    {
+        [$visitor, $author] = User::factory()->count(2)->create();
+        $recipe = $this->publishedRecipe($author, 'Auditable firewall', 'security', 3);
+
+        $defaultContent = $this->actingAs($visitor)
+            ->get(route('gallery.index'))
+            ->assertSuccessful()
+            ->assertSee($recipe->name)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-filters"[^>]*\bopen\b[^>]*>/', $defaultContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-insights"[^>]*\bopen\b[^>]*>/', $defaultContent);
+
+        $filteredContent = $this->actingAs($visitor)
+            ->get(route('gallery.index', ['category' => 'security']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="gallery-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
+    }
+
     public function test_personal_collection_filters_show_owned_installed_and_outdated_recipes(): void
     {
         [$visitor, $author, $otherUser] = User::factory()->count(3)->create();

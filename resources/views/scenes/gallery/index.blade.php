@@ -20,7 +20,17 @@
         <p class="mt-1">{{ __('Recipes run as root during provisioning. Inspect the full script and adapt it to your environment before assigning it to a server.') }}</p>
     </x-ui.alert>
 
-    <x-ui.card class="mt-6 p-4 sm:p-5">
+    @php
+        $galleryFilterCount = collect($filters)->filter(fn ($value, $key) => filled($value)
+            && ($key === 'search' || $key === 'category' || $value !== ($key === 'scope' ? 'all' : 'recent')))->count();
+    @endphp
+
+    <x-ui.filter-panel
+        id="gallery-filters"
+        class="mt-6"
+        :open="$galleryFilterCount > 0"
+        :summary="$galleryFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $galleryFilterCount, ['count' => $galleryFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('gallery.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
@@ -65,14 +75,20 @@
             @endif
         </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat class="ui-card" :label="__('Published recipes')" :value="$metrics['published']" />
-        <x-ui.stat class="ui-card" :label="__('Community installs')" :value="$metrics['installs']" />
-        <x-ui.stat class="ui-card" :label="__('Contributors')" :value="$metrics['authors']" />
-        <x-ui.stat class="ui-card" :label="__('Verified ratings')" :value="$metrics['ratings']" />
-    </dl>
+    <details id="gallery-insights" class="ui-card group mt-6 overflow-hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Insights') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count published recipe|:count published recipes', $metrics['published'], ['count' => $metrics['published']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat class="ui-card" :label="__('Published recipes')" :value="$metrics['published']" />
+            <x-ui.stat class="ui-card" :label="__('Community installs')" :value="$metrics['installs']" />
+            <x-ui.stat class="ui-card" :label="__('Contributors')" :value="$metrics['authors']" />
+            <x-ui.stat class="ui-card" :label="__('Verified ratings')" :value="$metrics['ratings']" />
+        </dl>
+    </details>
 
     @if ($recipes->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">

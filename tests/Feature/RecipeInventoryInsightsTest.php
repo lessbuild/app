@@ -103,6 +103,29 @@ class RecipeInventoryInsightsTest extends TestCase
             ->assertSee('No recipes match these filters');
     }
 
+    public function test_recipe_inventory_prioritizes_results_over_filters_and_metrics(): void
+    {
+        $owner = User::factory()->create();
+        $recipe = $this->recipe($owner, 'Deploy application');
+
+        $defaultContent = $this->actingAs($owner)
+            ->get(route('recipes.index'))
+            ->assertSuccessful()
+            ->assertSee($recipe->name)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-filters"[^>]*\bopen\b[^>]*>/', $defaultContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-insights"[^>]*\bopen\b[^>]*>/', $defaultContent);
+
+        $filteredContent = $this->actingAs($owner)
+            ->get(route('recipes.index', ['search' => 'Deploy']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="recipe-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
+    }
+
     private function recipe(User $user, string $name): Recipe
     {
         return $user->recipes()->create([
