@@ -213,7 +213,7 @@
             @endforeach
         </ol>
         <div class="mt-6 border-t border-primary pt-5">
-            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'heading' => __('Execution checkpoints')])
+            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'showHeading' => false])
         </div>
         </div>
     </details>

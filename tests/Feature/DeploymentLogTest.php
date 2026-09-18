@@ -183,7 +183,7 @@ class DeploymentLogTest extends TestCase
         );
         $completed
             ->assertSee('Deployment timeline')
-            ->assertSee('Execution checkpoints')
+            ->assertDontSee('Execution checkpoints')
             ->assertSeeText('Completed deployment output')
             ->assertSee(route('builds.log.download', $build), false);
 
