@@ -169,11 +169,40 @@ Current BuildPusher evidence from the development fixture:
   hierarchy, while preserving their truthful content, metadata, routes and
   non-JavaScript navigation.
 
+### Slice 5 — public landing and authentication surfaces
+
+- User problem: the public landing page and authentication screens used
+  functional but visually separate surfaces, so the product promise and the
+  signed-out entry point did not share the calm workspace hierarchy used in
+  the authenticated application.
+- Entry points: the public landing page, the shared authentication layout and
+  the shared UI stylesheet.
+- Boundary: added semantic presentation hooks for the public header, landing
+  hero, provider strip, CTA and authentication shell; added responsive
+  gradients, a subtle grid texture, restrained elevation and mobile spacing
+  through the shared UI stylesheet. No copy claims, metadata, route, form,
+  authorization or authentication behavior changed.
+- SOLID/Laravel rationale: visual behavior lives in the shared layout and
+  component stylesheet instead of being duplicated across login, register and
+  password screens. The existing Blade layout remains the single composition
+  boundary for authentication pages.
+- Preserved contracts: landing anchors, no-JavaScript navigation, SEO/share
+  metadata, illustrative-data disclosures, login form fields and all existing
+  auth layout accessibility hooks remain unchanged.
+- Verification: 47 focused tests passed with 706 assertions; Pint passed;
+  Vite build passed; light 320px and 1440px asset-layout browser fixtures
+  passed; `git diff --check` passed.
+- Commit and push: `85f8fc1 Refine public and authentication surfaces`,
+  pushed to `origin/main`.
+- Next task: run the responsive/accessibility sweep across the complete
+  product route inventory, fix only evidenced visual regressions, then run
+  the full regression and browser verification gates.
+
 ## Remaining sequence
 
 1. Dashboard hierarchy and first-value experience.
 2. Shared shell, resource headers and local navigation.
 3. Deployment, infrastructure and recovery page-family polish.
-4. Operational, automation, account and public-surface polish — operational,
-   account and feedback portion complete; public/auth portion next.
+4. Operational, automation, account and public-surface polish — complete
+   through the public/auth portion.
 5. Responsive accessibility and complete regression verification.
