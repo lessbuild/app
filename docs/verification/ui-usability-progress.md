@@ -715,6 +715,48 @@ or edit a deployment workflow. The original 390px review measured about
 
 | Phase 15: automation token hierarchy | Complete with browser follow-up | 34 focused tests / 169 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `b58fcb0`, `406b971` pushed to `origin/main` | Inspect providers, servers and websites for repeated inventory/setup density and the next shared presentation boundary |
 
+## Phase 16 — infrastructure inventory filter hierarchy
+
+### Responsibility problem
+
+Provider, server and website inventory pages placed their full filter forms in
+the default mobile flow, even when a user only needed to scan inventory or
+open a resource. The three pages repeated the same interaction problem with
+different filter counts and the controls also sat above their summary metrics.
+
+### Boundaries and preserved behavior
+
+- The existing provider, server and website controllers, query collaborators,
+  exports, pagination and authorization boundaries remain unchanged. This is
+  a presentation-only slice using the existing `ui.filter-panel` component.
+- Each inventory page now has a labeled native filter disclosure with a
+  meaningful id and active-filter count. It opens automatically for a filtered
+  request so selected controls remain visible after applying filters, and is
+  collapsed by default for an unfiltered inventory view.
+- Search normalization, allowed filter values, organization scoping, empty
+  states, CSV URLs, pagination query strings and table content remain
+  unchanged. No provider credentials or resource data were moved into the
+  disclosure.
+
+### Verification
+
+- Provider, server and website inventory filter suites passed: 13 tests / 106
+  assertions. Coverage includes active and default disclosure state, combined
+  filters, tenancy, invalid values, pagination preservation, provisioning
+  drill-downs, exports and provider resource counts. Pint, Blade view
+  compilation and `git diff --check` passed.
+- Commit `d4e34a1` (`ui: collapse infrastructure inventory filters`) was
+  pushed to `origin/main`; the isolated HTTPS runtime was fast-forwarded,
+  view-cached and both service units remained active.
+- The pre-change 390px measurements were about 2,595px for providers,
+  2,054px for servers and 2,090px for websites. A post-change browser
+  measurement remains deferred because the isolated host is at 100% root disk
+  usage and Chromium crashes before evaluation. No post-change height or
+  interaction result is claimed; the default/active states are covered by the
+  feature suite and compiled markup.
+
+| Phase 16: infrastructure inventory filter hierarchy | Complete with browser follow-up | 13 focused tests / 106 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `d4e34a1` pushed to `origin/main` | Inspect project/application overviews and detail pages for repeated secondary panels, long timelines and action discoverability |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
