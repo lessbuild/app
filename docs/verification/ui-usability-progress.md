@@ -1268,6 +1268,48 @@ relationship to their result card.
 
 | Phase 28: global-search result navigation | Complete with browser follow-up | 9 focused tests / 82 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `2064011` pushed to `origin/main` | Audit system-health/admin and activity/command histories for first-result and action priority |
 
+## Phase 29 — operational history priority
+
+### Responsibility problem
+
+Activity and Command Center pages both placed a large filter form and a
+multi-card metric grid ahead of the event/history list. That made the first
+audit event or command difficult to reach on a phone, while active command
+state could be separated from the table that required refresh.
+
+### Boundaries and preserved behavior
+
+- `ActivityController`, `ActivityQuery`, `CommandsController`, workspace
+  scoping, date normalization, export services, pagination, refresh links and
+  secret-safe projections remain unchanged. No command text or output is newly
+  rendered.
+- Activity filters use `activity-filters`; command filters use
+  `command-filters`. Both are closed by default and reopen for active query
+  parameters with the existing values and export URLs preserved.
+- Aggregate metrics use `activity-insights` and `command-insights`. Active
+  command metrics open automatically so queued/running context remains visible;
+  an empty filtered activity view opens its zero-state metrics for explanation.
+- Event feed content, command table, selected server history links, CSV
+  escaping, owner boundaries and verification redirects remain unchanged.
+
+### Verification
+
+- Activity and command suites passed: 12 tests / 109 assertions, including
+  owner scoping, filter/date normalization, literal wildcard handling, export
+  behavior, command output/secret exclusion, active refresh state, pagination
+  and the new default/active disclosure states. Pint, Blade view compilation
+  and `git diff --check` passed.
+- Commit `0f080c4` (`Prioritize activity and command history`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or keyboard result is claimed; history priority, active
+  reopening and preserved metadata contracts are covered by feature tests and
+  compiled markup.
+
+| Phase 29: operational history priority | Complete with browser follow-up | 12 focused tests / 109 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `0f080c4` pushed to `origin/main` | Complete system-health/admin and public documentation/status page hierarchy audit |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
