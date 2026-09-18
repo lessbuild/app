@@ -233,6 +233,27 @@ accessibility/visual crawl passed **6 tests**. Commit `215da0d` is pushed to
 `origin/main`. This is local/dev evidence only; production release and live
 acceptance remain deferred gates.
 
+## UI hierarchy verification — 2026-09-18
+
+The application-wide UI improvement sequence is complete locally on isolated
+`main`. The final pass covers the shared shell/navigation, all major inventory
+and detail families, recovery/operations, observability, workspace/account,
+community/template, public documentation/status, authentication, billing,
+search and admin surfaces. The result-first/progressive-disclosure patterns
+are covered by focused feature tests and the full regression suite.
+
+The strict PHP 8.5.10 suite passed **1,602 tests / 13,171 assertions**;
+full Pint, the required-PHP Composer platform check, Vite build, route/view
+caches and `git diff --check` passed. The implementation is pushed to
+`origin/main`, and the isolated runtime services remain active. Browser
+measurements after the latest slices are deferred because Chromium crashes on
+the host's exhausted root disk; they are not counted as passing evidence.
+
+The next work is external/live acceptance only when separately authorized:
+production release gates, physical-phone checks, provider-backed acceptance,
+mail, billing, GitHub App, independent monitoring and the remaining recovery
+drills.
+
 ## Deferred release gates
 
 The September 17 preview review found and corrected a PostgreSQL cleanup

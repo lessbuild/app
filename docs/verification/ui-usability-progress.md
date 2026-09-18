@@ -1425,6 +1425,52 @@ redirect.
 
 | Phase 32: public status and authentication polish | Complete with browser follow-up | 3 targeted tests / 49 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `7c43740` pushed to `origin/main` | Perform final cross-application hierarchy audit and release verification |
 
+## Phase 33 — final cross-application verification
+
+### Audit result
+
+The final view inventory audit found no remaining high-impact hierarchy defect
+that justified a speculative redesign. The application-wide pass now covers
+shared shell/navigation, dashboard, applications and environments,
+deployments, infrastructure, data/recovery, operations, observability,
+workspace/account, templates/community, public documentation/status,
+authentication, billing/cost, search, admin analytics and the remaining
+compatibility pages. Long specialized pages already use result-first layouts,
+purposeful disclosures or workflow-specific forms.
+
+### Preserved behavior
+
+- Routes, scoped authorization, validation and named error bags, flash/status
+  feedback, Livewire and non-JavaScript paths, persisted values, API/OpenAPI
+  contracts, queued-job semantics and provider/integration boundaries remain
+  unchanged.
+- No dependency or lockfile change was introduced. The final code baseline is
+  `7c43740`, with the public documentation and admin-analytics verification
+  records pushed afterward.
+
+### Verification
+
+- Complete strict PHP 8.5.10 suite passed: **1,602 tests / 13,171
+  assertions**. Pint passed across the repository.
+- `composer check-platform-reqs` passed when invoked through the required PHP
+  8.5.10 binary. The system Composer emitted compatibility deprecation notices
+  while loading its installed libraries; no application test or platform check
+  failed.
+- `npm run build` passed with Vite. Route cache, Blade view cache and
+  `git diff --check` passed; the implementation checkout is clean and aligned
+  with `origin/main`.
+- The isolated runtime was previously fast-forwarded to the pushed baseline,
+  view-cached and verified with both service units active. No production or
+  acceptance-drill checkout was changed.
+- Post-change browser measurement remains deferred: the host is at 100% root
+  disk usage and Chromium crashes before evaluation. No mobile height,
+  keyboard, focus or click result is claimed for the final slices. The
+  application behavior is covered by the PHP/UI contract suite and compiled
+  markup; live acceptance, physical-phone checks and external provider
+  acceptance remain separate gates.
+
+| Phase 33: final cross-application verification | Complete with browser follow-up | 1,602 PHP tests / 13,171 assertions, Pint, PHP 8.5.10 platform check, Vite build, route/view caches and `git diff --check` passed; browser measurement deferred by host disk exhaustion | `7c43740` implementation baseline plus pushed verification records | External/live acceptance only, when separately authorized |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.

@@ -1446,6 +1446,34 @@ commit is pushed to `origin/main`; the documentation update is the next
 cohesive commit and will also be pushed. No production checkout, credentials,
 cloud resources or live acceptance were used.
 
+## Final UI hierarchy verification — 2026-09-18
+
+The continued UI hierarchy pass is complete on isolated `main`. The final
+implementation slices prioritized provider/server/website/repository and
+database workflows, domain/load-balancer management, recipe/gallery feedback,
+cost/search/activity/command/admin analytics, public documentation/API
+navigation, authentication titles and public status accessibility. Existing
+navigation hubs, routes, policies, validation, flash/status feedback,
+Livewire/non-JavaScript paths and workflow contracts remain intact.
+
+Final local evidence:
+
+- Strict PHP 8.5.10 suite: **1,602 passed / 13,171 assertions**.
+- Full Pint: passed.
+- PHP 8.5.10 Composer platform check: passed. The system Composer emitted
+  library deprecation notices while loading; no platform requirement failed.
+- Vite production asset build, route cache, Blade view cache and
+  `git diff --check`: passed.
+- Implementation branch `main` is clean and pushed through `7442654`; the
+  isolated runtime was fast-forwarded, view-cached and both service units were
+  active.
+
+Browser measurements after the final slices remain deferred because the host
+has no usable root disk space and Chromium crashes before evaluation. No final
+mobile height, keyboard, focus or click result is claimed. Production release,
+live acceptance, physical-phone checks and external provider acceptance remain
+separate gates.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
