@@ -423,6 +423,46 @@ visually distinguished from historical records.
 
 | Phase 8: repository webhook configuration and delivery disclosure | Complete | 22 focused tests / 226 assertions, parser recovery, Pint, view compilation, push and real mobile interaction passed; ordinary history collapses while active/filter states open | `b4d35d2` pushed to `origin/main` | Inspect application/environment detail pages and choose the next summary-first slice |
 
+## Phase 9 — notification inbox results-first layout
+
+### Responsibility problem
+
+The notification inbox placed six filters, saved-filter management and six
+metrics before the first result. The original mobile review measured a page
+around 9,569px tall with the first notification beginning about 1,824px down;
+reviewed alerts also consumed the same vertical space as unread alerts.
+
+### Boundaries and preserved behavior
+
+- The existing `NotificationsController`, `NotificationIndexRequest`, query
+  collaborator and actions remain the source of filtering, pagination, export,
+  ownership and state transitions. This is a presentation-only slice.
+- Matching metrics, bulk selection and the existing unread cards now lead the
+  page. Read cards remain selectable and actionable, but their message and
+  secondary actions are inside native disclosures.
+- Filters and saved filters remain available after the results with explicit
+  summaries. The filter disclosure displays an active-filter count and opens
+  automatically for an active filtered view; saved-filter validation errors
+  reopen their disclosure.
+- Filter names, query parameters, pagination, CSV export, bulk operations,
+  read/unread transitions, deletion, destination links and no-JavaScript forms
+  are unchanged.
+
+### Verification
+
+- Notification insights, failure notifications and local UI asset suites
+  passed: 35 tests / 538 assertions.
+- Pint, Blade view compilation and `git diff --check` passed.
+- Commit `fab18f7` (`feat: streamline notification inbox`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was cache-refreshed and both
+  service units remained active.
+- A real 390px browser check measured the page at about 6,143px, with the
+  first result at about 1,070px. Filter and saved-filter disclosures were
+  closed by default; a reviewed row opened successfully and exposed its
+  actions. Active filters rendered their disclosure open.
+
+| Phase 9: notification inbox results-first layout | Complete | 35 focused tests / 538 assertions, Pint, view compilation, push and real mobile interaction passed; mobile height reduced ~3,426px | `fab18f7` pushed to `origin/main` | Inspect observability incident density and separate active response from historical management |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
