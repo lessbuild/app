@@ -56,6 +56,31 @@ class DatabaseOperationsTest extends TestCase
         Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id && $job->action === 'remove');
     }
 
+    public function test_database_management_is_open_for_first_use_and_collapsed_after_setup(): void
+    {
+        [$owner, $resource] = $this->infrastructure();
+
+        $firstUse = $this->actingAs($owner)->get(route('databases.index'));
+        $this->assertMatchesRegularExpression(
+            '/<details id="database-management-'.$resource->id.'"[^>]*\bopen\b[^>]*>/',
+            $firstUse->getContent(),
+        );
+
+        $resource->databaseUsers()->create([
+            'created_by' => $owner->id,
+            'username' => 'existing_reader',
+            'privilege' => 'read',
+            'password' => 'encrypted-password',
+            'expires_at' => null,
+        ]);
+
+        $completed = $this->actingAs($owner)->get(route('databases.index'));
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details id="database-management-'.$resource->id.'"[^>]*\bopen\b[^>]*>/',
+            $completed->getContent(),
+        );
+    }
+
     public function test_viewer_can_inspect_but_cannot_issue_database_credentials(): void
     {
         [$owner, $resource] = $this->infrastructure();

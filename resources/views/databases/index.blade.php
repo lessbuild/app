@@ -22,7 +22,9 @@
 
     <div class="mt-8 grid gap-5 xl:grid-cols-2">
         @forelse ($resources as $resource)
-            @php($latest = $resource->snapshots->first())
+            @php
+                $latest = $resource->snapshots->first();
+            @endphp
 
             <section class="ui-card p-5">
                 <div class="flex items-start justify-between gap-4">
@@ -58,7 +60,29 @@
                 @endif
 
                 @if ($canManage)
-                    <form method="POST" action="{{ route('databases.users.store', $resource) }}" class="mt-5 space-y-3 border-t border-primary pt-5">
+                    @php
+                        $databaseManagementOpen = $resource->databaseUsers->isEmpty()
+                            || session()->has('databasePassword')
+                            || $errors->has('username')
+                            || $errors->has('privilege')
+                            || $errors->has('expires_in_days')
+                            || $errors->has('target_resource_id')
+                            || $errors->has('confirmation');
+                    @endphp
+                    <details id="database-management-{{ $resource->id }}" class="group mt-5 overflow-hidden rounded-xl border border-primary" @if ($databaseManagementOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                            <span>
+                                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                                <span class="mt-1 block">{{ __('Credentials and cloning') }}</span>
+                                <span class="mt-1 block text-sm font-normal text-secondary">
+                                    {{ trans_choice(':count active credential|:count active credentials', $resource->databaseUsers->count(), ['count' => $resource->databaseUsers->count()]) }}
+                                    · {{ __('Non-production replacement only') }}
+                                </span>
+                            </span>
+                            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                        </summary>
+                        <div class="space-y-5 border-t border-primary p-4">
+                    <form method="POST" action="{{ route('databases.users.store', $resource) }}" class="space-y-3">
                         @csrf
                         <div>
                             <h3 class="font-bold text-primary">{{ __('Issue a database credential') }}</h3>
@@ -111,7 +135,7 @@
                         @endforeach
                     </div>
 
-                    <form method="POST" action="{{ route('databases.clone', $resource) }}" class="mt-5 space-y-3 border-t border-primary pt-5">
+                    <form method="POST" action="{{ route('databases.clone', $resource) }}" class="space-y-3 border-t border-primary pt-5">
                         @csrf
                         <div>
                             <h3 class="font-bold text-primary">{{ __('Clone this database') }}</h3>
@@ -132,6 +156,8 @@
                         </label>
                         <x-ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-ui.button>
                     </form>
+                        </div>
+                    </details>
                 @endif
             </section>
         @empty
