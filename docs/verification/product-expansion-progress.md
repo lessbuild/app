@@ -1,5 +1,24 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the global Command Center and per-server
+command history were converted from wide tables to responsive execution cards.
+The cards keep the existing metadata-only boundary in the global view, retain
+command text only in the server-scoped view, and preserve output downloads,
+cancellation, reruns, deletion, filters, pagination and CSV exports. The
+timing fields now form a compact definition list that remains readable on
+small screens without horizontal scrolling.
+
+Command coverage passed **20 tests / 225 assertions**, including explicit
+checks that both rendered surfaces no longer emit tables. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+fast-forwarded to `2f10ed6`, the service is active and the live-runtime smoke
+passed (**1 test**). Commit `2f10ed6` (`Replace command tables with responsive
+cards`) is pushed to `origin/main`. No routes, authorization, query behavior,
+secret handling, queued jobs or command lifecycle semantics changed. The exact
+next task is to convert the next cohesive table family, beginning with backup
+history and provider inventory, while preserving exports and operational
+actions.
+
 Latest continuation: September 18 the high-availability create panel stopped
 showing the same `Create a high-availability route` heading twice when its
 mobile disclosure is open. The mobile summary is now the single visible title
