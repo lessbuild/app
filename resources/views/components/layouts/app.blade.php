@@ -41,7 +41,7 @@
         <main id="main-content" tabindex="-1" class="min-w-0 w-full bg-secondary pl-0 lg:pl-64 min-h-screen">
             <div class="sticky top-0 z-30 bg-gray-800 text-gray-100 border-b border-primary shadow-xs">
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
-                    <a href="{{ route('dashboard') }}" class="text-lg font-bold text-primary">{{ config('app.name') }}</a>
+                    <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-gray-100">{{ config('app.name') }}</a>
                     <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
                     <button type="button" x-ref="navigationToggle" class="button secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>

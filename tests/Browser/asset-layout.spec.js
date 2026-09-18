@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'dashboard', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'dashboard', 'projects', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -105,6 +105,21 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
                     await expect(page.locator('#command-palette-query')).toBeFocused();
                     await page.keyboard.press('Escape');
+                }
+                if (screen === 'projects') {
+                    const brand = page.locator('[data-auth-brand]');
+                    await expect(brand).toHaveCSS('color', 'rgb(243, 244, 246)');
+
+                    const card = page.locator('[data-project-card]').first();
+                    const badge = card.locator('[data-project-environment-count]');
+                    await expect(card).toBeVisible();
+                    await expect(badge).toBeVisible();
+                    expect(await badge.evaluate((element) => element.scrollWidth <= element.clientWidth), 'application count badge must not clip its text').toBe(true);
+                    expect(await card.evaluate((element) => {
+                        const cardRect = element.getBoundingClientRect();
+                        const badgeRect = element.querySelector('[data-project-environment-count]').getBoundingClientRect();
+                        return badgeRect.left >= cardRect.left && badgeRect.right <= cardRect.right;
+                    }), 'application count badge must remain inside its card').toBe(true);
                 }
                 if (screen === 'organization' || screen === 'automation') {
                     const disclosureIds = screen === 'organization'

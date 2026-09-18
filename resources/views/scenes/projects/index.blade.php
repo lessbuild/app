@@ -22,16 +22,16 @@
 
     <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @forelse($projects as $project)
-            <a href="{{ route('projects.show', $project) }}" class="ui-card ui-card--interactive group flex min-h-52 flex-col justify-between p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <div class="min-w-0">
+            <a href="{{ route('projects.show', $project) }}" data-project-card class="ui-card ui-card--interactive group flex min-h-52 flex-col justify-between p-6">
+                <div class="flex min-w-0 flex-wrap items-start justify-between gap-4">
+                    <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
                             <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-sm font-black text-ternary" aria-hidden="true">{{ strtoupper(substr($project->name, 0, 1)) }}</span>
                             <h2 class="min-w-0 break-words text-xl font-black text-primary">{{ $project->name }}</h2>
                         </div>
                         <p class="mt-4 line-clamp-2 text-sm leading-6 text-secondary">{{ $project->description ?: __('No description') }}</p>
                     </div>
-                    <x-ui.badge tone="neutral">
+                    <x-ui.badge data-project-environment-count class="shrink-0" tone="neutral">
                         {{ trans_choice(':count environment|:count environments', $project->environments_count, ['count' => $project->environments_count]) }}
                     </x-ui.badge>
                 </div>

@@ -39,8 +39,10 @@ class AssetLayoutFixtureTest extends TestCase
         config(['billing.enforce_entitlements' => $entitlementEnforcement]);
 
         $project = $owner->currentOrganization->projects()->create([
-            'name' => 'Layout fixture application', 'slug' => 'layout-fixture', 'created_by' => $owner->id,
+            'name' => 'A deliberately long layout fixture application name', 'slug' => 'layout-fixture', 'created_by' => $owner->id,
         ]);
+        File::put($directory.'/projects.html', $this->renderPage(route('projects.index'))->assertOk()
+            ->assertSee('A deliberately long layout fixture application name')->getContent());
         $provider = $owner->providers()->create([
             'name' => 'GitHub', 'provider' => 'github', 'token' => 'fixture-token', 'description' => 'Test',
         ]);
