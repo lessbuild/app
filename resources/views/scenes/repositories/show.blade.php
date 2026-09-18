@@ -520,20 +520,22 @@
 
     <details
         id="repository-setup"
-        class="group ui-card mt-6 overflow-hidden"
+        class="ui-responsive-details group ui-card mt-6 overflow-hidden"
         @if ($repositorySetupNeedsAttention) open @endif
+        data-responsive-details
+        data-responsive-details-mobile-expanded="{{ $repositorySetupNeedsAttention ? 'true' : 'false' }}"
     >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Setup') }}</span>
-                <span class="mt-1 block text-lg">{{ __('Deployment stages') }}</span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Deployment timeline') }}</span>
                 <span class="mt-1 block text-sm font-normal text-secondary">
                     {{ $latestBuild ? __('Latest build: :status', ['status' => str($latestBuild->status)->replace('_', ' ')->headline()]) : __('No deployment has started yet.') }}
                 </span>
             </span>
             <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <div class="border-t border-primary p-5">
+        <div class="ui-responsive-details__content border-t border-primary p-5">
             <livewire:repository-setup :model="$repository"></livewire:repository-setup>
         </div>
     </details>

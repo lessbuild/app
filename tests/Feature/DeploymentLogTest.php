@@ -158,7 +158,7 @@ class DeploymentLogTest extends TestCase
             ->assertDontSee('Cancel deployment');
     }
 
-    public function test_build_progress_and_logs_open_for_active_or_failed_builds_but_completed_builds_start_concise(): void
+    public function test_deployment_timeline_and_logs_open_for_active_or_failed_builds_but_completed_builds_start_concise(): void
     {
         [$owner, $build] = $this->build();
         $build->update([
@@ -174,16 +174,16 @@ class DeploymentLogTest extends TestCase
         $completed = $this->actingAs($owner)->get(route('builds.show', $build));
         $completedContent = $completed->getContent();
 
-        $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*id="deployment-progress")(?=[^>]*open)[^>]*>/',
-            $completedContent,
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-timeline")(?=[^>]*data-responsive-details-mobile-expanded="false")[^>]*>/', $completedContent,
         );
         $this->assertDoesNotMatchRegularExpression(
             '/<details(?=[^>]*id="deployment-log")(?=[^>]*open)[^>]*>/',
             $completedContent,
         );
         $completed
-            ->assertSee('Deployment progress')
+            ->assertSee('Deployment timeline')
+            ->assertSee('Execution checkpoints')
             ->assertSeeText('Completed deployment output')
             ->assertSee(route('builds.log.download', $build), false);
 
@@ -197,7 +197,7 @@ class DeploymentLogTest extends TestCase
         $failedContent = $failed->getContent();
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="deployment-progress")(?=[^>]*open)[^>]*>/',
+            '/<details(?=[^>]*id="deployment-timeline")(?=[^>]*data-responsive-details-mobile-expanded="true")[^>]*>/',
             $failedContent,
         );
         $this->assertDoesNotMatchRegularExpression(
@@ -208,7 +208,7 @@ class DeploymentLogTest extends TestCase
             ->assertSee('Deployment failed:')
             ->assertSeeText('Completed deployment output');
         $this->assertLessThan(
-            strpos($failedContent, 'id="deployment-progress"'),
+            strpos($failedContent, 'id="deployment-timeline"'),
             strpos($failedContent, 'Recovery guidance'),
         );
     }

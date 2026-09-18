@@ -106,6 +106,7 @@ class DeploymentTimelineTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Deployment evidence')
             ->assertSee('Deployment timeline')
+            ->assertSee('Execution checkpoints')
             ->assertSee('Prepare deployment')
             ->assertSee('Build application')
             ->assertSee('Verify deployment health')
@@ -119,6 +120,10 @@ class DeploymentTimelineTest extends TestCase
 
         $this->assertMatchesRegularExpression(
             '/<details(?=[^>]*id="deployment-evidence")(?=[^>]*\\bopen\\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-open="false")[^>]*>/',
+            $response->getContent(),
+        );
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-timeline")(?=[^>]*\\bopen\\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-expanded="false")[^>]*>/',
             $response->getContent(),
         );
     }

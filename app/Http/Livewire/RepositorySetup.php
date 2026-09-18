@@ -31,6 +31,7 @@ class RepositorySetup extends Component
 
         return view('livewire.setup', [
             'processes' => $plan->scripts(),
+            'heading' => __('Execution checkpoints'),
         ]);
     }
 }

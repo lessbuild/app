@@ -153,15 +153,40 @@
         </div>
     </details>
 
-    <section class="ui-card mt-4 p-5" aria-labelledby="deployment-timeline-title">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</p>
-                <h2 id="deployment-timeline-title" class="mt-1 text-lg font-black text-primary">{{ __('What happened and what happens next') }}</h2>
-            </div>
-            <p class="text-xs text-secondary">{{ __('Milestones follow the recorded deployment stages.') }}</p>
-        </div>
-        <ol class="mt-5 space-y-4">
+    @php
+        $progressModel = clone $build;
+        $progressModel->setAttribute('provisioning_status', match ($build->status) {
+            \App\Models\Build::STATUS_SUCCEEDED => 'active',
+            \App\Models\Build::STATUS_FAILED => 'failed',
+            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'canceled',
+            default => $build->status,
+        });
+        $progressModel->setAttribute('provisioning_error', $build->failure_message);
+        $deploymentTimelineNeedsAttention = $build->statusEnum()?->isActive() === true
+            || $build->status === \App\Models\Build::STATUS_FAILED;
+        $completedDeploymentSteps = min(max((int) $build->setup_stage, 0), count($processes));
+        $deploymentStatusLabel = str($build->status)->replace('_', ' ')->headline();
+    @endphp
+    <details
+        id="deployment-timeline"
+        class="ui-responsive-details group ui-card mt-4 overflow-hidden"
+        open
+        data-responsive-details
+        data-responsive-details-mobile-expanded="{{ $deploymentTimelineNeedsAttention ? 'true' : 'false' }}"
+        aria-labelledby="deployment-timeline-title"
+    >
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment timeline') }}</span>
+                <span id="deployment-timeline-title" class="mt-1 block text-lg font-black text-primary">{{ __('Deployment timeline') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ __(':completed of :total checkpoints recorded · :status', ['completed' => $completedDeploymentSteps, 'total' => count($processes), 'status' => $deploymentStatusLabel]) }}
+                </span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="ui-responsive-details__content border-t border-primary p-5">
+        <ol class="space-y-4">
             @foreach ($deploymentTimeline as $entry)
                 <li class="relative pl-9">
                     <span @class([
@@ -187,7 +212,11 @@
                 </li>
             @endforeach
         </ol>
-    </section>
+        <div class="mt-6 border-t border-primary pt-5">
+            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'heading' => __('Execution checkpoints')])
+        </div>
+        </div>
+    </details>
 
     @if($build->promotedFrom)
         <aside class="ui-alert ui-alert--info mt-4"><p class="font-bold text-primary">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-secondary">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="font-bold text-ternary underline">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-secondary">{{ $build->promotion_note }}</p>@endif</aside>
@@ -195,42 +224,6 @@
     @if($build->promotions->isNotEmpty())
         <aside class="ui-card mt-4 p-4"><p class="font-bold text-primary">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-primary">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></aside>
     @endif
-
-    @php
-        $progressModel = clone $build;
-        $progressModel->setAttribute('provisioning_status', match ($build->status) {
-            \App\Models\Build::STATUS_SUCCEEDED => 'active',
-            \App\Models\Build::STATUS_FAILED => 'failed',
-            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'canceled',
-            default => $build->status,
-        });
-        $progressModel->setAttribute('provisioning_error', $build->failure_message);
-    @endphp
-    @php
-        $deploymentProgressNeedsAttention = $build->statusEnum()?->isActive() === true
-            || $build->status === \App\Models\Build::STATUS_FAILED;
-        $completedDeploymentSteps = min(max((int) $build->setup_stage, 0), count($processes));
-        $deploymentStatusLabel = str($build->status)->replace('_', ' ')->headline();
-    @endphp
-    <details
-        id="deployment-progress"
-        class="group ui-card mt-4 overflow-hidden"
-        @if ($deploymentProgressNeedsAttention) open @endif
-    >
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Execution detail') }}</span>
-                <span class="mt-1 block text-lg">{{ __('Deployment progress') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">
-                    {{ __(':completed of :total stages recorded · :status', ['completed' => $completedDeploymentSteps, 'total' => count($processes), 'status' => $deploymentStatusLabel]) }}
-                </span>
-            </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
-        </summary>
-        <div class="border-t border-primary px-5 pb-5">
-            @include('livewire.setup', ['model' => $progressModel, 'processes' => $processes, 'poll' => false, 'heading' => __('Deployment progress')])
-        </div>
-    </details>
 
     <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
         @if ($previousBuild)

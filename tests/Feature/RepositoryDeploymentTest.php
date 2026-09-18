@@ -164,7 +164,8 @@ class RepositoryDeploymentTest extends TestCase
 
         $this->actingAs($user)->get(route('builds.show', $failed))
             ->assertSuccessful()
-            ->assertSee('Deployment progress')
+            ->assertSee('Deployment timeline')
+            ->assertSee('Execution checkpoints')
             ->assertSee('Check dependencies and runtime')
             ->assertSee('Install Repository Dependencies')
             ->assertSee('Run custom build commands')
