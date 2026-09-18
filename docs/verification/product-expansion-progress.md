@@ -1,5 +1,20 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the domains index was reordered so the
+`Add or issue domains` management panel appears immediately below the page
+insights and before the domain inventory. This makes the primary actions
+available first on desktop and mobile while preserving the mobile disclosure,
+validation-error reopening, authorization, form actions and all domain/DNS
+behavior.
+
+Domain management coverage passed **8 tests / 50 assertions**. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+updated to `9e60cc5`, the service is active and the live-runtime smoke passed
+(**1 test**). Commit `9e60cc5` (`Move domain actions above inventory`) is pushed
+to `origin/main`. The exact next task is a visual review of the domains page
+at mobile and desktop widths; no domain workflow or backend behavior needs to
+change for this layout slice.
+
 Latest continuation: September 18 the deployment UI was simplified to the
 timeline alone. The build and repository pages no longer render the redundant
 execution/script checklist; both now reuse the same user-facing milestone
