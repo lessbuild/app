@@ -238,20 +238,62 @@ Implementation commit `1b28b12` was pushed to `origin/main`.
 
 ### Exact next task
 
-Begin Slice 5: improve the dashboard’s results-first hierarchy and mobile task
-distance, preserving onboarding order, attention semantics, query bounds and
-all existing authorization/entitlement behavior.
+Begin Slice 6: improve resource and deployment detail hierarchy while
+preserving route contracts, authorization, query bounds, status semantics and
+existing operation links.
+
+## Slice 5 — dashboard results-first hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The dashboard rendered the attention summary before the rest of the page but
+left the long setup journey after the operational charts. A user who had not
+completed setup therefore had to scan secondary metrics before reaching the
+next actionable step. The onboarding markup was also embedded in the main
+dashboard template, making the hierarchy harder to maintain and test.
+
+### Boundaries and principle
+
+The dashboard view owns presentation order, while the existing controller
+continues to own bounded queries, organization scoping, authorization and
+entitlement decisions. This is single responsibility at the view boundary:
+the setup journey is a reusable presentation partial, and the dashboard
+template coordinates the order without moving business rules into the view or
+changing any data source.
+
+### Implementation
+
+- Kept the attention summary immediately after the dashboard header.
+- Extracted the existing onboarding section into
+  `dashboard/_setup.blade.php` without changing its steps, conditions, links,
+  progress values or completion behavior.
+- Rendered setup before resource totals and the operational overview, so the
+  page sequence is attention, setup, then secondary metrics.
+- Added feature and responsive browser assertions for that document order.
+- Made the existing active-dashboard navigation assertion independent of HTML
+  attribute order; both `aria-current` and active styling remain required.
+
+### Verification
+
+- Dashboard feature coverage: **23 tests / 235 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including dashboard order, responsive disclosures, theme checks,
+  application-card geometry and provider no-JavaScript submission: **9
+  passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `8be1cf2` was pushed to `origin/main`.
 
 ## Remaining planned slices
 
-1. Theme, clipping and misleading-status corrections.
-2. Shared visual foundation and navigation refinement.
-3. Landing page and pricing hierarchy.
-4. Dashboard and results-first lists.
-5. Resource and deployment detail hierarchy.
-6. Setup forms, beginning with provider creation.
-7. Backups, observability and automation hubs.
-8. Remaining page families and final responsive/accessibility verification.
+1. Resource and deployment detail hierarchy.
+2. Setup forms, beginning with provider creation.
+3. Backups, observability and automation hubs.
+4. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
