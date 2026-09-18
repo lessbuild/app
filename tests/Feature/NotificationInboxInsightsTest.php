@@ -92,6 +92,39 @@ class NotificationInboxInsightsTest extends TestCase
             ->assertSee('No notifications match these filters');
     }
 
+    public function test_inbox_leads_with_alerts_and_keeps_secondary_tools_in_disclosures(): void
+    {
+        $owner = User::factory()->create();
+        $unread = $this->notification($owner, 'Unread alert first', NotificationInbox::STATUS_FAILED);
+        $read = $this->notification($owner, 'Reviewed alert second', NotificationInbox::STATUS_INFO, true);
+
+        $content = $this->actingAs($owner)
+            ->get(route('notifications.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertNotFalse($unreadPosition = strpos($content, 'Unread alert first'));
+        $this->assertNotFalse($filtersPosition = strpos($content, 'Filter notifications'));
+        $this->assertTrue($unreadPosition < $filtersPosition);
+        $this->assertStringContainsString('<details id="notification-'.$read->id.'"', $content);
+        $this->assertStringContainsString('<details id="notification-filters"', $content);
+        $this->assertStringContainsString('<details id="notification-saved-filters"', $content);
+    }
+
+    public function test_active_notification_filters_open_the_filter_disclosure(): void
+    {
+        $owner = User::factory()->create();
+        $this->notification($owner, 'Failed alert', NotificationInbox::STATUS_FAILED);
+
+        $content = $this->actingAs($owner)
+            ->get(route('notifications.index', ['status' => NotificationInbox::STATUS_FAILED]))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details[^>]*id="notification-filters"[^>]*open[^>]*>/', $content);
+        $this->assertStringContainsString('1 active', $content);
+    }
+
     public function test_notification_search_treats_sql_wildcards_as_literal_text(): void
     {
         $owner = User::factory()->create();
