@@ -216,7 +216,9 @@
         @endif
     </section>
 
-    @php($oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret"))
+    @php
+        $oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret");
+    @endphp
     <section id="deployment-webhook" class="ui-card my-6 p-5">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -318,7 +320,26 @@
             @endif
         </div>
 
-        <div class="mt-8 border-t border-primary pt-6">
+        @php
+            $deliveryFiltersActive = array_filter($deliveryFilters, fn ($value) => $value !== null);
+            $webhookDeliveryNeedsAttention = $deliveryFiltersActive !== []
+                || $deliveryMetrics['queued'] > 0
+                || $deliveryMetrics['pending'] > 0;
+        @endphp
+        <details
+            id="webhook-delivery-history"
+            class="group mt-8 overflow-hidden"
+            @if ($webhookDeliveryNeedsAttention) open @endif
+        >
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 border-t border-primary pt-6 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                <span>
+                    <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Automation') }}</span>
+                    <span class="mt-1 block text-lg">{{ __('Webhook delivery history') }}</span>
+                    <span class="mt-1 block text-sm font-normal text-secondary">{{ trans_choice(':count matching delivery|:count matching deliveries', $deliveryMetrics['total'], ['count' => $deliveryMetrics['total']]) }}</span>
+                </span>
+                <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <div class="border-t border-primary pt-6">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
                     <h3 class="text-lg font-semibold text-primary">{{ __('Webhook delivery history') }}</h3>
@@ -448,7 +469,8 @@
                     <div class="mt-4">{{ $webhookDeliveries->links() }}</div>
                 @endif
             </div>
-        </div>
+            </div>
+        </details>
     </section>
 
     <!--

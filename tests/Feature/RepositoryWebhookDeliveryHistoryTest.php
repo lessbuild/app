@@ -145,6 +145,49 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
             ->assertSee('No webhook deliveries match these filters.');
     }
 
+    public function test_webhook_delivery_history_is_collapsed_without_attention_and_opens_for_filters_or_pending_work(): void
+    {
+        [$owner, $repository] = $this->repository();
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'received-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $default = $this->actingAs($owner)->get(route('repositories.show', $repository));
+        $defaultContent = $default->getContent();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="webhook-delivery-history")(?=[^>]*open)[^>]*>/',
+            $defaultContent,
+        );
+
+        $filtered = $this->actingAs($owner)->get(route('repositories.show', [
+            $repository,
+            'delivery_status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
+        ]));
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="webhook-delivery-history")(?=[^>]*open)[^>]*>/',
+            $filtered->getContent(),
+        );
+
+        $repository->webhookDeliveries()->create([
+            'delivery_id' => 'queued-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_QUEUED,
+            'created_at' => now()->addSecond(),
+            'updated_at' => now()->addSecond(),
+        ]);
+
+        $pending = $this->actingAs($owner)->get(route('repositories.show', $repository));
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="webhook-delivery-history")(?=[^>]*open)[^>]*>/',
+            $pending->getContent(),
+        );
+    }
+
     public function test_delivery_history_is_paginated_and_preserves_a_valid_filter(): void
     {
         [$owner, $repository] = $this->repository();
