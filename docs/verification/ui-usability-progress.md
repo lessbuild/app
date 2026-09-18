@@ -544,6 +544,48 @@ evidence beginning around 1,497px.
 
 | Phase 11: environment evidence controls | Complete | 7 focused tests / 66 assertions, Pint, view compilation, push and real mobile filter-state checks passed; default page height reduced ~566px | `b031af2` pushed to `origin/main` | Inspect project overview environment cards and keep readiness/action context discoverable |
 
+## Phase 12 — account security hierarchy
+
+### Responsibility problem
+
+The account page placed profile editing, password changes, two-factor setup,
+security activity, sign-in history, browser sessions, connected accounts and
+account deletion in one uninterrupted mobile sequence. The original 390px
+review measured about 4,791px, so routine profile and password tasks were
+separated from less-frequent security and destructive workflows by excessive
+scrolling.
+
+### Boundaries and preserved behavior
+
+- The existing account controllers, requests, policies, actions, named error
+  bags and security forms remain unchanged. This is a presentation-only
+  hierarchy improvement.
+- Profile and password forms remain visible as the primary account tasks.
+- Two-factor setup, security activity, sign-in history, browser sessions,
+  connected accounts and account-data deletion are native disclosures. They
+  reopen when their existing status, validation errors or pending setup state
+  requires user attention.
+- The reusable forms section component owns only the disclosure markup and
+  keeps the desktop layout unchanged for existing callers. No credentials,
+  session data, routes or authorization decisions were moved into the view.
+
+### Verification
+
+- Account management, lifecycle, security overview, sign-in history and
+  two-factor suites passed: 54 tests / 356 assertions, including the default
+  disclosure-state regression. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `a994d10` (`feat: streamline account security panels`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was updated and both service units
+  remained active.
+- A real 390px browser check measured the default account page at about
+  2,373px. Profile and password actions appeared at about 649px and 1,131px;
+  the six secondary panels were closed by default. Opening browser sessions
+  worked and exposed the existing “Log out other sessions” action, measuring
+  about 2,570px while open.
+
+| Phase 12: account security hierarchy | Complete | 54 focused tests / 356 assertions, Pint, view compilation, push and real mobile disclosure interaction passed; page height reduced ~2,418px | `a994d10` pushed to `origin/main` | Inspect backups, organization administration and automation workflows for the next dense secondary-panel slice |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
