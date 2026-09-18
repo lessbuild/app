@@ -514,10 +514,19 @@ class AutomationTest extends TestCase
         Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, 1);
     }
 
-    public function test_automation_screen_is_compact_and_available_to_authenticated_users(): void
+    public function test_automation_screen_keeps_quick_start_visible_and_collapses_token_management_by_default(): void
     {
         $user = User::factory()->create();
-        $this->actingAs($user)->get(route('automation.index'))->assertOk()->assertSee('Application workflows')->assertSee('Personal access tokens');
+
+        $content = $this->actingAs($user)
+            ->get(route('automation.index'))
+            ->assertOk()
+            ->assertSee('Application workflows')
+            ->assertSee('CLI-friendly API')
+            ->assertSee('id="automation-tokens"', false)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*>/', $content);
     }
 
     public function test_owner_can_create_expiring_token_and_rotate_it(): void

@@ -22,8 +22,27 @@
         </div>
     @endif
 
+    @php
+        $automationErrorKeys = array_keys($errors->getBag('default')->getMessages());
+        $tokenPanelOpen = session('plainTextToken') || collect($automationErrorKeys)->contains(
+            static fn (string $key): bool => in_array($key, ['name', 'expires_in_days'], true) || str_starts_with($key, 'abilities.'),
+        );
+    @endphp
+
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
-        <section class="ui-card p-6">
+        <details id="automation-tokens" class="ui-card group overflow-hidden" @if ($tokenPanelOpen) open @endif>
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
+                <span>
+                    <span class="flex flex-wrap items-center gap-2">
+                        <span class="font-black text-primary">{{ __('Personal access tokens') }}</span>
+                        <x-ui.badge>{{ $tokens->count() }}</x-ui.badge>
+                    </span>
+                    <span class="mt-1 block text-sm text-secondary">{{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}</span>
+                </span>
+                <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+
+            <div class="p-6 lg:block">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Control plane API') }}</p>
@@ -103,7 +122,8 @@
                     <x-ui.empty-state :title="__('No API tokens')" :description="__('Create a token when an integration or local workflow needs API access.')" icon="key" />
                 @endforelse
             </div>
-        </section>
+            </div>
+        </details>
 
         <section class="ui-card p-6">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Quick start') }}</p>
