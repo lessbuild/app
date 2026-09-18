@@ -66,6 +66,24 @@ class LocalUiAssetTest extends TestCase
             ->assertSee(route('api-docs'));
     }
 
+    public function test_public_documentation_and_api_reference_offer_compact_local_navigation(): void
+    {
+        $this->get(route('docs'))
+            ->assertSuccessful()
+            ->assertSee('id="guide-contents"', false)
+            ->assertSee('On this page')
+            ->assertSee('6 guide sections')
+            ->assertSee('href="#troubleshooting"', false);
+
+        $this->get(route('api-docs'))
+            ->assertSuccessful()
+            ->assertSee('id="api-contents"', false)
+            ->assertSee('9 endpoints')
+            ->assertSee('href="#api-operation-deploy"', false)
+            ->assertSee('id="api-operation-deploy"', false)
+            ->assertSee('id="api-path-deploy"', false);
+    }
+
     public function test_public_navigation_and_calls_to_action_are_functional_and_truthful(): void
     {
         $guestHtml = $this->get('/')

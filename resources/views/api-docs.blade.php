@@ -28,26 +28,45 @@ Accept: application/json</code></pre>
                 <p class="mt-3 text-sm leading-6 text-secondary">{{ __('Create named read, deploy, or manage tokens from Automation. Tokens are shown once and can be rotated or revoked.') }}</p>
             </x-ui.card>
 
+            @php
+                $apiOperations = [
+                    ['me', 'GET', '/api/v1/me', 'read', 'Current user and workspace'],
+                    ['projects', 'GET', '/api/v1/projects', 'read', 'List applications and environments'],
+                    ['project', 'GET', '/api/v1/projects/{project}', 'read', 'Get an application'],
+                    ['workflow', 'PUT', '/api/v1/projects/{project}/workflow', 'manage', 'Apply buildpusher.yaml'],
+                    ['deployments', 'GET', '/api/v1/deployments', 'read', 'List recent deployments'],
+                    ['deployment', 'GET', '/api/v1/deployments/{build}', 'read', 'Get a deployment'],
+                    ['deploy', 'POST', '/api/v1/environments/{environment}/deploy', 'deploy', 'Queue a deployment'],
+                    ['scale', 'PATCH', '/api/v1/environments/{environment}/scale', 'manage', 'Change desired capacity'],
+                    ['runtime', 'PATCH', '/api/v1/environments/{environment}/runtime', 'manage', 'Hibernate or resume'],
+                ];
+            @endphp
+
+            <details id="api-contents" class="ui-card group mt-6 overflow-hidden">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-bold text-primary sm:px-6 [&::-webkit-details-marker]:hidden">
+                    <span>{{ __('API operations') }}</span>
+                    <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ count($apiOperations) }} {{ __('endpoints') }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+                </summary>
+                <nav class="grid gap-2 border-t border-primary p-4 sm:grid-cols-2" aria-label="{{ __('API operations') }}">
+                    @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
+                        <a href="#api-operation-{{ $anchor }}" class="rounded-xl border border-primary bg-secondary px-4 py-3 hover:border-ternary">
+                            <span class="font-mono text-xs font-bold text-ternary">{{ $method }}</span>
+                            <code class="mt-1 block break-all text-sm text-primary">{{ $path }}</code>
+                        </a>
+                    @endforeach
+                </nav>
+            </details>
+
             <x-ui.card class="mt-6 overflow-hidden">
                 <div class="border-b border-primary p-5 sm:p-6">
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Available operations') }}</p>
                     <h2 class="mt-1 text-xl font-black">{{ __('Endpoints') }}</h2>
                 </div>
-                @foreach ([
-                    ['GET', '/api/v1/me', 'read', 'Current user and workspace'],
-                    ['GET', '/api/v1/projects', 'read', 'List applications and environments'],
-                    ['GET', '/api/v1/projects/{project}', 'read', 'Get an application'],
-                    ['PUT', '/api/v1/projects/{project}/workflow', 'manage', 'Apply buildpusher.yaml'],
-                    ['GET', '/api/v1/deployments', 'read', 'List recent deployments'],
-                    ['GET', '/api/v1/deployments/{build}', 'read', 'Get a deployment'],
-                    ['POST', '/api/v1/environments/{environment}/deploy', 'deploy', 'Queue a deployment'],
-                    ['PATCH', '/api/v1/environments/{environment}/scale', 'manage', 'Change desired capacity'],
-                    ['PATCH', '/api/v1/environments/{environment}/runtime', 'manage', 'Hibernate or resume'],
-                ] as [$method, $path, $scope, $description])
-                    <article class="grid gap-3 border-b border-primary p-5 last:border-0 sm:grid-cols-[5rem_1fr_8rem] sm:items-center">
+                @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
+                    <article id="api-operation-{{ $anchor }}" class="scroll-mt-6 grid gap-3 border-b border-primary p-5 last:border-0 sm:grid-cols-[5rem_1fr_8rem] sm:items-center">
                         <x-ui.badge tone="neutral" class="w-fit font-mono">{{ $method }}</x-ui.badge>
                         <div>
-                            <code class="break-all text-sm text-primary">{{ $path }}</code>
+                            <code id="api-path-{{ $anchor }}" class="break-all text-sm text-primary">{{ $path }}</code>
                             <p class="mt-1 text-xs text-secondary">{{ __($description) }}</p>
                         </div>
                         <x-ui.badge tone="accent" class="w-fit sm:justify-self-end">{{ $scope }}</x-ui.badge>
