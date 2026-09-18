@@ -891,6 +891,50 @@ visit, especially when metric history and several diagnostic checks existed.
 
 | Phase 19: server operational panel hierarchy | Complete with browser follow-up | 32 focused tests / 194 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `57e1f6c` pushed to `origin/main` | Inspect website detail layout and provisioning/setup disclosure states |
 
+## Phase 20 — website provisioning and setup hierarchy
+
+### Responsibility problem
+
+Website detail pages already disclosed health history and runtime logs, but
+provisioning output and the setup timeline remained in the normal document flow
+after those sections. For a normally active website this was completed,
+secondary information; for a pending or failed website it was operational
+evidence that needed to remain visible. The page also contained two inline
+Blade assignments that compiled unreliably under the current runtime.
+
+### Boundaries and preserved behavior
+
+- Website controllers, Livewire provisioning/setup components, policies,
+  callbacks, polling, retries, log downloads, retention updates and encrypted
+  data handling remain unchanged. The slice changes only presentation grouping
+  and normalizes the existing view assignments into compiler-safe blocks.
+- Provisioning output and setup are now grouped under the stable
+  `website-operations` disclosure. In-progress, failed, canceled/unknown and
+  previous-placement-cleanup states open automatically; a normally active
+  website collapses the completed operational detail while leaving it one click
+  away.
+- Health failure alerts, health history/runtime-log attention states, attached
+  repositories, setup status text, bounded log output, polling and all existing
+  routes/forms remain in place.
+
+### Verification
+
+- Website provisioning, health-history, health-insight and release-retention
+  suites passed: 25 tests / 212 assertions. Coverage includes active and
+  incomplete disclosure state, callback-scoped output, polling transitions,
+  bounded/escaped logs, health export and pagination, monitoring metrics,
+  retention safety and authorization. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `6079a5e` (`ui: collapse website setup operations`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached and
+  both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; disclosure state, polling and
+  rendering are covered by feature tests and compiled markup.
+
+| Phase 20: website provisioning and setup hierarchy | Complete with browser follow-up | 25 focused tests / 212 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6079a5e` pushed to `origin/main` | Inspect repository detail for setup/webhook/deployment hierarchy and validation-state context |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
