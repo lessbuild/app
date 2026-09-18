@@ -186,11 +186,61 @@ active state and shared sizing contract were refined.
 
 Implementation commit `6a7c364` was pushed to `origin/main`.
 
+## Slice 4 — public preview and pricing hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The landing page’s static interface preview used live-sounding labels such as
+“Live workspace” and “System operational · 12 checks passing,” which could be
+read as current telemetry. Its hero also used more vertical spacing than
+necessary on small screens. Pricing rendered every feature and API limit
+inside six full-height cards, creating a long mobile scan before a visitor
+could compare the next plan.
+
+### Boundaries and principle
+
+The public Blade views own copy hierarchy, responsive presentation and demo
+disclosure. Registration availability, pricing data, plans, amounts, routes,
+entitlements and checkout targets remain supplied by the existing controller
+and configuration. Native `<details>` keeps the complete pricing information
+available without JavaScript; the shared responsive-details behavior only
+changes the initial mobile presentation.
+
+### Implementation
+
+- Tightened the landing hero’s small-screen spacing while retaining the
+  primary registration/access action and product preview near the top.
+- Renamed static preview labels to “Illustrative workspace,” “Example” and
+  “Example data · not live telemetry,” and removed implementation-focused
+  “no screenshots” wording.
+- Replaced the six-card mobile feature wall with three visible summary
+  features per plan and a native “See all features and limits” disclosure;
+  desktop remains expanded and no-JavaScript rendering remains complete.
+- Added pricing and public-preview coverage to the isolated responsive fixture
+  matrix.
+
+### Verification
+
+- Public UI, pricing and access-request coverage: **42 tests / 528
+  assertions**.
+- Isolated fixture renderer: **1 test / 19 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including six-plan disclosure behavior, illustrative-preview copy,
+  responsive disclosures, application-card geometry and provider
+  no-JavaScript submission: **9 passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `1b28b12` was pushed to `origin/main`.
+
 ### Exact next task
 
-Begin Slice 4: reduce the public landing page’s mobile task distance and make
-the static product preview clearly illustrative, then refine pricing hierarchy
-without changing plans, prices, routes or entitlements.
+Begin Slice 5: improve the dashboard’s results-first hierarchy and mobile task
+distance, preserving onboarding order, attention semantics, query bounds and
+all existing authorization/entitlement behavior.
 
 ## Remaining planned slices
 
