@@ -3,6 +3,10 @@
         $environment = $context->environment;
         $website = $environment->website;
         $server = $environment->server;
+        $contextFiltersAreActive = $context->window !== '24h'
+            || $context->serviceId !== null
+            || $context->deployment !== 'all'
+            || $context->severity !== 'all';
     @endphp
 
     <x-layouts.partials.breadcrumbs
@@ -55,101 +59,123 @@
             </div>
         </div>
 
-        <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-5 grid gap-3 border-t border-primary pt-5 sm:grid-cols-2 lg:grid-cols-4">
-            <label>
-                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Evidence window') }}</span>
-                <select name="window" class="input secondary mt-1 rounded-md">
-                    @foreach(\App\Data\ObservabilityContextFilters::WINDOWS as $window => $hours)
-                        <option value="{{ $window }}" @selected($context->window === $window)>{{ $window }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label>
-                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Service') }}</span>
-                <select name="service" class="input secondary mt-1 rounded-md">
-                    <option value="all" @selected($context->serviceId === null)>{{ __('All services') }}</option>
-                    @foreach($context->services as $service)
-                        <option value="{{ $service->id }}" @selected($context->serviceId === (int) $service->id)>{{ $service->name }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label>
-                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Deployments') }}</span>
-                <select name="deployment" class="input secondary mt-1 rounded-md">
-                    @foreach(['all' => __('All deployments'), 'active' => __('Active'), 'successful' => __('Successful'), 'unsuccessful' => __('Unsuccessful')] as $deployment => $label)
-                        <option value="{{ $deployment }}" @selected($context->deployment === $deployment)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <label>
-                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Incident severity') }}</span>
-                <select name="severity" class="input secondary mt-1 rounded-md">
-                    @foreach(\App\Data\ObservabilityContextFilters::SEVERITIES as $severity)
-                        <option value="{{ $severity }}" @selected($context->severity === $severity)>{{ str($severity)->headline() }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <x-ui.button type="submit" variant="primary" class="sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</x-ui.button>
-        </form>
-        <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
+        <details id="environment-context-filters" class="mt-5 border-t border-primary pt-5" @if ($contextFiltersAreActive || $errors->any()) open @endif>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>{{ __('Adjust evidence filters') }}</span>
+                <span class="flex items-center gap-2">
+                    @if ($contextFiltersAreActive)
+                        <x-ui.badge tone="accent">{{ __('Filtered') }}</x-ui.badge>
+                    @endif
+                    <span class="text-secondary" aria-hidden="true">⌄</span>
+                </span>
+            </summary>
+            <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label>
+                    <span class="block text-xs font-bold uppercase text-secondary">{{ __('Evidence window') }}</span>
+                    <select name="window" class="input secondary mt-1 rounded-md">
+                        @foreach(\App\Data\ObservabilityContextFilters::WINDOWS as $window => $hours)
+                            <option value="{{ $window }}" @selected($context->window === $window)>{{ $window }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label>
+                    <span class="block text-xs font-bold uppercase text-secondary">{{ __('Service') }}</span>
+                    <select name="service" class="input secondary mt-1 rounded-md">
+                        <option value="all" @selected($context->serviceId === null)>{{ __('All services') }}</option>
+                        @foreach($context->services as $service)
+                            <option value="{{ $service->id }}" @selected($context->serviceId === (int) $service->id)>{{ $service->name }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label>
+                    <span class="block text-xs font-bold uppercase text-secondary">{{ __('Deployments') }}</span>
+                    <select name="deployment" class="input secondary mt-1 rounded-md">
+                        @foreach(['all' => __('All deployments'), 'active' => __('Active'), 'successful' => __('Successful'), 'unsuccessful' => __('Unsuccessful')] as $deployment => $label)
+                            <option value="{{ $deployment }}" @selected($context->deployment === $deployment)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label>
+                    <span class="block text-xs font-bold uppercase text-secondary">{{ __('Incident severity') }}</span>
+                    <select name="severity" class="input secondary mt-1 rounded-md">
+                        @foreach(\App\Data\ObservabilityContextFilters::SEVERITIES as $severity)
+                            <option value="{{ $severity }}" @selected($context->severity === $severity)>{{ str($severity)->headline() }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <x-ui.button type="submit" variant="primary" class="sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</x-ui.button>
+            </form>
+            <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
+        </details>
 
-        <div class="mt-5 border-t border-primary pt-5">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <h3 class="font-bold text-primary">{{ __('Save this investigation') }}</h3>
-                    <p class="mt-1 text-xs text-secondary">{{ __('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.') }}</p>
+        <details id="save-investigation-view" class="mt-5 border-t border-primary pt-5" @if ($errors->has('name') || $errors->has('service')) open @endif>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>{{ __('Save or manage investigation views') }}</span>
+                <span class="flex items-center gap-2">
+                    @if ($savedInvestigations->isNotEmpty())
+                        <x-ui.badge>{{ $savedInvestigations->count() }}</x-ui.badge>
+                    @endif
+                    <span class="text-secondary" aria-hidden="true">⌄</span>
+                </span>
+            </summary>
+            <div class="mt-4">
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-primary">{{ __('Save this investigation') }}</h3>
+                        <p class="mt-1 text-xs text-secondary">{{ __('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.') }}</p>
+                    </div>
+                    <form method="POST" action="{{ route('observability.environments.investigations.store', $environment) }}" class="flex flex-wrap items-end gap-2">
+                        @csrf
+                        <input type="hidden" name="window" value="{{ $context->window }}">
+                        <input type="hidden" name="service" value="{{ $context->serviceId ?? 'all' }}">
+                        <input type="hidden" name="deployment" value="{{ $context->deployment }}">
+                        <input type="hidden" name="severity" value="{{ $context->severity }}">
+                        <label>
+                            <span class="sr-only">{{ __('Investigation name') }}</span>
+                            <input name="name" maxlength="60" required class="input secondary rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
+                        </label>
+                        <label>
+                            <span class="sr-only">{{ __('Keep for') }}</span>
+                            <select name="expires_in_days" class="input secondary rounded-md">
+                                @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
+                                    <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <x-ui.button type="submit" variant="primary">{{ __('Save view') }}</x-ui.button>
+                    </form>
                 </div>
-                <form method="POST" action="{{ route('observability.environments.investigations.store', $environment) }}" class="flex flex-wrap items-end gap-2">
-                    @csrf
-                    <input type="hidden" name="window" value="{{ $context->window }}">
-                    <input type="hidden" name="service" value="{{ $context->serviceId ?? 'all' }}">
-                    <input type="hidden" name="deployment" value="{{ $context->deployment }}">
-                    <input type="hidden" name="severity" value="{{ $context->severity }}">
-                    <label>
-                        <span class="sr-only">{{ __('Investigation name') }}</span>
-                        <input name="name" maxlength="60" required class="input secondary rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
-                    </label>
-                    <label>
-                        <span class="sr-only">{{ __('Keep for') }}</span>
-                        <select name="expires_in_days" class="input secondary rounded-md">
-                            @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
-                                <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
-                            @endforeach
-                        </select>
-                    </label>
-                    <x-ui.button type="submit" variant="primary">{{ __('Save view') }}</x-ui.button>
-                </form>
+                @error('name')
+                    <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+                @enderror
+                @error('service')
+                    <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
+                @enderror
             </div>
-            @error('name')
-                <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
-            @enderror
-            @error('service')
-                <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
-            @enderror
-        </div>
 
-        @if($savedInvestigations->isNotEmpty())
-            <div class="mt-5 border-t border-primary pt-5" data-testid="saved-investigations">
-                <h3 class="font-bold text-primary">{{ __('Saved investigations for this environment') }}</h3>
-                <div class="mt-3 grid gap-2 sm:grid-cols-2">
-                    @foreach($savedInvestigations as $saved)
-                        <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3">
-                            <a href="{{ route('observability.investigations.show', $saved) }}" class="min-w-0 flex-1">
-                                <span class="block truncate font-bold text-primary">{{ $saved->name }}</span>
-                                <span class="mt-0.5 block text-xs text-secondary">{{ __('By :name · expires :time', ['name' => $saved->creator?->name ?? __('former member'), 'time' => $saved->expires_at?->diffForHumans()]) }}</span>
-                            </a>
-                            @if($canManageInvestigationViews || (int) $saved->created_by === (int) auth()->id())
-                                <form method="POST" action="{{ route('observability.investigations.destroy', $saved) }}">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-ui.button type="submit" variant="danger" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</x-ui.button>
-                                </form>
-                            @endif
-                        </div>
-                    @endforeach
+            @if($savedInvestigations->isNotEmpty())
+                <div class="mt-5 border-t border-primary pt-5" data-testid="saved-investigations">
+                    <h3 class="font-bold text-primary">{{ __('Saved investigations for this environment') }}</h3>
+                    <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                        @foreach($savedInvestigations as $saved)
+                            <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-3">
+                                <a href="{{ route('observability.investigations.show', $saved) }}" class="min-w-0 flex-1">
+                                    <span class="block truncate font-bold text-primary">{{ $saved->name }}</span>
+                                    <span class="mt-0.5 block text-xs text-secondary">{{ __('By :name · expires :time', ['name' => $saved->creator?->name ?? __('former member'), 'time' => $saved->expires_at?->diffForHumans()]) }}</span>
+                                </a>
+                                @if($canManageInvestigationViews || (int) $saved->created_by === (int) auth()->id())
+                                    <form method="POST" action="{{ route('observability.investigations.destroy', $saved) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-ui.button type="submit" variant="danger" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</x-ui.button>
+                                    </form>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-            </div>
-        @endif
+            @endif
+        </details>
     </section>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">

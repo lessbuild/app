@@ -138,6 +138,9 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->assertDontSee('private-incident-summary')
             ->assertDontSee('private-website-summary');
 
+        $this->assertDoesNotMatchRegularExpression('/<details id="environment-context-filters"[^>]*\bopen\b[^>]*>/', $response->getContent());
+        $this->assertDoesNotMatchRegularExpression('/<details id="save-investigation-view"[^>]*\bopen\b[^>]*>/', $response->getContent());
+
         $this->assertStringContainsString(
             '<a href="'.route('builds.show', $recentBuild).'" class="text-xs font-bold text-ternary underline" data-testid="incident-deployment-evidence-link">Open deployment evidence</a>',
             $response->getContent(),
@@ -463,6 +466,8 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->assertSee('Worker service')
             ->assertDontSee('Minor other-service deployment')
             ->assertDontSee('unvalidated-value');
+
+        $this->assertMatchesRegularExpression('/<details id="environment-context-filters"[^>]*\bopen\b[^>]*>/', $response->getContent());
 
         $response->assertViewHas('context', function ($context) use ($repository, $selectedBuild): bool {
             return $context->serviceId === $repository->id
