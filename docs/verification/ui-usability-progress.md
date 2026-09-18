@@ -185,6 +185,41 @@ baseline.
 
 | Phase 2: deployment history results before advanced filters | Complete | 15 focused feature tests / 143 assertions, Pint, build, diff check and mobile visual crawl passed; first result moved from ~1,857px to ~1,061px | `9f3b611` pushed to `origin/main` | Audit dashboard priority and move secondary sections behind purposeful disclosures |
 
+## Phase 3 — dashboard priority and attention context
+
+### Responsibility problem
+
+The dashboard assembled the attention summary after provisioning, active
+deployments, webhook deliveries, command activity, gallery reports and recipe
+updates. That made the most actionable failure context appear around 4,469px
+down the mobile page even though the controller had already computed it.
+
+### Boundaries and preserved behavior
+
+- The attention panel is now a presentation-only `dashboard._attention` view
+  partial placed directly after the operational overview.
+- `DashboardController` remains responsible for workspace-scoped queries,
+  counts, limits and eager loading. No query, authorization, notification,
+  link target or sensitive-field selection changed.
+- Existing empty-state wording, failure categories, “view notifications” flow,
+  owner isolation and secondary panels remain intact; only their visual order
+  changed.
+
+### Verification
+
+- `DashboardTest` and `LocalUiAssetTest` passed, including the new five-
+  assertion ordering test proving operational overview → attention → setup.
+- Pint, Blade cache compilation, Vite build and `git diff --check` passed.
+- Authenticated mobile visual crawl passed: 1/1 test, 3.6 minutes.
+- A real mobile runtime measurement placed the attention heading at about
+  1,681px, down from the baseline ~4,469px; total page height remains ~7,280px
+  because this slice reorders existing panels without hiding data.
+- Commit `ebca982` (`feat: prioritize dashboard attention summary`) was pushed
+  to `origin/main`; the isolated HTTPS runtime was fast-forwarded, rebuilt,
+  cache-refreshed and confirmed healthy.
+
+| Phase 3: dashboard priority and attention context | Complete | Dashboard and UI feature suites, ordering assertion, Pint, build, diff check and mobile visual crawl passed; attention moved from ~4,469px to ~1,681px | `ebca982` pushed to `origin/main` | Improve long resource-detail pages with summary-first sections and purposeful disclosures |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
