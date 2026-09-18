@@ -804,6 +804,49 @@ error and the field that needed correction difficult to find.
 
 | Phase 17: project form validation context | Complete with browser follow-up | 29 focused tests / 287 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6e8f42e` pushed to `origin/main` | Inspect server, website and provider detail pages for action hierarchy, dense histories and error-state discoverability |
 
+## Phase 18 — provider connection history disclosure
+
+### Responsibility problem
+
+Provider detail pages kept the newest twenty retained connection checks in the
+default document flow below the connection metrics and action buttons. The
+history is useful evidence, but it is secondary to the current connection
+status and the actions to test or edit the provider. On a phone, the repeated
+six-column table pushed attached resources farther down than necessary.
+
+### Boundaries and preserved behavior
+
+- `ProviderController`, `ProviderConnectionHistoryQuery`, policies, retained
+  history limits, pagination/export routes and credential-safe rendering are
+  unchanged. This is a presentation-only disclosure using the same loaded
+  checks and metrics.
+- The connection summary, failure state, test action, full-history link and
+  export action remain visible. The newest checks now sit in a labeled native
+  disclosure with a stable id, matching the existing website health-history
+  pattern.
+- The disclosure opens automatically when the current retained failure streak
+  is non-zero, so a failing provider does not hide its evidence. Healthy
+  histories remain collapsed by default. Table escaping, endpoint/error
+  redaction, ordering and the existing 20/100 retained bounds are unchanged.
+
+### Verification
+
+- Provider connection insight, history and connection regression suites passed:
+  20 tests / 255 assertions. Coverage includes healthy collapsed state,
+  failure-streak open state, retained limits, filtered history, CSV export,
+  tenancy, authorization, rate limits and sanitized failures. Pint, Blade view
+  compilation and `git diff --check` passed.
+- Commit `8e7a52c` (`ui: collapse provider connection history`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached and
+  both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; open/collapsed behavior and
+  the preserved evidence contract are covered by feature tests and compiled
+  markup.
+
+| Phase 18: provider connection history disclosure | Complete with browser follow-up | 20 focused tests / 255 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `8e7a52c` pushed to `origin/main` | Inspect server and website detail pages for secondary panels, dense metrics and operational error discoverability |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
