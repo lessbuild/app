@@ -1,5 +1,22 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 server inventory, website inventory and
+health-check history were converted from wide tables to responsive resource
+cards. Website health checks now share one card partial between the detail
+history and paginated history views. Provisioning/health badges, IPs,
+endpoints, response timings, monitoring state, links and exports remain
+unchanged.
+
+Focused resource-management coverage passed **41 tests / 470 assertions**,
+including explicit checks that the affected views no longer emit tables. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+fast-forwarded to `ba0b4bf`, the service is active and the live-runtime smoke
+passed (**1 test**). Commit `ba0b4bf` (`Replace server and website tables with
+cards`) is pushed to `origin/main`. No routes, filters, authorization, health
+monitoring, exports, jobs or remote calls changed. The exact next task is to
+convert remaining product/detail tables, starting with recipes and gallery
+comparison surfaces.
+
 Latest continuation: September 18 the deployment comparison, build history,
 repository inventory, read-only impact preview and repository webhook delivery
 history were converted from wide tables to responsive cards and stacked
