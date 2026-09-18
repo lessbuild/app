@@ -39,6 +39,25 @@ class ProviderConnectionInsightsTest extends TestCase
             ->assertSee('Failed timings are excluded.')
             ->assertSee('2 consecutive failed checks')
             ->assertSee('not an SLA or a guarantee that the credential is currently valid.');
+
+        $this->assertMatchesRegularExpression(
+            '/<details id="provider-connection-history"[^>]*\bopen\b[^>]*>/',
+            $this->actingAs($owner)->get(route('providers.show', $provider))->getContent(),
+        );
+    }
+
+    public function test_connection_history_stays_collapsed_when_latest_checks_are_healthy(): void
+    {
+        [$owner, $provider] = $this->provider('Healthy');
+        $this->record($provider, true, 101, now()->subMinute());
+
+        $content = $this->actingAs($owner)->get(route('providers.show', $provider))->getContent();
+
+        $this->assertMatchesRegularExpression('/<details id="provider-connection-history"[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details id="provider-connection-history"[^>]*\bopen\b[^>]*>/',
+            $content,
+        );
     }
 
     public function test_empty_history_has_explicit_unknown_metrics(): void

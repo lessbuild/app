@@ -135,7 +135,12 @@
         @if ($connectionChecks->isEmpty())
             <x-ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
         @else
-            <div class="ui-card mt-4 overflow-hidden">
+            <details id="provider-connection-history" class="group ui-card mt-4 overflow-hidden" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                    <span>{{ __('Latest check results') }}</span>
+                    <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                </summary>
+                <div class="border-t border-primary p-0">
                 <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-primary bg-primary text-sm">
                     <thead>
@@ -176,7 +181,8 @@
                     </tbody>
                 </table>
                 </div>
-            </div>
+                </div>
+            </details>
         @endif
     </section>
 
