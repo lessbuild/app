@@ -254,6 +254,27 @@ production release gates, physical-phone checks, provider-backed acceptance,
 mail, billing, GitHub App, independent monitoring and the remaining recovery
 drills.
 
+## Browser verification follow-up — 2026-09-18
+
+The previously deferred browser gate was completed after safely clearing only
+regenerable Composer/npm caches and task-owned temporary Playwright/layout
+artifacts. Root free space increased from 821 MB to 972 MB; browser binaries,
+repositories, runtime data, credentials and desktop trash were retained. The
+disposable runtime now serves assets and local cookies from its isolated HTTP
+origin. No live or production environment changed.
+
+The complete browser set passed **19 tests**: 9 asset/layout and
+no-JavaScript provider tests, 1 served Livewire/public-navigation test, 6
+authenticated navigation/accessibility tests and 3 broad mobile/tablet/desktop
+route-audit tests. The route audit found no runtime errors or horizontal
+overflow. Exact commands are recorded in
+`verification/ui-browser-verification-2026-09-18.md`.
+
+The local UI improvement plan is now verified complete. Remaining work is
+external/live acceptance only: production release, physical-phone checks,
+provider-backed acceptance, mail, billing, GitHub App, independent monitoring
+and recovery drills.
+
 ## Deferred release gates
 
 The September 17 preview review found and corrected a PostgreSQL cleanup

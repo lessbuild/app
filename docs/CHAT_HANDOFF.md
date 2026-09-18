@@ -1474,6 +1474,28 @@ mobile height, keyboard, focus or click result is claimed. Production release,
 live acceptance, physical-phone checks and external provider acceptance remain
 separate gates.
 
+## Browser verification follow-up — 2026-09-18
+
+The browser follow-up was completed after a read-only disk audit. Only
+regenerable Composer/npm caches and task-owned temporary Playwright/layout
+artifacts were removed; installed browser binaries, repositories, runtime
+data, credentials and desktop trash were retained. Root free space increased
+from 821 MB to 972 MB. The disposable runtime was corrected to use its local
+HTTP asset origin and non-secure local cookies; no repository, live
+environment or acceptance-drill checkout was changed.
+
+All browser specs passed against isolated `main`: the asset/layout and
+no-JavaScript provider suite passed **9 tests**, the served Livewire/public
+mobile navigation smoke passed **1**, authenticated navigation and
+accessibility passed **6**, and the broad mobile/tablet/desktop route audit
+passed **3** in 8.4 minutes. The route audit reported no runtime errors or
+horizontal overflow. This is **19 browser tests passed** in total.
+
+The exact commands and cleanup scope are recorded in
+`docs/verification/ui-browser-verification-2026-09-18.md`. Local UI
+verification is now complete. Production release, physical-phone checks,
+live acceptance and external provider acceptance remain separate gates.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

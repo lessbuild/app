@@ -1471,6 +1471,32 @@ purposeful disclosures or workflow-specific forms.
 
 | Phase 33: final cross-application verification | Complete with browser follow-up | 1,602 PHP tests / 13,171 assertions, Pint, PHP 8.5.10 platform check, Vite build, route/view caches and `git diff --check` passed; browser measurement deferred by host disk exhaustion | `7c43740` implementation baseline plus pushed verification records | External/live acceptance only, when separately authorized |
 
+## Browser verification follow-up — 2026-09-18
+
+The previously deferred browser gate was rerun after a read-only disk audit.
+Only regenerable Composer/npm caches and task-owned temporary Playwright/layout
+artifacts were removed; installed browser binaries, repositories, runtime
+data, credentials and desktop trash were retained. Root free space increased
+from 821 MB to 972 MB. The disposable runtime was corrected to serve its
+assets and cookies from its local HTTP origin; this changed no repository or
+live environment configuration.
+
+All browser specifications passed against isolated `main`:
+
+- Asset/layout and no-JavaScript provider suite: **9 passed**.
+- Served Livewire/public mobile navigation: **1 passed**.
+- Authenticated navigation and accessibility at mobile/tablet/desktop:
+  **6 passed**.
+- Broad authenticated visual route audit at mobile/tablet/desktop:
+  **3 passed** in 8.4 minutes, with no runtime errors or horizontal overflow.
+
+This is **19 browser tests passed** in total. Together with the strict PHP
+suite, Pint, platform check, Vite build, route/view caches and diff check, the
+local UI plan verification is complete. See the [browser verification record](ui-browser-verification-2026-09-18.md)
+for exact commands and cleanup scope.
+
+| Browser verification follow-up | Complete | 19 browser tests, no runtime errors/overflow, isolated runtime active | Pending documentation commit and push | External/live acceptance only |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
