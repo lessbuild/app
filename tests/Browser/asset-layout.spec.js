@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -123,6 +123,20 @@ for (const colorScheme of ['light', 'dark']) {
                     const content = evidence.locator('.ui-responsive-details__content');
                     await expect(evidence).toBeVisible();
                     await expect(page.locator('#deployment-timeline-title')).toBeVisible();
+                    if (width >= 1024) {
+                        await expect(content).toBeVisible();
+                    } else {
+                        await expect(content).toBeHidden();
+                        await evidence.locator('summary').click();
+                        await expect(content).toBeVisible();
+                    }
+                }
+                if (screen === 'backups') {
+                    await expect(page.locator('[data-backup-readiness]')).toBeVisible();
+                    await expect(page.locator('#backup-destinations')).toBeVisible();
+                    await expect(page.locator('#backup-schedules')).toBeVisible();
+                    const evidence = page.locator('#backup-recovery-evidence');
+                    const content = evidence.locator('.ui-responsive-details__content');
                     if (width >= 1024) {
                         await expect(content).toBeVisible();
                     } else {

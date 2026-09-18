@@ -5,20 +5,87 @@
         :description="__('Encrypted, offsite restic snapshots of site databases, persistent storage, and environment configuration.')"
     />
 
-    <dl class="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">
-        @foreach ([
-            [__('Latest completed backup'), $recoverySummary->latestBackupCompletedAt?->diffForHumans() ?? __('No completed backup')],
-            [__('Latest HTTPS transport evidence'), $recoverySummary->latestTransportVerifiedAt?->diffForHumans() ?? __('Not recorded')],
-            [__('Latest in-place restore'), $recoverySummary->latestRestoreCompletedAt?->diffForHumans() ?? __('No completed restore')],
-            [__('Independent restore verification'), $recoverySummary->latestIndependentRecoveryVerificationAt?->diffForHumans() ?? __('Not recorded')],
-            [__('Observed restore time'), $recoverySummary->latestRestoreSeconds === null ? __('Not measured') : trans_choice(':count second|:count seconds', $recoverySummary->latestRestoreSeconds, ['count' => $recoverySummary->latestRestoreSeconds])],
-        ] as [$label, $value])
-            <x-ui.stat :label="$label" :value="$value" />
-        @endforeach
-    </dl>
+    @php
+        $hasDestination = $destinations->isNotEmpty();
+        $hasCompletedBackup = $recoverySummary->latestBackupCompletedAt !== null;
+        $hasIndependentVerification = $recoverySummary->latestIndependentRecoveryVerificationAt !== null;
+        $readiness = match (true) {
+            ! $hasDestination => [
+                'tone' => 'warning',
+                'label' => __('Setup required'),
+                'title' => __('Add a protected destination first'),
+                'description' => __('Backups cannot start until an encrypted offsite destination is configured and verified.'),
+                'action' => __('Add destination'),
+                'target' => '#backup-destinations',
+            ],
+            ! $hasCompletedBackup => [
+                'tone' => 'warning',
+                'label' => __('Ready to protect'),
+                'title' => __('Run the first backup'),
+                'description' => __('A destination is configured, but no completed backup has been recorded for this workspace yet.'),
+                'action' => __('Run a backup'),
+                'target' => '#backup-history',
+            ],
+            ! $hasIndependentVerification => [
+                'tone' => 'accent',
+                'label' => __('Verification recommended'),
+                'title' => __('Test recovery from a completed backup'),
+                'description' => __('Backups are completing, but an isolated restore verification has not been recorded yet.'),
+                'action' => __('Review recovery actions'),
+                'target' => '#backup-history',
+            ],
+            default => [
+                'tone' => 'success',
+                'label' => __('Recovery evidence current'),
+                'title' => __('Backups and independent recovery checks are recorded'),
+                'description' => __('Review the latest evidence below or open history to inspect a specific website backup.'),
+                'action' => __('Review evidence'),
+                'target' => '#backup-recovery-evidence',
+            ],
+        };
+    @endphp
+
+    <section id="backup-readiness" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="backup-readiness-title" data-backup-readiness>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Protection status') }}</p>
+                <h2 id="backup-readiness-title" class="mt-1 text-xl font-black text-primary">{{ $readiness['title'] }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-secondary">{{ $readiness['description'] }}</p>
+            </div>
+            <x-ui.badge :tone="$readiness['tone']">{{ $readiness['label'] }}</x-ui.badge>
+        </div>
+        <div class="mt-4 flex flex-wrap gap-3">
+            <x-ui.button :href="$readiness['target']" variant="primary">{{ $readiness['action'] }}</x-ui.button>
+            <x-ui.button href="#backup-destinations" variant="secondary">{{ __('Destinations and schedules') }}</x-ui.button>
+        </div>
+    </section>
+
+    <details id="backup-recovery-evidence" class="ui-responsive-details group ui-card mt-6 scroll-mt-24 overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" aria-labelledby="backup-recovery-evidence-title">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recovery evidence') }}</span>
+                <span id="backup-recovery-evidence-title" class="mt-1 block text-lg font-black text-primary">{{ __('Completion, restore and verification history') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">{{ __('Open for the latest recorded evidence.') }}</span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="ui-responsive-details__content border-t border-primary p-4 lg:border-0">
+            <dl class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">
+                @foreach ([
+                    [__('Latest completed backup'), $recoverySummary->latestBackupCompletedAt?->diffForHumans() ?? __('No completed backup')],
+                    [__('Latest HTTPS transport evidence'), $recoverySummary->latestTransportVerifiedAt?->diffForHumans() ?? __('Not recorded')],
+                    [__('Latest in-place restore'), $recoverySummary->latestRestoreCompletedAt?->diffForHumans() ?? __('No completed restore')],
+                    [__('Independent restore verification'), $recoverySummary->latestIndependentRecoveryVerificationAt?->diffForHumans() ?? __('Not recorded')],
+                    [__('Observed restore time'), $recoverySummary->latestRestoreSeconds === null ? __('Not measured') : trans_choice(':count second|:count seconds', $recoverySummary->latestRestoreSeconds, ['count' => $recoverySummary->latestRestoreSeconds])],
+                ] as [$label, $value])
+                    <x-ui.stat :label="$label" :value="$value" />
+                @endforeach
+            </dl>
+        </div>
+    </details>
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
-        <section class="ui-card p-6">
+        <section id="backup-destinations" class="ui-card scroll-mt-24 p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2>
@@ -85,7 +152,7 @@
             @endif
         </section>
 
-        <section class="ui-card p-6">
+        <section id="backup-schedules" class="ui-card scroll-mt-24 p-6">
             @php
                 $scheduleCount = $websites->sum(fn ($website) => $website->backupSchedules->count());
             @endphp
@@ -170,7 +237,7 @@
         </section>
     </div>
 
-    <section class="ui-card mt-6 overflow-hidden">
+    <section id="backup-history" class="ui-card mt-6 scroll-mt-24 overflow-hidden">
         <div class="flex flex-wrap items-start justify-between gap-4 p-6">
             <div>
                 <h2 class="text-xl font-black text-primary">{{ __('Backup history and restore') }}</h2>

@@ -87,11 +87,18 @@ class BackupRecoveryEvidenceTest extends TestCase
 
         $response = $this->actingAs($owner)->get(route('backups.index'));
         $response->assertOk()
+            ->assertSee('Protection status')
+            ->assertSee('Verification recommended')
             ->assertSee('Latest completed backup')
             ->assertSee('Latest HTTPS transport evidence')
             ->assertSee('Latest in-place restore')
             ->assertSee('Independent restore verification')
+            ->assertSee('id="backup-recovery-evidence"', false)
             ->assertSee('Not recorded');
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="backup-recovery-evidence")(?=[^>]*\\bopen\\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-open="false")[^>]*>/',
+            $response->getContent(),
+        );
         $response->assertViewHas('recoverySummary', fn (BackupRecoverySummary $viewSummary): bool => $viewSummary->latestRestoreSeconds === 900
             && $viewSummary->latestIndependentRecoveryVerificationAt === null);
     }
