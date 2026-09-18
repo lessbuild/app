@@ -135,10 +135,45 @@ Current BuildPusher evidence from the development fixture:
   beginning with the shared insight/disclosure hierarchy on Observability,
   Automation and Commands.
 
+### Slice 4 — operational, account and feedback surfaces
+
+- User problem: Commands, Notifications, Feedback, System Health, Account and
+  Workspace pages remained tall, multi-purpose screens without a compact way
+  to jump between their primary sections. Notification cards also used filled
+  status backgrounds, which competed with the content and differed from the
+  established border-only alert language.
+- Entry points: the Commands, Notifications, Feedback, System Health, Account
+  and Workspace Blade views.
+- Boundary: applied the shared contextual page-header eyebrows and local-nav
+  component to each surface; added stable scroll targets for the major
+  sections; marked long inventory lists for the shared row treatment; and
+  changed unread notification emphasis to a colored leading border only.
+  No controller, query, policy, route, form, persistence or notification
+  behavior changed.
+- SOLID/Laravel rationale: repeated presentation concerns are kept in the
+  shared Blade/CSS components while each page retains ownership of its
+  content and existing actions. The navigation is progressive enhancement:
+  ordinary anchors remain usable without JavaScript and do not introduce a
+  new client-side state boundary.
+- Preserved contracts: all existing form actions, validation, named error
+  bags, filters, pagination, authorization and disclosure open-state logic
+  remain unchanged. Status remains visible through badges and the semantic
+  border, without a full-surface color fill.
+- Verification: 82 focused tests passed with 908 assertions across local UI,
+  insights, commands, notifications, feedback, system health, account and
+  organization coverage; Pint passed; Vite build passed; `git diff --check`
+  passed.
+- Commit and push: `5c469fc Polish operational and account surfaces`, pushed
+  to `origin/main`.
+- Next task: give the public landing and authentication pages the same calm
+  hierarchy, while preserving their truthful content, metadata, routes and
+  non-JavaScript navigation.
+
 ## Remaining sequence
 
 1. Dashboard hierarchy and first-value experience.
 2. Shared shell, resource headers and local navigation.
 3. Deployment, infrastructure and recovery page-family polish.
-4. Operational, automation, account and public-surface polish.
+4. Operational, automation, account and public-surface polish — operational,
+   account and feedback portion complete; public/auth portion next.
 5. Responsive accessibility and complete regression verification.
