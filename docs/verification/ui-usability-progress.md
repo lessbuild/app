@@ -146,6 +146,45 @@ not in individual feature pages.
 
 | Phase 1: shared readability and keyboard navigation | Complete | Focused PHP, Pint, diff check, 9 asset tests, 6 browser smoke tests and 1 mobile visual crawl passed | `f9e7488` pushed to `origin/main` | Build the deployment-history results-before-filters slice |
 
+## Phase 2 — deployment history results before advanced filters
+
+### Responsibility problem
+
+The deployment-history controller already supplied a validated filter contract
+and a filter-aware inventory/metrics query. The usability problem was entirely
+presentational: eleven controls rendered expanded before the first outcome,
+which pushed the first deployment link to roughly 1,857px on the mobile
+baseline.
+
+### Boundaries and preserved behavior
+
+- The reusable `ui.filter-panel` component owns only native disclosure
+  presentation, an active-count badge and keyboard-friendly summary markup.
+- `BuildIndexRequest`, `BuildInventoryQuery`, metrics, pagination, CSV export,
+  organization scoping and all existing query names remain unchanged.
+- The default deployment-history view collapses the advanced controls. Any
+  normalized filter opens the panel and shows its count, so a filtered result
+  remains self-explanatory and editable.
+- Existing validation, selected values, empty states, result ordering and
+  active/latest semantics are preserved. No writes, jobs or authorization
+  decisions are involved.
+
+### Verification
+
+- `BuildHistoryInsightsTest` and `BuildHistoryFilterTest` passed: 15 tests,
+  143 assertions, including collapsed default state and active-filter reopen.
+- Pint, Blade cache compilation, Vite build and `git diff --check` passed.
+- The authenticated mobile visual crawl passed: 1/1 test, 2.5 minutes.
+- A real mobile runtime measurement after the change recorded 2,392px total
+  page height, filter summary at about 181px, metrics at 268px and the first
+  build link at 1,061px. The first useful result moved up about 796px and the
+  full page shortened about 854px against the baseline.
+- Commit `9f3b611` (`feat: streamline deployment history filters`) was pushed
+  to `origin/main`; the isolated HTTPS runtime was fast-forwarded, rebuilt,
+  cache-refreshed and confirmed healthy.
+
+| Phase 2: deployment history results before advanced filters | Complete | 15 focused feature tests / 143 assertions, Pint, build, diff check and mobile visual crawl passed; first result moved from ~1,857px to ~1,061px | `9f3b611` pushed to `origin/main` | Audit dashboard priority and move secondary sections behind purposeful disclosures |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
