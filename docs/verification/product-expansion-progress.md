@@ -1,5 +1,32 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the responsive table replacement slice is
+complete, including command history and command-center views. A full
+`resources/views` audit now finds no `<table>`, `<thead>` or `<tbody>` markup.
+Inventory, history, comparison, configuration, provider, backup, recipe,
+sign-in, documentation and command surfaces now use responsive cards, labeled
+definition lists, disclosure sections or stacked comparisons. Pagination,
+filters, exports, actions, authorization, secret redaction and queued-work
+contracts remain in place.
+
+The complete PHP suite passes **1,606 tests / 13,312 assertions**. Full Pint,
+`git diff --check` and the production Vite asset build pass. Browser coverage
+passes the responsive asset/layout suite (**10 tests**), authenticated
+navigation/accessibility suite (**6 tests**), broad visual audit (**3 tests**)
+and served-runtime Livewire/mobile smoke (**1 test**). Route and Blade view
+caches were rebuilt successfully; the isolated `buildpusher-dev-main.service`
+is active at `https://buildpusher.com`, and the runtime is at `ae01479`.
+
+The first full-suite run exposed two compatibility issues: the build cards had
+dropped the visible `Duration: …` contract, and the timeline migration had
+dropped the canceled-deployment notice. They were corrected and pushed as
+`9adbae3` (`Preserve deployment duration text in cards`) and `ae01479`
+(`Restore cancellation feedback in deployment timeline`). The final full suite
+and focused deployment tests pass after both fixes. The table-replacement slice
+has no remaining application work; the exact next task is the next
+user-prioritized UI improvement. Paid cloud acceptance and the separate live
+acceptance drill remain outside this local verification.
+
 Latest continuation: September 18 the final table-bearing views were converted
 to responsive cards and stacked decision sections. Sign-in history now presents
 derived device, method, IP and timestamp metadata as compact security cards;
