@@ -342,11 +342,64 @@ preserving text provider selection, validation keys, encrypted credentials,
 entitlement checks, connection-probe behavior, flash feedback and the
 no-JavaScript submission path.
 
+## Slice 7 — provider setup form hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The provider form used seven large single-column selection cards on narrow
+screens, pushing the required credential field well below the first usable
+viewport. GitHub App guidance appeared before the user had selected a
+provider, and optional monitoring settings consumed the same visual weight as
+the required credential and identity fields.
+
+### Boundaries and principle
+
+The provider form component owns selection presentation and progressive
+disclosure. `ProviderRequest`, provider actions, entitlements, encrypted token
+handling, connection probes, validation messages and route contracts were not
+changed. This is single responsibility at the presentation boundary: required
+setup fields remain primary while provider-specific guidance and optional
+monitoring remain available at the point they are relevant.
+
+### Implementation
+
+- Replaced the oversized provider cards with compact text radio rows in a
+  responsive two-column mobile grid, preserving every provider value and
+  accessible radio control.
+- Moved GitHub App guidance below provider selection and made it appear only
+  after GitHub is selected when JavaScript is available; it is not required for
+  no-JavaScript submission.
+- Made connection monitoring a responsive disclosure: open on desktop and in
+  server-rendered/no-JavaScript output, collapsed on mobile unless monitoring
+  validation errors need attention.
+- Preserved the encrypted-token notice immediately with the credential field.
+
+### Verification
+
+- Provider submission, authorization, source-provider and connection coverage:
+  **21 tests / 213 assertions**.
+- Isolated fixture renderer: **1 test / 21 assertions**.
+- Built asset/layout browser matrix: **8 light/dark width runs passed**;
+  provider-specific browser coverage added **2 passed** (no-JavaScript
+  submission and 390×844 mobile disclosure/credential visibility).
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `2afa85d` was pushed to `origin/main`.
+
+### Exact next task
+
+Begin Slice 8: improve the backups, observability and automation hubs with
+status-first summaries and bounded, reachable sections while preserving
+entitlements, filters, pagination, credential handling and operational links.
+
 ## Remaining planned slices
 
-1. Setup forms, beginning with provider creation.
-2. Backups, observability and automation hubs.
-3. Remaining page families and final responsive/accessibility verification.
+1. Backups, observability and automation hubs.
+2. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
