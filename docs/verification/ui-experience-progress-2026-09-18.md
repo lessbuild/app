@@ -13,8 +13,7 @@ compatibility constraints.
 
 ## Phase 0 — inventory and baseline
 
-Status: inventory reproduced; final complete-suite baseline remains a release
-milestone check.
+Status: inventory reproduced; fresh complete-suite baseline recorded.
 
 The 2026-09-18 rendered review covered public pages, authentication, dashboard,
 applications, deployments, repositories, websites, servers, providers,
@@ -34,6 +33,18 @@ The first verified measurements are recorded in the Luna Max plan and include:
 
 This is local rendered evidence only. Physical-device, cloud and live
 acceptance remain outstanding.
+
+### Fresh isolated baseline
+
+The required-PHP strict suite was run after the responsive-disclosure slice in
+the isolated checkout:
+
+- **1,602 tests passed / 13,173 assertions**.
+- Duration: 652.37 seconds.
+- No warnings, risky tests, deprecations or PHPUnit deprecations were reported.
+
+This establishes the current local regression baseline; it does not establish
+browser, physical-device, cloud or live acceptance.
 
 ## Slice 1 — responsive disclosure accessibility
 
@@ -85,9 +96,8 @@ slice begins. This ledger update records the exact verification handoff.
 
 ### Exact next task
 
-Run the complete isolated PHP baseline and begin Slice 2: repair light-theme
-header contrast and internal application-card clipping, with focused before/
-after browser assertions.
+Begin Slice 2: repair light-theme header contrast and internal application-card
+clipping, with focused before/after browser assertions.
 
 ## Remaining planned slices
 
