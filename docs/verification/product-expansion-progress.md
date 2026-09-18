@@ -1,5 +1,23 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 configuration authoring received the final
+justified overview summary for its non-review state. The page now surfaces
+recorded environment, dependency, masked-secret and recent-receipt counts from
+the existing eager-loaded overview and receipt collections. Review and receipt
+states remain unchanged so the apply, cancel, retry and recovery workflow stays
+focused on its existing details. No secret values, provider state or remote
+drift claims are added to the summary.
+
+Focused configuration coverage passed **15 tests / 145 assertions**, including
+secret-safe rendering, authorization-before-validation, comparison and
+observation behavior, and recovery access. Pint, `git diff --check` and Blade
+view caching passed. Commit `cc36d30` (`Add configuration overview insights`)
+is pushed to `origin/main`; the isolated dev runtime is aligned at that commit,
+the view cache was refreshed and the service is active. The exact next task is
+to review the remaining long mobile workflows (dashboard and detail sections)
+for a real grouping opportunity, without adding disclosures or duplicating
+existing detail controls.
+
 Latest continuation: September 18 shared operational insights were extended to
 the remaining detail pages that benefit from a compact, mobile-friendly summary.
 Build comparison now surfaces baseline/current status, duration change, revision
