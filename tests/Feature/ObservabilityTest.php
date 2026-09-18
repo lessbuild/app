@@ -62,6 +62,25 @@ class ObservabilityTest extends TestCase
             && $job->payload['category'] === 'website');
     }
 
+    public function test_observability_secondary_management_surfaces_are_collapsed_without_hiding_forms(): void
+    {
+        [$owner] = $this->infrastructure();
+
+        $content = $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        foreach (['metric-alert-rules', 'alert-destinations', 'status-pages', 'status-incident-history'] as $id) {
+            $this->assertMatchesRegularExpression('/<details id="'.$id.'"[^>]*>/', $content);
+            $this->assertDoesNotMatchRegularExpression('/<details id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
+        }
+
+        $this->assertStringContainsString('Create an alert rule', $content);
+        $this->assertStringContainsString('Add alert destination', $content);
+        $this->assertStringContainsString('Publish status page', $content);
+    }
+
     public function test_metric_alert_rule_operations_use_workspace_policy_and_scoped_server_validation(): void
     {
         [$owner, $server] = $this->infrastructure();

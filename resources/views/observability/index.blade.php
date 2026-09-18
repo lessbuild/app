@@ -45,7 +45,17 @@
         </div>
 
         @if ($canManage)
-            <div class="mt-6 grid gap-5 border-t border-primary pt-6 lg:grid-cols-[1fr_22rem]">
+            <details id="metric-alert-rules" class="mt-6 rounded-xl border border-primary bg-primary p-4" @if ($errors->any()) open @endif>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <span>{{ __('Metric alert rules') }}</span>
+                    <span class="flex items-center gap-2">
+                        @if ($metricRules->isNotEmpty())
+                            <x-ui.badge>{{ $metricRules->count() }}</x-ui.badge>
+                        @endif
+                        <span class="text-secondary" aria-hidden="true">⌄</span>
+                    </span>
+                </summary>
+                <div class="mt-5 grid gap-5 border-t border-primary pt-6 lg:grid-cols-[1fr_22rem]">
                 <div class="space-y-2">
                     <div class="mb-3">
                         <h3 class="font-bold text-primary">{{ __('Metric alert rules') }}</h3>
@@ -83,7 +93,8 @@
                     </div>
                     <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Create alert') }}</x-ui.button>
                 </form>
-            </div>
+                </div>
+            </details>
         @endif
     </section>
 
@@ -129,25 +140,30 @@
 
     @if ($environmentProjects->isNotEmpty())
         <section class="ui-card mt-6 p-6" aria-labelledby="environment-evidence-heading">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Investigation') }}</p>
-                    <h2 id="environment-evidence-heading" class="mt-1 text-xl font-black text-primary">{{ __('Environment evidence') }}</h2>
-                    <p class="mt-1 max-w-3xl text-sm text-secondary">{{ __('Connect deployments, health observations, runtime-log metadata and related incidents for a selected environment.') }}</p>
-                </div>
-                <x-ui.badge>{{ __('Read-only context') }}</x-ui.badge>
-            </div>
-            <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                @foreach ($environmentProjects as $project)
-                    @foreach ($project->environments as $environment)
-                        <a href="{{ route('observability.environments.context', $environment) }}" class="ui-card ui-card--interactive block bg-secondary p-4">
-                            <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ $project->name }}</p>
-                            <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-black text-primary">{{ $environment->name }}</h3><x-ui.badge>{{ str((string) $environment->type)->headline() }}</x-ui.badge></div>
-                            <p class="mt-2 text-xs text-secondary">{{ $environment->branch }} · {{ str((string) $environment->status)->headline() }}</p>
-                        </a>
+            <details id="environment-evidence" class="rounded-xl" aria-labelledby="environment-evidence-heading">
+                <summary class="flex cursor-pointer list-none items-start justify-between gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Investigation') }}</p>
+                        <h2 id="environment-evidence-heading" class="mt-1 text-xl font-black text-primary">{{ __('Environment evidence') }}</h2>
+                        <p class="mt-1 max-w-3xl text-sm text-secondary">{{ __('Connect deployments, health observations, runtime-log metadata and related incidents for a selected environment.') }}</p>
+                    </div>
+                    <span class="flex shrink-0 items-center gap-2">
+                        <x-ui.badge>{{ trans_choice(':count environment|:count environments', $environmentProjects->sum(fn ($project) => $project->environments->count()), ['count' => $environmentProjects->sum(fn ($project) => $project->environments->count())]) }}</x-ui.badge>
+                        <span class="text-secondary" aria-hidden="true">⌄</span>
+                    </span>
+                </summary>
+                <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach ($environmentProjects as $project)
+                        @foreach ($project->environments as $environment)
+                            <a href="{{ route('observability.environments.context', $environment) }}" class="ui-card ui-card--interactive block bg-secondary p-4">
+                                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ $project->name }}</p>
+                                <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-black text-primary">{{ $environment->name }}</h3><x-ui.badge>{{ str((string) $environment->type)->headline() }}</x-ui.badge></div>
+                                <p class="mt-2 text-xs text-secondary">{{ $environment->branch }} · {{ str((string) $environment->status)->headline() }}</p>
+                            </a>
+                        @endforeach
                     @endforeach
-                @endforeach
-            </div>
+                </div>
+            </details>
         </section>
     @endif
 
@@ -156,7 +172,17 @@
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Integrations') }}</p>
             <h2 class="mt-1 text-xl font-black text-primary">{{ __('Alert destinations') }}</h2>
             <p class="mt-1 text-sm text-secondary">{{ __('Send signed failure and recovery events to Slack or your HTTPS webhook.') }}</p>
-            <div class="mt-5 space-y-3">
+            <details id="alert-destinations" class="mt-5 rounded-xl border border-primary bg-primary p-4" @if ($errors->any()) open @endif>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <span>{{ __('Manage destinations') }}</span>
+                    <span class="flex items-center gap-2">
+                        @if ($destinations->isNotEmpty())
+                            <x-ui.badge>{{ $destinations->count() }}</x-ui.badge>
+                        @endif
+                        <span class="text-secondary" aria-hidden="true">⌄</span>
+                    </span>
+                </summary>
+                <div class="mt-4 space-y-3">
                 @forelse ($destinations as $destination)
                     <article class="rounded-xl border border-primary bg-secondary p-4">
                         <div class="flex flex-wrap items-center gap-3">
@@ -176,7 +202,7 @@
                 @empty
                     <x-ui.empty-state :title="__('No external alert destinations')" :description="__('Configure a destination to send signed failure and recovery events.')" icon="bell" />
                 @endforelse
-            </div>
+                </div>
             @if ($canManage)
                 <form method="POST" action="{{ route('observability.destinations.store') }}" class="mt-5 grid gap-4 rounded-xl border border-primary bg-secondary p-4 sm:grid-cols-2">
                     @csrf
@@ -188,13 +214,24 @@
                     <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Add destination') }}</x-ui.button>
                 </form>
             @endif
+            </details>
         </section>
 
         <section class="ui-card p-6">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Customer communication') }}</p>
             <h2 class="mt-1 text-xl font-black text-primary">{{ __('Public status pages') }}</h2>
             <p class="mt-1 text-sm text-secondary">{{ __('Publish live component health and rolling 30-day uptime without exposing infrastructure details.') }}</p>
-            <div class="mt-5 space-y-3">
+            <details id="status-pages" class="mt-5 rounded-xl border border-primary bg-primary p-4" @if ($errors->any()) open @endif>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <span>{{ __('Manage status pages') }}</span>
+                    <span class="flex items-center gap-2">
+                        @if ($statusPages->isNotEmpty())
+                            <x-ui.badge>{{ $statusPages->count() }}</x-ui.badge>
+                        @endif
+                        <span class="text-secondary" aria-hidden="true">⌄</span>
+                    </span>
+                </summary>
+                <div class="mt-4 space-y-3">
                 @forelse ($statusPages as $page)
                     <article class="rounded-xl border border-primary bg-secondary p-4">
                         <div class="flex items-start gap-3">
@@ -211,7 +248,7 @@
                 @empty
                     <x-ui.empty-state :title="__('No status pages published')" :description="__('Publish a status page to communicate component health.')" icon="globe-alt" />
                 @endforelse
-            </div>
+                </div>
             @if ($canManage)
                 <form method="POST" action="{{ route('observability.status-pages.store') }}" class="mt-5 space-y-4 rounded-xl border border-primary bg-secondary p-4">
                     @csrf
@@ -226,6 +263,7 @@
                     <x-ui.button type="submit" variant="primary">{{ __('Publish status page') }}</x-ui.button>
                 </form>
             @endif
+            </details>
         </section>
     </div>
 
@@ -234,7 +272,17 @@
         <h2 class="mt-1 text-xl font-black text-primary">{{ __('Incidents and planned maintenance') }}</h2>
         <p class="mt-1 text-sm text-secondary">{{ __('Publish updates to a status page and notify its confirmed subscribers.') }}</p>
 
-        <div class="mt-5 space-y-3">
+        <details id="status-incident-history" class="mt-5 rounded-xl border border-primary bg-primary p-4" @if ($errors->any() || $incidents->contains(fn ($incident) => ! in_array($incident->status, ['resolved', 'completed'], true))) open @endif>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span>{{ __('Show status updates') }}</span>
+                <span class="flex items-center gap-2">
+                    @if ($incidents->isNotEmpty())
+                        <x-ui.badge>{{ $incidents->count() }}</x-ui.badge>
+                    @endif
+                    <span class="text-secondary" aria-hidden="true">⌄</span>
+                </span>
+            </summary>
+            <div class="mt-4 space-y-3">
             @forelse ($incidents as $incident)
                 <article class="rounded-xl border border-primary bg-secondary p-4">
                     <div>
@@ -279,7 +327,7 @@
             @empty
                 <x-ui.empty-state :title="__('No incidents or maintenance events')" :description="__('Published incidents and maintenance updates will appear here.')" icon="warning" />
             @endforelse
-        </div>
+            </div>
 
         @if ($canManage && $statusPages->isNotEmpty())
             <form method="POST" action="{{ route('observability.incidents.store') }}" class="mt-5 grid gap-4 rounded-xl border border-primary bg-secondary p-4 sm:grid-cols-2">
@@ -299,5 +347,6 @@
                 <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Publish status update') }}</x-ui.button>
             </form>
         @endif
+        </details>
     </section>
 </x-layouts.app>
