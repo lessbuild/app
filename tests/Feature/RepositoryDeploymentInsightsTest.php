@@ -83,6 +83,55 @@ class RepositoryDeploymentInsightsTest extends TestCase
             ->assertSee('0 timed deployments');
     }
 
+    public function test_repository_surfaces_the_latest_deployment_and_collapses_secondary_history_until_work_needs_attention(): void
+    {
+        [$owner, $repository] = $this->repository('Summary');
+        $latest = $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'setup_stage' => 15,
+            'revision' => str_repeat('a', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'started_at' => now()->subMinute(),
+            'finished_at' => now(),
+            'created_at' => now(),
+        ]);
+
+        $completed = $this->actingAs($owner)->get(route('repositories.show', $repository));
+        $completedContent = $completed->getContent();
+
+        $completed
+            ->assertSuccessful()
+            ->assertSee('Latest deployment')
+            ->assertSee('Build #'.$latest->id)
+            ->assertSee('View latest deployment');
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="repository-setup")(?=[^>]*open)[^>]*>/',
+            $completedContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="repository-deployment-history")(?=[^>]*open)[^>]*>/',
+            $completedContent,
+        );
+        $this->assertLessThan(
+            strpos($completedContent, 'id="deployment-webhook"'),
+            strpos($completedContent, 'id="repository-latest-deployment"'),
+        );
+
+        $latest->update(['status' => Build::STATUS_RUNNING, 'finished_at' => null]);
+
+        $active = $this->actingAs($owner)->get(route('repositories.show', $repository));
+        $activeContent = $active->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="repository-setup")(?=[^>]*open)[^>]*>/',
+            $activeContent,
+        );
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="repository-deployment-history")(?=[^>]*open)[^>]*>/',
+            $activeContent,
+        );
+    }
+
     public function test_median_duration_is_bounded_to_twenty_recent_timed_deployments(): void
     {
         [$owner, $repository] = $this->repository('Bounded');

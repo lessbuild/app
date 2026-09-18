@@ -68,6 +68,67 @@
         </x-ui.alert>
     @enderror
 
+    @php
+        $latestBuild = $builds->first();
+        $latestBuildStatusTone = match ($latestBuild?->status) {
+            \App\Models\Build::STATUS_SUCCEEDED => 'success',
+            \App\Models\Build::STATUS_FAILED => 'danger',
+            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_TIMING_OUT => 'warning',
+            \App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING => 'accent',
+            default => 'neutral',
+        };
+        $repositorySetupNeedsAttention = $latestBuild?->statusEnum()?->isActive() === true
+            || $latestBuild?->status === \App\Models\Build::STATUS_FAILED;
+    @endphp
+
+    @if ($latestBuild)
+        <section id="repository-latest-deployment" class="ui-card my-6 p-5" aria-labelledby="repository-latest-deployment-title">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Overview') }}</p>
+                    <h2 id="repository-latest-deployment-title" class="mt-1 text-xl font-black text-primary">{{ __('Latest deployment · Build #:id', ['id' => $latestBuild->id]) }}</h2>
+                    <p class="mt-1 text-sm text-secondary">
+                        {{ __('Triggered :time by :source', ['time' => $latestBuild->created_at->diffForHumans(), 'source' => ucfirst($latestBuild->trigger_source)]) }}
+                        @if ($latestBuild->durationLabel())
+                            · {{ __(':duration', ['duration' => $latestBuild->durationLabel()]) }}
+                        @endif
+                    </p>
+                </div>
+                <x-ui.badge :tone="$latestBuildStatusTone">{{ str($latestBuild->status)->replace('_', ' ')->headline() }}</x-ui.badge>
+            </div>
+            <dl class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Revision') }}</dt>
+                    <dd class="mt-1 break-all font-mono text-sm text-primary">
+                        @if ($latestBuild->revision)
+                            @if ($revisionUrl = $repository->revisionUrl($latestBuild->revision))
+                                <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ $latestBuild->shortRevision() }}</a>
+                            @else
+                                {{ $latestBuild->shortRevision() }}
+                            @endif
+                        @else
+                            {{ __('Repository branch') }}
+                        @endif
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Deployment result') }}</dt>
+                    <dd class="mt-1 text-sm text-primary">
+                        @if ($latestBuild->failure_message)
+                            {{ $latestBuild->failure_message }}
+                        @else
+                            {{ __('Open the deployment for timeline, approval and recovery context.') }}
+                        @endif
+                    </dd>
+                </div>
+            </dl>
+            <div class="mt-4 flex flex-wrap gap-3">
+                <x-ui.button :href="route('builds.show', $latestBuild)" variant="primary">{{ __('View latest deployment') }}</x-ui.button>
+                <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary">{{ __('View all deployments') }}</x-ui.button>
+            </div>
+        </section>
+    @endif
+
     @if ($isFirstDeployment)
         <section class="ui-card my-6 p-5" aria-labelledby="first-deployment-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -434,9 +495,25 @@
         </div>
     </x-ui.card>
 
-    <div class="col-span-3">
-        <livewire:repository-setup :model="$repository"></livewire:repository-setup>
-    </div>
+    <details
+        id="repository-setup"
+        class="group ui-card mt-6 overflow-hidden"
+        @if ($repositorySetupNeedsAttention) open @endif
+    >
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Setup') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Deployment stages') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ $latestBuild ? __('Latest build: :status', ['status' => str($latestBuild->status)->replace('_', ' ')->headline()]) : __('No deployment has started yet.') }}
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="border-t border-primary p-5">
+            <livewire:repository-setup :model="$repository"></livewire:repository-setup>
+        </div>
+    </details>
 
     <section class="mt-10" aria-labelledby="deployment-insights-heading">
         <div>
@@ -477,56 +554,70 @@
         </dl>
     </section>
 
-    <section class="mt-10">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 class="text-2xl font-bold text-primary">{{ __('Deployment history') }}</h2>
-            <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary">
-                {{ __('View all deployments') }}
-            </x-ui.button>
-        </div>
-        @forelse ($builds as $build)
-            <div class="ui-card mb-3 flex items-center justify-between gap-4 p-4">
-                <div>
-                    <a href="{{ route('builds.show', $build) }}" class="font-medium text-primary hover:underline">
-                        {{ __('Build #:id', ['id' => $build->id]) }}
-                    </a>
-                    <p class="text-sm text-secondary">
-                        {{ $build->created_at->diffForHumans() }}
-                        &middot; {{ ucfirst($build->trigger_source) }}
-                        @if ($build->redeployed_from_build_id)
-                            {{ __('of build #:id', ['id' => $build->redeployed_from_build_id]) }}
-                        @endif
-                        @if ($build->revision)
-                            &middot;
-                            @if ($revisionUrl = $repository->revisionUrl($build->revision))
-                                <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="font-mono hover:underline">{{ $build->shortRevision() }}</a>
-                            @else
-                                <span class="font-mono">{{ $build->shortRevision() }}</span>
-                            @endif
-                        @endif
-                        @if ($build->failure_message)
-                            &middot; {{ $build->failure_message }}
-                        @endif
-                    </p>
-                </div>
-                @if ($build->status === \App\Models\Build::STATUS_SUCCEEDED)
-                    <x-ui.badge tone="success">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
-                @elseif ($build->status === \App\Models\Build::STATUS_FAILED)
-                    <x-ui.badge tone="danger">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
-                @elseif (in_array($build->status, [\App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_TIMING_OUT], true))
-                    <x-ui.badge tone="warning">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
-                @elseif (in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING], true))
-                    <x-ui.badge tone="accent">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
-                @else
-                    <x-ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
-                @endif
+    <details
+        id="repository-deployment-history"
+        class="group mt-10 overflow-hidden"
+        @if ($latestBuild?->statusEnum()?->isActive() === true) open @endif
+    >
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployments') }}</span>
+                <span class="mt-1 block text-2xl">{{ __('Recent deployment history') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">{{ trans_choice(':count recent deployment|:count recent deployments', $builds->count(), ['count' => $builds->count()]) }}</span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="mt-4 border-t border-primary pt-4">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 id="deployment-history-title" class="sr-only">{{ __('Deployment history') }}</h2>
+                <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary" class="ml-auto">
+                    {{ __('View all deployments') }}
+                </x-ui.button>
             </div>
-        @empty
-            <x-ui.empty-state
-                :title="__('No deployments yet')"
-                :description="__('Deploy this repository to create its first build.')"
-            />
-        @endforelse
-    </section>
+            @forelse ($builds as $build)
+                <div class="ui-card mb-3 flex items-center justify-between gap-4 p-4">
+                    <div>
+                        <a href="{{ route('builds.show', $build) }}" class="font-medium text-primary hover:underline">
+                            {{ __('Build #:id', ['id' => $build->id]) }}
+                        </a>
+                        <p class="text-sm text-secondary">
+                            {{ $build->created_at->diffForHumans() }}
+                            &middot; {{ ucfirst($build->trigger_source) }}
+                            @if ($build->redeployed_from_build_id)
+                                {{ __('of build #:id', ['id' => $build->redeployed_from_build_id]) }}
+                            @endif
+                            @if ($build->revision)
+                                &middot;
+                                @if ($revisionUrl = $repository->revisionUrl($build->revision))
+                                    <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="font-mono hover:underline">{{ $build->shortRevision() }}</a>
+                                @else
+                                    <span class="font-mono">{{ $build->shortRevision() }}</span>
+                                @endif
+                            @endif
+                            @if ($build->failure_message)
+                                &middot; {{ $build->failure_message }}
+                            @endif
+                        </p>
+                    </div>
+                    @if ($build->status === \App\Models\Build::STATUS_SUCCEEDED)
+                        <x-ui.badge tone="success">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    @elseif ($build->status === \App\Models\Build::STATUS_FAILED)
+                        <x-ui.badge tone="danger">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    @elseif (in_array($build->status, [\App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_TIMING_OUT], true))
+                        <x-ui.badge tone="warning">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    @elseif (in_array($build->status, [\App\Models\Build::STATUS_DEPLOYING, \App\Models\Build::STATUS_RUNNING], true))
+                        <x-ui.badge tone="accent">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    @else
+                        <x-ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    @endif
+                </div>
+            @empty
+                <x-ui.empty-state
+                    :title="__('No deployments yet')"
+                    :description="__('Deploy this repository to create its first build.')"
+                />
+            @endforelse
+        </div>
+    </details>
 
 </x-layouts.app>
