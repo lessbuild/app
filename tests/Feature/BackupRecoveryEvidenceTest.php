@@ -103,7 +103,7 @@ class BackupRecoveryEvidenceTest extends TestCase
             && $viewSummary->latestIndependentRecoveryVerificationAt === null);
     }
 
-    public function test_backup_history_keeps_the_desktop_table_and_adds_mobile_recovery_cards(): void
+    public function test_backup_history_uses_responsive_recovery_cards_without_a_table(): void
     {
         [$owner, $website] = $this->infrastructure();
         $destination = $this->destination($owner);
@@ -117,9 +117,9 @@ class BackupRecoveryEvidenceTest extends TestCase
         $content = $this->actingAs($owner)
             ->get(route('backups.index'))
             ->assertOk()
-            ->assertSee('id="backup-history-table"', false)
-            ->assertSee('id="backup-history-mobile"', false)
+            ->assertSee('id="backup-history-list"', false)
             ->assertSee('id="backup-mobile-'.$backup->id.'"', false)
+            ->assertDontSee('<table', false)
             ->assertSee('Verify safely')
             ->assertSee('Restore')
             ->getContent();

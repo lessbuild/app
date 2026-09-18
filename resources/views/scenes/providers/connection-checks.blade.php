@@ -85,42 +85,10 @@
         />
     @else
         <x-ui.card class="mt-4 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-primary">
-                    <caption class="sr-only">{{ __('Provider connection check history') }}</caption>
-                    <thead class="bg-secondary">
-                        <tr>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Result') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Source') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Provider type') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Response') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Endpoint') }}</th>
-                            <th scope="col" class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Checked') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-primary">
-                        @foreach ($connectionChecks as $check)
-                            <tr class="align-top">
-                                <td class="px-4 py-4">
-                                    <x-ui.badge :tone="$check->successful ? 'success' : 'danger'">{{ $check->successful ? __('Healthy') : __('Failed') }}</x-ui.badge>
-                                    @if ($check->error)
-                                        <p class="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-red-700">{{ $check->error }}</p>
-                                    @endif
-                                </td>
-                                <td class="whitespace-nowrap px-4 py-4 text-sm text-primary">{{ str($check->source)->title() }}</td>
-                                <td class="whitespace-nowrap px-4 py-4 text-sm text-primary">{{ str($check->provider_type)->headline() }}</td>
-                                <td class="whitespace-nowrap px-4 py-4 text-sm text-primary">
-                                    {{ $check->http_status ? __('HTTP :status', ['status' => $check->http_status]) : __('No status') }}
-                                    <span class="mt-1 block text-xs text-secondary">{{ __(':duration ms', ['duration' => $check->duration_ms]) }}</span>
-                                </td>
-                                <td class="max-w-md break-all px-4 py-4 font-mono text-xs text-primary">{{ $check->endpoint ?? __('Unavailable') }}</td>
-                                <td class="whitespace-nowrap px-4 py-4 text-right text-sm text-secondary" title="{{ $check->checked_at }}">
-                                    {{ $check->checked_at->diffForHumans() }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="divide-y divide-primary" aria-label="{{ __('Provider connection check history') }}">
+                @foreach ($connectionChecks as $check)
+                    @include('scenes.providers._connection-check-card', ['check' => $check])
+                @endforeach
             </div>
         </x-ui.card>
         <div class="py-4">{{ $connectionChecks->links() }}</div>

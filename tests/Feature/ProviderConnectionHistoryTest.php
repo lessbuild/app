@@ -55,9 +55,11 @@ class ProviderConnectionHistoryTest extends TestCase
             ->assertDontSee('<script>latest failure</script>', false)
             ->assertDontSee('Old check hidden from the page')
             ->assertDontSee('Private provider result')
+            ->assertSee('data-provider-connection-check', false)
+            ->assertDontSee('<table', false)
             ->assertSee(route('providers.connection-checks.index', $provider))
             ->assertSee(route('providers.connection-checks.export', $provider));
-        $this->assertSame(20, substr_count($page->getContent(), '<tr class="align-top">'));
+        $this->assertSame(20, substr_count($page->getContent(), 'data-provider-connection-check'));
 
         $export = $this->get(route('providers.connection-checks.export', $provider));
         $export

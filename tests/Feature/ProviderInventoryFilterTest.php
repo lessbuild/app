@@ -51,6 +51,8 @@ class ProviderInventoryFilterTest extends TestCase
             ->assertSee('value="in_use" selected', false)
             ->assertSee('value="healthy" selected', false)
             ->assertSee('Healthy')
+            ->assertSee('data-provider-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Production Spare')
             ->assertDontSee('Production GitHub')
             ->assertDontSee('Private Production DigitalOcean');

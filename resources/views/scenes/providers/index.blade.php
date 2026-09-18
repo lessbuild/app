@@ -110,103 +110,78 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$providers->isEmpty())
-        <div class="ui-card mt-6 overflow-hidden">
-            <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary border-primary border-t border-b">
-                <thead class="bg-primary border-l border-r border-primary">
-                    <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                            {{ __('Provider') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Description') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Attached resources') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Connection') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Created At') }}
-                        </th>
-                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary bg-primary">
-                    @foreach($providers as $provider)
-                        <tr class="border-l border-r border-primary">
-                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 shrink-0">
-                                        <x-avatar :name="$provider->name" class="h-10 w-10 rounded-md text-sm" />
-                                    </div>
-                                    <a href="{{ route('providers.show', $provider) }}" class="ml-4">
-                                        <div class="font-medium text-primary">
-                                            {{ $provider->name }}
-                                        </div>
-                                        <div class="text-secondary">
-                                            {{ $provider->provider }}
-                                        </div>
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ $provider->description }}
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ trans_choice(':count server|:count servers', $provider->servers_count, ['count' => $provider->servers_count]) }}
-                                </div>
-                                <div class="text-secondary">
-                                    {{ trans_choice(':count repository|:count repositories', $provider->repositories_count, ['count' => $provider->repositories_count]) }}
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                @if ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY)
-                                    <x-ui.badge tone="success">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-                                @elseif ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED)
-                                    <x-ui.badge tone="danger">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-                                @else
-                                    <x-ui.badge>{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-                                @endif
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Provider inventory') }}">
+            @foreach($providers as $provider)
+                @php($connectionHealth = $provider->connectionHealth())
+                <article data-provider-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-avatar :name="$provider->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <div class="min-w-0">
+                                <a href="{{ route('providers.show', $provider) }}" class="font-semibold text-primary hover:underline">
+                                    {{ $provider->name }}
+                                </a>
+                                <p class="text-sm text-secondary">{{ $provider->provider }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($connectionHealth === \App\Models\Provider::CONNECTION_HEALTHY)
+                                <x-ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                            @elseif ($connectionHealth === \App\Models\Provider::CONNECTION_FAILED)
+                                <x-ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                            @else
+                                <x-ui.badge>{{ str($connectionHealth)->title() }}</x-ui.badge>
+                            @endif
+                            <x-ui.button :href="route('providers.show', $provider)" variant="secondary">
+                                {{ __('View provider') }}
+                            </x-ui.button>
+                        </div>
+                    </div>
+
+                    @if ($provider->description)
+                        <p class="mt-3 text-sm text-secondary">{{ $provider->description }}</p>
+                    @endif
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Attached resources') }}</dt>
+                            <dd class="mt-1 text-primary">
+                                {{ trans_choice(':count server|:count servers', $provider->servers_count, ['count' => $provider->servers_count]) }}
+                                <span class="mt-1 block text-secondary">{{ trans_choice(':count repository|:count repositories', $provider->repositories_count, ['count' => $provider->repositories_count]) }}</span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Connection') }}</dt>
+                            <dd class="mt-1 text-primary">
                                 @if ($provider->connection_checked_at)
-                                    <div class="text-xs text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</div>
+                                    {{ $provider->connection_checked_at->diffForHumans() }}
+                                @else
+                                    {{ __('Not checked yet') }}
                                 @endif
                                 @unless ($provider->connection_monitoring_enabled)
-                                    <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
+                                    <span class="mt-1 block font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</span>
                                 @endunless
-                                <div class="text-xs text-secondary">
-                                    {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
-                                </div>
-                                <div class="text-xs text-secondary">
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Monitoring') }}</dt>
+                            <dd class="mt-1 text-primary">
+                                {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
+                                <span class="mt-1 block text-secondary">
                                     {{ trans_choice('Alert after :count failure|Alert after :count failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
                                     @if ($provider->connection_failure_count > 0)
                                         &middot; {{ __(':count recorded', ['count' => $provider->connection_failure_count]) }}
                                     @endif
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ $provider->created_at->diffForHumans() }}
-                                </div>
-                            </td>
-                            <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <a href="{{ route('providers.show', $provider) }}" aria-label="{{ __('View :name', ['name' => $provider->name]) }}">
-                                    <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
-                                        <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-
-                    <!-- More people... -->
-                </tbody>
-            </table>
-            </div>
+                                </span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Created') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $provider->created_at->diffForHumans() }}</dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
         </div>
         <div class="py-4">
             {{ $providers->links() }}
