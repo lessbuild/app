@@ -224,33 +224,27 @@
     .ui-alert {
         border: 1px solid;
         border-radius: 0.625rem;
+        background-color: var(--ui-surface);
+        color: var(--ui-text);
         padding: 0.875rem 1rem;
         font-size: 0.875rem;
         line-height: 1.5;
     }
 
     .ui-alert--success {
-        border-color: color-mix(in srgb, var(--ui-success) 42%, transparent);
-        background-color: var(--ui-success-soft);
-        color: var(--ui-success-text);
+        border-color: var(--ui-success);
     }
 
     .ui-alert--info {
-        border-color: color-mix(in srgb, var(--ui-info) 42%, transparent);
-        background-color: var(--ui-info-soft);
-        color: var(--ui-info-text);
+        border-color: var(--ui-info);
     }
 
     .ui-alert--warning {
-        border-color: color-mix(in srgb, var(--ui-warning) 42%, transparent);
-        background-color: var(--ui-warning-soft);
-        color: var(--ui-warning-text);
+        border-color: var(--ui-warning);
     }
 
     .ui-alert--danger {
-        border-color: color-mix(in srgb, var(--ui-danger) 42%, transparent);
-        background-color: var(--ui-danger-soft);
-        color: var(--ui-danger-text);
+        border-color: var(--ui-danger);
     }
 
     .ui-empty-state {
