@@ -278,21 +278,37 @@
             </x-ui.card>
         @endif
 
-        <section class="lg:col-span-2" aria-labelledby="server-log-overview-heading">
-            <div class="mb-3">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Observability') }}</p>
-                <h2 id="server-log-overview-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Log snapshot overview') }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ __('Current state across the five supported server log types.') }}</p>
-            </div>
-            <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                <x-ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
-                <x-ui.stat :label="__('Queued snapshots')" :value="$logMetrics['queued']" />
-                <x-ui.stat :label="__('Refreshing snapshots')" :value="$logMetrics['refreshing']" />
-                <x-ui.stat :label="__('Failed snapshots')" :value="$logMetrics['failed']" />
-                <x-ui.stat :label="__('Not collected')" :value="$logMetrics['missing']" />
-                <x-ui.stat :label="__('Latest refresh')" :value="$logMetrics['latest_at']?->diffForHumans() ?? __('Not available')" />
-            </dl>
-        </section>
+        <details
+            id="server-operations"
+            class="group ui-card lg:col-span-2 overflow-hidden"
+            @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE || $logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED) open @endif
+        >
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                <span>
+                    <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                    <span class="mt-1 block text-lg">{{ __('Logs and setup') }}</span>
+                    <span class="mt-1 block text-sm font-normal text-secondary">
+                        {{ __(':ready ready · :failed failed · :missing not collected', ['ready' => $logMetrics['ready'], 'failed' => $logMetrics['failed'], 'missing' => $logMetrics['missing']]) }}
+                    </span>
+                </span>
+                <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            </summary>
+            <div class="grid gap-6 border-t border-primary p-5 lg:grid-cols-2">
+                <section class="lg:col-span-2" aria-labelledby="server-log-overview-heading">
+                    <div class="mb-3">
+                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Observability') }}</p>
+                        <h2 id="server-log-overview-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Log snapshot overview') }}</h2>
+                        <p class="mt-1 text-sm text-secondary">{{ __('Current state across the five supported server log types.') }}</p>
+                    </div>
+                    <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                        <x-ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
+                        <x-ui.stat :label="__('Queued snapshots')" :value="$logMetrics['queued']" />
+                        <x-ui.stat :label="__('Refreshing snapshots')" :value="$logMetrics['refreshing']" />
+                        <x-ui.stat :label="__('Failed snapshots')" :value="$logMetrics['failed']" />
+                        <x-ui.stat :label="__('Not collected')" :value="$logMetrics['missing']" />
+                        <x-ui.stat :label="__('Latest refresh')" :value="$logMetrics['latest_at']?->diffForHumans() ?? __('Not available')" />
+                    </dl>
+                </section>
 
         <!--
          ! ------------------------------------------------------------
@@ -377,6 +393,8 @@
         <div class="lg:col-span-2">
             <livewire:server-setup :model="$server"></livewire:server-setup>
         </div>
+            </div>
+        </details>
     </div>
 
     <div id="server-command">

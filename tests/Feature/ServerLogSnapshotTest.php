@@ -209,6 +209,33 @@ class ServerLogSnapshotTest extends TestCase
         $this->assertSame('2026-09-03 13:00:00', $metrics['latest_at']->format('Y-m-d H:i:s'));
     }
 
+    public function test_active_server_operations_are_collapsed_but_provisioning_operations_open(): void
+    {
+        [$user, $server] = $this->server();
+
+        $active = $this->actingAs($user)->get(route('servers.show', $server));
+        $activeContent = $active->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="server-operations")(?=[^>]*class="[^"]*overflow-hidden)[^>]*>/',
+            $activeContent,
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="server-operations")(?=[^>]*open)[^>]*>/',
+            $activeContent,
+        );
+        $active->assertSee('Logs and setup');
+
+        $server->update(['provisioning_status' => Server::STATUS_FAILED]);
+
+        $failed = $this->actingAs($user)->get(route('servers.show', $server));
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="server-operations")(?=[^>]*open)[^>]*>/',
+            $failed->getContent(),
+        );
+    }
+
     public function test_snapshot_is_deleted_with_its_server(): void
     {
         [, $server] = $this->server();
