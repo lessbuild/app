@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AccessRequest;
 use App\Models\User;
 use App\Services\Entitlements;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -50,5 +51,31 @@ class AdminAnalyticsTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.analytics'));
         $response->assertOk()->assertViewHas('totals', fn (array $totals): bool => $totals['denials_30d'] === 1);
         $this->assertSame(1, Cache::get('business:denials:'.now()->utc()->toDateString().':total'));
+    }
+
+    public function test_platform_summary_collapses_when_no_admin_attention_is_pending(): void
+    {
+        $admin = User::factory()->create(['email' => 'owner@example.com']);
+
+        $content = $this->actingAs($admin)
+            ->get(route('admin.analytics'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details id="admin-analytics-summary"[^>]*\bopen\b[^>]*>/', $content);
+
+        AccessRequest::query()->create([
+            'email_hash' => hash('sha256', 'pending@example.com'),
+            'email' => 'pending@example.com',
+            'name' => 'Pending applicant',
+            'use_case' => 'A sufficiently detailed deployment use case.',
+        ]);
+
+        $attentionContent = $this->actingAs($admin)
+            ->get(route('admin.analytics'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression('/<details id="admin-analytics-summary"[^>]*\bopen\b[^>]*>/', $attentionContent);
     }
 }
