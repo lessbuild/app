@@ -46,7 +46,34 @@ Current BuildPusher evidence from the development fixture:
 
 ## Slice ledger
 
-No redesign implementation slice has been completed yet.
+### Slice 1 — dashboard first-value hierarchy
+
+- User problem: the dashboard’s welcome area and totals were visually dense,
+  while primary actions were only available in the header and the four totals
+  used an older icon-led treatment.
+- Entry point: `resources/views/dashboard.blade.php` and its dashboard
+  presentation partials.
+- Boundary: added `_quick-actions.blade.php` and `_metrics.blade.php` as
+  presentation-only partials; added shared dashboard surface classes in
+  `resources/css/components/ui.css`. No controller, query, policy, route or
+  persistence behavior changed.
+- SOLID/Laravel rationale: the view now has cohesive presentation
+  responsibilities without expanding `DashboardController`; existing bounded
+  data is consumed directly and the established `ui-stat`/`ui-card` components
+  are reused.
+- Preserved contracts: attention remains before setup, setup remains before
+  operational metrics, existing route targets and dashboard preferences remain
+  unchanged, and the 320px metric height contract is maintained by hiding
+  secondary metric descriptions at the narrowest breakpoint.
+- Verification: `DashboardTest` — 25 tests / 258 assertions; Pint passed;
+  `npm run build` passed; the 320px light asset-layout browser case passed;
+  `git diff --check` passed. The first browser attempt used the wrong default
+  PHP 8.3 binary and was rerun successfully with the required PHP 8.5 binary.
+- Commit and push: `5ab1155 Improve dashboard first-value hierarchy`, pushed
+  to `origin/main`.
+- Next task: establish the shared resource-page header and local-navigation
+  treatment, beginning with the page-family inventory and a low-risk reusable
+  presentation component.
 
 ## Remaining sequence
 
