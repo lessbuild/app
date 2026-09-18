@@ -21,7 +21,15 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.card class="mt-8 p-4">
+    @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
+
+    <x-ui.filter-panel
+        id="servers-filters"
+        class="mt-8"
+        :label="__('Filter servers')"
+        :open="$activeFilterCount > 0"
+        :summary="$activeFilterCount > 0 ? __(':count active', ['count' => $activeFilterCount]) : null"
+    >
         <form method="GET" action="{{ route('servers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
@@ -64,7 +72,7 @@
             @endif
         </div>
         </form>
-    </x-ui.card>
+    </x-ui.filter-panel>
 
     <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         <x-ui.stat :label="__('Matching servers')" :value="$metrics['total']" :description="__('Servers in this filtered view.')" />

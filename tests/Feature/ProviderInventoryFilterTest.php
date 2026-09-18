@@ -37,8 +37,12 @@ class ProviderInventoryFilterTest extends TestCase
             'connection' => Provider::CONNECTION_HEALTHY,
         ];
 
-        $this->actingAs($owner)->get(route('providers.index', $filters))
+        $response = $this->actingAs($owner)->get(route('providers.index', $filters));
+
+        $response
             ->assertSuccessful()
+            ->assertSee('Filter providers')
+            ->assertSee('4 active', false)
             ->assertSee(route('providers.show', $matching))
             ->assertSee('1 server')
             ->assertSee('0 repositories')
@@ -50,6 +54,19 @@ class ProviderInventoryFilterTest extends TestCase
             ->assertDontSee('Production Spare')
             ->assertDontSee('Production GitHub')
             ->assertDontSee('Private Production DigitalOcean');
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*\bid="providers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            $response->getContent(),
+        );
+
+        $default = $this->actingAs($owner)->get(route('providers.index'));
+
+        $default->assertSuccessful();
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*\bid="providers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            $default->getContent(),
+        );
     }
 
     public function test_unused_filter_excludes_providers_with_either_resource_type(): void

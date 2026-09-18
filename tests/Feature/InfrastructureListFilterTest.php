@@ -47,13 +47,17 @@ class InfrastructureListFilterTest extends TestCase
             'health_status' => Website::HEALTH_UNHEALTHY,
         ]);
 
-        $this->actingAs($owner)->get(route('websites.index', [
+        $response = $this->actingAs($owner)->get(route('websites.index', [
             'search' => 'customer',
             'status' => Website::STATUS_FAILED,
             'health' => Website::HEALTH_UNHEALTHY,
             'attention' => 1,
-        ]))
+        ]));
+
+        $response
             ->assertSuccessful()
+            ->assertSee('Filter websites')
+            ->assertSee('4 active', false)
             ->assertSee(route('websites.show', $matching))
             ->assertSee('value="customer"', false)
             ->assertSee('value="failed" selected', false)
@@ -62,6 +66,11 @@ class InfrastructureListFilterTest extends TestCase
             ->assertDontSee('Customer Healthy')
             ->assertDontSee('Unrelated Outage')
             ->assertDontSee('Customer Private');
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*\bid="websites-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            $response->getContent(),
+        );
     }
 
     public function test_owner_can_filter_servers_by_status_and_any_address_field(): void
@@ -83,10 +92,12 @@ class InfrastructureListFilterTest extends TestCase
             'public_ip' => '203.0.113.10',
         ]);
 
-        $this->actingAs($owner)->get(route('servers.index', [
+        $response = $this->actingAs($owner)->get(route('servers.index', [
             'search' => '203.0.113.10',
             'status' => Server::STATUS_FAILED,
-        ]))
+        ]));
+
+        $response
             ->assertSuccessful()
             ->assertSee(route('servers.show', $matching))
             ->assertSee('value="203.0.113.10"', false)
@@ -94,6 +105,19 @@ class InfrastructureListFilterTest extends TestCase
             ->assertDontSee('Healthy Edge')
             ->assertDontSee('Unrelated Failure')
             ->assertDontSee('Private Production Edge');
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*\bid="servers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            $response->getContent(),
+        );
+
+        $default = $this->actingAs($owner)->get(route('servers.index'));
+
+        $default->assertSuccessful();
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*\bid="servers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            $default->getContent(),
+        );
     }
 
     public function test_website_attention_filter_includes_either_current_failure_type(): void
