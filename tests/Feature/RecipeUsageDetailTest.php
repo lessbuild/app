@@ -52,6 +52,8 @@ class RecipeUsageDetailTest extends TestCase
             ->assertSee('#2')
             ->assertSee('#3')
             ->assertSee(route('servers.show', $ready))
+            ->assertSee('data-recipe-server-assignment', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('recipe-script-secret')
             ->assertDontSee('foreign-server-secret');
     }

@@ -84,58 +84,54 @@
             </x-lists.empty>
         </div>
     @else
-        <div class="ui-card mt-6 overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary text-sm">
-                <thead class="bg-secondary">
-                    <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left font-semibold text-primary sm:pl-6">{{ __('Recipe') }}</th>
-                        <th scope="col" class="px-3 py-3.5 text-left font-semibold text-primary">{{ __('Used by') }}</th>
-                        <th scope="col" class="px-3 py-3.5 text-left font-semibold text-primary">{{ __('Updated') }}</th>
-                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">{{ __('Actions') }}</span></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary bg-primary">
-                    @foreach ($recipes as $recipe)
-                        <tr>
-                            <td class="py-4 pl-4 pr-3 sm:pl-6">
-                                <a class="font-bold text-ternary" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
-                                <p class="mt-1 max-w-xl text-secondary">{{ $recipe->description ?: __('No description') }}</p>
-                                <div class="mt-2 flex flex-wrap gap-1.5">
-                                    @if ($recipe->is_published)
-                                        <x-ui.badge tone="accent"><a href="{{ route('gallery.show', $recipe) }}">{{ __('Published') }}</a></x-ui.badge>
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Recipe inventory') }}">
+            @foreach ($recipes as $recipe)
+                <article data-recipe-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <a class="font-bold text-primary hover:underline" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
+                            <p class="mt-1 max-w-3xl text-sm text-secondary">{{ $recipe->description ?: __('No description') }}</p>
+                            <div class="mt-2 flex flex-wrap gap-1.5">
+                                @if ($recipe->is_published)
+                                    <x-ui.badge tone="accent"><a href="{{ route('gallery.show', $recipe) }}">{{ __('Published') }}</a></x-ui.badge>
+                                @endif
+                                @if ($recipe->source_recipe_id)
+                                    @if ($recipe->source && $recipe->hasGalleryUpdate())
+                                        <x-ui.badge tone="warning"><a href="{{ route('gallery.show', $recipe->source) }}">{{ __('Gallery update available') }}</a></x-ui.badge>
+                                    @elseif ($recipe->source)
+                                        <x-ui.badge tone="neutral"><a href="{{ route('gallery.show', $recipe->source) }}">{{ __('Gallery copy current') }}</a></x-ui.badge>
+                                    @else
+                                        <x-ui.badge tone="neutral">{{ __('Gallery source unavailable') }}</x-ui.badge>
                                     @endif
-                                    @if ($recipe->source_recipe_id)
-                                        @if ($recipe->source && $recipe->hasGalleryUpdate())
-                                            <x-ui.badge tone="warning"><a href="{{ route('gallery.show', $recipe->source) }}">{{ __('Gallery update available') }}</a></x-ui.badge>
-                                        @elseif ($recipe->source)
-                                            <x-ui.badge tone="neutral"><a href="{{ route('gallery.show', $recipe->source) }}">{{ __('Gallery copy current') }}</a></x-ui.badge>
-                                        @else
-                                            <x-ui.badge tone="neutral">{{ __('Gallery source unavailable') }}</x-ui.badge>
-                                        @endif
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-secondary">{{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}</td>
-                            <td class="whitespace-nowrap px-3 py-4 text-secondary">{{ $recipe->updated_at->diffForHumans() }}</td>
-                            <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right sm:pr-6">
-                                <div class="flex justify-end gap-2">
-                                    <x-ui.button href="{{ route('recipes.show', $recipe) }}" variant="secondary">{{ __('View') }}</x-ui.button>
-                                    <x-ui.button href="{{ route('recipes.edit', $recipe) }}" variant="secondary">{{ __('Edit') }}</x-ui.button>
-                                    <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
-                                        @csrf
-                                        <x-ui.button type="submit" variant="secondary">{{ __('Duplicate') }}</x-ui.button>
-                                    </form>
-                                    <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Delete :recipe? This cannot be undone.', ['recipe' => $recipe->name])) }})">
-                                        @csrf
-                                        @method('DELETE')
-                                        <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                                @endif
+                            </div>
+                        </div>
+                        <dl class="flex shrink-0 gap-6 text-sm">
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Used by') }}</dt>
+                                <dd class="mt-1 text-primary">{{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Updated') }}</dt>
+                                <dd class="mt-1 text-primary">{{ $recipe->updated_at->diffForHumans() }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
+                        <x-ui.button href="{{ route('recipes.show', $recipe) }}" variant="secondary">{{ __('View') }}</x-ui.button>
+                        <x-ui.button href="{{ route('recipes.edit', $recipe) }}" variant="secondary">{{ __('Edit') }}</x-ui.button>
+                        <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary">{{ __('Duplicate') }}</x-ui.button>
+                        </form>
+                        <form method="POST" action="{{ route('recipes.destroy', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Delete :recipe? This cannot be undone.', ['recipe' => $recipe->name])) }})">
+                            @csrf
+                            @method('DELETE')
+                            <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
+                        </form>
+                    </div>
+                </article>
+            @endforeach
             <div class="p-4">{{ $recipes->links() }}</div>
         </div>
     @endif

@@ -56,51 +56,40 @@
                 />
             </div>
         @else
-            <x-ui.card class="mt-6 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-primary">
-                    <caption class="sr-only">{{ __('Servers assigned to this recipe') }}</caption>
-                    <thead class="bg-secondary">
-                        <tr>
-                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">{{ __('Order') }}</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">{{ __('Server') }}</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">{{ __('Type') }}</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">{{ __('Address') }}</th>
-                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">{{ __('Status') }}</th>
-                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">{{ __('Actions') }}</span></th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-primary bg-primary">
-                        @foreach ($servers as $server)
-                            <tr>
-                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-primary sm:pl-6">
-                                    #{{ $server->pivot->position + 1 }}
-                                </td>
-                                <td class="px-3 py-4 text-sm">
-                                    <a href="{{ route('servers.show', $server) }}" class="font-medium text-ternary">{{ $server->label }}</a>
-                                    @if ($server->display_name)
-                                        <p class="mt-1 text-xs text-secondary">{{ $server->name }}</p>
-                                    @endif
-                                </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                    {{ str($server->type->value)->replace('-', ' ')->title() }}
-                                </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                    {{ $server->public_ip ?? __('Not assigned') }}
-                                </td>
-                                <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                    <x-ui.badge :tone="$server->provisioning_status === \App\Models\Server::STATUS_ACTIVE ? 'success' : ($server->provisioning_status === \App\Models\Server::STATUS_FAILED ? 'danger' : 'info')">
-                                        {{ str($server->provisioning_status)->replace('_', ' ') }}
-                                    </x-ui.badge>
-                                </td>
-                                <td class="whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm sm:pr-6">
-                                    <a href="{{ route('servers.show', $server) }}" class="font-medium text-ternary">{{ __('View server') }}</a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                </div>
+            <x-ui.card class="mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Servers assigned to this recipe') }}">
+                @foreach ($servers as $server)
+                    <article data-recipe-server-assignment class="p-4 sm:p-5">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Order #:order', ['order' => $server->pivot->position + 1]) }}</p>
+                                <a href="{{ route('servers.show', $server) }}" class="mt-1 block font-semibold text-primary hover:underline">{{ $server->label }}</a>
+                                @if ($server->display_name)
+                                    <p class="mt-1 text-xs text-secondary">{{ $server->name }}</p>
+                                @endif
+                            </div>
+                            <x-ui.badge :tone="$server->provisioning_status === \App\Models\Server::STATUS_ACTIVE ? 'success' : ($server->provisioning_status === \App\Models\Server::STATUS_FAILED ? 'danger' : 'info')">
+                                {{ str($server->provisioning_status)->replace('_', ' ') }}
+                            </x-ui.badge>
+                        </div>
+                        <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Type') }}</dt>
+                                <dd class="mt-1 text-primary">{{ str($server->type->value)->replace('-', ' ')->title() }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Address') }}</dt>
+                                <dd class="mt-1 font-mono text-xs text-primary">{{ $server->public_ip ?? __('Not assigned') }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
+                                <dd class="mt-1 text-primary">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                            </div>
+                        </dl>
+                        <div class="mt-4 flex justify-start sm:justify-end">
+                            <x-ui.button :href="route('servers.show', $server)" variant="secondary">{{ __('View server') }}</x-ui.button>
+                        </div>
+                    </article>
+                @endforeach
             </x-ui.card>
             <div class="py-4">{{ $servers->links() }}</div>
         @endif

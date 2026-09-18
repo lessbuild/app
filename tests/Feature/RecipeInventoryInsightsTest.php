@@ -42,6 +42,8 @@ class RecipeInventoryInsightsTest extends TestCase
             ->assertSee('Server assignments')
             ->assertSee('Covered servers')
             ->assertSee('Latest update')
+            ->assertSee('data-recipe-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Foreign private recipe')
             ->assertDontSee('recipe-script-secret');
     }

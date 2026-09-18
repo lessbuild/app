@@ -217,6 +217,8 @@ class RecipeGalleryTest extends TestCase
                 'gallery_lines' => 2,
             ])
             ->assertSee('Review every changed command')
+            ->assertSee('data-gallery-comparison-field', false)
+            ->assertDontSee('<table', false)
             ->assertSee('echo gallery-script')
             ->assertSee('echo gallery-script-v2')
             ->assertSee('Update Private Copy');
