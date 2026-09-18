@@ -1,5 +1,30 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 shared operational insights were extended to
+the remaining detail pages that benefit from a compact, mobile-friendly summary.
+Build comparison now surfaces baseline/current status, duration change, revision
+and trigger context before the detailed comparison table. Repository impact
+preview now summarizes evaluated, affected, unaffected and conservative targets
+without changing its read-only path evaluator. Platform-admin access requests
+now show consistent status counts while retaining the existing review controls,
+pagination, export behavior and private applicant data handling. The shared
+responsive component remains collapsed on mobile by default, so these summaries
+do not add to the initial scroll burden.
+
+Focused coverage passed **21 tests / 196 assertions** across deployment
+comparison, repository impact preview, access requests and shared page
+insights. Blade view caching, the required-PHP Pint check, `git diff --check`,
+the Vite build and the responsive asset/browser suite (**10 passed**) passed.
+The isolated dev runtime was fast-forwarded to `bf10f50`, rebuilt, recached and
+restarted successfully; the live-runtime smoke passed (**1 test**) and the
+navigation journey passed (**3 tests**) when run serially. Commit `bf10f50`
+(`Add insights to operational detail pages`) is pushed to `origin/main`.
+No routes, response formats, queries, writes, authorization rules, exports or
+operational side effects changed. The exact next task is a wider UI audit of
+remaining operational detail pages and mobile scroll density, followed by a
+separate cohesive slice only where a meaningful summary or grouping is still
+missing.
+
 Latest continuation: September 18 GitHub App repository acceptance and an
 isolated deployment attempt completed. The isolated development runtime now
 has a valid GitHub App private key, and the installation can read
