@@ -17,11 +17,12 @@ That check exposed a retry-state defect in the upload boundary. Commit
 script upload fails before a remote process exists, allowing a safe retry while
 preserving stale-attempt protection. Focused deployment coverage passed **22
 tests / 177 assertions**; the strict PHP suite passed **1,566 tests / 12,908
-assertions**; Pint and `git diff --check` passed. The implementation and
-isolated runtime are on `main` at `582acbd`, and both runtime services are
-active. No live acceptance is claimed. Exact next task: attach a real isolated
-SSH target, or separately authorize a disposable host, before repeating the
-remote deployment.
+assertions**; Pint and `git diff --check` passed. The code fix is `582acbd`,
+the documentation follow-up is `812d605`, and the implementation plus
+isolated runtime are aligned with `main` at `812d605`; both runtime services
+are active. No live acceptance is claimed. Exact next task: attach a real
+isolated SSH target, or separately authorize a disposable host, before
+repeating the remote deployment.
 
 Latest continuation: September 17 phone-friendly GitHub App key setup
 implemented and deployed to the isolated `main` development runtime. The new
