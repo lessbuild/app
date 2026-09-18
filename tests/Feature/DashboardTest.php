@@ -154,6 +154,24 @@ class DashboardTest extends TestCase
         $this->assertLessThan($overviewPosition, $setupPosition);
     }
 
+    public function test_dashboard_setup_has_mobile_step_navigation_without_removing_setup_actions(): void
+    {
+        $content = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertStringContainsString('aria-label="Workspace setup steps"', $content);
+        $this->assertStringContainsString('role="tab"', $content);
+        $this->assertStringContainsString('id="setup-tab-provider"', $content);
+        $this->assertStringContainsString('id="setup-panel-provider"', $content);
+        $this->assertStringContainsString('x-show="activeSetupStep ===', $content);
+        $this->assertStringContainsString('href="'.route('providers.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('servers.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('websites.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('repositories.create').'"', $content);
+    }
+
     public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void
     {
         Queue::fake();

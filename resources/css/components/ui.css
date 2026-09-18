@@ -148,6 +148,22 @@
         line-height: 1.45;
     }
 
+    .dashboard-setup-step {
+        display: flex;
+    }
+
+    .dashboard-setup-tab {
+        border-color: var(--ui-border);
+        background-color: var(--ui-surface-muted);
+        color: var(--ui-text-muted);
+    }
+
+    .dashboard-setup-tab[aria-selected="true"] {
+        border-color: var(--ui-accent);
+        background-color: var(--ui-accent);
+        color: white;
+    }
+
     .ui-badge {
         display: inline-flex;
         min-height: 1.5rem;
@@ -274,6 +290,12 @@
         .ui-page-header__actions {
             width: 100%;
             justify-content: flex-start;
+        }
+    }
+
+    @media (min-width: 64rem) {
+        .dashboard-setup-step {
+            display: flex !important;
         }
     }
 

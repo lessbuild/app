@@ -83,6 +83,25 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(dashboardStats).toBeVisible();
                         expect((await dashboardStats.boundingBox()).height).toBeLessThan(170);
                     }
+                    const setupTabs = page.locator('[role="tablist"][aria-label="Workspace setup steps"]');
+                    const setupSteps = page.locator('[data-dashboard-setup-step]');
+                    if (width < 1024) {
+                        await expect(setupTabs).toBeVisible();
+                        await expect(setupSteps.filter({ hasText: 'Connect a provider' })).toBeVisible();
+                        if (width <= 390) {
+                            expect((await setupSteps.filter({ hasText: 'Connect a provider' }).boundingBox()).height).toBeLessThan(220);
+                            const serverTab = page.locator('#setup-tab-server');
+                            await serverTab.click();
+                            await expect(page.locator('#setup-panel-server')).toBeVisible();
+                            await expect(page.locator('#setup-panel-provider')).toBeHidden();
+                            await expect(serverTab).toHaveAttribute('aria-selected', 'true');
+                            await serverTab.press('ArrowLeft');
+                            await expect(page.locator('#setup-tab-provider')).toBeFocused();
+                        }
+                    } else {
+                        await expect(setupTabs).toBeHidden();
+                        await expect(setupSteps).toHaveCount(5);
+                    }
                     expect(await page.evaluate(() => {
                         const ids = ['dashboard-attention-title', 'setup-progress-title', 'operations-overview-title'];
                         const elements = ids.map((id) => document.getElementById(id));
