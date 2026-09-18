@@ -463,6 +463,51 @@ reviewed alerts also consumed the same vertical space as unread alerts.
 
 | Phase 9: notification inbox results-first layout | Complete | 35 focused tests / 538 assertions, Pint, view compilation, push and real mobile interaction passed; mobile height reduced ~3,426px | `fab18f7` pushed to `origin/main` | Inspect observability incident density and separate active response from historical management |
 
+## Phase 10 — observability response and secondary panels
+
+### Responsibility problem
+
+Observability combined active response, resolved incident history, metric-rule
+management, environment navigation, alert integrations, public status pages
+and status updates into one always-expanded page. The original 390px review
+measured about 12,629px, including an operational-incident block around
+5,294px.
+
+### Boundaries and preserved behavior
+
+- `ObservabilityDashboardQuery`, the controller, policies, Form Requests and
+  operational actions remain unchanged. The view consumes the same bounded,
+  workspace-scoped collections and keeps every existing route and form.
+- Active incidents remain visible with status, resource, owner and acknowledge
+  controls. Their encrypted summary, event timeline, assignment, notes and
+  resolution controls are grouped in one native response disclosure.
+- Resolved incidents are separated into a collapsed history disclosure. The
+  existing export action, event ordering, recovery state and response routes
+  remain unchanged.
+- Metric rules, environment evidence, alert destinations, public status pages
+  and status-page updates are explicit secondary disclosures. Validation errors
+  reopen the management panels; active status updates reopen status history.
+- A reusable incident-card partial now keeps response presentation cohesive
+  without introducing a business-service abstraction or changing persistence.
+
+### Verification
+
+- Observability and operational-incident suites passed: 29 focused tests / 239
+  assertions across the two commits, including active/resolved disclosure
+  state, authorization ordering and response-action rendering.
+- Pint, Blade view compilation and `git diff --check` passed.
+- Commit `98e9e03` (`feat: streamline operational incident history`) and
+  commit `a90c36d` (`feat: streamline observability management panels`) were
+  pushed to `origin/main`; the isolated HTTPS runtime was cache-refreshed and
+  both service units remained active.
+- A real 390px browser check measured the page at about 7,507px. The incident
+  block measured about 3,796px, resolved history was closed by default and
+  opened successfully, and an active response disclosure opened to expose the
+  existing resolve controls. Secondary management disclosures were closed by
+  default.
+
+| Phase 10: observability response and secondary panels | Complete | 29 focused tests / 239 assertions, Pint, view compilation, push and real mobile interactions passed; page height reduced ~5,122px | `98e9e03`, `a90c36d` pushed to `origin/main` | Inspect project and environment detail pages for the next summary-first workflow slice |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
