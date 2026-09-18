@@ -137,8 +137,11 @@
         </form>
 
         <x-forms.section
+            id="account-two-factor"
             :title="__('Two-factor authentication')"
             :description="__('Require a rotating authenticator code after password or social sign-in.')"
+            :collapsible="true"
+            :open="session('two_factor_status') || session('two_factor_recovery_codes') || filled(auth()->user()->two_factor_secret) || $errors->getBag('twoFactor')->any()"
         >
             <div class="space-y-5 bg-primary px-4 py-5 sm:p-6">
                 @if (session('two_factor_status'))
@@ -215,8 +218,10 @@
         </x-forms.section>
 
         <x-forms.section
+            id="account-security-activity"
             :title="__('Recent security activity')"
             :description="__('Review recent changes to your profile, credentials, sessions, and connected sign-in methods.')"
+            :collapsible="true"
         >
             <div class="bg-primary p-4 sm:p-6">
                 <x-activity-feed
@@ -238,8 +243,11 @@
         </x-forms.section>
 
         <x-forms.section
+            id="account-sign-ins"
             :title="__('Recent sign-ins')"
             :description="__('Review successful sign-ins retained for account security history.')"
+            :collapsible="true"
+            :open="session('sign_ins_status') || $errors->getBag('signIns')->any()"
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('sign_ins_status'))
@@ -323,8 +331,11 @@
         </x-forms.section>
 
         <x-forms.section
+            id="account-browser-sessions"
             :title="__('Browser sessions')"
             :description="__('Review active browsers and log out sessions you no longer recognize.')"
+            :collapsible="true"
+            :open="session('sessions_status') || session('sessions_error') || old('session_id') || $errors->getBag('sessions')->any()"
         >
             <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                 @if (session('sessions_status'))
@@ -431,8 +442,11 @@
         </x-forms.section>
 
         <x-forms.section
+            id="account-connected-accounts"
             :title="__('Connected accounts')"
             :description="__('Review and disconnect social sign-in methods linked to your account.')"
+            :collapsible="true"
+            :open="session('social_status') || session('social_error') || $errors->getBag('social')->any()"
         >
             <div class="divide-y divide-primary bg-primary">
                 @if (session('social_status'))
@@ -503,8 +517,11 @@
         </x-forms.section>
 
         <x-forms.section
+            id="account-data"
             :title="__('Your data and account')"
             :description="__('Export your information or permanently delete your BuildPusher account.')"
+            :collapsible="true"
+            :open="$errors->getBag('deleteAccount')->any()"
         >
             <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
                 <div class="ui-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">

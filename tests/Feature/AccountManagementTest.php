@@ -53,6 +53,24 @@ class AccountManagementTest extends TestCase
             ->assertSee(route('account.social.connect', 'github'));
     }
 
+    public function test_account_page_keeps_primary_forms_visible_and_collapses_secondary_security_panels(): void
+    {
+        $user = User::factory()->create();
+
+        $content = $this->actingAs($user)
+            ->get(route('account.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        foreach (['account-two-factor', 'account-security-activity', 'account-sign-ins', 'account-browser-sessions', 'account-connected-accounts', 'account-data'] as $id) {
+            $this->assertStringContainsString('id="'.$id.'"', $content);
+            $this->assertDoesNotMatchRegularExpression('/<details id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
+        }
+
+        $this->assertStringContainsString('Save profile', $content);
+        $this->assertStringContainsString('Update password', $content);
+    }
+
     public function test_user_can_update_their_profile(): void
     {
         Event::fake([OtherDeviceLogout::class]);
