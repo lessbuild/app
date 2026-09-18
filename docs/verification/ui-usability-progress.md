@@ -675,6 +675,46 @@ actions difficult to discover and compare on a phone.
 
 | Phase 14: mobile backup recovery workflow | Complete with browser follow-up | 18 focused tests / 136 assertions, Pint, view compilation, push and responsive rendering contract passed; post-change browser measurement deferred by host disk exhaustion | `678c5fc` pushed to `origin/main` | Inspect automation/API density and separate token management from per-application workflows |
 
+## Phase 15 — automation token hierarchy
+
+### Responsibility problem
+
+Automation combined API credential issuance, the token inventory, CLI
+documentation and per-application workflow editors. The token form and list
+were always in the first mobile flow even when a user only needed to inspect
+or edit a deployment workflow. The original 390px review measured about
+2,067px before the application workflow disclosures were considered.
+
+### Boundaries and preserved behavior
+
+- `AutomationController`, token Form Requests, policies, entitlements,
+  Sanctum actions, workflow validation and API response contracts remain
+  unchanged. This slice changes presentation only.
+- CLI quick-start guidance remains visible beside the token management panel.
+  Token management is a native disclosure with a count summary; the one-time
+  plaintext-token result and token-specific validation errors reopen it.
+- Token abilities, expiry choices, rotate/revoke forms, API documentation,
+  feature badges and application workflow details remain unchanged. Desktop
+  token content is forced visible when the mobile disclosure is closed.
+
+### Verification
+
+- The complete Automation suite passed: 34 tests / 169 assertions, including
+  workflow validation, schedule and task authorization, entitlements, API
+  envelopes, token ownership, token rotation and one-time token disclosure
+  state. Pint, Blade view compilation and `git diff --check` passed.
+- Commit `b58fcb0` (`feat: streamline automation token management`) and the
+  follow-up regression commit `406b971` (`test: preserve automation token
+  result disclosure`) were pushed to `origin/main`; the isolated HTTPS
+  runtime was updated, view-cached and both service units remained active.
+- A post-change browser height measurement is deferred because the isolated
+  host remains at 100% root disk usage and Chromium crashes before evaluation.
+  No post-change height reduction is claimed; the mobile disclosure, desktop
+  visibility safeguard and one-time result behavior are covered by feature
+  tests and compiled markup.
+
+| Phase 15: automation token hierarchy | Complete with browser follow-up | 34 focused tests / 169 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `b58fcb0`, `406b971` pushed to `origin/main` | Inspect providers, servers and websites for repeated inventory/setup density and the next shared presentation boundary |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
