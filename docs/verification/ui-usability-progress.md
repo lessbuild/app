@@ -342,6 +342,47 @@ in the original review.
 
 | Phase 6: deployment detail recovery and execution disclosures | Complete | 25 focused tests / 189 assertions, Pint, view compilation, push and real mobile disclosure interaction passed; recovery moved to ~868px, with failed-page total-height limitation documented | `f00e79b`, `4c1c6d8`, `9250304` pushed to `origin/main` | Improve repository detail so latest deployment and core setup actions precede webhook history and secondary configuration |
 
+## Phase 7 — repository overview and secondary deployment history
+
+### Responsibility problem
+
+Repository detail mixed the latest deployment with setup stages and ten recent
+build rows near the bottom of the page. The original mobile review measured a
+4,446px repository page, with deployment history beginning around 3,955px;
+first-deployment data measured about 5,755px.
+
+### Boundaries and preserved behavior
+
+- `RepositoriesController` continues to own the same scoped build, insight,
+  preflight and webhook queries. The Blade view uses the already-loaded latest
+  build collection; no new query, authorization rule, route or deployment
+  operation was introduced.
+- A compact latest-deployment overview now appears after the existing alert
+  boundary, with status, revision, failure/result context and links to the
+  existing detail and history routes.
+- Repository setup stages remain rendered by the existing Livewire component,
+  but are grouped behind a disclosure. Active and failed latest builds open it
+  automatically; completed and not-started repositories remain concise.
+- Recent deployment rows remain available behind a disclosure and open for an
+  active latest build. The all-deployments route, row links, revision links,
+  status badges and empty state are unchanged.
+
+### Verification
+
+- Repository insights, deployment, webhook history and webhook behavior suites
+  passed: 32 tests / 293 assertions, including the disclosure-state and
+  ordering regression test.
+- Pint, Blade view compilation and `git diff --check` passed.
+- Commit `7e698be` (`feat: streamline repository deployment overview`) was
+  pushed to `origin/main`; the isolated HTTPS runtime was cache-refreshed and
+  both service units remained active.
+- A real 390px browser check placed the latest deployment card around 280px and
+  the webhook section around 824px. The first-deployment fixture shortened from
+  about 5,755px to 4,645px; completed repositories started with setup and
+  recent-history disclosures closed, while active setup reopened automatically.
+
+| Phase 7: repository overview and secondary deployment history | Complete | 32 focused tests / 293 assertions, Pint, view compilation, push and real mobile state checks passed; first-deployment fixture shortened ~1,110px | `7e698be` pushed to `origin/main` | Put webhook configuration first and make delivery history a filtered, state-aware disclosure |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
