@@ -1106,6 +1106,50 @@ also had no panel-specific context.
 
 | Phase 24: load-balancer workflow hierarchy | Complete with browser follow-up | 5 focused tests / 32 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6ad6be9` pushed to `origin/main` | Audit remaining dense settings and operational pages for primary-result hierarchy and progressive disclosure |
 
+## Phase 25 — recipe and gallery discovery hierarchy
+
+### Responsibility problem
+
+The private recipe inventory and community gallery both placed a multi-field
+filter form and a full metric grid before the first recipe card/row. Those
+metrics are useful for planning and reporting, but they are secondary to
+finding a recipe, opening its script, saving it or publishing a change. The
+two surfaces also needed a consistent way to distinguish active filters from
+the default browse state.
+
+### Boundaries and preserved behavior
+
+- `RecipesController`, `RecipeGalleryController`, Form Requests, scoped query
+  services, metrics, publication/install/favorite/report actions and pagination
+  are unchanged. No query is moved into Blade and no result ordering or URL
+  parameter changes.
+- Both pages now use the existing `x-ui.filter-panel` primitive. It remains
+  collapsed for the default browse state and opens automatically when a
+  non-default filter is present, with a compact active-filter count.
+- The existing metric values now live in `recipe-insights` and
+  `gallery-insights` disclosures. Their summaries keep the matching/published
+  count visible while the first useful result appears earlier in the document.
+- Recipe/gallery cards, script safety warnings, save/install/update/report
+  actions, exports, pagination, SQL-wildcard handling and privacy boundaries
+  remain unchanged.
+
+### Verification
+
+- Recipe inventory and gallery suites passed: 16 tests / 158 assertions,
+  including scope/tenancy, filtering, SQL wildcard safety, install/update and
+  publication behavior, script secrecy, pagination and the new default/active
+  disclosure states. Pint, Blade view compilation and `git diff --check`
+  passed.
+- Commit `74b1375` (`Prioritize recipe discovery results`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; result priority, filter state
+  and preserved actions are covered by feature tests and compiled markup.
+
+| Phase 25: recipe and gallery discovery hierarchy | Complete with browser follow-up | 16 focused tests / 158 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `74b1375` pushed to `origin/main` | Audit report/feedback, billing/cost and search surfaces for filter and primary-result ordering |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
