@@ -141,11 +141,56 @@ data remain unchanged while each component owns its own readable geometry.
 
 Implementation commit `2bb0b8b` was pushed to `origin/main`.
 
+## Slice 3 — shared shell and navigation refinement
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The shared page-header action region had no stable hook or touch-size rule,
+while the fixed mobile quick-action bar called a link to the application form
+just `Create`. That label implied a broader action menu than the link provided,
+and the quick actions did not state their 44px touch target in the shell
+markup. The existing flat mobile navigation also needed to remain unchanged as
+an explicit product constraint.
+
+### Boundaries and principle
+
+The shared page-header and authenticated layout components own shell
+presentation and interaction semantics. This is single responsibility: the
+navigation model, route names, authorization and mobile destination inventory
+were not changed. The flat menu remains intact; only the quick-action label,
+active state and shared sizing contract were refined.
+
+### Implementation
+
+- Added a stable `data-ui-page-header-actions` hook and a shared 44px minimum
+  height for page-header buttons, including buttons nested in forms.
+- Renamed the bottom-bar `Create` destination to `New app`, matching its
+  existing application-creation route.
+- Added active-state semantics for the `New app` quick action and stable hooks
+  for all four quick actions.
+- Applied explicit 44px minimum touch targets to the bottom-bar links and
+  search button while preserving safe-area padding, Escape/focus handling and
+  the old flat menu.
+
+### Verification
+
+- Local UI feature coverage: **19 tests / 399 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including quick-action label/path/touch-size checks, responsive disclosures,
+  application-card geometry and provider no-JavaScript submission: **9 passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `6a7c364` was pushed to `origin/main`.
+
 ### Exact next task
 
-Begin Slice 3: audit the shared visual foundation and navigation refinement,
-starting with repeated page-header/action patterns and the intentional flat
-mobile navigation constraint.
+Begin Slice 4: reduce the public landing page’s mobile task distance and make
+the static product preview clearly illustrative, then refine pricing hierarchy
+without changing plans, prices, routes or entitlements.
 
 ## Remaining planned slices
 
