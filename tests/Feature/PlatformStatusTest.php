@@ -31,6 +31,8 @@ class PlatformStatusTest extends TestCase
             ->assertSee('Deployments')
             ->assertSee('Webhooks')
             ->assertSee('Background jobs')
+            ->assertSee('href="#main-content"', false)
+            ->assertSee('id="main-content" tabindex="-1"', false)
             ->assertDontSee('Database connection')
             ->assertDontSee('sqlite')
             ->assertDontSee('Application key');

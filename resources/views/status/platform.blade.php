@@ -5,6 +5,10 @@
     :indexable="true"
     :livewire="false"
 >
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
+        {{ __('Skip to main content') }}
+    </a>
+
     <main id="main-content" tabindex="-1" class="min-h-screen bg-secondary px-4 py-10 sm:px-6 sm:py-16">
         <div class="mx-auto max-w-4xl">
             <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">

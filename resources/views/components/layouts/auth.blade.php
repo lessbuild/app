@@ -1,4 +1,4 @@
-<x-layouts.core>
+<x-layouts.core :title="$title">
     <div class="min-h-screen bg-secondary lg:grid lg:grid-cols-[minmax(24rem,0.82fr)_minmax(28rem,1.18fr)]">
         <main id="main-content" tabindex="-1" class="flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
             <div class="w-full max-w-lg">
@@ -9,7 +9,7 @@
                 <x-ui.card class="mt-6 p-6 sm:p-8">
                     <header>
                         <h1 class="text-2xl font-black tracking-tight text-primary">{{ $title }}</h1>
-                        <p class="mt-2 leading-6 text-secondary">{{ $description }}</p>
+                        <div class="mt-2 leading-6 text-secondary">{{ $description }}</div>
                     </header>
 
                     @if ($errors->any())

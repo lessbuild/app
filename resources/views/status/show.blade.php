@@ -5,6 +5,10 @@
     :indexable="true"
     :livewire="false"
 >
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
+        {{ __('Skip to main content') }}
+    </a>
+
     <main id="main-content" tabindex="-1" class="min-h-screen bg-secondary px-4 py-10 sm:px-6 sm:py-16">
         <div class="mx-auto max-w-3xl">
             <header class="text-center">
@@ -76,11 +80,11 @@
                 <form method="POST" action="{{ route('status.subscriptions.store', $page->slug) }}" class="mt-4 flex flex-col gap-3 sm:flex-row">
                     @csrf
                     <label class="sr-only" for="status-email">{{ __('Email address') }}</label>
-                    <input id="status-email" type="email" name="email" required autocomplete="email" class="input secondary min-w-0 flex-1 rounded-lg" placeholder="you@example.com">
+                    <input id="status-email" type="email" name="email" value="{{ old('email') }}" required autocomplete="email" aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}" @if ($errors->has('email')) aria-describedby="status-email-error" @endif class="input secondary min-w-0 flex-1 rounded-lg" placeholder="you@example.com">
                     <x-ui.button type="submit" variant="primary">{{ __('Subscribe') }}</x-ui.button>
                 </form>
                 @error('email')
-                    <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                    <p id="status-email-error" class="mt-2 text-sm text-red-700">{{ $message }}</p>
                 @enderror
             </x-ui.card>
 

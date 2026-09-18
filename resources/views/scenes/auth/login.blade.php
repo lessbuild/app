@@ -4,7 +4,7 @@
     </x-slot>
 
     <x-slot name="description">
-        {{ __('Sign in to your manage your websites and servers.') }}
+        {{ __('Sign in to manage your websites and servers.') }}
 
         <x-auth.social-providers action="in" />
     </x-slot>

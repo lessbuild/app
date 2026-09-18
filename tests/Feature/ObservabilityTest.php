@@ -519,7 +519,11 @@ class ObservabilityTest extends TestCase
             'starts_at' => now()->format('Y-m-d H:i:s'),
         ])->assertRedirect();
         Notification::assertSentOnDemand(StatusIncidentNotification::class);
-        $this->get(route('status.show', $page->slug))->assertOk()->assertSee('API latency');
+        $this->get(route('status.show', $page->slug))
+            ->assertOk()
+            ->assertSee('API latency')
+            ->assertSee('href="#main-content"', false)
+            ->assertSee('id="main-content" tabindex="-1"', false);
         $this->getJson(route('status.report', $page->slug))
             ->assertOk()->assertJsonPath('incidents.0.status', 'investigating');
 

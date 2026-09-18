@@ -84,6 +84,20 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('id="api-path-deploy"', false);
     }
 
+    public function test_auth_pages_have_page_specific_browser_titles_and_valid_description_structure(): void
+    {
+        $this->get(route('login'))
+            ->assertSuccessful()
+            ->assertSee('<title>Sign in to your account · '.config('app.name').'</title>', false)
+            ->assertSee('Sign in to manage your websites and servers.')
+            ->assertSee('<div class="mt-2 leading-6 text-secondary">', false);
+
+        $this->get(route('register'))
+            ->assertSuccessful()
+            ->assertSee('<title>Sign up for an account · '.config('app.name').'</title>', false)
+            ->assertSee('Sign up for an account to easily manage your work life.');
+    }
+
     public function test_public_navigation_and_calls_to_action_are_functional_and_truthful(): void
     {
         $guestHtml = $this->get('/')
