@@ -103,6 +103,21 @@ class GlobalSearchTest extends TestCase
             ->assertDontSee('secret-script', false);
     }
 
+    public function test_search_results_have_jump_links_and_group_context(): void
+    {
+        $owner = User::factory()->create();
+        $resources = $this->resources($owner, 'Jumpable', 'owner');
+
+        $this->actingAs($owner)->get(route('search.index', ['q' => 'Jumpable']))
+            ->assertSuccessful()
+            ->assertSee('Search result groups')
+            ->assertSee('href="#search-group-projects"', false)
+            ->assertSee('id="search-group-projects"', false)
+            ->assertSee('id="search-group-heading-projects"', false)
+            ->assertSee('Applications')
+            ->assertSee($resources['project']->name);
+    }
+
     public function test_repository_name_search_includes_its_builds_and_preserves_owner_scoping(): void
     {
         Queue::fake();
