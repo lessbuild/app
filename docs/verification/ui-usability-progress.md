@@ -1495,7 +1495,7 @@ suite, Pint, platform check, Vite build, route/view caches and diff check, the
 local UI plan verification is complete. See the [browser verification record](ui-browser-verification-2026-09-18.md)
 for exact commands and cleanup scope.
 
-| Browser verification follow-up | Complete | 19 browser tests, no runtime errors/overflow, isolated runtime active | Pending documentation commit and push | External/live acceptance only |
+| Browser verification follow-up | Complete | 19 browser tests, no runtime errors/overflow, isolated runtime active | `95fc4a3` pushed to `origin/main` | External/live acceptance only |
 
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
