@@ -13,6 +13,41 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    @php
+        $environmentCount = $projects->sum('environments_count');
+        $previewProjectCount = $projects->where('preview_enabled', true)->count();
+        $setupProjectCount = $projects->where('environments_count', 0)->count();
+    @endphp
+
+    <x-ui.insights
+        id="projects-insights"
+        class="mt-6"
+        :summary="trans_choice(':count application|:count applications', $projects->count(), ['count' => $projects->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Applications')"
+                :value="$projects->count()"
+                :description="__('Applications in the current workspace.')"
+            />
+            <x-ui.stat
+                :label="__('Environments')"
+                :value="$environmentCount"
+                :description="__('Production, staging, development, and preview targets.')"
+            />
+            <x-ui.stat
+                :label="__('Preview-enabled')"
+                :value="$previewProjectCount"
+                :description="__('Applications ready for preview environments.')"
+            />
+            <x-ui.stat
+                :label="__('Needs setup')"
+                :value="$setupProjectCount"
+                :description="__('Applications without an environment yet.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-secondary">
             {{ trans_choice(':count application|:count applications', $projects->count(), ['count' => $projects->count()]) }}

@@ -34,7 +34,12 @@
         $scheduledOperationCount = $deploymentScheduleCount + $scalingScheduleCount + $scheduledTaskCount;
     @endphp
 
-    <section id="automation-overview" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="automation-overview-title">
+    <x-ui.insights
+        id="automation-overview"
+        class="mt-6 scroll-mt-24 border-ternary"
+        :summary="trans_choice(':count scheduled operation|:count scheduled operations', $scheduledOperationCount, ['count' => $scheduledOperationCount])"
+        aria-labelledby="automation-overview-title"
+    >
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Automation overview') }}</p>
@@ -44,7 +49,7 @@
             <x-ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-ui.badge>
         </div>
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="#automation-tokens" class="ui-card ui-card--interactive block bg-secondary p-4">
                 <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('API access') }}</p>
                 <p class="mt-2 text-2xl font-black text-primary">{{ $tokens->count() }}</p>
@@ -72,7 +77,7 @@
             <a href="#automation-quick-start" class="hover:underline">{{ __('Quick start') }}</a>
             <a href="#automation-workflows" class="hover:underline">{{ __('Application workflows') }}</a>
         </nav>
-    </section>
+    </x-ui.insights>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
         <details id="automation-tokens" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}">

@@ -36,6 +36,35 @@
         </div>
     </x-ui.alert>
 
+    <x-ui.insights
+        id="system-health-insights"
+        class="mt-6"
+        :summary="trans_choice(':passed of :total check passed|:passed of :total checks passed', count($checks), ['passed' => $passedCount, 'total' => count($checks)])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Checks')"
+                :value="count($checks)"
+                :description="__('Safe runtime checks in this snapshot.')"
+            />
+            <x-ui.stat
+                :label="__('Passed')"
+                :value="$passedCount"
+                :description="__('Checks reporting a healthy result.')"
+            />
+            <x-ui.stat
+                :label="__('Needs attention')"
+                :value="count($checks) - $passedCount"
+                :description="__('Checks requiring operator review.')"
+            />
+            <x-ui.stat
+                :label="__('Checked')"
+                :value="$checkedAt->diffForHumans()"
+                :description="$checkedAt->toDayDateTimeString()"
+            />
+        </dl>
+    </x-ui.insights>
+
     <section class="mt-6" aria-labelledby="system-health-checks">
         <div class="mb-4">
             <h2 id="system-health-checks" class="text-xl font-bold text-primary">{{ __('Diagnostic checks') }}</h2>

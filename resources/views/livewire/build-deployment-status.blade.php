@@ -8,7 +8,13 @@
             default => 'neutral',
         };
     @endphp
-    <dl class="ui-card mt-6 grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+    <x-ui.insights
+        id="build-summary"
+        class="mt-6"
+        :summary="str($build->status)->replace('_', ' ')->headline()"
+        :mobile-open="true"
+    >
+    <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <div>
             <dt class="ui-stat__label">{{ __('Status') }}</dt>
             <dd class="mt-2"><x-ui.badge :tone="$statusTone">{{ str($build->status)->replace('_', ' ')->title() }}</x-ui.badge></dd>
@@ -44,6 +50,7 @@
             <dd class="mt-1 text-primary">{{ $build->last_heartbeat_at?->format('Y-m-d H:i:s T') ?? __('Not received') }}</dd>
         </div>
     </dl>
+    </x-ui.insights>
 
     @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
         <div class="ui-alert ui-alert--danger mt-6 p-4">

@@ -20,6 +20,40 @@
         </div>
     @endif
 
+    @php
+        $readyResourceCount = $resources->where('status', \App\Models\EnvironmentResource::STATUS_READY)->count();
+        $credentialCount = $resources->sum(fn ($resource) => $resource->databaseUsers->count());
+    @endphp
+
+    <x-ui.insights
+        id="database-insights"
+        class="mt-6"
+        :summary="trans_choice(':count managed database resource|:count managed database resources', $resources->count(), ['count' => $resources->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Managed resources')"
+                :value="$resources->count()"
+                :description="__('MySQL and PostgreSQL resources in this workspace.')"
+            />
+            <x-ui.stat
+                :label="__('Ready')"
+                :value="$readyResourceCount"
+                :description="__('Resources with a usable inspection state.')"
+            />
+            <x-ui.stat
+                :label="__('Active credentials')"
+                :value="$credentialCount"
+                :description="__('Issued database credentials across resources.')"
+            />
+            <x-ui.stat
+                :label="__('Recent clones')"
+                :value="$clones->count()"
+                :description="__('Retained clone operations shown below.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-8 grid gap-5 xl:grid-cols-2">
         @forelse ($resources as $resource)
             @php

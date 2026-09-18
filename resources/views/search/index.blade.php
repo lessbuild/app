@@ -35,7 +35,42 @@
             />
         </div>
     @else
-        @php($resultCount = collect($groups)->sum(fn ($group) => $group['results']->count()))
+        @php
+            $resultCount = collect($groups)->sum(fn ($group) => $group['results']->count());
+            $matchingGroupCount = collect($groups)->filter(fn ($group) => $group['results']->isNotEmpty())->count();
+            $moreResultCount = collect($groups)->filter(fn ($group) => $group['has_more'])->count();
+        @endphp
+
+        <x-ui.insights
+            id="search-insights"
+            class="mt-6"
+            :summary="trans_choice(':count result shown|:count results shown', $resultCount, ['count' => $resultCount])"
+            :mobile-open="true"
+        >
+            <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <x-ui.stat
+                    :label="__('Results')"
+                    :value="$resultCount"
+                    :description="__('Matching resources across the account.')"
+                />
+                <x-ui.stat
+                    :label="__('Categories')"
+                    :value="$matchingGroupCount"
+                    :description="__('Resource groups with a matching result.')"
+                />
+                <x-ui.stat
+                    :label="__('More available')"
+                    :value="$moreResultCount"
+                    :description="__('Categories with additional matches.')"
+                />
+                <x-ui.stat
+                    :label="__('Search term')"
+                    :value="$query"
+                    :description="__('Search stays scoped to your account.')"
+                />
+            </dl>
+        </x-ui.insights>
+
         @if ($resultCount === 0)
             <div class="mt-8">
                 <x-lists.empty

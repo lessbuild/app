@@ -24,6 +24,35 @@
         @enderror
     </div>
 
+    <x-ui.insights
+        id="billing-insights"
+        class="mt-6"
+        :summary="__('Current plan: :plan', ['plan' => $plans[$currentPlan]['name']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Current plan')"
+                :value="$plans[$currentPlan]['name']"
+                :description="__('Workspace entitlement level.')"
+            />
+            <x-ui.stat
+                :label="__('Billing cycle')"
+                :value="$currentPlan === 'free' ? __('No subscription') : ucfirst($currentInterval)"
+                :description="__('The interval used for paid plan changes.')"
+            />
+            <x-ui.stat
+                :label="__('Plan options')"
+                :value="count($plans)"
+                :description="__('Available plans for this installation.')"
+            />
+            <x-ui.stat
+                :label="__('API limit')"
+                :value="number_format($plans[$currentPlan]['limits']['api_requests_per_minute']).'/min'"
+                :description="__('Requests allowed by the current plan.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <x-ui.card class="mt-8 overflow-hidden">
         <div class="flex flex-wrap items-start justify-between gap-5 p-6">
             <div>

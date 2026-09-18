@@ -5,6 +5,40 @@
         :description="__('Manage aliases, redirects, Cloudflare DNS, temporary domains, and certificate health.')"
     />
 
+    @php
+        $domains = $websites->flatMap(fn ($website) => $website->domains);
+        $attentionDomainCount = $domains->filter(fn ($domain) => $domain->dns_status !== 'active' || $domain->ssl_status !== 'active')->count();
+    @endphp
+
+    <x-ui.insights
+        id="domain-insights"
+        class="mt-6"
+        :summary="trans_choice(':count domain configured|:count domains configured', $domains->count(), ['count' => $domains->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Websites')"
+                :value="$websites->count()"
+                :description="__('Websites with domain records available.')"
+            />
+            <x-ui.stat
+                :label="__('Domains')"
+                :value="$domains->count()"
+                :description="__('Primary, alias, redirect, and temporary hosts.')"
+            />
+            <x-ui.stat
+                :label="__('Temporary')"
+                :value="$domains->where('is_temporary', true)->count()"
+                :description="__('Shareable temporary domains.')"
+            />
+            <x-ui.stat
+                :label="__('Needs attention')"
+                :value="$attentionDomainCount"
+                :description="__('DNS or TLS status is not active.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="space-y-5">
             @forelse ($websites as $website)

@@ -39,20 +39,30 @@
             </x-ui.alert>
         @endif
 
-        <dl class="mt-5 grid gap-4 sm:grid-cols-3">
-            <div>
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</dt>
-                <dd class="mt-1 text-sm font-medium text-primary">{{ str($report->reason)->headline() }}</dd>
-            </div>
-            <div>
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Reported') }}</dt>
-                <dd class="mt-1 text-sm text-primary">{{ $report->created_at->toDayDateTimeString() }}</dd>
-            </div>
-            <div>
-                <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last updated') }}</dt>
-                <dd class="mt-1 text-sm text-primary">{{ $report->updated_at->toDayDateTimeString() }}</dd>
-            </div>
-        </dl>
+        <x-ui.insights
+            id="gallery-report-status-insights"
+            class="mt-5"
+            :summary="$report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor')"
+            :mobile-open="true"
+        >
+            <dl class="ui-insight-grid grid gap-4 sm:grid-cols-3">
+                <x-ui.stat
+                    :label="__('Issue type')"
+                    :value="str($report->reason)->headline()"
+                    :description="__('The category selected when the report was submitted.')"
+                />
+                <x-ui.stat
+                    :label="__('Reported')"
+                    :value="$report->created_at->diffForHumans()"
+                    :description="$report->created_at->toDayDateTimeString()"
+                />
+                <x-ui.stat
+                    :label="__('Last updated')"
+                    :value="$report->updated_at->diffForHumans()"
+                    :description="$report->updated_at->toDayDateTimeString()"
+                />
+            </dl>
+        </x-ui.insights>
 
         <div class="mt-5">
             <h3 class="text-xs font-semibold uppercase text-secondary">{{ __('Your report details') }}</h3>

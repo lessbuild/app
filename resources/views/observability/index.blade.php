@@ -12,7 +12,12 @@
         $recentHealthFailureCount = $correlatedHealthChecks->count();
     @endphp
 
-    <section id="observability-overview" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="observability-overview-title">
+    <x-ui.insights
+        id="observability-overview"
+        class="mt-6 scroll-mt-24 border-ternary"
+        :summary="trans_choice(':count active incident|:count active incidents', $activeOperationalIncidentCount, ['count' => $activeOperationalIncidentCount])"
+        aria-labelledby="observability-overview-title"
+    >
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Response overview') }}</p>
@@ -22,7 +27,7 @@
             <x-ui.badge tone="accent">{{ __('Workspace scope') }}</x-ui.badge>
         </div>
 
-        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="#operational-incidents" class="ui-card ui-card--interactive block bg-secondary p-4">
                 <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Active response') }}</p>
                 <p class="mt-2 text-2xl font-black text-primary">{{ $activeOperationalIncidentCount }}</p>
@@ -53,7 +58,7 @@
             <a href="#status-pages" class="hover:underline">{{ __('Status pages') }}</a>
             <a href="#status-incident-timeline" class="hover:underline">{{ __('Status updates') }}</a>
         </nav>
-    </section>
+    </x-ui.insights>
 
     @include('observability._operational-incidents')
 

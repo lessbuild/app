@@ -5,6 +5,44 @@
         :description="__('Manage your profile and sign-in credentials.')"
     />
 
+    @php
+        $connectedProviderCount = $socialProviders->where('connected', true)->count();
+        $securityCheckCount = collect([
+            auth()->user()->hasVerifiedEmail(),
+            auth()->user()->hasLocalPassword(),
+            filled(auth()->user()->two_factor_secret),
+        ])->filter()->count();
+    @endphp
+
+    <x-ui.insights
+        id="account-insights"
+        class="mt-6 max-w-5xl"
+        :summary="trans_choice(':count of 3 account security checks complete|:count of 3 account security checks complete', $securityCheckCount, ['count' => $securityCheckCount])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Email')"
+                :value="auth()->user()->hasVerifiedEmail() ? __('Verified') : __('Needs verification')"
+                :description="__('Required before managing infrastructure.')"
+            />
+            <x-ui.stat
+                :label="__('Two-factor')"
+                :value="filled(auth()->user()->two_factor_secret) ? __('Enabled') : __('Not enabled')"
+                :description="__('Authenticator protection for sign-in.')"
+            />
+            <x-ui.stat
+                :label="__('Browser sessions')"
+                :value="$browserSessions->count()"
+                :description="__('Active sessions, including this browser.')"
+            />
+            <x-ui.stat
+                :label="__('Connected sign-ins')"
+                :value="$connectedProviderCount"
+                :description="__('Linked social sign-in providers.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-8 max-w-5xl space-y-8">
         @if (! auth()->user()->hasVerifiedEmail())
             <div class="ui-alert ui-alert--warning p-4">

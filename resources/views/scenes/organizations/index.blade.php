@@ -22,6 +22,40 @@
         $deleteWorkspaceOpen = $errors->getBag('deleteWorkspace')->any();
     @endphp
 
+    <x-ui.insights
+        id="organization-insights"
+        class="mt-6"
+        :summary="trans_choice(':count member|:count members', $organization->members->count(), ['count' => $organization->members->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-ui.stat
+                :label="__('Members')"
+                :value="$organization->members->count()"
+                :description="__('People with current workspace access.')"
+            />
+            <x-ui.stat
+                :label="__('Pending invites')"
+                :value="$invitations->count()"
+                :description="__('Unaccepted invitations still available.')"
+            />
+            <x-ui.stat
+                :label="__('Seat usage')"
+                :value="$memberUsage['used'].' / '.($memberUsage['limit'] ?? __('Unlimited'))"
+                :description="__('Members and active invitations.')"
+            />
+            <x-ui.stat
+                :label="__('Two-factor policy')"
+                :value="$organization->require_two_factor ? __('Required') : __('Optional')"
+                :description="__('Workspace-wide account security rule.')"
+            />
+            <x-ui.stat
+                :label="__('SSO policy')"
+                :value="$organization->sso_enforced ? __('Required') : (filled($organization->sso_configuration['issuer'] ?? null) ? __('Configured') : __('Not configured'))"
+                :description="__('OpenID Connect sign-in policy.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <x-forms.section
             :title="__('Members')"

@@ -14,12 +14,35 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <section class="ui-card mt-8 grid overflow-hidden sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ __('Application summary') }}">
-        <div class="border-b border-primary p-4 sm:border-r xl:border-b-0"><p class="ui-stat__label">{{ __('Environments') }}</p><p class="ui-stat__value">{{ $project->environments->count() }}</p></div>
-        <div class="border-b border-primary p-4 xl:border-b-0 xl:border-r"><p class="ui-stat__label">{{ __('Attached sites') }}</p><p class="ui-stat__value">{{ $project->environments->whereNotNull('website_id')->count() }}</p></div>
-        <div class="border-b border-primary p-4 sm:border-r sm:border-b-0"><p class="ui-stat__label">{{ __('Runtime') }}</p><p class="mt-1 font-black text-primary">{{ $project->environments->contains(fn ($environment) => $environment->hibernated_at) ? __('Partially hibernated') : __('Running') }}</p></div>
-        <div class="p-4"><p class="ui-stat__label">{{ __('Previews') }}</p><p class="mt-1 font-black text-primary">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</p></div>
-    </section>
+    <x-ui.insights
+        id="project-insights"
+        class="mt-8"
+        :summary="trans_choice(':count environment|:count environments', $project->environments->count(), ['count' => $project->environments->count()])"
+        :mobile-open="true"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ __('Application summary') }}">
+            <x-ui.stat
+                :label="__('Environments')"
+                :value="$project->environments->count()"
+                :description="__('Targets managed by this application.')"
+            />
+            <x-ui.stat
+                :label="__('Attached sites')"
+                :value="$project->environments->whereNotNull('website_id')->count()"
+                :description="__('Environments connected to a website.')"
+            />
+            <x-ui.stat
+                :label="__('Runtime')"
+                :value="$project->environments->contains(fn ($environment) => $environment->hibernated_at) ? __('Partially hibernated') : __('Running')"
+                :description="__('Current environment runtime state.')"
+            />
+            <x-ui.stat
+                :label="__('Previews')"
+                :value="$project->preview_enabled ? __('Enabled') : __('Disabled')"
+                :description="__('Pull-request preview environments.')"
+            />
+        </dl>
+    </x-ui.insights>
 
     <div class="mt-5 space-y-4">
         @foreach($project->environments as $environment)

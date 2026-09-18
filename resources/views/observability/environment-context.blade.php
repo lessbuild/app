@@ -26,6 +26,40 @@
         </div>
     </div>
 
+    <x-ui.insights
+        id="environment-context-insights"
+        class="mt-6"
+        :summary="trans_choice(':count deployment in evidence|:count deployments in evidence', $context->builds->count(), ['count' => $context->builds->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-ui.stat
+                :label="__('Deployments')"
+                :value="$context->builds->count()"
+                :description="__('Bounded deployment records in the selected window.')"
+            />
+            <x-ui.stat
+                :label="__('Health checks')"
+                :value="$context->healthChecks->count()"
+                :description="__('Website observations retained for this context.')"
+            />
+            <x-ui.stat
+                :label="__('Log snapshots')"
+                :value="$context->runtimeLogs->count()"
+                :description="__('Metadata records; log bodies stay out of this view.')"
+            />
+            <x-ui.stat
+                :label="__('Incidents')"
+                :value="$context->incidents->count()"
+                :description="__('Explicitly related operational incidents.')"
+            />
+            <x-ui.stat
+                :label="__('Services')"
+                :value="$context->services->count()"
+                :description="__('Authorized deployment services for this website.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <section class="ui-card mt-8 p-6" aria-labelledby="environment-context-heading">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>

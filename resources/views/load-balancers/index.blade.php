@@ -14,6 +14,41 @@
         </div>
     @endunless
 
+    @php
+        $healthyBalancerCount = $loadBalancers->whereIn('status', ['active', 'healthy', 'ready'])->count();
+        $nodeCount = $loadBalancers->sum(fn ($balancer) => $balancer->nodes->count());
+        $underprovisionedBalancerCount = $loadBalancers->filter(fn ($balancer) => $balancer->nodes->count() < 2)->count();
+    @endphp
+
+    <x-ui.insights
+        id="load-balancer-insights"
+        class="mt-6"
+        :summary="trans_choice(':count high-availability route|:count high-availability routes', $loadBalancers->count(), ['count' => $loadBalancers->count()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Routes')"
+                :value="$loadBalancers->count()"
+                :description="__('High-availability routes in this workspace.')"
+            />
+            <x-ui.stat
+                :label="__('Healthy or ready')"
+                :value="$healthyBalancerCount"
+                :description="__('Routes currently able to apply traffic configuration.')"
+            />
+            <x-ui.stat
+                :label="__('Application nodes')"
+                :value="$nodeCount"
+                :description="__('Configured upstream nodes across routes.')"
+            />
+            <x-ui.stat
+                :label="__('Needs nodes')"
+                :value="$underprovisionedBalancerCount"
+                :description="__('Routes with fewer than two application nodes.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     @if ($canManage)
         @php
             $loadBalancerCreateOpen = $loadBalancers->isEmpty()

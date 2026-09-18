@@ -5,6 +5,35 @@
         :description="__('Report a bug, share an idea, or tell us where the product became confusing.')"
     />
 
+    <x-ui.insights
+        id="feedback-insights"
+        class="mt-6"
+        :summary="trans_choice(':count matching submission|:count matching submissions', $feedback->total(), ['count' => $feedback->total()])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat
+                :label="__('Matching')"
+                :value="$feedback->total()"
+                :description="__('Submissions in the current filtered view.')"
+            />
+            <x-ui.stat
+                :label="__('This page')"
+                :value="$feedback->count()"
+                :description="__('Submissions loaded in this page of results.')"
+            />
+            <x-ui.stat
+                :label="__('Status filter')"
+                :value="$status ? str($status)->headline() : __('All statuses')"
+                :description="__('Use the filter to focus review work.')"
+            />
+            <x-ui.stat
+                :label="__('Access scope')"
+                :value="$canReview ? __('Workspace') : __('Your submissions')"
+                :description="__('Visibility is controlled by workspace permissions.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-8 grid gap-6 xl:grid-cols-[22rem_1fr]">
         <x-ui.card class="h-fit p-5 sm:p-6">
             <h2 class="text-lg font-black text-primary">{{ __('Send private feedback') }}</h2>

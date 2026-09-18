@@ -60,17 +60,14 @@
         </div>
     </section>
 
-    <details id="backup-recovery-evidence" class="ui-responsive-details group ui-card mt-6 scroll-mt-24 overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" aria-labelledby="backup-recovery-evidence-title">
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
-            <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recovery evidence') }}</span>
-                <span id="backup-recovery-evidence-title" class="mt-1 block text-lg font-black text-primary">{{ __('Completion, restore and verification history') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">{{ __('Open for the latest recorded evidence.') }}</span>
-            </span>
-            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
-        </summary>
-        <div class="ui-responsive-details__content border-t border-primary p-4 lg:border-0">
-            <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">
+    <x-ui.insights
+        id="backup-recovery-evidence"
+        class="mt-6 scroll-mt-24"
+        :summary="__('Completion, restore and verification history')"
+        data-responsive-details-mobile-open="false"
+        aria-label="{{ __('Recovery evidence') }}"
+    >
+        <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5" aria-label="{{ __('Recovery readiness') }}">
                 @foreach ([
                     [__('Latest completed backup'), $recoverySummary->latestBackupCompletedAt?->diffForHumans() ?? __('No completed backup')],
                     [__('Latest HTTPS transport evidence'), $recoverySummary->latestTransportVerifiedAt?->diffForHumans() ?? __('Not recorded')],
@@ -80,9 +77,8 @@
                 ] as [$label, $value])
                     <x-ui.stat :label="$label" :value="$value" />
                 @endforeach
-            </dl>
-        </div>
-    </details>
+        </dl>
+    </x-ui.insights>
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
         <section id="backup-destinations" class="ui-card scroll-mt-24 p-6">
