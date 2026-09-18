@@ -1150,6 +1150,48 @@ the default browse state.
 
 | Phase 25: recipe and gallery discovery hierarchy | Complete with browser follow-up | 16 focused tests / 158 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `74b1375` pushed to `origin/main` | Audit report/feedback, billing/cost and search surfaces for filter and primary-result ordering |
 
+## Phase 26 — recipe feedback result hierarchy
+
+### Responsibility problem
+
+Contributor feedback inboxes and reporter history pages repeated the same
+long-form browse pattern: seven or more filters, a full metric grid, and then
+the actual report cards. Bulk resolve/reopen controls and report details are
+the primary work, while aggregate counts are supporting context.
+
+### Boundaries and preserved behavior
+
+- `RecipeReportsController`, Form Requests, `RecipeReportQuery`, exporters,
+  policies, named bulk-validation bags, pagination and all report actions are
+  unchanged. No filter normalization, ownership scope, anonymity rule or
+  notification behavior moved into the view.
+- Contributor inbox filters now use `gallery-report-filters`; reporter history
+  uses `gallery-report-history-filters`. Both remain closed for their default
+  state and reopen automatically when a non-default filter is active.
+- Contributor and reporter metric grids now use separate Insights disclosures
+  with compact result summaries. Bulk controls, report cards, status links,
+  resolution notes and pagination stay in the normal result flow.
+- Filter URLs, CSV exports, report anchors, independent bulk forms and
+  `bulkResolve`/`bulkReopen` error bags remain unchanged.
+
+### Verification
+
+- Feedback inbox and reporter-history suites passed: 31 tests / 337
+  assertions, including tenant/anonymity boundaries, pagination, filter and
+  export preservation, bulk selection/atomicity, notification review and the
+  new default/active disclosure states. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `758b1fd` (`Prioritize gallery feedback results`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; report priority, filter state,
+  bulk controls and preserved privacy behavior are covered by feature tests
+  and compiled markup.
+
+| Phase 26: recipe feedback result hierarchy | Complete with browser follow-up | 31 focused tests / 337 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `758b1fd` pushed to `origin/main` | Inspect billing/cost, search and system-health pages for secondary statistics and action hierarchy |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
