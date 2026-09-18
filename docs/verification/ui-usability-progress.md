@@ -586,6 +586,50 @@ scrolling.
 
 | Phase 12: account security hierarchy | Complete | 54 focused tests / 356 assertions, Pint, view compilation, push and real mobile disclosure interaction passed; page height reduced ~2,418px | `a994d10` pushed to `origin/main` | Inspect backups, organization administration and automation workflows for the next dense secondary-panel slice |
 
+## Phase 13 — workspace administration hierarchy
+
+### Responsibility problem
+
+Workspace administration placed the member list, a long security-policy form,
+notification preferences, invitations, workspace switching and destructive
+workspace deletion in one uninterrupted mobile flow. The original 390px
+review measured about 3,238px even though most visitors only need to inspect
+members or change one setting occasionally.
+
+### Boundaries and preserved behavior
+
+- `OrganizationController`, its Form Requests, policies, actions, invitation
+  flow, membership protections and named deletion error bag remain unchanged.
+  This is a presentation-only hierarchy slice.
+- Members remain the first visible workspace task. Security policy,
+  notification preferences, invitations and workspace switching are native
+  secondary disclosures. Workspace deletion retains its warning styling and
+  becomes an explicit disclosure rather than occupying the default flow.
+- Relevant validation errors reopen only their associated panel. Existing
+  password, two-factor, invitation and membership fields remain in the same
+  forms; no secrets, routes, status codes or authorization decisions moved.
+- The shared forms-section component forces the form body to remain visible at
+  desktop widths when its mobile disclosure is closed, preventing responsive
+  content loss.
+
+### Verification
+
+- Organization management and account regression suites passed: 37 tests /
+  232 assertions. Coverage includes default panel state, security-policy
+  validation reopening, owner protection, invitation behavior, membership
+  authorization and named deletion errors. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `e7b749f` (`feat: streamline workspace administration panels`) was
+  pushed to `origin/main`; the isolated HTTPS runtime was updated and both
+  service units remained active.
+- A real 390px browser check measured the default workspace page at about
+  1,307px, a reduction of roughly 1,931px. All five secondary panels were
+  closed by default. A follow-up live click-through was limited by the
+  isolated host reaching 100% disk usage; the disclosure and validation paths
+  remain covered by the feature suite and compiled markup.
+
+| Phase 13: workspace administration hierarchy | Complete | 37 focused tests / 232 assertions, Pint, view compilation, push and real mobile height measurement passed; page height reduced ~1,931px; live click-through deferred by host disk exhaustion | `e7b749f` pushed to `origin/main` | Inspect backups and automation for the next high-value workflow slice |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
