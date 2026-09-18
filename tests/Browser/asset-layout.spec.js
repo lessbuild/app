@@ -110,6 +110,15 @@ for (const colorScheme of ['light', 'dark']) {
                             && (elements[0].compareDocumentPosition(elements[1]) & Node.DOCUMENT_POSITION_FOLLOWING)
                             && (elements[1].compareDocumentPosition(elements[2]) & Node.DOCUMENT_POSITION_FOLLOWING));
                     }), 'dashboard should present attention, setup, then secondary metrics').toBe(true);
+                    const overview = page.locator('#dashboard-operational-overview');
+                    const overviewContent = overview.locator('.ui-responsive-details__content');
+                    if (width >= 1024) {
+                        await expect(overviewContent).toBeVisible();
+                    } else {
+                        await expect(overviewContent).toBeHidden();
+                        await overview.locator('summary').click();
+                        await expect(overviewContent).toBeVisible();
+                    }
                     const override = colorScheme === 'dark' ? 'light' : 'dark';
                     await page.evaluate((theme) => document.documentElement.classList.add(theme), override);
                     await expect(page.locator('body')).toHaveCSS('background-color', override === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');

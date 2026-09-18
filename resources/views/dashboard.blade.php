@@ -38,14 +38,26 @@
     </div>
     @endif
 
-    <section class="mb-12" aria-labelledby="operations-overview-title">
-        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 14 days') }}</p>
-                <h2 id="operations-overview-title" class="mt-1 text-xl font-semibold text-primary">{{ __('Operational overview') }}</h2>
+    <details
+        id="dashboard-operational-overview"
+        class="ui-responsive-details group ui-card mb-12 overflow-hidden"
+        open
+        data-responsive-details
+        data-responsive-details-mobile-open="false"
+        aria-labelledby="operations-overview-title"
+    >
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 14 days') }}</span>
+                <span id="operations-overview-title" class="mt-1 block text-xl font-semibold text-primary">{{ __('Operational overview') }}</span>
+                <span class="mt-1 block text-sm font-normal leading-6 text-secondary">{{ __('Deployment, health and plan signals for this workspace.') }}</span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="ui-responsive-details__content border-t border-primary p-5 lg:border-0 lg:p-0">
+            <div class="mb-4 flex justify-end">
+                <a href="{{ route('observability.index') }}" class="text-sm font-bold text-ternary underline">{{ __('Open observability') }}</a>
             </div>
-            <a href="{{ route('observability.index') }}" class="text-sm font-bold text-ternary underline">{{ __('Open observability') }}</a>
-        </div>
         <div class="grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
             <article class="ui-card p-5" aria-labelledby="deployment-volume-title">
                 <div class="flex items-start justify-between gap-3"><div><h3 id="deployment-volume-title" class="font-black text-primary">{{ __('Deployment volume') }}</h3><p class="mt-1 text-xs text-secondary">{{ trans_choice(':count release|:count releases', $trendSummary['deployments'], ['count' => $trendSummary['deployments']]) }}</p></div><div class="text-right"><p class="text-2xl font-black text-primary">{{ $trendSummary['success_rate'] === null ? '—' : $trendSummary['success_rate'].'%' }}</p><p class="text-xs text-secondary">{{ __('success') }}</p></div></div>
@@ -89,7 +101,8 @@
                 <p class="mt-5 border-t border-primary pt-3 text-xs leading-5 text-secondary">{{ __('Limits are checked again on the server for create, import, invitation, preview, and paid-feature actions.') }}</p>
             </article>
         </div>
-    </section>
+        </div>
+    </details>
 
     @php($healthOperational = $canManageSystemHealth ? $systemHealth['passed'] : $platformStatus['operational'])
     @if(in_array('status', $dashboardWidgets, true))
