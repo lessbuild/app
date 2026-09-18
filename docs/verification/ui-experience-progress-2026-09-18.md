@@ -396,10 +396,63 @@ Begin Slice 8: improve the backups, observability and automation hubs with
 status-first summaries and bounded, reachable sections while preserving
 entitlements, filters, pagination, credential handling and operational links.
 
+## Slice 8 — backup readiness hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The backups page led with five evidence metrics, while the next setup or
+recovery action was implicit. Destinations, schedules and history also had no
+stable in-page targets, so mobile users had to scan the evidence block before
+reaching the operational controls.
+
+### Boundaries and principle
+
+The backup view owns presentation order and responsive disclosure. Existing
+recovery-summary queries, destination and schedule data, authorization,
+validation, backup actions and restore semantics remain unchanged. This is
+single responsibility at the UI boundary: the view makes readiness actionable
+without moving backup state or recovery rules into a new abstraction.
+
+### Implementation
+
+- Added a status-first protection card derived only from existing destination
+  and recovery evidence state, with the next relevant in-page action.
+- Grouped the existing completion, transport, restore and independent
+  verification metrics into a responsive evidence disclosure: open on desktop
+  and in server-rendered/no-JavaScript output, collapsed on mobile.
+- Added stable anchors for readiness, recovery evidence, destinations,
+  schedules and backup history.
+- Added the real backups page to the isolated browser fixture and verified the
+  desktop/mobile evidence behavior.
+
+### Verification
+
+- Backup recovery, destination, managed-backup and restore-verification
+  coverage: **24 tests / 196 assertions**.
+- Isolated backups fixture renderer: **1 test / 23 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including backup evidence disclosure and the existing dashboard, deployment,
+  provider, theme and navigation checks: **10 passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `7d1af0e` was pushed to `origin/main`.
+
+### Exact next task
+
+Begin Slice 9: improve the observability hub with a status-first incident
+summary, reachable evidence sections and responsive secondary panels while
+preserving filters, authorization, pagination, alert actions and telemetry
+query bounds.
+
 ## Remaining planned slices
 
-1. Backups, observability and automation hubs.
-2. Remaining page families and final responsive/accessibility verification.
+1. Observability hub.
+2. Automation hub.
+3. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
