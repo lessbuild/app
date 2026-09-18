@@ -1,5 +1,23 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the deployment comparison, build history,
+repository inventory, read-only impact preview and repository webhook delivery
+history were converted from wide tables to responsive cards and stacked
+comparison sections. Deployment status, revisions, links, path reasoning,
+matched paths, webhook outcomes and pagination remain available without
+horizontal scrolling. The existing deployment timeline and operational
+actions were not changed.
+
+Focused deployment/repository coverage passed **39 tests / 374 assertions**,
+including explicit checks that the affected views no longer emit tables. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+fast-forwarded to `d3c2c29`, the service is active and the live-runtime smoke
+passed (**1 test**). Commit `d3c2c29` (`Replace deployment tables with
+responsive cards`) is pushed to `origin/main`. No routes, query filters,
+authorization, exports, webhook semantics, deployment records or queued jobs
+changed. The exact next task is to convert the remaining resource-management
+tables, beginning with servers and websites/health checks.
+
 Latest continuation: September 18 backup history and provider inventory were
 converted from wide tables to responsive cards. Backup history now has one
 disclosure-based list for every viewport instead of separate desktop and
