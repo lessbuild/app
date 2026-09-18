@@ -19,6 +19,49 @@
         {{ __('Compare recorded deployment outcomes and operator context. This view does not fetch source code or contact the repository provider.') }}
     </div>
 
+    @php
+        $durationComparison = match (true) {
+            $durationDelta === null => __('Unavailable'),
+            $durationDelta > 0 => __(':duration slower', ['duration' => \App\Models\Build::formatDuration($durationDelta)]),
+            $durationDelta < 0 => __(':duration faster', ['duration' => \App\Models\Build::formatDuration(abs($durationDelta))]),
+            default => __('No change'),
+        };
+    @endphp
+
+    <x-ui.insights
+        id="build-comparison-insights"
+        class="mt-6"
+        :summary="__('Build #:id compared with build #:baseline', ['id' => $build->id, 'baseline' => $baseline->id])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-ui.stat
+                :label="__('Baseline status')"
+                :value="str($baseline->status)->replace('_', ' ')->title()"
+                :description="__('Recorded outcome for build #:id.', ['id' => $baseline->id])"
+            />
+            <x-ui.stat
+                :label="__('Current status')"
+                :value="str($build->status)->replace('_', ' ')->title()"
+                :description="__('Recorded outcome for build #:id.', ['id' => $build->id])"
+            />
+            <x-ui.stat
+                :label="__('Duration change')"
+                :value="$durationComparison"
+                :description="__('Current build compared with the baseline.')"
+            />
+            <x-ui.stat
+                :label="__('Current revision')"
+                :value="$build->shortRevision()"
+                :description="__('The immutable revision recorded for the current build.')"
+            />
+            <x-ui.stat
+                :label="__('Current trigger')"
+                :value="str($build->trigger_source)->replace('_', ' ')->title()"
+                :description="__('How the current deployment was started.')"
+            />
+        </dl>
+    </x-ui.insights>
+
     <div class="ui-card mt-6 overflow-x-auto">
         <table class="min-w-full divide-y divide-primary text-sm">
             <thead>

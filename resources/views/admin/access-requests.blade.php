@@ -13,6 +13,27 @@
         <x-ui.button href="{{ route('admin.access-requests.export', array_filter(['status' => $status])) }}" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
     </div>
 
+    <x-ui.insights
+        id="access-request-insights"
+        class="mt-6"
+        :summary="$status ? __('Showing :status access requests', ['status' => ucfirst($status)]) : __('All access-request statuses')"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <x-ui.stat
+                :label="__('Total requests')"
+                :value="$counts->sum()"
+                :description="__('All retained access requests across statuses.')"
+            />
+            @foreach (\App\Models\AccessRequest::STATUSES as $item)
+                <x-ui.stat
+                    :label="ucfirst($item)"
+                    :value="$counts[$item] ?? 0"
+                    :description="__('Requests currently marked :status.', ['status' => $item])"
+                />
+            @endforeach
+        </dl>
+    </x-ui.insights>
+
     <div class="mt-6 space-y-4">
         @forelse ($requests as $lead)
             <x-ui.card class="p-5 sm:p-6">

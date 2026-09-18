@@ -66,6 +66,35 @@
                 </div>
             </div>
 
+            <x-ui.insights
+                id="repository-impact-insights"
+                class="mt-5"
+                :summary="$preview->changedPaths === null ? __('Conservative result because changed paths are unavailable') : __('Read-only path impact summary')"
+            >
+                <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <x-ui.stat
+                        :label="__('Targets evaluated')"
+                        :value="count($preview->targets)"
+                        :description="__('Enabled automatic deployment targets in this workspace.')"
+                    />
+                    <x-ui.stat
+                        :label="__('Affected')"
+                        :value="$preview->counts[\App\Data\RepositoryChangeImpact::AFFECTED]"
+                        :description="__('A configured path changed and deployment remains conservative.')"
+                    />
+                    <x-ui.stat
+                        :label="__('Unaffected')"
+                        :value="$preview->counts[\App\Data\RepositoryChangeImpact::UNAFFECTED]"
+                        :description="__('No configured path matched the supplied changes.')"
+                    />
+                    <x-ui.stat
+                        :label="__('Conservative targets')"
+                        :value="$preview->counts[\App\Data\RepositoryChangeImpact::AFFECTED] + $preview->counts[\App\Data\RepositoryChangeImpact::UNKNOWN]"
+                        :description="__('Affected or unknown targets that should not be skipped automatically.')"
+                    />
+                </dl>
+            </x-ui.insights>
+
             @if ($preview->isEmpty())
                 <x-ui.empty-state
                     class="mt-4"

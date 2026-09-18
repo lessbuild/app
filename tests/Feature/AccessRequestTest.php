@@ -104,7 +104,10 @@ class AccessRequestTest extends TestCase
         $this->actingAs($user)->get(route('admin.access-requests.index'))->assertForbidden();
         $this->actingAs($user)->patch(route('admin.access-requests.update', $lead), ['status' => 'contacted'])->assertForbidden();
         $this->actingAs($admin)->get(route('admin.access-requests.index'))
-            ->assertOk()->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)->assertDontSee('<script>alert(1)</script>', false);
+            ->assertOk()
+            ->assertSee('<details id="access-request-insights"', false)
+            ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)
+            ->assertDontSee('<script>alert(1)</script>', false);
         $this->actingAs($admin)->patch(route('admin.access-requests.update', $lead), [
             'status' => 'invited', 'review_notes' => 'Invite sent manually.',
         ])->assertSessionHas('success');

@@ -49,6 +49,7 @@ class DeploymentComparisonTest extends TestCase
         $response
             ->assertSuccessful()
             ->assertSee('Compare deployments')
+            ->assertSee('<details id="build-comparison-insights"', false)
             ->assertSee('Baseline Build #'.$baseline->id)
             ->assertSee('Current Build #'.$current->id)
             ->assertSee(route('builds.show', $baseline))

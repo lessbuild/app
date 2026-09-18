@@ -66,6 +66,7 @@ class RepositoryImpactPreviewTest extends TestCase
             ->assertDontSee('Private')
             ->assertSee('Affected')
             ->assertSee('Unaffected')
+            ->assertSee('<details id="repository-impact-insights"', false)
             ->assertSee('apps/storefront');
 
         $this->assertDatabaseCount('builds', 0);
@@ -101,6 +102,7 @@ class RepositoryImpactPreviewTest extends TestCase
             })
             ->assertSee('Changed paths were unavailable')
             ->assertSee('Unknown')
+            ->assertSee('<details id="repository-impact-insights"', false)
             ->assertSee('deployable');
 
         $this->assertDatabaseCount('builds', 0);
