@@ -75,6 +75,37 @@ Current BuildPusher evidence from the development fixture:
   treatment, beginning with the page-family inventory and a low-risk reusable
   presentation component.
 
+### Slice 2 — shared resource headers and local navigation
+
+- User problem: resource pages used a shared component, but its visual
+  treatment did not provide enough context or a consistent compact way to move
+  between long page sections on small screens.
+- Entry points: `x-ui.page-header`, the layout heading partial, major resource
+  index views, and the Observability and Automation section links.
+- Boundary: added an optional contextual eyebrow to the shared page-header
+  component, a reusable `x-ui.local-nav` component, and semantic responsive
+  styles for both. Applied the eyebrow to Applications, Servers, Websites,
+  Repositories, Providers, Deployments, Backups, Observability, Databases,
+  Domains, Costs, Automation and Activity. Converted the two existing section
+  link rows to the shared local-nav component.
+- SOLID/Laravel rationale: repeated presentation responsibilities are owned by
+  reusable Blade components and CSS rather than copied into controllers or
+  individual pages; page-specific actions remain slots and existing route
+  semantics remain page-owned.
+- Preserved contracts: no route, query, authorization, form, persistence or
+  response behavior changed. Existing page titles, descriptions, actions and
+  anchor targets remain intact. Local navigation is keyboard-focusable and
+  horizontally scrollable on narrow screens.
+- Verification: 45 focused dashboard/local-UI tests passed with 670
+  assertions; 36 focused insights/observability/search tests passed with 340
+  assertions; Blade view cache passed; Pint passed; Vite build passed; light
+  and dark asset-layout fixtures passed at 390px and 1440px; `git diff --check`
+  passed.
+- Commit and push: `e20ea89 Unify resource page headers`, pushed to
+  `origin/main`.
+- Next task: polish the deployment, infrastructure and recovery page family,
+  starting with long list pages and their mobile filter/action hierarchy.
+
 ## Remaining sequence
 
 1. Dashboard hierarchy and first-value experience.
