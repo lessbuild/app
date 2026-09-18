@@ -3,6 +3,7 @@
 namespace App\Actions\Repository;
 
 use App\Abstracts\Publishable;
+use App\Exceptions\DeploymentScriptUploadException;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Services\ProvisioningCallbackUrl;
@@ -162,7 +163,11 @@ class PublishRepositoryAction extends Publishable
         );
         $remotePath = "/tmp/{$this->fileName}.sh";
 
-        $this->upload();
+        try {
+            $this->upload();
+        } catch (\RuntimeException $exception) {
+            throw new DeploymentScriptUploadException($exception->getMessage(), previous: $exception);
+        }
 
         $output = trim($this->run());
         if (! ctype_digit($output) || (int) $output < 1) {

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Repository\CancelDeploymentAction;
+use App\Exceptions\DeploymentScriptUploadException;
 use App\Jobs\Repository\PublishRepositoryJob;
 use App\Models\Build;
 use App\Models\Provider;
@@ -240,6 +241,46 @@ class DeploymentCancellationTest extends TestCase
         $this->assertSame(9876, $build->remote_process_id);
         $this->assertSame("/tmp/lessbuild-deployment-{$build->id}.sh", $build->remote_process_path);
         $this->assertNotNull($build->started_at);
+    }
+
+    public function test_upload_failure_returns_the_build_to_the_queue_for_a_safe_retry(): void
+    {
+        [, $build] = $this->build();
+        $build->update([
+            'status' => Build::STATUS_QUEUED,
+            'remote_process_id' => null,
+            'remote_process_path' => null,
+            'started_at' => null,
+            'last_heartbeat_at' => null,
+        ]);
+        config(['lessbuild.ssh_upload_attempts' => 1, 'lessbuild.ssh_retry_delay_ms' => 0]);
+
+        $process = Mockery::mock(Process::class);
+        $process->shouldReceive('isSuccessful')->once()->andReturnFalse();
+        $process->shouldReceive('getErrorOutput')->once()->andReturn('SSH connection failed');
+        $ssh = Mockery::mock(ManagedSsh::class);
+        $ssh->shouldReceive('upload')->once()->andReturn($process);
+        $runner = Mockery::mock(Runner::class);
+        $runner->shouldReceive('server')->once()->andReturnSelf();
+        $runner->shouldReceive('create')->once()->andReturn($ssh);
+
+        try {
+            (new PublishRepositoryJob($build))->handle($runner);
+            $this->fail('An upload failure should be retried by the queue.');
+        } catch (DeploymentScriptUploadException $exception) {
+            $this->assertStringContainsString('SSH connection failed', $exception->getMessage());
+        }
+
+        $build->refresh();
+        $this->assertSame(Build::STATUS_QUEUED, $build->status);
+        $this->assertNull($build->started_at);
+        $this->assertNull($build->last_heartbeat_at);
+        $this->assertNull($build->remote_process_id);
+        $this->assertNull($build->remote_process_path);
+
+        (new PublishRepositoryJob($build->fresh()))->handle($this->publishingRunner($build));
+
+        $this->assertSame(Build::STATUS_RUNNING, $build->fresh()->status);
     }
 
     public function test_worker_does_not_regress_a_build_completed_during_remote_launch(): void

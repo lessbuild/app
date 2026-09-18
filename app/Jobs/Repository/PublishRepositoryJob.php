@@ -3,6 +3,7 @@
 namespace App\Jobs\Repository;
 
 use App\Actions\Repository\PublishRepositoryAction;
+use App\Exceptions\DeploymentScriptUploadException;
 use App\Models\Build;
 use App\Services\ApplicationConfigurationExecution;
 use App\Services\AutomaticDeploymentRollback;
@@ -72,7 +73,13 @@ class PublishRepositoryJob implements ShouldQueue
         }
 
         $this->build->refresh();
-        $process = (new PublishRepositoryAction($this->build, $runner))->handle();
+        try {
+            $process = (new PublishRepositoryAction($this->build, $runner))->handle();
+        } catch (DeploymentScriptUploadException $exception) {
+            $this->requeueAfterUploadFailure();
+
+            throw $exception;
+        }
 
         $running = Build::query()
             ->whereKey($this->build->id)
@@ -91,6 +98,30 @@ class PublishRepositoryJob implements ShouldQueue
                     'remote_process_path' => null,
                 ]);
         }
+    }
+
+    /**
+     * Return a build to the queue when no remote deployment process could exist yet.
+     *
+     * Upload failures are safe to retry because the remote script never reached the
+     * server. Clearing the launch lease lets the next queue attempt claim it again.
+     */
+    private function requeueAfterUploadFailure(): void
+    {
+        Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_DEPLOYING)
+            ->whereNull('remote_process_id')
+            ->whereNotNull('remote_process_path')
+            ->update([
+                'status' => Build::STATUS_QUEUED,
+                'started_at' => null,
+                'last_heartbeat_at' => null,
+                'remote_process_path' => null,
+                'release_name' => null,
+                'release_path' => null,
+                'failure_message' => null,
+            ]);
     }
 
     /**
