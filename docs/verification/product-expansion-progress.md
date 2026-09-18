@@ -1,5 +1,19 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the nested `Execution checkpoints` heading
+was removed from build and repository deployment timelines. The event/status
+rows and failure details remain available inside the single
+`DEPLOYMENT TIMELINE` surface, while the shared setup partial keeps its normal
+heading for server and website setup screens.
+
+The focused deployment suite passed **24 tests / 203 assertions**. Pint,
+`git diff --check` and Blade view caching passed. The isolated dev runtime was
+updated to `ce52a83`, the service is active and the live-runtime smoke passed
+(**1 test**). Commit `ce52a83` (`Remove nested deployment checkpoint heading`)
+is pushed to `origin/main`. The exact next task is to review the live build and
+repository pages for any remaining concrete timeline-density issue; no further
+checkpoint heading should be introduced unless it adds distinct user value.
+
 Latest continuation: September 18 deployment detail sections were consolidated
 into one `DEPLOYMENT TIMELINE` surface. Build details now combine the recorded
 milestones and execution checkpoints in the existing timeline card, while
