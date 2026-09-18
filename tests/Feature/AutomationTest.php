@@ -514,7 +514,7 @@ class AutomationTest extends TestCase
         Queue::assertPushed(ApplyEnvironmentRuntimeStateJob::class, 1);
     }
 
-    public function test_automation_screen_keeps_quick_start_visible_and_collapses_token_management_by_default(): void
+    public function test_automation_screen_keeps_quick_start_visible_and_marks_token_management_for_responsive_disclosure(): void
     {
         $user = User::factory()->create();
 
@@ -526,7 +526,7 @@ class AutomationTest extends TestCase
             ->assertSee('id="automation-tokens"', false)
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
     }
 
     public function test_owner_can_create_expiring_token_and_rotate_it(): void

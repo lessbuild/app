@@ -7,7 +7,7 @@
 ])
 
 @if ($collapsible)
-    <details @if ($id) id="{{ $id }}" @endif class="group grid gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.5fr)]" @if ($open) open @endif>
+    <details @if ($id) id="{{ $id }}" @endif class="ui-responsive-details group grid gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.5fr)]" open data-responsive-details data-responsive-details-mobile-open="{{ $open ? 'true' : 'false' }}">
         <summary class="ui-card flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
             <span>
                 <span class="block font-bold text-primary">{{ $title }}</span>
@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div class="ui-card overflow-hidden lg:block">
+    <div class="ui-responsive-details__content ui-card overflow-hidden lg:block">
         @if (! $collapsible)
             <div class="border-b border-primary px-4 py-4 lg:hidden">
                 <h2 class="font-bold text-primary">{{ $title }}</h2>

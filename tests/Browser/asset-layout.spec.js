@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'dashboard', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'dashboard', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -105,6 +105,24 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
                     await expect(page.locator('#command-palette-query')).toBeFocused();
                     await page.keyboard.press('Escape');
+                }
+                if (screen === 'organization' || screen === 'automation') {
+                    const disclosureIds = screen === 'organization'
+                        ? ['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete']
+                        : ['automation-tokens'];
+
+                    for (const id of disclosureIds) {
+                        const disclosure = page.locator(`#${id}`);
+                        const content = disclosure.locator('.ui-responsive-details__content');
+                        await expect(disclosure).toBeVisible();
+                        if (width >= 1024) {
+                            await expect(content).toBeVisible();
+                        } else {
+                            await expect(content).toBeHidden();
+                            await disclosure.locator('summary').click();
+                            await expect(content).toBeVisible();
+                        }
+                    }
                 }
                 if (width === 390) await page.screenshot({ path: test.info().outputPath(`${screen}.png`), fullPage: true });
             }

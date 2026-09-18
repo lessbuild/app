@@ -232,7 +232,7 @@
     </div>
 
     @if ($organization->owner->is(auth()->user()))
-        <details id="organization-delete" class="group ui-card mt-8 border-red-200 bg-red-50" @if ($deleteWorkspaceOpen) open @endif>
+        <details id="organization-delete" class="ui-responsive-details group ui-card mt-8 border-red-200 bg-red-50" open data-responsive-details data-responsive-details-mobile-open="{{ $deleteWorkspaceOpen ? 'true' : 'false' }}">
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:p-6 lg:hidden">
                 <span>
                     <span class="block text-xl font-black text-red-900">{{ __('Delete workspace') }}</span>
@@ -240,7 +240,7 @@
                 </span>
                 <span class="shrink-0 text-xl text-red-700 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
-            <div class="p-5 sm:p-6 lg:block">
+            <div class="ui-responsive-details__content p-5 sm:p-6 lg:block">
                 <div class="max-w-3xl">
                 <div class="flex items-start gap-3">
                     <svg class="mt-0.5 h-6 w-6 shrink-0 text-red-700" aria-hidden="true">

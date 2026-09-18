@@ -47,6 +47,40 @@
     <body class="font-sans text-sm text-primary bg-primary">
         {{ $slot }}
 
+        <script>
+            (() => {
+                const media = window.matchMedia('(min-width: 64rem)');
+
+                const syncResponsiveDetails = () => {
+                    document.querySelectorAll('[data-responsive-details]').forEach((details) => {
+                        if (media.matches) {
+                            details.open = true;
+                            details.dataset.responsiveDetailsAutoOpened = 'true';
+
+                            return;
+                        }
+
+                        if (details.dataset.responsiveDetailsInitialized !== 'true') {
+                            details.open = details.dataset.responsiveDetailsMobileOpen === 'true';
+                            details.dataset.responsiveDetailsInitialized = 'true';
+                            details.dataset.responsiveDetailsAutoOpened = 'false';
+                        }
+                    });
+                };
+
+                document.querySelectorAll('[data-responsive-details]').forEach((details) => {
+                    details.addEventListener('toggle', () => {
+                        if (! media.matches) {
+                            details.dataset.responsiveDetailsAutoOpened = 'false';
+                        }
+                    });
+                });
+
+                syncResponsiveDetails();
+                media.addEventListener('change', syncResponsiveDetails);
+            })();
+        </script>
+
         @if ($livewire)
             @livewireScripts
         @endif

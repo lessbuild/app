@@ -39,7 +39,7 @@ class OrganizationManagementTest extends TestCase
         Notification::assertSentOnDemand(OrganizationInvitationNotification::class);
     }
 
-    public function test_workspace_page_keeps_members_visible_and_collapses_secondary_administration_panels(): void
+    public function test_workspace_page_keeps_members_visible_and_marks_secondary_panels_for_responsive_disclosure(): void
     {
         $owner = User::factory()->create();
 
@@ -50,7 +50,7 @@ class OrganizationManagementTest extends TestCase
 
         foreach (['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete'] as $id) {
             $this->assertStringContainsString('id="'.$id.'"', $content);
-            $this->assertDoesNotMatchRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*>/', $content);
+            $this->assertMatchesRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
         }
 
         $this->assertStringContainsString('Members', $content);
@@ -79,9 +79,10 @@ class OrganizationManagementTest extends TestCase
 
         $content = $response->getContent();
 
-        $this->assertMatchesRegularExpression('/<details\s+id="organization-security-policy"[^>]*\bopen\b[^>]*>/', $content);
-        $this->assertDoesNotMatchRegularExpression('/<details\s+id="organization-notification-preferences"[^>]*\bopen\b[^>]*>/', $content);
-        $this->assertDoesNotMatchRegularExpression('/<details\s+id="organization-invite"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<details\s+id="organization-security-policy"[^>]*data-responsive-details-mobile-open="true"[^>]*>/', $content);
+        foreach (['organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete'] as $id) {
+            $this->assertMatchesRegularExpression('/<details\s+id="'.$id.'"[^>]*data-responsive-details-mobile-open="false"[^>]*>/', $content);
+        }
     }
 
     public function test_only_a_current_workspace_manager_can_invite_and_denial_precedes_malformed_input(): void
