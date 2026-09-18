@@ -200,13 +200,17 @@ class DeploymentLogTest extends TestCase
             '/<details(?=[^>]*id="deployment-progress")(?=[^>]*open)[^>]*>/',
             $failedContent,
         );
-        $this->assertMatchesRegularExpression(
+        $this->assertDoesNotMatchRegularExpression(
             '/<details(?=[^>]*id="deployment-log")(?=[^>]*open)[^>]*>/',
             $failedContent,
         );
         $failed
             ->assertSee('Deployment failed:')
             ->assertSeeText('Completed deployment output');
+        $this->assertLessThan(
+            strpos($failedContent, 'id="deployment-progress"'),
+            strpos($failedContent, 'Recovery guidance'),
+        );
     }
 
     public function test_late_log_callback_cannot_replace_a_canceled_deployment_log(): void
