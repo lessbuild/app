@@ -204,6 +204,8 @@ test('provider creation submits the selected provider without JavaScript', async
         await page.locator('#name').fill('Disposable connection');
         await page.locator('#description').fill('Provider form regression');
         await page.locator('#token').fill('fixture-private-token');
+        const tokenBounds = await page.locator('#token').boundingBox();
+        expect(tokenBounds.y).toBeLessThan(700);
         const request = page.waitForRequest(request => request.method() === 'POST');
         await page.getByRole('button', { name: 'Create Provider', exact: true }).click();
         const submitted = new URLSearchParams((await request).postData());
@@ -213,4 +215,19 @@ test('provider creation submits the selected provider without JavaScript', async
     } finally {
         await context.close();
     }
+});
+
+test('provider creation keeps credentials primary and monitoring collapsible on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/provider-create', { waitUntil: 'networkidle' });
+
+    const tokenBounds = await page.locator('#token').boundingBox();
+    expect(tokenBounds.y).toBeLessThan(700);
+
+    const monitoring = page.locator('#provider-monitoring-settings');
+    const content = monitoring.locator('.ui-responsive-details__content');
+    await expect(content).toBeHidden();
+    await monitoring.locator('summary').click();
+    await expect(content).toBeVisible();
 });

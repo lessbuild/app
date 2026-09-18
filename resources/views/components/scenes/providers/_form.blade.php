@@ -1,61 +1,70 @@
-@php($monitoringAllowed = app(\App\Services\Entitlements::class)->allows(auth()->user()->currentOrganization, 'monitoring'))
+@php
+    $monitoringAllowed = app(\App\Services\Entitlements::class)->allows(auth()->user()->currentOrganization, 'monitoring');
+    $selectedProvider = (string) old('provider', $provider->provider ?? '');
+    $monitoringHasErrors = $errors->hasAny([
+        'connection_monitoring_enabled',
+        'connection_check_interval_minutes',
+        'connection_failure_threshold',
+    ]);
+@endphp
 
-<div class="grid gap-6 bg-primary px-5 py-5 sm:grid-cols-2 sm:px-8">
-    @if (! isset($provider) && app(\App\Services\GitHubApp::class)->configured())
-        <x-ui.alert tone="info" class="sm:col-span-2">
-            <p class="font-semibold">{{ __('Recommended for GitHub') }}</p>
-            <p class="mt-1">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p>
-            <x-ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-ui.button>
-        </x-ui.alert>
-    @elseif (! isset($provider) && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Services\GitHubApp::class)->hasPrivateKey())
-        <x-ui.alert tone="warning" class="sm:col-span-2">
-            <p class="font-semibold">{{ __('GitHub App setup is incomplete') }}</p>
-            <p class="mt-1">{{ __('A platform administrator can upload the downloaded private key from a phone.') }}</p>
-            <x-ui.button :href="route('admin.github-app.setup')" variant="secondary" class="mt-3">{{ __('Set up GitHub App') }}</x-ui.button>
-        </x-ui.alert>
-    @endif
+<div class="grid gap-6 bg-primary px-5 py-5 sm:grid-cols-2 sm:px-8" x-data="{ selectedProvider: @js($selectedProvider) }">
 
     <fieldset class="sm:col-span-2">
         <legend class="text-sm font-semibold text-primary">{{ __('Provider') }}</legend>
         <p class="mt-1 text-xs text-secondary">{{ __('Choose the integration that owns this credential.') }}</p>
-        <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label="{{ __('Provider') }}">
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
-                <input type="radio" name="provider" value="digitalocean" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'digitalocean')>
+        <div class="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4" role="radiogroup" aria-label="{{ __('Provider') }}">
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="digitalocean" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'digitalocean')>
                 <span class="text-sm font-semibold text-primary">{{ __('DigitalOcean') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
-                <input type="radio" name="provider" value="github" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'github')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="github" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'github')>
                 <span class="text-sm font-semibold text-primary">{{ __('GitHub') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
-                <input type="radio" name="provider" value="gitlab" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'gitlab')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="gitlab" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'gitlab')>
                 <span class="text-sm font-semibold text-primary">{{ __('GitLab') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
-                <input type="radio" name="provider" value="bitbucket" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'bitbucket')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="bitbucket" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'bitbucket')>
                 <span class="text-sm font-semibold text-primary">{{ __('Bitbucket') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
-                <input type="radio" name="provider" value="hetzner" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'hetzner')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="hetzner" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'hetzner')>
                 <span class="text-sm font-semibold text-primary">{{ __('Hetzner Cloud') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
-                <input type="radio" name="provider" value="vultr" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'vultr')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="vultr" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'vultr')>
                 <span class="text-sm font-semibold text-primary">{{ __('Vultr') }}</span>
             </label>
 
-            <label class="group relative flex min-h-20 cursor-pointer items-center justify-center rounded-xl border border-primary bg-secondary p-4 text-center transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary sm:col-span-2 lg:col-span-1">
-                <input type="radio" name="provider" value="cloudflare" class="absolute left-3 top-3 h-4 w-4" required @checked(old('provider', $provider->provider ?? null) === 'cloudflare')>
+            <label class="group relative flex min-h-14 cursor-pointer items-center justify-start gap-3 rounded-lg border border-primary bg-secondary px-3 py-3 text-left transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
+                <input type="radio" name="provider" value="cloudflare" class="h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'cloudflare')>
                 <span class="text-sm font-semibold text-primary">{{ __('Cloudflare DNS') }}</span>
             </label>
         </div>
         <x-forms.errors name="provider" />
     </fieldset>
+
+    @if (! isset($provider) && app(\App\Services\GitHubApp::class)->configured())
+        <x-ui.alert tone="info" class="sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
+            <p class="font-semibold">{{ __('Recommended for GitHub') }}</p>
+            <p class="mt-1">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p>
+            <x-ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-ui.button>
+        </x-ui.alert>
+    @elseif (! isset($provider) && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Services\GitHubApp::class)->hasPrivateKey())
+        <x-ui.alert tone="warning" class="sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
+            <p class="font-semibold">{{ __('GitHub App setup is incomplete') }}</p>
+            <p class="mt-1">{{ __('A platform administrator can upload the downloaded private key from a phone.') }}</p>
+            <x-ui.button :href="route('admin.github-app.setup')" variant="secondary" class="mt-3">{{ __('Set up GitHub App') }}</x-ui.button>
+        </x-ui.alert>
+    @endif
 
     <div>
         <label for="token" class="block text-sm font-semibold text-primary">{{ __('Provider Token') }}</label>
@@ -99,7 +108,15 @@
         <x-forms.errors name="description" />
     </div>
 
-    <fieldset class="ui-card ui-card--muted p-4 sm:col-span-2">
+    <details id="provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block font-bold text-primary">{{ __('Connection monitoring') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">{{ $monitoringAllowed ? __('Optional automatic credential health checks.') : __('Manual connection tests are available on your current plan.') }}</span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <fieldset class="ui-responsive-details__content border-t border-primary p-4 lg:border-0">
         <legend class="sr-only">{{ __('Connection monitoring') }}</legend>
         <div class="flex items-start gap-3">
             <input type="hidden" name="connection_monitoring_enabled" value="0">
@@ -155,5 +172,6 @@
                 <x-forms.errors name="connection_failure_threshold" />
             </div>
         </div>
-    </fieldset>
+        </fieldset>
+    </details>
 </div>

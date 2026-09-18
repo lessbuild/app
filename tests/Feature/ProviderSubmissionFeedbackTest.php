@@ -54,6 +54,21 @@ class ProviderSubmissionFeedbackTest extends TestCase
         $response->assertSee('You can add a provider and test its connection manually.');
     }
 
+    public function test_provider_form_keeps_optional_monitoring_secondary_and_server_rendered(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get(route('providers.create'))->assertOk();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="provider-monitoring-settings")(?=[^>]*\\bopen\\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-open="false")[^>]*>/',
+            $response->getContent(),
+        );
+        $response
+            ->assertSee('Credentials are encrypted at rest and never shown in connection history.')
+            ->assertSee('Optional automatic credential health checks.')
+            ->assertSee('name="provider" value="digitalocean"', false)
+            ->assertSee('name="provider" value="github"', false);
+    }
+
     public function test_plan_rejection_is_visible_after_redirect_without_flashing_the_token(): void
     {
         config(['billing.enforce_entitlements' => true]);
