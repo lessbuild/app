@@ -5,13 +5,63 @@
         :description="__('Metrics, runtime logs, alert integrations, and public service health in one place.')"
     />
 
+    @php
+        $activeOperationalIncidentCount = $operationalIncidents
+            ->reject(fn ($incident) => $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED)
+            ->count();
+        $recentHealthFailureCount = $correlatedHealthChecks->count();
+    @endphp
+
+    <section id="observability-overview" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="observability-overview-title">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Response overview') }}</p>
+                <h2 id="observability-overview-title" class="mt-1 text-xl font-black text-primary">{{ __('Start with what needs attention') }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-secondary">{{ __('Review active response work and recent signals first, then open the supporting telemetry and communication controls.') }}</p>
+            </div>
+            <x-ui.badge tone="accent">{{ __('Workspace scope') }}</x-ui.badge>
+        </div>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <a href="#operational-incidents" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Active response') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $activeOperationalIncidentCount }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count incident|:count incidents', $activeOperationalIncidentCount, ['count' => $activeOperationalIncidentCount]) }}</p>
+            </a>
+            <a href="#correlated-signals" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Recent health signals') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $recentHealthFailureCount }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count failed check|:count failed checks', $recentHealthFailureCount, ['count' => $recentHealthFailureCount]) }}</p>
+            </a>
+            <a href="#server-telemetry" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Infrastructure') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $servers->count() }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count monitored server|:count monitored servers', $servers->count(), ['count' => $servers->count()]) }}</p>
+            </a>
+            <a href="#status-pages" class="ui-card ui-card--interactive block bg-secondary p-4">
+                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Communication') }}</p>
+                <p class="mt-2 text-2xl font-black text-primary">{{ $statusPages->count() }}</p>
+                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count status page|:count status pages', $statusPages->count(), ['count' => $statusPages->count()]) }}</p>
+            </a>
+        </div>
+
+        <nav class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-bold text-ternary" aria-label="{{ __('Observability sections') }}">
+            <a href="#operational-incidents" class="hover:underline">{{ __('Incidents') }}</a>
+            <a href="#server-telemetry" class="hover:underline">{{ __('Telemetry') }}</a>
+            <a href="#correlated-signals" class="hover:underline">{{ __('Deployment signals') }}</a>
+            <a href="#alert-destinations" class="hover:underline">{{ __('Alert destinations') }}</a>
+            <a href="#status-pages" class="hover:underline">{{ __('Status pages') }}</a>
+            <a href="#status-incident-timeline" class="hover:underline">{{ __('Status updates') }}</a>
+        </nav>
+    </section>
+
     @include('observability._operational-incidents')
 
-    <section class="ui-card mt-8 p-6">
+    <section id="server-telemetry" class="ui-card mt-8 scroll-mt-24 p-6" aria-labelledby="server-telemetry-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Infrastructure') }}</p>
-                <h2 class="mt-1 text-xl font-black text-primary">{{ __('Server telemetry') }}</h2>
+                <h2 id="server-telemetry-title" class="mt-1 text-xl font-black text-primary">{{ __('Server telemetry') }}</h2>
                 <p class="mt-1 text-sm text-secondary">{{ __('CPU, memory, disk, load, network and process history with threshold alerts.') }}</p>
             </div>
             <x-ui.badge>{{ __('30-day retention · 5-minute samples') }}</x-ui.badge>
@@ -98,15 +148,17 @@
         @endif
     </section>
 
-    <section class="ui-card mt-6 p-6">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Incident command centre') }}</p>
-                <h2 class="mt-1 text-xl font-black text-primary">{{ __('Recent deployment and health signals') }}</h2>
-            </div>
-            <p class="max-w-xl text-xs text-secondary">{{ __('Use timestamps and resource links to correlate an incident before recording the review below.') }}</p>
-        </div>
-        <div class="mt-5 grid gap-5 lg:grid-cols-2">
+    <details id="correlated-signals" class="ui-responsive-details group ui-card mt-6 scroll-mt-24 overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" aria-labelledby="correlated-signals-title">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:p-6 [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Incident command centre') }}</span>
+                <span id="correlated-signals-title" class="mt-1 block text-xl font-black text-primary">{{ __('Recent deployment and health signals') }}</span>
+                <span class="mt-1 block text-sm font-normal leading-6 text-secondary">{{ __('Use timestamps and resource links to correlate an incident before recording the review below.') }}</span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="ui-responsive-details__content border-t border-primary p-5 sm:p-6 lg:border-0">
+            <div class="grid gap-5 lg:grid-cols-2">
             <div>
                 <h3 class="text-xs font-bold uppercase text-secondary">{{ __('Deployments') }}</h3>
                 <div class="mt-2 space-y-2">
@@ -135,8 +187,9 @@
                     @endforelse
                 </div>
             </div>
+            </div>
         </div>
-    </section>
+    </details>
 
     @if ($environmentProjects->isNotEmpty())
         <section class="ui-card mt-6 p-6" aria-labelledby="environment-evidence-heading">
@@ -168,7 +221,7 @@
     @endif
 
     <div class="mt-8 grid gap-6 xl:grid-cols-2">
-        <section class="ui-card p-6">
+        <section id="alert-destination-panel" class="ui-card scroll-mt-24 p-6">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Integrations') }}</p>
             <h2 class="mt-1 text-xl font-black text-primary">{{ __('Alert destinations') }}</h2>
             <p class="mt-1 text-sm text-secondary">{{ __('Send signed failure and recovery events to Slack or your HTTPS webhook.') }}</p>
@@ -217,7 +270,7 @@
             </details>
         </section>
 
-        <section class="ui-card p-6">
+        <section id="status-page-panel" class="ui-card scroll-mt-24 p-6">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Customer communication') }}</p>
             <h2 class="mt-1 text-xl font-black text-primary">{{ __('Public status pages') }}</h2>
             <p class="mt-1 text-sm text-secondary">{{ __('Publish live component health and rolling 30-day uptime without exposing infrastructure details.') }}</p>
@@ -267,9 +320,9 @@
         </section>
     </div>
 
-    <section class="ui-card mt-6 p-6">
+    <section id="status-incident-timeline" class="ui-card mt-6 scroll-mt-24 p-6" aria-labelledby="status-incident-timeline-title">
         <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Communication timeline') }}</p>
-        <h2 class="mt-1 text-xl font-black text-primary">{{ __('Incidents and planned maintenance') }}</h2>
+        <h2 id="status-incident-timeline-title" class="mt-1 text-xl font-black text-primary">{{ __('Incidents and planned maintenance') }}</h2>
         <p class="mt-1 text-sm text-secondary">{{ __('Publish updates to a status page and notify its confirmed subscribers.') }}</p>
 
         <details id="status-incident-history" class="mt-5 rounded-xl border border-primary bg-primary p-4" @if ($errors->any() || $incidents->contains(fn ($incident) => ! in_array($incident->status, ['resolved', 'completed'], true))) open @endif>

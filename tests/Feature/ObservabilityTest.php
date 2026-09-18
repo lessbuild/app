@@ -81,6 +81,30 @@ class ObservabilityTest extends TestCase
         $this->assertStringContainsString('Publish status page', $content);
     }
 
+    public function test_observability_starts_with_response_overview_and_makes_signal_context_responsive(): void
+    {
+        [$owner] = $this->infrastructure();
+
+        $content = $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('Start with what needs attention')
+            ->assertSee('href="#operational-incidents"', false)
+            ->assertSee('href="#server-telemetry"', false)
+            ->assertSee('href="#correlated-signals"', false)
+            ->assertSee('id="status-incident-timeline"', false)
+            ->getContent();
+
+        $this->assertLessThan(
+            strpos($content, 'id="operational-incidents"'),
+            strpos($content, 'id="observability-overview"'),
+        );
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="correlated-signals")(?=[^>]*\bopen\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-open="false")[^>]*>/',
+            $content,
+        );
+    }
+
     public function test_metric_alert_rule_operations_use_workspace_policy_and_scoped_server_validation(): void
     {
         [$owner, $server] = $this->infrastructure();

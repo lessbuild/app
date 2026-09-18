@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'observability', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -142,6 +142,20 @@ for (const colorScheme of ['light', 'dark']) {
                     } else {
                         await expect(content).toBeHidden();
                         await evidence.locator('summary').click();
+                        await expect(content).toBeVisible();
+                    }
+                }
+                if (screen === 'observability') {
+                    await expect(page.locator('#observability-overview')).toBeVisible();
+                    await expect(page.locator('#operational-incidents')).toBeVisible();
+                    await expect(page.locator('#server-telemetry')).toBeVisible();
+                    const signals = page.locator('#correlated-signals');
+                    const content = signals.locator('.ui-responsive-details__content');
+                    if (width >= 1024) {
+                        await expect(content).toBeVisible();
+                    } else {
+                        await expect(content).toBeHidden();
+                        await signals.locator('summary').click();
                         await expect(content).toBeVisible();
                     }
                 }

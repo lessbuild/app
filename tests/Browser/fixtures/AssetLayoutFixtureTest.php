@@ -81,6 +81,8 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Deployment evidence')->getContent());
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
             ->assertSee('Protection status')->getContent());
+        File::put($directory.'/observability.html', $this->renderPage(route('observability.index'))->assertOk()
+            ->assertSee('Start with what needs attention')->getContent());
     }
 
     /** Render a fresh request with Livewire's per-request asset state reset. */
