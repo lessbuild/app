@@ -17,16 +17,26 @@
         </div>
     @endunless
 
-    <div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @foreach([
-            [__('Estimated monthly'), '$'.number_format($estimated, 2)],
-            [__('Configured servers'), $rows->count()],
-            [__('Needs attention'), $idleCount],
-            [__('Unknown prices'), $unknownCount],
-        ] as [$label, $value])
-            <x-ui.stat :label="$label" :value="$value" />
-        @endforeach
-    </div>
+    @php
+        $costSummaryOpen = $idleCount > 0 || $unknownCount > 0;
+    @endphp
+
+    <details id="cost-summary" class="ui-card group mt-8 overflow-hidden" @if ($costSummaryOpen) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>{{ __('Cost summary') }}</span>
+            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ '$'.number_format($estimated, 2) }} {{ __('estimated monthly') }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
+        </summary>
+        <div class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-4">
+            @foreach([
+                [__('Estimated monthly'), '$'.number_format($estimated, 2)],
+                [__('Configured servers'), $rows->count()],
+                [__('Needs attention'), $idleCount],
+                [__('Unknown prices'), $unknownCount],
+            ] as [$label, $value])
+                <x-ui.stat :label="$label" :value="$value" />
+            @endforeach
+        </div>
+    </details>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <section class="ui-card overflow-hidden">

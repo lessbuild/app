@@ -78,6 +78,32 @@ class ProductImprovementTest extends TestCase
         $this->assertSame('100.00', $owner->currentOrganization->fresh()->monthly_infrastructure_budget);
     }
 
+    public function test_cost_summary_collapses_when_resource_pricing_has_no_attention_state(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        [$owner] = $this->application();
+        Size::query()->create([
+            'slug' => 's-1',
+            'description' => 'Small',
+            'memory' => 1024,
+            'vcpus' => 1,
+            'disk' => 25,
+            'transfer' => 1,
+            'price_monthly' => 12,
+            'price_hourly' => 0.02,
+            'catalog_synced_at' => now(),
+        ]);
+        $owner->servers()->firstOrFail()->update(['size' => 's-1']);
+
+        $content = $this->actingAs($owner)
+            ->get(route('costs.index'))
+            ->assertOk()
+            ->assertSee('$12.00')
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression('/<details id="cost-summary"[^>]*\bopen\b[^>]*>/', $content);
+    }
+
     public function test_cost_budget_denies_non_managers_before_validation_and_writing(): void
     {
         config(['billing.enforce_entitlements' => false]);
