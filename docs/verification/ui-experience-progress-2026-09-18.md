@@ -505,10 +505,64 @@ overview and responsive secondary panels while preserving token secrecy,
 entitlement checks, request contracts, queued workflows and no-JavaScript
 forms.
 
+## Slice 10 — automation hub hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+The automation page exposed token management, API quick-start instructions and
+per-application workflow controls, but users had no summary of what was
+enabled, how many environments existed or how much scheduled work was already
+configured. The API quick-start block also occupied full mobile height before
+the user reached application workflows.
+
+### Boundaries and principle
+
+The automation view owns presentation order, existing relationship counts and
+responsive disclosure. AutomationController, entitlements, Form Requests,
+policies, actions, workflow parsing, token secrecy, queue behavior and
+persisted values remain unchanged. This is single responsibility at the UI
+boundary: the view summarizes already-loaded data without introducing a
+second source of automation state.
+
+### Implementation
+
+- Added an automation overview with API access, application, environment and
+  scheduled-operation counts.
+- Added direct navigation to tokens, quick start and application workflows.
+- Converted the CLI quick-start panel into a responsive disclosure that is
+  open on desktop and in server-rendered/no-JavaScript output, collapsed on
+  mobile.
+- Added stable workflow anchors and richer application summaries showing
+  environment, deploy-schedule and task counts.
+- Added overview and quick-start browser coverage to the isolated fixture and
+  responsive matrix.
+
+### Verification
+
+- Automation feature coverage: **34 tests / 173 assertions**.
+- Isolated automation fixture renderer: **1 test / 26 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including the automation overview, token and quick-start disclosures plus
+  the existing backup, observability, deployment, dashboard, provider, theme
+  and navigation checks: **10 passed**.
+- Required-PHP Pint, diff check and npm build: passed.
+
+### Commit and push
+
+Implementation commit 99b1faa was pushed to origin/main.
+
+### Exact next task
+
+Begin the final page-family audit: inspect the remaining high-traffic
+dashboard, project, resource, settings and public pages for the same
+status-first, responsive and accessibility issues, then run the complete
+verification gate without changing public behavior.
+
 ## Remaining planned slices
 
-1. Automation hub.
-2. Remaining page families and final responsive/accessibility verification.
+1. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
