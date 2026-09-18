@@ -1063,6 +1063,49 @@ where the relevant controls were not visibly grouped or reopened.
 
 | Phase 23: domain management hierarchy | Complete with browser follow-up | 8 focused tests / 49 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `ee39d5a` pushed to `origin/main` | Inspect load-balancer create/node workflows for dense controls and first-use/error-state hierarchy |
 
+## Phase 24 — load-balancer workflow hierarchy
+
+### Responsibility problem
+
+The high-availability page kept route creation, application-node inventory and
+node mutation controls in the default document flow. A new workspace therefore
+opened with a long setup form, while a configured route continued to show all
+node controls even after the healthy topology was complete. Validation feedback
+also had no panel-specific context.
+
+### Boundaries and preserved behavior
+
+- `LoadBalancerController`, Form Requests, policies, entitlement checks,
+  actions, apply/remove jobs and remote configuration behavior remain
+  unchanged. The UI markers used to restore context are ignored by validated
+  action data and do not alter persistence.
+- Empty workspaces keep route creation open for first-use guidance. Once a
+  route exists, its creation form collapses on mobile and reopens only for its
+  own validation state; non-sensitive inputs are restored after failure.
+- Application-node management is grouped per route. It opens while a route has
+  fewer than two nodes or a failed state, then collapses after a healthy
+  two-node topology. Status and Apply remain in the always-visible route
+  header.
+- Node and route actions, authorization/entitlement ordering, validation keys,
+  response messages, queue dispatch, self-routing safeguards and remote
+  lifecycle semantics are unchanged.
+
+### Verification
+
+- `LoadBalancerOperationsTest` passed: 5 tests / 32 assertions, including
+  lifecycle jobs, self-routing rejection, viewer denial before validation,
+  entitlement enforcement and empty/incomplete/complete disclosure states.
+  Pint, Blade view compilation and `git diff --check` passed.
+- Commit `6ad6be9` (`Improve load balancer workflow hierarchy`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; route/node attention states and
+  validation context are covered by feature tests and compiled markup.
+
+| Phase 24: load-balancer workflow hierarchy | Complete with browser follow-up | 5 focused tests / 32 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6ad6be9` pushed to `origin/main` | Audit remaining dense settings and operational pages for primary-result hierarchy and progressive disclosure |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
