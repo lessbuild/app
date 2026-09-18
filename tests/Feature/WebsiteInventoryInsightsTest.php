@@ -48,6 +48,8 @@ class WebsiteInventoryInsightsTest extends TestCase
             ->assertSee('Failed websites')
             ->assertSee('Unhealthy websites')
             ->assertSee('Needs attention')
+            ->assertSee('data-website-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Foreign private site')
             ->assertDontSee('PRIVATE_WEBSITE_SECRET');
     }

@@ -108,102 +108,70 @@
 
     <!--
      ! ------------------------------------------------------------
-     ! List Websites
+    ! List Websites
      ! ------------------------------------------------------------
      !-->
     @if(!$websites->isEmpty())
-        <div class="ui-card mt-6 overflow-hidden">
-            <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
-                <thead class="bg-primary border-l border-r border-primary">
-                    <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                            {{ __('Website') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Server') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Status') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Health') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Added') }}
-                        </th>
-                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary bg-primary">
-                    @foreach($websites as $website)
-                        <tr class="border-l border-r border-primary">
-                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 shrink-0">
-                                        <x-avatar :name="$website->name" class="h-10 w-10 rounded-md text-sm" />
-                                    </div>
-                                    <a href="{{ route('websites.show', $website) }}" class="ml-4">
-                                        <div class="font-medium text-ternary">
-                                            {{ $website->name }}
-                                        </div>
-                                        <div class="text-secondary">
-                                            {{ $website->url }}
-                                        </div>
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                                <a href="{{ route('servers.show', $website->server) }}" class="text-ternary cursor-pointer">
-                                    {{ $website->server->label }}
-                                </a>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                    @if ($website->provisioning_status === \App\Models\Website::STATUS_ACTIVE)
-                                        <x-ui.badge tone="success">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
-                                    @elseif ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
-                                        <x-ui.badge tone="danger">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
-                                    @else
-                                        <x-ui.badge tone="accent">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
-                                    @endif
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Website inventory') }}">
+            @foreach($websites as $website)
+                <article data-website-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-avatar :name="$website->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <div class="min-w-0">
+                                <a href="{{ route('websites.show', $website) }}" class="font-semibold text-primary hover:underline">{{ $website->name }}</a>
+                                <p class="truncate text-sm text-secondary">{{ $website->url }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($website->provisioning_status === \App\Models\Website::STATUS_ACTIVE)
+                                <x-ui.badge tone="success">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @elseif ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
+                                <x-ui.badge tone="danger">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="accent">{{ str($website->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @endif
+                            <x-ui.button :href="route('websites.show', $website)" variant="secondary">{{ __('View website') }}</x-ui.button>
+                        </div>
+                    </div>
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Server') }}</dt>
+                            <dd class="mt-1 text-primary"><a href="{{ route('servers.show', $website->server) }}" class="text-ternary hover:underline">{{ $website->server->label }}</a></dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Health') }}</dt>
+                            <dd class="mt-1 text-primary">
                                 @if (! $website->health_check_enabled)
                                     <x-ui.badge>{{ __('Disabled') }}</x-ui.badge>
+                                @elseif ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
+                                    <x-ui.badge tone="success">{{ $website->health_status }}</x-ui.badge>
+                                @elseif ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
+                                    <x-ui.badge tone="danger">{{ $website->health_status }}</x-ui.badge>
                                 @else
-                                    @if ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
-                                        <x-ui.badge tone="success">{{ $website->health_status }}</x-ui.badge>
-                                    @elseif ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY)
-                                        <x-ui.badge tone="danger">{{ $website->health_status }}</x-ui.badge>
-                                    @else
-                                        <x-ui.badge>{{ $website->health_status }}</x-ui.badge>
-                                    @endif
+                                    <x-ui.badge>{{ $website->health_status }}</x-ui.badge>
+                                @endif
+                                @if ($website->health_check_enabled)
                                     @unless ($website->health_monitoring_enabled)
-                                        <div class="text-xs font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</div>
+                                        <span class="mt-1 block font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</span>
                                     @else
-                                        <div class="text-xs text-secondary">
-                                            {{ trans_choice('Every :count minute|Every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}
-                                        </div>
+                                        <span class="mt-1 block text-secondary">{{ trans_choice('Every :count minute|Every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
                                     @endunless
                                 @endif
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary">
-                                    {{ $website->created_at->diffForHumans() }}
-                                </div>
-                            </td>
-                            <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <a href="{{ route('websites.show', $website) }}">
-                                    <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
-                                        <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            </div>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
+                            <dd class="mt-1 text-primary">{{ str($website->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Added') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $website->created_at->diffForHumans() }}</dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
         </div>
         <div class="py-4">
             {{ $websites->links() }}

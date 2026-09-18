@@ -60,8 +60,10 @@ class WebsiteHealthHistoryTest extends TestCase
             ->assertDontSee('<script>latest failure</script>', false)
             ->assertDontSee('Old check hidden from the page')
             ->assertDontSee('Private check result')
+            ->assertSee('data-website-health-check', false)
+            ->assertDontSee('<table', false)
             ->assertSee(route('websites.health-checks.export', $website));
-        $this->assertSame(20, substr_count($page->getContent(), '<tr class="align-top">'));
+        $this->assertSame(20, substr_count($page->getContent(), 'data-website-health-check'));
 
         $export = $this->get(route('websites.health-checks.export', $website));
         $export

@@ -48,6 +48,8 @@ class ServerInventoryInsightsTest extends TestCase
             ->assertSee('Failed servers')
             ->assertSee('Hosted websites')
             ->assertSee('Latest matching server')
+            ->assertSee('data-server-card', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('Foreign private server')
             ->assertDontSee('Foreign private website')
             ->assertDontSee('owner-private-key-secret');

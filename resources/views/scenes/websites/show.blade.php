@@ -218,51 +218,10 @@
                     <span>{{ __('Latest check results') }}</span>
                     <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
                 </summary>
-                <div class="border-t border-primary p-0">
-                    <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-primary bg-primary text-sm">
-                    <thead>
-                        <tr>
-                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Result') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Source') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Response') }}</th>
-                            <th scope="col" class="px-4 py-3 text-left font-semibold text-secondary">{{ __('Endpoint') }}</th>
-                            <th scope="col" class="px-4 py-3 text-right font-semibold text-secondary">{{ __('Checked') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-primary">
-                        @foreach ($healthChecks as $check)
-                            <tr class="align-top">
-                                <td class="px-4 py-3">
-                                    @if ($check->successful)
-                                        <x-ui.badge tone="success">{{ __('Healthy') }}</x-ui.badge>
-                                    @else
-                                        <x-ui.badge tone="danger">{{ __('Failed') }}</x-ui.badge>
-                                    @endif
-                                    @if ($check->error)
-                                        <p class="mt-2 max-w-md whitespace-pre-wrap break-words text-xs text-red-700">{{ $check->error }}</p>
-                                    @endif
-                                </td>
-                                <td class="whitespace-nowrap px-4 py-3 text-primary">{{ str($check->source)->title() }}</td>
-                                <td class="whitespace-nowrap px-4 py-3 text-primary">
-                                    @if ($check->http_status)
-                                        {{ __('HTTP :status', ['status' => $check->http_status]) }}
-                                    @else
-                                        {{ __('No status') }}
-                                    @endif
-                                    <span class="block text-xs text-secondary">
-                                        {{ $check->duration_ms !== null ? __(':duration ms', ['duration' => $check->duration_ms]) : __('Duration unavailable') }}
-                                    </span>
-                                </td>
-                                <td class="max-w-md break-all px-4 py-3 font-mono text-xs text-primary">{{ $check->endpoint }}</td>
-                                <td class="whitespace-nowrap px-4 py-3 text-right text-secondary" title="{{ $check->checked_at }}">
-                                    {{ $check->checked_at->diffForHumans() }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    </table>
-                    </div>
+                <div class="divide-y divide-primary border-t border-primary">
+                    @foreach ($healthChecks as $check)
+                        @include('scenes.websites._health-check-card', ['check' => $check])
+                    @endforeach
                 </div>
             </details>
         @endif

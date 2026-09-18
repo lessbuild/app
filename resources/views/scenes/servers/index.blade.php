@@ -91,92 +91,62 @@
 
     <!--
      ! ------------------------------------------------------------
-     ! List Servers
+    ! List Servers
      ! ------------------------------------------------------------
      !-->
     @if(!$servers->isEmpty())
-        <div class="ui-card mt-6 overflow-hidden">
-            <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-primary border-t border-b border-primary">
-                <thead class="bg-primary border-l border-r border-primary">
-                    <tr>
-                        <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-primary sm:pl-6">
-                            {{ __('Server') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Specifics') }}
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('IP') }}
-                            <span class="text-xs text-secondary">
-                                 (Public/Private)
-                            </span>
-                        </th>
-                        <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-primary">
-                            {{ __('Status') }}
-                        </th>
-                        <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-primary bg-primary">
-                    @foreach($servers as $server)
-                        <tr class="border-l border-r border-primary">
-                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                                <div class="flex items-center">
-                                    <div class="h-10 w-10 shrink-0">
-                                        <x-avatar :name="$server->label" class="h-10 w-10 rounded-md text-sm" />
-                                    </div>
-                                    <a href="{{ route('servers.show', $server) }}" class="ml-4">
-                                        <div class="font-medium text-ternary">
-                                            {{ $server->label }}
-                                        </div>
-                                        <div class="text-secondary">
-                                            @if (filled($server->display_name))
-                                                {{ $server->name }} &middot;
-                                            @endif
-                                            #{{ $server->identifier }}
-                                        </div>
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary flex flex-col">
-                                    <span>{{ $server->region }}</span>
-                                    <span>{{ $server->image }}</span>
-                                    <span>{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                <div class="text-primary flex flex-col">
-                                    <span>
-                                        {{ $server->public_ip ?? 'Not generated yet' }}
-                                    </span>
-                                    <span>
-                                        {{ $server->private_ip ?? 'Not generated yet' }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td class="whitespace-nowrap px-3 py-4 text-sm text-secondary">
-                                    @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
-                                        <x-ui.badge tone="success">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
-                                    @elseif ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
-                                        <x-ui.badge tone="danger">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
-                                    @else
-                                        <x-ui.badge tone="accent">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Server inventory') }}">
+            @foreach($servers as $server)
+                <article data-server-card class="p-4 sm:p-5">
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-avatar :name="$server->label" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <div class="min-w-0">
+                                <a href="{{ route('servers.show', $server) }}" class="font-semibold text-primary hover:underline">{{ $server->label }}</a>
+                                <p class="text-sm text-secondary">
+                                    @if (filled($server->display_name))
+                                        {{ $server->name }} &middot;
                                     @endif
-                            </td>
-                            <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <a href="{{ route('servers.show', $server) }}" aria-label="{{ __('View :name', ['name' => $server->label]) }}">
-                                    <svg class="inline-block w-4 h-4 text-secondary stroke-2 mr-2">
-                                        <use xlink:href="/assets/images/icons.svg#chevron-right"></use>
-                                    </svg>
-                                </a>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-            </div>
+                                    #{{ $server->identifier }}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if ($server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+                                <x-ui.badge tone="success">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @elseif ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
+                                <x-ui.badge tone="danger">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @else
+                                <x-ui.badge tone="accent">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                            @endif
+                            <x-ui.button :href="route('servers.show', $server)" variant="secondary">{{ __('View server') }}</x-ui.button>
+                        </div>
+                    </div>
+
+                    <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Specifics') }}</dt>
+                            <dd class="mt-1 text-primary">
+                                {{ $server->region }}
+                                <span class="mt-1 block text-secondary">{{ $server->image }}</span>
+                                <span class="mt-1 block text-secondary">{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Public IP') }}</dt>
+                            <dd class="mt-1 font-mono text-xs text-primary">{{ $server->public_ip ?? __('Not generated yet') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Private IP') }}</dt>
+                            <dd class="mt-1 font-mono text-xs text-primary">{{ $server->private_ip ?? __('Not generated yet') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
+                            <dd class="mt-1 text-primary">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
         </div>
         <div class="py-4">
             {{ $servers->links() }}
