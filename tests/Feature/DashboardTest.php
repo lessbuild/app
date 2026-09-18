@@ -134,12 +134,12 @@ class DashboardTest extends TestCase
             ->assertSee(route('websites.create'));
 
         $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'" class="[^"]*bg-secondary[^"]*"[^>]*aria-current="page"[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
+            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*bg-secondary[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
             $response->getContent(),
         );
     }
 
-    public function test_attention_summary_precedes_secondary_dashboard_sections(): void
+    public function test_dashboard_prioritizes_attention_and_setup_before_secondary_metrics(): void
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
         $content = $response->getContent();
@@ -150,8 +150,8 @@ class DashboardTest extends TestCase
         $this->assertNotFalse($overviewPosition);
         $this->assertNotFalse($attentionPosition);
         $this->assertNotFalse($setupPosition);
-        $this->assertLessThan($attentionPosition, $overviewPosition);
         $this->assertLessThan($setupPosition, $attentionPosition);
+        $this->assertLessThan($overviewPosition, $setupPosition);
     }
 
     public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void

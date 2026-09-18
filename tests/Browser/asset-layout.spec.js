@@ -78,6 +78,14 @@ for (const colorScheme of ['light', 'dark']) {
                     }), `${screen} action must not sit behind the footer`).toBe(true);
                 }
                 if (screen === 'dashboard') {
+                    expect(await page.evaluate(() => {
+                        const ids = ['dashboard-attention-title', 'setup-progress-title', 'operations-overview-title'];
+                        const elements = ids.map((id) => document.getElementById(id));
+
+                        return Boolean(elements.every(Boolean)
+                            && (elements[0].compareDocumentPosition(elements[1]) & Node.DOCUMENT_POSITION_FOLLOWING)
+                            && (elements[1].compareDocumentPosition(elements[2]) & Node.DOCUMENT_POSITION_FOLLOWING));
+                    }), 'dashboard should present attention, setup, then secondary metrics').toBe(true);
                     const override = colorScheme === 'dark' ? 'light' : 'dark';
                     await page.evaluate((theme) => document.documentElement.classList.add(theme), override);
                     await expect(page.locator('body')).toHaveCSS('background-color', override === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
