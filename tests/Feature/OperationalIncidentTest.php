@@ -6,6 +6,7 @@ use App\Jobs\DeliverAlertWebhookJob;
 use App\Models\OperationalIncident;
 use App\Models\Provider;
 use App\Models\User;
+use App\Models\Website;
 use App\Services\IncidentNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
@@ -102,6 +103,37 @@ class OperationalIncidentTest extends TestCase
         $this->actingAs($intruder)->post(route('observability.operational-incidents.notes.store', $incident), ['message' => 'No access'])->assertForbidden();
     }
 
+    public function test_observability_keeps_active_response_visible_and_collapses_resolved_history(): void
+    {
+        [$owner, $server] = $this->server();
+        $website = $owner->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'Application',
+            'description' => 'Website',
+            'environment' => 'APP_KEY=secret',
+            'url' => 'app.example.com',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $notifier = app(IncidentNotifier::class);
+
+        $notifier->fail($owner, 'server', $server->id, 'Server failed', 'Server response details.');
+        $notifier->recoverIfOpen($owner, 'server', $server->id, 'Server recovered', 'Server recovery details.');
+        $notifier->fail($owner, 'website', $website->id, 'Website failed', 'Website response details.');
+
+        $content = $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertStringContainsString('1 active', $content);
+        $this->assertStringContainsString('1 resolved', $content);
+        $this->assertMatchesRegularExpression('/<details id="operational-incident-history"[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<details id="operational-incident-history"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertStringContainsString('Acknowledge', $content);
+        $this->assertStringContainsString('Timeline and response', $content);
+        $this->assertStringContainsString(route('observability.operational-incidents.resolve', $this->activeIncident()), $content);
+    }
+
     public function test_authorization_precedes_validation_and_business_rejections_do_not_write(): void
     {
         [$owner, $server] = $this->server();
@@ -181,5 +213,10 @@ class OperationalIncidentTest extends TestCase
         $server = $owner->servers()->create(['provider_id' => $provider->id, 'name' => 'Production', 'public_ip' => '203.0.113.10', 'ssh_private_key' => 'key']);
 
         return [$owner, $server];
+    }
+
+    private function activeIncident(): OperationalIncident
+    {
+        return OperationalIncident::query()->where('status', OperationalIncident::STATUS_OPEN)->sole();
     }
 }
