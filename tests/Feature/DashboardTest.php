@@ -139,6 +139,21 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_attention_summary_precedes_secondary_dashboard_sections(): void
+    {
+        $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
+        $content = $response->getContent();
+        $overviewPosition = strpos($content, 'id="operations-overview-title"');
+        $attentionPosition = strpos($content, 'id="dashboard-attention-title"');
+        $setupPosition = strpos($content, 'id="setup-progress-title"');
+
+        $this->assertNotFalse($overviewPosition);
+        $this->assertNotFalse($attentionPosition);
+        $this->assertNotFalse($setupPosition);
+        $this->assertLessThan($attentionPosition, $overviewPosition);
+        $this->assertLessThan($setupPosition, $attentionPosition);
+    }
+
     public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void
     {
         Queue::fake();
