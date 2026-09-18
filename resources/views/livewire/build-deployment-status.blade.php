@@ -75,7 +75,23 @@
         @endif
     @endif
 
-    <section class="ui-card mt-4 p-5" aria-labelledby="deployment-evidence-title">
+    <details
+        id="deployment-evidence"
+        class="ui-responsive-details group ui-card mt-4 overflow-hidden"
+        open
+        data-responsive-details
+        data-responsive-details-mobile-open="false"
+        aria-labelledby="deployment-evidence-title"
+    >
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</span>
+                <span class="mt-1 block text-lg font-black text-primary">{{ __('Identity and approval context') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">{{ __('Revision, actor and approval details.') }}</span>
+            </span>
+            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="ui-responsive-details__content border-t border-primary p-5 lg:border-0">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</p>
@@ -127,7 +143,8 @@
                 </div>
             @endif
         </dl>
-    </section>
+        </div>
+    </details>
 
     <section class="ui-card mt-4 p-5" aria-labelledby="deployment-timeline-title">
         <div class="flex flex-wrap items-start justify-between gap-3">

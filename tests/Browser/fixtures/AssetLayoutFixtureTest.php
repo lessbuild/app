@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Build;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
@@ -67,6 +68,17 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Cancel pending deployment')->assertDontSee('fixture-private-command')->getContent());
         File::put($directory.'/configuration-create.html', $this->renderPage(route('projects.configuration.create', $project))
             ->assertOk()->assertSee('Recent application receipts')->getContent());
+
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'setup_stage' => 15,
+            'revision' => str_repeat('a', 40),
+            'trigger_source' => Build::TRIGGER_MANUAL,
+            'started_at' => now()->subMinutes(2),
+            'finished_at' => now(),
+        ]);
+        File::put($directory.'/build.html', $this->renderPage(route('builds.show', $build))->assertOk()
+            ->assertSee('Deployment evidence')->getContent());
     }
 
     /** Render a fresh request with Livewire's per-request asset state reset. */

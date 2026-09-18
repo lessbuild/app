@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -117,6 +117,19 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(quickAction).toHaveText('New app');
                     expect(new URL(await quickAction.getAttribute('href')).pathname).toBe('/projects/create');
                     await expect(quickAction).toHaveCSS('min-height', '44px');
+                }
+                if (screen === 'build') {
+                    const evidence = page.locator('#deployment-evidence');
+                    const content = evidence.locator('.ui-responsive-details__content');
+                    await expect(evidence).toBeVisible();
+                    await expect(page.locator('#deployment-timeline-title')).toBeVisible();
+                    if (width >= 1024) {
+                        await expect(content).toBeVisible();
+                    } else {
+                        await expect(content).toBeHidden();
+                        await evidence.locator('summary').click();
+                        await expect(content).toBeVisible();
+                    }
                 }
                 if (screen === 'projects') {
                     const brand = page.locator('[data-auth-brand]');

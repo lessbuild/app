@@ -100,7 +100,9 @@ class DeploymentTimelineTest extends TestCase
             'completed_at' => $finishedAt,
         ]);
 
-        $this->actingAs($owner)->get(route('builds.show', $build))
+        $response = $this->actingAs($owner)->get(route('builds.show', $build));
+
+        $response
             ->assertSuccessful()
             ->assertSee('Deployment evidence')
             ->assertSee('Deployment timeline')
@@ -114,5 +116,10 @@ class DeploymentTimelineTest extends TestCase
             ->assertSee("Operation #{$operation->id}")
             ->assertSee(str_repeat('c', 64))
             ->assertDontSee('private-configuration-payload');
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="deployment-evidence")(?=[^>]*\\bopen\\b)(?=[^>]*data-responsive-details)(?=[^>]*data-responsive-details-mobile-open="false")[^>]*>/',
+            $response->getContent(),
+        );
     }
 }
