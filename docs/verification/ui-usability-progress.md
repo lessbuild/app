@@ -935,6 +935,47 @@ Blade assignments that compiled unreliably under the current runtime.
 
 | Phase 20: website provisioning and setup hierarchy | Complete with browser follow-up | 25 focused tests / 212 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `6079a5e` pushed to `origin/main` | Inspect repository detail for setup/webhook/deployment hierarchy and validation-state context |
 
+## Phase 21 — repository deployment insight hierarchy
+
+### Responsibility problem
+
+Repository detail already led with the latest deployment and kept webhook,
+setup and history sections discoverable. Its five-card deployment-insights
+grid, however, remained in the default flow between webhook configuration and
+deployment history. Those aggregate totals are useful for investigation but
+secondary to the latest outcome and current deployment actions.
+
+### Boundaries and preserved behavior
+
+- `RepositoriesController`, deployment insight query logic, build routes,
+  webhook routes, policies and deployment operations remain unchanged. This is
+  a presentation-only disclosure over the existing metrics.
+- `repository-deployment-insights` now has a compact summary showing recorded
+  deployment count and completed-run success rate. The full totals and median
+  duration cards remain available inside it.
+- The summary opens automatically when the latest build is active or failed,
+  matching the existing setup/history attention behavior. Healthy completed
+  deployments and empty repositories keep aggregate detail collapsed without
+  changing any values or links.
+
+### Verification
+
+- Repository deployment-insight, webhook-delivery, deployment and webhook
+  suites passed: 33 tests / 298 assertions. Coverage includes healthy/active
+  latest-build states, preflight and entitlement behavior, deployment
+  idempotency, webhook authentication/replay/path filtering, safe exports,
+  pagination, tenancy and secret exclusion. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `eab8c62` (`ui: collapse repository deployment insights`) was pushed
+  to `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; attention states and preserved
+  insight links are covered by feature tests and compiled markup.
+
+| Phase 21: repository deployment insight hierarchy | Complete with browser follow-up | 33 focused tests / 298 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `eab8c62` pushed to `origin/main` | Inspect notifications and observability pages for secondary statistics, saved views and filters that still precede primary results |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
