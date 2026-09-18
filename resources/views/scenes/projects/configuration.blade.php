@@ -1,6 +1,40 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('projects.show', $project)" :title="__('Back to application')" />
     <x-layouts.partials.heading icon="view-grid" :title="__('Application configuration')" :description="__('Review portable configuration before applying changes.')" />
+    @if(isset($environmentOverview))
+        @php
+            $recordedDependencyCount = $environmentOverview->sum(fn ($environment) => count($environment->dependencies));
+            $maskedSecretCount = $environmentOverview->sum(fn ($environment) => $environment->secretCount);
+        @endphp
+        <x-ui.insights
+            id="configuration-insights"
+            class="mt-6"
+            :summary="__('Recorded local state for :count environments', ['count' => $environmentOverview->count()])"
+        >
+            <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <x-ui.stat
+                    :label="__('Environments')"
+                    :value="$environmentOverview->count()"
+                    :description="__('Environment records in this application.')"
+                />
+                <x-ui.stat
+                    :label="__('Dependencies')"
+                    :value="$recordedDependencyCount"
+                    :description="__('Recorded processes, resources and deployments.')"
+                />
+                <x-ui.stat
+                    :label="__('Masked secrets')"
+                    :value="$maskedSecretCount"
+                    :description="__('Secret values remain hidden from this overview.')"
+                />
+                <x-ui.stat
+                    :label="__('Recent receipts')"
+                    :value="$recentApplications->count()"
+                    :description="__('Recent local configuration applications available for recovery.')"
+                />
+            </dl>
+        </x-ui.insights>
+    @endif
     @if($errors->any())
         <x-ui.alert tone="danger" class="mt-4" role="alert">
             <ul class="list-disc space-y-1 pl-5">
