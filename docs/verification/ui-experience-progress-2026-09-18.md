@@ -448,11 +448,67 @@ summary, reachable evidence sections and responsive secondary panels while
 preserving filters, authorization, pagination, alert actions and telemetry
 query bounds.
 
+## Slice 9 — observability response hierarchy
+
+Status: verified; implementation committed and pushed.
+
+### Concrete problem
+
+Observability opened with operational incident cards and then required a long
+scan through telemetry, deployment signals, integrations and status updates.
+The page had useful data and existing collapsed management forms, but no
+response overview or stable way to jump directly to the relevant evidence.
+
+### Boundaries and principle
+
+The observability view owns presentation order, section navigation and
+responsive disclosure. `ObservabilityDashboardQuery`, controller permission
+flags, policies, actions, bounded collections and integration side effects
+remain unchanged. This is single responsibility at the UI boundary: the page
+prioritizes existing operational evidence without duplicating query or
+authorization logic.
+
+### Implementation
+
+- Added a response overview with active operational incidents, recent failed
+  health checks, monitored-server and status-page counts, each linking to the
+  existing evidence section.
+- Added an accessible section navigation row for incidents, telemetry,
+  deployment signals, alert destinations, status pages and status updates.
+- Added stable scroll anchors and labelled landmarks for server telemetry,
+  alert destinations, status pages and the communication timeline.
+- Converted recent deployment and failed-health-check correlation into a
+  responsive disclosure that remains open on desktop/no-JavaScript output and
+  starts collapsed on mobile.
+- Added the page to the isolated browser fixture and verified mobile
+  expandability plus desktop visibility.
+
+### Verification
+
+- Observability, operational-incident and incident-notification coverage:
+  **27 tests / 235 assertions**.
+- Isolated observability fixture renderer: **1 test / 25 assertions**.
+- Built asset/layout browser matrix, light/dark at 320/390/768/1440px,
+  including response overview, responsive signal disclosure and the existing
+  backup, deployment, dashboard, provider, theme and navigation checks:
+  **10 passed**.
+- Required-PHP Pint, `git diff --check` and `npm run build`: passed.
+
+### Commit and push
+
+Implementation commit `45dc909` was pushed to `origin/main`.
+
+### Exact next task
+
+Begin Slice 10: improve the automation hub with a clearer API/scheduling
+overview and responsive secondary panels while preserving token secrecy,
+entitlement checks, request contracts, queued workflows and no-JavaScript
+forms.
+
 ## Remaining planned slices
 
-1. Observability hub.
-2. Automation hub.
-3. Remaining page families and final responsive/accessibility verification.
+1. Automation hub.
+2. Remaining page families and final responsive/accessibility verification.
 
 Each slice must record its concrete behavior, tests, commit, push status and
 next task here before work advances.
