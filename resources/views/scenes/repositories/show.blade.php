@@ -79,6 +79,7 @@
         };
         $repositorySetupNeedsAttention = $latestBuild?->statusEnum()?->isActive() === true
             || $latestBuild?->status === \App\Models\Build::STATUS_FAILED;
+        $deploymentInsightsNeedAttention = $repositorySetupNeedsAttention;
     @endphp
 
     @if ($latestBuild)
@@ -537,14 +538,28 @@
         </div>
     </details>
 
-    <section class="mt-10" aria-labelledby="deployment-insights-heading">
-        <div>
-            <h2 id="deployment-insights-heading" class="text-2xl font-bold text-primary">{{ __('Deployment insights') }}</h2>
-            <p class="mt-1 text-sm text-secondary">
-                {{ __('Outcome totals cover all recorded deployments. Median duration uses up to the 20 most recent deployments with valid start and finish times.') }}
-            </p>
-        </div>
-        <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+    <details id="repository-deployment-insights" class="group mt-10 ui-card overflow-hidden" @if ($deploymentInsightsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Insights') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Deployment insights') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ trans_choice(':count recorded deployment|:count recorded deployments', $deploymentMetrics['total'], ['count' => $deploymentMetrics['total']]) }}
+                    @if ($deploymentMetrics['success_rate'] !== null)
+                        · {{ __(':rate% completed success', ['rate' => $deploymentMetrics['success_rate']]) }}
+                    @endif
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <section class="border-t border-primary p-5" aria-labelledby="deployment-insights-heading">
+            <div>
+                <h2 id="deployment-insights-heading" class="text-2xl font-bold text-primary">{{ __('Deployment insights') }}</h2>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Outcome totals cover all recorded deployments. Median duration uses up to the 20 most recent deployments with valid start and finish times.') }}
+                </p>
+            </div>
+            <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="ui-card ui-card--interactive p-4">
                 <dt class="ui-stat__label">{{ __('Total deployments') }}</dt>
                 <dd class="ui-stat__value">{{ $deploymentMetrics['total'] }}</dd>
@@ -573,8 +588,9 @@
                     {{ trans_choice(':count timed deployment|:count timed deployments', $deploymentMetrics['duration_sample_size'], ['count' => $deploymentMetrics['duration_sample_size']]) }}
                 </p>
             </div>
-        </dl>
-    </section>
+            </dl>
+        </section>
+    </details>
 
     <details
         id="repository-deployment-history"

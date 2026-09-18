@@ -112,6 +112,10 @@ class RepositoryDeploymentInsightsTest extends TestCase
             '/<details(?=[^>]*id="repository-deployment-history")(?=[^>]*open)[^>]*>/',
             $completedContent,
         );
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="repository-deployment-insights")(?=[^>]*open)[^>]*>/',
+            $completedContent,
+        );
         $this->assertLessThan(
             strpos($completedContent, 'id="deployment-webhook"'),
             strpos($completedContent, 'id="repository-latest-deployment"'),
@@ -128,6 +132,10 @@ class RepositoryDeploymentInsightsTest extends TestCase
         );
         $this->assertMatchesRegularExpression(
             '/<details(?=[^>]*id="repository-deployment-history")(?=[^>]*open)[^>]*>/',
+            $activeContent,
+        );
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="repository-deployment-insights")(?=[^>]*open)[^>]*>/',
             $activeContent,
         );
     }
