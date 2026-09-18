@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'dashboard', 'projects', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -54,7 +54,7 @@ for (const colorScheme of ['light', 'dark']) {
 
             for (const screen of screens) {
                 await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
-                if (screen !== 'landing') expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
+                if (!['landing', 'pricing'].includes(screen)) expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
                 await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), screen).toBe(true);
                 const primaryText = page.locator('.text-primary').first();
@@ -124,6 +124,27 @@ for (const colorScheme of ['light', 'dark']) {
                         const badgeRect = element.querySelector('[data-project-environment-count]').getBoundingClientRect();
                         return badgeRect.left >= cardRect.left && badgeRect.right <= cardRect.right;
                     }), 'application count badge must remain inside its card').toBe(true);
+                }
+                if (screen === 'landing') {
+                    await expect(page.locator('[data-illustrative-preview]')).toContainText('Example data · not live telemetry');
+                    await expect(page.locator('[data-illustrative-preview]')).toContainText('Illustrative workspace');
+                }
+                if (screen === 'pricing') {
+                    const plans = page.locator('[data-pricing-plan]');
+                    await expect(plans).toHaveCount(6);
+                    const disclosures = page.locator('[data-pricing-plan] [data-responsive-details]');
+                    await expect(disclosures).toHaveCount(6);
+                    for (let index = 0; index < await disclosures.count(); index += 1) {
+                        const disclosure = disclosures.nth(index);
+                        const content = disclosure.locator('.ui-responsive-details__content');
+                        if (width >= 1024) {
+                            await expect(content).toBeVisible();
+                        } else {
+                            await expect(content).toBeHidden();
+                            await disclosure.locator('summary').click();
+                            await expect(content).toBeVisible();
+                        }
+                    }
                 }
                 if (screen === 'organization' || screen === 'automation') {
                     const disclosureIds = screen === 'organization'

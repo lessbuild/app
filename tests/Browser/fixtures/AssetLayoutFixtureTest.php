@@ -24,7 +24,7 @@ class AssetLayoutFixtureTest extends TestCase
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         File::ensureDirectoryExists($directory);
 
-        foreach (['landing' => '/', 'login' => '/login'] as $name => $url) {
+        foreach (['landing' => '/', 'login' => '/login', 'pricing' => '/pricing'] as $name => $url) {
             File::put($directory.'/'.$name.'.html', $this->renderPage($url)->assertOk()->getContent());
         }
 

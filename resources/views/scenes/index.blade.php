@@ -141,23 +141,23 @@
 
     <main id="main-content" tabindex="-1">
         <section class="overflow-hidden bg-primary">
-            <div class="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+            <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
                 <div>
                     <p class="inline-flex rounded-full border border-ternary bg-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Your infrastructure. One control plane.') }}</p>
-                    <h1 class="mt-6 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
-                    <p class="mt-6 max-w-xl text-lg leading-8 text-secondary">{{ __('BuildPusher brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.') }}</p>
-                    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <h1 class="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:mt-6 sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
+                    <p class="mt-4 max-w-xl text-lg leading-8 text-secondary sm:mt-6">{{ __('BuildPusher brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.') }}</p>
+                    <div class="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                         <x-ui.button :href="$primaryUrl" variant="primary" class="w-full sm:w-auto">{{ $primaryLabel }}</x-ui.button>
                         <x-ui.button href="#product" variant="secondary" class="w-full sm:w-auto">{{ __('Explore the product') }}</x-ui.button>
                     </div>
-                    <div class="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-secondary">
+                    <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-secondary sm:mt-8">
                         @foreach ([__('Encrypted secrets'), __('Tracked releases'), __('Owner-scoped access')] as $promise)
                             <span class="flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-ternary text-xs text-white">✓</span>{{ $promise }}</span>
                         @endforeach
                     </div>
                 </div>
-                <div class="overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" aria-label="{{ __('Live workspace preview') }}">
-                    <div class="flex items-center justify-between border-b border-primary px-5 py-4"><div class="flex gap-1.5" aria-hidden="true"><span class="h-2.5 w-2.5 rounded-full bg-ternary"></span><span class="h-2.5 w-2.5 rounded-full bg-secondary"></span><span class="h-2.5 w-2.5 rounded-full bg-tertiary"></span></div><span class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Live workspace') }}</span></div>
+                <div data-illustrative-preview class="overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" aria-label="{{ __('Illustrative workspace preview') }}">
+                    <div class="flex items-center justify-between border-b border-primary px-5 py-4"><div class="flex gap-1.5" aria-hidden="true"><span class="h-2.5 w-2.5 rounded-full bg-ternary"></span><span class="h-2.5 w-2.5 rounded-full bg-secondary"></span><span class="h-2.5 w-2.5 rounded-full bg-tertiary"></span></div><span class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Illustrative workspace') }}</span></div>
                     <div class="grid gap-4 bg-secondary p-4 sm:grid-cols-[1.35fr_.65fr] sm:p-5">
                         <div class="rounded-xl border border-primary bg-primary p-5">
                             <div class="flex items-center justify-between gap-3"><p class="font-bold text-primary">storefront</p><span class="rounded-full bg-ternary px-2.5 py-1 text-[0.6875rem] font-bold uppercase text-white">{{ __('Deploying') }}</span></div>
@@ -166,7 +166,7 @@
                         </div>
                         <div class="grid grid-cols-3 gap-3 sm:grid-cols-1">@foreach ([['3', __('Servers')], ['8', __('Websites')], ['0', __('Incidents')]] as [$value, $label])<div class="rounded-xl border border-primary bg-primary p-4"><p class="text-2xl font-black text-primary">{{ $value }}</p><p class="mt-1 text-xs text-secondary">{{ $label }}</p></div>@endforeach</div>
                     </div>
-                    <div class="flex items-center gap-3 border-t border-primary px-5 py-4 text-xs text-secondary"><span class="h-2 w-2 rounded-full bg-ternary"></span><span>{{ __('System operational · 12 checks passing') }}</span><span class="ml-auto font-mono">12:04 UTC</span></div>
+                    <div class="flex items-center gap-3 border-t border-primary px-5 py-4 text-xs text-secondary"><span class="h-2 w-2 rounded-full bg-ternary"></span><span>{{ __('Example data · not live telemetry') }}</span><span class="ml-auto font-mono">{{ __('Demo') }}</span></div>
                 </div>
             </div>
         </section>
@@ -221,7 +221,7 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-primary bg-primary px-5 py-3 text-xs font-semibold text-secondary">
-                        <span><strong class="text-primary">36</strong> {{ __('capabilities') }}</span><span><strong class="text-primary">6</strong> {{ __('focused groups') }}</span><span class="sm:ml-auto">{{ __('No screenshots. Every preview is built with interface code.') }}</span>
+                        <span><strong class="text-primary">36</strong> {{ __('capabilities') }}</span><span><strong class="text-primary">6</strong> {{ __('focused groups') }}</span><span class="sm:ml-auto">{{ __('Illustrative previews · no live workspace data.') }}</span>
                     </div>
                 </div>
             </div>
@@ -243,13 +243,13 @@
             }"
         >
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Inside the product') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('One workspace, every operational stage.') }}</h2></div><p class="max-w-lg leading-7 text-secondary">{{ __('Explore code-built previews with illustrative data. Nothing here is a screenshot or a real account.') }}</p></div>
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Inside the product') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('One workspace, every operational stage.') }}</h2></div><p class="max-w-lg leading-7 text-secondary">{{ __('Explore representative workflows with illustrative data. Use them to see where each operation lives.') }}</p></div>
                 <div class="mt-8 overflow-x-auto pb-2" role="tablist" aria-label="{{ __('Product areas') }}"><div class="flex w-max gap-2 rounded-xl border border-primary bg-primary p-2">@foreach ($tourAreas as $key => $area)<button id="area-tab-{{ $key }}" type="button" role="tab" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ternary focus-visible:ring-offset-2" :class="activeArea === '{{ $key }}' ? 'bg-ternary text-white shadow-sm' : 'text-secondary hover:bg-secondary hover:text-primary'" :aria-selected="(activeArea === '{{ $key }}').toString()" :tabindex="activeArea === '{{ $key }}' ? '0' : '-1'" aria-controls="area-panel-{{ $key }}" @click="activeArea = '{{ $key }}'" @keydown.right.prevent="moveArea(1)" @keydown.left.prevent="moveArea(-1)" @keydown.home.prevent="focusArea(0)" @keydown.end.prevent="focusArea(areas.length - 1)">{{ $area['label'] }}</button>@endforeach</div></div>
                 <div class="mt-5 rounded-2xl border border-primary bg-primary p-5 shadow-xl sm:p-7">
                     @foreach ($tourAreas as $key => $area)
                         <article id="area-panel-{{ $key }}" role="tabpanel" aria-labelledby="area-tab-{{ $key }}" x-show="activeArea === '{{ $key }}'" @if (! $loop->first) x-cloak @endif class="grid items-center gap-8 lg:grid-cols-[.65fr_1.35fr]">
                             <div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ $area['label'] }}</p><h3 class="mt-3 text-2xl font-black text-primary sm:text-3xl">{{ $area['title'] }}</h3><p class="mt-4 leading-7 text-secondary">{{ $area['description'] }}</p></div>
-                            <div class="overflow-hidden rounded-xl border border-primary bg-secondary" aria-hidden="true"><div class="flex items-center justify-between border-b border-primary bg-primary px-4 py-3"><span class="text-xs font-bold text-secondary">{{ $area['window'] }}</span><span class="rounded-full bg-ternary px-2 py-1 text-[0.625rem] font-bold uppercase text-white">{{ __('Live') }}</span></div><div class="grid grid-cols-3 gap-2 p-4">@foreach ($area['metrics'] as [$value, $label])<div class="rounded-lg border border-primary bg-primary p-3"><p class="truncate text-base font-black text-primary sm:text-xl">{{ $value }}</p><p class="mt-1 truncate text-[0.625rem] uppercase text-secondary">{{ $label }}</p></div>@endforeach</div><div class="mx-4 mb-4 overflow-hidden rounded-lg border border-primary bg-primary">@foreach ($area['events'] as [$event, $state])<div class="flex items-center gap-3 border-b border-primary px-3 py-3 text-sm last:border-0"><span class="h-2 w-2 shrink-0 rounded-full bg-ternary"></span><span class="min-w-0 truncate text-primary">{{ $event }}</span><span class="ml-auto shrink-0 text-xs font-semibold text-secondary">{{ $state }}</span></div>@endforeach</div></div>
+                            <div class="overflow-hidden rounded-xl border border-primary bg-secondary" aria-hidden="true"><div class="flex items-center justify-between border-b border-primary bg-primary px-4 py-3"><span class="text-xs font-bold text-secondary">{{ $area['window'] }}</span><span class="rounded-full bg-ternary px-2 py-1 text-[0.625rem] font-bold uppercase text-white">{{ __('Example') }}</span></div><div class="grid grid-cols-3 gap-2 p-4">@foreach ($area['metrics'] as [$value, $label])<div class="rounded-lg border border-primary bg-primary p-3"><p class="truncate text-base font-black text-primary sm:text-xl">{{ $value }}</p><p class="mt-1 truncate text-[0.625rem] uppercase text-secondary">{{ $label }}</p></div>@endforeach</div><div class="mx-4 mb-4 overflow-hidden rounded-lg border border-primary bg-primary">@foreach ($area['events'] as [$event, $state])<div class="flex items-center gap-3 border-b border-primary px-3 py-3 text-sm last:border-0"><span class="h-2 w-2 shrink-0 rounded-full bg-ternary"></span><span class="min-w-0 truncate text-primary">{{ $event }}</span><span class="ml-auto shrink-0 text-xs font-semibold text-secondary">{{ $state }}</span></div>@endforeach</div></div>
                         </article>
                     @endforeach
                 </div>

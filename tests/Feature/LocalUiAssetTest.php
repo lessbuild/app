@@ -33,7 +33,7 @@ class LocalUiAssetTest extends TestCase
 
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('Live workspace preview')
+            ->assertSee('Illustrative workspace preview')
             ->assertSee('Health verification')
             ->assertDontSee('i.imgur.com', false)
             ->assertDontSee('gopayee.test', false);
@@ -158,7 +158,8 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('GitHub')
             ->assertSee('GitLab')
             ->assertSee('Bitbucket')
-            ->assertSee('Live workspace')
+            ->assertSee('Illustrative workspace')
+            ->assertSee('Example data · not live telemetry')
             ->assertSee('Designed for the difficult day.')
             ->assertSee('Exact-revision recovery')
             ->assertSee('Where does my application run?')
@@ -170,7 +171,8 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('Health checks that tell a story')
             ->assertSee('Actions keep their accountability')
             ->assertSee('Repeat the setup that works')
-            ->assertSee('Nothing here is a screenshot or a real account.')
+            ->assertSee('Explore representative workflows with illustrative data.')
+            ->assertSee('Illustrative previews · no live workspace data.')
             ->assertSee('role="tablist"', false)
             ->assertSee('aria-label="Product areas"', false)
             ->assertSee("activeArea: 'overview'", false)
