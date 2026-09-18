@@ -1,5 +1,33 @@
 # BuildPusher chat handoff
 
+## GitHub App repository acceptance and isolated deployment attempt — 2026-09-18
+
+The isolated development runtime now has a valid GitHub App private key, and
+the installation can read `natecorkish/Deployer-Test`. BuildPusher recorded
+the repository on `main`, enabled its authenticated webhook, attached it to
+the existing demo Storefront target, and its read-only deployment preflight
+reported ready (100/100).
+
+A first manual deployment request was created and approved through the
+existing owner policy. It did not reach a remote process: the seeded demo
+server uses `203.0.113.10`, a documentation-only reserved address, so SSH
+timed out before script upload. The attempt was finalized as failed with no
+remote process, no pending job and no production or cloud resource change.
+
+The check exposed a retry-state defect in the upload boundary. Commit
+`582acbd` now clears the launch lease and returns a build to the queue when
+script upload fails before a remote process exists, allowing a safe retry while
+preserving stale-attempt protection. Focused deployment coverage passed **22
+tests / 177 assertions**; the strict PHP suite passed **1,566 tests / 12,908
+assertions**; Pint and `git diff --check` passed. The implementation and
+isolated runtime are on `main` at `582acbd`, and both runtime services are
+active.
+
+The exact next task is to attach a real isolated SSH target, or separately
+authorize a disposable host, before repeating the remote deployment. The
+GitHub App installation and repository link are verified. No live acceptance
+is claimed.
+
 ## Phone-friendly GitHub App key setup — 2026-09-17
 
 The isolated development runtime now has a platform-admin-only, local-only
