@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Workspace administration') }}"
         icon="user-circle"
         :title="__('Workspace')"
         :description="__('Manage members, roles, and workspace access.')"
@@ -55,6 +56,14 @@
             />
         </dl>
     </x-ui.insights>
+
+    <x-ui.local-nav :label="__('Workspace sections')">
+        <a href="#organization-security-policy" class="ui-local-nav__link">{{ __('Security') }}</a>
+        <a href="#organization-notification-preferences" class="ui-local-nav__link">{{ __('Notifications') }}</a>
+        <a href="#organization-invite" class="ui-local-nav__link">{{ __('Invitations') }}</a>
+        <a href="#organization-workspaces" class="ui-local-nav__link">{{ __('Workspaces') }}</a>
+        <a href="#organization-delete" class="ui-local-nav__link">{{ __('Delete workspace') }}</a>
+    </x-ui.local-nav>
 
     <div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <x-forms.section

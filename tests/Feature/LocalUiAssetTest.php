@@ -73,6 +73,31 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('href="#inventory"', $html);
     }
 
+    public function test_long_workspace_surfaces_use_compact_local_navigation_and_border_only_notice_states(): void
+    {
+        foreach ([
+            'commands/index.blade.php' => ['#command-filters', '#command-insights', '#command-history'],
+            'notifications/index.blade.php' => ['#notifications-insights', '#notification-list', '#notification-filters'],
+            'feedback/index.blade.php' => ['#feedback-compose', '#feedback-list'],
+            'scenes/users/index.blade.php' => ['#account-profile', '#account-two-factor', '#account-data'],
+            'scenes/organizations/index.blade.php' => ['#organization-security-policy', '#organization-delete'],
+            'system-health/index.blade.php' => ['#system-health-insights', '#system-health-checks', '#system-health-help'],
+        ] as $view => $anchors) {
+            $source = File::get(resource_path('views/'.$view));
+
+            $this->assertStringContainsString('x-ui.local-nav', $source, $view);
+            foreach ($anchors as $anchor) {
+                $this->assertStringContainsString('href="'.$anchor.'"', $source, $view);
+            }
+        }
+
+        $notifications = File::get(resource_path('views/notifications/index.blade.php'));
+        $this->assertStringContainsString('border-l-4 border-l-red-400', $notifications);
+        $this->assertStringNotContainsString('bg-red-50', $notifications);
+        $this->assertStringNotContainsString('bg-green-50', $notifications);
+        $this->assertStringNotContainsString('bg-blue-50', $notifications);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

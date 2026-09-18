@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Health signals') }}"
         icon="bell"
         :title="__('Notifications')"
         :description="__('Review account security, deployment, infrastructure, and community feedback alerts.')"
@@ -22,6 +23,13 @@
         @endif
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav :label="__('Notification sections')">
+        <a href="#notifications-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#notification-list" class="ui-local-nav__link">{{ __('Inbox') }}</a>
+        <a href="#notification-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
+        <a href="#notification-saved-filters" class="ui-local-nav__link">{{ __('Saved filters') }}</a>
+    </x-ui.local-nav>
+
     @php
         $activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null));
         $filtersAreActive = $activeFilterCount > 0;
@@ -43,7 +51,8 @@
     </x-ui.insights>
 
     <div
-        class="space-y-3"
+        id="notification-list"
+        class="ui-inventory-list scroll-mt-24 space-y-3"
         x-data="{
             selected: [],
             pageIds: {{ Illuminate\Support\Js::from($notifications->pluck('id')->values()) }},
@@ -79,9 +88,9 @@
             @endphp
             <article @class([
                 'ui-card p-5',
-                'border-red-300 bg-red-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
-                'border-green-300 bg-green-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
-                'border-blue-300 bg-blue-50' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
+                'border-l-4 border-l-red-400' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
+                'border-l-4 border-l-green-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
+                'border-l-4 border-l-blue-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
             ])>
                 <div class="flex items-start gap-3">
                     <input type="checkbox" name="notifications[]" value="{{ $notification->id }}" form="notification-bulk-form" x-model="selected" class="mt-1 h-4 w-4 shrink-0 rounded border-primary text-blue-600 focus:ring-blue-500" aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}">

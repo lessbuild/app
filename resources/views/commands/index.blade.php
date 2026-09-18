@@ -1,9 +1,16 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Server operations') }}"
         icon="terminal"
         :title="__('Command Center')"
         :description="__('Review command activity across every server without exposing command text or retained output.')"
     />
+
+    <x-ui.local-nav :label="__('Command center sections')">
+        <a href="#command-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
+        <a href="#command-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#command-history" class="ui-local-nav__link">{{ __('History') }}</a>
+    </x-ui.local-nav>
 
     @php
         $commandFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
@@ -108,7 +115,7 @@
         </dl>
     </x-ui.insights>
 
-    <x-ui.card class="mt-6 overflow-hidden">
+    <x-ui.card id="command-history" class="ui-inventory-list mt-6 scroll-mt-24 overflow-hidden">
         <div class="divide-y divide-primary" aria-label="{{ __('Command activity across all servers') }}">
             @forelse ($executions as $execution)
                 <article data-command-execution class="p-4 sm:p-5">

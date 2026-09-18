@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Platform diagnostics') }}"
         icon="chip"
         :title="__('System Health')"
         :description="__('Read-only checks for the application runtime, storage, queue, and production automation.')"
@@ -13,6 +14,12 @@
             </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
+
+    <x-ui.local-nav :label="__('System health sections')">
+        <a href="#system-health-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#system-health-checks" class="ui-local-nav__link">{{ __('Checks') }}</a>
+        <a href="#system-health-help" class="ui-local-nav__link">{{ __('When a check fails') }}</a>
+    </x-ui.local-nav>
 
     <x-ui.alert
         :tone="$passed ? 'success' : 'danger'"
@@ -92,8 +99,8 @@
         </ul>
     </section>
 
-    <x-ui.card tone="muted" class="mt-6 p-5" aria-labelledby="system-health-help">
-        <h2 id="system-health-help" class="font-bold text-primary">{{ __('When a check fails') }}</h2>
+    <x-ui.card id="system-health-help" tone="muted" class="mt-6 scroll-mt-24 p-5" aria-labelledby="system-health-help-title">
+        <h2 id="system-health-help-title" class="font-bold text-primary">{{ __('When a check fails') }}</h2>
         <p class="mt-1 text-sm text-secondary">
             {{ __('Use the failing check and its safe summary to guide investigation. Operators with shell access can run php artisan lessbuild:diagnose for the same current snapshot.') }}
         </p>

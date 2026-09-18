@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Product loop') }}"
         icon="information-circle"
         :title="__('Product feedback')"
         :description="__('Report a bug, share an idea, or tell us where the product became confusing.')"
@@ -34,8 +35,13 @@
         </dl>
     </x-ui.insights>
 
+    <x-ui.local-nav :label="__('Feedback sections')">
+        <a href="#feedback-compose" class="ui-local-nav__link">{{ __('Send feedback') }}</a>
+        <a href="#feedback-list" class="ui-local-nav__link">{{ __('Workspace feedback') }}</a>
+    </x-ui.local-nav>
+
     <div class="mt-8 grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <x-ui.card class="h-fit p-5 sm:p-6">
+        <x-ui.card id="feedback-compose" class="h-fit scroll-mt-24 p-5 sm:p-6">
             <h2 class="text-lg font-black text-primary">{{ __('Send private feedback') }}</h2>
             <p class="mt-1 text-sm leading-6 text-secondary">{{ __('Visible only to you and workspace administrators. Never include passwords, tokens, private keys, or environment values.') }}</p>
             <form method="POST" action="{{ route('feedback.store') }}" class="mt-5 space-y-4">
@@ -84,7 +90,7 @@
             </form>
         </x-ui.card>
 
-        <section aria-labelledby="feedback-list-heading">
+        <section id="feedback-list" class="scroll-mt-24" aria-labelledby="feedback-list-heading">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 id="feedback-list-heading" class="text-lg font-black text-primary">{{ __('Workspace feedback') }}</h2>
                 <form method="GET" class="flex flex-wrap gap-2">
@@ -99,7 +105,7 @@
                 </form>
             </div>
 
-            <div class="space-y-4">
+            <div class="ui-inventory-list space-y-4">
                 @forelse ($feedback as $item)
                     <x-ui.card class="p-5 sm:p-6">
                         <div class="flex flex-wrap items-start justify-between gap-3">

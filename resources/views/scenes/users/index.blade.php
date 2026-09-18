@@ -1,5 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.heading
+        eyebrow="{{ __('Account security') }}"
         icon="user-circle"
         :title="__('Account')"
         :description="__('Manage your profile and sign-in credentials.')"
@@ -43,6 +44,17 @@
         </dl>
     </x-ui.insights>
 
+    <x-ui.local-nav :label="__('Account sections')">
+        <a href="#account-profile" class="ui-local-nav__link">{{ __('Profile') }}</a>
+        <a href="#password" class="ui-local-nav__link">{{ __('Password') }}</a>
+        <a href="#account-two-factor" class="ui-local-nav__link">{{ __('Two-factor') }}</a>
+        <a href="#account-security-activity" class="ui-local-nav__link">{{ __('Security activity') }}</a>
+        <a href="#account-sign-ins" class="ui-local-nav__link">{{ __('Sign-ins') }}</a>
+        <a href="#account-browser-sessions" class="ui-local-nav__link">{{ __('Sessions') }}</a>
+        <a href="#account-connected-accounts" class="ui-local-nav__link">{{ __('Connected accounts') }}</a>
+        <a href="#account-data" class="ui-local-nav__link">{{ __('Your data') }}</a>
+    </x-ui.local-nav>
+
     <div class="mt-8 max-w-5xl space-y-8">
         @if (! auth()->user()->hasVerifiedEmail())
             <div class="ui-alert ui-alert--warning p-4">
@@ -61,7 +73,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('account.profile.update') }}">
+        <form id="account-profile" method="POST" action="{{ route('account.profile.update') }}" class="scroll-mt-24">
             @csrf
             @method('PATCH')
 
