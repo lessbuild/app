@@ -1,5 +1,37 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 application configuration review changes,
+recorded environment dependencies, provider observations and environment
+comparisons were converted from wide tables to labeled cards. The new layout
+keeps the distinction between desired/reviewed data, recorded local state and
+observed provider state explicit, while retaining masked-secret behavior,
+review/apply actions and provider observation controls.
+
+Focused configuration coverage passed **19 tests / 188 assertions**, including
+secret-safe rendering and explicit no-table checks for review, overview,
+observation and comparison states. Pint, `git diff --check` and Blade view
+caching passed. The isolated dev runtime was fast-forwarded to `02d80af`, the
+service is active and the live-runtime smoke passed (**1 test**). Commit
+`02d80af` (`Replace configuration tables with labeled cards`) is pushed to
+`origin/main`. No configuration routes, validation, authorization, query
+contracts, persistence, queue behavior or remote calls changed. The exact
+next task is to replace sign-in history and the docs troubleshooting table.
+
+Latest continuation: September 18 recipe inventory, recipe server assignments
+and gallery comparison metadata were converted from tables to responsive
+cards and stacked side-by-side sections. Recipe actions, assignment order,
+provisioning state, gallery update badges and encrypted script handling are
+unchanged; the comparison remains read-only and still keeps both scripts in
+their dedicated code panels.
+
+Focused recipe/gallery coverage passed **19 tests / 182 assertions**, including
+explicit no-table checks for inventory, assignments and comparison. Pint and
+`git diff --check` passed. The isolated dev runtime was fast-forwarded to
+`c6b1349`, the service is active and the live-runtime smoke passed (**1
+test**). Commit `c6b1349` (`Replace recipe tables with responsive cards`) is
+pushed to `origin/main`. The exact next task is to replace the four project
+configuration tables, then sign-in history and the docs troubleshooting table.
+
 Latest continuation: September 18 server inventory, website inventory and
 health-check history were converted from wide tables to responsive resource
 cards. Website health checks now share one card partial between the detail
