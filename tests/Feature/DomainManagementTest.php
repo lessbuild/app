@@ -59,6 +59,29 @@ class DomainManagementTest extends TestCase
         $this->actingAs($owner)->get(route('domains.index'))->assertOk()->assertSee('www.example.com')->assertDontSee('cloudflare-secret');
     }
 
+    public function test_domain_management_is_collapsed_by_default_and_reopens_for_validation_errors(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+
+        $default = $this->actingAs($owner)->get(route('domains.index'));
+        $this->assertDoesNotMatchRegularExpression(
+            '/<details(?=[^>]*id="domain-management")(?=[^>]*\bopen\b)[^>]*>/',
+            $default->getContent(),
+        );
+
+        $errorPage = $this->from(route('domains.index'))
+            ->followingRedirects()
+            ->actingAs($owner)
+            ->post(route('domains.store'), ['website_id' => $website->id])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<details(?=[^>]*id="domain-management")(?=[^>]*\bopen\b)[^>]*>/',
+            $errorPage->getContent(),
+        );
+        $errorPage->assertSee('The hostname field is required.');
+    }
+
     public function test_temporary_domains_require_operator_configuration_and_cloudflare(): void
     {
         Queue::fake();
