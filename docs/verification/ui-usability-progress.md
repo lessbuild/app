@@ -1192,6 +1192,82 @@ the primary work, while aggregate counts are supporting context.
 
 | Phase 26: recipe feedback result hierarchy | Complete with browser follow-up | 31 focused tests / 337 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `758b1fd` pushed to `origin/main` | Inspect billing/cost, search and system-health pages for secondary statistics and action hierarchy |
 
+## Phase 27 — cost resource priority
+
+### Responsibility problem
+
+Cost visibility opened with four large summary cards before the resource
+estimates that users actually need to inspect. The summary duplicated the
+resource list and pushed provider/source attribution and cleanup signals down
+the page, while a warning state did not explicitly control whether its context
+was visible.
+
+### Boundaries and preserved behavior
+
+- `CostController`, `InfrastructureCostQuery`, `PreviewUsageQuery`, budget
+  authorization/action boundaries, entitlement checks and provider-catalog
+  semantics remain unchanged.
+- The four summary values now share `cost-summary`. A healthy priced inventory
+  keeps the aggregate grid collapsed while the estimated monthly amount stays
+  visible in the summary; idle resources or unknown prices automatically open
+  the grid so attention context is not hidden.
+- Resource estimates, project attribution, measured CPU wording, preview
+  lifetime/quota distinction, budget editing and provider-invoice disclaimer
+  remain in the normal workflow with all existing links and messages.
+
+### Verification
+
+- Product-improvement and billing suites passed: 19 tests / 73 assertions,
+  including cost scoping, budget authorization, catalog uncertainty, preview
+  quota/expiry semantics, entitlement behavior and Stripe checkout/ownership
+  behavior. Pint, Blade view compilation and `git diff --check` passed.
+- Commit `00c8cc2` (`Prioritize cost resource estimates`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; attention-aware disclosure and
+  preserved cost semantics are covered by feature tests and compiled markup.
+
+| Phase 27: cost resource priority | Complete with browser follow-up | 19 focused tests / 73 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `00c8cc2` pushed to `origin/main` | Improve global-search result grouping and context |
+
+## Phase 28 — global-search result navigation
+
+### Responsibility problem
+
+Global search already grouped results by resource type, but a query returning
+several groups required continuous scrolling and offered no stable way to jump
+to a type. Group headers also did not expose the result count or a semantic
+relationship to their result card.
+
+### Boundaries and preserved behavior
+
+- `SearchController` and every workspace-scoped query remain unchanged. Search
+  trimming, SQL wildcard escaping, owner metadata limits, secret exclusion,
+  group ordering, “view more” URLs and authentication boundaries are intact.
+- A result-only in-page index now lists each populated resource group with its
+  bounded count and anchor. Each group card has a stable id and labeled
+  heading, and the existing per-result links remain ordinary server-rendered
+  anchors.
+- Blank and no-result guidance remains unchanged; no new client-side search
+  state or unbounded result loading was introduced.
+
+### Verification
+
+- `GlobalSearchTest` passed: 9 tests / 82 assertions, covering verification,
+  owner scoping, all seven resource groups, bounded “view more” behavior,
+  literal wildcard handling, secret exclusion and the new jump-link/group
+  context markup. Pint, Blade view compilation and `git diff --check` passed.
+- Commit `2064011` (`Improve search result navigation`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or keyboard result is claimed; anchors, labels and
+  preserved result semantics are covered by feature tests and compiled markup.
+
+| Phase 28: global-search result navigation | Complete with browser follow-up | 9 focused tests / 82 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `2064011` pushed to `origin/main` | Audit system-health/admin and activity/command histories for first-result and action priority |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
