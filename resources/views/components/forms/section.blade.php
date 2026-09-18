@@ -29,7 +29,7 @@
         </div>
     </div>
 
-    <div class="ui-card overflow-hidden">
+    <div class="ui-card overflow-hidden lg:block">
         @if (! $collapsible)
             <div class="border-b border-primary px-4 py-4 lg:hidden">
                 <h2 class="font-bold text-primary">{{ $title }}</h2>

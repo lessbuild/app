@@ -69,6 +69,7 @@ class AccountManagementTest extends TestCase
 
         $this->assertStringContainsString('Save profile', $content);
         $this->assertStringContainsString('Update password', $content);
+        $this->assertStringContainsString('ui-card overflow-hidden lg:block', $content);
     }
 
     public function test_user_can_update_their_profile(): void
