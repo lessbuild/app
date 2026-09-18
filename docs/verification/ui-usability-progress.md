@@ -976,6 +976,49 @@ secondary to the latest outcome and current deployment actions.
 
 | Phase 21: repository deployment insight hierarchy | Complete with browser follow-up | 33 focused tests / 298 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `eab8c62` pushed to `origin/main` | Inspect notifications and observability pages for secondary statistics, saved views and filters that still precede primary results |
 
+## Phase 22 — database management workflow hierarchy
+
+### Responsibility problem
+
+Each database inventory card mixed read-only resource evidence with credential
+issuance, a list of existing credentials and a destructive clone-confirmation
+form. With multiple resources, these management controls dominated the default
+inventory and made size, connection and schema information harder to scan.
+
+### Boundaries and preserved behavior
+
+- `DatabaseController`, Form Requests, policies, entitlement checks, database
+  actions/jobs and target-safety rules remain unchanged. The view still uses the
+  same eager-loaded resources and snapshot data.
+- Read-only resource identity, latest size/connections/schema and Inspect stay
+  visible. Credential issuance, credential revocation and non-production clone
+  confirmation now share a per-resource `database-management-{id}` disclosure.
+- A resource with no credential opens the management panel for first-use
+  discoverability. Validation errors and the one-time generated password also
+  reopen it; a resource with completed setup collapses the optional workflow.
+  Credentials remain encrypted/hidden and clone confirmation/production and
+  tenancy protections are unchanged.
+- The existing inline `@php` snapshot assignment was normalized to a block form
+  so the database page compiles consistently with the current Blade runtime.
+
+### Verification
+
+- Database operations and platform-expansion suites passed: 14 tests / 76
+  assertions. Coverage includes inspection scoping, credential creation and
+  encryption, viewer authorization, unsupported resources, clone confirmation,
+  production/foreign target rejection and first-use/completed disclosure state.
+  Pint, Blade view compilation and `git diff --check` passed.
+- Commit `b942715` (`ui: separate database management actions`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached and
+  both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; the resource summary, form
+  availability and open-state behavior are covered by feature tests and
+  compiled markup.
+
+| Phase 22: database management workflow hierarchy | Complete with browser follow-up | 14 focused tests / 76 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `b942715` pushed to `origin/main` | Inspect domains and load-balancer inventories for side-by-side management forms and error-state discoverability |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
