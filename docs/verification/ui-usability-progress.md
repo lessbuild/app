@@ -508,6 +508,42 @@ measured about 12,629px, including an operational-incident block around
 
 | Phase 10: observability response and secondary panels | Complete | 29 focused tests / 239 assertions, Pint, view compilation, push and real mobile interactions passed; page height reduced ~5,122px | `98e9e03`, `a90c36d` pushed to `origin/main` | Inspect project and environment detail pages for the next summary-first workflow slice |
 
+## Phase 11 — environment evidence controls
+
+### Responsibility problem
+
+The environment evidence page placed four filter controls, explanatory text,
+save-view forms and saved investigation management before the evidence cards.
+The default 390px page measured about 3,095px, with the first deployment
+evidence beginning around 1,497px.
+
+### Boundaries and preserved behavior
+
+- `ObservabilityContextRequest`, immutable filter data, authorization, bounded
+  query collections, share URLs and investigation actions remain unchanged.
+- Environment identity, website/server/evidence-window summary cards remain
+  visible. Filters are a native disclosure with a `Filtered` indicator and
+  automatically reopen for non-default filters or validation errors.
+- Save/manage investigation views are a separate disclosure with the existing
+  expiration choices, hidden filter values, validation messages, ownership
+  checks, share routes and removal forms unchanged.
+- Deployment, health, runtime-log and incident evidence remains rendered with
+  the same redaction, limits and authorization boundaries.
+
+### Verification
+
+- Environment context suite passed: 7 tests / 66 assertions, including default
+  and active-filter disclosure state; Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `b031af2` (`feat: streamline environment evidence controls`) was
+  pushed to `origin/main`; the isolated HTTPS runtime was cache-refreshed and
+  both service units remained active.
+- Real 390px browser checks measured the default page at about 2,529px, with
+  first evidence around 976px. A non-default filter view measured about
+  3,010px and reopened the filter disclosure.
+
+| Phase 11: environment evidence controls | Complete | 7 focused tests / 66 assertions, Pint, view compilation, push and real mobile filter-state checks passed; default page height reduced ~566px | `b031af2` pushed to `origin/main` | Inspect project overview environment cards and keep readiness/action context discoverable |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
