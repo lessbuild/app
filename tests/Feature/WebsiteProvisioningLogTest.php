@@ -72,6 +72,25 @@ class WebsiteProvisioningLogTest extends TestCase
             ->assertDontSee('wire:poll.5s', false);
     }
 
+    public function test_completed_website_operations_are_collapsed_but_incomplete_operations_open(): void
+    {
+        [$user, , $website] = $this->resources();
+        $website->update(['provisioning_status' => Website::STATUS_ACTIVE]);
+
+        $active = $this->actingAs($user)->get(route('websites.show', $website));
+        $activeContent = $active->getContent();
+        $this->assertMatchesRegularExpression('/<details id="website-operations"[^>]*>/', $activeContent);
+        $this->assertDoesNotMatchRegularExpression('/<details id="website-operations"[^>]*\bopen\b[^>]*>/', $activeContent);
+
+        $website->update(['provisioning_status' => Website::STATUS_PROVISIONING]);
+
+        $pending = $this->actingAs($user)->get(route('websites.show', $website));
+        $this->assertMatchesRegularExpression(
+            '/<details id="website-operations"[^>]*\bopen\b[^>]*>/',
+            $pending->getContent(),
+        );
+    }
+
     public function test_generated_background_script_uploads_progress_and_failure_logs(): void
     {
         [, , $website] = $this->resources();

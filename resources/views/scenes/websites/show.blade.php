@@ -262,7 +262,13 @@
         @endif
     </section>
 
-    @php($runtimeLogsNeedAttention = $runtimeLogs->contains(fn ($snapshot) => in_array($snapshot?->status, [\App\Models\WebsiteLogSnapshot::STATUS_QUEUED, \App\Models\WebsiteLogSnapshot::STATUS_REFRESHING, \App\Models\WebsiteLogSnapshot::STATUS_FAILED], true)))
+    @php
+        $runtimeLogsNeedAttention = $runtimeLogs->contains(fn ($snapshot) => in_array($snapshot?->status, [
+            \App\Models\WebsiteLogSnapshot::STATUS_QUEUED,
+            \App\Models\WebsiteLogSnapshot::STATUS_REFRESHING,
+            \App\Models\WebsiteLogSnapshot::STATUS_FAILED,
+        ], true));
+    @endphp
     <details id="website-runtime-logs" class="group ui-card mt-6 overflow-hidden" @if ($runtimeLogsNeedAttention) open @endif>
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
             <span>
@@ -286,7 +292,9 @@
             </div>
         </div>
         @foreach (\App\Models\WebsiteLogSnapshot::TYPES as $type)
-            @php($snapshot = $runtimeLogs->get($type))
+            @php
+                $snapshot = $runtimeLogs->get($type);
+            @endphp
             <div x-show="logType === '{{ $type }}'" class="mt-4" data-runtime-log-console data-refresh-url="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}" data-report-url="{{ route('websites.runtime-logs.show', [$website, $type]) }}">
                 <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p>
@@ -332,7 +340,35 @@
         </section>
     </details>
 
-    <livewire:website-provisioning-log :website="$website" />
+    @php
+        $websiteOperationsNeedAttention = $website->provisioning_status !== \App\Models\Website::STATUS_ACTIVE
+            || $website->previous_server_id !== null;
+    @endphp
+    <details id="website-operations" class="group ui-card mt-6 overflow-hidden" @if ($websiteOperationsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Provisioning and setup') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ str($website->provisioning_status ?? 'unknown')->replace('_', ' ')->headline() }}
+                    @if ($website->previous_server_id)
+                        · {{ __('Previous placement cleanup pending') }}
+                    @endif
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="space-y-6 border-t border-primary p-5">
+            <livewire:website-provisioning-log :website="$website" />
+
+            <!--
+             ! ------------------------------------------------------------
+             ! Website Setup
+             ! ------------------------------------------------------------
+             !-->
+            <livewire:website-setup :model="$website" />
+        </div>
+    </details>
 
     <!--
      ! ------------------------------------------------------------
@@ -372,12 +408,5 @@
             </ul>
         </x-ui.card>
     </section>
-
-    <!--
-     ! ------------------------------------------------------------
-     ! Website Setup
-     ! ------------------------------------------------------------
-     !-->
-    <livewire:website-setup :model="$website" />
 
 </x-layouts.app>
