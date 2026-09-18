@@ -847,6 +847,50 @@ six-column table pushed attached resources farther down than necessary.
 
 | Phase 18: provider connection history disclosure | Complete with browser follow-up | 20 focused tests / 255 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `8e7a52c` pushed to `origin/main` | Inspect server and website detail pages for secondary panels, dense metrics and operational error discoverability |
 
+## Phase 19 — server operational panel hierarchy
+
+### Responsibility problem
+
+The server detail page placed the complete metrics card and diagnostic result
+grid before attached websites and the existing logs/setup disclosure. Healthy
+operational evidence was useful but secondary to the server identity, current
+provisioning state and attached-resource actions. The result was a long first
+visit, especially when metric history and several diagnostic checks existed.
+
+### Boundaries and preserved behavior
+
+- `ServerShow`, its Livewire actions, policies, polling conditions, diagnostic
+  and log jobs, and all remote-operation boundaries remain unchanged. This
+  slice changes only the presentation state of the existing component data.
+- Metrics now use a stable `server-metrics` disclosure. A server with no sample
+  opens it so `Collect now` and the existing empty state remain discoverable;
+  completed metric history is available on demand.
+- Diagnostics use a stable `server-diagnostics` disclosure. First-use, queued,
+  running, failed and attention-required reports open automatically. A
+  completed all-clear report is collapsed but its checks, safe details and
+  rerun action remain one click away.
+- Provisioning failures, retry/resume actions, command access, attached
+  websites, log/setup recovery, polling, authorization and secret-safe output
+  remain unchanged.
+
+### Verification
+
+- Server diagnostic, log snapshot and provisioning-log suites passed: 32 tests
+  / 194 assertions. Coverage includes first-use and completed disclosure state,
+  diagnostic queue/lease/stale-attempt behavior, pinned-host failures,
+  provisioning recovery, log polling, bounded output, authorization and
+  credential non-disclosure. Pint, Blade view compilation and `git diff --check`
+  passed.
+- Commit `57e1f6c` (`ui: prioritize server operational panels`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached and
+  both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; operational open/closed states
+  are covered by feature tests and compiled markup.
+
+| Phase 19: server operational panel hierarchy | Complete with browser follow-up | 32 focused tests / 194 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `57e1f6c` pushed to `origin/main` | Inspect website detail layout and provisioning/setup disclosure states |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
