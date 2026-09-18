@@ -71,6 +71,11 @@
         flex: 0 0 auto;
     }
 
+    .ui-page-header__actions > .button,
+    .ui-page-header__actions > form > .button {
+        min-height: 2.75rem;
+    }
+
     .ui-breadcrumb {
         display: flex;
         align-items: center;

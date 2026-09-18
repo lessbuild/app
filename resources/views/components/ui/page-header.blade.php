@@ -23,7 +23,7 @@
         </div>
 
         @isset($actions)
-            <div class="ui-page-header__actions">
+            <div data-ui-page-header-actions class="ui-page-header__actions">
                 {{ $actions }}
             </div>
         @endisset

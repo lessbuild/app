@@ -105,6 +105,10 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
                     await expect(page.locator('#command-palette-query')).toBeFocused();
                     await page.keyboard.press('Escape');
+                    const quickAction = page.locator('[data-mobile-quick-action="create"]');
+                    await expect(quickAction).toHaveText('New app');
+                    expect(new URL(await quickAction.getAttribute('href')).pathname).toBe('/projects/create');
+                    await expect(quickAction).toHaveCSS('min-height', '44px');
                 }
                 if (screen === 'projects') {
                     const brand = page.locator('[data-auth-brand]');
