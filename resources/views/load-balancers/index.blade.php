@@ -68,7 +68,7 @@
                     @csrf
                     <input type="hidden" name="_load_balancer_form" value="create">
                     <div>
-                        <h2 class="font-black text-primary">{{ __('Create a high-availability route') }}</h2>
+                        <h2 class="hidden font-black text-primary lg:block">{{ __('Create a high-availability route') }}</h2>
                         <p class="mt-1 text-sm text-secondary">{{ __('Choose the environment and dedicated edge server before adding application nodes.') }}</p>
                     </div>
                     <div class="mt-5 grid gap-4 md:grid-cols-2">
