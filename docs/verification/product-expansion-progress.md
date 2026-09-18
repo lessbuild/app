@@ -1,5 +1,22 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the deployment UI was simplified to the
+timeline alone. The build and repository pages no longer render the redundant
+execution/script checklist; both now reuse the same user-facing milestone
+timeline component. Existing `setup_stage`, failure state, callback handling,
+retry behavior and logs remain unchanged, and the old `repository-setup`
+Livewire name remains a compatibility alias for the new timeline component.
+
+Focused deployment coverage passed **24 tests / 209 assertions**. Pint,
+`git diff --check`, Blade view caching and responsive browser coverage (**10
+tests** across light/dark 320/390/768/1440px viewports plus provider journeys)
+passed. The isolated dev runtime was updated to `7d7ffb0`, the service is
+active and the live-runtime smoke passed (**1 test**). Commit `7d7ffb0`
+(`Use deployment timeline without execution checklist`) is pushed to
+`origin/main`. The exact next task is to review the deployed build and
+repository timelines visually and leave this slice unchanged unless a concrete
+accessibility or density issue is found.
+
 Latest continuation: September 18 the nested `Execution checkpoints` heading
 was removed from build and repository deployment timelines. The event/status
 rows and failure details remain available inside the single
