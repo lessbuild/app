@@ -45,6 +45,36 @@
         </div>
     </dl>
 
+    @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
+        <div class="ui-alert ui-alert--danger mt-6 p-4">
+            <strong class="text-primary">{{ __('Deployment failed:') }}</strong> <span class="text-secondary">{{ $build->failure_message }}</span>
+        </div>
+        @if ($failureGuidance)
+            <section class="ui-card mt-4 border-ternary p-5" aria-labelledby="recovery-guidance-title">
+                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recovery guidance') }}</p>
+                <h2 id="recovery-guidance-title" class="mt-1 text-lg font-black text-primary">{{ $failureGuidance['title'] }}</h2>
+                <p class="mt-2 text-sm text-secondary">{{ $failureGuidance['summary'] }}</p>
+                <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
+                    <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
+                </dl>
+                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.edit', $build->repository)" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
+            </section>
+        @endif
+        @if ($rollbackCandidate)
+            @can('rollback', $rollbackCandidate)
+                <section class="ui-alert ui-alert--warning mt-4 p-5">
+                    <h2 class="font-black text-primary">{{ __('Restore the last known-good release') }}</h2>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
+                    <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
+                        @csrf
+                        <x-ui.button type="submit" variant="primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</x-ui.button>
+                    </form>
+                </section>
+            @endcan
+        @endif
+    @endif
+
     <section class="ui-card mt-4 p-5" aria-labelledby="deployment-evidence-title">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -134,36 +164,6 @@
             @endforeach
         </ol>
     </section>
-
-    @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
-        <div class="ui-alert ui-alert--danger mt-6 p-4">
-            <strong class="text-primary">{{ __('Deployment failed:') }}</strong> <span class="text-secondary">{{ $build->failure_message }}</span>
-        </div>
-        @if ($failureGuidance)
-            <section class="ui-card mt-4 border-ternary p-5" aria-labelledby="recovery-guidance-title">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recovery guidance') }}</p>
-                <h2 id="recovery-guidance-title" class="mt-1 text-lg font-black text-primary">{{ $failureGuidance['title'] }}</h2>
-                <p class="mt-2 text-sm text-secondary">{{ $failureGuidance['summary'] }}</p>
-                <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
-                    <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
-                </dl>
-                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.edit', $build->repository)" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
-            </section>
-        @endif
-        @if ($rollbackCandidate)
-            @can('rollback', $rollbackCandidate)
-                <section class="ui-alert ui-alert--warning mt-4 p-5">
-                    <h2 class="font-black text-primary">{{ __('Restore the last known-good release') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
-                    <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
-                        @csrf
-                        <x-ui.button type="submit" variant="primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</x-ui.button>
-                    </form>
-                </section>
-            @endcan
-        @endif
-    @endif
 
     @if($build->promotedFrom)
         <aside class="ui-alert ui-alert--info mt-4"><p class="font-bold text-primary">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-secondary">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="font-bold text-ternary underline">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-secondary">{{ $build->promotion_note }}</p>@endif</aside>
