@@ -1,5 +1,22 @@
 # BuildPusher product expansion progress
 
+Latest continuation: September 18 the final table-bearing views were converted
+to responsive cards and stacked decision sections. Sign-in history now presents
+derived device, method, IP and timestamp metadata as compact security cards;
+the public troubleshooting guide presents each symptom as a check/action card.
+Pagination, filters, export behavior, raw-user-agent redaction and public
+documentation links are unchanged.
+
+Focused sign-in/documentation coverage passed **36 tests / 539 assertions**,
+including explicit no-table checks and sign-in privacy assertions. Pint,
+`git diff --check`, Blade view caching and the live-runtime smoke (**1 test**)
+passed. The isolated dev runtime was fast-forwarded to `e2595f3`, the service
+is active, and commit `e2595f3` (`Replace sign-in and docs tables with cards`)
+is pushed to `origin/main`. A complete `resources/views` audit now finds no
+`<table>`, `<thead>` or `<tbody>` markup. The exact next task is final
+repository verification: run the complete PHP suite, full Pint, asset/browser
+checks and the final UI/contract audit.
+
 Latest continuation: September 18 application configuration review changes,
 recorded environment dependencies, provider observations and environment
 comparisons were converted from wide tables to labeled cards. The new layout
