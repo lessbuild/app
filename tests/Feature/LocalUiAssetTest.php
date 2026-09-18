@@ -34,6 +34,8 @@ class LocalUiAssetTest extends TestCase
         $this->get('/')
             ->assertSuccessful()
             ->assertSee('Illustrative workspace preview')
+            ->assertSee('data-landing-hero', false)
+            ->assertSee('ui-landing-preview', false)
             ->assertSee('Health verification')
             ->assertDontSee('i.imgur.com', false)
             ->assertDontSee('gopayee.test', false);
@@ -41,6 +43,8 @@ class LocalUiAssetTest extends TestCase
         $this->get(route('login'))
             ->assertSuccessful()
             ->assertSee('Deploy with confidence')
+            ->assertSee('ui-auth-panel', false)
+            ->assertSee('ui-auth-aside', false)
             ->assertDontSee('fonts.googleapis.com', false)
             ->assertDontSee('cdnjs.cloudflare.com', false);
 

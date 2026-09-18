@@ -95,7 +95,7 @@
 
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">{{ __('Skip to main content') }}</a>
 
-    <header class="sticky top-0 z-40 border-b border-primary bg-primary" x-data="{ navigationOpen: false }" @keydown.escape.window="navigationOpen = false">
+    <header class="ui-public-header sticky top-0 z-40 border-b border-primary bg-primary" x-data="{ navigationOpen: false }" @keydown.escape.window="navigationOpen = false">
         <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
             <a href="/" class="text-lg font-black uppercase tracking-tight text-primary sm:text-xl">{{ config('app.name') }}</a>
             <nav class="ml-auto hidden lg:block" aria-label="{{ __('Homepage navigation') }}">
@@ -140,8 +140,8 @@
     </header>
 
     <main id="main-content" tabindex="-1">
-        <section class="overflow-hidden bg-primary">
-            <div class="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
+        <section data-landing-hero class="ui-landing-hero overflow-hidden bg-primary">
+            <div class="ui-landing-hero__layout mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
                 <div>
                     <p class="inline-flex rounded-full border border-ternary bg-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Your infrastructure. One control plane.') }}</p>
                     <h1 class="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:mt-6 sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
@@ -156,7 +156,7 @@
                         @endforeach
                     </div>
                 </div>
-                <div data-illustrative-preview class="overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" aria-label="{{ __('Illustrative workspace preview') }}">
+                <div data-illustrative-preview class="ui-landing-preview overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" aria-label="{{ __('Illustrative workspace preview') }}">
                     <div class="flex items-center justify-between border-b border-primary px-5 py-4"><div class="flex gap-1.5" aria-hidden="true"><span class="h-2.5 w-2.5 rounded-full bg-ternary"></span><span class="h-2.5 w-2.5 rounded-full bg-secondary"></span><span class="h-2.5 w-2.5 rounded-full bg-tertiary"></span></div><span class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Illustrative workspace') }}</span></div>
                     <div class="grid gap-4 bg-secondary p-4 sm:grid-cols-[1.35fr_.65fr] sm:p-5">
                         <div class="rounded-xl border border-primary bg-primary p-5">
@@ -171,7 +171,7 @@
             </div>
         </section>
 
-        <section class="border-y border-primary bg-secondary" aria-labelledby="providers-heading">
+        <section class="ui-provider-strip border-y border-primary bg-secondary" aria-labelledby="providers-heading">
             <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
                 <h2 id="providers-heading" class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Works with the providers you already use') }}</h2>
                 <ul class="grid grid-cols-2 gap-2 sm:flex" aria-label="{{ __('Supported providers') }}">@foreach ([['digital-ocean', 'DigitalOcean'], ['github', 'GitHub'], ['gitlab', 'GitLab'], ['bitbucket', 'Bitbucket']] as [$icon, $name])<li class="flex items-center gap-2 rounded-lg border border-primary bg-primary px-3 py-2 text-sm font-bold text-primary"><svg class="h-4 w-4 fill-current" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use></svg>{{ $name }}</li>@endforeach</ul>
@@ -267,7 +267,7 @@
             <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[.7fr_1.3fr] lg:px-8"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Good to know') }}</p><h2 class="mt-3 text-3xl font-black text-primary">{{ __('Straight answers.') }}</h2></div><div class="space-y-3">@foreach ([[__('Who is BuildPusher for?'), __('Development teams and operators who want a focused control plane while keeping applications in their own cloud accounts.')], [__('Where does my application run?'), __('On infrastructure in the provider account you connect. BuildPusher coordinates the operational workflow.')], [__('Can I recover a previous release?'), __('Yes. Recorded revisions can be redeployed with lineage and logs retained, provided the target is ready.')], [__('How are sensitive values handled?'), __('Provider tokens, environments, scripts, command text, and retained output are encrypted at rest and owner-scoped.')], [__('What does BuildPusher not replace?'), __('Your cloud provider, source host, application architecture, and independent external monitoring remain separate. Provider invoices remain authoritative for cost.')]] as [$question, $answer])<details class="group rounded-xl border border-primary bg-primary p-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary">{{ $question }}<span class="text-xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span></summary><p class="mt-3 leading-7 text-secondary">{{ $answer }}</p></details>@endforeach</div></div>
         </section>
 
-        <section class="border-t border-primary bg-primary py-14"><div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div><h2 class="text-3xl font-black tracking-tight text-primary">{{ __('Make the next deployment the clear one.') }}</h2><p class="mt-2 text-secondary">{{ __('Bring infrastructure, releases, and recovery into one workspace.') }}</p></div><a href="{{ $primaryUrl }}" class="rounded-lg bg-ternary px-6 py-3 text-center text-sm font-bold text-white shadow-lg">{{ $primaryLabel }}</a></div></section>
+        <section class="ui-public-cta border-t border-primary bg-primary py-14"><div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div><h2 class="text-3xl font-black tracking-tight text-primary">{{ __('Make the next deployment the clear one.') }}</h2><p class="mt-2 text-secondary">{{ __('Bring infrastructure, releases, and recovery into one workspace.') }}</p></div><a href="{{ $primaryUrl }}" class="rounded-lg bg-ternary px-6 py-3 text-center text-sm font-bold text-white shadow-lg">{{ $primaryLabel }}</a></div></section>
     </main>
 
     <footer class="border-t border-primary bg-secondary px-4 py-8"><div class="mx-auto flex max-w-7xl flex-col gap-5 sm:px-2 md:flex-row md:items-center md:justify-between lg:px-4"><div><p class="font-black uppercase tracking-tight text-primary">{{ config('app.name') }}</p><p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. One focused control plane.') }}</p></div><nav aria-label="{{ __('Footer navigation') }}" class="flex flex-wrap gap-5 text-sm font-medium text-secondary"><a href="#features">{{ __('Capabilities') }}</a><a href="#product">{{ __('Product') }}</a><a href="#how-it-works">{{ __('How it works') }}</a><a href="{{ route('platform-status.show') }}">{{ __('Status') }}</a><a href="{{ route('privacy') }}">{{ __('Privacy') }}</a><a href="{{ route('terms') }}">{{ __('Terms') }}</a><a href="{{ route('login') }}">{{ __('Sign in') }}</a></nav></div></footer>
