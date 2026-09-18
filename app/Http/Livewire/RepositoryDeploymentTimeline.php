@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\Build;
 use App\Models\Repository;
 use App\Services\BuildDeploymentTimeline;
 use Illuminate\Contracts\View\View;
@@ -23,6 +24,7 @@ class RepositoryDeploymentTimeline extends Component
 
         return view('livewire.repository-deployment-timeline', [
             'deploymentTimeline' => $latestBuild ? $timeline->for($latestBuild) : [],
+            'deploymentCanceled' => $latestBuild?->status === Build::STATUS_CANCELED,
         ]);
     }
 }
