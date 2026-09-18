@@ -58,7 +58,7 @@ for (const colorScheme of ['light', 'dark']) {
                 await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), screen).toBe(true);
                 const primaryText = page.locator('.text-primary').first();
-                await expect(primaryText).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(156, 163, 175)' : 'rgb(75, 85, 99)');
+                await expect(primaryText).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(55, 65, 81)');
                 if (screen === 'login') {
                     await expect(page.locator('#email')).toHaveCSS('border-top-width', '1px');
                     await expect(page.locator('#email')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');

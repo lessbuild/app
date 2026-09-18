@@ -121,9 +121,10 @@ for (const device of devices) {
         if (device.width < 1024) {
             await page.getByRole('button', { name: 'Toggle navigation' }).click();
             await expect(navigation).toBeVisible();
-            await expect(navigation.getByRole('link', { name: 'Applications' })).toBeVisible();
-            await navigation.getByRole('link', { name: 'Account and security' }).scrollIntoViewIfNeeded();
-            await expect(navigation.getByRole('link', { name: 'Account and security' })).toBeVisible();
+            await expect(navigation.getByRole('link', { name: 'Applications', exact: true })).toBeVisible();
+            await navigation.getByRole('link', { name: 'Account', exact: true }).scrollIntoViewIfNeeded();
+            await expect(navigation.getByRole('link', { name: 'Account', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
             await page.getByRole('button', { name: 'Close navigation', exact: true }).click();
             await expect(navigation).toBeHidden();
         } else {

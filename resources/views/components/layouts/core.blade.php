@@ -44,7 +44,7 @@
             @livewireStyles
         @endif
     </head>
-    <body class="font-sans text-sm bg-primary">
+    <body class="font-sans text-sm text-primary bg-primary">
         {{ $slot }}
 
         @if ($livewire)

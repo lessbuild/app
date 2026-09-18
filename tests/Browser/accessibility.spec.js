@@ -48,6 +48,13 @@ for (const viewport of viewports) {
         const palette = page.getByRole('dialog', { name: 'Command palette' });
         await expect(palette).toBeVisible();
         await expect(page.locator('#command-palette-query')).toBeFocused();
+        await page.keyboard.press('ArrowDown');
+        await expect(page.locator('[data-palette-item]').first()).toBeFocused();
+        await expect(page.locator('[data-palette-item]').first()).toHaveAttribute('aria-selected', 'true');
+        await page.keyboard.press('ArrowDown');
+        await expect(page.locator('[data-palette-item]').nth(1)).toBeFocused();
+        await page.keyboard.press('ArrowUp');
+        await expect(page.locator('[data-palette-item]').first()).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(palette).toBeHidden();
         if (viewport.width >= 640) await expect(page.getByRole('button', { name: /Search and navigate/ })).toBeFocused();

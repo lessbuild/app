@@ -42,7 +42,7 @@
     &.ternary {
         @apply bg-ternary;
         @apply border-ternary;
-        @apply text-ternary;
+        @apply text-white;
     }
 
     &.danger {
