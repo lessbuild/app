@@ -544,6 +544,12 @@ class AutomationTest extends TestCase
         $this->assertTrue($token->expires_at->isBetween(now()->addDays(89), now()->addDays(91)));
         $oldHash = $token->token;
 
+        $tokenPage = $this->get(route('automation.index'))
+            ->assertOk()
+            ->assertSee('Copy this token now')
+            ->getContent();
+        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*>/', $tokenPage);
+
         $rotate = $this->post(route('automation.tokens.rotate', $token));
 
         $rotate->assertRedirect()->assertSessionHas('plainTextToken');
