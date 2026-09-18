@@ -1496,6 +1496,29 @@ The exact commands and cleanup scope are recorded in
 verification is now complete. Production release, physical-phone checks,
 live acceptance and external provider acceptance remain separate gates.
 
+## Final isolated UI gate — 2026-09-18
+
+The final page-family audit and verification gate are complete on isolated
+main. Remaining project, repository, website, server, build, provider,
+database, domain, notification, cost, account, public and authentication
+pages were reviewed. Existing responsive table fallbacks and progressive
+disclosures were retained where they already met the need; no speculative
+application extraction was added.
+
+The final implementation slices are pushed through 7d1af0e, 45dc909 and
+99b1faa, with their verification records pushed through f5c2191, 8123659 and
+3d758e2. The strict PHP 8.5.10 suite passed 1,604 tests and 13,201
+assertions. Pint, Composer validation/platform checks, the Vite build, route
+cache, view cache, configuration cache and diff check passed.
+
+The final isolated browser gate passed 20 tests: 10 asset/layout tests, 7
+served Livewire/navigation/accessibility tests and 3 broad
+mobile/tablet/desktop route-audit tests. The disposable runtime used a
+temporary SQLite database and was stopped after verification. These results
+are local/dev evidence only; production release, physical-device checks,
+provider-backed acceptance, mail, billing, GitHub App, independent
+monitoring and recovery drills remain separate.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

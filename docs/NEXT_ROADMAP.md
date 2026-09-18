@@ -275,6 +275,23 @@ external/live acceptance only: production release, physical-phone checks,
 provider-backed acceptance, mail, billing, GitHub App, independent monitoring
 and recovery drills.
 
+## Final isolated UI gate — 2026-09-18
+
+The final UI page-family audit is complete on isolated main. The final
+implementation slices are pushed through 7d1af0e, 45dc909 and 99b1faa, and
+the complete local gate passed:
+
+- Strict PHP 8.5.10: **1,604 tests / 13,201 assertions**.
+- Pint, Composer validation/platform checks, Vite build, route/view/config
+  caches and git diff check: passed.
+- Browser verification: **20 passed** across the current asset/layout matrix,
+  served Livewire/navigation/accessibility checks and the broad
+  mobile/tablet/desktop route audit.
+
+The disposable runtime used a temporary SQLite database and was stopped after
+verification. No production release or external provider acceptance is
+claimed. The remaining work is external/live acceptance only.
+
 ## Deferred release gates
 
 The September 17 preview review found and corrected a PostgreSQL cleanup

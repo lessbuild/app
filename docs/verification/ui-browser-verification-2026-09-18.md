@@ -53,3 +53,26 @@ The previous browser follow-up is complete locally. No browser regression or
 remaining tablet/mobile navigation expectation was found in the current
 `main` line. Production release, physical-phone checks, live acceptance and
 external provider acceptance remain separate gates.
+
+## Final isolated-main confirmation — 2026-09-18
+
+After the remaining UI slices, the final implementation checkout was verified
+with its own disposable runtime on port 8014, a temporary SQLite database and
+array/file-backed local services. The runtime was stopped after the checks.
+The served runtime was the isolated implementation checkout, not the live
+site, production checkout or acceptance-drill checkout.
+
+The current final code passed:
+
+- **10** asset/layout fixture tests across light/dark 320/390/768/1440px,
+  including the dashboard, deployment, provider, backup, observability and
+  automation hierarchy checks.
+- **7** served Livewire, public-navigation, authenticated-navigation and
+  accessibility tests.
+- **3** broad mobile/tablet/desktop visual route-audit tests.
+
+This is **20 final browser tests passed**. The route audit reported no runtime
+errors or horizontal overflow. The earlier 19-test browser follow-up remains
+the historical record for that earlier code point; this section records the
+current final implementation. Production release, physical-device checks,
+live acceptance and external provider acceptance remain separate gates.
