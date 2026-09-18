@@ -1310,6 +1310,46 @@ state could be separated from the table that required refresh.
 
 | Phase 29: operational history priority | Complete with browser follow-up | 12 focused tests / 109 assertions, Pint, view compilation and push passed; post-change browser measurement deferred by host disk exhaustion | `0f080c4` pushed to `origin/main` | Complete system-health/admin and public documentation/status page hierarchy audit |
 
+## Phase 30 — admin analytics insight priority
+
+### Responsibility problem
+
+Business Analytics placed nine aggregate cards before the signup and
+deployment charts and the pending-access context that can require immediate
+admin action. On a healthy platform this pushed the useful trend evidence
+below a large summary block; on a platform needing attention, the summary did
+not communicate why it was expanded.
+
+### Boundaries and preserved behavior
+
+- `AdminAnalyticsController`, `BusinessAnalytics`, platform-admin
+  authorization, metric definitions, date windows and privacy-preserving
+  aggregates remain unchanged.
+- The aggregate cards now share `admin-analytics-summary`. The summary stays
+  collapsed when there are no pending access requests or recent limit denials,
+  while those attention states open it automatically. User count and pending
+  access count remain visible in the summary row.
+- Signup/deployment trends, plan distribution, existing admin links and
+  private analytics boundaries remain in the same server-rendered response.
+
+### Verification
+
+- Admin analytics and access-request suites passed: 16 tests / 111
+  assertions, including platform-admin authorization, privacy-safe denial
+  counting, pending-access disclosure and existing request validation,
+  invitation, export and pruning behavior. Pint, Blade view compilation and
+  `git diff --check` passed.
+- Commit `e448fc3` (`Prioritize admin analytics insights`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was fast-forwarded, view-cached
+  and both service units remained active.
+- A post-change browser measurement remains deferred because the isolated host
+  is at 100% root disk usage and Chromium crashes before evaluation. No
+  post-change height or click result is claimed; attention-aware disclosure,
+  platform-admin access and preserved metrics are covered by feature tests and
+  compiled markup.
+
+| Phase 30: admin analytics insight priority | Complete with browser follow-up | 16 focused tests / 111 assertions, Pint, view compilation and `git diff --check` passed; post-change browser measurement deferred by host disk exhaustion | `e448fc3` pushed to `origin/main` | Audit public documentation, API documentation, status and authentication page hierarchy |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
