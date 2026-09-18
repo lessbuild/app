@@ -1,7 +1,8 @@
 <x-layouts.app>
-    <header class="ui-card mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title">
+    <header class="ui-dashboard-hero ui-card mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
         <div class="min-w-0">
-            <p class="text-sm text-secondary">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
+            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace overview') }}</p>
+            <p class="mt-2 text-sm text-secondary">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
             <h1 id="dashboard-title" class="mt-1 break-words text-2xl font-bold text-primary">{{ auth()->user()->currentOrganization?->name ?: __('Dashboard') }}</h1>
             <p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
         </div>
@@ -29,14 +30,9 @@
 
     @include('dashboard._setup')
 
-    @if(in_array('stats', $dashboardWidgets, true))
-    <div data-dashboard-stats class="grid grid-cols-2 gap-2 -mx-1.5 mb-8 sm:-mx-3 sm:mb-12 sm:gap-0 md:grid-cols-2 lg:grid-cols-4">
-        <x-panel.stats icon="link" :title="$stats['websites']" :description="__('Websites')" />
-        <x-panel.stats icon="cloud" :title="$stats['servers']" :description="__('Servers')" />
-        <x-panel.stats icon="cloud-upload" :title="$stats['builds']" :description="__('Builds')" />
-        <x-panel.stats icon="code" :title="$stats['repositories']" :description="__('Repositories')" />
-    </div>
-    @endif
+    @include('dashboard._quick-actions')
+
+    @include('dashboard._metrics')
 
     <details
         id="dashboard-operational-overview"

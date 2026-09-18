@@ -154,6 +154,31 @@ class DashboardTest extends TestCase
         $this->assertLessThan($overviewPosition, $setupPosition);
     }
 
+    public function test_dashboard_uses_a_workspace_first_value_hierarchy_for_quick_actions_and_totals(): void
+    {
+        $content = $this->actingAs(User::factory()->create())
+            ->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('data-dashboard-hero', false)
+            ->assertSee('Workspace overview')
+            ->assertSee('data-dashboard-quick-actions', false)
+            ->assertSee('Quick actions')
+            ->assertSee('Create application')
+            ->assertSee('Open observability')
+            ->assertSee('aria-label="Workspace totals"', false)
+            ->getContent();
+
+        $setupPosition = strpos($content, 'id="setup-progress-title"');
+        $quickActionsPosition = strpos($content, 'id="dashboard-quick-actions-title"');
+        $statsPosition = strpos($content, 'data-dashboard-stats');
+
+        $this->assertNotFalse($setupPosition);
+        $this->assertNotFalse($quickActionsPosition);
+        $this->assertNotFalse($statsPosition);
+        $this->assertLessThan($quickActionsPosition, $setupPosition);
+        $this->assertLessThan($statsPosition, $quickActionsPosition);
+    }
+
     public function test_dashboard_setup_has_mobile_step_navigation_without_removing_setup_actions(): void
     {
         $content = $this->actingAs(User::factory()->create())

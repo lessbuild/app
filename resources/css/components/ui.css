@@ -76,6 +76,18 @@
         min-height: 2.75rem;
     }
 
+    .ui-dashboard-hero {
+        background: linear-gradient(135deg, var(--ui-surface) 0%, var(--ui-accent-soft) 145%);
+    }
+
+    .ui-dashboard-quick-action {
+        text-decoration: none;
+    }
+
+    .ui-dashboard-quick-action--primary {
+        border-color: var(--ui-accent);
+    }
+
     .ui-breadcrumb {
         display: flex;
         align-items: center;
@@ -333,6 +345,10 @@
             overflow: hidden;
             -webkit-box-orient: vertical;
             -webkit-line-clamp: 2;
+        }
+
+        [data-dashboard-stats] .ui-stat__description {
+            display: none;
         }
     }
 
