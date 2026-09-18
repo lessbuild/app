@@ -383,6 +383,46 @@ first-deployment data measured about 5,755px.
 
 | Phase 7: repository overview and secondary deployment history | Complete | 32 focused tests / 293 assertions, Pint, view compilation, push and real mobile state checks passed; first-deployment fixture shortened ~1,110px | `7e698be` pushed to `origin/main` | Put webhook configuration first and make delivery history a filtered, state-aware disclosure |
 
+## Phase 8 — repository webhook configuration and delivery disclosure
+
+### Responsibility problem
+
+Webhook configuration and the paginated delivery table shared one always-open
+card. Even when no delivery needed attention, filters, seven delivery metrics
+and the table consumed the repository page; active delivery states were not
+visually distinguished from historical records.
+
+### Boundaries and preserved behavior
+
+- Webhook URL, provider-specific instructions, one-time secret display,
+  signing-token input and enable/rotate/disable forms remain immediately
+  visible inside the existing `deployment-webhook` section.
+- Delivery history is now a native disclosure with its matching-delivery count.
+  It opens for active status/date filters or queued/pending deliveries and is
+  closed for ordinary received-only history.
+- Existing filter names, GET action and `#webhook-deliveries` anchor,
+  pagination page name, CSV export route, status metrics, escaped payload text,
+  replay behavior and secret exclusion are unchanged.
+- The existing inline session assignment was converted to a block PHP
+  statement after the template parser exposed an invalid compiled boundary;
+  this changes no value or session behavior.
+
+### Verification
+
+- Repository webhook history, webhook behavior and repository insights suites
+  passed: 22 tests / 226 assertions.
+- Pint, Blade cache compilation and `git diff --check` passed after correcting
+  the parser issue; no failed implementation commit was pushed.
+- Commit `b4d35d2` (`feat: streamline repository webhook history`) was pushed to
+  `origin/main`; the isolated HTTPS runtime was cache-refreshed and both service
+  units remained active.
+- A real 390px browser check confirmed the normal repository’s delivery panel
+  is closed without pending work and toggles on click. The active fixture kept
+  setup open, while webhook configuration began around 824px; the normal page
+  measured about 4,165px with delivery history collapsed.
+
+| Phase 8: repository webhook configuration and delivery disclosure | Complete | 22 focused tests / 226 assertions, parser recovery, Pint, view compilation, push and real mobile interaction passed; ordinary history collapses while active/filter states open | `b4d35d2` pushed to `origin/main` | Inspect application/environment detail pages and choose the next summary-first slice |
+
 Known limitations retained from earlier work: the separate live acceptance
 drill, production release gates, physical-phone checks and any external
 provider acceptance remain outside this UI implementation.
