@@ -52,6 +52,8 @@ class ApplicationConfigurationEnvironmentComparisonTest extends TestCase
             ]))
             ->assertOk()
             ->assertSee('Recorded environment comparison')
+            ->assertSee('data-configuration-comparison-field', false)
+            ->assertDontSee('<table', false)
             ->assertSee('Branch')
             ->assertSee('develop')
             ->assertDontSee('private-command')

@@ -77,23 +77,21 @@
             @if(collect($plan['changes'])->contains(fn ($change) => $change['kind'] === 'environment' && $change['action'] === 'remove'))
                 <x-ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-ui.alert>
             @endif
-            <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <caption class="sr-only">{{ __('Reviewed configuration changes') }}</caption>
-                    <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Object') }}</th><th scope="col" class="p-3">{{ __('Action') }}</th><th scope="col" class="p-3">{{ __('Reviewed fields') }}</th></tr></thead>
-                    <tbody>
-                        @foreach($plan['changes'] as $change)
-                            <tr class="border-b border-primary align-top text-primary">
-                                <th scope="row" class="p-3 font-medium"><span class="block">{{ $change['name'] }}</span><span class="text-xs text-secondary">{{ $change['environment'] }} / {{ $change['kind'] }}</span></th>
-                                <td class="p-3">{{ ucfirst(str_replace('_', ' ', $change['action'])) }}
-                                    @if($change['kind'] === 'deployment')<span class="mt-1 block text-xs text-secondary">{{ ($change['requires_approval'] ?? false) ? __('Approval required before deployment') : __('Queued after local apply; not immediate remote success') }}</span>@endif
-                                    @if($change['action'] === 'detach')<span class="mt-1 block text-xs text-secondary">{{ __('Remote data preserved') }}</span>@endif
-                                </td>
-                                <td class="p-3 text-secondary">{{ $change['fields'] === [] ? '—' : implode(', ', $change['fields']) }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+            <div class="mt-4 divide-y divide-primary rounded-lg border border-primary" aria-label="{{ __('Reviewed configuration changes') }}">
+                @foreach($plan['changes'] as $change)
+                    <article data-configuration-change class="p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="font-semibold text-primary">{{ $change['name'] }}</h3>
+                                <p class="mt-1 text-xs text-secondary">{{ $change['environment'] }} / {{ $change['kind'] }}</p>
+                            </div>
+                            <x-ui.badge>{{ ucfirst(str_replace('_', ' ', $change['action'])) }}</x-ui.badge>
+                        </div>
+                        @if($change['kind'] === 'deployment')<p class="mt-3 text-xs text-secondary">{{ ($change['requires_approval'] ?? false) ? __('Approval required before deployment') : __('Queued after local apply; not immediate remote success') }}</p>@endif
+                        @if($change['action'] === 'detach')<p class="mt-3 text-xs text-secondary">{{ __('Remote data preserved') }}</p>@endif
+                        <p class="mt-3 text-sm text-secondary"><span class="font-semibold text-primary">{{ __('Reviewed fields') }}:</span> {{ $change['fields'] === [] ? '—' : implode(', ', $change['fields']) }}</p>
+                    </article>
+                @endforeach
             </div>
             <p class="mt-3 text-xs text-secondary">{{ __('Command and credential values are hidden. Fields identify the settings under review, not a plaintext diff.') }}</p>
             <p class="mt-4 text-secondary">{{ __('Expires') }}: {{ $review->expires_at->toIso8601String() }}</p>
@@ -120,22 +118,23 @@
                 <x-ui.badge>{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</x-ui.badge>
             </div>
             @if($environmentOverview->isNotEmpty())
-                <div class="mt-4 overflow-x-auto">
-                    <table class="w-full min-w-[48rem] text-left text-sm">
-                        <caption class="sr-only">{{ __('Recorded environment dependencies') }}</caption>
-                        <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Environment') }}</th><th scope="col" class="p-3">{{ __('Runtime') }}</th><th scope="col" class="p-3">{{ __('Recorded dependencies') }}</th><th scope="col" class="p-3">{{ __('Configuration') }}</th><th scope="col" class="p-3">{{ __('Provider state') }}</th></tr></thead>
-                        <tbody>
-                            @foreach($environmentOverview as $environment)
-                                <tr class="border-b border-primary align-top text-primary">
-                                    <th scope="row" class="p-3"><span class="flex flex-wrap items-center gap-2 font-bold">{{ $environment->name }} @if($environment->isProtected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif</span><span class="mt-1 block text-xs text-secondary">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</span></th>
-                                    <td class="p-3 text-secondary">{{ ucfirst($environment->runtimeType) }}</td>
-                                    <td class="p-3"><ul class="space-y-1">@foreach($environment->dependencies as $dependency)<li><span class="font-medium text-primary">{{ ucfirst($dependency['kind']) }}:</span> {{ $dependency['name'] }} <span class="text-secondary">· {{ str_replace('_', ' ', $dependency['status']) }} · {{ $dependency['detail'] }}</span></li>@endforeach</ul></td>
-                                    <td class="p-3 text-secondary">{{ $environment->processCount }} {{ __('process(es)') }} · {{ $environment->resourceCount }} {{ __('resource(s)') }} · {{ $environment->variableCount }} {{ __('variable(s)') }}<br><span class="text-xs">{{ $environment->secretCount }} {{ __('secret value(s) masked') }}</span></td>
-                                    <td class="p-3"><form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><x-ui.button type="submit" variant="secondary" class="whitespace-nowrap">{{ __('Observe provider') }}</x-ui.button></form></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="mt-4 space-y-3" aria-label="{{ __('Recorded environment dependencies') }}">
+                    @foreach($environmentOverview as $environment)
+                        <article data-configuration-environment class="rounded-xl border border-primary bg-secondary p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <h3 class="flex flex-wrap items-center gap-2 font-bold text-primary">{{ $environment->name }} @if($environment->isProtected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif</h3>
+                                    <p class="mt-1 text-xs text-secondary">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</p>
+                                </div>
+                                <form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><x-ui.button type="submit" variant="secondary">{{ __('Observe provider') }}</x-ui.button></form>
+                            </div>
+                            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
+                                <div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Runtime') }}</dt><dd class="mt-1 text-primary">{{ ucfirst($environment->runtimeType) }}</dd></div>
+                                <div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Configuration') }}</dt><dd class="mt-1 text-primary">{{ $environment->processCount }} {{ __('process(es)') }} · {{ $environment->resourceCount }} {{ __('resource(s)') }} · {{ $environment->variableCount }} {{ __('variable(s)') }}<span class="mt-1 block text-xs text-secondary">{{ $environment->secretCount }} {{ __('secret value(s) masked') }}</span></dd></div>
+                                <div class="sm:col-span-2"><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Recorded dependencies') }}</dt><dd class="mt-1"><ul class="space-y-1">@foreach($environment->dependencies as $dependency)<li><span class="font-medium text-primary">{{ ucfirst($dependency['kind']) }}:</span> {{ $dependency['name'] }} <span class="text-secondary">· {{ str_replace('_', ' ', $dependency['status']) }} · {{ $dependency['detail'] }}</span></li>@endforeach</ul></dd></div>
+                            </dl>
+                        </article>
+                    @endforeach
                 </div>
             @else
                 <p class="mt-4 text-sm text-secondary">{{ __('No environments have been recorded yet.') }}</p>
@@ -158,16 +157,16 @@
                 <p class="mt-3 text-sm font-bold text-primary">{{ __('Provider readiness: :status', ['status' => str($observation->providerReadiness)->replace('_', ' ')->headline()]) }}</p>
                 @if($observation->providerState)<p class="mt-1 text-xs text-secondary">{{ __('Provider lifecycle: :state', ['state' => $observation->providerState]) }}</p>@endif
                 @if($observation->status === \App\Data\ApplicationEnvironmentObservation::STATUS_OBSERVED)
-                    <div class="mt-4 overflow-x-auto">
-                        <table class="w-full min-w-[42rem] text-left text-sm">
-                            <caption class="sr-only">{{ __('Observed provider server fields') }}</caption>
-                            <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Field') }}</th><th scope="col" class="p-3">{{ __('Recorded locally') }}</th><th scope="col" class="p-3">{{ __('Observed at provider') }}</th><th scope="col" class="p-3">{{ __('Result') }}</th></tr></thead>
-                            <tbody>
-                                @foreach($observation->fields as $field)
-                                    <tr class="border-b border-primary align-top text-primary"><th scope="row" class="p-3 font-medium">{{ $field['field'] }}</th><td class="p-3 text-secondary">{{ $field['recorded'] }}</td><td class="p-3 text-secondary">{{ $field['observed'] }}</td><td class="p-3">{{ $field['status'] === 'match' ? __('Matches') : __('Different') }}</td></tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="mt-4 divide-y divide-primary rounded-lg border border-primary" aria-label="{{ __('Observed provider server fields') }}">
+                        @foreach($observation->fields as $field)
+                            <article data-configuration-observation-field class="p-4">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <h3 class="font-semibold text-primary">{{ $field['field'] }}</h3>
+                                    <x-ui.badge :tone="$field['status'] === 'match' ? 'success' : 'warning'">{{ $field['status'] === 'match' ? __('Matches') : __('Different') }}</x-ui.badge>
+                                </div>
+                                <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Recorded locally') }}</dt><dd class="mt-1 text-secondary">{{ $field['recorded'] }}</dd></div><div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Observed at provider') }}</dt><dd class="mt-1 text-secondary">{{ $field['observed'] }}</dd></div></dl>
+                            </article>
+                        @endforeach
                     </div>
                     @if($observation->hasDifferences())<p class="mt-3 text-xs text-secondary">{{ __('A difference is informational only. Corrective changes must go through the existing configuration review and apply workflow.') }}</p>@endif
                 @endif
@@ -181,16 +180,13 @@
                 @if($comparison->isIdentical())
                     <p class="mt-4 rounded-lg border border-primary bg-secondary p-3 text-sm text-secondary">{{ __('All displayed recorded fields match. Commands, variable keys and values, and encrypted resource configuration are not compared.') }}</p>
                 @else
-                    <div class="mt-4 overflow-x-auto">
-                        <table class="w-full min-w-[40rem] text-left text-sm">
-                            <caption class="sr-only">{{ __('Safe recorded environment differences') }}</caption>
-                            <thead class="border-b border-primary text-secondary"><tr><th scope="col" class="p-3">{{ __('Field') }}</th><th scope="col" class="p-3">{{ $comparison->from->name }}</th><th scope="col" class="p-3">{{ $comparison->to->name }}</th></tr></thead>
-                            <tbody>
-                                @foreach($comparison->differences as $difference)
-                                    <tr class="border-b border-primary align-top text-primary"><th scope="row" class="p-3 font-medium">{{ $difference['field'] }}</th><td class="p-3 text-secondary">{{ $difference['from'] }}</td><td class="p-3 text-secondary">{{ $difference['to'] }}</td></tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="mt-4 divide-y divide-primary rounded-lg border border-primary" aria-label="{{ __('Safe recorded environment differences') }}">
+                        @foreach($comparison->differences as $difference)
+                            <article data-configuration-comparison-field class="p-4">
+                                <h3 class="font-semibold text-primary">{{ $difference['field'] }}</h3>
+                                <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ $comparison->from->name }}</dt><dd class="mt-1 text-secondary">{{ $difference['from'] }}</dd></div><div><dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ $comparison->to->name }}</dt><dd class="mt-1 text-secondary">{{ $difference['to'] }}</dd></div></dl>
+                            </article>
+                        @endforeach
                     </div>
                     <p class="mt-3 text-xs text-secondary">{{ __('Only non-secret metadata is shown. Executable commands, variable keys and values, and encrypted resource configuration are excluded.') }}</p>
                 @endif

@@ -62,6 +62,8 @@ class ApplicationConfigurationEnvironmentObservationTest extends TestCase
             ->assertSee('Provider lifecycle: active')
             ->assertSee('Different')
             ->assertSee('Matches')
+            ->assertSee('data-configuration-observation-field', false)
+            ->assertDontSee('<table', false)
             ->assertDontSee('do-not-render');
         $this->assertSame('Recorded server', $server->fresh()->name);
         $this->assertDatabaseCount('configuration_applications', 0);
