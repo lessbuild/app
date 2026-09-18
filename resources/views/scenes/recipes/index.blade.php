@@ -52,12 +52,13 @@
         </form>
     </x-ui.filter-panel>
 
-    <details id="recipe-insights" class="ui-card group mt-6 overflow-hidden">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>{{ __('Insights') }}</span>
-            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count matching recipe|:count matching recipes', $metrics['total'], ['count' => $metrics['total']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
-        </summary>
-        <dl class="grid gap-3 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <x-ui.insights
+        id="recipe-insights"
+        class="mt-6"
+        :open="false"
+        :summary="trans_choice(':count matching recipe|:count matching recipes', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <x-ui.stat class="ui-card" :label="__('Matching recipes')" :value="$metrics['total']" :description="__('Recipes in this filtered view.')" />
             <x-ui.stat class="ui-card" :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching recipes assigned to servers.')" />
             <x-ui.stat class="ui-card" :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching recipes without assignments.')" />
@@ -65,7 +66,7 @@
             <x-ui.stat class="ui-card" :label="__('Covered servers')" :value="$metrics['servers']" :description="__('Distinct servers using matching recipes.')" />
             <x-ui.stat class="ui-card" :label="__('Latest update')" :value="$metrics['latest_at']?->diffForHumans() ?? __('No matching recipe')" :description="__('Most recently updated matching recipe.')" />
         </dl>
-    </details>
+    </x-ui.insights>
 
     @if ($recipes->isEmpty())
         <div class="mx-auto max-w-3xl">

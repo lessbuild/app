@@ -61,7 +61,10 @@
                         }
 
                         if (details.dataset.responsiveDetailsInitialized !== 'true') {
-                            details.open = details.dataset.responsiveDetailsMobileOpen === 'true';
+                            const mobileExpanded = details.dataset.responsiveDetailsMobileExpanded
+                                ?? details.dataset.responsiveDetailsMobileOpen;
+
+                            details.open = mobileExpanded === 'true';
                             details.dataset.responsiveDetailsInitialized = 'true';
                             details.dataset.responsiveDetailsAutoOpened = 'false';
                         }

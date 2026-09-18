@@ -55,14 +55,20 @@
         </form>
     </section>
 
-    <dl class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <x-ui.stat class="ui-card" :label="__('Matching checks')" :value="$metrics['total']" :description="__('Checks in this filtered retained sample.')" />
-        <x-ui.stat class="ui-card" :label="__('Healthy checks')" :value="$metrics['healthy']" :description="__('Matching successful responses.')" />
-        <x-ui.stat class="ui-card" :label="__('Failed checks')" :value="$metrics['failed']" :description="__('Matching unsuccessful responses.')" />
-        <x-ui.stat class="ui-card" :label="__('Observed success')" :value="$metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available')" :description="__('Recorded sample rate, not SLA uptime.')" />
-        <x-ui.stat class="ui-card" :label="__('Median healthy response')" :value="$metrics['median_healthy_duration_ms'] !== null ? $metrics['median_healthy_duration_ms'].' ms' : __('Not recorded')" :description="__('Median of matching successful checks.')" />
-        <x-ui.stat class="ui-card" :label="__('Latest matching check')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="__('Newest check in the filtered sample.')" />
-    </dl>
+    <x-ui.insights
+        id="health-checks-insights"
+        class="mt-6"
+        :summary="trans_choice(':count matching check|:count matching checks', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <x-ui.stat class="ui-card" :label="__('Matching checks')" :value="$metrics['total']" :description="__('Checks in this filtered retained sample.')" />
+            <x-ui.stat class="ui-card" :label="__('Healthy checks')" :value="$metrics['healthy']" :description="__('Matching successful responses.')" />
+            <x-ui.stat class="ui-card" :label="__('Failed checks')" :value="$metrics['failed']" :description="__('Matching unsuccessful responses.')" />
+            <x-ui.stat class="ui-card" :label="__('Observed success')" :value="$metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available')" :description="__('Recorded sample rate, not SLA uptime.')" />
+            <x-ui.stat class="ui-card" :label="__('Median healthy response')" :value="$metrics['median_healthy_duration_ms'] !== null ? $metrics['median_healthy_duration_ms'].' ms' : __('Not recorded')" :description="__('Median of matching successful checks.')" />
+            <x-ui.stat class="ui-card" :label="__('Latest matching check')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="__('Newest check in the filtered sample.')" />
+        </dl>
+    </x-ui.insights>
 
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-secondary">

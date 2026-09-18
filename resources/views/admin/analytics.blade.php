@@ -9,12 +9,14 @@
         $analyticsSummaryOpen = $totals['pending_access_requests'] > 0 || $totals['denials_30d'] > 0;
     @endphp
 
-    <details id="admin-analytics-summary" class="ui-card group mt-8 overflow-hidden" @if ($analyticsSummaryOpen) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>{{ __('Platform summary') }}</span>
-            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ number_format($totals['users']) }} {{ __('users') }} · {{ number_format($totals['pending_access_requests']) }} {{ __('pending access') }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
-        </summary>
-        <dl class="grid grid-cols-2 gap-3 border-t border-primary p-4 lg:grid-cols-4 2xl:grid-cols-8">
+    <x-ui.insights
+        id="admin-analytics-summary"
+        class="mt-8"
+        :open="$analyticsSummaryOpen"
+        :mobile-open="$analyticsSummaryOpen"
+        :summary="number_format($totals['users']).' '.__('users').' · '.number_format($totals['pending_access_requests']).' '.__('pending access')"
+    >
+        <dl class="ui-insight-grid grid grid-cols-2 gap-3 lg:grid-cols-4 2xl:grid-cols-8">
             @foreach ([
                 __('Users') => number_format($totals['users']),
                 __('Active 30d') => number_format($totals['active_users']),
@@ -29,7 +31,7 @@
                 <x-ui.stat :label="$label" :value="$value" class="ui-card" />
             @endforeach
         </dl>
-    </details>
+    </x-ui.insights>
 
     @php
         $signupMax = max(1, $trend->max('signups'));

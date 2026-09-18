@@ -384,7 +384,7 @@
                 </form>
             </div>
 
-            <dl class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
+            <dl class="ui-insight-grid mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
                 <x-ui.stat :label="__('Matching deliveries')" :value="$deliveryMetrics['total']" />
                 <x-ui.stat :label="__('Queued deliveries')" :value="$deliveryMetrics['queued']" />
                 <x-ui.stat :label="__('Pending deliveries')" :value="$deliveryMetrics['pending']" />
@@ -538,7 +538,13 @@
         </div>
     </details>
 
-    <details id="repository-deployment-insights" class="group mt-10 ui-card overflow-hidden" @if ($deploymentInsightsNeedAttention) open @endif>
+    <details
+        id="repository-deployment-insights"
+        class="ui-responsive-details group mt-10 ui-card overflow-hidden"
+        @if ($deploymentInsightsNeedAttention) open @endif
+        data-responsive-details
+        data-responsive-details-mobile-expanded="{{ $deploymentInsightsNeedAttention ? 'true' : 'false' }}"
+    >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Insights') }}</span>
@@ -552,14 +558,14 @@
             </span>
             <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <section class="border-t border-primary p-5" aria-labelledby="deployment-insights-heading">
+        <section class="ui-responsive-details__content border-t border-primary p-5" aria-labelledby="deployment-insights-heading">
             <div>
                 <h2 id="deployment-insights-heading" class="text-2xl font-bold text-primary">{{ __('Deployment insights') }}</h2>
                 <p class="mt-1 text-sm text-secondary">
                     {{ __('Outcome totals cover all recorded deployments. Median duration uses up to the 20 most recent deployments with valid start and finish times.') }}
                 </p>
             </div>
-            <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <dl class="ui-insight-grid mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="ui-card ui-card--interactive p-4">
                 <dt class="ui-stat__label">{{ __('Total deployments') }}</dt>
                 <dd class="ui-stat__value">{{ $deploymentMetrics['total'] }}</dd>

@@ -164,7 +164,7 @@
                 </div>
                 <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
             </div>
-            <dl class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <dl class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 @foreach ([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label, $value])
                     <x-ui.stat :label="__($label)" :value="$value ?? '—'" />
                 @endforeach
@@ -339,7 +339,7 @@
                         <h2 id="server-log-overview-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Log snapshot overview') }}</h2>
                         <p class="mt-1 text-sm text-secondary">{{ __('Current state across the five supported server log types.') }}</p>
                     </div>
-                    <dl class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
+                    <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                         <x-ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
                         <x-ui.stat :label="__('Queued snapshots')" :value="$logMetrics['queued']" />
                         <x-ui.stat :label="__('Refreshing snapshots')" :value="$logMetrics['refreshing']" />

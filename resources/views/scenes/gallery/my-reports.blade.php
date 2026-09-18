@@ -88,12 +88,13 @@
         </form>
     </x-ui.filter-panel>
 
-    <details id="gallery-report-history-insights" class="ui-card group mt-6 overflow-hidden">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>{{ __('Insights') }}</span>
-            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count report|:count reports', $metrics['matching'], ['count' => $metrics['matching']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
-        </summary>
-        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-5">
+    <x-ui.insights
+        id="gallery-report-history-insights"
+        class="mt-6"
+        :open="false"
+        :summary="trans_choice(':count report|:count reports', $metrics['matching'], ['count' => $metrics['matching']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             @foreach ([
                 ['label' => __('Matching reports'), 'value' => $metrics['matching']],
                 ['label' => __('Needs review'), 'value' => $metrics['open']],
@@ -104,7 +105,7 @@
                 <x-ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
             @endforeach
         </dl>
-    </details>
+    </x-ui.insights>
 
     @if ($reports->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">

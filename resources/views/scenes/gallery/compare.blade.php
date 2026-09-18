@@ -24,12 +24,14 @@
         <p class="mt-1">{{ __('The left side is your encrypted private snapshot. The right side is the contributor’s current gallery version. No script is executed from this page.') }}</p>
     </x-ui.alert>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat class="ui-card" :label="__('Script')" :value="$comparison['script_changed'] ? __('Changed') : __('Unchanged')" />
-        <x-ui.stat class="ui-card" :label="__('Name')" :value="$comparison['name_changed'] ? __('Changed') : __('Unchanged')" />
-        <x-ui.stat class="ui-card" :label="__('Description')" :value="$comparison['description_changed'] ? __('Changed') : __('Unchanged')" />
-        <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
-    </dl>
+    <x-ui.insights id="recipe-comparison-insights" class="mt-6" :summary="__('Change summary')">
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat class="ui-card" :label="__('Script')" :value="$comparison['script_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-ui.stat class="ui-card" :label="__('Name')" :value="$comparison['name_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-ui.stat class="ui-card" :label="__('Description')" :value="$comparison['description_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
+        </dl>
+    </x-ui.insights>
 
     <div class="ui-card mt-6 overflow-x-auto">
         <table class="min-w-full divide-y divide-primary bg-primary text-sm">

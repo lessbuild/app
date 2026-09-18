@@ -40,12 +40,14 @@
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat class="ui-card" :label="__('Category')" :value="str($recipe->category)->title()" />
-        <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
-        <x-ui.stat class="ui-card" :label="__('Installs')" :value="$recipe->install_count" />
-        <x-ui.stat class="ui-card" :label="__('Verified rating')" :value="$recipe->ratings_count ? __(':score / 5 from :count', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => trans_choice(':count rating|:count ratings', $recipe->ratings_count, ['count' => $recipe->ratings_count])]) : __('Not rated yet')" />
-    </dl>
+    <x-ui.insights id="recipe-details-insights" class="mt-6" :summary="__('Recipe details')">
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat class="ui-card" :label="__('Category')" :value="str($recipe->category)->title()" />
+            <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
+            <x-ui.stat class="ui-card" :label="__('Installs')" :value="$recipe->install_count" />
+            <x-ui.stat class="ui-card" :label="__('Verified rating')" :value="$recipe->ratings_count ? __(':score / 5 from :count', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => trans_choice(':count rating|:count ratings', $recipe->ratings_count, ['count' => $recipe->ratings_count])]) : __('Not rated yet')" />
+        </dl>
+    </x-ui.insights>
 
     @if ($installedRecipe)
         <div @class([

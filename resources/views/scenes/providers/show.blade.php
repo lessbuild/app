@@ -122,12 +122,18 @@
             </div>
         </div>
 
-        <dl class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Newest :limit maximum', ['limit' => \App\Models\ProviderConnectionCheck::MAX_PER_PROVIDER])" />
-            <x-ui.stat :label="__('Observed connection success')" :value="$connectionMetrics['success_rate'] !== null ? $connectionMetrics['success_rate'].'%' : __('Not available')" :description="trans_choice(':count successful check|:count successful checks', $connectionMetrics['successful'], ['count' => $connectionMetrics['successful']])" />
-            <x-ui.stat :label="__('Median successful response')" :value="$connectionMetrics['median_successful_duration_ms'] !== null ? $connectionMetrics['median_successful_duration_ms'].' ms' : __('Not recorded')" :description="__('Failed timings are excluded.')" />
-            <x-ui.stat :label="__('Current failure streak')" :value="$connectionMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']])" />
-        </dl>
+        <x-ui.insights
+            id="provider-health-insights"
+            class="mt-4"
+            :summary="trans_choice(':count retained check|:count retained checks', $connectionMetrics['total'], ['count' => $connectionMetrics['total']])"
+        >
+            <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <x-ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Newest :limit maximum', ['limit' => \App\Models\ProviderConnectionCheck::MAX_PER_PROVIDER])" />
+                <x-ui.stat :label="__('Observed connection success')" :value="$connectionMetrics['success_rate'] !== null ? $connectionMetrics['success_rate'].'%' : __('Not available')" :description="trans_choice(':count successful check|:count successful checks', $connectionMetrics['successful'], ['count' => $connectionMetrics['successful']])" />
+                <x-ui.stat :label="__('Median successful response')" :value="$connectionMetrics['median_successful_duration_ms'] !== null ? $connectionMetrics['median_successful_duration_ms'].' ms' : __('Not recorded')" :description="__('Failed timings are excluded.')" />
+                <x-ui.stat :label="__('Current failure streak')" :value="$connectionMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']])" />
+            </dl>
+        </x-ui.insights>
         <p class="mt-3 text-xs text-secondary">
             {{ __('These figures summarize retained observations and are not an SLA or a guarantee that the credential is currently valid.') }}
         </p>

@@ -77,18 +77,19 @@
         </form>
     </x-ui.filter-panel>
 
-    <details id="gallery-insights" class="ui-card group mt-6 overflow-hidden">
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>{{ __('Insights') }}</span>
-            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count published recipe|:count published recipes', $metrics['published'], ['count' => $metrics['published']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
-        </summary>
-        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-4">
+    <x-ui.insights
+        id="gallery-insights"
+        class="mt-6"
+        :open="false"
+        :summary="trans_choice(':count published recipe|:count published recipes', $metrics['published'], ['count' => $metrics['published']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-ui.stat class="ui-card" :label="__('Published recipes')" :value="$metrics['published']" />
             <x-ui.stat class="ui-card" :label="__('Community installs')" :value="$metrics['installs']" />
             <x-ui.stat class="ui-card" :label="__('Contributors')" :value="$metrics['authors']" />
             <x-ui.stat class="ui-card" :label="__('Verified ratings')" :value="$metrics['ratings']" />
         </dl>
-    </details>
+    </x-ui.insights>
 
     @if ($recipes->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">

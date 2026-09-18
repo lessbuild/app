@@ -27,14 +27,20 @@
         $filtersAreActive = $activeFilterCount > 0;
     @endphp
 
-    <dl class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <x-ui.stat :label="__('Matching alerts')" :value="$metrics['total']" :description="__('Alerts in this filtered view.')" />
-        <x-ui.stat :label="__('Unread alerts')" :value="$metrics['unread']" :description="__('Matching alerts still awaiting review.')" />
-        <x-ui.stat :label="__('Failures')" :value="$metrics['failed']" :description="__('Matching failed incidents.')" />
-        <x-ui.stat :label="__('Recoveries')" :value="$metrics['healthy']" :description="__('Matching recovery notices.')" />
-        <x-ui.stat :label="__('Information')" :value="$metrics['info']" :description="__('Matching informational notices.')" />
-        <x-ui.stat :label="__('Latest matching alert')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching alert recorded.')" />
-    </dl>
+    <x-ui.insights
+        id="notifications-insights"
+        class="mb-6"
+        :summary="trans_choice(':count matching alert|:count matching alerts', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <x-ui.stat :label="__('Matching alerts')" :value="$metrics['total']" :description="__('Alerts in this filtered view.')" />
+            <x-ui.stat :label="__('Unread alerts')" :value="$metrics['unread']" :description="__('Matching alerts still awaiting review.')" />
+            <x-ui.stat :label="__('Failures')" :value="$metrics['failed']" :description="__('Matching failed incidents.')" />
+            <x-ui.stat :label="__('Recoveries')" :value="$metrics['healthy']" :description="__('Matching recovery notices.')" />
+            <x-ui.stat :label="__('Information')" :value="$metrics['info']" :description="__('Matching informational notices.')" />
+            <x-ui.stat :label="__('Latest matching alert')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching alert recorded.')" />
+        </dl>
+    </x-ui.insights>
 
     <div
         class="space-y-3"

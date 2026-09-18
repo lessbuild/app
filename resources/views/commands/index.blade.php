@@ -87,12 +87,14 @@
         </form>
     </x-ui.filter-panel>
 
-    <details id="command-insights" class="ui-card group mt-6 overflow-hidden" @if ($metrics['active'] > 0) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>{{ __('Insights') }}</span>
-            <span class="flex items-center gap-2 text-sm font-normal text-secondary"><span>{{ trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']]) }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
-        </summary>
-        <dl class="grid gap-4 border-t border-primary p-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+    <x-ui.insights
+        id="command-insights"
+        class="mt-6"
+        :open="$metrics['active'] > 0"
+        :mobile-open="$metrics['active'] > 0"
+        :summary="trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             @foreach ([
                 ['label' => __('Matching commands'), 'value' => $metrics['total']],
                 ['label' => __('Active'), 'value' => $metrics['active']],
@@ -104,7 +106,7 @@
             @endforeach
             <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
         </dl>
-    </details>
+    </x-ui.insights>
 
     <x-ui.card class="mt-6 overflow-hidden">
         <div class="overflow-x-auto">

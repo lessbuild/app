@@ -81,14 +81,20 @@
         </form>
     </section>
 
-    <dl class="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <x-ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Commands in this filtered view.')" />
-        <x-ui.stat class="ui-card" :label="__('Active commands')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
-        <x-ui.stat class="ui-card" :label="__('Succeeded')" :value="$metrics['succeeded']" :description="__('Matching successful commands.')" />
-        <x-ui.stat class="ui-card" :label="__('Failed')" :value="$metrics['failed']" :description="__('Matching failed commands.')" />
-        <x-ui.stat class="ui-card" :label="__('Canceled')" :value="$metrics['canceled']" :description="__('Matching canceled commands.')" />
-        <x-ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Matching commands with downloadable output.')" />
-    </dl>
+    <x-ui.insights
+        id="server-commands-insights"
+        class="mb-6"
+        :summary="trans_choice(':count matching command|:count matching commands', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <x-ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Commands in this filtered view.')" />
+            <x-ui.stat class="ui-card" :label="__('Active commands')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
+            <x-ui.stat class="ui-card" :label="__('Succeeded')" :value="$metrics['succeeded']" :description="__('Matching successful commands.')" />
+            <x-ui.stat class="ui-card" :label="__('Failed')" :value="$metrics['failed']" :description="__('Matching failed commands.')" />
+            <x-ui.stat class="ui-card" :label="__('Canceled')" :value="$metrics['canceled']" :description="__('Matching canceled commands.')" />
+            <x-ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Matching commands with downloadable output.')" />
+        </dl>
+    </x-ui.insights>
 
     <x-ui.card class="overflow-hidden">
         <div class="overflow-x-auto">

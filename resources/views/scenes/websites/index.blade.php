@@ -91,14 +91,20 @@
         </form>
     </x-ui.filter-panel>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-        <x-ui.stat :label="__('Matching websites')" :value="$metrics['total']" :description="__('Websites in this filtered view.')" />
-        <x-ui.stat :label="__('Active websites')" :value="$metrics['active']" :description="__('Matching provisioned websites.')" />
-        <x-ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued or provisioning websites.')" />
-        <x-ui.stat :label="__('Failed websites')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
-        <x-ui.stat :label="__('Unhealthy websites')" :value="$metrics['unhealthy']" :description="__('Enabled health checks reporting unhealthy.')" />
-        <x-ui.stat :label="__('Needs attention')" :value="$metrics['attention']" :description="__('Provisioning failures or enabled unhealthy checks.')" />
-    </dl>
+    <x-ui.insights
+        id="websites-insights"
+        class="mt-6"
+        :summary="trans_choice(':count matching website|:count matching websites', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+            <x-ui.stat :label="__('Matching websites')" :value="$metrics['total']" :description="__('Websites in this filtered view.')" />
+            <x-ui.stat :label="__('Active websites')" :value="$metrics['active']" :description="__('Matching provisioned websites.')" />
+            <x-ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued or provisioning websites.')" />
+            <x-ui.stat :label="__('Failed websites')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
+            <x-ui.stat :label="__('Unhealthy websites')" :value="$metrics['unhealthy']" :description="__('Enabled health checks reporting unhealthy.')" />
+            <x-ui.stat :label="__('Needs attention')" :value="$metrics['attention']" :description="__('Provisioning failures or enabled unhealthy checks.')" />
+        </dl>
+    </x-ui.insights>
 
     <!--
      ! ------------------------------------------------------------

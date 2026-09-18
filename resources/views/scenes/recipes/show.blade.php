@@ -29,12 +29,18 @@
         </p>
     </x-ui.card>
 
-    <dl class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-ui.stat class="ui-card" :label="__('Assigned servers')" :value="$metrics['total']" :description="__('Current recipe-to-server assignments.')" />
-        <x-ui.stat class="ui-card" :label="__('Ready servers')" :value="$metrics['ready']" :description="__('Assigned servers ready for workloads.')" />
-        <x-ui.stat class="ui-card" :label="__('Provisioning servers')" :value="$metrics['provisioning']" :description="__('Queued, waiting, or provisioning assignments.')" />
-        <x-ui.stat class="ui-card" :label="__('Failed servers')" :value="$metrics['failed']" :description="__('Assignments requiring operator attention.')" />
-    </dl>
+    <x-ui.insights
+        id="recipe-insights"
+        class="mt-6"
+        :summary="trans_choice(':count assigned server|:count assigned servers', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat class="ui-card" :label="__('Assigned servers')" :value="$metrics['total']" :description="__('Current recipe-to-server assignments.')" />
+            <x-ui.stat class="ui-card" :label="__('Ready servers')" :value="$metrics['ready']" :description="__('Assigned servers ready for workloads.')" />
+            <x-ui.stat class="ui-card" :label="__('Provisioning servers')" :value="$metrics['provisioning']" :description="__('Queued, waiting, or provisioning assignments.')" />
+            <x-ui.stat class="ui-card" :label="__('Failed servers')" :value="$metrics['failed']" :description="__('Assignments requiring operator attention.')" />
+        </dl>
+    </x-ui.insights>
 
     <section class="mt-8" aria-labelledby="server-assignments-heading">
         <div>
