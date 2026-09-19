@@ -190,3 +190,52 @@ The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this c
 ### Exact next task
 
 Audit the remaining product pages for compact, reversible forms: deployment approvals/promotions, small domain or repository settings, and notification/report composers. Do not modalize full deployment timelines, restore/rollback confirmation, provider/server setup, YAML configuration, security settings or destructive operations.
+
+## Slice 5 — gallery report and metric-alert composers
+
+Status: complete and deployed to the isolated development runtime.
+
+### Responsibility problem
+
+The gallery detail page placed a private report composer beside a long root-level script and contributor feedback history. Observability placed metric-rule creation beside telemetry cards and alert-rule inventory. Both were short, bounded submissions whose permanent inline forms increased mobile scrolling and obscured the primary evidence.
+
+### Boundary and design decision
+
+- Private gallery report creation/update uses the shared modal. Report history, contributor resolution controls and irreversible withdrawal remain visible or explicit.
+- Metric-alert rule creation uses the shared modal. Existing rule inventory, deletion and alert delivery behavior remain unchanged.
+- Alert-destination endpoints, status-page publication, status updates, deployment approvals/promotions and repository/provider settings remain page workflows because they carry integration, public-communication, release or credential consequences.
+- Existing policies, Form Requests, normalization, encryption and actions remain the business boundary.
+
+This is a presentation-only extraction: controllers still coordinate the same routes, requests and actions, while the modal component owns focus and URL behavior.
+
+### Preserved contracts and safety guarantees
+
+- Existing route names, methods, validation keys, flash/status messages, report anonymity and encrypted report details are unchanged.
+- Current gallery reports still update in place, reopen resolved reports, and retain the existing withdraw confirmation.
+- Metric thresholds, cooldown options, server scoping, alert entitlement checks and no-write-on-denial behavior are unchanged.
+- Failed forms reopen only their relevant dialog and preserve the existing validated/old-input behavior.
+- Direct query URLs, normal anchor fallback and keyboard focus restoration remain available.
+
+### Verification
+
+- `tests/Feature/RecipeReportTest.php` and `tests/Feature/RecipeFeedbackInboxTest.php`: 38 tests, 395 assertions passed.
+- `tests/Feature/ObservabilityTest.php`, `tests/Feature/OperationalIncidentTest.php`, and `tests/Feature/IncidentNotificationTest.php`: 28 tests, 244 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 49 assertions passed.
+- Gallery report browser flow: 1 Playwright test passed at 390px.
+- Metric-alert browser flow: 1 Playwright test passed at 390px.
+- `npm run build`: passed.
+- Pint: passed.
+- `git diff --check`: passed.
+- Isolated runtime restarted successfully; `https://buildpusher.com/login` returned HTTP 200.
+
+### Commit and push
+
+Gallery report commit and push: `a76179e Use dialog for gallery report composer`.
+
+Metric-alert commit and push: `a99993d Use dialog for metric alert rules`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to `a99993d`, rebuilt, view-cached, route-cache-cleared, restarted and verified active on `main`.
+
+### Exact next task
+
+Complete the remaining audit and final verification: review deployment/repository compact actions and notification saved-filter forms for a real mobile benefit, then run the complete PHP/Pint/browser verification and document any intentionally unchanged inline workflow.
