@@ -78,13 +78,15 @@
                 </div>
 
                 @if(!$repository?->builds()->where('status', \App\Models\Build::STATUS_SUCCEEDED)->exists())
-                    @php($readiness = [
+                    @php
+                        $readiness = [
                         ['label' => __('Active server attached'), 'ready' => $environment->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE, 'url' => route('servers.index')],
                         ['label' => __('Active website attached'), 'ready' => $environment->website?->provisioning_status === \App\Models\Website::STATUS_ACTIVE, 'url' => route('websites.index')],
                         ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.create')],
                         ['label' => __('Provider credentials available'), 'ready' => (bool) $repository?->provider_id, 'url' => route('providers.index')],
-                    ])
-                    @php($readyCount = collect($readiness)->where('ready', true)->count())
+                        ];
+                        $readyCount = collect($readiness)->where('ready', true)->count();
+                    @endphp
                     <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4" aria-label="{{ __('First deployment readiness') }}">
                         <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-primary">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-secondary">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="text-xs font-bold text-ternary underline">{{ __('Open setup guide') }}</a></div>
                         <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-secondary"><span aria-hidden="true" class="font-black text-ternary">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" class="font-bold text-ternary underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
@@ -113,9 +115,51 @@
                 </div>
 
                 @if($canDeploy && $successfulBuild && $successfulBuild->revision && $promotionTargets->isNotEmpty())
+                    @php
+                        $promotionDialogId = 'promotion-dialog-'.$successfulBuild->id;
+                        $promotionDialogHasErrors = old('_promotion_build_id') == $successfulBuild->id
+                            && $errors->hasAny(['target_environment_id', 'promotion_note']);
+                        $promotionDialogOpen = (request()->query('dialog') === 'promote'
+                            && (string) request()->query('build_id') === (string) $successfulBuild->id
+                            && ! session()->has('success')
+                            && ! session()->has('error')
+                            && ! session()->has('info')) || $promotionDialogHasErrors;
+                        $promotionDialogUrl = route('projects.show', [
+                            'project' => $project,
+                            'dialog' => 'promote',
+                            'build_id' => $successfulBuild->id,
+                        ]);
+                    @endphp
                     <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4">
-                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-secondary">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><form method="POST" action="{{ route('builds.promote',$successfulBuild) }}" class="flex w-full min-w-0 flex-wrap gap-2 lg:w-auto">@csrf<select name="target_environment_id" required class="input secondary min-w-0 rounded-lg" aria-label="{{ __('Target environment') }}"><option value="">{{ __('Choose target') }}</option>@foreach($promotionTargets as $target)<option value="{{ $target->id }}">{{ $target->name }}</option>@endforeach</select><input name="promotion_note" maxlength="2000" class="input secondary min-w-0 rounded-lg" aria-label="{{ __('Change ticket or release note') }}" placeholder="{{ __('Change ticket or release note') }}"><x-ui.button type="submit" variant="primary">{{ __('Promote') }}</x-ui.button></form></div>
+                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-secondary">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><x-ui.button href="{{ $promotionDialogUrl }}" data-modal-trigger="{{ $promotionDialogId }}" aria-controls="{{ $promotionDialogId }}" aria-expanded="{{ $promotionDialogOpen ? 'true' : 'false' }}" variant="primary">{{ __('Promote') }}</x-ui.button></div>
                     </aside>
+                    <x-dialogs.modal
+                        :id="$promotionDialogId"
+                        :title="__('Promote tested release')"
+                        :description="__('Rebuild exact revision :revision with the target environment configuration.', ['revision' => $successfulBuild->shortRevision()])"
+                        :open="$promotionDialogOpen"
+                    >
+                        <form method="POST" action="{{ route('builds.promote', $successfulBuild) }}" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="_promotion_build_id" value="{{ $successfulBuild->id }}">
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Target environment') }}</span>
+                                <select name="target_environment_id" required class="input secondary w-full rounded-lg">
+                                    <option value="">{{ __('Choose target') }}</option>
+                                    @foreach($promotionTargets as $target)
+                                        <option value="{{ $target->id }}" @selected((string) old('target_environment_id') === (string) $target->id)>{{ $target->name }}</option>
+                                    @endforeach
+                                </select>
+                                <x-forms.errors name="target_environment_id" />
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Change ticket or release note') }}</span>
+                                <input name="promotion_note" value="{{ old('promotion_note') }}" maxlength="2000" class="input secondary w-full rounded-lg" placeholder="{{ __('Optional release note') }}">
+                                <x-forms.errors name="promotion_note" />
+                            </label>
+                            <x-ui.button type="submit" variant="primary">{{ __('Promote') }}</x-ui.button>
+                        </form>
+                    </x-dialogs.modal>
                 @endif
 
                 <div class="grid gap-px bg-secondary lg:grid-cols-3">

@@ -27,6 +27,47 @@ class BuildPromotionTest extends TestCase
         config(['billing.enforce_entitlements' => false]);
     }
 
+    public function test_project_promotion_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$owner, $project, , , $source] = $this->pipeline();
+
+        $default = $this->actingAs($owner)
+            ->get(route('projects.show', $project))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="promotion-dialog-'.$source->id.'"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="promotion-dialog-'.$source->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('projects.show', [
+            'project' => $project,
+            'dialog' => 'promote',
+            'build_id' => $source->id,
+        ]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="promotion-dialog-'.$source->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('builds.promote', $source), [
+                '_promotion_build_id' => $source->id,
+                'promotion_note' => 'Missing target',
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="promotion-dialog-'.$source->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The target environment id field is required.');
+        $this->assertSame(0, Build::query()->where('trigger_source', Build::TRIGGER_PROMOTION)->count());
+    }
+
     public function test_successful_revision_is_promoted_with_lineage_target_snapshot_and_approval_gate(): void
     {
         Queue::fake();
