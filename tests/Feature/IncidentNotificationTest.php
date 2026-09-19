@@ -61,7 +61,7 @@ class IncidentNotificationTest extends TestCase
             ->assertSee('First outage')
             ->assertSee('Repeated outage')
             ->assertSee('Website recovered')
-            ->assertSee('border-green-300', false)
+            ->assertSee('border-l-green-500', false)
             ->assertDontSee('Foreign outage');
     }
 }

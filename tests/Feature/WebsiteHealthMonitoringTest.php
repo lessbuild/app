@@ -105,7 +105,7 @@ class WebsiteHealthMonitoringTest extends TestCase
         $this->actingAs($owner)->get(route('notifications.index', ['category' => 'website']))
             ->assertSuccessful()
             ->assertSee('Website &quot;Application&quot; recovered', false)
-            ->assertSee('border-green-300', false);
+            ->assertSee('border-l-green-500', false);
 
         $this->assertStringContainsString("'http://app.example.com/health/ready'", $command);
         $this->assertStringContainsString('--connect-timeout 5 --max-time 15', $command);
