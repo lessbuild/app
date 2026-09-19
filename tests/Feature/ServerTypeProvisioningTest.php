@@ -90,7 +90,7 @@ class ServerTypeProvisioningTest extends TestCase
         $this->assertStringNotContainsString('apt install php8.1 php8.1-fpm', $script);
     }
 
-    public function test_progress_ui_and_completion_callback_use_the_selected_type_plan(): void
+    public function test_operations_panel_and_completion_callback_use_the_selected_type_plan(): void
     {
         $user = User::factory()->create();
         $provider = $user->providers()->create([
@@ -110,10 +110,9 @@ class ServerTypeProvisioningTest extends TestCase
         $this->assertSame(7, $finalStage);
         $this->actingAs($user)->get(route('servers.show', $server))
             ->assertSuccessful()
-            ->assertSee('Install Redis')
-            ->assertSee('Install Memcached')
-            ->assertDontSee('Install PHP')
-            ->assertDontSee('Install Mysql');
+            ->assertSee('Logs and setup')
+            ->assertSee('Waiting for provisioning output')
+            ->assertDontSee('Setup Information');
 
         $this->postJson(ProvisioningCallbackUrl::serverStatus($server), ['status' => 12])
             ->assertUnprocessable();
