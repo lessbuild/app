@@ -1164,3 +1164,62 @@ compact local forms whose authorization, plan checks and side-effect ordering
 can be preserved; keep import, restore, provisioning and other remote or
 destructive workflows as explicit pages unless a safe URL-backed dialog
 boundary is demonstrated.
+
+## Follow-up Slice 13 — high-availability route dialogs
+
+Status: complete locally and pushed to `main` in `063b95b`.
+
+### Responsibility problem
+
+High-availability route creation and application-node addition already used
+URL-backed dialogs, but their form markup was embedded in the large inventory
+view. That coupled route inventory rendering to two separate mutation forms and
+made the dialog presentation difficult to reuse or test independently.
+
+### Boundary and design decision
+
+- Route creation now lives in `scenes.load-balancers.create-dialog`.
+- Per-route application-node addition now lives in
+  `scenes.load-balancers.node-dialog`.
+- The inventory retains the URL/history state, node-management disclosure
+  state, and per-route context, while the components own modal markup and
+  existing request field rendering.
+- No speculative load-balancer edit operation was introduced because the
+  current application exposes creation, node management, apply and deletion,
+  not a resource update contract.
+
+Existing requests, policies, entitlement checks, actions, queued configuration,
+remote cleanup, error status mapping and redirects remain the operation
+boundary. This is a presentation-only extraction following single
+responsibility without changing the remote workflow.
+
+### Preserved contracts and safety guarantees
+
+- Environment/server/hostname/health-path validation and node
+  server/port/weight validation remain unchanged.
+- Organization scoping, high-availability entitlement checks, self-routing
+  restrictions, queue timing, failure handling and success messages remain
+  unchanged.
+- The dialog URLs, open-on-validation-error behavior, node disclosure state and
+  no-JavaScript form fallback remain intact.
+- The create and node forms use unique component-owned IDs while preserving
+  existing request names and validation keys.
+
+### Verification
+
+- `LoadBalancerOperationsTest`: **5 tests / 41 assertions** passed under PHP
+  8.5.10.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `063b95b Extract load balancer dialogs into
+components`.
+
+### Exact next task
+
+Extract the existing domain-add and temporary-domain dialogs into reusable
+components. Preserve website authorization, Cloudflare provider scoping,
+temporary-domain configuration failures, DNS side effects and validation-error
+reopening before moving to encrypted backup destination forms.

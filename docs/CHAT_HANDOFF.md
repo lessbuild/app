@@ -1877,6 +1877,25 @@ backup destinations for similarly safe compact add/edit dialogs. Import,
 restore, provisioning and destructive remote workflows remain explicit until
 their ordering and failure behavior can be preserved.
 
+## High-availability dialog follow-up — 2026-09-19
+
+High-availability route creation and application-node addition now use
+reusable server-rendered dialog components:
+`scenes.load-balancers.create-dialog` and
+`scenes.load-balancers.node-dialog`. The inventory retains URL state,
+per-route state and operation context; the components own only the dialog
+presentation. No speculative load-balancer edit operation was added because
+the current application has no update contract for that resource.
+
+Existing requests, policies, entitlement checks, actions, queued configuration,
+remote cleanup, validation keys, status mapping and redirects are unchanged.
+The implementation is pushed as `063b95b`.
+
+`LoadBalancerOperationsTest` passed with 5 tests / 41 assertions. Blade cache,
+Pint and diff checks passed. The next task is domain-add and temporary-domain
+dialog componentization, followed by the encrypted backup destination
+create/edit forms.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
