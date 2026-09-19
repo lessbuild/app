@@ -239,3 +239,138 @@ The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to `a9999
 ### Exact next task
 
 Complete the remaining audit and final verification: review deployment/repository compact actions and notification saved-filter forms for a real mobile benefit, then run the complete PHP/Pint/browser verification and document any intentionally unchanged inline workflow.
+
+## Slice 6 — promotion composer
+
+Status: complete and deployed to the isolated development runtime.
+
+### Responsibility problem
+
+The project release page kept the promotion request fields permanently beside deployment history and release evidence. Promotion is a short request, but it is still a consequential release operation that must retain the selected successful revision and its existing approval context.
+
+### Boundary and design decision
+
+- The promotion request uses the shared URL-backed modal.
+- The project page remains responsible for the successful-build context, target-environment options and existing policy/request boundary.
+- `BuildsController`, the promotion request, policy, action, approval workflow and queued deployment behavior remain unchanged.
+- Approval, rollback, restore, cancellation and first-deployment workflows remain explicit page workflows because they need durable release context or carry recovery/destructive consequences.
+
+This is a presentational boundary only. It reduces mobile page height without moving release invariants, authorization or persistence into the dialog component.
+
+### Preserved contracts and safety guarantees
+
+- The existing promotion route, HTTP method, validation keys, flash messages, target-environment rules, protected-environment approval behavior and lineage metadata are unchanged.
+- Only successful builds expose the promotion trigger; the selected build identity remains explicit in the existing request contract.
+- Invalid input reopens the promotion dialog without creating a promotion build.
+- Existing duplicate-promotion, same-project, forward-environment, deployment-lock and authorization behavior remains in the existing operation boundary.
+- Direct query URLs, normal anchor fallback, Escape handling and focus restoration remain available.
+
+### Verification
+
+- `tests/Feature/BuildPromotionTest.php`: 8 tests, 66 assertions passed, including closed-by-default, direct URL opening and validation-reopen coverage.
+- Full PHP regression later passed 1,616 tests and 13,434 assertions.
+- `npm run build`: passed.
+- Pint: passed.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: `5acc6a4 Use dialog for promotion requests`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded, rebuilt, view-cached, restarted and verified active. This is isolated development evidence, not live acceptance.
+
+### Exact next task
+
+Inspect the notification saved-filter composer as the final compact, reversible candidate, then complete the full audit and verification record.
+
+## Slice 7 — notification saved-filter composer
+
+Status: complete and deployed to the isolated development runtime.
+
+### Responsibility problem
+
+The notifications page kept the saved-filter name form inside a secondary disclosure. Saving a named filter is a short preference operation, but the always-available form added mobile height to a page whose primary task is reviewing and acting on notifications.
+
+### Boundary and design decision
+
+- The saved-filter name form uses the shared URL-backed modal.
+- Notification filtering, saved-filter listing/removal, bulk actions, authorization, validation and preference persistence remain page/controller boundaries.
+- The filter query is carried into the dialog URL and existing store route so the saved preference still represents the current view.
+- Inventory, bulk actions, destructive deletion and primary notification evidence remain visible or explicit page workflows.
+
+This keeps the modal responsible for presentation and interaction state while preserving the existing preference operation and query semantics.
+
+### Preserved contracts and safety guarantees
+
+- Existing route, HTTP method, validation key, redirect, flash behavior, filter values and saved-filter persistence are unchanged.
+- Invalid names reopen only the saved-filter dialog and do not write a preference.
+- Current filters continue to be submitted explicitly; unrestricted request data is not introduced.
+- Direct query URLs, no-JavaScript anchor fallback, Escape handling and focus restoration remain available.
+- Notification ownership, workspace scoping, bulk-action authorization and secret-safe input behavior remain unchanged.
+
+### Verification
+
+- `tests/Feature/NotificationBulkActionTest.php` and `tests/Feature/NotificationInboxInsightsTest.php`: 12 tests, 72 assertions passed for the focused notification slice.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 53 assertions passed with the notification dialog fixture.
+- Targeted Playwright saved-filter workflow: 1 test passed at 390px, including disclosure opening, URL state, Escape/focus restoration and direct URL opening.
+- The corrected complete browser matrix: 26 tests passed in 21.1 minutes.
+- `npm run build`: passed.
+- Pint and `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: `556e67b Use dialog for saved notification filters`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded, rebuilt, view-cached, restarted and verified active. The later compatibility test commit `1a7ee41` and browser coverage commit `b564506` were also pushed to `origin/main`.
+
+## Final modal audit and verification
+
+Status: complete locally on `main`; no production or paid-cloud operation was performed.
+
+### Audit decision
+
+The remaining UI was reviewed against the modal decision rule: use a dialog for a short, reversible, interruptible task; keep workflows requiring durable context, long forms, one-time credentials, remote execution, approval, recovery or destructive confirmation on the page.
+
+The following remain intentionally non-modal:
+
+- Repository webhook enable/rotate settings, because they issue one-time integration credentials and change external webhook state.
+- First deployment, redeployment, approval, cancellation, rollback and restore, because they require release evidence, preflight context, durable status or recovery consequences.
+- Provider and server setup, YAML configuration authoring/review/receipt, backup destination save/verify, SSO, two-factor, security settings and workspace deletion, because they are multi-step, secret-bearing, destructive or safety-critical.
+- Database clone/restore and other destructive operations, because the destination and overwrite/recovery consequences must remain explicit.
+- Inventory filters, timelines, logs, tables and command history, because they are primary evidence or navigation surfaces rather than short submission forms. Existing command/delete dialogs are retained where they already match the interaction contract.
+
+No new generic action, repository, policy or business interface was introduced for this presentation work. Existing Form Requests, policies, actions, Livewire components, transactions, jobs and provider contracts remain the behavior boundaries.
+
+### Final verification
+
+- Complete strict PHP suite with PHP 8.5.10: 1,616 tests, 13,434 assertions passed in 693.03 seconds; no failures, warnings, risky tests or deprecations.
+- Focused stale-server-test compatibility fix: 4 tests, 82 assertions passed. The old assertion was updated because the prior intentional removal of `Setup Information` had left the test expecting removed UI.
+- Full Pint: passed.
+- Composer locked platform requirements: passed for PHP 8.5.10 and required extensions. Composer itself emitted environment deprecation notices but exited successfully; no dependencies or lockfiles changed.
+- Vite production asset build: passed.
+- Node syntax check for the browser suite: passed.
+- `git diff --check`: passed.
+- Full browser matrix: 26 tests passed in 21.1 minutes, covering accessibility, light/dark 320/390/768/1440 layouts, no-JavaScript provider submission, all modal workflows, navigation, served Livewire assets and mobile/tablet/desktop visual audits.
+- Isolated runtime route cache: rebuilt successfully with `artisan route:cache`.
+- Isolated runtime Blade cache: rebuilt successfully with `artisan view:cache`.
+- Isolated `buildpusher-dev-main.service`: active after restart.
+- `https://buildpusher.com/login`: HTTP 200.
+- Served Livewire asset: HTTP 200, `application/javascript`.
+- Served Vite stylesheet: HTTP 200, `text/css`.
+
+### Commits and push status
+
+The final source branch is clean, on `main`, and aligned with `origin/main` at `b564506`:
+
+- `5acc6a4` — promotion composer.
+- `556e67b` — saved notification-filter composer.
+- `1a7ee41` — compatibility test for the intentionally removed server setup panel.
+- `b564506` — organization invitation modal browser coverage.
+
+All commits were pushed immediately after creation. The isolated runtime was fast-forwarded to the final pushed tip and verified after caching/restart.
+
+### Handoff
+
+The modal modernization plan is complete for the local/dev scope. Physical-phone checks, production deployment, provider-backed acceptance, billing, mail, monitoring, GitHub App, SSO and the separate live acceptance drill remain external release gates and are not represented by these local results.
+
+Exact next task: no further modal slice is justified by the current audit. Continue with a separately authorized product/UI backlog item or external acceptance gate.

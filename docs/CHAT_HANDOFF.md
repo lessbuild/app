@@ -1,5 +1,49 @@
 # BuildPusher chat handoff
 
+# Modal modernization completion — 2026-09-19
+
+The compact-workflow modal modernization plan is complete locally on `main`.
+The shared native-dialog foundation now provides URL-backed opening, direct-link
+and no-JavaScript fallback behavior, Escape/back handling, deterministic focus
+restoration and responsive styling. Verified modal slices cover domains,
+organization invitations, feedback, backup schedules, load-balancer forms, API
+tokens, database credentials, gallery reports, metric-alert rules, promotion
+requests and notification saved filters.
+
+The final source tip is `b564506` on `origin/main`. The compatibility follow-up
+`1a7ee41` aligned the server provisioning assertion with the intentionally
+removed `Setup Information` panel, and `b564506` added browser coverage for the
+organization invitation modal. Every commit was pushed immediately after it
+was created. The complete strict PHP 8.5.10 suite passed **1,616 tests / 13,434
+assertions** in **693.03 seconds**. Pint, the locked Composer platform check,
+the Vite build, Node browser-test syntax check and `git diff --check` passed.
+
+The complete browser gate passed **26 tests** in **21.1 minutes**, including
+accessibility, light/dark responsive layouts, no-JavaScript provider
+submission, all modal workflows, navigation, served Livewire assets and the
+mobile/tablet/desktop visual audit. Playwright used a temporary directory on
+the workspace volume because the system root filesystem was full; no unrelated
+temporary data was removed.
+
+The isolated `buildpusher-dev-main.service` runtime is aligned with the final
+tip. Route and Blade caches were rebuilt; the service is active;
+`https://buildpusher.com/login` returns HTTP 200; the served Livewire
+JavaScript and Vite stylesheet each return HTTP 200. This is isolated
+development evidence only, not production or live acceptance.
+
+The final audit intentionally kept repository webhook rotation, deployments,
+approvals, rollback/restore, provider/server setup, YAML configuration,
+backup destination verification, security/SSO/2FA and destructive workflows as
+explicit page operations because they require durable context, one-time
+credentials, remote side effects or recovery safeguards. The detailed record
+is `docs/verification/modal-modernization-progress.md`.
+
+No further modal slice is justified by the current audit. The next task must
+be a separately authorized product/UI backlog item or external acceptance
+gate. Production deployment, physical-phone checks, provider-backed
+acceptance, billing, mail, monitoring, GitHub App, SSO and the separate live
+acceptance drill remain outstanding.
+
 ## UI redesign completion — 2026-09-19
 
 The application-wide UI redesign plan is complete locally on isolated `main`.
