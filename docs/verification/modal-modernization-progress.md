@@ -1347,6 +1347,36 @@ workflows. Long configuration, import, restore, authentication and protocol
 flows remain explicit pages where modal extraction could alter ordering or
 failure semantics.
 
+## Observability dialog follow-up — 2026-09-19
+
+Metric alert creation, environment-investigation saving and operational
+incident investigation notes now render through reusable scene components:
+`scenes.observability.metric-rule-dialog`,
+`scenes.observability.investigation-dialog` and
+`scenes.observability.incident-note-dialog`. Inventory and incident partials
+retain policy/entitlement gating, resource identity and URL-backed open state;
+the components own only the form presentation.
+
+Metric thresholds, server scoping, investigation filter identity, expiry
+choices, incident identity, bounded note sizes, secret-safe old input,
+validation keys, notification behavior and response messages remain
+unchanged. Larger destination, status-page and status-update forms were not
+mixed into this slice and remain the next observability work because their
+create/update workflows have separate validation and subscriber-notification
+contracts.
+
+Verification passed with 45 focused PHP tests / 353 assertions and two
+targeted mobile browser journeys. Blade cache, Pint and `git diff --check`
+passed. No dependency or lockfile changed.
+
+Implementation commit and push: `7382176 Extract observability dialog
+components`.
+
+Next task: convert observability alert-destination, status-page and
+status-incident create/update forms into URL-backed reusable dialogs, then
+continue with notifications, feedback, build notes, gallery actions and
+cost/budget workflows.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.
