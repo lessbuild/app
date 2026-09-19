@@ -67,22 +67,7 @@
                     >
                         {{ __('Add investigation note') }}
                     </x-ui.button>
-                    <x-dialogs.modal
-                        :id="$noteDialogId"
-                        :title="__('Add investigation note')"
-                        :description="__('Record bounded evidence in the incident timeline without changing its status.')"
-                        :open="$noteDialogOpen"
-                    >
-                        <form method="POST" action="{{ route('observability.operational-incidents.notes.store', $incident) }}" class="space-y-3">
-                            @csrf
-                            <input type="hidden" name="_operational_incident_form" value="note">
-                            <input type="hidden" name="_operational_incident_id" value="{{ $incident->id }}">
-                            <label for="{{ $noteDialogId }}-message" class="block text-xs font-semibold uppercase text-secondary">{{ __('Investigation note') }}</label>
-                            <textarea id="{{ $noteDialogId }}-message" name="message" rows="5" maxlength="5000" required class="input secondary w-full rounded-md" placeholder="{{ __('Investigation note') }}">{{ old('message') }}</textarea>
-                            <x-forms.errors name="message" />
-                            <x-ui.button type="submit" variant="primary">{{ __('Add note') }}</x-ui.button>
-                        </form>
-                    </x-dialogs.modal>
+                    <x-scenes.observability.incident-note-dialog :incident="$incident" :open="$noteDialogOpen" />
                 </div>
                 <form method="POST" action="{{ route('observability.operational-incidents.resolve', $incident) }}" class="flex items-end gap-2">
                     @csrf
