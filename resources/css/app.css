@@ -29,6 +29,69 @@
     max-width: 100%;
 }
 
+.ui-modal {
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+}
+
+.ui-modal:not([open]) {
+    display: none;
+}
+
+.ui-modal[open] {
+    display: block;
+}
+
+.ui-modal::backdrop {
+    background: rgb(15 23 42 / 0.68);
+}
+
+.ui-modal__viewport {
+    display: flex;
+    min-height: 100%;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.ui-modal__panel {
+    display: flex;
+    width: min(100%, 42rem);
+    max-height: calc(100dvh - 2rem);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--border-primary);
+    border-radius: 1rem;
+    background: var(--bg-primary);
+    box-shadow: 0 1.5rem 4rem rgb(15 23 42 / 0.28);
+}
+
+.ui-modal__body {
+    min-height: 0;
+    overflow-y: auto;
+}
+
+@media (max-width: 639px) {
+    .ui-modal__viewport {
+        align-items: flex-end;
+        padding: 0.5rem;
+    }
+
+    .ui-modal__panel {
+        max-height: calc(100dvh - 1rem);
+        border-radius: 1rem 1rem 0.75rem 0.75rem;
+    }
+}
+
 /* Keep editable controls at the iOS zoom threshold on narrow screens. */
 @media (max-width: 639px) {
     #main-content input:not([type='checkbox']):not([type='radio']):not([type='hidden']),

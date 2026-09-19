@@ -88,6 +88,106 @@
             @livewireScripts
         @endif
 
+        <script>
+            (() => {
+                const cleanModalUrl = () => {
+                    const url = new URL(window.location.href);
+
+                    if (! url.searchParams.has('dialog')) {
+                        return;
+                    }
+
+                    url.searchParams.delete('dialog');
+                    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+                };
+
+                const initialiseModals = () => {
+                    document.querySelectorAll('[data-modal-trigger]').forEach((trigger) => {
+                        if (trigger.dataset.modalTriggerBound === 'true') {
+                            return;
+                        }
+
+                        const dialog = document.getElementById(trigger.dataset.modalTrigger);
+
+                        if (! dialog) {
+                            return;
+                        }
+
+                        trigger.dataset.modalTriggerBound = 'true';
+
+                        dialog.addEventListener('close', () => {
+                            trigger.setAttribute('aria-expanded', 'false');
+
+                            if (dialog.dataset.modalHistory === 'pushed'
+                                && window.history.state?.modal === dialog.id) {
+                                dialog.dataset.modalHistory = 'backing';
+                                window.history.back();
+                            } else {
+                                cleanModalUrl();
+                                delete dialog.dataset.modalHistory;
+                            }
+
+                            window.requestAnimationFrame(() => trigger.focus());
+                        });
+
+                        trigger.addEventListener('click', (event) => {
+                            if (typeof dialog.showModal !== 'function') {
+                                return;
+                            }
+
+                            event.preventDefault();
+
+                            if (! dialog.open) {
+                                dialog.showModal();
+                            }
+
+                            trigger.setAttribute('aria-expanded', 'true');
+                            dialog.dataset.modalHistory = 'pushed';
+
+                            if (trigger instanceof HTMLAnchorElement) {
+                                const url = new URL(trigger.href, window.location.href);
+
+                                window.history.pushState(
+                                    { ...(window.history.state ?? {}), modal: dialog.id },
+                                    '',
+                                    `${url.pathname}${url.search}${url.hash}`,
+                                );
+                            }
+                        });
+
+                        if (dialog.dataset.modalInitialOpen === 'true') {
+                            trigger.setAttribute('aria-expanded', 'true');
+
+                            if (typeof dialog.showModal === 'function' && dialog.open) {
+                                dialog.removeAttribute('open');
+                                dialog.showModal();
+                                dialog.dataset.modalHistory = 'server';
+                            }
+                        }
+                    });
+                };
+
+                window.addEventListener('popstate', () => {
+                    document.querySelectorAll('dialog[data-modal-history][open]').forEach((dialog) => {
+                        if (! ['pushed', 'server'].includes(dialog.dataset.modalHistory)) {
+                            return;
+                        }
+
+                        dialog.dataset.modalHistory = 'popped';
+                        dialog.close('history');
+                    });
+                });
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initialiseModals, { once: true });
+                } else {
+                    initialiseModals();
+                }
+
+                document.addEventListener('livewire:navigated', initialiseModals);
+            })();
+        </script>
+
         @stack('scripts')
         <script src="/service-worker-register.js" defer></script>
     </body>

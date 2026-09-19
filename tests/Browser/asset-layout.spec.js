@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'observability', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'domains', 'observability', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -28,7 +28,11 @@ async function serveFixtures(page) {
         const pathname = new URL(route.request().url()).pathname;
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
         if ([...screens, 'provider-create'].includes(pathname.slice(1))) {
-            let html = fs.readFileSync(path.join(fixtures, `${pathname.slice(1)}.html`), 'utf8');
+            const screen = pathname.slice(1);
+            const fixtureName = screen === 'domains' && new URL(route.request().url()).searchParams.get('dialog') === 'add-domain'
+                ? 'domains-dialog'
+                : screen;
+            let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
@@ -177,6 +181,25 @@ for (const colorScheme of ['light', 'dark']) {
                         await evidence.locator('summary').click();
                         await expect(content).toBeVisible();
                     }
+                }
+                if (screen === 'domains') {
+                    const addDomain = page.getByRole('link', { name: 'Add domain', exact: true });
+                    const addDialog = page.getByRole('dialog', { name: 'Add domain', exact: true });
+
+                    await addDomain.click();
+                    await expect(addDialog).toBeVisible();
+                    await expect(page.locator('#domain-add-dialog [data-modal-close]')).toBeFocused();
+                    expect(new URL(page.url()).searchParams.get('dialog')).toBe('add-domain');
+
+                    await page.keyboard.press('Escape');
+                    await expect(addDialog).toBeHidden();
+                    await expect(addDomain).toBeFocused();
+                    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+                    await page.goto(new URL('/domains?dialog=add-domain', 'http://buildpusher.test').toString(), { waitUntil: 'networkidle' });
+                    await expect(addDialog).toBeVisible();
+                    await page.locator('#domain-add-dialog [data-modal-close]').click();
+                    await expect(addDialog).toBeHidden();
                 }
                 if (screen === 'observability') {
                     await expect(page.locator('#observability-overview')).toBeVisible();

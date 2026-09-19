@@ -82,6 +82,10 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Deployment evidence')->getContent());
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
             ->assertSee('Protection status')->getContent());
+        File::put($directory.'/domains.html', $this->renderPage(route('domains.index'))->assertOk()
+            ->assertSee('Add domain')->getContent());
+        File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/observability.html', $this->renderPage(route('observability.index'))->assertOk()
             ->assertSee('Start with what needs attention')->getContent());
     }

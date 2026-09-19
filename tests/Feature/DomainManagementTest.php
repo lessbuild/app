@@ -59,30 +59,37 @@ class DomainManagementTest extends TestCase
         $this->actingAs($owner)->get(route('domains.index'))->assertOk()->assertSee('www.example.com')->assertDontSee('cloudflare-secret');
     }
 
-    public function test_domain_management_is_collapsed_by_default_and_reopens_for_validation_errors(): void
+    public function test_domain_management_uses_dialogs_and_reopens_for_validation_errors(): void
     {
         [$owner, $website] = $this->infrastructure();
 
         $default = $this->actingAs($owner)->get(route('domains.index'));
         $defaultContent = $default->getContent();
 
-        $this->assertLessThan(
-            strpos($defaultContent, 'id="domain-inventory"'),
-            strpos($defaultContent, 'id="domain-management"'),
-        );
+        $default->assertSee('data-modal-trigger="domain-add-dialog"', false)
+            ->assertSee('data-modal-trigger="temporary-domain-dialog"', false)
+            ->assertSee('id="domain-inventory"', false)
+            ->assertDontSee('id="domain-management"', false);
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*id="domain-management")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="domain-add-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $defaultContent,
         );
 
-        $errorPage = $this->from(route('domains.index'))
+        $fallback = $this->actingAs($owner)->get(route('domains.index', ['dialog' => 'add-domain']))
+            ->assertSuccessful();
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="domain-add-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $fallback->getContent(),
+        );
+
+        $errorPage = $this->from(route('domains.index', ['dialog' => 'add-domain']))
             ->followingRedirects()
             ->actingAs($owner)
             ->post(route('domains.store'), ['website_id' => $website->id])
             ->assertSuccessful();
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="domain-management")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="domain-add-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $errorPage->getContent(),
         );
         $errorPage->assertSee('The hostname field is required.');
