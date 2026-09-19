@@ -330,30 +330,66 @@
         </div>
     @endif
 
+    @php
+        $noteDialogId = 'build-note-dialog';
+        $noteDialogOpen = request()->query('dialog') === 'operator-note'
+            || $errors->getBag('buildNote')->any();
+        $noteDialogUrl = route('builds.show', ['build' => $build, 'dialog' => 'operator-note']);
+    @endphp
     <section class="ui-card mt-4 p-4">
-        <h2 class="font-semibold text-primary">{{ __('Operator note') }}</h2>
-        <p class="mt-1 text-sm text-secondary">
-            {{ __('Record an incident ticket, rollback reason, approval, or handoff context. Notes are searchable and included in build exports, so do not store secrets.') }}
-        </p>
-        <form method="POST" action="{{ route('builds.note.update', $build) }}" class="mt-4">
-            @csrf
-            @method('PATCH')
-            <label class="block">
-                <span class="sr-only">{{ __('Operator note') }}</span>
-                <textarea
-                    name="operator_note"
-                    rows="4"
-                    maxlength="2000"
-                    class="input secondary w-full rounded-lg"
-                    placeholder="{{ __('Example: Approved rollback for incident INC-1042.') }}"
-                >{{ old('operator_note', $build->operator_note) }}</textarea>
-            </label>
-            <x-forms.errors name="operator_note" bag="buildNote" />
-            <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                <p class="text-xs text-secondary">{{ __('Remove all text and save to clear the note.') }}</p>
-                <x-ui.button type="submit" variant="primary">{{ __('Save note') }}</x-ui.button>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0">
+                <h2 class="font-semibold text-primary">{{ __('Operator note') }}</h2>
+                <p class="mt-1 text-sm text-secondary">
+                    {{ __('Record an incident ticket, rollback reason, approval, or handoff context. Notes are searchable and included in build exports, so do not store secrets.') }}
+                </p>
             </div>
-        </form>
+            <x-ui.button
+                href="{{ $noteDialogUrl }}"
+                data-modal-trigger="{{ $noteDialogId }}"
+                aria-controls="{{ $noteDialogId }}"
+                aria-expanded="{{ $noteDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
+                {{ $build->operator_note ? __('Edit operator note') : __('Add operator note') }}
+            </x-ui.button>
+        </div>
+
+        @if ($build->operator_note)
+            <div class="mt-4 rounded-lg border border-primary bg-secondary p-3">
+                <p class="whitespace-pre-wrap text-sm text-primary">{{ $build->operator_note }}</p>
+            </div>
+        @else
+            <p class="mt-4 text-sm text-secondary">{{ __('No operator note has been recorded.') }}</p>
+        @endif
+
+        <x-dialogs.modal
+            id="{{ $noteDialogId }}"
+            :title="$build->operator_note ? __('Edit operator note') : __('Add operator note')"
+            :description="__('Keep incident, approval and handoff context here. Do not store secrets.')"
+            :open="$noteDialogOpen"
+            wire:ignore
+        >
+            <form method="POST" action="{{ route('builds.note.update', $build) }}" class="space-y-4">
+                @csrf
+                @method('PATCH')
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Operator note') }}</span>
+                    <textarea
+                        name="operator_note"
+                        rows="6"
+                        maxlength="2000"
+                        class="input secondary w-full rounded-lg"
+                        placeholder="{{ __('Example: Approved rollback for incident INC-1042.') }}"
+                    >{{ old('operator_note', $build->operator_note) }}</textarea>
+                </label>
+                <x-forms.errors name="operator_note" bag="buildNote" />
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-xs text-secondary">{{ __('Remove all text and save to clear the note.') }}</p>
+                    <x-ui.button type="submit" variant="primary">{{ __('Save note') }}</x-ui.button>
+                </div>
+            </form>
+        </x-dialogs.modal>
     </section>
 
     @if (in_array($build->status, [\App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_AWAITING_APPROVAL], true) || ($build->status === \App\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path))

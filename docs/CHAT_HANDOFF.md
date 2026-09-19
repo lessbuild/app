@@ -14,6 +14,15 @@ The implementation is currently uncommitted. The next action is to commit and
 push this slice, update the isolated development runtime, then continue with
 the deployment operator-note dialog.
 
+The operator-note slice is now also implemented and verified locally. It uses
+the shared dialog with `wire:ignore` so active-build polling cannot replace an
+open editor, and it preserves the `buildNote` error bag. Deployment-note
+coverage passed **5 tests / 32 assertions**, the Blade fixture passed **1 test
+/ 58 assertions**, and the focused light 390px browser route passed **1 test**.
+The code is currently uncommitted; the next action is to commit and push both
+verified changes, update the isolated runtime, then continue with application
+detail forms.
+
 # Modal modernization completion — 2026-09-19
 
 The compact-workflow modal modernization plan is complete locally on `main`.

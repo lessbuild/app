@@ -43,6 +43,36 @@ class DeploymentNoteTest extends TestCase
             ->assertSee('Save note');
     }
 
+    public function test_operator_note_composer_is_a_dialog_and_reopens_for_named_validation_errors(): void
+    {
+        [$owner, $build] = $this->build();
+        $dialogUrl = route('builds.show', ['build' => $build, 'dialog' => 'operator-note']);
+        $dialogPattern = '/<dialog(?=[^>]*id="build-note-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($owner)
+            ->get(route('builds.show', $build))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="build-note-dialog"', false)
+            ->getContent();
+        $this->assertDoesNotMatchRegularExpression($dialogPattern, $default);
+
+        $this->assertMatchesRegularExpression(
+            $dialogPattern,
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $invalid = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->patch(route('builds.note.update', $build), [
+                'operator_note' => str_repeat('x', 2001),
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression($dialogPattern, $invalid->getContent());
+        $invalid->assertSee('2000 characters');
+    }
+
     public function test_owner_can_clear_a_note_and_an_unchanged_note_does_not_duplicate_activity(): void
     {
         [$owner, $build] = $this->build();

@@ -126,7 +126,13 @@ class AssetLayoutFixtureTest extends TestCase
             'finished_at' => now(),
         ]);
         File::put($directory.'/build.html', $this->renderPage(route('builds.show', $build))->assertOk()
-            ->assertSee('Deployment evidence')->getContent());
+            ->assertSee('Deployment evidence')
+            ->assertSee('data-modal-trigger="build-note-dialog"', false)
+            ->getContent());
+        File::put($directory.'/build-note-dialog.html', $this->renderPage(route('builds.show', [
+            'build' => $build,
+            'dialog' => 'operator-note',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
             ->assertSee('Protection status')
             ->assertSee('data-modal-trigger="backup-schedule-dialog"', false)

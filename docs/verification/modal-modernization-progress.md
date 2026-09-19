@@ -411,3 +411,40 @@ This is a presentation-only extraction. The dialog carries the environment ident
 ### Exact next task
 
 Commit and push this slice, update the isolated runtime, then convert the deployment operator-note editor while preserving the named `buildNote` validation bag.
+
+## Follow-up Slice 2 — deployment operator-note composer
+
+Status: complete locally; ready to commit and push with this verification record.
+
+### Responsibility problem
+
+The deployment detail page kept a six-line operator-note editor permanently above the deployment log. The note is useful context, but the editor is only needed when adding or changing that context and pushed the deployment evidence lower on mobile screens.
+
+### Boundary and design decision
+
+- The operator-note editor uses the shared URL-backed dialog.
+- The deployment page keeps the current note, deployment timeline, logs and recovery controls visible in their existing context.
+- The existing `BuildNoteRequest`, `buildNote` error bag, policy, action, activity metadata and redirect messages remain unchanged.
+- The dialog is marked `wire:ignore` because its parent Livewire component polls active deployments; an open editor must not be replaced during a poll.
+
+This is a presentation-only extraction. The normal HTTP form still owns note validation and persistence, while the Livewire component continues to own deployment refreshes.
+
+### Preserved contracts and safety guarantees
+
+- Existing route, PATCH method, validation key, named error bag, trimming, blank-to-null normalization, flash messages and activity behavior are unchanged.
+- Existing notes remain visible and the same save/clear behavior is available from the dialog.
+- Invalid submissions reopen the dialog using the existing named `buildNote` errors.
+- Operator notes remain escaped and bounded; the dialog does not expose note content in its URL.
+- Direct query URLs, no-JavaScript fallback, Escape, Back navigation and focus restoration remain available.
+
+### Verification
+
+- `tests/Feature/DeploymentNoteTest.php`: 5 tests, 32 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 58 assertions passed.
+- Focused light 390px built-asset browser route: 1 test passed in 1.4 minutes, including the deployment-note open/close, focus and direct-URL flow.
+- Pint: passed.
+- Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Commit and push this slice, update the isolated runtime, then convert the compact application-detail forms: add environment, add variable version and add process definition.

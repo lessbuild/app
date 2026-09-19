@@ -41,6 +41,8 @@ async function serveFixtures(page) {
                             ? 'automation-dialog'
                             : screen === 'backups' && dialog === 'add-schedule'
                                 ? 'backups-dialog'
+                            : screen === 'build' && dialog === 'operator-note'
+                                ? 'build-note-dialog'
                             : screen === 'gallery' && dialog === 'report'
                                 ? 'gallery-dialog'
                                 : screen === 'observability' && dialog === 'create-metric-rule'
@@ -183,6 +185,17 @@ for (const colorScheme of ['light', 'dark']) {
                         await evidence.locator('summary').click();
                         await expect(content).toBeVisible();
                     }
+                    const noteTrigger = page.getByRole('link', { name: 'Add operator note', exact: true });
+                    const noteDialog = page.getByRole('dialog', { name: 'Add operator note', exact: true });
+                    await noteTrigger.click();
+                    await expect(noteDialog).toBeVisible();
+                    await expect(noteDialog.locator('[data-modal-close]')).toBeFocused();
+                    expect(new URL(page.url()).searchParams.get('dialog')).toBe('operator-note');
+                    await page.keyboard.press('Escape');
+                    await expect(noteDialog).toBeHidden();
+                    await expect(noteTrigger).toBeFocused();
+                    await page.goto('http://buildpusher.test/build?dialog=operator-note', { waitUntil: 'networkidle' });
+                    await expect(page.getByRole('dialog', { name: 'Add operator note', exact: true })).toBeVisible();
                 }
                 if (screen === 'backups') {
                     await expect(page.locator('[data-backup-readiness]')).toBeVisible();
