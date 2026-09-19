@@ -1991,6 +1991,22 @@ cost/budget workflows. Keep long configuration, import, restore,
 authentication and protocol flows as pages where modal extraction could alter
 ordering or failure semantics.
 
+## Project child-resource dialog follow-up — 2026-09-19
+
+Application detail environment, encrypted-variable and worker/scheduler
+process creation forms now render through reusable scene dialog components.
+Existing resource scoping, policies, entitlements, validation-panel state,
+encryption, field names, old input and actions are unchanged.
+
+Verification: 15 focused PHP tests / 121 assertions and one targeted mobile
+project-detail browser journey passed. Blade cache, Pint and diff checks
+passed. Implementation commit and push: `30bad5e`.
+
+Next task: continue through observability, notifications, feedback, build
+notes, gallery actions and cost/budget workflows. Keep long configuration,
+import, restore, authentication and protocol flows as pages when modal
+extraction could alter ordering or failure semantics.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

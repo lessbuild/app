@@ -1319,6 +1319,34 @@ and cost/budget workflows. Long configuration, import, restore,
 authentication and protocol workflows remain explicit pages unless their
 ordering and failure contracts can be preserved.
 
+## Project child-resource dialog follow-up — 2026-09-19
+
+Application detail environment creation, encrypted-variable creation and
+worker/scheduler process creation now render through reusable components:
+`scenes.projects.environment-create-dialog`,
+`scenes.projects.variable-create-dialog` and
+`scenes.projects.process-create-dialog`. The detail page retains resource
+scoping, policy checks, feature entitlements, URL state and validation-panel
+state; each component owns only its form presentation.
+
+Environment identity and panel markers, validation keys, encrypted-value
+non-disclosure, process-command handling, old input, redirects and existing
+actions remain unchanged. No persistence, authorization or deployment
+workflow was moved into the components.
+
+Verification passed with 15 focused PHP tests / 121 assertions and one
+targeted mobile project-detail browser journey. Blade cache, Pint and
+`git diff --check` passed. No dependency or lockfile changed.
+
+Implementation commit and push: `30bad5e Extract project child-resource
+dialogs`.
+
+The next task is the remaining inline-dialog audit through observability,
+notifications, feedback, build notes, gallery actions and cost/budget
+workflows. Long configuration, import, restore, authentication and protocol
+flows remain explicit pages where modal extraction could alter ordering or
+failure semantics.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.
