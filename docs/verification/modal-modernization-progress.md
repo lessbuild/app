@@ -509,7 +509,8 @@ validation.
 
 ## Follow-up Slice 4 — gallery report-resolution composers
 
-Status: complete locally and pushed in `be3ea3f`; the isolated development runtime is next to be updated and restarted at the pushed tip.
+Status: complete locally and pushed in `be3ea3f`; the isolated development runtime
+was updated, cached and restarted at the pushed tip before this follow-up slice.
 
 ### Responsibility problem
 
@@ -562,3 +563,65 @@ repository was introduced.
 Update the isolated runtime, then convert the observability operational-incident
 investigation-note editor while preserving incident authorization, activity
 timing and status transitions.
+
+## Follow-up Slice 5 — observability investigation-note composer
+
+Status: complete locally and pushed in `2c05632`; isolated runtime and final
+regression verification are pending.
+
+### Responsibility problem
+
+Each active operational incident rendered a free-text investigation-note input
+inside the response timeline. The timeline and status controls are useful
+context, but the note editor is only needed when recording evidence and made
+incident cards taller on small screens.
+
+### Boundary and design decision
+
+- The investigation-note editor uses the shared URL-backed dialog, with one
+  stable dialog ID and query key per incident.
+- Assignment, acknowledgement, resolution, timeline evidence and incident
+  status transitions remain inline because they are response workflow rather
+  than short composition tasks.
+- The existing `StoreOperationalIncidentNoteRequest`, incident policy,
+  activity event, encrypted event storage and redirect behavior remain the
+  business boundary.
+
+This is a presentation-only extraction. The modal owns focus and URL state;
+the existing request and controller continue to own authorization, validation
+and persistence. No provider, job, transaction or incident-state abstraction
+was introduced.
+
+### Preserved contracts and safety guarantees
+
+- The existing route, POST method, `message` field, 5,000-character limit,
+  flash/validation behavior and authorization-before-validation ordering are
+  unchanged.
+- Invalid note submissions reopen only the submitted incident's dialog and
+  retain the existing validation message; no event is written on rejection.
+- Timeline expansion, assignment, acknowledgement, resolution, recovery and
+  activity timing remain unchanged.
+- The incident identity used to reopen the editor is bounded to the rendered
+  incident and is not used as a permission substitute.
+- Direct query URLs, normal anchor fallback, Escape handling, focus
+  restoration and responsive native-dialog behavior remain available.
+
+### Verification
+
+- `tests/Feature/OperationalIncidentTest.php`: 7 tests, 60 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 67 assertions
+  passed.
+- Dedicated observability 390px Playwright flow: 1 test passed in 26.4
+  seconds, including timeline expansion, dialog focus and Escape restoration.
+- Light 390px built-asset route matrix: 1 test passed in 1.0 minute,
+  including the observability dialog path.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: `2c05632 Use dialog for incident investigation notes`.
+
+### Exact next task
+
+Synchronize the isolated development runtime, run the complete strict PHP,
+Pint, asset and browser verification, then record the final follow-up handoff.

@@ -2,11 +2,12 @@
 
 # Follow-up modal pass — 2026-09-19
 
-The follow-up modal pass is complete through the gallery report-resolution
-slice on `main`. Four cohesive slices are pushed and verified: Automation
+The follow-up modal pass is complete through the observability incident-note
+slice on `main`. Five cohesive slices are pushed and verified: Automation
 schedule and task composers (`5349f5d`), deployment operator notes (`42080e0`),
-application-detail composers (`c428f04`), and gallery report-resolution
-composers (`be3ea3f`).
+application-detail composers (`c428f04`), gallery report-resolution
+composers (`be3ea3f`), and the observability incident-note composer
+(`2c05632`).
 The isolated development runtime is updated after each pushed slice. Existing
 requests, policies, actions, entitlement checks, encryption, Livewire polling
 and queue behavior remain unchanged.
@@ -27,8 +28,18 @@ feature coverage passed **16 tests / 186 assertions** for `RecipeReportTest`,
 passed **1 test / 66 assertions**, and the focused 390px Playwright flow passed
 **1 test**. Pint, Node syntax and `git diff --check` passed.
 
-The next task is the observability incident-note dialog. Keep each slice
-independently tested, committed and pushed.
+The observability slice moves the free-text investigation-note editor into a
+URL-backed dialog while keeping assignment, acknowledgement, resolution and
+the incident timeline inline as durable response workflow. Its focused
+feature coverage passed **7 tests / 60 assertions**, the Blade fixture passed
+**1 test / 67 assertions**, the dedicated 390px Playwright flow passed **1
+test in 26.4 seconds**, and the light 390px built-asset route matrix passed
+**1 test in 1.0 minute**. Pint, Node syntax and `git diff --check` passed.
+
+The next task is final runtime synchronization and the complete regression
+verification for this follow-up pass. Physical-phone checks, production
+deployment, provider-backed acceptance and the separate live acceptance drill
+remain external gates.
 
 # Modal modernization completion — 2026-09-19
 
