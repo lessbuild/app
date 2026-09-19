@@ -139,23 +139,10 @@
             </section>
 
             @if($canManage)
-                <x-dialogs.modal
-                    id="cost-budget-dialog"
-                    :title="__('Edit monthly budget')"
-                    :description="__('This is a planning threshold for workspace infrastructure estimates, not a provider spending cap.')"
+                <x-scenes.costs.budget-dialog
+                    :budget="$budget"
                     :open="$budgetDialogOpen"
-                >
-                    <form method="POST" action="{{ route('costs.update') }}" class="space-y-4">
-                        @csrf
-                        @method('PATCH')
-                        <label>
-                            <span class="block text-xs font-bold uppercase text-secondary">{{ __('Budget in USD') }}</span>
-                            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ old('monthly_infrastructure_budget', $budget) }}" class="input secondary mt-1 w-full rounded-md" autofocus>
-                            <x-forms.errors name="monthly_infrastructure_budget" />
-                        </label>
-                        <x-ui.button type="submit" variant="primary">{{ __('Save budget') }}</x-ui.button>
-                    </form>
-                </x-dialogs.modal>
+                />
             @endif
 
             <section class="ui-card border-primary bg-tertiary p-5 text-white">

@@ -142,33 +142,11 @@
                     <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4">
                         <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-secondary">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><x-ui.button href="{{ $promotionDialogUrl }}" data-modal-trigger="{{ $promotionDialogId }}" aria-controls="{{ $promotionDialogId }}" aria-expanded="{{ $promotionDialogOpen ? 'true' : 'false' }}" variant="primary">{{ __('Promote') }}</x-ui.button></div>
                     </aside>
-                    <x-dialogs.modal
-                        :id="$promotionDialogId"
-                        :title="__('Promote tested release')"
-                        :description="__('Rebuild exact revision :revision with the target environment configuration.', ['revision' => $successfulBuild->shortRevision()])"
+                    <x-scenes.projects.promotion-dialog
+                        :build="$successfulBuild"
                         :open="$promotionDialogOpen"
-                    >
-                        <form method="POST" action="{{ route('builds.promote', $successfulBuild) }}" class="space-y-4">
-                            @csrf
-                            <input type="hidden" name="_promotion_build_id" value="{{ $successfulBuild->id }}">
-                            <label class="block">
-                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Target environment') }}</span>
-                                <select name="target_environment_id" required class="input secondary w-full rounded-lg">
-                                    <option value="">{{ __('Choose target') }}</option>
-                                    @foreach($promotionTargets as $target)
-                                        <option value="{{ $target->id }}" @selected((string) old('target_environment_id') === (string) $target->id)>{{ $target->name }}</option>
-                                    @endforeach
-                                </select>
-                                <x-forms.errors name="target_environment_id" />
-                            </label>
-                            <label class="block">
-                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Change ticket or release note') }}</span>
-                                <input name="promotion_note" value="{{ old('promotion_note') }}" maxlength="2000" class="input secondary w-full rounded-lg" placeholder="{{ __('Optional release note') }}">
-                                <x-forms.errors name="promotion_note" />
-                            </label>
-                            <x-ui.button type="submit" variant="primary">{{ __('Promote') }}</x-ui.button>
-                        </form>
-                    </x-dialogs.modal>
+                        :targets="$promotionTargets"
+                    />
                 @endif
 
                 <div class="grid gap-px bg-secondary lg:grid-cols-3">
