@@ -166,47 +166,7 @@
         </details>
 
         @if ($features['api'] && $canManage)
-            <x-dialogs.modal
-                id="automation-token-dialog"
-                :title="__('Create personal access token')"
-                :description="__('Use the smallest set of abilities and an explicit expiry for each integration.')"
-                :open="$tokenDialogOpen"
-            >
-                <form method="POST" action="{{ route('automation.tokens.store') }}" class="space-y-4">
-                    @csrf
-                    <input type="hidden" name="_automation_token_form" value="1">
-                    <div class="grid gap-3 sm:grid-cols-[1fr_11rem]">
-                        <label class="block">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Token name') }}</span>
-                            <input name="name" required maxlength="100" value="{{ old('name') }}" class="input secondary w-full rounded-md" placeholder="CI deployment">
-                            <x-forms.errors name="name" />
-                        </label>
-                        <label class="block">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Expires') }}</span>
-                            <select name="expires_in_days" class="input secondary w-full rounded-md">
-                                <option value="30" @selected((string) old('expires_in_days', 365) === '30')>{{ __('30 days') }}</option>
-                                <option value="90" @selected((string) old('expires_in_days', 365) === '90')>{{ __('90 days') }}</option>
-                                <option value="180" @selected((string) old('expires_in_days', 365) === '180')>{{ __('180 days') }}</option>
-                                <option value="365" @selected((string) old('expires_in_days', 365) === '365')>{{ __('1 year') }}</option>
-                            </select>
-                            <x-forms.errors name="expires_in_days" />
-                        </label>
-                    </div>
-                    <fieldset>
-                        <legend class="mb-2 text-xs font-bold uppercase text-secondary">{{ __('Abilities') }}</legend>
-                        <div class="flex flex-wrap gap-4 text-sm text-secondary">
-                            @foreach (['read', 'deploy', 'manage'] as $ability)
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="abilities[]" value="{{ $ability }}" @checked(in_array($ability, (array) old('abilities', ['read']), true))>
-                                    {{ ucfirst($ability) }}
-                                </label>
-                            @endforeach
-                        </div>
-                        <x-forms.errors name="abilities" />
-                    </fieldset>
-                    <x-ui.button type="submit" variant="primary">{{ __('Create token') }}</x-ui.button>
-                </form>
-            </x-dialogs.modal>
+            <x-scenes.automation.token-dialog :open="$tokenDialogOpen" />
         @endif
 
         <details id="automation-quick-start" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false">
@@ -317,7 +277,6 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                 $scheduleDialogKey = 'deployment-schedule-'.$environment->id;
                                                 $scheduleDialogOpen = request()->query('dialog') === $scheduleDialogKey
                                                     || old('_automation_dialog') === $scheduleDialogKey;
-                                                $scheduleFormOld = old('_automation_dialog') === $scheduleDialogKey;
                                             @endphp
                                             <x-ui.button
                                                 href="{{ route('automation.index', ['dialog' => $scheduleDialogKey]) }}"
@@ -330,33 +289,11 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                 {{ __('Add schedule') }}
                                             </x-ui.button>
 
-                                            <x-dialogs.modal
-                                                id="{{ $scheduleDialogId }}"
-                                                :title="__('Add deployment schedule')"
-                                                :description="__('Choose when this environment should receive an automatic deployment.')"
+                                            <x-scenes.automation.schedule-dialog
+                                                :environment="$environment"
+                                                :dialog-key="$scheduleDialogKey"
                                                 :open="$scheduleDialogOpen"
-                                            >
-                                                <form method="POST" action="{{ route('automation.deployment-schedules.store', $environment) }}" class="space-y-4">
-                                                    @csrf
-                                                    <input type="hidden" name="_automation_dialog" value="{{ $scheduleDialogKey }}">
-                                                    <label class="block">
-                                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Schedule name') }}</span>
-                                                        <input required name="name" maxlength="100" class="input secondary w-full rounded-md" placeholder="Nightly" value="{{ $scheduleFormOld ? old('name') : '' }}">
-                                                        <x-forms.errors name="name" />
-                                                    </label>
-                                                    <label class="block">
-                                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Cron expression') }}</span>
-                                                        <input required name="cron_expression" maxlength="100" class="input secondary w-full rounded-md font-mono" value="{{ $scheduleFormOld ? old('cron_expression', '0 3 * * *') : '0 3 * * *' }}">
-                                                        <x-forms.errors name="cron_expression" />
-                                                    </label>
-                                                    <label class="block">
-                                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Timezone') }}</span>
-                                                        <input required name="timezone" class="input secondary w-full rounded-md" value="{{ $scheduleFormOld ? old('timezone', 'UTC') : 'UTC' }}">
-                                                        <x-forms.errors name="timezone" />
-                                                    </label>
-                                                    <x-ui.button type="submit" variant="primary">{{ __('Add deployment schedule') }}</x-ui.button>
-                                                </form>
-                                            </x-dialogs.modal>
+                                            />
                                         @endif
                                     </div>
 
@@ -399,7 +336,6 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                             $taskDialogKey = 'scheduled-task-'.$environment->id;
                                             $taskDialogOpen = request()->query('dialog') === $taskDialogKey
                                                 || old('_automation_dialog') === $taskDialogKey;
-                                            $taskFormOld = old('_automation_dialog') === $taskDialogKey;
                                         @endphp
                                         <x-ui.button
                                             href="{{ route('automation.index', ['dialog' => $taskDialogKey]) }}"
@@ -412,50 +348,11 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                             {{ __('Add task') }}
                                         </x-ui.button>
 
-                                        <x-dialogs.modal
-                                            id="{{ $taskDialogId }}"
-                                            :title="__('Add scheduled task')"
-                                            :description="__('Run a bounded command on a recurring schedule for this environment.')"
+                                        <x-scenes.automation.task-dialog
+                                            :environment="$environment"
+                                            :dialog-key="$taskDialogKey"
                                             :open="$taskDialogOpen"
-                                        >
-                                            <form method="POST" action="{{ route('automation.tasks.store', $environment) }}" class="space-y-4">
-                                                @csrf
-                                                <input type="hidden" name="_automation_dialog" value="{{ $taskDialogKey }}">
-                                                <label class="block">
-                                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Task name') }}</span>
-                                                    <input name="name" maxlength="100" required class="input secondary w-full rounded-md" placeholder="Warm cache" value="{{ $taskFormOld ? old('name') : '' }}">
-                                                    <x-forms.errors name="name" />
-                                                </label>
-                                                <label class="block">
-                                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Cron expression') }}</span>
-                                                    <input name="cron_expression" maxlength="100" required class="input secondary w-full rounded-md font-mono" value="{{ $taskFormOld ? old('cron_expression', '0 * * * *') : '0 * * * *' }}">
-                                                    <x-forms.errors name="cron_expression" />
-                                                </label>
-                                                <label class="block">
-                                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Timezone') }}</span>
-                                                    <input name="timezone" required class="input secondary w-full rounded-md" value="{{ $taskFormOld ? old('timezone', 'UTC') : 'UTC' }}">
-                                                    <x-forms.errors name="timezone" />
-                                                </label>
-                                                <label class="block">
-                                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Command') }}</span>
-                                                    <textarea name="command" maxlength="4000" required class="input secondary w-full rounded-md font-mono" rows="3" placeholder="php artisan cache:warm">{{ $taskFormOld ? old('command') : '' }}</textarea>
-                                                    <x-forms.errors name="command" />
-                                                </label>
-                                                <label class="block">
-                                                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Timeout seconds') }}</span>
-                                                    <input type="number" name="timeout_seconds" min="10" max="3600" value="{{ $taskFormOld ? old('timeout_seconds', 300) : 300 }}" required class="input secondary w-full rounded-md" aria-describedby="task-timeout-help-{{ $environment->id }}">
-                                                    <span id="task-timeout-help-{{ $environment->id }}" class="mt-1 block text-xs text-secondary">{{ __('Between 10 seconds and 1 hour.') }}</span>
-                                                    <x-forms.errors name="timeout_seconds" />
-                                                </label>
-                                                <div class="flex flex-wrap gap-4 text-sm text-secondary">
-                                                    <input type="hidden" name="without_overlapping" value="0">
-                                                    <label class="flex items-center gap-2"><input type="checkbox" name="without_overlapping" value="1" @checked(! $taskFormOld || (string) old('without_overlapping') === '1')>{{ __('Prevent overlap') }}</label>
-                                                    <input type="hidden" name="alert_on_failure" value="0">
-                                                    <label class="flex items-center gap-2"><input type="checkbox" name="alert_on_failure" value="1" @checked(! $taskFormOld || (string) old('alert_on_failure') === '1')>{{ __('Alert on failure') }}</label>
-                                                </div>
-                                                <x-ui.button type="submit" variant="primary">{{ __('Add scheduled task') }}</x-ui.button>
-                                            </form>
-                                        </x-dialogs.modal>
+                                        />
                                     </div>
                                 </article>
                             @endforeach
