@@ -36,10 +36,24 @@ feature coverage passed **7 tests / 60 assertions**, the Blade fixture passed
 test in 26.4 seconds**, and the light 390px built-asset route matrix passed
 **1 test in 1.0 minute**. Pint, Node syntax and `git diff --check` passed.
 
-The next task is final runtime synchronization and the complete regression
-verification for this follow-up pass. Physical-phone checks, production
-deployment, provider-backed acceptance and the separate live acceptance drill
-remain external gates.
+The follow-up pass is now fully verified in the isolated development runtime.
+The complete strict PHP 8.5.10 suite passed **1,622 tests / 13,513
+assertions** in **416.55 seconds** with no failures, warnings, risky tests or
+deprecations. Pint, the PHP 8.5.10 Composer platform check, the Vite build,
+Node syntax check and `git diff --check` passed. The complete built-asset
+browser matrix passed **20 tests in 8.9 minutes**, including light/dark
+responsive layouts, provider no-JavaScript submission and every modal slice.
+
+The isolated `buildpusher-dev-main.service` runtime is clean on `main` at
+`5442346`; route and Blade caches were rebuilt, the service is active,
+`https://buildpusher.com/login` returns HTTP 200, and the manifest CSS and
+served Livewire JavaScript return HTTP 200 with their expected content types.
+This is isolated development evidence only, not production or live
+acceptance. Physical-phone checks, production deployment, provider-backed
+acceptance and the separate live acceptance drill remain external gates.
+
+No further modal slice is justified by the current audit. Continue with a
+separately authorized product/UI backlog item or external acceptance gate.
 
 # Modal modernization completion — 2026-09-19
 

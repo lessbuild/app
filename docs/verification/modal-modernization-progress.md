@@ -567,7 +567,7 @@ timing and status transitions.
 ## Follow-up Slice 5 — observability investigation-note composer
 
 Status: complete locally and pushed in `2c05632`; isolated runtime and final
-regression verification are pending.
+regression verification are complete.
 
 ### Responsibility problem
 
@@ -623,5 +623,40 @@ Commit and push: `2c05632 Use dialog for incident investigation notes`.
 
 ### Exact next task
 
-Synchronize the isolated development runtime, run the complete strict PHP,
-Pint, asset and browser verification, then record the final follow-up handoff.
+No further modal slice is justified by the current audit. Continue with a
+separately authorized product/UI backlog item or external acceptance gate.
+
+## Follow-up final verification — 2026-09-19
+
+Status: complete for the isolated local/development scope.
+
+### Verification record
+
+- Complete strict PHP 8.5.10 suite: **1,622 tests / 13,513 assertions**
+  passed in **416.55 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Full Pint: passed.
+- Locked Composer platform requirements under PHP 8.5.10: passed. Composer
+  emitted known upstream PHP 8.5 deprecation notices but exited successfully;
+  no dependencies or lockfiles changed.
+- Vite production build: passed.
+- Browser-test Node syntax check: passed.
+- `git diff --check`: passed.
+- Complete built-asset browser matrix: **20 tests passed in 8.9 minutes**,
+  covering the new incident-note flow, all prior modal flows, light/dark
+  320/390/768/1440 layouts, provider no-JavaScript submission, navigation,
+  focus/Escape behavior and served assets.
+
+### Isolated runtime evidence
+
+- Runtime checkout `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
+  is clean on `main` at `5442346`.
+- `buildpusher-dev-main.service` is active after the update.
+- Blade and route caches were rebuilt successfully.
+- `https://buildpusher.com/login` returns HTTP 200.
+- The manifest CSS returns `text/css`; the served Livewire asset returns
+  `application/javascript`.
+
+This is isolated development evidence only. No production deployment, paid
+cloud operation, provider-backed acceptance or physical-phone verification was
+performed. Those remain separately authorized external gates.
