@@ -297,7 +297,7 @@ for (const colorScheme of ['light', 'dark']) {
                 }
                 if (screen === 'organization' || screen === 'automation') {
                     const disclosureIds = screen === 'organization'
-                        ? ['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete']
+                        ? ['organization-security-policy', 'organization-notification-preferences', 'organization-workspaces', 'organization-delete']
                         : ['automation-tokens', 'automation-quick-start'];
 
                     for (const id of disclosureIds) {
@@ -311,6 +311,23 @@ for (const colorScheme of ['light', 'dark']) {
                             await disclosure.locator('summary').click();
                             await expect(content).toBeVisible();
                         }
+                    }
+                    if (screen === 'organization') {
+                        const inviteTrigger = page.getByRole('link', { name: 'Invitations', exact: true });
+                        const inviteDialog = page.getByRole('dialog', { name: 'Invite member', exact: true });
+                        await inviteTrigger.click();
+                        await expect(inviteDialog).toBeVisible();
+                        await expect(page.locator('#organization-invite [data-modal-close]')).toBeFocused();
+                        expect(new URL(page.url()).searchParams.get('dialog')).toBe('invite-member');
+                        await page.keyboard.press('Escape');
+                        await expect(inviteDialog).toBeHidden();
+                        await expect(inviteTrigger).toBeFocused();
+                        expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+                        await page.goto('http://buildpusher.test/organization?dialog=invite-member', { waitUntil: 'networkidle' });
+                        await expect(inviteDialog).toBeVisible();
+                        await page.locator('#organization-invite [data-modal-close]').click();
+                        await expect(inviteDialog).toBeHidden();
                     }
                     if (screen === 'automation') {
                         await expect(page.locator('#automation-overview')).toBeVisible();
