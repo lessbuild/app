@@ -50,7 +50,7 @@ The broader modal modernization plan remains incomplete. Live acceptance and pai
 
 ## Slice 2 — invitation and feedback composers
 
-Status: implementation and verification complete; commit and push pending.
+Status: complete and deployed to the isolated development runtime.
 
 ### Responsibility problem
 
@@ -89,7 +89,9 @@ This keeps presentation responsibility separate from application operations and 
 
 ### Commit and push
 
-Pending final review, commit and push of this slice.
+Commit and push: `a243d72 Use dialogs for invitations and feedback`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this commit, rebuilt, view-cached and restarted. The service is active and the runtime checkout is clean on `main`.
 
 ### Exact next task
 
