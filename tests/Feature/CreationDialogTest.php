@@ -34,4 +34,29 @@ class CreationDialogTest extends TestCase
             ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors(['name', 'server_id', 'url', 'description', 'environment']);
     }
+
+    public function test_the_servers_inventory_hosts_the_server_creation_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('servers.index', ['dialog' => 'create-server']);
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('id="server-create-dialog"', false)
+            ->assertSee('data-modal-trigger="server-create-dialog"', false)
+            ->assertSee('action="'.route('servers.store', ['dialog' => 'create-server']).'"', false);
+    }
+
+    public function test_server_creation_validation_returns_to_the_open_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('servers.index', ['dialog' => 'create-server']);
+
+        $this->actingAs($user)
+            ->from($dialogUrl)
+            ->post(route('servers.store', ['dialog' => 'create-server']), [])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors(['provider_id', 'name', 'region', 'image', 'size']);
+    }
 }

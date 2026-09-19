@@ -1,5 +1,12 @@
 <x-layouts.app>
 
+    @php
+        $serverCreateOpen = request()->query('dialog') === 'create-server';
+        $serverIndexQuery = array_filter($filters, fn ($value) => $value !== null);
+        $serverCreateUrl = route('servers.index', [...$serverIndexQuery, 'dialog' => 'create-server']);
+        $serverStoreUrl = route('servers.store', ['dialog' => 'create-server']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Heading
@@ -13,7 +20,13 @@
     >
         <x-slot:buttons>
             <x-ui.button :href="route('servers.import.create')" variant="secondary">{{ __('Import existing') }}</x-ui.button>
-            <x-ui.button :href="route('servers.create')" variant="primary">
+            <x-ui.button
+                :href="$serverCreateUrl"
+                data-modal-trigger="server-create-dialog"
+                aria-controls="server-create-dialog"
+                aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
@@ -162,10 +175,64 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <x-ui.button :href="route('servers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <x-ui.button :href="route('servers.create')" variant="secondary">{{ __('Add Server') }}</x-ui.button>
+                        <x-ui.button
+                            :href="$serverCreateUrl"
+                            data-modal-trigger="server-create-dialog"
+                            aria-controls="server-create-dialog"
+                            aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >{{ __('Add Server') }}</x-ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>
         </div>
     @endif
+
+    <x-dialogs.modal
+        id="server-create-dialog"
+        :title="__('Add server')"
+        :description="__('Choose a provider and infrastructure profile, then start server provisioning.')"
+        :open="$serverCreateOpen"
+        body-class="p-0"
+    >
+        @if ($providers->isEmpty())
+            <x-ui.alert tone="warning" class="m-5">
+                <p class="font-semibold">{{ __('You must add a cloud provider before you can add a server.') }}</p>
+                <x-ui.button :href="route('providers.create')" variant="secondary" class="mt-3">{{ __('Add cloud provider') }}</x-ui.button>
+            </x-ui.alert>
+        @endif
+
+        @if (! $planUsage['allowed'])
+            <x-ui.alert tone="warning" class="m-5">
+                <p class="font-semibold">{{ __('Your plan’s server limit has been reached.') }}</p>
+                <x-ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-ui.button>
+            </x-ui.alert>
+        @endif
+
+        @error('plan')
+            <x-ui.alert tone="danger" class="m-5">
+                {{ $message }}
+                <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a>
+            </x-ui.alert>
+        @enderror
+
+        <form action="{{ $serverStoreUrl }}" method="POST">
+            @csrf
+            <x-scenes.servers._form
+                :types="$types"
+                :providers="$providers"
+                :sizes="$sizes"
+                :images="$images"
+                :regions="$regions"
+                :recipes="$recipes"
+            />
+
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+                <x-ui.button :href="route('servers.index', $serverIndexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || ! $planUsage['allowed']">
+                    {{ __('Create server') }}
+                </x-ui.button>
+            </div>
+        </form>
+    </x-dialogs.modal>
 </x-layouts.app>

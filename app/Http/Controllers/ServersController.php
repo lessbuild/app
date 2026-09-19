@@ -35,7 +35,7 @@ class ServersController extends Controller
     /**
      * List all servers.
      */
-    public function index(Request $request): View
+    public function index(Request $request, PlanLimits $limits): View
     {
         $filters = $this->indexFilters($request);
         $servers = $this->serverInventory->for($request->user(), $filters)
@@ -48,6 +48,7 @@ class ServersController extends Controller
             'filters' => $filters,
             'metrics' => $this->serverInventory->metrics($request->user(), $filters),
             'statuses' => $this->serverStatuses(),
+            ...$this->creationData($request, $limits),
         ]);
     }
 
@@ -66,26 +67,29 @@ class ServersController extends Controller
      */
     public function create(Request $request, PlanLimits $limits): View
     {
-        $types = ServerTypeEnum::cases();
-        $providers = $request->user()->workspaceProviders()->forServers()->get();
-        $regions = Region::all();
-        $sizes = Size::all();
-        $recipes = $request->user()->workspaceRecipes()->oldest()->get();
-        $images = [
-            'ubuntu-22-04-x64' => 'Ubuntu 22.04 (LTS) x64',
-            'ubuntu-20-04-x64' => 'Ubuntu 20.04 x86',
-            'ubuntu-18-04-x64' => 'Ubuntu 18.04 x86 image',
-        ];
+        return view('scenes.servers.create', $this->creationData($request, $limits));
+    }
 
-        return view('scenes.servers.create', [
-            'types' => $types,
-            'providers' => $providers,
-            'regions' => $regions,
-            'sizes' => $sizes,
-            'images' => $images,
-            'recipes' => $recipes,
+    /**
+     * Build the shared server creation-form data for the standalone page and inventory dialog.
+     *
+     * @return array<string, mixed> Provider catalog inputs and current workspace capacity.
+     */
+    private function creationData(Request $request, PlanLimits $limits): array
+    {
+        return [
+            'types' => ServerTypeEnum::cases(),
+            'providers' => $request->user()->workspaceProviders()->forServers()->get(),
+            'regions' => Region::all(),
+            'sizes' => Size::all(),
+            'images' => [
+                'ubuntu-22-04-x64' => 'Ubuntu 22.04 (LTS) x64',
+                'ubuntu-20-04-x64' => 'Ubuntu 20.04 x86',
+                'ubuntu-18-04-x64' => 'Ubuntu 18.04 x86 image',
+            ],
+            'recipes' => $request->user()->workspaceRecipes()->oldest()->get(),
             'planUsage' => $limits->usage($request->user(), 'servers'),
-        ]);
+        ];
     }
 
     /**
