@@ -81,6 +81,48 @@ class ObservabilityTest extends TestCase
         $this->assertStringContainsString('Publish status page', $content);
     }
 
+    public function test_metric_alert_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$owner] = $this->infrastructure();
+
+        $default = $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="metric-rule-dialog"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="metric-rule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('observability.index', ['dialog' => 'create-metric-rule']);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="metric-rule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('observability.metric-rules.store'), [
+                '_metric_rule_form' => '1',
+                'name' => '',
+                'metric' => 'invalid',
+                'operator' => 'invalid',
+                'threshold' => -1,
+                'consecutive_breaches' => 0,
+                'cooldown_minutes' => 2,
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="metric-rule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The name field is required.');
+        $this->assertDatabaseCount('metric_alert_rules', 0);
+    }
+
     public function test_observability_starts_with_response_overview_and_makes_signal_context_responsive(): void
     {
         [$owner] = $this->infrastructure();

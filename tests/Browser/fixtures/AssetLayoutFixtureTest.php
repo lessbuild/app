@@ -129,7 +129,11 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/observability.html', $this->renderPage(route('observability.index'))->assertOk()
-            ->assertSee('Start with what needs attention')->getContent());
+            ->assertSee('Start with what needs attention')
+            ->assertSee('data-modal-trigger="metric-rule-dialog"', false)
+            ->getContent());
+        File::put($directory.'/observability-metric-rule-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-metric-rule']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
     }
 
     /** Render a fresh request with Livewire's per-request asset state reset. */

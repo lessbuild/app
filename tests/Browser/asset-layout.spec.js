@@ -41,8 +41,10 @@ async function serveFixtures(page) {
                             ? 'automation-dialog'
                             : screen === 'backups' && dialog === 'add-schedule'
                                 ? 'backups-dialog'
-                                : screen === 'gallery' && dialog === 'report'
-                                    ? 'gallery-dialog'
+                            : screen === 'gallery' && dialog === 'report'
+                                ? 'gallery-dialog'
+                                : screen === 'observability' && dialog === 'create-metric-rule'
+                                    ? 'observability-metric-rule-dialog'
                                 : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
@@ -435,4 +437,26 @@ test('gallery report composer uses an accessible URL-backed dialog', async ({ pa
     await expect(reportDialog).toBeVisible();
     await page.locator('#gallery-report-dialog [data-modal-close]').click();
     await expect(reportDialog).toBeHidden();
+});
+
+test('metric alert rule composer uses an accessible URL-backed dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability', { waitUntil: 'networkidle' });
+
+    const ruleTrigger = page.getByRole('link', { name: 'Create alert rule', exact: true });
+    const ruleDialog = page.getByRole('dialog', { name: 'Create an alert rule', exact: true });
+    await ruleTrigger.click();
+    await expect(ruleDialog).toBeVisible();
+    await expect(page.locator('#metric-rule-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-metric-rule');
+    await page.keyboard.press('Escape');
+    await expect(ruleDialog).toBeHidden();
+    await expect(ruleTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/observability?dialog=create-metric-rule', { waitUntil: 'networkidle' });
+    await expect(ruleDialog).toBeVisible();
+    await page.locator('#metric-rule-dialog [data-modal-close]').click();
+    await expect(ruleDialog).toBeHidden();
 });

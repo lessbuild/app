@@ -1,10 +1,32 @@
 <x-layouts.app>
+    @php
+        $metricRuleDialogHasErrors = old('_metric_rule_form') === '1'
+            && $errors->hasAny(['name', 'server_id', 'metric', 'operator', 'threshold', 'consecutive_breaches', 'cooldown_minutes']);
+        $metricRuleDialogOpen = (request()->query('dialog') === 'create-metric-rule' && ! session()->has('success'))
+            || $metricRuleDialogHasErrors;
+        $metricRuleDialogUrl = route('observability.index', ['dialog' => 'create-metric-rule']);
+    @endphp
+
     <x-layouts.partials.heading
         eyebrow="{{ __('Operations') }}"
         icon="chip"
         :title="__('Observability')"
         :description="__('Metrics, runtime logs, alert integrations, and public service health in one place.')"
-    />
+    >
+        @if ($canManage)
+            <x-slot:buttons>
+                <x-ui.button
+                    href="{{ $metricRuleDialogUrl }}"
+                    data-modal-trigger="metric-rule-dialog"
+                    aria-controls="metric-rule-dialog"
+                    aria-expanded="{{ $metricRuleDialogOpen ? 'true' : 'false' }}"
+                    variant="primary"
+                >
+                    {{ __('Create alert rule') }}
+                </x-ui.button>
+            </x-slot:buttons>
+        @endif
+    </x-layouts.partials.heading>
 
     @php
         $activeOperationalIncidentCount = $operationalIncidents
@@ -133,24 +155,75 @@
                     @endforeach
                 </div>
 
-                <form method="POST" action="{{ route('observability.metric-rules.store') }}" class="ui-card ui-card--muted space-y-3 p-4">
+                </div>
+            </details>
+            <x-dialogs.modal
+                id="metric-rule-dialog"
+                :title="__('Create an alert rule')"
+                :description="__('Trigger a notification after a sustained metric threshold breach.')"
+                :open="$metricRuleDialogOpen"
+            >
+                <form method="POST" action="{{ route('observability.metric-rules.store') }}" class="space-y-4">
                     @csrf
-                    <h3 class="font-bold text-primary">{{ __('Create an alert rule') }}</h3>
-                    <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span><input name="name" required class="input secondary w-full rounded-md" placeholder="High memory"></label>
-                    <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Server') }}</span><select name="server_id" class="input secondary w-full rounded-md"><option value="">{{ __('All servers') }}</option>@foreach ($servers as $server)<option value="{{ $server->id }}">{{ $server->label }}</option>@endforeach</select></label>
+                    <input type="hidden" name="_metric_rule_form" value="1">
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span>
+                        <input name="name" value="{{ old('name') }}" required class="input secondary w-full rounded-md" placeholder="High memory">
+                        <x-forms.errors name="name" />
+                    </label>
+                    <label class="block">
+                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Server') }}</span>
+                        <select name="server_id" class="input secondary w-full rounded-md">
+                            <option value="">{{ __('All servers') }}</option>
+                            @foreach ($servers as $server)
+                                <option value="{{ $server->id }}" @selected((string) old('server_id') === (string) $server->id)>{{ $server->label }}</option>
+                            @endforeach
+                        </select>
+                        <x-forms.errors name="server_id" />
+                    </label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="block"><span class="sr-only">{{ __('Metric') }}</span><select name="metric" class="input secondary w-full rounded-md">@foreach (\App\Models\MetricAlertRule::METRICS as $metric)<option value="{{ $metric }}">{{ str($metric)->replace('_', ' ')->headline() }}</option>@endforeach</select></label>
-                        <label class="block"><span class="sr-only">{{ __('Operator') }}</span><select name="operator" class="input secondary w-full rounded-md"><option value="gte">≥</option><option value="lte">≤</option></select></label>
+                        <label class="block">
+                            <span class="sr-only">{{ __('Metric') }}</span>
+                            <select name="metric" class="input secondary w-full rounded-md" aria-label="{{ __('Metric') }}">
+                                @foreach (\App\Models\MetricAlertRule::METRICS as $metric)
+                                    <option value="{{ $metric }}" @selected(old('metric', 'cpu_percent') === $metric)>{{ str($metric)->replace('_', ' ')->headline() }}</option>
+                                @endforeach
+                            </select>
+                            <x-forms.errors name="metric" />
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">{{ __('Operator') }}</span>
+                            <select name="operator" class="input secondary w-full rounded-md" aria-label="{{ __('Operator') }}">
+                                <option value="gte" @selected(old('operator', 'gte') === 'gte')>≥</option>
+                                <option value="lte" @selected(old('operator') === 'lte')>≤</option>
+                            </select>
+                            <x-forms.errors name="operator" />
+                        </label>
                     </div>
                     <div class="grid grid-cols-3 gap-2">
-                        <label class="block"><span class="sr-only">{{ __('Threshold') }}</span><input type="number" step="0.01" min="0" name="threshold" value="85" class="input secondary w-full rounded-md" aria-label="{{ __('Threshold') }}"></label>
-                        <label class="block"><span class="sr-only">{{ __('Consecutive breaches') }}</span><input type="number" min="1" max="10" name="consecutive_breaches" value="3" class="input secondary w-full rounded-md" aria-label="{{ __('Consecutive breaches') }}"></label>
-                        <label class="block"><span class="sr-only">{{ __('Cooldown') }}</span><select name="cooldown_minutes" class="input secondary w-full rounded-md" aria-label="{{ __('Cooldown') }}"><option value="30">30m</option><option value="60">1h</option><option value="180">3h</option></select></label>
+                        <label class="block">
+                            <span class="sr-only">{{ __('Threshold') }}</span>
+                            <input type="number" step="0.01" min="0" name="threshold" value="{{ old('threshold', 85) }}" class="input secondary w-full rounded-md" aria-label="{{ __('Threshold') }}">
+                            <x-forms.errors name="threshold" />
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">{{ __('Consecutive breaches') }}</span>
+                            <input type="number" min="1" max="10" name="consecutive_breaches" value="{{ old('consecutive_breaches', 3) }}" class="input secondary w-full rounded-md" aria-label="{{ __('Consecutive breaches') }}">
+                            <x-forms.errors name="consecutive_breaches" />
+                        </label>
+                        <label class="block">
+                            <span class="sr-only">{{ __('Cooldown') }}</span>
+                            <select name="cooldown_minutes" class="input secondary w-full rounded-md" aria-label="{{ __('Cooldown') }}">
+                                @foreach ([5 => '5m', 15 => '15m', 30 => '30m', 60 => '1h', 180 => '3h', 1440 => '24h'] as $minutes => $label)
+                                    <option value="{{ $minutes }}" @selected((string) old('cooldown_minutes', 30) === (string) $minutes)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            <x-forms.errors name="cooldown_minutes" />
+                        </label>
                     </div>
                     <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Create alert') }}</x-ui.button>
                 </form>
-                </div>
-            </details>
+            </x-dialogs.modal>
         @endif
     </section>
 
