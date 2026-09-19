@@ -2103,6 +2103,23 @@ The next task is the remaining deployment operator-note dialog. Preserve
 Livewire polling/state, the named `buildNote` error bag and deployment
 authorization, then perform a final non-component modal audit.
 
+## Deployment operator-note dialog follow-up — 2026-09-19
+
+The deployment operator-note add/edit form now renders through
+`scenes.builds.operator-note-dialog`. The Livewire deployment view retains
+polling, timeline and URL state; the component owns the form presentation.
+`wire:ignore`, the `buildNote` error bag, note clearing, authorization,
+method/field names and update response behavior remain unchanged.
+
+Verification passed with 26 focused PHP tests / 233 assertions and one
+isolated mobile built-asset/Livewire sweep across the authenticated screens.
+Blade cache, Pint and diff checks passed. A final search found no
+non-component `<x-dialogs.modal>` or raw `<dialog>` markup under
+`resources/views`. Implementation commit and push: `6d9966a`.
+
+The next task is final dialog-family regression verification and a complete
+handoff update with the pushed commit sequence.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

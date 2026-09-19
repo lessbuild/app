@@ -1754,3 +1754,56 @@ Extract the remaining deployment operator-note dialog into a reusable
 component, preserving Livewire polling/state, named `buildNote` errors and
 deployment authorization. Then re-audit for any non-component modal markup
 before final verification.
+
+## Follow-up Slice 19 — deployment operator-note dialog
+
+Status: complete locally and pushed to `main` in `6d9966a`.
+
+### Responsibility problem
+
+The deployment detail Livewire view still owned the operator-note modal form
+alongside polling, timeline and deployment controls. That coupled a small
+add/edit presentation to the stateful deployment view and left the final
+inline `<x-dialogs.modal>` outside the scene component convention.
+
+### Boundary and design decision
+
+Operator-note markup now lives in
+`scenes.builds.operator-note-dialog`. The Livewire view retains the current
+build, URL open state and surrounding deployment state; the component owns
+only the note form presentation.
+
+The component deliberately keeps `wire:ignore` because the existing modal
+focus/close behavior must not be reset by deployment polling. No Livewire
+state, route, action or validation behavior was moved.
+
+### Preserved contracts and safety guarantees
+
+- Add-versus-edit title, existing note value, clear-on-empty behavior and
+  maximum length remain unchanged.
+- The `buildNote` error bag, field name, update route, CSRF/method fields and
+  authorization behavior remain unchanged.
+- Deployment polling, timeline rendering, stale build protections and
+  surrounding actions remain in the Livewire view.
+- The component is included in the deployment page render and does not load a
+  second build feature page.
+
+### Verification
+
+- Deployment note, history and comparison regression coverage: **26 tests /
+  233 assertions** passed under PHP 8.5.10.
+- Isolated mobile built-asset/Livewire sweep: **1 passed** across the full
+  authenticated screen set in 1.8 minutes.
+- Blade view cache, Pint and `git diff --check` passed.
+- A final search found no non-component `<x-dialogs.modal>` or raw `<dialog>`
+  markup under `resources/views`.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `6d9966a Extract deployment note dialog`.
+
+### Exact next task
+
+Run the final component audit and focused regression suite across all dialog
+families, then update the handoff with the complete pushed commit sequence.
