@@ -1,14 +1,20 @@
+@props([
+    'servers',
+    'website' => null,
+    'fieldPrefix' => '',
+])
+
 <div class="space-y-8 bg-primary p-6 sm:p-8">
 
     <div>
-        <label for="server_id" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}server_id" class="block text-sm font-medium text-primary">
             {{ __('Server') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
-            <select id="server_id" name="server_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
+            <select id="{{ $fieldPrefix }}server_id" name="server_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($servers as $server)
                     <option value="{{ $server->id }}"
-                        @selected((string) old('server_id', $website->server_id ?? '') === (string) $server->id)
+                        @selected((string) old('server_id', $website?->server_id ?? '') === (string) $server->id)
                     >
                         {{ $server->label }} ({{ str($server->type->value)->replace('-', ' ')->title() }})
                     </option>
@@ -19,15 +25,15 @@
     </div>
 
     <div>
-        <label for="name" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}name" class="block text-sm font-medium text-primary">
             {{ __('Website Name') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
             <input
-                value="{{ old('name') ?? ($website->name ?? null) }}"
+                value="{{ old('name') ?? ($website?->name ?? null) }}"
                 type="text"
                 name="name"
-                id="name"
+                id="{{ $fieldPrefix }}name"
                 class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="Example: Deployer">
         </div>
@@ -35,7 +41,7 @@
     </div>
 
     <div>
-        <label for="url" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}url" class="block text-sm font-medium text-primary">
             {{ __('Website URL') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
@@ -43,10 +49,10 @@
                 http://
             </span>
             <input
-                value="{{ old('url') ?? ($website->url ?? null) }}"
+                value="{{ old('url') ?? ($website?->url ?? null) }}"
                 type="text"
                 name="url"
-                id="url"
+                id="{{ $fieldPrefix }}url"
                 class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                 placeholder="www.example.com">
         </div>
@@ -54,16 +60,16 @@
     </div>
 
     <div>
-        <label for="environment" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}environment" class="block text-sm font-medium text-primary">
             {{ __('Environment') }}
         </label>
         <div class="mt-2">
             <textarea
-                id="environment"
+                id="{{ $fieldPrefix }}environment"
                 name="environment"
                 rows="3"
                 class="input secondary w-full rounded-lg"
-                placeholder="APP_ENV=production....">{{ old('environment') ?? ($website->environment ?? null) }}</textarea>
+                placeholder="APP_ENV=production....">{{ old('environment') ?? ($website?->environment ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
             {{ __('Your environment file contents') }}
@@ -72,15 +78,15 @@
     </div>
 
     <div>
-        <label for="release_retention" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}release_retention" class="block text-sm font-medium text-primary">
             {{ __('Retained releases') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
             <input
-                value="{{ old('release_retention', $website->release_retention ?? 5) }}"
+                value="{{ old('release_retention', $website?->release_retention ?? 5) }}"
                 type="number"
                 name="release_retention"
-                id="release_retention"
+                id="{{ $fieldPrefix }}release_retention"
                 min="2"
                 max="20"
                 step="1"
@@ -98,15 +104,15 @@
         <div class="flex items-start gap-3">
             <input type="hidden" name="health_check_enabled" value="0">
             <input
-                id="health_check_enabled"
+                id="{{ $fieldPrefix }}health_check_enabled"
                 name="health_check_enabled"
                 type="checkbox"
                 value="1"
                 class="mt-1 rounded-md border-primary"
-                @checked((bool) old('health_check_enabled', $website->health_check_enabled ?? false))
+                @checked((bool) old('health_check_enabled', $website?->health_check_enabled ?? false))
             >
             <div>
-                <label for="health_check_enabled" class="block text-sm font-medium text-primary">
+                <label for="{{ $fieldPrefix }}health_check_enabled" class="block text-sm font-medium text-primary">
                     {{ __('Verify website health after deployment') }}
                 </label>
                 <p class="mt-1 text-sm text-secondary">
@@ -116,18 +122,18 @@
         </div>
 
         <div class="mt-4">
-            <label for="health_check_path" class="block text-sm font-medium text-primary">
+            <label for="{{ $fieldPrefix }}health_check_path" class="block text-sm font-medium text-primary">
                 {{ __('Health check path') }}
             </label>
             <div class="mt-2 flex rounded-lg shadow-xs">
                 <span class="inline-flex items-center rounded-l-md border border-r-0 border-primary bg-tertiary px-3 text-sm text-primary">
-                    http://{{ old('url', $website->url ?? __('website')) }}
+                    http://{{ old('url', $website?->url ?? __('website')) }}
                 </span>
                 <input
-                    value="{{ old('health_check_path', $website->health_check_path ?? '/') }}"
+                    value="{{ old('health_check_path', $website?->health_check_path ?? '/') }}"
                     type="text"
                     name="health_check_path"
-                    id="health_check_path"
+                    id="{{ $fieldPrefix }}health_check_path"
                     class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                     placeholder="/health"
                 >
@@ -142,15 +148,15 @@
         <div class="mt-4 flex items-start gap-3 border-t border-primary pt-4">
             <input type="hidden" name="health_monitoring_enabled" value="0">
             <input
-                id="health_monitoring_enabled"
+                id="{{ $fieldPrefix }}health_monitoring_enabled"
                 name="health_monitoring_enabled"
                 type="checkbox"
                 value="1"
                 class="mt-1 rounded-md border-primary"
-                @checked((bool) old('health_monitoring_enabled', $website->health_monitoring_enabled ?? true))
+                @checked((bool) old('health_monitoring_enabled', $website?->health_monitoring_enabled ?? true))
             >
             <div>
-                <label for="health_monitoring_enabled" class="block text-sm font-medium text-primary">
+                <label for="{{ $fieldPrefix }}health_monitoring_enabled" class="block text-sm font-medium text-primary">
                     {{ __('Automatically monitor website health') }}
                 </label>
                 <p class="mt-1 text-sm text-secondary">
@@ -161,18 +167,18 @@
         <x-forms.errors name="health_monitoring_enabled"></x-forms.errors>
 
         <div class="mt-4 border-t border-primary pt-4">
-            <label for="health_check_interval_minutes" class="block text-sm font-medium text-primary">
+            <label for="{{ $fieldPrefix }}health_check_interval_minutes" class="block text-sm font-medium text-primary">
                 {{ __('Automatic check interval') }}
             </label>
             <select
-                id="health_check_interval_minutes"
+                id="{{ $fieldPrefix }}health_check_interval_minutes"
                 name="health_check_interval_minutes"
                 class="input secondary mt-2 min-h-[2.75rem] rounded-lg"
             >
                 @foreach (\App\Models\Website::HEALTH_CHECK_INTERVALS as $minutes)
                     <option
                         value="{{ $minutes }}"
-                        @selected((int) old('health_check_interval_minutes', $website->health_check_interval_minutes ?? \App\Models\Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES) === $minutes)
+                        @selected((int) old('health_check_interval_minutes', $website?->health_check_interval_minutes ?? \App\Models\Website::DEFAULT_HEALTH_CHECK_INTERVAL_MINUTES) === $minutes)
                     >
                         {{ trans_choice('Every :count minute|Every :count minutes', $minutes, ['count' => $minutes]) }}
                     </option>
@@ -185,18 +191,18 @@
         </div>
 
         <div class="mt-4 border-t border-primary pt-4">
-            <label for="health_failure_threshold" class="block text-sm font-medium text-primary">
+            <label for="{{ $fieldPrefix }}health_failure_threshold" class="block text-sm font-medium text-primary">
                 {{ __('Outage confirmation') }}
             </label>
             <select
-                id="health_failure_threshold"
+                id="{{ $fieldPrefix }}health_failure_threshold"
                 name="health_failure_threshold"
                 class="input secondary mt-2 min-h-[2.75rem] rounded-lg"
             >
                 @foreach (\App\Models\Website::HEALTH_FAILURE_THRESHOLDS as $failures)
                     <option
                         value="{{ $failures }}"
-                        @selected((int) old('health_failure_threshold', $website->health_failure_threshold ?? \App\Models\Website::defaultHealthFailureThreshold()) === $failures)
+                        @selected((int) old('health_failure_threshold', $website?->health_failure_threshold ?? \App\Models\Website::defaultHealthFailureThreshold()) === $failures)
                     >
                         {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $failures, ['count' => $failures]) }}
                     </option>
@@ -210,16 +216,16 @@
     </div>
 
     <div>
-        <label for="description" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}description" class="block text-sm font-medium text-primary">
             {{ __('Description') }}
         </label>
         <div class="mt-2">
             <textarea
-                id="description"
+                id="{{ $fieldPrefix }}description"
                 name="description"
                 rows="3"
                 class="input secondary w-full rounded-lg"
-                placeholder="My website">{{ old('description') ?? ($website->description ?? null) }}</textarea>
+                placeholder="My website">{{ old('description') ?? ($website?->description ?? null) }}</textarea>
         </div>
         <p class="mt-2 text-sm text-secondary">
             {{ __('Brief description of your website') }}

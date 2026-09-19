@@ -1,5 +1,10 @@
 <x-layouts.app>
 
+    @php
+        $websiteEditOpen = $editDialogOpen;
+        $websiteEditUrl = route('websites.show', ['website' => $website, 'dialog' => 'edit-website']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Show passwords
@@ -52,7 +57,13 @@
                 </form>
             @endif
 
-            <x-ui.button :href="route('websites.edit', $website)" variant="primary">
+            <x-ui.button
+                :href="$websiteEditUrl"
+                data-modal-trigger="website-edit-dialog"
+                aria-controls="website-edit-dialog"
+                aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
@@ -374,4 +385,11 @@
         </x-ui.card>
     </section>
 
+    @if ($websiteEditOpen)
+        <x-scenes.websites.edit-dialog
+            :website="$website"
+            :servers="$servers"
+            :open="$websiteEditOpen"
+        />
+    @endif
 </x-layouts.app>

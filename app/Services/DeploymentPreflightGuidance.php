@@ -77,7 +77,7 @@ class DeploymentPreflightGuidance
         $server = $website?->server;
         $repositoryUrl = $this->url->route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-repository']);
         $websiteUrl = $website && ! $website->trashed()
-            ? $this->url->route('websites.edit', $website)
+            ? $this->url->route('websites.show', ['website' => $website, 'dialog' => 'edit-website'])
             : $this->url->route('websites.index');
 
         [$url, $action] = match ($check['name']) {

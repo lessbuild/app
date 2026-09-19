@@ -50,7 +50,7 @@ class RepositoryDeploymentTest extends TestCase
             ->assertSee('Run a connection check before the first deployment')
             ->assertSee(route('providers.show', $repository->provider), false)
             ->assertSee('Launch first deployment')
-            ->assertSee(route('websites.edit', $repository->website), false);
+            ->assertSee(route('websites.show', ['website' => $repository->website, 'dialog' => 'edit-website']), false);
 
         $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]);
         $this->actingAs($user)->get(route('repositories.show', $repository))

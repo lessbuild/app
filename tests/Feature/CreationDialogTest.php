@@ -177,6 +177,28 @@ class CreationDialogTest extends TestCase
             ->assertSee('for="repository-edit-provider_id"', false);
     }
 
+    public function test_the_website_show_page_hosts_its_edit_dialog_when_requested(): void
+    {
+        [$user, $repository] = $this->repository();
+        $website = $repository->website;
+        $dialogUrl = route('websites.show', ['website' => $website, 'dialog' => 'edit-website']);
+
+        $this->actingAs($user)
+            ->get(route('websites.show', $website))
+            ->assertOk()
+            ->assertDontSee('id="website-edit-dialog"', false)
+            ->assertDontSee('APP_ENV=production');
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('id="website-edit-dialog"', false)
+            ->assertSee('data-modal-trigger="website-edit-dialog"', false)
+            ->assertSee('action="'.route('websites.update', ['website' => $website, 'dialog' => 'edit-website']).'"', false)
+            ->assertSee('id="website-edit-environment"', false)
+            ->assertSee('APP_ENV=production');
+    }
+
     public function test_the_recipe_inventory_hosts_create_and_selected_edit_dialogs(): void
     {
         $user = User::factory()->create();

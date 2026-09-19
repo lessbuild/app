@@ -78,15 +78,22 @@ class WebsitesController extends Controller
     /**
      * Show the specified websites
      */
-    public function show(Website $website): View
+    public function show(Request $request, Website $website): View
     {
         $this->authorize('view', $website);
+
+        $editDialogOpen = $request->query('dialog') === 'edit-website';
+        $servers = $editDialogOpen
+            ? $request->user()->workspaceServers()->readyForWebsites()->get()
+            : null;
 
         $repositories = $website->repositories()->with('latestBuild')->latest()->paginate();
         $retainedHealthChecks = $this->healthHistory->retained($website);
 
         return view('scenes.websites.show', [
             'website' => $website,
+            'editDialogOpen' => $editDialogOpen,
+            'servers' => $servers,
             'repositories' => $repositories,
             'healthChecks' => $retainedHealthChecks->take(20),
             'healthMetrics' => $this->healthHistory->metrics($retainedHealthChecks),

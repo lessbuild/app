@@ -140,6 +140,13 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="website-create-dialog"', false)->getContent());
         File::put($directory.'/websites-dialog.html', $this->renderPage(route('websites.index', ['dialog' => 'create-website']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/website-show.html', $this->renderPage(route('websites.show', $website))->assertOk()
+            ->assertSee('data-modal-trigger="website-edit-dialog"', false)
+            ->assertDontSee('APP_ENV=production')->getContent());
+        File::put($directory.'/website-show-edit-dialog.html', $this->renderPage(route('websites.show', [
+            'website' => $website,
+            'dialog' => 'edit-website',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $owner->currentOrganization->backupDestinations()->create([
             'created_by' => $owner->id,
             'name' => 'Fixture storage',

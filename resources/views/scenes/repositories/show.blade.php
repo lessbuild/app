@@ -184,7 +184,7 @@
                     aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
                     variant="secondary"
                 >{{ __('Review source settings') }}</x-ui.button>
-                <x-ui.button :href="route('websites.edit', $repository->website)" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
+                <x-ui.button :href="route('websites.show', ['website' => $repository->website, 'dialog' => 'edit-website'])" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
             </div>
 
             @if ($deploymentGuidance['steps'])
