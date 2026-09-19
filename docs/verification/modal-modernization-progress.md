@@ -732,3 +732,71 @@ Keep long setup, deployment, recovery, credential, YAML, security and
 destructive workflows as explicit pages. Any further modal work requires a
 newly identified compact workflow and separate authorization; production
 deployment, physical-device checks and external acceptance remain outstanding.
+
+## Follow-up Slice 7 — application, server and website creation dialogs
+
+Status: complete locally and pushed on `main` in `f18447f`, `87bf94f`,
+`000cfe0` and `35404fb`.
+
+### Responsibility problem
+
+The inventory pages already represented the user's application, server and
+website resources, but their primary creation actions sent the user to separate
+pages. That added navigation and context switching, especially on mobile and
+from dashboard setup guidance. The existing creation operations were already
+cohesive; the justified boundary was a shared presentation entry point rather
+than a new business abstraction.
+
+### Boundary and design decision
+
+- Website creation is available from the websites inventory dialog and reuses
+  the existing website form, request, policy, action and provisioning flow.
+- Server creation is available from the servers inventory dialog and reuses
+  the existing server form, request, policy, action and provider flow.
+- New Application is available from the projects inventory dialog and shares
+  the creation form with the standalone project-create page.
+- Dashboard quick actions, setup steps, mobile quick action, command palette,
+  provider/project/repository guidance and deployment preflight link to the
+  inventory dialogs where the user can act in context.
+- The shared URL-backed native dialog remains responsible only for presentation,
+  focus, Escape/back behavior and direct-link state. No generic action,
+  repository, policy or provider abstraction was introduced.
+
+### Preserved contracts and safety guarantees
+
+- `/projects/create`, `/servers/create` and `/websites/create` remain direct
+  full-page fallbacks, including no-JavaScript use.
+- Existing POST routes, methods, field names, validation rules, named error
+  behavior, flash messages, policies, plan limits, organization scoping,
+  transactions, persistence and queued provisioning behavior are unchanged.
+- The server and website dialogs continue using the existing provider and
+  active-server eligibility data; application templates continue using the
+  existing catalog and allowlist.
+- Failed dialog validation redirects preserve the creation dialog query state
+  while keeping submitted sensitive values subject to the existing request and
+  session handling.
+- No provider credentials, secrets, route contracts or job serialization were
+  changed.
+
+### Verification
+
+- Complete strict PHP 8.5.10 suite: **1,628 tests / 13,561 assertions**
+  passed in **551.61 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Locked Composer platform requirements under PHP 8.5.10: passed; Composer
+  emitted only the known upstream PHP 8.5 deprecation notices.
+- Focused dashboard, dialog, title and asset checks: **53 tests / 741
+  assertions** passed.
+- `AssetLayoutFixtureTest.php`: **1 test / 77 assertions** passed.
+- Dedicated 390px creation-dialog Playwright flow: **1 test passed**.
+- Complete built-asset browser matrix: **21 tests passed in 14.3 minutes**.
+- Full Pint, Vite production build, Node syntax check, route cache, Blade view
+  cache and `git diff --check`: passed.
+
+### Exact next task
+
+This creation-dialog slice is complete. Keep long setup, credential,
+deployment, recovery and destructive workflows as pages unless a new compact
+workflow is separately identified and authorized. Production deployment,
+provider-backed acceptance and physical-device verification remain external
+gates.

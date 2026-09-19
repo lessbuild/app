@@ -1,5 +1,44 @@
 # BuildPusher chat handoff
 
+# Latest creation-dialog slice — 2026-09-19
+
+The authorized creation-dialog slice is complete and pushed on `main` through
+`35404fb` (`Route creation actions through inventory dialogs`). Add Website,
+Add Server and New Application now open from their inventory pages in the
+shared URL-backed native dialog. Dashboard actions, setup guidance, the mobile
+quick action, command palette, provider/repository/project readiness links and
+deployment preflight guidance now route to those inventory dialogs as well.
+
+The existing `/projects/create`, `/servers/create` and `/websites/create`
+pages remain available as direct full-page and no-JavaScript fallbacks. The
+same Form Requests, policies, actions, plan checks, organization scoping,
+validation keys, flash messages, persistence and provisioning jobs are used;
+this slice changes the presentation entry point rather than the operation
+boundary. Dialog validation failures retain their dialog query state.
+
+Verification for this slice:
+
+- Complete strict PHP 8.5.10 suite: **1,628 tests / 13,561 assertions**
+  passed in **551.61 seconds**.
+- Locked Composer platform requirements under PHP 8.5.10: passed; Composer
+  emitted only the known upstream PHP 8.5 deprecation notices.
+- Full Pint, Vite production build, Node browser-test syntax, route cache,
+  Blade view cache and `git diff --check`: passed.
+- Browser fixture export: **1 test / 77 assertions** passed.
+- Complete built-asset browser matrix: **21 tests passed in 14.3 minutes**,
+  including the new three creation workflows and the existing responsive,
+  accessibility, provider and dialog coverage.
+- Cohesive commits `f18447f`, `87bf94f`, `000cfe0` and `35404fb` were pushed
+  immediately to `origin/main`.
+
+This is isolated development and test evidence only. No production deployment,
+provider-backed acceptance, paid cloud operation or physical-device check was
+performed. Long setup, credential, recovery and destructive workflows remain
+explicit pages by design.
+
+The creation-dialog plan is complete. The next task requires a separately
+authorized product/UI item or an external acceptance gate.
+
 # Latest modal follow-up — 2026-09-19
 
 The latest authorized UI follow-up is complete and pushed on `main` at
