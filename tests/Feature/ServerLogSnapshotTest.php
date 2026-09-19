@@ -236,6 +236,16 @@ class ServerLogSnapshotTest extends TestCase
         );
     }
 
+    public function test_server_page_does_not_render_the_setup_information_section(): void
+    {
+        [$user, $server] = $this->server();
+
+        $this->actingAs($user)->get(route('servers.show', $server))
+            ->assertSuccessful()
+            ->assertDontSee('Setup Information')
+            ->assertSee('Logs and setup');
+    }
+
     public function test_snapshot_is_deleted_with_its_server(): void
     {
         [, $server] = $this->server();

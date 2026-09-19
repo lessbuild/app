@@ -429,9 +429,6 @@
             </div>
         </section>
 
-        <div class="lg:col-span-2">
-            <livewire:server-setup :model="$server"></livewire:server-setup>
-        </div>
             </div>
         </details>
     </div>
