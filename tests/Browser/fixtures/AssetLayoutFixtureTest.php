@@ -104,6 +104,15 @@ class AssetLayoutFixtureTest extends TestCase
             'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'App',
             'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
         ]);
+        $project->environments()->where('type', 'production')->firstOrFail()->update([
+            'server_id' => $server->id,
+            'website_id' => $website->id,
+        ]);
+        File::put($directory.'/project-detail.html', $this->renderPage(route('projects.show', $project))->assertOk()
+            ->assertSee('data-modal-trigger="add-environment-dialog"', false)
+            ->assertSee('data-modal-trigger="environment-variable-dialog-', false)
+            ->assertSee('data-modal-trigger="environment-process-dialog-', false)
+            ->getContent());
         $review = app(ApplicationConfigurationReviews::class)->create($project, $owner,
             "version: 2\nenvironments:\n  staging:\n    type: staging\n    placement: site\n    runtime:\n      type: php\n      build_command: fixture-private-command\n    deploy:\n      repository: app\n",
             ['placements' => ['site' => $website->id], 'repositories' => ['app' => $repository->id]],

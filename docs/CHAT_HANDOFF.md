@@ -2,26 +2,26 @@
 
 # Follow-up modal pass — 2026-09-19
 
-The follow-up modal pass is active on `main`. The first new slice moves
-deployment-schedule and scheduled-task creation on the Automation page into
-per-environment URL-backed dialogs. Existing requests, entitlement checks,
-actions, encryption and queue behavior remain unchanged. Feature coverage
-passed **35 tests / 182 assertions**, the Blade fixture passed **1 test / 55
+The follow-up modal pass is complete through the application-detail slice on
+`main`. Three cohesive slices are pushed and verified: Automation schedule and
+task composers (`5349f5d`), deployment operator notes (`42080e0`), and the
+application-detail composers (`PENDING-COMMIT` while this handoff is written).
+The isolated development runtime is updated after each pushed slice. Existing
+requests, policies, actions, entitlement checks, encryption, Livewire polling
+and queue behavior remain unchanged.
+
+The application-detail slice moves add-environment, encrypted-variable and
+worker/scheduler creation into environment-aware URL-backed dialogs. The
+focused feature coverage passed **7 tests / 47 assertions** for
+`ProjectEnvironmentTest`, **3 tests / 22 assertions** for
+`EnvironmentOperationsTest`, the Blade fixture passed **1 test / 62
 assertions**, and the focused 390px Playwright flow passed **1 test**. Pint,
 Node syntax and `git diff --check` passed.
 
-The implementation is currently uncommitted. The next action is to commit and
-push this slice, update the isolated development runtime, then continue with
-the deployment operator-note dialog.
-
-The operator-note slice is now also implemented and verified locally. It uses
-the shared dialog with `wire:ignore` so active-build polling cannot replace an
-open editor, and it preserves the `buildNote` error bag. Deployment-note
-coverage passed **5 tests / 32 assertions**, the Blade fixture passed **1 test
-/ 58 assertions**, and the focused light 390px browser route passed **1 test**.
-The code is currently uncommitted; the next action is to commit and push both
-verified changes, update the isolated runtime, then continue with application
-detail forms.
+After committing and pushing this slice, update the isolated runtime and
+continue with the gallery report-resolution dialog, then the observability
+incident-note dialog. Keep each slice independently tested, committed and
+pushed.
 
 # Modal modernization completion — 2026-09-19
 

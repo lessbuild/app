@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -492,6 +492,36 @@ test('automation schedule and task composers use compact accessible dialogs', as
     await page.locator('[id^="automation-task-dialog-"] [data-modal-close]').click();
     await expect(taskDialog).toBeHidden();
     await expect(taskTrigger).toBeFocused();
+});
+
+test('application detail composers use compact accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/project-detail', { waitUntil: 'networkidle' });
+
+    const workflows = [
+        ['Add environment', 'Add environment', '#add-environment-dialog'],
+        ['Add variable', 'Add encrypted variable', '[id^="environment-variable-dialog-"]'],
+        ['Add process', 'Add worker or scheduler', '[id^="environment-process-dialog-"]'],
+    ];
+
+    for (const [triggerName, dialogName, dialogSelector] of workflows) {
+        const trigger = page.getByRole('link', { name: triggerName, exact: true });
+        const dialog = page.getByRole('dialog', { name: dialogName, exact: true });
+        await trigger.click();
+        await expect(dialog).toBeVisible();
+        await expect(page.locator(`${dialogSelector} [data-modal-close]`)).toBeFocused();
+        const dialogKey = new URL(page.url()).searchParams.get('dialog');
+        if (triggerName === 'Add environment') {
+            expect(dialogKey).toBe('add-environment');
+        } else {
+            expect(dialogKey).toMatch(triggerName === 'Add variable' ? /^add-variable-\d+$/ : /^add-process-\d+$/);
+        }
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+        expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+    }
 });
 
 test('gallery report composer uses an accessible URL-backed dialog', async ({ page }) => {

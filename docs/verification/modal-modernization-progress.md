@@ -377,7 +377,7 @@ Exact next task: no further modal slice is justified by the current audit. Conti
 
 ## Follow-up Slice 1 — automation schedule and task composers
 
-Status: complete locally; ready to commit and push with this verification record.
+Status: complete locally and pushed in `5349f5d`; the isolated development runtime was updated and restarted at the pushed tip.
 
 ### Responsibility problem
 
@@ -410,11 +410,11 @@ This is a presentation-only extraction. The dialog carries the environment ident
 
 ### Exact next task
 
-Commit and push this slice, update the isolated runtime, then convert the deployment operator-note editor while preserving the named `buildNote` validation bag.
+Convert the deployment operator-note editor while preserving the named `buildNote` validation bag.
 
 ## Follow-up Slice 2 — deployment operator-note composer
 
-Status: complete locally; ready to commit and push with this verification record.
+Status: complete locally and pushed in `42080e0`; the isolated development runtime was updated and restarted at the pushed tip.
 
 ### Responsibility problem
 
@@ -447,4 +447,62 @@ This is a presentation-only extraction. The normal HTTP form still owns note val
 
 ### Exact next task
 
-Commit and push this slice, update the isolated runtime, then convert the compact application-detail forms: add environment, add variable version and add process definition.
+Convert the compact application-detail forms: add environment, add variable version and add process definition.
+
+## Follow-up Slice 3 — application-detail composers
+
+Status: complete locally; ready to commit and push with this verification record.
+
+### Responsibility problem
+
+The application detail page rendered three complete creation forms inside every
+environment card: add environment, add encrypted variable version, and add
+worker/scheduler process. These are infrequent creation actions, while the
+environment overview and existing resources are the primary information users
+need. Keeping the forms inline made the mobile page substantially longer and
+made each environment card compete with its own operational context.
+
+### Boundary and design decision
+
+- Add-environment uses a project-level shared URL-backed dialog.
+- Variable-version and process-definition creation use one environment-aware
+  dialog per environment.
+- Existing environment settings, deployment controls, resource attachment,
+  existing variable/process inventories and destructive actions remain in their
+  current page context.
+- Existing Form Requests, policy checks, entitlement checks, actions and
+  transaction/encryption behavior remain unchanged.
+
+This is a presentation-only extraction. The dialog carries only the existing
+project/environment route identity and a small dialog key in the URL; submitted
+forms retain the existing panel markers so validation redirects reopen the
+correct environment context.
+
+### Preserved contracts and safety guarantees
+
+- Existing route names, methods, validation keys, entitlement failures, flash
+  messages and persistence behavior are unchanged.
+- Add-environment, variable and process validation failures reopen the matching
+  dialog after a redirect; no invalid record is written.
+- Variable values remain absent from rendered page content, including failed
+  validation responses. The value field intentionally remains blank after an
+  error rather than reflecting secret input.
+- Existing encrypted variable versioning, scheduler replica normalization and
+  environment ownership checks remain in their current actions and requests.
+- Direct query URLs, no-JavaScript anchor fallback, Escape, Back navigation and
+  focus restoration remain available through the shared dialog foundation.
+
+### Verification
+
+- `tests/Feature/ProjectEnvironmentTest.php`: 7 tests, 47 assertions passed.
+- `tests/Feature/EnvironmentOperationsTest.php`: 3 tests, 22 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 62 assertions passed.
+- Focused 390px application-detail Playwright flow: 1 test passed in 17.4
+  seconds.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Commit and push this slice, update the isolated runtime, then convert the
+gallery report-resolution dialog while preserving reporter/contributor
+authorization, unread notifications and resolution-note validation.

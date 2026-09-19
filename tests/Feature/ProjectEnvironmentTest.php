@@ -141,6 +141,66 @@ class ProjectEnvironmentTest extends TestCase
         );
     }
 
+    public function test_application_detail_composers_use_dialogs_and_reopen_the_submitted_context(): void
+    {
+        config(['billing.enforce_entitlements' => false]);
+        [$owner, $developer, $project] = $this->workspaceProject();
+        $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+        $variableDialogId = 'environment-variable-dialog-'.$environment->id;
+        $processDialogId = 'environment-process-dialog-'.$environment->id;
+        $dialogPattern = static fn (string $id): string => '/<dialog(?=[^>]*id="'.preg_quote($id, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($developer)->get(route('projects.show', $project))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="add-environment-dialog"', false)
+            ->assertSee('data-modal-trigger="'.$variableDialogId.'"', false)
+            ->assertSee('data-modal-trigger="'.$processDialogId.'"', false);
+        $this->assertDoesNotMatchRegularExpression($dialogPattern('add-environment-dialog'), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($variableDialogId), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($processDialogId), $default->getContent());
+
+        foreach ([
+            ['dialog' => 'add-environment', 'id' => 'add-environment-dialog'],
+            ['dialog' => 'add-variable-'.$environment->id, 'id' => $variableDialogId],
+            ['dialog' => 'add-process-'.$environment->id, 'id' => $processDialogId],
+        ] as $dialog) {
+            $this->assertMatchesRegularExpression(
+                $dialogPattern($dialog['id']),
+                $this->actingAs($developer)->get(route('projects.show', ['project' => $project, 'dialog' => $dialog['dialog']]))
+                    ->assertSuccessful()->getContent(),
+            );
+        }
+
+        $addEnvironmentUrl = route('projects.show', ['project' => $project, 'dialog' => 'add-environment']);
+        $environmentError = $this->actingAs($developer)->from($addEnvironmentUrl)->followingRedirects()->post(route('environments.store', $project), [
+            '_environment_form' => 'add', 'name' => '', 'type' => 'staging', 'branch' => '',
+            'is_protected' => '0', 'requires_deployment_approval' => '0',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern('add-environment-dialog'), $environmentError->getContent());
+        $environmentError->assertSee('The name field is required.');
+
+        $variableUrl = route('projects.show', ['project' => $project, 'dialog' => 'add-variable-'.$environment->id]);
+        $variableError = $this->actingAs($developer)->from($variableUrl)->followingRedirects()->post(route('environments.variables.store', $environment), [
+            '_environment_id' => $environment->id, '_environment_panel' => 'variables',
+            'key' => 'not-valid', 'value' => 'private-value', 'scope' => 'runtime', 'is_secret' => '1',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern($variableDialogId), $variableError->getContent());
+        $variableError->assertSee('The key format is invalid.')->assertDontSee('private-value');
+
+        $processUrl = route('projects.show', ['project' => $project, 'dialog' => 'add-process-'.$environment->id]);
+        $processError = $this->actingAs($developer)->from($processUrl)->followingRedirects()->post(route('environments.processes.store', $environment), [
+            '_environment_id' => $environment->id, '_environment_panel' => 'processes',
+            'name' => '', 'type' => 'worker', 'command' => 'php artisan queue:work',
+            'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => '1',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern($processDialogId), $processError->getContent());
+        $processError->assertSee('The name field is required.');
+
+        $this->assertSame(2, $project->environments()->count());
+        $this->assertDatabaseCount('environment_variables', 0);
+        $this->assertDatabaseCount('environment_processes', 0);
+    }
+
     private function workspaceProject(): array
     {
         $owner = User::factory()->create();
