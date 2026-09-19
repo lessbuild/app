@@ -1834,6 +1834,25 @@ eligible add/edit workflows are the next task; long import, configuration,
 security, recovery and remote-side-effect workflows remain explicit pages
 until their ordering can be preserved.
 
+## Website modal follow-up — 2026-09-19
+
+Website creation now uses a reusable `scenes.websites.create-dialog` component
+and website detail has a URL-backed server-rendered edit dialog. The normal
+website detail page does not load server choices or decrypted environment
+content. Existing WebsiteRequest, policies/actions, plan limits, encryption,
+health settings, placement behavior and direct editor routes remain intact.
+
+The implementation is pushed as `4289a44`. Website preflight and deployment
+guidance links now target the edit dialog. Verification passed with 66 focused
+PHP tests / 569 assertions and two targeted 390px browser tests; Pint, Blade
+cache, Node syntax and diff checks passed. The isolated served runtime still
+needs to be fast-forwarded before claiming served-runtime acceptance.
+
+The next task is the remaining eligible server/infrastructure add/edit audit.
+Long import, configuration-review, security, recovery and remote-side-effect
+workflows remain explicit pages until their ordering and failure behavior can
+be preserved in a dialog.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

@@ -1032,3 +1032,65 @@ Continue the add/edit inventory with website editing and other compact
 resource-management forms. Keep long import, configuration-review, security,
 recovery and remote-side-effect workflows as explicit pages until their
 ordering and failure behavior can be preserved in a server-rendered dialog.
+
+## Follow-up Slice 11 — website dialogs
+
+Status: complete locally and pushed to `main` in `4289a44`.
+
+### Responsibility problem
+
+Website creation already opened in an inventory dialog, but its implementation
+was embedded in the inventory page and website editing still navigated to a
+full-page form. This made the website workflow inconsistent with the provider,
+repository, and recipe dialog conventions and duplicated the long form
+markup's presentation responsibility.
+
+### Boundary and design decision
+
+- The website creation form now lives in a reusable
+  `scenes.websites.create-dialog` component and is included by the inventory.
+- Website detail owns a server-rendered `scenes.websites.edit-dialog` when the
+  URL requests `dialog=edit-website`. The normal detail page does not load the
+  server choices or decrypted environment text.
+- The existing website form partial is reused with prefixed IDs. Its direct
+  create/edit pages remain unchanged as no-JavaScript fallbacks.
+- Dashboard/deployment guidance and repository preflight links now point to
+  the website detail edit dialog.
+- `WebsiteRequest`, `CreateWebsiteAction`, `UpdateWebsiteAction`, health and
+  placement actions, encryption casts, plan checks and redirects remain the
+  business boundary.
+
+This keeps dialog markup responsible for presentation and URL state while
+preserving the existing HTTP validation, policy authorization, persistence,
+remote provisioning and cleanup semantics.
+
+### Preserved contracts and safety guarantees
+
+- Website environment values remain encrypted and are absent from the normal
+  website detail response; they render only in the explicit authorized edit
+  dialog or existing editor page.
+- Server eligibility, plan limits, monitoring defaults, health path rules,
+  retention bounds, placement behavior, validation keys and redirects remain
+  unchanged.
+- Existing create-dialog prerequisite alerts and no-submit behavior remain
+  intact. Native links retain direct and no-JavaScript fallbacks.
+
+### Verification
+
+- Focused website/modal coverage: **66 tests / 569 assertions** passed under
+  PHP 8.5.10.
+- Targeted built-asset 390px creation/edit browser coverage: **2 tests passed
+  in 1.6 minutes**.
+- Pint, Blade view cache, Node syntax check and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `4289a44 Use modals for website editing`.
+
+### Exact next task
+
+Continue with remaining compact server/infrastructure add/edit forms and audit
+their encrypted fields, plan gates, remote side effects, and authorization
+ordering before deciding whether each belongs in a dialog or remains a direct
+workflow page.
