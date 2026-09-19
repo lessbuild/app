@@ -221,23 +221,23 @@
                     @endphp
                     <div class="mt-4">
                         @if ($report->resolved_at === null)
-                            @include('scenes.gallery.partials.report-resolution-dialog', [
-                                'dialogId' => $resolutionDialogId,
-                                'dialogOpen' => $resolutionDialogOpen,
-                                'dialogUrl' => $resolutionDialogUrl,
-                                'formAction' => route('gallery.reports.resolve', [$report->recipe, $report]),
-                                'report' => $report,
-                                'resolved' => false,
-                            ])
+                            <x-scenes.gallery.report-resolution-dialog
+                                :dialog-id="$resolutionDialogId"
+                                :dialog-open="$resolutionDialogOpen"
+                                :dialog-url="$resolutionDialogUrl"
+                                :form-action="route('gallery.reports.resolve', [$report->recipe, $report])"
+                                :report="$report"
+                                :resolved="false"
+                            />
                         @else
-                            @include('scenes.gallery.partials.report-resolution-dialog', [
-                                'dialogId' => $resolutionDialogId,
-                                'dialogOpen' => $resolutionDialogOpen,
-                                'dialogUrl' => $resolutionDialogUrl,
-                                'formAction' => route('gallery.reports.resolution-note.update', [$report->recipe, $report]),
-                                'report' => $report,
-                                'resolved' => true,
-                            ])
+                            <x-scenes.gallery.report-resolution-dialog
+                                :dialog-id="$resolutionDialogId"
+                                :dialog-open="$resolutionDialogOpen"
+                                :dialog-url="$resolutionDialogUrl"
+                                :form-action="route('gallery.reports.resolution-note.update', [$report->recipe, $report])"
+                                :report="$report"
+                                :resolved="true"
+                            />
                             <form method="POST" action="{{ route('gallery.reports.reopen', [$report->recipe, $report]) }}" class="mt-3">
                                 @csrf
                                 @method('PATCH')

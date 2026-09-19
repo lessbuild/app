@@ -29,23 +29,10 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-dialogs.modal
-        id="gallery-publish-recipe-dialog"
-        :title="__('Publish a recipe')"
-        :description="__('Share a reviewed provisioning script with the community gallery.')"
+    <x-scenes.gallery.publish-dialog
+        :cancel-url="$galleryIndexUrl"
         :open="$publishRecipeDialogOpen"
-        body-class="p-0"
-    >
-        <form method="POST" action="{{ route('recipes.store') }}">
-            @csrf
-            <input type="hidden" name="_recipe_publish_form" value="1">
-            <x-scenes.recipes._form />
-            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-4 py-4 sm:px-6">
-                <x-ui.button href="{{ $galleryIndexUrl }}" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-                <x-ui.button type="submit" variant="primary">{{ __('Publish Recipe') }}</x-ui.button>
-            </div>
-        </form>
-    </x-dialogs.modal>
+    />
 
     @if (session('status'))
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
@@ -208,21 +195,11 @@
                     </div>
                 </x-ui.card>
 
-                <x-dialogs.modal
-                    id="{{ $inspectDialogId }}"
-                    :title="__('Inspect :recipe', ['recipe' => $recipe->name])"
-                    :description="__('Review the commands before using this recipe on a server.')"
+                <x-scenes.gallery.inspect-dialog
+                    :inspect-recipe="$inspectRecipe"
                     :open="$inspectDialogOpen"
-                    data-modal-content-loaded="{{ $inspectDialogOpen ? 'true' : 'false' }}"
-                >
-                    <div data-modal-content class="space-y-4">
-                        @if ($inspectDialogOpen)
-                            @include('scenes.gallery.partials.script-modal-content', ['recipe' => $inspectRecipe])
-                        @else
-                            <p class="text-sm text-secondary">{{ __('Loading script preview…') }}</p>
-                        @endif
-                    </div>
-                </x-dialogs.modal>
+                    :recipe="$recipe"
+                />
             @endforeach
         </div>
         <div class="mt-6">{{ $recipes->links() }}</div>

@@ -1,7 +1,13 @@
+@props([
+    'dialogId',
+    'dialogOpen' => false,
+    'dialogUrl',
+    'formAction',
+    'report',
+    'resolved' => false,
+])
+
 @php
-    $dialogId = $dialogId ?? 'gallery-report-resolution-'.$report->id;
-    $dialogOpen = $dialogOpen ?? false;
-    $resolved = $resolved ?? $report->resolved_at !== null;
     $dialogTitle = $resolved ? __('Edit resolution note') : __('Resolve community report');
     $dialogDescription = $resolved
         ? __('Update the note shared with the reporter without reopening the report.')

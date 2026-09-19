@@ -172,23 +172,23 @@
                                 $resolutionDialogUrl = route('gallery.show', ['recipe' => $recipe, 'dialog' => $resolutionDialogKey]);
                             @endphp
                             @if ($report->resolved_at === null)
-                                @include('scenes.gallery.partials.report-resolution-dialog', [
-                                    'dialogId' => $resolutionDialogId,
-                                    'dialogOpen' => $resolutionDialogOpen,
-                                    'dialogUrl' => $resolutionDialogUrl,
-                                    'formAction' => route('gallery.reports.resolve', [$recipe, $report]),
-                                    'report' => $report,
-                                    'resolved' => false,
-                                ])
+                                <x-scenes.gallery.report-resolution-dialog
+                                    :dialog-id="$resolutionDialogId"
+                                    :dialog-open="$resolutionDialogOpen"
+                                    :dialog-url="$resolutionDialogUrl"
+                                    :form-action="route('gallery.reports.resolve', [$recipe, $report])"
+                                    :report="$report"
+                                    :resolved="false"
+                                />
                             @else
-                                @include('scenes.gallery.partials.report-resolution-dialog', [
-                                    'dialogId' => $resolutionDialogId,
-                                    'dialogOpen' => $resolutionDialogOpen,
-                                    'dialogUrl' => $resolutionDialogUrl,
-                                    'formAction' => route('gallery.reports.resolution-note.update', [$recipe, $report]),
-                                    'report' => $report,
-                                    'resolved' => true,
-                                ])
+                                <x-scenes.gallery.report-resolution-dialog
+                                    :dialog-id="$resolutionDialogId"
+                                    :dialog-open="$resolutionDialogOpen"
+                                    :dialog-url="$resolutionDialogUrl"
+                                    :form-action="route('gallery.reports.resolution-note.update', [$recipe, $report])"
+                                    :report="$report"
+                                    :resolved="true"
+                                />
                                 <form method="POST" action="{{ route('gallery.reports.reopen', [$recipe, $report]) }}" class="mt-3">
                                     @csrf
                                     @method('PATCH')
@@ -233,33 +233,11 @@
             >
                 {{ $currentReport ? __('Update Report') : __('Open report form') }}
             </x-ui.button>
-            <x-dialogs.modal
-                id="gallery-report-dialog"
-                :title="$currentReport ? __('Update your private report') : __('Report a recipe issue')"
-                :description="__('Your identity is not shown to the recipe contributor.')"
+            <x-scenes.gallery.report-dialog
+                :current-report="$currentReport"
                 :open="$reportDialogOpen"
-            >
-                <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="space-y-4">
-                    @csrf
-                    <input type="hidden" name="_gallery_report_form" value="1">
-                    <div>
-                        <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                        <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg" required>
-                            <option value="">{{ __('Choose an issue') }}</option>
-                            @foreach (\App\Models\RecipeReport::REASONS as $reason)
-                                <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
-                            @endforeach
-                        </select>
-                        <x-forms.errors name="reason" />
-                    </div>
-                    <div>
-                        <label for="details" class="block text-xs font-semibold uppercase text-secondary">{{ __('Details (optional)') }}</label>
-                        <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
-                        <x-forms.errors name="details" />
-                    </div>
-                    <x-ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-ui.button>
-                </form>
-            </x-dialogs.modal>
+                :recipe="$recipe"
+            />
             @if ($currentReport)
                 <form
                     method="POST"
