@@ -41,6 +41,21 @@ class RecipeGalleryIndexRequest extends FormRequest
     }
 
     /**
+     * Return the bounded recipe ID requested by the script-inspection dialog.
+     *
+     * Dialog state is presentation input rather than a gallery filter, so it
+     * is intentionally kept out of the validated filter contract.
+     */
+    public function inspectRecipeId(): ?int
+    {
+        $dialog = $this->string('dialog')->toString();
+
+        return preg_match('/\Ainspect-script-(\d+)\z/', $dialog, $matches) === 1
+            ? (int) $matches[1]
+            : null;
+    }
+
+    /**
      * Validate normalized values without replacing query parameters used by pagination links.
      *
      * @return array<string, mixed>

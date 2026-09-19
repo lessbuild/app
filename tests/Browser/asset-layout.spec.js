@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -27,9 +27,13 @@ async function serveFixtures(page) {
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         const galleryPage = /^\/gallery\/\d+$/.test(pathname);
+        const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+        if (galleryScriptPage) {
+            return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
+        }
         if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage) {
-            const screen = galleryPage ? 'gallery' : pathname.slice(1);
+            const screen = galleryPage ? 'gallery-detail' : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fixtureName = screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
@@ -43,8 +47,16 @@ async function serveFixtures(page) {
                                 ? 'backups-dialog'
                             : screen === 'build' && dialog === 'operator-note'
                                 ? 'build-note-dialog'
-                            : screen === 'gallery' && dialog === 'report'
+                            : screen === 'gallery' && dialog === 'publish-recipe'
+                                ? 'gallery-index-publish-dialog'
+                            : screen === 'gallery' && dialog?.startsWith('inspect-script-')
+                                ? 'gallery-index-inspect-dialog'
+                            : screen === 'gallery'
+                                ? 'gallery-index'
+                            : screen === 'gallery-detail' && dialog === 'report'
                                 ? 'gallery-dialog'
+                            : screen === 'gallery-detail'
+                                ? 'gallery'
                                 : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
                                 : screen === 'notifications' && dialog === 'save-filter'
@@ -119,6 +131,39 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
         await page.goto(`http://buildpusher.test/${workflow.path}?dialog=${workflow.query}`, { waitUntil: 'networkidle' });
         await expect(page.getByRole('dialog', { name: workflow.title, exact: true })).toBeVisible();
     }
+});
+
+test('gallery publishing and script inspection use accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/gallery', { waitUntil: 'networkidle' });
+
+    const publishTrigger = page.getByRole('link', { name: 'Publish a Recipe', exact: true });
+    const publishDialog = page.getByRole('dialog', { name: 'Publish a recipe', exact: true });
+    await publishTrigger.click();
+    await expect(publishDialog).toBeVisible();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('publish-recipe');
+    await expect(publishDialog.locator('[data-modal-close]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(publishDialog).toBeHidden();
+    await expect(publishTrigger).toBeFocused();
+
+    const inspectTrigger = page.getByRole('link', { name: 'Inspect script', exact: true }).first();
+    const inspectUrl = new URL(await inspectTrigger.getAttribute('href'), 'http://buildpusher.test');
+    const inspectDialog = page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true });
+    await inspectTrigger.click();
+    await expect(inspectDialog).toBeVisible();
+    await expect(inspectDialog).toContainText('echo gallery-fixture');
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^inspect-script-\d+$/);
+    await expect(inspectDialog.locator('[data-modal-close]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(inspectDialog).toBeHidden();
+    await expect(inspectTrigger).toBeFocused();
+
+    await page.goto(`http://buildpusher.test${inspectUrl.pathname}${inspectUrl.search}`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true })).toContainText('echo gallery-fixture');
 });
 
 for (const colorScheme of ['light', 'dark']) {

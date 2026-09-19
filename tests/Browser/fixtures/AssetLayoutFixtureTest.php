@@ -57,6 +57,19 @@ class AssetLayoutFixtureTest extends TestCase
         ]);
         File::put($directory.'/gallery.html', $this->renderPage(route('gallery.show', $galleryRecipe))->assertOk()
             ->assertSee('Report issue')->getContent());
+        File::put($directory.'/gallery-index.html', $this->renderPage(route('gallery.index'))->assertOk()
+            ->assertSee('Publish a Recipe')
+            ->assertSee('data-modal-trigger="gallery-inspect-script-'.$galleryRecipe->id.'"', false)
+            ->assertDontSee('echo gallery-fixture', false)->getContent());
+        File::put($directory.'/gallery-index-publish-dialog.html', $this->renderPage(route('gallery.index', ['dialog' => 'publish-recipe']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/gallery-index-inspect-dialog.html', $this->renderPage(route('gallery.index', [
+            'dialog' => 'inspect-script-'.$galleryRecipe->id,
+        ]))->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('echo gallery-fixture')->getContent());
+        File::put($directory.'/gallery-script.html', $this->renderPage(route('gallery.script', $galleryRecipe))
+            ->assertOk()->assertSee('echo gallery-fixture')->getContent());
         File::put($directory.'/gallery-dialog.html', $this->renderPage(route('gallery.show', [
             'recipe' => $galleryRecipe,
             'dialog' => 'report',

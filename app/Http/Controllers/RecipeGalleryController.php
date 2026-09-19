@@ -23,6 +23,7 @@ class RecipeGalleryController extends Controller
     public function index(RecipeGalleryIndexRequest $request): View
     {
         $filters = $request->filters();
+        $inspectRecipeId = $request->inspectRecipeId();
         $query = $this->gallery->for($filters, $request->user()->id);
         $recipes = (clone $query)
             ->select([
@@ -65,7 +66,27 @@ class RecipeGalleryController extends Controller
             'filters' => $filters,
             'categories' => Recipe::CATEGORIES,
             'metrics' => $this->gallery->metrics($filters, $request->user()->id),
+            'inspectRecipe' => $inspectRecipeId === null
+                ? null
+                : Recipe::query()
+                    ->published()
+                    ->with('user:id,name')
+                    ->findOrFail($inspectRecipeId),
         ]);
+    }
+
+    /**
+     * Return the bounded script body for a published recipe inspection dialog.
+     *
+     * The gallery index deliberately omits encrypted script bodies. This
+     * endpoint loads one published script only after the user asks to inspect
+     * it, while the normal anchor still has a server-rendered fallback.
+     */
+    public function script(Recipe $recipe): View
+    {
+        abort_unless($recipe->is_published && $recipe->published_at !== null, 404);
+
+        return view('scenes.gallery.partials.script-modal-content', ['recipe' => $recipe]);
     }
 
     /**

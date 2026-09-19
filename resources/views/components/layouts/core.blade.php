@@ -90,6 +90,45 @@
 
         <script>
             (() => {
+                const loadModalContent = async (dialog, trigger) => {
+                    const contentUrl = trigger.dataset.modalContentUrl;
+                    const content = dialog.querySelector('[data-modal-content]');
+
+                    if (! contentUrl || ! content || dialog.dataset.modalContentLoaded === 'true') {
+                        return;
+                    }
+
+                    const url = new URL(contentUrl, window.location.href);
+
+                    if (url.origin !== window.location.origin) {
+                        return;
+                    }
+
+                    dialog.dataset.modalContentLoading = 'true';
+                    content.setAttribute('aria-busy', 'true');
+
+                    try {
+                        const response = await fetch(url, {
+                            headers: {
+                                Accept: 'text/html',
+                                'X-Requested-With': 'XMLHttpRequest',
+                            },
+                        });
+
+                        if (! response.ok) {
+                            throw new Error(`Modal content request failed with ${response.status}`);
+                        }
+
+                        content.innerHTML = await response.text();
+                        dialog.dataset.modalContentLoaded = 'true';
+                    } catch (error) {
+                        content.innerHTML = '<p class="text-sm text-secondary">Unable to load this content. Open the recipe details page instead.</p>';
+                    } finally {
+                        content.removeAttribute('aria-busy');
+                        delete dialog.dataset.modalContentLoading;
+                    }
+                };
+
                 const cleanModalUrl = () => {
                     const url = new URL(window.location.href);
 
@@ -159,6 +198,8 @@
                                     `${url.pathname}${url.search}${url.hash}`,
                                 );
                             }
+
+                            void loadModalContent(dialog, trigger);
                         });
 
                         if (dialog.dataset.modalInitialOpen === 'true') {
@@ -170,6 +211,8 @@
                                 dialog.showModal();
                                 dialog.dataset.modalHistory = 'server';
                             }
+
+                            void loadModalContent(dialog, trigger);
                         }
                     });
                 };

@@ -352,6 +352,57 @@ class RecipeGalleryTest extends TestCase
         $this->actingAs($user)->get(route('gallery.show', $recipe))->assertNotFound();
     }
 
+    public function test_gallery_uses_dialogs_for_publishing_and_on_demand_script_inspection(): void
+    {
+        [$visitor, $author] = User::factory()->count(2)->create();
+        $published = $this->publishedRecipe($author, 'Inspect me', 'utilities');
+        $private = $author->recipes()->create([
+            'name' => 'Private helper',
+            'description' => 'Not shared.',
+            'script' => 'echo private-gallery-secret',
+        ]);
+        $publishUrl = route('gallery.index', ['dialog' => 'publish-recipe']);
+        $inspectUrl = route('gallery.index', ['dialog' => 'inspect-script-'.$published->id]);
+
+        $this->actingAs($visitor)->get(route('gallery.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="gallery-publish-recipe-dialog"', false)
+            ->assertSee('data-modal-trigger="gallery-inspect-script-'.$published->id.'"', false)
+            ->assertSee('data-modal-content-url="'.parse_url(route('gallery.script', $published), PHP_URL_PATH).'"', false)
+            ->assertDontSee('echo gallery-script', false)
+            ->assertDontSee('echo private-gallery-secret', false);
+
+        $this->actingAs($visitor)->get($publishUrl)
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Publish Recipe');
+
+        $this->actingAs($visitor)->get($inspectUrl)
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('echo gallery-script', false)
+            ->assertDontSee('echo private-gallery-secret', false);
+
+        $this->actingAs($visitor)->get(route('gallery.script', $published))
+            ->assertSuccessful()
+            ->assertSee('echo gallery-script', false);
+        $this->actingAs($visitor)->get(route('gallery.script', $private))->assertNotFound();
+
+        $this->actingAs($visitor)->from($publishUrl)->post(route('recipes.store'), [
+            '_recipe_publish_form' => '1',
+            'name' => 'Invalid published recipe',
+            'description' => 'Needs a category.',
+            'script' => 'echo invalid',
+            'is_published' => '1',
+        ])
+            ->assertRedirect($publishUrl)
+            ->assertSessionHasErrors('category');
+
+        $this->actingAs($visitor)->get($publishUrl)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Invalid published recipe');
+    }
+
     public function test_gallery_requires_authentication(): void
     {
         $author = User::factory()->create();

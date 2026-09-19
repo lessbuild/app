@@ -458,6 +458,9 @@ Route::middleware('auth')->group(function () {
         Route::get('gallery/{recipe}/compare/{copy}', [RecipeGalleryController::class, 'compare'])
             ->whereNumber(['recipe', 'copy'])
             ->name('gallery.compare');
+        Route::get('gallery/{recipe}/script', [RecipeGalleryController::class, 'script'])
+            ->whereNumber('recipe')
+            ->name('gallery.script');
         Route::get('gallery/{recipe}', [RecipeGalleryController::class, 'show'])
             ->whereNumber('recipe')
             ->name('gallery.show');

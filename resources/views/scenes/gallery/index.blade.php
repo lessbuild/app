@@ -1,4 +1,14 @@
 <x-layouts.app>
+    @php
+        $galleryQuery = array_filter($filters, fn ($value) => $value !== null);
+        $publishRecipeDialogHasErrors = old('_recipe_publish_form') === '1'
+            && $errors->hasAny(['name', 'description', 'script', 'is_published', 'category']);
+        $publishRecipeDialogOpen = (request()->query('dialog') === 'publish-recipe' && ! session()->has('status'))
+            || $publishRecipeDialogHasErrors;
+        $publishRecipeDialogUrl = route('gallery.index', [...$galleryQuery, 'dialog' => 'publish-recipe']);
+        $galleryIndexUrl = route('gallery.index', $galleryQuery);
+    @endphp
+
     <x-layouts.partials.heading
         :title="__('Community Recipe Gallery')"
         :description="__('Discover reusable provisioning scripts shared by other operators.')"
@@ -7,9 +17,35 @@
             <x-ui.button href="{{ route('recipes.index') }}" variant="secondary">{{ __('My recipes') }}</x-ui.button>
             <x-ui.button href="{{ route('gallery.reports.mine') }}" variant="secondary">{{ __('My Reports') }}</x-ui.button>
             <x-ui.button href="{{ route('gallery.reports.index') }}" variant="secondary">{{ __('Feedback Inbox') }}</x-ui.button>
-            <x-ui.button href="{{ route('recipes.create') }}" variant="primary">{{ __('Publish a Recipe') }}</x-ui.button>
+            <x-ui.button
+                href="{{ $publishRecipeDialogUrl }}"
+                data-modal-trigger="gallery-publish-recipe-dialog"
+                aria-controls="gallery-publish-recipe-dialog"
+                aria-expanded="{{ $publishRecipeDialogOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
+                {{ __('Publish a Recipe') }}
+            </x-ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
+
+    <x-dialogs.modal
+        id="gallery-publish-recipe-dialog"
+        :title="__('Publish a recipe')"
+        :description="__('Share a reviewed provisioning script with the community gallery.')"
+        :open="$publishRecipeDialogOpen"
+        body-class="p-0"
+    >
+        <form method="POST" action="{{ route('recipes.store') }}">
+            @csrf
+            <input type="hidden" name="_recipe_publish_form" value="1">
+            <x-scenes.recipes._form />
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-4 py-4 sm:px-6">
+                <x-ui.button href="{{ $galleryIndexUrl }}" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary">{{ __('Publish Recipe') }}</x-ui.button>
+            </div>
+        </form>
+    </x-dialogs.modal>
 
     @if (session('status'))
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
@@ -106,6 +142,9 @@
                     $favorite = $recipe->favorites->first();
                     $report = $recipe->reports->first();
                     $updateAvailable = $installedRecipe?->hasGalleryUpdate($recipe) ?? false;
+                    $inspectDialogId = 'gallery-inspect-script-'.$recipe->id;
+                    $inspectDialogOpen = (int) $inspectRecipe?->id === (int) $recipe->id;
+                    $inspectDialogUrl = route('gallery.index', [...$galleryQuery, 'dialog' => 'inspect-script-'.$recipe->id]);
                 @endphp
                 <x-ui.card class="p-5 sm:p-6">
                     <div class="flex items-start justify-between gap-4">
@@ -155,10 +194,35 @@
                                     <x-ui.button type="submit" variant="secondary">{{ __('Save recipe') }}</x-ui.button>
                                 </form>
                             @endif
-                            <x-ui.button href="{{ route('gallery.show', $recipe) }}" variant="primary">{{ __('Inspect script') }}</x-ui.button>
+                            <x-ui.button
+                                href="{{ $inspectDialogUrl }}"
+                                data-modal-trigger="{{ $inspectDialogId }}"
+                                data-modal-content-url="{{ parse_url(route('gallery.script', $recipe), PHP_URL_PATH) }}"
+                                aria-controls="{{ $inspectDialogId }}"
+                                aria-expanded="{{ $inspectDialogOpen ? 'true' : 'false' }}"
+                                variant="primary"
+                            >
+                                {{ __('Inspect script') }}
+                            </x-ui.button>
                         </div>
                     </div>
                 </x-ui.card>
+
+                <x-dialogs.modal
+                    id="{{ $inspectDialogId }}"
+                    :title="__('Inspect :recipe', ['recipe' => $recipe->name])"
+                    :description="__('Review the commands before using this recipe on a server.')"
+                    :open="$inspectDialogOpen"
+                    data-modal-content-loaded="{{ $inspectDialogOpen ? 'true' : 'false' }}"
+                >
+                    <div data-modal-content class="space-y-4">
+                        @if ($inspectDialogOpen)
+                            @include('scenes.gallery.partials.script-modal-content', ['recipe' => $inspectRecipe])
+                        @else
+                            <p class="text-sm text-secondary">{{ __('Loading script preview…') }}</p>
+                        @endif
+                    </div>
+                </x-dialogs.modal>
             @endforeach
         </div>
         <div class="mt-6">{{ $recipes->links() }}</div>
