@@ -14,7 +14,7 @@
 
         <div>
             <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
-            <input id="email" class="input primary mt-2 rounded-lg" type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('Example: johndoe@mail.com') }}" autocomplete="email" required autofocus>
+            <input id="email" class="input primary mt-2 rounded-lg" type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('Example: johndoe@mail.com') }}" autocomplete="email" required>
         </div>
 
         <div>

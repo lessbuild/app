@@ -16,6 +16,9 @@ for (const viewport of viewports) {
             await expect(page.locator('input[name="email"]')).toHaveAttribute('autocomplete', 'email');
         }
         await page.goto(new URL('/login', baseURL).toString());
+        if (viewport.width < 640) {
+            await expect(page.locator('#email')).not.toBeFocused();
+        }
         await page.locator('#email').fill('ncorkish@icloud.com');
         await page.locator('#password').fill('password');
         if (viewport.width < 640) {
