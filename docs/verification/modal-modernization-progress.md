@@ -1377,6 +1377,32 @@ status-incident create/update forms into URL-backed reusable dialogs, then
 continue with notifications, feedback, build notes, gallery actions and
 cost/budget workflows.
 
+## Observability administration dialog follow-up — 2026-09-19
+
+Alert-destination creation, status-page creation, status-update creation and
+per-incident status review updates now render through reusable scene
+components: `scenes.observability.alert-destination-create-dialog`,
+`scenes.observability.status-page-create-dialog`,
+`scenes.observability.status-incident-create-dialog` and
+`scenes.observability.status-incident-edit-dialog`.
+
+The inventory keeps organization policy/entitlement gating, status-page
+scoping and URL state. Form Requests, encrypted destination persistence,
+incident kind/status compatibility, subscriber notification timing, response
+messages and existing field names remain unchanged. Validation reopen markers
+are scoped to the relevant create or incident-update dialog.
+
+Verification passed with 29 focused PHP tests / 262 assertions, one fixture
+test / 140 assertions and one targeted four-workflow mobile browser journey.
+Blade cache, Pint and `git diff --check` passed. No dependency or lockfile
+changed.
+
+Implementation commit and push: `4e18d41 Move observability management forms
+into dialogs`.
+
+Next task: audit notifications and feedback for remaining add/edit forms,
+then continue with build notes, gallery actions and cost/budget workflows.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.

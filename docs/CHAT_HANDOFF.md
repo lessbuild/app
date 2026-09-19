@@ -2024,6 +2024,22 @@ create/update forms into URL-backed reusable dialogs, then continue with
 notifications, feedback, build notes, gallery actions and cost/budget
 workflows.
 
+## Observability administration dialog follow-up — 2026-09-19
+
+Alert-destination, status-page, status-update and per-incident review forms
+now render through reusable observability scene dialog components. Existing
+organization authorization, entitlements, resource scoping, encrypted
+destination handling, incident validation, subscriber notifications, field
+names and responses remain unchanged.
+
+Verification: 29 focused PHP tests / 262 assertions, one fixture / 140
+assertions and one targeted four-workflow mobile browser journey passed. Blade
+cache, Pint and diff checks passed. Implementation commit and push:
+`4e18d41`.
+
+Next task: audit notification and feedback add/edit forms, then continue with
+build notes, gallery actions and cost/budget workflows.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
