@@ -30,6 +30,11 @@ class ServerDisplayNameTest extends TestCase
             ->assertSee('cloud-hostname')
             ->assertSee(route('servers.update', $server));
 
+        $this->actingAs($owner)->get(route('servers.show', ['server' => $server, 'dialog' => 'edit-display-name']))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="server-display-name-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
+
         $this->patch(route('servers.update', $server), [
             'display_name' => "  Customer   Edge\nPrimary  ",
             'name' => 'attempted-cloud-rename',

@@ -1,3 +1,9 @@
+@php
+    $displayNameDialogOpen = request()->query('dialog') === 'edit-display-name'
+        || $errors->has('display_name');
+    $displayNameDialogUrl = route('servers.show', ['server' => $server, 'dialog' => 'edit-display-name']);
+@endphp
+
 <div @if ($shouldPoll) wire:poll.5s @endif>
 
     <!--
@@ -42,7 +48,13 @@
                 {{ __('Deployment History') }}
             </x-ui.button>
 
-            <x-ui.button :href="route('servers.edit', $server)" variant="secondary">
+            <x-ui.button
+                :href="$displayNameDialogUrl"
+                data-modal-trigger="server-display-name-dialog"
+                aria-controls="server-display-name-dialog"
+                aria-expanded="{{ $displayNameDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
@@ -83,6 +95,39 @@
             </button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
+
+    <x-dialogs.modal
+        id="server-display-name-dialog"
+        :title="__('Edit server display name')"
+        :description="__('Change the label shown in BuildPusher without renaming the cloud server or its hostname.')"
+        :open="$displayNameDialogOpen"
+    >
+        <form action="{{ route('servers.update', $server) }}" method="POST" class="space-y-5">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="_server_display_name_form" value="1">
+            <label class="block" for="server-display-name">
+                <span class="block text-sm font-semibold text-primary">{{ __('Display name') }}</span>
+                <input
+                    class="input secondary mt-2 w-full rounded-lg"
+                    id="server-display-name"
+                    name="display_name"
+                    type="text"
+                    maxlength="80"
+                    value="{{ old('display_name', $server->display_name) }}"
+                    placeholder="{{ $server->name }}"
+                    autofocus
+                >
+                <x-forms.errors name="display_name" />
+            </label>
+            <div class="rounded-xl border border-primary bg-secondary p-4 text-sm text-secondary">
+                <span class="font-semibold text-primary">{{ __('Cloud hostname:') }}</span>
+                <code class="ml-1 break-all">{{ $server->name }}</code>
+                <p class="mt-2">{{ __('Leave the display name empty to use this hostname throughout the control panel.') }}</p>
+            </div>
+            <x-ui.button type="submit" variant="primary">{{ __('Save display name') }}</x-ui.button>
+        </form>
+    </x-dialogs.modal>
 
     @if ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
         <x-ui.alert tone="danger" class="my-4">

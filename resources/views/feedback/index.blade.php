@@ -138,6 +138,18 @@
 
             <div class="ui-inventory-list space-y-4">
                 @forelse ($feedback as $item)
+                    @php
+                        $feedbackReviewDialogId = 'feedback-review-'.$item->id;
+                        $feedbackReviewFormOld = old('_feedback_review_id') === (string) $item->id;
+                        $feedbackReviewDialogOpen = request()->query('dialog') === $feedbackReviewDialogId
+                            || ((string) old('_feedback_review_id') === (string) $item->id && $errors->any());
+                        $feedbackReviewDialogUrl = route('feedback.index', array_filter([
+                            'dialog' => $feedbackReviewDialogId,
+                            'status' => $status,
+                            'category' => $category,
+                            'page' => $feedback->currentPage() > 1 ? $feedback->currentPage() : null,
+                        ], static fn ($value): bool => filled($value)));
+                    @endphp
                     <x-ui.card class="p-5 sm:p-6">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
@@ -149,11 +161,24 @@
                                 <h3 class="mt-3 text-lg font-black text-primary">{{ $item->title }}</h3>
                                 <p class="mt-1 text-xs text-secondary">{{ __('Submitted by :name :time', ['name' => $item->submitter->name, 'time' => $item->created_at->diffForHumans()]) }}@if ($item->page) <span aria-hidden="true">·</span> <code>{{ $item->page }}</code>@endif</p>
                             </div>
-                            <form method="POST" action="{{ route('feedback.destroy', $item) }}">
-                                @csrf
-                                @method('DELETE')
-                                <x-ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Remove this feedback permanently?')) }})">{{ __('Delete') }}</x-ui.button>
-                            </form>
+                            <div class="flex flex-wrap justify-end gap-2">
+                                @if ($canReview)
+                                    <x-ui.button
+                                        :href="$feedbackReviewDialogUrl"
+                                        data-modal-trigger="{{ $feedbackReviewDialogId }}"
+                                        aria-controls="{{ $feedbackReviewDialogId }}"
+                                        aria-expanded="{{ $feedbackReviewDialogOpen ? 'true' : 'false' }}"
+                                        variant="secondary"
+                                    >
+                                        {{ __('Review') }}
+                                    </x-ui.button>
+                                @endif
+                                <form method="POST" action="{{ route('feedback.destroy', $item) }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Remove this feedback permanently?')) }})">{{ __('Delete') }}</x-ui.button>
+                                </form>
+                            </div>
                         </div>
 
                         <p class="mt-4 whitespace-pre-wrap text-sm leading-6 text-secondary">{{ $item->description }}</p>
@@ -170,16 +195,33 @@
                             </div>
                         @endif
                         @if ($canReview)
-                            <details class="mt-4">
-                                <summary class="cursor-pointer text-sm font-bold text-ternary">{{ __('Review feedback') }}</summary>
-                                <form method="POST" action="{{ route('feedback.update', $item) }}" class="mt-3 space-y-3">
+                            <x-dialogs.modal
+                                id="{{ $feedbackReviewDialogId }}"
+                                :title="__('Review feedback')"
+                                :description="__('Update the workspace status and record a response without leaving the feedback list.')"
+                                :open="$feedbackReviewDialogOpen"
+                            >
+                                <form method="POST" action="{{ route('feedback.update', $item) }}" class="space-y-4">
                                     @csrf
                                     @method('PATCH')
-                                    <label class="block"><span class="sr-only">{{ __('Status') }}</span><select name="status" class="input secondary w-full rounded-lg">@foreach (\App\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($item->status === $value)>{{ str($value)->headline() }}</option>@endforeach</select></label>
-                                    <label class="block"><span class="sr-only">{{ __('Workspace response') }}</span><textarea name="review_response" rows="3" maxlength="10000" class="input secondary w-full rounded-lg" placeholder="{{ __('Decision, workaround, or planned resolution') }}">{{ $item->review_response }}</textarea></label>
+                                    <input type="hidden" name="_feedback_review_id" value="{{ $item->id }}">
+                                    <label class="block">
+                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status') }}</span>
+                                        <select name="status" class="input secondary w-full rounded-lg">
+                                            @foreach (\App\Models\ProductFeedback::STATUSES as $value)
+                                                <option value="{{ $value }}" @selected(($feedbackReviewFormOld ? old('status', $item->status) : $item->status) === $value)>{{ str($value)->headline() }}</option>
+                                            @endforeach
+                                        </select>
+                                        <x-forms.errors name="status" />
+                                    </label>
+                                    <label class="block">
+                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Workspace response') }}</span>
+                                        <textarea name="review_response" rows="4" maxlength="10000" class="input secondary w-full rounded-lg" placeholder="{{ __('Decision, workaround, or planned resolution') }}">{{ $feedbackReviewFormOld ? old('review_response', $item->review_response) : $item->review_response }}</textarea>
+                                        <x-forms.errors name="review_response" />
+                                    </label>
                                     <x-ui.button type="submit" variant="primary">{{ __('Save review') }}</x-ui.button>
                                 </form>
-                            </details>
+                            </x-dialogs.modal>
                         @endif
                     </x-ui.card>
                 @empty

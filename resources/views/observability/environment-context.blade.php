@@ -7,6 +7,16 @@
             || $context->serviceId !== null
             || $context->deployment !== 'all'
             || $context->severity !== 'all';
+        $investigationDialogOpen = request()->query('dialog') === 'save-investigation'
+            || (old('_investigation_view_form') === '1' && $errors->any());
+        $investigationDialogUrl = route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => $context->window,
+            'service' => $context->serviceId ?? 'all',
+            'deployment' => $context->deployment,
+            'severity' => $context->severity,
+            'dialog' => 'save-investigation',
+        ]);
     @endphp
 
     <x-layouts.partials.breadcrumbs
@@ -22,6 +32,15 @@
         />
         <div class="flex flex-wrap gap-2">
             <x-ui.button :href="$shareUrl" variant="secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</x-ui.button>
+            <x-ui.button
+                :href="$investigationDialogUrl"
+                data-modal-trigger="save-investigation-dialog"
+                aria-controls="save-investigation-dialog"
+                aria-expanded="{{ $investigationDialogOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
+                {{ __('Save investigation') }}
+            </x-ui.button>
             <x-ui.button :href="route('observability.index')" variant="secondary">{{ __('Observability overview') }}</x-ui.button>
         </div>
     </div>
@@ -142,9 +161,9 @@
             <p class="mt-3 text-xs text-secondary">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
         </details>
 
-        <details id="save-investigation-view" class="mt-5 border-t border-primary pt-5" @if ($errors->has('name') || $errors->has('service')) open @endif>
+        <details id="save-investigation-view" class="mt-5 border-t border-primary pt-5">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                <span>{{ __('Save or manage investigation views') }}</span>
+                <span>{{ __('Saved investigation views') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($savedInvestigations->isNotEmpty())
                         <x-ui.badge>{{ $savedInvestigations->count() }}</x-ui.badge>
@@ -152,41 +171,6 @@
                     <span class="text-secondary" aria-hidden="true">⌄</span>
                 </span>
             </summary>
-            <div class="mt-4">
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                        <h3 class="font-bold text-primary">{{ __('Save this investigation') }}</h3>
-                        <p class="mt-1 text-xs text-secondary">{{ __('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.') }}</p>
-                    </div>
-                    <form method="POST" action="{{ route('observability.environments.investigations.store', $environment) }}" class="flex flex-wrap items-end gap-2">
-                        @csrf
-                        <input type="hidden" name="window" value="{{ $context->window }}">
-                        <input type="hidden" name="service" value="{{ $context->serviceId ?? 'all' }}">
-                        <input type="hidden" name="deployment" value="{{ $context->deployment }}">
-                        <input type="hidden" name="severity" value="{{ $context->severity }}">
-                        <label>
-                            <span class="sr-only">{{ __('Investigation name') }}</span>
-                            <input name="name" maxlength="60" required class="input secondary rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}">
-                        </label>
-                        <label>
-                            <span class="sr-only">{{ __('Keep for') }}</span>
-                            <select name="expires_in_days" class="input secondary rounded-md">
-                                @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
-                                    <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <x-ui.button type="submit" variant="primary">{{ __('Save view') }}</x-ui.button>
-                    </form>
-                </div>
-                @error('name')
-                    <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
-                @enderror
-                @error('service')
-                    <p class="mt-2 text-xs font-semibold text-red-700">{{ $message }}</p>
-                @enderror
-            </div>
-
             @if($savedInvestigations->isNotEmpty())
                 <div class="mt-5 border-t border-primary pt-5" data-testid="saved-investigations">
                     <h3 class="font-bold text-primary">{{ __('Saved investigations for this environment') }}</h3>
@@ -208,8 +192,42 @@
                         @endforeach
                     </div>
                 </div>
+            @else
+                <p class="mt-4 text-sm text-secondary">{{ __('No saved investigation views for this environment yet.') }}</p>
             @endif
         </details>
+
+        <x-dialogs.modal
+            id="save-investigation-dialog"
+            :title="__('Save this investigation')"
+            :description="__('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.')"
+            :open="$investigationDialogOpen"
+        >
+            <form method="POST" action="{{ route('observability.environments.investigations.store', $environment) }}" class="space-y-4">
+                @csrf
+                <input type="hidden" name="_investigation_view_form" value="1">
+                <input type="hidden" name="window" value="{{ $context->window }}">
+                <input type="hidden" name="service" value="{{ $context->serviceId ?? 'all' }}">
+                <input type="hidden" name="deployment" value="{{ $context->deployment }}">
+                <input type="hidden" name="severity" value="{{ $context->severity }}">
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Investigation name') }}</span>
+                    <input name="name" maxlength="60" required class="input secondary w-full rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}" autofocus>
+                    <x-forms.errors name="name" />
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Keep for') }}</span>
+                    <select name="expires_in_days" class="input secondary w-full rounded-md">
+                        @foreach(\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
+                            <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
+                        @endforeach
+                    </select>
+                    <x-forms.errors name="expires_in_days" />
+                </label>
+                <x-forms.errors name="service" />
+                <x-ui.button type="submit" variant="primary">{{ __('Save view') }}</x-ui.button>
+            </form>
+        </x-dialogs.modal>
     </section>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">

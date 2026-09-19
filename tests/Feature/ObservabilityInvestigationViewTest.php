@@ -62,6 +62,12 @@ class ObservabilityInvestigationViewTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Failed production deploys')
             ->assertSee('Saved investigations for this environment');
+
+        $this->actingAs($member)
+            ->get($canonical.'&dialog=save-investigation')
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="save-investigation-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
     }
 
     public function test_context_lists_views_for_workspace_members_and_creator_can_remove_one(): void

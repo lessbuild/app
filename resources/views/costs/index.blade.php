@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $budgetDialogOpen = request()->query('dialog') === 'edit-budget'
+            || $errors->has('monthly_infrastructure_budget');
+        $budgetDialogUrl = route('costs.index', ['dialog' => 'edit-budget']);
+    @endphp
+
     <x-layouts.partials.heading
         eyebrow="{{ __('Workspace economics') }}"
         icon="chip"
@@ -106,7 +112,21 @@
 
         <aside class="space-y-5">
             <section class="ui-card p-5">
-                <h2 class="font-black text-primary">{{ __('Monthly budget') }}</h2>
+                <div class="flex items-start justify-between gap-3">
+                    <h2 class="font-black text-primary">{{ __('Monthly budget') }}</h2>
+                    @if($canManage)
+                        <x-ui.button
+                            :href="$budgetDialogUrl"
+                            data-modal-trigger="cost-budget-dialog"
+                            aria-controls="cost-budget-dialog"
+                            aria-expanded="{{ $budgetDialogOpen ? 'true' : 'false' }}"
+                            variant="ghost"
+                            class="-mr-2 -mt-2"
+                        >
+                            {{ __('Edit') }}
+                        </x-ui.button>
+                    @endif
+                </div>
                 @if($budget)
                     <p class="mt-2 text-2xl font-black text-primary">{{ '$'.number_format($budget, 2) }}</p>
                     <p class="mt-1 text-sm {{ $estimated > $budget ? 'text-danger' : 'text-secondary' }}">
@@ -116,18 +136,27 @@
                     <p class="mt-2 text-sm text-secondary">{{ __('Set a planning threshold to make cost changes visible before they become surprises.') }}</p>
                 @endif
 
-                @if($canManage)
-                    <form method="POST" action="{{ route('costs.update') }}" class="mt-4">
+            </section>
+
+            @if($canManage)
+                <x-dialogs.modal
+                    id="cost-budget-dialog"
+                    :title="__('Edit monthly budget')"
+                    :description="__('This is a planning threshold for workspace infrastructure estimates, not a provider spending cap.')"
+                    :open="$budgetDialogOpen"
+                >
+                    <form method="POST" action="{{ route('costs.update') }}" class="space-y-4">
                         @csrf
                         @method('PATCH')
                         <label>
                             <span class="block text-xs font-bold uppercase text-secondary">{{ __('Budget in USD') }}</span>
-                            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ $budget }}" class="input secondary mt-1 w-full rounded-md">
+                            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ old('monthly_infrastructure_budget', $budget) }}" class="input secondary mt-1 w-full rounded-md" autofocus>
+                            <x-forms.errors name="monthly_infrastructure_budget" />
                         </label>
-                        <x-ui.button type="submit" variant="primary" class="mt-3 w-full">{{ __('Save budget') }}</x-ui.button>
+                        <x-ui.button type="submit" variant="primary">{{ __('Save budget') }}</x-ui.button>
                     </form>
-                @endif
-            </section>
+                </x-dialogs.modal>
+            @endif
 
             <section class="ui-card border-primary bg-tertiary p-5 text-white">
                 <h2 class="font-black">{{ __('Cost basis') }}</h2>

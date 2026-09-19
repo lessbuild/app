@@ -862,6 +862,11 @@ class DashboardTest extends TestCase
 
         $this->assertSame(['stats', 'status'], $user->fresh()->preferences['dashboard_widgets']);
         $this->get(route('dashboard'))->assertOk()->assertSee('Platform status')->assertDontSee('Provider credential health');
+
+        $this->get(route('dashboard', ['dialog' => 'customize-dashboard']))
+            ->assertOk()
+            ->assertSee('data-modal-trigger="dashboard-preferences-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
     }
 
     public function test_invalid_dashboard_widgets_do_not_replace_existing_preferences(): void

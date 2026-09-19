@@ -74,6 +74,10 @@ class ProductImprovementTest extends TestCase
             ->assertSee('Provider billing: not connected')
             ->assertSee('Linked to Application')
             ->assertSee($catalogObservedAt->toDayDateTimeString());
+        $this->actingAs($owner)->get(route('costs.index', ['dialog' => 'edit-budget']))
+            ->assertOk()
+            ->assertSee('data-modal-trigger="cost-budget-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
         $this->actingAs($owner)->patch(route('costs.update'), ['monthly_infrastructure_budget' => 100])->assertRedirect();
         $this->assertSame('100.00', $owner->currentOrganization->fresh()->monthly_infrastructure_budget);
     }

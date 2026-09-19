@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $dashboardPreferencesDialogOpen = request()->query('dialog') === 'customize-dashboard'
+            || $errors->any();
+        $dashboardPreferencesDialogUrl = route('dashboard', ['dialog' => 'customize-dashboard']);
+    @endphp
+
     <header class="ui-dashboard-hero ui-card mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
         <div class="min-w-0">
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace overview') }}</p>
@@ -13,20 +19,43 @@
             <x-ui.button :href="route('websites.create')" variant="primary">
                 {{ __('Add website') }}
             </x-ui.button>
+            <x-ui.button
+                :href="$dashboardPreferencesDialogUrl"
+                data-modal-trigger="dashboard-preferences-dialog"
+                aria-controls="dashboard-preferences-dialog"
+                aria-expanded="{{ $dashboardPreferencesDialogOpen ? 'true' : 'false' }}"
+                variant="ghost"
+            >
+                {{ __('Customize') }}
+            </x-ui.button>
         </nav>
     </header>
 
     @include('dashboard._attention')
 
-    <details class="ui-card mb-6 p-4">
-        <summary class="cursor-pointer font-bold text-primary">{{ __('Customize dashboard') }}</summary>
-        <form method="POST" action="{{ route('dashboard.preferences.update') }}" class="mt-4 flex flex-wrap items-end gap-4">@csrf @method('PATCH')
-            @foreach(['stats' => __('Resource totals'), 'setup' => __('Setup progress'), 'status' => __('Platform status'), 'providers' => __('Provider health')] as $widget => $label)
-                <label class="flex items-center gap-2 text-sm text-secondary"><input type="checkbox" name="widgets[]" value="{{ $widget }}" @checked(in_array($widget, $dashboardWidgets, true))><span>{{ $label }}</span></label>
-            @endforeach
+    <x-dialogs.modal
+        id="dashboard-preferences-dialog"
+        :title="__('Customize dashboard')"
+        :description="__('Choose which overview sections appear on your dashboard.')"
+        :open="$dashboardPreferencesDialogOpen"
+    >
+        <form method="POST" action="{{ route('dashboard.preferences.update') }}" class="space-y-5">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="_dashboard_preferences_form" value="1">
+            <fieldset>
+                <legend class="mb-3 text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Dashboard sections') }}</legend>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    @foreach(['stats' => __('Resource totals'), 'setup' => __('Setup progress'), 'status' => __('Platform status'), 'providers' => __('Provider health')] as $widget => $label)
+                        <label class="flex items-center gap-2 text-sm text-secondary"><input type="checkbox" name="widgets[]" value="{{ $widget }}" @checked(in_array($widget, $dashboardWidgets, true))><span>{{ $label }}</span></label>
+                    @endforeach
+                </div>
+            </fieldset>
+            <x-forms.errors name="widgets" />
+            <x-forms.errors name="widgets.0" />
             <x-ui.button type="submit" variant="primary">{{ __('Save layout') }}</x-ui.button>
         </form>
-    </details>
+    </x-dialogs.modal>
 
     @include('dashboard._setup')
 

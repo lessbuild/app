@@ -84,6 +84,12 @@ class ProductFeedbackTest extends TestCase
         ]);
         $outsider = User::factory()->create();
 
+        $dialogUrl = route('feedback.index', ['dialog' => 'feedback-review-'.$feedback->id]);
+        $this->actingAs($owner)->get($dialogUrl)
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="feedback-review-'.$feedback->id.'"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
+
         $this->actingAs($outsider)->patch(route('feedback.update', $feedback), ['status' => 'resolved', 'review_response' => 'foreign'])->assertForbidden();
         $this->actingAs($owner)->patch(route('feedback.update', $feedback), ['status' => 'resolved', 'review_response' => 'Added to the release view.'])->assertRedirect();
 
