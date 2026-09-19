@@ -44,12 +44,6 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Save current')->getContent());
         File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
-        File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
-            ->assertSee('Automate routine release work')
-            ->assertSee('data-modal-trigger="automation-token-dialog"', false)
-            ->getContent());
-        File::put($directory.'/automation-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'create-token']))
-            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',
@@ -74,6 +68,17 @@ class AssetLayoutFixtureTest extends TestCase
         $project = $owner->currentOrganization->projects()->create([
             'name' => 'A deliberately long layout fixture application name', 'slug' => 'layout-fixture', 'created_by' => $owner->id,
         ]);
+        $project->environments()->create([
+            'name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main',
+        ]);
+        File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
+            ->assertSee('Automate routine release work')
+            ->assertSee('data-modal-trigger="automation-token-dialog"', false)
+            ->assertSee('data-modal-trigger="automation-schedule-dialog-', false)
+            ->assertSee('data-modal-trigger="automation-task-dialog-', false)
+            ->getContent());
+        File::put($directory.'/automation-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'create-token']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/projects.html', $this->renderPage(route('projects.index'))->assertOk()
             ->assertSee('A deliberately long layout fixture application name')->getContent());
         $provider = $owner->providers()->create([

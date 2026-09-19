@@ -572,6 +572,70 @@ class AutomationTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
+    public function test_schedule_and_task_composers_are_dialogs_and_reopen_the_correct_environment(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Automation dialogs',
+            'slug' => 'automation-dialogs',
+            'preset' => 'custom',
+        ]);
+        $environment = $project->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+            'branch' => 'main',
+        ]);
+
+        $scheduleDialogId = 'automation-schedule-dialog-'.$environment->id;
+        $taskDialogId = 'automation-task-dialog-'.$environment->id;
+        $scheduleDialogKey = 'deployment-schedule-'.$environment->id;
+        $taskDialogKey = 'scheduled-task-'.$environment->id;
+
+        $default = $this->actingAs($user)
+            ->get(route('automation.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="'.$scheduleDialogId.'"', false)
+            ->assertSee('data-modal-trigger="'.$taskDialogId.'"', false)
+            ->getContent();
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="'.preg_quote($scheduleDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default,
+        );
+
+        $scheduleUrl = route('automation.index', ['dialog' => $scheduleDialogKey]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="'.preg_quote($scheduleDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($user)->get($scheduleUrl)->assertSuccessful()->getContent(),
+        );
+
+        $invalidSchedule = $this->actingAs($user)
+            ->from($scheduleUrl)
+            ->followingRedirects()
+            ->post(route('automation.deployment-schedules.store', $environment), [
+                '_automation_dialog' => $scheduleDialogKey,
+                'name' => '',
+                'cron_expression' => 'not cron',
+                'timezone' => 'Not/AZone',
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="'.preg_quote($scheduleDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $invalidSchedule->getContent(),
+        );
+        $invalidSchedule->assertSee('The name field is required.');
+        $this->assertDatabaseCount('deployment_schedules', 0);
+
+        $taskUrl = route('automation.index', ['dialog' => $taskDialogKey]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="'.preg_quote($taskDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($user)->get($taskUrl)->assertSuccessful()->getContent(),
+        );
+    }
+
     public function test_owner_can_create_expiring_token_and_rotate_it(): void
     {
         $user = User::factory()->create();

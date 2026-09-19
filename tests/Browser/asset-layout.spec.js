@@ -454,6 +454,33 @@ test('credential workflows use compact accessible dialogs', async ({ page }) => 
     await expect(tokenDialog).toBeHidden();
 });
 
+test('automation schedule and task composers use compact accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/automation', { waitUntil: 'networkidle' });
+    await page.locator('details[id^="automation-project-"]').first().locator('summary').click();
+
+    const scheduleTrigger = page.getByRole('link', { name: 'Add schedule', exact: true }).first();
+    const scheduleDialog = page.getByRole('dialog', { name: 'Add deployment schedule', exact: true }).first();
+    await scheduleTrigger.click();
+    await expect(scheduleDialog).toBeVisible();
+    await expect(scheduleDialog.locator('[data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^deployment-schedule-/);
+    await page.keyboard.press('Escape');
+    await expect(scheduleDialog).toBeHidden();
+    await expect(scheduleTrigger).toBeFocused();
+
+    const taskTrigger = page.getByRole('link', { name: 'Add task', exact: true }).first();
+    const taskDialog = page.getByRole('dialog', { name: 'Add scheduled task', exact: true }).first();
+    await taskTrigger.click();
+    await expect(taskDialog).toBeVisible();
+    await expect(taskDialog.locator('[data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^scheduled-task-/);
+    await page.locator('[id^="automation-task-dialog-"] [data-modal-close]').click();
+    await expect(taskDialog).toBeHidden();
+    await expect(taskTrigger).toBeFocused();
+});
+
 test('gallery report composer uses an accessible URL-backed dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);

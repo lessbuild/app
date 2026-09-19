@@ -374,3 +374,40 @@ All commits were pushed immediately after creation. The isolated runtime was fas
 The modal modernization plan is complete for the local/dev scope. Physical-phone checks, production deployment, provider-backed acceptance, billing, mail, monitoring, GitHub App, SSO and the separate live acceptance drill remain external release gates and are not represented by these local results.
 
 Exact next task: no further modal slice is justified by the current audit. Continue with a separately authorized product/UI backlog item or external acceptance gate.
+
+## Follow-up Slice 1 — automation schedule and task composers
+
+Status: complete locally; ready to commit and push with this verification record.
+
+### Responsibility problem
+
+Each expanded automation environment rendered the complete deployment-schedule and scheduled-task creation forms inline with runtime controls and execution history. On a 390px viewport these forms consumed roughly 590 pixels per environment, pushing existing schedules, task runs and capacity controls out of view.
+
+### Boundary and design decision
+
+- Deployment-schedule and scheduled-task creation use one URL-backed shared dialog per environment.
+- The automation page remains responsible for environment context, existing schedules, task runs and runtime controls.
+- Existing Form Requests, entitlement checks, policies, actions, encryption and queue behavior remain unchanged.
+- YAML workflow editing, scaling, hibernation, task execution/deletion and other durable operations remain page workflows.
+
+This is a presentation-only extraction. The dialog carries the environment identity through the existing route and carries a small hidden dialog key solely to reopen the correct form after validation failure.
+
+### Preserved contracts and safety guarantees
+
+- Existing route names, methods, validation keys, entitlement errors, flash messages and persistence behavior are unchanged.
+- Invalid schedule input reopens the schedule dialog for the submitted environment; task input uses the separate task dialog key.
+- Existing defaults for cron, timezone, timeout, overlap prevention and failure alerts are retained.
+- Commands remain submitted through the existing request/action boundary and are not placed in URLs or browser storage.
+- Direct query URLs, no-JavaScript anchor fallback, Escape, Back navigation and focus restoration remain available.
+
+### Verification
+
+- `tests/Feature/AutomationTest.php`: 35 tests, 182 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 55 assertions passed.
+- Focused Playwright automation schedule/task flow at 390px: 1 test passed in 34.0 seconds.
+- Pint: passed.
+- Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Commit and push this slice, update the isolated runtime, then convert the deployment operator-note editor while preserving the named `buildNote` validation bag.

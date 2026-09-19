@@ -1,5 +1,19 @@
 # BuildPusher chat handoff
 
+# Follow-up modal pass — 2026-09-19
+
+The follow-up modal pass is active on `main`. The first new slice moves
+deployment-schedule and scheduled-task creation on the Automation page into
+per-environment URL-backed dialogs. Existing requests, entitlement checks,
+actions, encryption and queue behavior remain unchanged. Feature coverage
+passed **35 tests / 182 assertions**, the Blade fixture passed **1 test / 55
+assertions**, and the focused 390px Playwright flow passed **1 test**. Pint,
+Node syntax and `git diff --check` passed.
+
+The implementation is currently uncommitted. The next action is to commit and
+push this slice, update the isolated development runtime, then continue with
+the deployment operator-note dialog.
+
 # Modal modernization completion — 2026-09-19
 
 The compact-workflow modal modernization plan is complete locally on `main`.
