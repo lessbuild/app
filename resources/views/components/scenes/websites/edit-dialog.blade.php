@@ -2,6 +2,7 @@
     'website',
     'servers',
     'open' => false,
+    'fieldPrefix' => 'website-edit-',
 ])
 
 <x-dialogs.modal
@@ -17,7 +18,7 @@
         <x-scenes.websites._form
             :servers="$servers"
             :website="$website"
-            field-prefix="website-edit-"
+            :field-prefix="$fieldPrefix"
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">

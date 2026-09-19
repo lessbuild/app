@@ -1,4 +1,7 @@
-@props(['open' => false])
+@props([
+    'open' => false,
+    'fieldPrefix' => 'recipe-create-',
+])
 
 <x-dialogs.modal
     id="recipe-create-dialog"
@@ -9,7 +12,7 @@
 >
     <form action="{{ route('recipes.store', ['dialog' => 'create-recipe']) }}" method="POST">
         @csrf
-        <x-scenes.recipes._form field-prefix="recipe-create-" />
+        <x-scenes.recipes._form :field-prefix="$fieldPrefix" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
             <x-ui.button :href="route('recipes.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>

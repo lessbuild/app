@@ -3,6 +3,7 @@
     'providers',
     'websites',
     'open' => false,
+    'fieldPrefix' => 'repository-edit-',
 ])
 
 <x-dialogs.modal
@@ -19,7 +20,7 @@
             :providers="$providers"
             :websites="$websites"
             :repository="$repository"
-            field-prefix="repository-edit-"
+            :field-prefix="$fieldPrefix"
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">

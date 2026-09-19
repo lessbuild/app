@@ -1,11 +1,14 @@
 @props([
     'server',
     'open' => false,
+    'title' => null,
 ])
+
+@php($dialogTitle = $title ?? __('Edit server display name'))
 
 <x-dialogs.modal
     id="server-display-name-dialog"
-    :title="__('Edit server display name')"
+    :title="$dialogTitle"
     :description="__('Change the label shown in BuildPusher without renaming the cloud server or its hostname.')"
     :open="$open"
 >

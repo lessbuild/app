@@ -1,4 +1,7 @@
-@props(['open' => false])
+@props([
+    'open' => false,
+    'fieldPrefix' => 'provider-create-',
+])
 
 <x-dialogs.modal
     id="provider-create-dialog"
@@ -11,7 +14,7 @@
 
     <form action="{{ route('providers.store', ['dialog' => 'create-provider']) }}" method="POST">
         @csrf
-        <x-scenes.providers._form field-prefix="provider-create-" />
+        <x-scenes.providers._form :field-prefix="$fieldPrefix" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
             <x-ui.button :href="route('providers.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>

@@ -1,6 +1,7 @@
 @props([
     'provider',
     'open' => false,
+    'fieldPrefix' => 'provider-edit-',
 ])
 
 <x-dialogs.modal
@@ -15,7 +16,7 @@
     <form action="{{ route('providers.update', ['provider' => $provider, 'dialog' => 'edit-provider']) }}" method="POST">
         @csrf
         @method('PATCH')
-        <x-scenes.providers._form :provider="$provider" field-prefix="provider-edit-" />
+        <x-scenes.providers._form :provider="$provider" :field-prefix="$fieldPrefix" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
             <x-ui.button :href="route('providers.show', $provider)" variant="ghost">{{ __('Cancel') }}</x-ui.button>

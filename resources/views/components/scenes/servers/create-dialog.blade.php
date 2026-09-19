@@ -8,6 +8,7 @@
     'planUsage',
     'open' => false,
     'indexQuery' => [],
+    'fieldPrefix' => 'server-create-',
 ])
 
 @php
@@ -51,7 +52,7 @@
             :images="$images"
             :regions="$regions"
             :recipes="$recipes"
-            field-prefix="server-create-"
+            :field-prefix="$fieldPrefix"
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">

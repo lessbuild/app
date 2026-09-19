@@ -2,6 +2,7 @@
     'recipe',
     'open' => false,
     'id' => 'recipe-edit-dialog',
+    'fieldPrefix' => 'recipe-edit-',
 ])
 
 <x-dialogs.modal
@@ -20,7 +21,7 @@
     <form action="{{ route('recipes.update', ['recipe' => $recipe, 'dialog' => 'edit-recipe']) }}" method="POST">
         @csrf
         @method('PATCH')
-        <x-scenes.recipes._form :recipe="$recipe" field-prefix="recipe-edit-" />
+        <x-scenes.recipes._form :recipe="$recipe" :field-prefix="$fieldPrefix" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
             <x-ui.button :href="route('recipes.show', $recipe)" variant="ghost">{{ __('Cancel') }}</x-ui.button>

@@ -3,6 +3,7 @@
     'websites',
     'indexQuery' => [],
     'open' => false,
+    'fieldPrefix' => 'repository-create-',
 ])
 
 <x-dialogs.modal
@@ -35,7 +36,7 @@
         <x-scenes.repositories._form
             :providers="$providers"
             :websites="$websites"
-            field-prefix="repository-create-"
+            :field-prefix="$fieldPrefix"
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
