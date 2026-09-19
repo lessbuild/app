@@ -145,6 +145,11 @@ class AssetLayoutFixtureTest extends TestCase
             'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'App',
             'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
         ]);
+        File::put($directory.'/repositories.html', $this->renderPage(route('repositories.index'))->assertOk()
+            ->assertSee('data-modal-trigger="repository-create-dialog"', false)
+            ->getContent());
+        File::put($directory.'/repositories-dialog.html', $this->renderPage(route('repositories.index', ['dialog' => 'create-repository']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $project->environments()->where('type', 'production')->firstOrFail()->update([
             'server_id' => $server->id,
             'website_id' => $website->id,

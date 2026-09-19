@@ -1,5 +1,12 @@
 <x-layouts.app>
 
+    @php
+        $repositoryIndexQuery = array_filter($filters, fn ($value) => $value !== null);
+        $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
+        $repositoryCreateUrl = route('repositories.index', [...$repositoryIndexQuery, 'dialog' => 'create-repository']);
+        $repositoryStoreUrl = route('repositories.store', ['dialog' => 'create-repository']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Heading
@@ -15,7 +22,13 @@
             <x-ui.button :href="route('repositories.impact-preview')" variant="secondary">
                 {{ __('Preview push impact') }}
             </x-ui.button>
-            <x-ui.button :href="route('repositories.create')" variant="primary">
+            <x-ui.button
+                :href="$repositoryCreateUrl"
+                data-modal-trigger="repository-create-dialog"
+                aria-controls="repository-create-dialog"
+                aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
@@ -184,7 +197,13 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <x-ui.button :href="route('repositories.index')" variant="secondary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <x-ui.button :href="route('repositories.create')" variant="primary">
+                        <x-ui.button
+                            :href="$repositoryCreateUrl"
+                            data-modal-trigger="repository-create-dialog"
+                            aria-controls="repository-create-dialog"
+                            aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
+                            variant="primary"
+                        >
                             {{ __('Add Repository') }}
                         </x-ui.button>
                     @endif
@@ -192,4 +211,46 @@
             </x-ui.empty-state>
         </div>
     @endif
+
+    <x-dialogs.modal
+        id="repository-create-dialog"
+        :title="__('Add repository')"
+        :description="__('Connect a source repository to an active website and deployment branch.')"
+        :open="$repositoryCreateOpen"
+        body-class="p-0"
+    >
+        @if ($providers->isEmpty())
+            <div class="m-5">
+                <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+                    <p>{{ __('You must add a source control provider before you can add a repository') }}</p>
+                    <x-ui.button :href="route('providers.create')" variant="secondary">{{ __('Add source provider') }}</x-ui.button>
+                </x-ui.alert>
+            </div>
+        @endif
+
+        @if ($websites->isEmpty())
+            <div class="m-5">
+                <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+                    <p>{{ __('You need an active website before you can add a repository') }}</p>
+                    <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="secondary">{{ __('Create Website') }}</x-ui.button>
+                </x-ui.alert>
+            </div>
+        @endif
+
+        <form action="{{ $repositoryStoreUrl }}" method="POST">
+            @csrf
+            <x-scenes.repositories._form
+                :providers="$providers"
+                :websites="$websites"
+                field-prefix="repository-create-"
+            />
+
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+                <x-ui.button :href="route('repositories.index', $repositoryIndexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || $websites->isEmpty()">
+                    {{ __('Create Repository') }}
+                </x-ui.button>
+            </div>
+        </form>
+    </x-dialogs.modal>
 </x-layouts.app>

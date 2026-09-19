@@ -91,7 +91,7 @@
                         [__('Provision server'), route('servers.index', ['dialog' => 'create-server']), __('new cloud infrastructure')],
                         [__('Import existing server'), route('servers.import.create'), __('ssh migrate')],
                         [__('Add website'), route('websites.index', ['dialog' => 'create-website']), __('domain site')],
-                        [__('Connect repository'), route('repositories.create'), __('git source deploy')],
+                        [__('Connect repository'), route('repositories.index', ['dialog' => 'create-repository']), __('git source deploy')],
                         [__('View deployments'), route('builds.index'), __('build history releases')],
                         [__('Open live logs'), route('websites.index'), __('runtime logs')],
                         [__('Observability'), route('observability.index'), __('alerts status incidents')],

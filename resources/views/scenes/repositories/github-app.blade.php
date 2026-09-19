@@ -8,7 +8,7 @@
                     <h2 class="truncate font-bold text-primary">{{ $repository['full_name'] }}</h2>
                     <p class="mt-1 text-xs text-secondary">{{ $repository['private'] ? __('Private') : __('Public') }} · {{ $repository['default_branch'] }}</p>
                 </div>
-                <x-ui.button :href="route('repositories.create', ['provider_id' => $provider->id, 'name' => str($repository['full_name'])->after('/'), 'url' => 'github.com/'.$repository['full_name'].'.git', 'branch' => $repository['default_branch']])" variant="primary">{{ __('Connect') }}</x-ui.button>
+                <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository', 'provider_id' => $provider->id, 'name' => str($repository['full_name'])->after('/'), 'url' => 'github.com/'.$repository['full_name'].'.git', 'branch' => $repository['default_branch']])" variant="primary">{{ __('Connect') }}</x-ui.button>
             </x-ui.card>
         @empty
             <x-ui.empty-state class="md:col-span-2" :title="__('No repositories available')" :description="__('Update the GitHub App installation and grant access to at least one repository.')" />

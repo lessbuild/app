@@ -1,11 +1,18 @@
+@props([
+    'providers',
+    'websites',
+    'repository' => null,
+    'fieldPrefix' => '',
+])
+
 <div class="space-y-8 bg-primary p-6 sm:p-8">
 
     <div>
-        <label for="website_id" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}website_id" class="block text-sm font-medium text-primary">
             {{ __('Website') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
-            <select id="website_id" name="website_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
+            <select id="{{ $fieldPrefix }}website_id" name="website_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($websites as $website)
                     <option value="{{ $website->id }}"
                         @selected((string) old('website_id', $repository->website_id ?? request()->query('website_id', '')) === (string) $website->id)
@@ -19,11 +26,11 @@
     </div>
 
     <div>
-        <label for="provider_id" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}provider_id" class="block text-sm font-medium text-primary">
             {{ __('Provider') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
-            <select id="provider_id" name="provider_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
+            <select id="{{ $fieldPrefix }}provider_id" name="provider_id" class="input secondary min-h-[2.75rem] w-full rounded-lg" required>
                 @foreach($providers as $provider)
                     <option
                         value="{{ $provider->id }}"
@@ -38,7 +45,7 @@
     </div>
 
     <div>
-        <label for="name" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}name" class="block text-sm font-medium text-primary">
             {{ __('Repository Name') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
@@ -46,7 +53,7 @@
                 value="{{ old('name', $repository->name ?? request()->query('name')) }}"
                 type="text"
                 name="name"
-                id="name"
+                id="{{ $fieldPrefix }}name"
                 class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="Example: Deployer">
         </div>
@@ -54,7 +61,7 @@
     </div>
 
     <div>
-        <label for="url" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}url" class="block text-sm font-medium text-primary">
             {{ __('Repository URL') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
@@ -65,7 +72,7 @@
                 value="{{ old('url', $repository->url ?? request()->query('url')) }}"
                 type="text"
                 name="url"
-                id="url"
+                id="{{ $fieldPrefix }}url"
                 class="input secondary min-h-[2.75rem] w-full rounded-none rounded-r-lg"
                 placeholder="github.com, gitlab.com, or bitbucket.org">
         </div>
@@ -73,7 +80,7 @@
     </div>
 
     <div>
-        <label for="branch" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}branch" class="block text-sm font-medium text-primary">
             {{ __('Deployment Branch') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
@@ -81,7 +88,7 @@
                 value="{{ old('branch', $repository->branch ?? request()->query('branch', 'main')) }}"
                 type="text"
                 name="branch"
-                id="branch"
+                id="{{ $fieldPrefix }}branch"
                 class="input secondary min-h-[2.75rem] w-full rounded-lg"
                 placeholder="main">
         </div>
@@ -89,7 +96,7 @@
     </div>
 
     <div>
-        <label for="deployment_root" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}deployment_root" class="block text-sm font-medium text-primary">
             {{ __('Service root directory') }}
         </label>
         <div class="mt-2 flex rounded-lg shadow-xs">
@@ -97,7 +104,7 @@
                 value="{{ old('deployment_root', $repository->deployment_root ?? '') }}"
                 type="text"
                 name="deployment_root"
-                id="deployment_root"
+                id="{{ $fieldPrefix }}deployment_root"
                 maxlength="512"
                 autocomplete="off"
                 class="input secondary min-h-[2.75rem] w-full rounded-lg font-mono"
@@ -122,11 +129,11 @@
         </p>
         <div class="mt-4 grid gap-4 md:grid-cols-2">
             <div>
-                <label for="auto_deploy_include_paths" class="block text-sm font-medium text-primary">
+                <label for="{{ $fieldPrefix }}auto_deploy_include_paths" class="block text-sm font-medium text-primary">
                     {{ __('Include paths') }}
                 </label>
                 <textarea
-                    id="auto_deploy_include_paths"
+                    id="{{ $fieldPrefix }}auto_deploy_include_paths"
                     name="auto_deploy_include_paths"
                     rows="5"
                     maxlength="5000"
@@ -137,11 +144,11 @@
                 <x-forms.errors name="auto_deploy_include_paths.*"></x-forms.errors>
             </div>
             <div>
-                <label for="auto_deploy_exclude_paths" class="block text-sm font-medium text-primary">
+                <label for="{{ $fieldPrefix }}auto_deploy_exclude_paths" class="block text-sm font-medium text-primary">
                     {{ __('Exclude paths') }}
                 </label>
                 <textarea
-                    id="auto_deploy_exclude_paths"
+                    id="{{ $fieldPrefix }}auto_deploy_exclude_paths"
                     name="auto_deploy_exclude_paths"
                     rows="5"
                     maxlength="5000"
@@ -155,12 +162,12 @@
     </div>
 
     <div>
-        <label for="build_commands" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}build_commands" class="block text-sm font-medium text-primary">
             {{ __('Build commands') }}
         </label>
         <div class="mt-1">
             <textarea
-                id="build_commands"
+                id="{{ $fieldPrefix }}build_commands"
                 name="build_commands"
                 rows="6"
                 maxlength="10000"
@@ -175,12 +182,12 @@
     </div>
 
     <div>
-        <label for="post_deployment_commands" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}post_deployment_commands" class="block text-sm font-medium text-primary">
             {{ __('Post-deployment commands') }}
         </label>
         <div class="mt-1">
             <textarea
-                id="post_deployment_commands"
+                id="{{ $fieldPrefix }}post_deployment_commands"
                 name="post_deployment_commands"
                 rows="6"
                 maxlength="10000"
@@ -198,12 +205,12 @@
     </div>
 
     <div>
-        <label for="description" class="block text-sm font-medium text-primary">
+        <label for="{{ $fieldPrefix }}description" class="block text-sm font-medium text-primary">
             {{ __('Description') }}
         </label>
         <div class="mt-1">
             <textarea
-                id="description"
+                id="{{ $fieldPrefix }}description"
                 name="description"
                 rows="3"
                 class="input secondary mt-2 w-full rounded-lg"

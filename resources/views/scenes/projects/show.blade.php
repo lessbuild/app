@@ -91,7 +91,7 @@
                         $readiness = [
                         ['label' => __('Active server attached'), 'ready' => $environment->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE, 'url' => route('servers.index')],
                         ['label' => __('Active website attached'), 'ready' => $environment->website?->provisioning_status === \App\Models\Website::STATUS_ACTIVE, 'url' => route('websites.index')],
-                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.index', ['dialog' => 'create-website'])],
+                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.index', ['dialog' => 'create-repository', 'website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.index', ['dialog' => 'create-website'])],
                         ['label' => __('Provider credentials available'), 'ready' => (bool) $repository?->provider_id, 'url' => route('providers.index')],
                         ];
                         $readyCount = collect($readiness)->where('ready', true)->count();
@@ -117,7 +117,7 @@
                         <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View source') }}</x-ui.button>
                         @if($canDeploy)<form method="POST" action="{{ route('repositories.deploy', $repository) }}">@csrf<x-ui.button type="submit" variant="primary" :disabled="! $deploymentReady || $deploymentInProgress">{{ $deploymentInProgress ? __('Deploying…') : ($deploymentReady ? __('Deploy now') : __('Not ready')) }}</x-ui.button></form>@endif
                     @elseif($environment->website && $canDeploy)
-                        <x-ui.button :href="route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch])" variant="primary">{{ __('Connect repository') }}</x-ui.button>
+                        <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository', 'website_id' => $environment->website_id, 'branch' => $environment->branch])" variant="primary">{{ __('Connect repository') }}</x-ui.button>
                     @elseif($canDeploy)
                         <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">{{ __('Create website') }}</x-ui.button>
                     @endif

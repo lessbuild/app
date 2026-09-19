@@ -85,4 +85,31 @@ class CreationDialogTest extends TestCase
             ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors('name');
     }
+
+    public function test_the_repositories_inventory_hosts_the_repository_creation_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('repositories.index', ['dialog' => 'create-repository']);
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('id="repository-create-dialog"', false)
+            ->assertSee('data-modal-trigger="repository-create-dialog"', false)
+            ->assertSee('action="'.route('repositories.store', ['dialog' => 'create-repository']).'"', false)
+            ->assertSee('for="repository-create-provider_id"', false)
+            ->assertSee('for="repository-create-website_id"', false);
+    }
+
+    public function test_repository_creation_validation_returns_to_the_open_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('repositories.index', ['dialog' => 'create-repository']);
+
+        $this->actingAs($user)
+            ->from($dialogUrl)
+            ->post(route('repositories.store', ['dialog' => 'create-repository']), [])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors(['provider_id', 'website_id', 'name', 'url', 'description']);
+    }
 }

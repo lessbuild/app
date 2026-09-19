@@ -194,7 +194,7 @@ class DashboardTest extends TestCase
         $this->assertStringContainsString('href="'.route('providers.create').'"', $content);
         $this->assertStringContainsString('href="'.route('servers.index', ['dialog' => 'create-server']).'"', $content);
         $this->assertStringContainsString('href="'.route('websites.index', ['dialog' => 'create-website']).'"', $content);
-        $this->assertStringContainsString('href="'.route('repositories.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('repositories.index', ['dialog' => 'create-repository']).'"', $content);
     }
 
     public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void

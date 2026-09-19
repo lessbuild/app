@@ -347,7 +347,7 @@
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployments') }}</p>
                     <h2 id="attached-repositories-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Attached Repositories') }}</h2>
                 </div>
-                <x-ui.button :href="route('repositories.create')" variant="ghost">{{ __('Add Repo') }}</x-ui.button>
+                <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository'])" variant="ghost">{{ __('Add Repo') }}</x-ui.button>
             </div>
             <ul role="list" class="mt-4 divide-y divide-primary">
                 @forelse($repositories as $repository)

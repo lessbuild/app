@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'repositories', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -65,9 +65,11 @@ async function serveFixtures(page) {
                                         ? 'projects-dialog'
                                         : screen === 'websites' && dialog === 'create-website'
                                             ? 'websites-dialog'
-                                            : screen === 'servers' && dialog === 'create-server'
-                                                ? 'servers-dialog'
-                                                : screen;
+                                                : screen === 'servers' && dialog === 'create-server'
+                                                    ? 'servers-dialog'
+                                                    : screen === 'repositories' && dialog === 'create-repository'
+                                                        ? 'repositories-dialog'
+                                                        : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -113,6 +115,7 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
         { path: 'projects', trigger: 'New application', title: 'New application', query: 'create-application' },
         { path: 'servers', trigger: 'Add Server', title: 'Add server', query: 'create-server' },
         { path: 'websites', trigger: 'Add Website', title: 'Add website', query: 'create-website' },
+        { path: 'repositories', trigger: 'Add Repository', title: 'Add repository', query: 'create-repository' },
     ]) {
         await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });
         const trigger = page.getByRole('link', { name: workflow.trigger, exact: true }).first();

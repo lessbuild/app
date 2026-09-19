@@ -166,7 +166,7 @@
             <x-ui.card class="p-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-bold text-primary">{{ __('Repositories') }}</h3>
-                    <x-ui.button :href="route('repositories.create')" variant="ghost">{{ __('Add Repository') }}</x-ui.button>
+                <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository'])" variant="ghost">{{ __('Add Repository') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 divide-y divide-primary">
                     @forelse($repositories as $repository)
