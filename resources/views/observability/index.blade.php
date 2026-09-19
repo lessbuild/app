@@ -5,6 +5,24 @@
         $metricRuleDialogOpen = (request()->query('dialog') === 'create-metric-rule' && ! session()->has('success'))
             || $metricRuleDialogHasErrors;
         $metricRuleDialogUrl = route('observability.index', ['dialog' => 'create-metric-rule']);
+        $alertDestinationDialogFields = ['name', 'type', 'endpoint', 'events'];
+        $alertDestinationDialogHasErrors = old('_alert_destination_form') === '1'
+            && $errors->hasAny($alertDestinationDialogFields);
+        $alertDestinationDialogOpen = (request()->query('dialog') === 'create-alert-destination' && ! session()->has('success'))
+            || $alertDestinationDialogHasErrors;
+        $alertDestinationDialogUrl = route('observability.index', ['dialog' => 'create-alert-destination']);
+        $statusPageDialogFields = ['name', 'slug', 'description', 'is_published', 'website_ids'];
+        $statusPageDialogHasErrors = old('_status_page_form') === '1'
+            && $errors->hasAny($statusPageDialogFields);
+        $statusPageDialogOpen = (request()->query('dialog') === 'create-status-page' && ! session()->has('success'))
+            || $statusPageDialogHasErrors;
+        $statusPageDialogUrl = route('observability.index', ['dialog' => 'create-status-page']);
+        $statusIncidentDialogFields = ['status_page_id', 'kind', 'status', 'severity', 'title', 'message', 'root_cause', 'remediation', 'follow_up', 'starts_at', 'ends_at'];
+        $statusIncidentDialogHasErrors = old('_status_incident_form') === 'create'
+            && $errors->hasAny($statusIncidentDialogFields);
+        $statusIncidentDialogOpen = (request()->query('dialog') === 'create-status-incident' && ! session()->has('success'))
+            || $statusIncidentDialogHasErrors;
+        $statusIncidentDialogUrl = route('observability.index', ['dialog' => 'create-status-incident']);
     @endphp
 
     <x-layouts.partials.heading
@@ -270,15 +288,17 @@
                 @endforelse
                 </div>
             @if ($canManage)
-                <form method="POST" action="{{ route('observability.destinations.store') }}" class="mt-5 grid gap-4 rounded-xl border border-primary bg-secondary p-4 sm:grid-cols-2">
-                    @csrf
-                    <h3 class="sm:col-span-2 font-bold text-primary">{{ __('Add alert destination') }}</h3>
-                    <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span><input name="name" placeholder="Engineering alerts" class="input secondary w-full rounded-md" required></label>
-                    <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Type') }}</span><select name="type" class="input secondary w-full rounded-md"><option value="email">Email</option><option value="discord">Discord</option><option value="teams">Microsoft Teams</option><option value="pagerduty">PagerDuty</option><option value="slack">Slack</option><option value="webhook">{{ __('Signed webhook') }}</option></select></label>
-                    <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Endpoint') }}</span><input name="endpoint" placeholder="{{ __('Email, webhook URL, or PagerDuty routing key') }}" autocomplete="off" class="input secondary w-full rounded-md" required></label>
-                    <fieldset class="flex flex-wrap gap-4 sm:col-span-2"><legend class="sr-only">{{ __('Events') }}</legend><label class="flex items-center gap-2"><input type="checkbox" name="events[]" value="failure" checked><span class="text-sm text-secondary">{{ __('Failures') }}</span></label><label class="flex items-center gap-2"><input type="checkbox" name="events[]" value="recovery" checked><span class="text-sm text-secondary">{{ __('Recoveries') }}</span></label></fieldset>
-                    <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Add destination') }}</x-ui.button>
-                </form>
+                <x-ui.button
+                    :href="$alertDestinationDialogUrl"
+                    data-modal-trigger="alert-destination-create-dialog"
+                    aria-controls="alert-destination-create-dialog"
+                    aria-expanded="{{ $alertDestinationDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                    class="mt-5"
+                >
+                    {{ __('Add alert destination') }}
+                </x-ui.button>
+                <x-scenes.observability.alert-destination-create-dialog :open="$alertDestinationDialogOpen" />
             @endif
             </details>
         </section>
@@ -316,18 +336,17 @@
                 @endforelse
                 </div>
             @if ($canManage)
-                <form method="POST" action="{{ route('observability.status-pages.store') }}" class="mt-5 space-y-4 rounded-xl border border-primary bg-secondary p-4">
-                    @csrf
-                    <h3 class="font-bold text-primary">{{ __('Create status page') }}</h3>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                        <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span><input name="name" placeholder="BuildPusher Status" class="input secondary w-full rounded-md" required></label>
-                        <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Slug') }}</span><input name="slug" placeholder="buildpusher" class="input secondary w-full rounded-md"></label>
-                        <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Description') }}</span><textarea name="description" placeholder="Current platform availability" class="input secondary w-full rounded-md"></textarea></label>
-                    </div>
-                    <fieldset class="grid gap-2 sm:grid-cols-2"><legend class="mb-1 text-xs font-bold uppercase text-secondary">{{ __('Components') }}</legend>@foreach ($websites as $website)<label class="flex items-center gap-2 rounded-lg border border-primary p-3"><input type="checkbox" name="website_ids[]" value="{{ $website->id }}"><span class="min-w-0 truncate text-sm text-primary">{{ $website->name }}</span></label>@endforeach</fieldset>
-                    <input type="hidden" name="is_published" value="1">
-                    <x-ui.button type="submit" variant="primary">{{ __('Publish status page') }}</x-ui.button>
-                </form>
+                <x-ui.button
+                    :href="$statusPageDialogUrl"
+                    data-modal-trigger="status-page-create-dialog"
+                    aria-controls="status-page-create-dialog"
+                    aria-expanded="{{ $statusPageDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                    class="mt-5"
+                >
+                    {{ __('Create status page') }}
+                </x-ui.button>
+                <x-scenes.observability.status-page-create-dialog :websites="$websites" :open="$statusPageDialogOpen" />
             @endif
             </details>
         </section>
@@ -350,6 +369,15 @@
             </summary>
             <div class="mt-4 space-y-3">
             @forelse ($incidents as $incident)
+                @php
+                    $incidentDialogId = 'status-incident-edit-dialog-'.$incident->id;
+                    $incidentDialogKey = 'edit-status-incident-'.$incident->id;
+                    $incidentDialogHasErrors = old('_status_incident_form') === 'update'
+                        && (string) old('_status_incident_id') === (string) $incident->id
+                        && $errors->hasAny($statusIncidentDialogFields);
+                    $incidentDialogOpen = request()->query('dialog') === $incidentDialogKey || $incidentDialogHasErrors;
+                    $incidentDialogUrl = route('observability.index', ['dialog' => $incidentDialogKey]);
+                @endphp
                 <article class="rounded-xl border border-primary bg-secondary p-4">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -370,24 +398,17 @@
                     </div>
 
                     @if ($canManage)
-                        <details class="mt-4 rounded-lg border border-primary bg-primary p-3">
-                            <summary class="cursor-pointer text-xs font-bold text-ternary">{{ __('Update or complete review') }}</summary>
-                            <form method="POST" action="{{ route('observability.incidents.update', $incident) }}" class="mt-4 grid gap-4 sm:grid-cols-2">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="kind" value="{{ $incident->kind }}">
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status') }}</span><select name="status" class="input secondary w-full rounded-md">@foreach (\App\Models\StatusIncident::STATUSES as $status)<option value="{{ $status }}" @selected($incident->status === $status)>{{ str($status)->headline() }}</option>@endforeach</select></label>
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Severity') }}</span><select name="severity" class="input secondary w-full rounded-md">@foreach (\App\Models\StatusIncident::SEVERITIES as $severity)<option value="{{ $severity }}" @selected($incident->severity === $severity)>{{ ucfirst($severity) }}</option>@endforeach</select></label>
-                                <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Title') }}</span><input name="title" value="{{ $incident->title }}" required class="input secondary w-full rounded-md"></label>
-                                <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Message') }}</span><textarea name="message" required class="input secondary w-full rounded-md">{{ $incident->message }}</textarea></label>
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Root cause') }}</span><textarea name="root_cause" maxlength="5000" class="input secondary w-full rounded-md" placeholder="{{ __('Root cause (internal review)') }}">{{ $incident->root_cause }}</textarea></label>
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Remediation') }}</span><textarea name="remediation" maxlength="5000" class="input secondary w-full rounded-md" placeholder="{{ __('Remediation taken') }}">{{ $incident->remediation }}</textarea></label>
-                                <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Follow-up') }}</span><textarea name="follow_up" maxlength="5000" class="input secondary w-full rounded-md" placeholder="{{ __('Follow-up actions and owners') }}">{{ $incident->follow_up }}</textarea></label>
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Starts') }}</span><input type="datetime-local" name="starts_at" value="{{ $incident->starts_at->format('Y-m-d\TH:i') }}" class="input secondary w-full rounded-md"></label>
-                                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Ends') }}</span><input type="datetime-local" name="ends_at" value="{{ $incident->ends_at?->format('Y-m-d\TH:i') }}" class="input secondary w-full rounded-md"></label>
-                                <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Publish update') }}</x-ui.button>
-                            </form>
-                        </details>
+                        <x-ui.button
+                            :href="$incidentDialogUrl"
+                            data-modal-trigger="{{ $incidentDialogId }}"
+                            aria-controls="{{ $incidentDialogId }}"
+                            aria-expanded="{{ $incidentDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                            class="mt-4"
+                        >
+                            {{ __('Update or complete review') }}
+                        </x-ui.button>
+                        <x-scenes.observability.status-incident-edit-dialog :incident="$incident" :open="$incidentDialogOpen" />
                     @endif
                 </article>
             @empty
@@ -396,22 +417,20 @@
             </div>
 
         @if ($canManage && $statusPages->isNotEmpty())
-            <form method="POST" action="{{ route('observability.incidents.store') }}" class="mt-5 grid gap-4 rounded-xl border border-primary bg-secondary p-4 sm:grid-cols-2">
-                @csrf
-                <h3 class="sm:col-span-2 font-bold text-primary">{{ __('Publish a status update') }}</h3>
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status page') }}</span><select name="status_page_id" class="input secondary w-full rounded-md" required>@foreach ($statusPages as $page)<option value="{{ $page->id }}">{{ $page->name }}</option>@endforeach</select></label>
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Kind') }}</span><select name="kind" class="input secondary w-full rounded-md"><option value="incident">{{ __('Incident') }}</option><option value="maintenance">{{ __('Planned maintenance') }}</option></select></label>
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status') }}</span><select name="status" class="input secondary w-full rounded-md"><option value="investigating">{{ __('Investigating') }}</option><option value="identified">{{ __('Identified') }}</option><option value="monitoring">{{ __('Monitoring') }}</option><option value="resolved">{{ __('Resolved') }}</option><option value="scheduled">{{ __('Scheduled') }}</option><option value="in_progress">{{ __('In progress') }}</option><option value="completed">{{ __('Completed') }}</option></select></label>
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Severity') }}</span><select name="severity" class="input secondary w-full rounded-md"><option value="minor">{{ __('Minor') }}</option><option value="major">{{ __('Major') }}</option><option value="critical">{{ __('Critical') }}</option></select></label>
-                <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Title') }}</span><input name="title" placeholder="{{ __('API latency') }}" required class="input secondary w-full rounded-md"></label>
-                <label class="block sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Message') }}</span><textarea name="message" placeholder="{{ __('What users should know') }}" required class="input secondary w-full rounded-md"></textarea></label>
-                <input type="hidden" name="root_cause" value="">
-                <input type="hidden" name="remediation" value="">
-                <input type="hidden" name="follow_up" value="">
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Starts') }}</span><input type="datetime-local" name="starts_at" value="{{ now()->format('Y-m-d\TH:i') }}" required class="input secondary w-full rounded-md"></label>
-                <label class="block"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Ends (maintenance)') }}</span><input type="datetime-local" name="ends_at" class="input secondary w-full rounded-md"></label>
-                <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Publish status update') }}</x-ui.button>
-            </form>
+            <x-ui.button
+                :href="$statusIncidentDialogUrl"
+                data-modal-trigger="status-incident-create-dialog"
+                aria-controls="status-incident-create-dialog"
+                aria-expanded="{{ $statusIncidentDialogOpen ? 'true' : 'false' }}"
+                variant="primary"
+                class="mt-5"
+            >
+                {{ __('Publish a status update') }}
+            </x-ui.button>
+            <x-scenes.observability.status-incident-create-dialog
+                :status-pages="$statusPages"
+                :open="$statusIncidentDialogOpen"
+            />
         @endif
         </details>
     </section>

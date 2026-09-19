@@ -256,12 +256,40 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Fixture server incident', 'Fixture incident summary.');
+        $statusPage = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id,
+            'name' => 'Fixture status page',
+            'slug' => 'fixture-status',
+            'is_published' => true,
+        ]);
+        $statusPage->websites()->attach($website);
+        $statusPage->incidents()->create([
+            'created_by' => $owner->id,
+            'kind' => 'incident',
+            'status' => 'investigating',
+            'severity' => 'major',
+            'title' => 'Fixture incident update',
+            'message' => 'Fixture incident message.',
+            'starts_at' => now(),
+        ]);
         File::put($directory.'/observability.html', $this->renderPage(route('observability.index'))->assertOk()
             ->assertSee('Start with what needs attention')
             ->assertSee('data-modal-trigger="metric-rule-dialog"', false)
+            ->assertSee('data-modal-trigger="alert-destination-create-dialog"', false)
+            ->assertSee('data-modal-trigger="status-page-create-dialog"', false)
+            ->assertSee('data-modal-trigger="status-incident-create-dialog"', false)
             ->assertSee('data-modal-trigger="operational-incident-note-', false)
+            ->assertSee('data-modal-trigger="status-incident-edit-dialog-', false)
             ->getContent());
         File::put($directory.'/observability-metric-rule-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-metric-rule']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/observability-destination-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-alert-destination']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/observability-status-page-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-status-page']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/observability-status-incident-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-status-incident']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/observability-status-incident-edit-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'edit-status-incident-'.$statusPage->incidents()->sole()->id]))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
     }
 

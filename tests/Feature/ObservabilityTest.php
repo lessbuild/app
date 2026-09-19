@@ -123,6 +123,77 @@ class ObservabilityTest extends TestCase
         $this->assertDatabaseCount('metric_alert_rules', 0);
     }
 
+    public function test_observability_management_composers_are_dialogs_and_reopen_the_relevant_form(): void
+    {
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id,
+            'name' => 'Operations status',
+            'slug' => 'operations-status',
+            'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $incident = $page->incidents()->create([
+            'created_by' => $owner->id,
+            'kind' => 'incident',
+            'status' => 'investigating',
+            'severity' => 'major',
+            'title' => 'API latency',
+            'message' => 'Investigating latency.',
+            'starts_at' => now(),
+        ]);
+        $dialogPattern = static fn (string $id): string => '/<dialog(?=[^>]*id="'.preg_quote($id, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($owner)->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="alert-destination-create-dialog"', false)
+            ->assertSee('data-modal-trigger="status-page-create-dialog"', false)
+            ->assertSee('data-modal-trigger="status-incident-create-dialog"', false)
+            ->assertSee('data-modal-trigger="status-incident-edit-dialog-'.$incident->id.'"', false)
+            ->getContent();
+
+        foreach (['alert-destination-create-dialog', 'status-page-create-dialog', 'status-incident-create-dialog', 'status-incident-edit-dialog-'.$incident->id] as $id) {
+            $this->assertDoesNotMatchRegularExpression($dialogPattern($id), $default);
+        }
+
+        foreach ([
+            ['create-alert-destination', 'alert-destination-create-dialog'],
+            ['create-status-page', 'status-page-create-dialog'],
+            ['create-status-incident', 'status-incident-create-dialog'],
+            ['edit-status-incident-'.$incident->id, 'status-incident-edit-dialog-'.$incident->id],
+        ] as [$dialog, $id]) {
+            $this->assertMatchesRegularExpression(
+                $dialogPattern($id),
+                $this->actingAs($owner)->get(route('observability.index', ['dialog' => $dialog]))->assertSuccessful()->getContent(),
+            );
+        }
+
+        $destinationUrl = route('observability.index', ['dialog' => 'create-alert-destination']);
+        $destinationError = $this->actingAs($owner)->from($destinationUrl)->followingRedirects()->post(route('observability.destinations.store'), [
+            '_alert_destination_form' => '1', 'name' => '', 'type' => 'slack', 'endpoint' => 'not-a-url', 'events' => [],
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern('alert-destination-create-dialog'), $destinationError->getContent());
+
+        $statusPageUrl = route('observability.index', ['dialog' => 'create-status-page']);
+        $statusPageError = $this->actingAs($owner)->from($statusPageUrl)->followingRedirects()->post(route('observability.status-pages.store'), [
+            '_status_page_form' => '1', 'name' => '', 'slug' => 'invalid slug', 'description' => '', 'is_published' => '1', 'website_ids' => [],
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern('status-page-create-dialog'), $statusPageError->getContent());
+
+        $statusIncidentUrl = route('observability.index', ['dialog' => 'create-status-incident']);
+        $statusIncidentError = $this->actingAs($owner)->from($statusIncidentUrl)->followingRedirects()->post(route('observability.incidents.store'), [
+            '_status_incident_form' => 'create', 'status_page_id' => $page->id, 'kind' => 'incident', 'status' => 'completed', 'severity' => 'major', 'title' => '', 'message' => '', 'starts_at' => '',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern('status-incident-create-dialog'), $statusIncidentError->getContent());
+
+        $editIncidentUrl = route('observability.index', ['dialog' => 'edit-status-incident-'.$incident->id]);
+        $editIncidentError = $this->actingAs($owner)->from($editIncidentUrl)->followingRedirects()->patch(route('observability.incidents.update', $incident), [
+            '_status_incident_form' => 'update', '_status_incident_id' => $incident->id, 'kind' => 'incident', 'status' => 'resolved', 'severity' => 'major', 'title' => '', 'message' => '', 'starts_at' => '',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern('status-incident-edit-dialog-'.$incident->id), $editIncidentError->getContent());
+        $this->assertSame('Investigating', str($incident->fresh()->status)->headline()->toString());
+    }
+
     public function test_observability_starts_with_response_overview_and_makes_signal_context_responsive(): void
     {
         [$owner] = $this->infrastructure();

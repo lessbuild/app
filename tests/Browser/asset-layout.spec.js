@@ -77,6 +77,14 @@ async function serveFixtures(page) {
                                 ? 'gallery'
                                 : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
+                                : screen === 'observability' && dialog === 'create-alert-destination'
+                                    ? 'observability-destination-dialog'
+                                : screen === 'observability' && dialog === 'create-status-page'
+                                    ? 'observability-status-page-dialog'
+                                : screen === 'observability' && dialog === 'create-status-incident'
+                                    ? 'observability-status-incident-dialog'
+                                : screen === 'observability' && dialog?.startsWith('edit-status-incident-')
+                                    ? 'observability-status-incident-edit-dialog'
                                 : screen === 'notifications' && dialog === 'save-filter'
                                     ? 'notifications-dialog'
                                     : screen === 'projects' && dialog === 'create-application'
@@ -808,6 +816,43 @@ test('metric alert rule composer uses an accessible URL-backed dialog', async ({
     await expect(ruleDialog).toBeVisible();
     await page.locator('#metric-rule-dialog [data-modal-close]').click();
     await expect(ruleDialog).toBeHidden();
+});
+
+test('observability management forms use compact accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability', { waitUntil: 'networkidle' });
+
+    for (const section of ['#alert-destinations', '#status-pages', '#status-incident-history']) {
+        const details = page.locator(section);
+        if (! await details.evaluate((element) => element.open)) {
+            await details.locator('summary').click();
+        }
+    }
+
+    const workflows = [
+        ['Add alert destination', 'Add alert destination', '#alert-destination-create-dialog', 'create-alert-destination'],
+        ['Create status page', 'Create status page', '#status-page-create-dialog', 'create-status-page'],
+        ['Publish a status update', 'Publish a status update', '#status-incident-create-dialog', 'create-status-incident'],
+        ['Update or complete review', 'Update or complete review', '[id^="status-incident-edit-dialog-"]', 'edit-status-incident'],
+    ];
+
+    for (const [triggerName, dialogName, dialogSelector, dialogKey] of workflows) {
+        const trigger = page.getByRole('link', { name: triggerName, exact: true }).first();
+        const dialog = page.getByRole('dialog', { name: dialogName, exact: true }).first();
+        await trigger.click();
+        await expect(dialog).toBeVisible();
+        await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+        const activeDialogKey = new URL(page.url()).searchParams.get('dialog');
+        if (dialogKey === 'edit-status-incident') {
+            expect(activeDialogKey).toMatch(/^edit-status-incident-\d+$/);
+        } else {
+            expect(activeDialogKey).toBe(dialogKey);
+        }
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+    }
 });
 
 test('notification saved-filter composer uses an accessible URL-backed dialog', async ({ page }) => {
