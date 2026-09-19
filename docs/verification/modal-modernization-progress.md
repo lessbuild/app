@@ -1290,6 +1290,35 @@ organization invitations. Preserve token secrecy, schedule/task validation,
 membership authorization, rate limits, dispatch timing and existing named
 error/flash behavior.
 
+## Automation and organization dialog follow-up — 2026-09-19
+
+Automation token creation, deployment-schedule creation, scheduled-task
+creation and workspace invitations now use reusable scene components:
+`scenes.automation.token-dialog`, `scenes.automation.schedule-dialog`,
+`scenes.automation.task-dialog` and `scenes.organizations.invite-dialog`.
+The feature pages retain URL-backed open state, trigger links and entitlement
+or membership gating; the components own only the modal form presentation.
+
+Existing token secrecy, one-time plaintext display, schedule/task validation,
+encrypted task-command handling, membership authorization, entitlement checks,
+rate limits, notification dispatch, validation keys, old-input behavior and
+flash messages remain unchanged. No workflow or persistence abstraction was
+introduced.
+
+Verification passed with 56 focused PHP tests / 299 assertions, one Blade
+fixture test / 128 assertions, and three targeted mobile browser journeys.
+Blade view cache, Pint and `git diff --check` passed. No dependency or
+lockfile changed.
+
+Implementation commit and push: `83ff12a Extract automation and organization
+dialogs`.
+
+The next task is the remaining inline-dialog audit: project child-resource
+forms, observability, notifications, feedback, build notes, gallery actions
+and cost/budget workflows. Long configuration, import, restore,
+authentication and protocol workflows remain explicit pages unless their
+ordering and failure contracts can be preserved.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.

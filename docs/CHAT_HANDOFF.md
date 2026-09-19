@@ -1973,6 +1973,24 @@ The next task is automation token/schedule/task dialogs and organization
 invitation componentization, preserving token secrecy, membership permissions,
 validation, rate limits, dispatch timing and existing feedback.
 
+## Automation and organization dialog follow-up — 2026-09-19
+
+Automation token, deployment-schedule, scheduled-task and organization
+invitation forms now render through reusable scene dialog components. Existing
+URL-backed opening, trigger behavior, validation reopen markers, token
+secrecy, membership authorization, entitlements, rate limits, dispatch timing
+and feedback are unchanged.
+
+Verification: 56 focused PHP tests / 299 assertions, one Blade fixture / 128
+assertions and three targeted mobile browser journeys passed. Blade cache,
+Pint and diff checks passed. Implementation commit and push: `83ff12a`.
+
+Next task: continue the inline-dialog audit through project child resources,
+observability, notifications, feedback, build notes, gallery actions and
+cost/budget workflows. Keep long configuration, import, restore,
+authentication and protocol flows as pages where modal extraction could alter
+ordering or failure semantics.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
