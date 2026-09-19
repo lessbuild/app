@@ -47,6 +47,22 @@ class BuildHistoryInsightsTest extends TestCase
             ->assertDontSee('Foreign private deployment');
     }
 
+    public function test_deployment_history_page_does_not_render_the_local_section_links(): void
+    {
+        [$owner, $repository] = $this->repository('Owner');
+        $this->build($repository, Build::STATUS_SUCCEEDED, now());
+
+        $this->actingAs($owner)->get(route('builds.index'))
+            ->assertSuccessful()
+            ->assertDontSee('aria-label="Deployment sections"', false)
+            ->assertDontSee('href="#deployment-filters"', false)
+            ->assertDontSee('href="#builds-insights"', false)
+            ->assertDontSee('href="#deployment-history"', false)
+            ->assertSee('Filter deployments')
+            ->assertSee('Matching deployments')
+            ->assertSee('Deployment history');
+    }
+
     public function test_metrics_apply_every_history_filter_including_latest_per_repository(): void
     {
         [$owner, $first] = $this->repository('Owner');

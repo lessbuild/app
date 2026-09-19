@@ -13,12 +13,6 @@
     >
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav :label="__('Deployment sections')">
-        <a href="#deployment-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
-        <a href="#builds-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
-        <a href="#deployment-history" class="ui-local-nav__link">{{ __('History') }}</a>
-    </x-ui.local-nav>
-
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
 
     <x-ui.filter-panel
