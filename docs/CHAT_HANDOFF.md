@@ -1912,6 +1912,26 @@ unchanged. The implementation is pushed as `5dd80bc`.
 and diff checks passed. The next task is database credential componentization,
 followed by the encrypted backup destination create/edit dialogs.
 
+## Database credential dialog follow-up — 2026-09-19
+
+Database credential issuance now uses the reusable
+`scenes.databases.credential-dialog` component for each managed resource. The
+inventory retains resource-specific open/error state and management gating;
+the component owns the credential form presentation and accessible field IDs.
+
+`StoreDatabaseUserRequest`, resource policy and entitlement checks,
+`CreateDatabaseUserAction`, queued management jobs, one-time password flash,
+validation keys and response messages remain unchanged. Database clone,
+inspection and revocation stay separate workflows.
+
+Verification passed with 14 database/backup regression tests and 106
+assertions. Blade cache, Pint and diff checks passed. The implementation is
+pushed as `4442977`.
+
+The next task is to convert encrypted backup destination creation and editing
+to URL-backed reusable dialogs while preserving blank-on-edit credential
+rotation and destination safety rules.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

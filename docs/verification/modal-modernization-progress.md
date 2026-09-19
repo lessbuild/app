@@ -1278,3 +1278,56 @@ backup destination create/edit forms to URL-backed server-rendered dialogs.
 Keep encrypted credentials blank on edit, preserve safe validation failures,
 and do not move backup verification or restore operations into the modal
 boundary.
+
+## Follow-up Slice 15 — database credential dialog
+
+Status: complete locally and pushed to `main` in `4442977`.
+
+### Responsibility problem
+
+Database credential issuance already used a URL-backed dialog, but its markup
+was embedded inside the database inventory loop. That left the inventory
+responsible for a repeated mutation form and did not provide component-owned
+accessible IDs for each resource.
+
+### Boundary and design decision
+
+- Credential issuance now renders through
+  `scenes.databases.credential-dialog` for each managed database resource.
+- The inventory retains resource-specific open/error state and management
+  gating; the component owns only the credential form presentation.
+- `StoreDatabaseUserRequest`, resource policies, entitlement checks,
+  `CreateDatabaseUserAction`, queued management jobs, one-time password flash
+  and response messages remain unchanged.
+
+This is a focused add-operation extraction. Database clone, inspection and
+credential-revocation workflows remain separate because they have different
+confirmation, queueing and lifecycle semantics.
+
+### Preserved contracts and safety guarantees
+
+- Resource-scoped hidden identity, username/privilege/expiry field names,
+  validation keys, authorization ordering and validation-error reopening remain
+  unchanged.
+- Generated passwords remain flashed for one-time display only; encrypted
+  persistence and queue behavior are untouched.
+- Component-owned field IDs improve label association without exposing new
+  credential values or changing the existing no-JavaScript submission path.
+
+### Verification
+
+- Database and backup regression coverage: **14 tests / 106 assertions**
+  passed under PHP 8.5.10.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `4442977 Extract database credential dialog`.
+
+### Exact next task
+
+Convert backup destination creation and editing from inline disclosure forms to
+URL-backed server-rendered components. Preserve encrypted credential omission,
+blank-on-edit rotation semantics, destination immutability safeguards,
+provider guidance, verification actions and safe validation failure behavior.
