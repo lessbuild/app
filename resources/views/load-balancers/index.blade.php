@@ -71,50 +71,11 @@
     </x-ui.insights>
 
     @if ($canManage)
-        <x-dialogs.modal
-            id="load-balancer-create"
-            :title="__('Create a high-availability route')"
-            :description="__('Choose the environment and dedicated edge server before adding application nodes.')"
+        <x-scenes.load-balancers.create-dialog
+            :environments="$environments"
+            :servers="$servers"
             :open="$loadBalancerCreateOpen"
-        >
-            <form method="POST" action="{{ route('load-balancers.store') }}" class="grid gap-4 md:grid-cols-2">
-                @csrf
-                <input type="hidden" name="_load_balancer_form" value="create">
-                <label class="block" for="load-balancer-environment">
-                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Environment') }}</span>
-                    <select id="load-balancer-environment" name="environment_id" class="input secondary w-full rounded-md" required>
-                        <option value="">{{ __('Environment') }}</option>
-                        @foreach ($environments as $environment)
-                            <option value="{{ $environment->id }}" @selected((string) old('environment_id') === (string) $environment->id)>{{ $environment->project->name }} / {{ $environment->name }}</option>
-                        @endforeach
-                    </select>
-                    <x-forms.errors name="environment_id" />
-                </label>
-                <label class="block" for="load-balancer-server">
-                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Dedicated server') }}</span>
-                    <select id="load-balancer-server" name="server_id" class="input secondary w-full rounded-md" required>
-                        <option value="">{{ __('Dedicated load-balancer server') }}</option>
-                        @foreach ($servers as $server)
-                            <option value="{{ $server->id }}" @selected((string) old('server_id') === (string) $server->id)>{{ $server->label }}</option>
-                        @endforeach
-                    </select>
-                    <x-forms.errors name="server_id" />
-                </label>
-                <label class="block" for="load-balancer-hostname">
-                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Hostname') }}</span>
-                    <input id="load-balancer-hostname" name="hostname" value="{{ old('hostname') }}" class="input secondary w-full rounded-md" placeholder="app.example.com" required>
-                    <x-forms.errors name="hostname" />
-                </label>
-                <label class="block" for="load-balancer-health-path">
-                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Health path') }}</span>
-                    <input id="load-balancer-health-path" name="health_path" value="{{ old('health_path', '/') }}" class="input secondary w-full rounded-md" required>
-                    <x-forms.errors name="health_path" />
-                </label>
-                <div class="md:col-span-2">
-                    <x-ui.button type="submit" variant="primary">{{ __('Create load balancer') }}</x-ui.button>
-                </div>
-            </form>
-        </x-dialogs.modal>
+        />
     @endif
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
@@ -196,46 +157,12 @@
                 </details>
 
                 @if ($canManage)
-                    <x-dialogs.modal
+                    <x-scenes.load-balancers.node-dialog
+                        :balancer="$balancer"
+                        :servers="$servers"
                         :id="$nodeDialogId"
-                        :title="__('Add application node')"
-                        :description="__('Choose a distinct application server and configure its upstream capacity.')"
                         :open="$nodeDialogOpen"
-                    >
-                        <form method="POST" action="{{ route('load-balancers.nodes.store', $balancer) }}" class="grid gap-3 sm:grid-cols-3">
-                            @csrf
-                            <input type="hidden" name="_load_balancer_id" value="{{ $balancer->id }}">
-                            <label class="block sm:col-span-3" for="node-server-{{ $balancer->id }}">
-                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Application node') }}</span>
-                                <select id="node-server-{{ $balancer->id }}" name="server_id" class="input secondary w-full rounded-md" required>
-                                    <option value="">{{ __('Application node') }}</option>
-                                    @foreach ($servers->where('id', '!=', $balancer->server_id) as $server)
-                                        <option value="{{ $server->id }}" @selected((string) old('server_id') === (string) $server->id && old('_load_balancer_id') == $balancer->id)>{{ $server->label }}</option>
-                                    @endforeach
-                                </select>
-                                @if (old('_load_balancer_id') == $balancer->id)
-                                    <x-forms.errors name="server_id" />
-                                @endif
-                            </label>
-                            <label class="block" for="node-port-{{ $balancer->id }}">
-                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Port') }}</span>
-                                <input id="node-port-{{ $balancer->id }}" name="upstream_port" type="number" min="1" max="65535" value="{{ old('_load_balancer_id') == $balancer->id ? old('upstream_port', 80) : 80 }}" class="input secondary w-full rounded-md">
-                                @if (old('_load_balancer_id') == $balancer->id)
-                                    <x-forms.errors name="upstream_port" />
-                                @endif
-                            </label>
-                            <label class="block" for="node-weight-{{ $balancer->id }}">
-                                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Weight') }}</span>
-                                <input id="node-weight-{{ $balancer->id }}" name="weight" type="number" min="1" max="10" value="{{ old('_load_balancer_id') == $balancer->id ? old('weight', 1) : 1 }}" class="input secondary w-full rounded-md">
-                                @if (old('_load_balancer_id') == $balancer->id)
-                                    <x-forms.errors name="weight" />
-                                @endif
-                            </label>
-                            <div class="flex items-end">
-                                <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Add') }}</x-ui.button>
-                            </div>
-                        </form>
-                    </x-dialogs.modal>
+                    />
                 @endif
             </section>
         @empty
