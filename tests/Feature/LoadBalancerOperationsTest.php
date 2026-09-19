@@ -65,7 +65,19 @@ class LoadBalancerOperationsTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details id="load-balancer-create"[^>]*\bopen\b[^>]*>/', $emptyContent);
+        $this->assertStringContainsString('data-modal-trigger="load-balancer-create"', $emptyContent);
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="load-balancer-create")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $emptyContent,
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="load-balancer-create")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)
+                ->get(route('load-balancers.index', ['dialog' => 'create-route']))
+                ->assertSuccessful()
+                ->getContent(),
+        );
 
         $loadBalancer = $owner->currentOrganization->loadBalancers()->create([
             'environment_id' => $environment->id,
@@ -81,8 +93,21 @@ class LoadBalancerOperationsTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details id="load-balancer-create"[^>]*\bopen\b[^>]*>/', $initialContent);
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="load-balancer-create")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $initialContent,
+        );
+        $this->assertStringContainsString('data-modal-trigger="load-balancer-node-'.$loadBalancer->id.'"', $initialContent);
         $this->assertMatchesRegularExpression('/<details id="load-balancer-nodes-'.$loadBalancer->id.'"[^>]*\bopen\b[^>]*>/', $initialContent);
+
+        $nodeDialogUrl = route('load-balancers.index', [
+            'dialog' => 'add-node',
+            'load_balancer_id' => $loadBalancer->id,
+        ]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="load-balancer-node-'.$loadBalancer->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($nodeDialogUrl)->assertSuccessful()->getContent(),
+        );
 
         $this->from(route('load-balancers.index'))
             ->followingRedirects()
@@ -96,6 +121,23 @@ class LoadBalancerOperationsTest extends TestCase
             ])
             ->assertSuccessful()
             ->assertSee('The hostname field is required.');
+
+        $nodeErrorPage = $this->from($nodeDialogUrl)
+            ->followingRedirects()
+            ->actingAs($owner)
+            ->post(route('load-balancers.nodes.store', $loadBalancer), [
+                '_load_balancer_id' => $loadBalancer->id,
+                'server_id' => '',
+                'upstream_port' => 0,
+                'weight' => 0,
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="load-balancer-node-'.$loadBalancer->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $nodeErrorPage->getContent(),
+        );
+        $nodeErrorPage->assertSee('The server id field is required.');
 
         $nodeServerTwo = $owner->servers()->create([
             'provider_id' => $nodeServer->provider_id,

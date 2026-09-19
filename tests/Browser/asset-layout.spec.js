@@ -36,6 +36,8 @@ async function serveFixtures(page) {
                     ? 'organization-dialog'
                     : screen === 'feedback' && dialog === 'compose-feedback'
                         ? 'feedback-dialog'
+                        : screen === 'backups' && dialog === 'add-schedule'
+                            ? 'backups-dialog'
                         : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
@@ -186,6 +188,16 @@ for (const colorScheme of ['light', 'dark']) {
                         await evidence.locator('summary').click();
                         await expect(content).toBeVisible();
                     }
+                    const scheduleTrigger = page.getByRole('link', { name: 'Add schedule', exact: true });
+                    const scheduleDialog = page.getByRole('dialog', { name: 'Add schedule', exact: true });
+                    await scheduleTrigger.click();
+                    await expect(scheduleDialog).toBeVisible();
+                    await expect(page.locator('#backup-schedule-dialog [data-modal-close]')).toBeFocused();
+                    expect(new URL(page.url()).searchParams.get('dialog')).toBe('add-schedule');
+                    await page.keyboard.press('Escape');
+                    await expect(scheduleDialog).toBeHidden();
+                    await expect(scheduleTrigger).toBeFocused();
+                    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
                 }
                 if (screen === 'domains') {
                     const addDomain = page.getByRole('link', { name: 'Add domain', exact: true });
@@ -351,4 +363,27 @@ test('compact invitation and feedback workflows use accessible URL-backed dialog
     await page.locator('#feedback-compose [data-modal-close]').click();
     await expect(feedbackDialog).toBeHidden();
     await expect(feedbackTrigger).toBeFocused();
+});
+
+test('backup schedule workflow uses an accessible URL-backed dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/backups', { waitUntil: 'networkidle' });
+
+    const scheduleTrigger = page.getByRole('link', { name: 'Add schedule', exact: true });
+    const scheduleDialog = page.getByRole('dialog', { name: 'Add schedule', exact: true });
+    await scheduleTrigger.click();
+    await expect(scheduleDialog).toBeVisible();
+    await expect(page.locator('#backup-schedule-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('add-schedule');
+
+    await page.keyboard.press('Escape');
+    await expect(scheduleDialog).toBeHidden();
+    await expect(scheduleTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/backups?dialog=add-schedule', { waitUntil: 'networkidle' });
+    await expect(scheduleDialog).toBeVisible();
+    await page.locator('#backup-schedule-dialog [data-modal-close]').click();
+    await expect(scheduleDialog).toBeHidden();
 });

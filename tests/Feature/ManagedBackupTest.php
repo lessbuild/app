@@ -55,6 +55,42 @@ class ManagedBackupTest extends TestCase
         $this->actingAs($outsider)->delete(route('backups.schedules.destroy', $schedule))->assertForbidden();
     }
 
+    public function test_backup_schedule_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$owner, $website] = $this->infrastructure();
+        $destination = $this->destination($owner);
+
+        $default = $this->actingAs($owner)
+            ->get(route('backups.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="backup-schedule-dialog"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="backup-schedule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('backups.index', ['dialog' => 'add-schedule']);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="backup-schedule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('backups.schedules.store'), ['_backup_schedule_form' => '1'])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="backup-schedule-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The website id field is required.');
+        $this->assertCount(0, $website->backupSchedules()->get());
+        $this->assertNotNull($destination->fresh());
+    }
+
     public function test_non_manager_cannot_create_or_queue_backups(): void
     {
         [$owner, $website] = $this->infrastructure();

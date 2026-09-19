@@ -59,6 +59,17 @@ class AssetLayoutFixtureTest extends TestCase
             'server_id' => $server->id, 'name' => 'App', 'url' => 'app.test', 'description' => 'Test',
             'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
+        $owner->currentOrganization->backupDestinations()->create([
+            'created_by' => $owner->id,
+            'name' => 'Fixture storage',
+            'endpoint' => 'https://storage.example.test',
+            'bucket' => 'buildpusher-fixture',
+            'region' => 'auto',
+            'access_key' => 'fixture-access',
+            'secret_key' => 'fixture-secret',
+            'repository_password' => 'fixture-repository-password',
+            'path_prefix' => 'fixture',
+        ]);
         $repository = $owner->repositories()->create([
             'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'App',
             'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
@@ -87,7 +98,11 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/build.html', $this->renderPage(route('builds.show', $build))->assertOk()
             ->assertSee('Deployment evidence')->getContent());
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
-            ->assertSee('Protection status')->getContent());
+            ->assertSee('Protection status')
+            ->assertSee('data-modal-trigger="backup-schedule-dialog"', false)
+            ->getContent());
+        File::put($directory.'/backups-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'add-schedule']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/domains.html', $this->renderPage(route('domains.index'))->assertOk()
             ->assertSee('Add domain')->getContent());
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
