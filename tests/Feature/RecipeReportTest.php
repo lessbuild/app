@@ -13,6 +13,45 @@ class RecipeReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_private_report_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$user, $author] = User::factory()->count(2)->create();
+        $recipe = $this->publishedRecipe($author, 'Reportable helper');
+
+        $default = $this->actingAs($user)
+            ->get(route('gallery.show', $recipe))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="gallery-report-dialog"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="gallery-report-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('gallery.show', ['recipe' => $recipe, 'dialog' => 'report']);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="gallery-report-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($user)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($user)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('gallery.report.store', $recipe), [
+                '_gallery_report_form' => '1',
+                'reason' => 'invalid',
+                'details' => str_repeat('x', 1001),
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="gallery-report-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The selected reason is invalid.');
+        $this->assertDatabaseCount('recipe_reports', 0);
+    }
+
     public function test_user_can_create_update_and_withdraw_one_private_report(): void
     {
         [$user, $author] = User::factory()->count(2)->create();

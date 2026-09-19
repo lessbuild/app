@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $reportDialogHasErrors = old('_gallery_report_form') === '1' && $errors->hasAny(['reason', 'details']);
+        $reportDialogOpen = (request()->query('dialog') === 'report' && ! session()->has('status')) || $reportDialogHasErrors;
+        $reportDialogUrl = route('gallery.show', ['recipe' => $recipe, 'dialog' => 'report']);
+    @endphp
+
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
 
     <x-layouts.partials.heading
@@ -6,6 +12,17 @@
         :description="$recipe->description"
     >
         <x-slot:buttons>
+            @if ((int) $recipe->user_id !== (int) auth()->id())
+                <x-ui.button
+                    href="{{ $reportDialogUrl }}"
+                    data-modal-trigger="gallery-report-dialog"
+                    aria-controls="gallery-report-dialog"
+                    aria-expanded="{{ $reportDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >
+                    {{ __('Report issue') }}
+                </x-ui.button>
+            @endif
             @if ($currentFavorite)
                 <form method="POST" action="{{ route('gallery.favorite.destroy', $recipe) }}">
                     @csrf
@@ -201,25 +218,43 @@
                     </div>
                 @endif
             @endif
-            <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="mt-4 space-y-4">
-                @csrf
-                <div>
-                    <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                    <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg sm:max-w-xs" required>
-                        <option value="">{{ __('Choose an issue') }}</option>
-                        @foreach (\App\Models\RecipeReport::REASONS as $reason)
-                            <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
-                        @endforeach
-                    </select>
-                    <x-forms.errors name="reason" />
-                </div>
-                <div>
-                    <label for="details" class="block text-xs font-semibold uppercase text-secondary">{{ __('Details (optional)') }}</label>
-                    <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
-                    <x-forms.errors name="details" />
-                </div>
-                <x-ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-ui.button>
-            </form>
+            <x-ui.button
+                href="{{ $reportDialogUrl }}"
+                data-modal-trigger="gallery-report-dialog"
+                aria-controls="gallery-report-dialog"
+                aria-expanded="{{ $reportDialogOpen ? 'true' : 'false' }}"
+                variant="primary"
+                class="mt-4"
+            >
+                {{ $currentReport ? __('Update Report') : __('Open report form') }}
+            </x-ui.button>
+            <x-dialogs.modal
+                id="gallery-report-dialog"
+                :title="$currentReport ? __('Update your private report') : __('Report a recipe issue')"
+                :description="__('Your identity is not shown to the recipe contributor.')"
+                :open="$reportDialogOpen"
+            >
+                <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="_gallery_report_form" value="1">
+                    <div>
+                        <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
+                        <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg" required>
+                            <option value="">{{ __('Choose an issue') }}</option>
+                            @foreach (\App\Models\RecipeReport::REASONS as $reason)
+                                <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
+                            @endforeach
+                        </select>
+                        <x-forms.errors name="reason" />
+                    </div>
+                    <div>
+                        <label for="details" class="block text-xs font-semibold uppercase text-secondary">{{ __('Details (optional)') }}</label>
+                        <textarea id="details" name="details" rows="4" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
+                        <x-forms.errors name="details" />
+                    </div>
+                    <x-ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-ui.button>
+                </form>
+            </x-dialogs.modal>
             @if ($currentReport)
                 <form
                     method="POST"

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Build;
+use App\Models\Recipe;
 use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
@@ -45,6 +46,22 @@ class AssetLayoutFixtureTest extends TestCase
             ->getContent());
         File::put($directory.'/automation-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'create-token']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
+        $galleryRecipe = $galleryAuthor->recipes()->create([
+            'name' => 'Gallery fixture recipe',
+            'description' => 'A published recipe for modal browser coverage.',
+            'script' => 'echo gallery-fixture',
+            'category' => Recipe::CATEGORIES[0],
+            'is_published' => true,
+            'published_at' => now(),
+            'gallery_revision_at' => now(),
+        ]);
+        File::put($directory.'/gallery.html', $this->renderPage(route('gallery.show', $galleryRecipe))->assertOk()
+            ->assertSee('Report issue')->getContent());
+        File::put($directory.'/gallery-dialog.html', $this->renderPage(route('gallery.show', [
+            'recipe' => $galleryRecipe,
+            'dialog' => 'report',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());

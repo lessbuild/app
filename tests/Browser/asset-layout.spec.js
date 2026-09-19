@@ -26,9 +26,10 @@ async function serveFixtures(page) {
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
+        const galleryPage = /^\/gallery\/\d+$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1))) {
-            const screen = pathname.slice(1);
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage) {
+            const screen = galleryPage ? 'gallery' : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fixtureName = screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
@@ -40,6 +41,8 @@ async function serveFixtures(page) {
                             ? 'automation-dialog'
                             : screen === 'backups' && dialog === 'add-schedule'
                                 ? 'backups-dialog'
+                                : screen === 'gallery' && dialog === 'report'
+                                    ? 'gallery-dialog'
                                 : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
@@ -410,4 +413,26 @@ test('credential workflows use compact accessible dialogs', async ({ page }) => 
     await expect(tokenDialog).toBeVisible();
     await page.locator('#automation-token-dialog [data-modal-close]').click();
     await expect(tokenDialog).toBeHidden();
+});
+
+test('gallery report composer uses an accessible URL-backed dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/gallery/1', { waitUntil: 'networkidle' });
+
+    const reportTrigger = page.getByRole('link', { name: 'Report issue', exact: true });
+    const reportDialog = page.getByRole('dialog', { name: 'Report a recipe issue', exact: true });
+    await reportTrigger.click();
+    await expect(reportDialog).toBeVisible();
+    await expect(page.locator('#gallery-report-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('report');
+    await page.keyboard.press('Escape');
+    await expect(reportDialog).toBeHidden();
+    await expect(reportTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/gallery/1?dialog=report', { waitUntil: 'networkidle' });
+    await expect(reportDialog).toBeVisible();
+    await page.locator('#gallery-report-dialog [data-modal-close]').click();
+    await expect(reportDialog).toBeHidden();
 });
