@@ -1810,6 +1810,30 @@ are local/dev evidence only; production release, physical-device checks,
 provider-backed acceptance, mail, billing, GitHub App, independent
 monitoring and recovery drills remain separate.
 
+## Modal modernization follow-up — 2026-09-19
+
+Provider creation, provider editing, repository editing, and recipe creation
+or editing now use reusable server-rendered dialog components on `main`.
+The implementation is pushed as `848c96e`. Existing form partials are reused
+with prefixed IDs; Form Requests, policies and actions remain responsible for
+validation, authorization and writes. Direct full-page create/edit routes
+remain available as no-JavaScript fallbacks.
+
+Recipe inventory deliberately resolves only the selected recipe for editing,
+so encrypted scripts remain absent from the default inventory and search
+responses. Repository encrypted deployment hooks remain absent from normal
+detail pages and render only when the edit dialog URL is requested. Dashboard,
+prerequisite, gallery and deployment guidance links use the new dialog URLs.
+
+Verification for this slice: 107 focused PHP tests / 881 assertions, one
+browser fixture test / 112 assertions, and 23 built-asset browser tests passed
+with PHP 8.5.10. Pint, Blade cache, Node syntax and diff checks passed. The
+isolated development runtime still needs to be fast-forwarded to this commit
+before served-runtime acceptance is claimed. Website editing and the remaining
+eligible add/edit workflows are the next task; long import, configuration,
+security, recovery and remote-side-effect workflows remain explicit pages
+until their ordering can be preserved.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

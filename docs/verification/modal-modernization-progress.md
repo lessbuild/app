@@ -958,3 +958,77 @@ page returned HTTP 200 with `app-TtqGG4AO.css`.
 Keep repository editing, deployment, webhook rotation, provider setup and
 other durable or remote-side-effect workflows as explicit pages. Continue
 with a separately authorized compact UI workflow or external acceptance gate.
+
+## Follow-up Slice 10 — provider, repository, and recipe dialogs
+
+Status: complete locally and pushed to `main` in `848c96e`.
+
+### Responsibility problem
+
+Provider creation, provider editing, repository editing, and recipe creation
+or editing still moved the user to separate form pages. That made the common
+inventory and detail journeys lose context and duplicated the modal behavior
+that already existed for other compact workflows.
+
+### Boundary and design decision
+
+- Provider inventory owns the URL-backed provider creation dialog.
+- Provider detail owns the provider edit dialog when its edit URL is requested.
+- Repository detail owns the repository edit dialog when its edit URL is
+  requested, without rendering encrypted deployment hooks on the normal
+  read-only page.
+- Recipe inventory owns the create dialog and resolves only the explicitly
+  selected recipe for editing. Recipe detail renders the edit dialog only for
+  its edit URL. This keeps encrypted recipe scripts out of the default
+  inventory/detail HTML and avoids decrypting every recipe in a list.
+- Existing form partials are reused with optional field prefixes so filters
+  and dialog controls have unique IDs. Existing Form Requests, policies,
+  actions, transactions, encrypted casts, redirects, validation keys and
+  direct full-page routes remain the application boundary and fallback.
+- Dashboard, server/repository prerequisites, gallery links, deployment
+  guidance and deployment-status links now point to the corresponding
+  server-rendered dialog URLs.
+
+This preserves the responsibility split: Blade dialog components own
+presentation, URL/history state and focus behavior; Form Requests and
+policies keep HTTP validation and authorization; existing actions keep
+business writes and remote workflow semantics.
+
+### Preserved contracts and safety guarantees
+
+- Provider tokens remain encrypted, blank on edit unless newly submitted,
+  excluded from old input and absent from connection history/log output.
+- Repository build and post-deployment hooks remain encrypted and absent from
+  normal repository detail/inventory output; they render only in the explicit
+  edit dialog or existing full-page editor.
+- Recipe scripts remain encrypted and absent from normal inventory output and
+  search results. Only one authorized selected recipe is loaded for an edit
+  dialog.
+- Existing validation error keys, old input, authorization ordering, response
+  redirects, flash/status messages, persisted values, job serialization,
+  webhook behavior and deployment preflight semantics are unchanged.
+- Native anchors retain direct URL and no-JavaScript fallbacks. Dialog URLs
+  preserve Escape, focus restoration, browser history and server-open state.
+
+### Verification
+
+- Focused modal and affected feature coverage: **107 tests / 881 assertions**
+  passed under PHP 8.5.10.
+- Browser fixture export: **1 test / 112 assertions** passed.
+- Full built-asset browser/dialog matrix: **23 tests passed in 11.0 minutes**.
+- Full Pint, Blade view cache, Node syntax check and `git diff --check` passed.
+- No dependency or lockfile changed. The system PHP 8.3 browser invocation
+  was rejected by the PHPUnit platform check; the rerun used the required
+  `/root/.local/share/buildpusher/php-8.5.10/bin/php` and passed.
+
+### Commit and push
+
+Implementation commit and push: `848c96e Use modals for provider repository
+and recipe editing`.
+
+### Exact next task
+
+Continue the add/edit inventory with website editing and other compact
+resource-management forms. Keep long import, configuration-review, security,
+recovery and remote-side-effect workflows as explicit pages until their
+ordering and failure behavior can be preserved in a server-rendered dialog.
