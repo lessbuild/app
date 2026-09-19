@@ -2082,6 +2082,27 @@ into reusable scene components while preserving report visibility, script
 privacy, gallery publishing, review-resolution semantics, Livewire state and
 deployment authorization.
 
+## Gallery dialog follow-up — 2026-09-19
+
+Gallery publishing, lazy script inspection, private report/update and
+contributor resolution forms now render through reusable scene components:
+`scenes.gallery.publish-dialog`, `scenes.gallery.inspect-dialog`,
+`scenes.gallery.report-dialog` and
+`scenes.gallery.report-resolution-dialog`.
+
+The components are included by the gallery index, recipe detail and feedback
+inbox pages that use them. Existing script privacy/lazy loading, report
+identity privacy, encrypted details, contributor-only resolution, validation
+reopening, pagination and response behavior remain unchanged.
+
+Verification passed with 53 focused PHP tests / 575 assertions and three
+targeted browser journeys. Blade cache, Pint and diff checks passed. The
+implementation is pushed as `0840b55`.
+
+The next task is the remaining deployment operator-note dialog. Preserve
+Livewire polling/state, the named `buildNote` error bag and deployment
+authorization, then perform a final non-component modal audit.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

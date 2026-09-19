@@ -1692,3 +1692,65 @@ Implementation commit and push: `4a34ba0 Extract dashboard cost and promotion di
 Extract the remaining gallery and deployment-note dialogs into reusable scene
 components. Preserve report visibility, script privacy, gallery publishing,
 review-resolution semantics, Livewire state and deployment authorization.
+
+## Follow-up Slice 18 — gallery dialogs
+
+Status: complete locally and pushed to `main` in `0840b55`.
+
+### Responsibility problem
+
+Gallery publishing, on-demand script inspection, private report/update and
+contributor resolution forms were spread across the gallery index, recipe
+detail, reports inbox and a view partial. That made several large read views
+own mutation markup and left the resolution dialog as a partial rather than a
+reusable component.
+
+### Boundary and design decision
+
+- Gallery publishing now uses `scenes.gallery.publish-dialog`.
+- Script inspection now uses `scenes.gallery.inspect-dialog`.
+- Private report creation/update now uses `scenes.gallery.report-dialog`.
+- Contributor resolution and resolution-note editing now uses
+  `scenes.gallery.report-resolution-dialog` on both the recipe detail and
+  feedback-inbox pages.
+- The host pages retain route/query state, list context and authorization;
+  components own modal markup and existing form fields.
+
+The inspection component keeps its existing lazy content behavior: default
+gallery cards render only the loading placeholder and fetch the public script
+through the existing modal content endpoint when opened. No script data is
+made available to unauthorized pages.
+
+### Preserved contracts and safety guarantees
+
+- Publish markers, recipe fields, validation keys, category requirements and
+  redirect behavior remain unchanged.
+- Script inspection remains limited to explicitly published recipes and does
+  not expose private recipe content in the gallery index.
+- Report identity privacy, report update semantics, encrypted details,
+  contributor-only resolution, resolution-note behavior and reopen actions
+  remain unchanged.
+- Per-report URL keys, hidden report IDs, validation reopening, pagination and
+  existing no-JavaScript form submissions remain intact.
+- Components are included by every page that uses the corresponding dialog;
+  opening a dialog does not load a second gallery feature page.
+
+### Verification
+
+- Gallery, report and feedback-inbox regression coverage: **53 tests / 575
+  assertions** passed under PHP 8.5.10.
+- Targeted browser journeys for gallery publishing/script inspection,
+  private reporting and contributor resolution: **3 passed**.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `0840b55 Extract gallery dialogs into components`.
+
+### Exact next task
+
+Extract the remaining deployment operator-note dialog into a reusable
+component, preserving Livewire polling/state, named `buildNote` errors and
+deployment authorization. Then re-audit for any non-component modal markup
+before final verification.
