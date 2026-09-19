@@ -59,4 +59,30 @@ class CreationDialogTest extends TestCase
             ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors(['provider_id', 'name', 'region', 'image', 'size']);
     }
+
+    public function test_the_applications_inventory_hosts_the_application_creation_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('projects.index', ['dialog' => 'create-application']);
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('id="application-create-dialog"', false)
+            ->assertSee('data-modal-trigger="application-create-dialog"', false)
+            ->assertSee('action="'.route('projects.store', ['dialog' => 'create-application']).'"', false)
+            ->assertSee('Curated template 1.0.0');
+    }
+
+    public function test_application_creation_validation_returns_to_the_open_dialog(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('projects.index', ['dialog' => 'create-application']);
+
+        $this->actingAs($user)
+            ->from($dialogUrl)
+            ->post(route('projects.store', ['dialog' => 'create-application']), [])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors('name');
+    }
 }

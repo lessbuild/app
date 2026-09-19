@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $applicationCreateOpen = request()->query('dialog') === 'create-application';
+        $applicationCreateUrl = route('projects.index', ['dialog' => 'create-application']);
+        $applicationStoreUrl = route('projects.store', ['dialog' => 'create-application']);
+    @endphp
+
     <x-layouts.partials.heading eyebrow="{{ __('Application workspace') }}" icon="view-grid" :title="__('Applications')" :description="__('Organize infrastructure into isolated production, staging, development, and preview environments.')">
         <x-slot:buttons>
             <x-ui.button :href="route('builds.index')" variant="secondary">
@@ -7,7 +13,13 @@
             <x-ui.button :href="route('repositories.index')" variant="secondary">
                 {{ __('Repositories') }}
             </x-ui.button>
-            <x-ui.button :href="route('projects.create')" variant="primary">
+            <x-ui.button
+                :href="$applicationCreateUrl"
+                data-modal-trigger="application-create-dialog"
+                aria-controls="application-create-dialog"
+                aria-expanded="{{ $applicationCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 {{ __('New application') }}
             </x-ui.button>
         </x-slot:buttons>
@@ -79,7 +91,13 @@
             <div class="md:col-span-2 xl:col-span-3">
                 <x-lists.empty :title="__('No applications yet')" :description="__('Create an application to group environments and deployment settings.')">
                     <x-slot:button>
-                        <x-ui.button :href="route('projects.create')" variant="primary">
+                        <x-ui.button
+                            :href="$applicationCreateUrl"
+                            data-modal-trigger="application-create-dialog"
+                            aria-controls="application-create-dialog"
+                            aria-expanded="{{ $applicationCreateOpen ? 'true' : 'false' }}"
+                            variant="primary"
+                        >
                             {{ __('Create application') }}
                         </x-ui.button>
                     </x-slot:button>
@@ -87,4 +105,22 @@
             </div>
         @endforelse
     </div>
+
+    <x-dialogs.modal
+        id="application-create-dialog"
+        :title="__('New application')"
+        :description="__('Start from a production-ready template, then customize every runtime setting.')"
+        :open="$applicationCreateOpen"
+        body-class="p-0"
+    >
+        <form method="POST" action="{{ $applicationStoreUrl }}">
+            @csrf
+            <x-scenes.projects._create-form :templates="$templates" />
+
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+                <x-ui.button :href="route('projects.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary">{{ __('Create application') }}</x-ui.button>
+            </div>
+        </form>
+    </x-dialogs.modal>
 </x-layouts.app>

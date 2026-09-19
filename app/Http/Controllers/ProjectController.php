@@ -27,10 +27,11 @@ class ProjectController extends Controller
     /**
      * Render current-workspace applications with environment counts in creation order.
      */
-    public function index(Request $request): View
+    public function index(Request $request, ApplicationTemplateCatalog $templates): View
     {
         return view('scenes.projects.index', [
             'projects' => $request->user()->currentOrganization->projects()->withCount('environments')->latest()->get(),
+            'templates' => $templates->all(),
         ]);
     }
 
