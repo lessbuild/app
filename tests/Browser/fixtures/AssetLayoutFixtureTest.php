@@ -40,6 +40,10 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Send private feedback')->getContent());
         File::put($directory.'/feedback-dialog.html', $this->renderPage(route('feedback.index', ['dialog' => 'compose-feedback']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/notifications.html', $this->renderPage(route('notifications.index'))->assertOk()
+            ->assertSee('Save current')->getContent());
+        File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
             ->assertSee('Automate routine release work')
             ->assertSee('data-modal-trigger="automation-token-dialog"', false)

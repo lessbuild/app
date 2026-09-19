@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'domains', 'observability', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -45,6 +45,8 @@ async function serveFixtures(page) {
                                 ? 'gallery-dialog'
                                 : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
+                                : screen === 'notifications' && dialog === 'save-filter'
+                                    ? 'notifications-dialog'
                                 : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
@@ -238,6 +240,24 @@ for (const colorScheme of ['light', 'dark']) {
                         await signals.locator('summary').click();
                         await expect(content).toBeVisible();
                     }
+                }
+                if (screen === 'notifications') {
+                    await page.locator('#notification-saved-filters summary').click();
+                    const savedFilterTrigger = page.getByRole('link', { name: 'Save current', exact: true });
+                    const savedFilterDialog = page.getByRole('dialog', { name: 'Save notification filter', exact: true });
+                    await savedFilterTrigger.click();
+                    await expect(savedFilterDialog).toBeVisible();
+                    await expect(page.locator('#notification-save-filter-dialog [data-modal-close]')).toBeFocused();
+                    expect(new URL(page.url()).searchParams.get('dialog')).toBe('save-filter');
+                    await page.keyboard.press('Escape');
+                    await expect(savedFilterDialog).toBeHidden();
+                    await expect(savedFilterTrigger).toBeFocused();
+                    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+                    await page.goto('http://buildpusher.test/notifications?dialog=save-filter', { waitUntil: 'networkidle' });
+                    await expect(savedFilterDialog).toBeVisible();
+                    await page.locator('#notification-save-filter-dialog [data-modal-close]').click();
+                    await expect(savedFilterDialog).toBeHidden();
                 }
                 if (screen === 'projects') {
                     const brand = page.locator('[data-auth-brand]');
@@ -459,4 +479,27 @@ test('metric alert rule composer uses an accessible URL-backed dialog', async ({
     await expect(ruleDialog).toBeVisible();
     await page.locator('#metric-rule-dialog [data-modal-close]').click();
     await expect(ruleDialog).toBeHidden();
+});
+
+test('notification saved-filter composer uses an accessible URL-backed dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/notifications', { waitUntil: 'networkidle' });
+
+    await page.locator('#notification-saved-filters summary').click();
+    const savedFilterTrigger = page.getByRole('link', { name: 'Save current', exact: true });
+    const savedFilterDialog = page.getByRole('dialog', { name: 'Save notification filter', exact: true });
+    await savedFilterTrigger.click();
+    await expect(savedFilterDialog).toBeVisible();
+    await expect(page.locator('#notification-save-filter-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('save-filter');
+    await page.keyboard.press('Escape');
+    await expect(savedFilterDialog).toBeHidden();
+    await expect(savedFilterTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/notifications?dialog=save-filter', { waitUntil: 'networkidle' });
+    await expect(savedFilterDialog).toBeVisible();
+    await page.locator('#notification-save-filter-dialog [data-modal-close]').click();
+    await expect(savedFilterDialog).toBeHidden();
 });

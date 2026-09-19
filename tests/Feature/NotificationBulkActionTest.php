@@ -96,6 +96,47 @@ class NotificationBulkActionTest extends TestCase
         $this->assertSame([], $owner->fresh()->preferences['notification_saved_filters']);
     }
 
+    public function test_saved_filter_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        $owner = User::factory()->create();
+
+        $default = $this->actingAs($owner)
+            ->get(route('notifications.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="notification-save-filter-dialog"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="notification-save-filter-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('notifications.index', [
+            'dialog' => 'save-filter',
+            'category' => 'website',
+            'status' => 'failed',
+        ]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="notification-save-filter-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('notifications.saved-filters.store', [
+                'category' => 'website',
+                'status' => 'failed',
+            ]), ['name' => ''])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="notification-save-filter-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The name field is required.');
+        $this->assertSame([], $owner->fresh()->preferences['notification_saved_filters'] ?? []);
+    }
+
     private function notification(User $user, string $title): DatabaseNotification
     {
         $user->notify(new FailureNotification(

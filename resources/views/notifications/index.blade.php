@@ -33,6 +33,14 @@
     @php
         $activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null));
         $filtersAreActive = $activeFilterCount > 0;
+        $savedFilterDialogHasErrors = $errors->has('name');
+        $savedFilterDialogOpen = (request()->query('dialog') === 'save-filter' && ! session()->has('success'))
+            || $savedFilterDialogHasErrors;
+        $savedFilterDialogUrl = route('notifications.index', [
+            'dialog' => 'save-filter',
+            ...array_filter($filters, fn ($value) => $value !== null),
+        ]);
+        $savedFilterStoreUrl = route('notifications.saved-filters.store', array_filter($filters, fn ($value) => $value !== null));
     @endphp
 
     <x-ui.insights
@@ -217,13 +225,14 @@
             </summary>
             <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
                 <p class="text-sm text-secondary">{{ __('Reuse a notification view without rebuilding every filter.') }}</p>
-                <form method="POST" action="{{ route('notifications.saved-filters.store', array_filter($filters, fn ($value) => $value !== null)) }}" class="flex min-w-0 gap-2">
-                    @csrf
-                    <label class="min-w-0"><span class="sr-only">{{ __('Filter name') }}</span><input name="name" maxlength="40" required class="input secondary min-w-0 rounded-md" placeholder="{{ __('Filter name') }}"></label>
-                    <x-ui.button type="submit" variant="secondary">{{ __('Save current') }}</x-ui.button>
-                </form>
+                <x-ui.button
+                    href="{{ $savedFilterDialogUrl }}"
+                    data-modal-trigger="notification-save-filter-dialog"
+                    aria-controls="notification-save-filter-dialog"
+                    aria-expanded="{{ $savedFilterDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('Save current') }}</x-ui.button>
             </div>
-            <x-forms.errors name="name" />
             @if ($savedFilters)
                 <div class="mt-4 flex flex-wrap gap-2">
                     @foreach ($savedFilters as $saved)
@@ -240,4 +249,21 @@
             @endif
         </details>
     </section>
+
+    <x-dialogs.modal
+        id="notification-save-filter-dialog"
+        :title="__('Save notification filter')"
+        :description="__('Give this filtered notification view a short name so you can return to it later.')"
+        :open="$savedFilterDialogOpen"
+    >
+        <form method="POST" action="{{ $savedFilterStoreUrl }}" class="space-y-4">
+            @csrf
+            <label class="block">
+                <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Filter name') }}</span>
+                <input name="name" value="{{ old('name') }}" maxlength="40" required class="input secondary w-full rounded-lg" placeholder="{{ __('Website incidents') }}">
+                <x-forms.errors name="name" />
+            </label>
+            <x-ui.button type="submit" variant="primary">{{ __('Save current filter') }}</x-ui.button>
+        </form>
+    </x-dialogs.modal>
 </x-layouts.app>
