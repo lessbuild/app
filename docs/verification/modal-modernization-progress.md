@@ -451,7 +451,7 @@ Convert the compact application-detail forms: add environment, add variable vers
 
 ## Follow-up Slice 3 — application-detail composers
 
-Status: complete locally; ready to commit and push with this verification record.
+Status: complete locally and pushed in `c428f04`; the isolated development runtime was updated, cached and restarted at the pushed tip.
 
 ### Responsibility problem
 
@@ -503,6 +503,6 @@ correct environment context.
 
 ### Exact next task
 
-Commit and push this slice, update the isolated runtime, then convert the
-gallery report-resolution dialog while preserving reporter/contributor
-authorization, unread notifications and resolution-note validation.
+Convert the gallery report-resolution dialog while preserving
+reporter/contributor authorization, unread notifications and resolution-note
+validation.

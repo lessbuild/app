@@ -5,7 +5,7 @@
 The follow-up modal pass is complete through the application-detail slice on
 `main`. Three cohesive slices are pushed and verified: Automation schedule and
 task composers (`5349f5d`), deployment operator notes (`42080e0`), and the
-application-detail composers (`PENDING-COMMIT` while this handoff is written).
+application-detail composers (`c428f04`).
 The isolated development runtime is updated after each pushed slice. Existing
 requests, policies, actions, entitlement checks, encryption, Livewire polling
 and queue behavior remain unchanged.
@@ -18,8 +18,7 @@ focused feature coverage passed **7 tests / 47 assertions** for
 assertions**, and the focused 390px Playwright flow passed **1 test**. Pint,
 Node syntax and `git diff --check` passed.
 
-After committing and pushing this slice, update the isolated runtime and
-continue with the gallery report-resolution dialog, then the observability
+The next task is the gallery report-resolution dialog, then the observability
 incident-note dialog. Keep each slice independently tested, committed and
 pushed.
 
