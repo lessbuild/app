@@ -875,3 +875,86 @@ and script inspection`.
 Keep long recipe editing, installation/update, recovery and other durable
 workflows as explicit pages. Continue with a separately authorized compact UI
 workflow or external acceptance gate.
+
+## Follow-up Slice 9 — repository creation dialog
+
+Status: complete locally, pushed on `main` in `30331e3`, and deployed to the
+isolated development runtime.
+
+### Responsibility problem
+
+The Repositories inventory sent users to a separate, long creation page even
+when they were already reviewing deployment targets. The same context switch
+appeared in dashboard setup, project readiness, GitHub App selection, website
+deployment actions, provider details and the command palette. This was a
+presentation boundary problem; the existing repository operation was already
+cohesive.
+
+### Boundary and design decision
+
+- The inventory page now owns the URL-backed `repository-create-dialog`.
+- The existing repository form partial is reused inside the dialog rather
+  than duplicated. A small optional field prefix gives the modal controls
+  unique IDs alongside the inventory's provider and website filters.
+- Existing `RepositoryRequest`, authorization, `CreateRepositoryAction`,
+  provider/website queries and `repositories.store` remain the business
+  boundary.
+- Primary repository entry points now link to the inventory dialog and retain
+  their existing prefilled provider, website, name, URL and branch context.
+- `/repositories/create` remains the direct full-page and no-JavaScript
+  fallback. No generic repository abstraction or new business service was
+  introduced.
+
+This keeps the single-responsibility split clear: the inventory dialog owns
+presentation and focus/history behavior, while the existing request and
+action own validation, authorization, normalization, persistence and remote
+workflow setup.
+
+### Preserved contracts and safety guarantees
+
+- Existing form names, validation rules, branch default, URL normalization,
+  deployment-root/path-filter handling, command fields, description field,
+  flash behavior and redirect to the repository detail page are unchanged.
+- Source-control provider filtering and active-website eligibility remain
+  enforced both in the form and by `RepositoryRequest`; missing prerequisites
+  still disable submission and show the existing guidance.
+- Validation failures from the modal return to the open dialog with old input
+  and the existing error keys. Direct create and edit pages retain their
+  original field IDs and behavior.
+- Project readiness, GitHub App selection, dashboard setup, command palette,
+  website and provider links now open the same dialog without bypassing
+  authorization or changing deployment/webhook semantics.
+- No provider token, repository credential, job serialization, webhook
+  behavior or persisted value changed.
+
+### Verification
+
+- Focused PHP coverage: **55 tests / 479 assertions** passed under PHP
+  8.5.10.
+- Browser fixture export: **1 test / 92 assertions** passed.
+- Dedicated 390px primary-creation browser flow: **1 test passed in 26.0
+  seconds**.
+- Complete strict PHP 8.5.10 suite: **1,631 tests / 13,597 assertions**
+  passed in **560.83 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Complete built-asset browser matrix: **22 tests passed in 10.1 minutes**.
+- Full Pint, locked Composer platform requirements, Vite production build,
+  Node syntax check, Blade view cache, route cache and `git diff --check`:
+  passed. Composer emitted only the known upstream PHP 8.5 deprecation
+  notices; no dependencies or lockfiles changed.
+
+### Commit, push and runtime
+
+Implementation commit and push: `30331e3 Use a dialog for repository
+creation`.
+
+The isolated `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
+checkout is clean on `main` at `30331e3`; its assets and caches were rebuilt,
+`buildpusher-dev-main.service` restarted successfully, and the public login
+page returned HTTP 200 with `app-TtqGG4AO.css`.
+
+### Exact next task
+
+Keep repository editing, deployment, webhook rotation, provider setup and
+other durable or remote-side-effect workflows as explicit pages. Continue
+with a separately authorized compact UI workflow or external acceptance gate.

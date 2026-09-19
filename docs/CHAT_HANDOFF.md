@@ -1,5 +1,52 @@
 # BuildPusher chat handoff
 
+# Latest repository-dialog slice — 2026-09-19
+
+The repository creation follow-up is complete and pushed on `main` at
+`30331e3` (`Use a dialog for repository creation`). The Repositories inventory
+now opens **Add Repository** in the shared URL-backed native dialog. The long
+existing repository form remains one shared partial, with unique modal field
+IDs so its controls do not collide with the inventory filters.
+
+Dashboard setup, the command palette, project readiness, GitHub App repository
+selection, website deployment actions and provider repository actions now open
+the inventory dialog with their existing provider, website, name, URL and
+branch context. The existing `/repositories/create` page remains available as
+the direct full-page and no-JavaScript fallback.
+
+The existing `RepositoryRequest`, policy/permission boundary, create action,
+provider and active-website prerequisites, validation keys, URL normalization,
+branch defaults, deployment-path filters, webhook behavior, persistence and
+deployment safety rules are unchanged.
+
+Verification for this slice:
+
+- Focused PHP coverage: **55 tests / 479 assertions** passed.
+- Browser fixture export: **1 test / 92 assertions** passed.
+- Dedicated 390px creation-dialog browser flow: **1 test passed in 26.0
+  seconds**.
+- Complete strict PHP 8.5.10 suite: **1,631 tests / 13,597 assertions**
+  passed in **560.83 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Complete built-asset browser matrix: **22 tests passed in 10.1 minutes**,
+  including all responsive layouts, the four primary creation dialogs,
+  provider no-JavaScript submission and the existing modal coverage.
+- Full Pint, locked Composer platform requirements, Vite production build,
+  Node syntax, Blade view cache, route cache and `git diff --check` passed.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to
+`30331e3`, assets and caches were rebuilt, and the service restarted active.
+`https://buildpusher.com/login` returns HTTP 200 and serves the current
+`app-TtqGG4AO.css` asset. This remains isolated development evidence only; no
+production deployment, provider-backed acceptance, paid cloud operation or
+physical-device check was performed.
+
+### Exact next task
+
+Keep repository editing, deployment, webhook rotation, provider setup and
+other durable or remote-side-effect workflows as explicit pages. Continue
+with a separately authorized compact UI workflow or external acceptance gate.
+
 # Latest gallery-dialog slice — 2026-09-19
 
 The gallery publish and script-inspection follow-up is complete and pushed on
