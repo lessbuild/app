@@ -69,57 +69,7 @@
     </x-ui.local-nav>
 
     <div class="mt-8">
-        <x-dialogs.modal
-            id="feedback-compose"
-            :title="__('Send private feedback')"
-            :description="__('Visible only to you and workspace administrators. Never include passwords, tokens, private keys, or environment values.')"
-            :open="$feedbackDialogOpen"
-        >
-            <form method="POST" action="{{ route('feedback.store') }}" class="space-y-4">
-                @csrf
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label for="feedback-category" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Type') }}</label>
-                        <select id="feedback-category" name="category" class="input secondary mt-2 w-full rounded-lg">
-                            @foreach (\App\Models\ProductFeedback::CATEGORIES as $value)
-                                <option value="{{ $value }}" @selected($value === old('category', 'bug'))>{{ str($value)->headline() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label for="feedback-severity" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Impact') }}</label>
-                        <select id="feedback-severity" name="severity" class="input secondary mt-2 w-full rounded-lg">
-                            @foreach (\App\Models\ProductFeedback::SEVERITIES as $value)
-                                <option value="{{ $value }}" @selected($value === old('severity', 'normal'))>{{ str($value)->headline() }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label for="feedback-title" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Summary') }}</label>
-                    <input id="feedback-title" name="title" maxlength="160" required value="{{ old('title') }}" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('What happened or should change?') }}">
-                </div>
-                <div>
-                    <label for="feedback-description" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Details') }}</label>
-                    <textarea id="feedback-description" name="description" rows="5" maxlength="10000" required class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Describe the outcome you expected and what you saw.') }}">{{ old('description') }}</textarea>
-                </div>
-                <div>
-                    <label for="feedback-reproduction" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Steps to reproduce (optional)') }}</label>
-                    <textarea id="feedback-reproduction" name="reproduction_steps" rows="4" maxlength="10000" class="input secondary mt-2 w-full rounded-lg" placeholder="1. Open…">{{ old('reproduction_steps') }}</textarea>
-                </div>
-                <div>
-                    <label for="feedback-page" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Related page (optional)') }}</label>
-                    <input id="feedback-page" name="page" maxlength="500" value="{{ old('page', request()->query('from')) }}" class="input secondary mt-2 w-full rounded-lg font-mono" placeholder="/projects/12">
-                </div>
-                <x-forms.errors name="category" />
-                <x-forms.errors name="severity" />
-                <x-forms.errors name="title" />
-                <x-forms.errors name="description" />
-                <x-forms.errors name="reproduction_steps" />
-                <x-forms.errors name="page" />
-                <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Submit feedback') }}</x-ui.button>
-            </form>
-        </x-dialogs.modal>
+        <x-scenes.feedback.compose-dialog :open="$feedbackDialogOpen" />
 
         <section id="feedback-list" class="scroll-mt-24" aria-labelledby="feedback-list-heading">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -195,33 +145,11 @@
                             </div>
                         @endif
                         @if ($canReview)
-                            <x-dialogs.modal
-                                id="{{ $feedbackReviewDialogId }}"
-                                :title="__('Review feedback')"
-                                :description="__('Update the workspace status and record a response without leaving the feedback list.')"
+                            <x-scenes.feedback.review-dialog
+                                :feedback="$item"
+                                :form-old="$feedbackReviewFormOld"
                                 :open="$feedbackReviewDialogOpen"
-                            >
-                                <form method="POST" action="{{ route('feedback.update', $item) }}" class="space-y-4">
-                                    @csrf
-                                    @method('PATCH')
-                                    <input type="hidden" name="_feedback_review_id" value="{{ $item->id }}">
-                                    <label class="block">
-                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status') }}</span>
-                                        <select name="status" class="input secondary w-full rounded-lg">
-                                            @foreach (\App\Models\ProductFeedback::STATUSES as $value)
-                                                <option value="{{ $value }}" @selected(($feedbackReviewFormOld ? old('status', $item->status) : $item->status) === $value)>{{ str($value)->headline() }}</option>
-                                            @endforeach
-                                        </select>
-                                        <x-forms.errors name="status" />
-                                    </label>
-                                    <label class="block">
-                                        <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Workspace response') }}</span>
-                                        <textarea name="review_response" rows="4" maxlength="10000" class="input secondary w-full rounded-lg" placeholder="{{ __('Decision, workaround, or planned resolution') }}">{{ $feedbackReviewFormOld ? old('review_response', $item->review_response) : $item->review_response }}</textarea>
-                                        <x-forms.errors name="review_response" />
-                                    </label>
-                                    <x-ui.button type="submit" variant="primary">{{ __('Save review') }}</x-ui.button>
-                                </form>
-                            </x-dialogs.modal>
+                            />
                         @endif
                     </x-ui.card>
                 @empty
