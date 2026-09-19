@@ -12,6 +12,7 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\Website;
 use App\Models\WebsiteHealthCheck;
+use App\Services\DashboardCreationDialogData;
 use App\Services\PlanLimits;
 use App\Services\PublicPlatformStatus;
 use App\Services\SystemHealth;
@@ -34,9 +35,21 @@ class DashboardController extends Controller
         SystemHealth $systemHealth,
         PublicPlatformStatus $platformStatus,
         PlanLimits $limits,
+        DashboardCreationDialogData $creationDialogData,
     ): View {
         $user = $request->user();
         $organization = $user->currentOrganization;
+        $dashboardDialog = $request->string('dialog')->toString();
+        $dashboardCreationData = $creationDialogData->for($user);
+        $editingDashboardRecipe = null;
+        if (preg_match('/\\Aedit-recipe-(\\d+)\\z/', $dashboardDialog, $matches) === 1) {
+            $editingDashboardRecipe = $user->workspaceRecipes()
+                ->with([
+                    'source' => fn ($query) => $query->published()->with('user:id,name'),
+                ])
+                ->findOrFail((int) $matches[1]);
+            $this->authorize('update', $editingDashboardRecipe);
+        }
         $workspaceBuilds = Build::query()
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
         $workspaceCommands = ServerCommandExecution::query()
@@ -167,6 +180,8 @@ class DashboardController extends Controller
             'platformStatus' => $canManageSystemHealth ? null : $platformStatus->snapshot(),
             'onboarding' => $onboarding,
             'dashboardWidgets' => $user->preferences['dashboard_widgets'] ?? self::WIDGETS,
+            'dashboardCreationData' => $dashboardCreationData,
+            'editingDashboardRecipe' => $editingDashboardRecipe,
             'stats' => [
                 'websites' => $user->workspaceWebsites()->count(),
                 'servers' => $user->workspaceServers()->count(),

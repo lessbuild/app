@@ -1,10 +1,10 @@
 @php
     $onboardingSteps = [
-        'provider' => ['title' => __('Connect a provider'), 'description' => __('Add cloud credentials for server provisioning.'), 'createUrl' => route('providers.index', ['dialog' => 'create-provider']), 'reviewUrl' => route('providers.index')],
-        'server' => ['title' => __('Provision a server'), 'description' => __('Create the application server that will run your sites.'), 'createUrl' => route('servers.index', ['dialog' => 'create-server']), 'reviewUrl' => route('servers.index')],
-        'website' => ['title' => __('Add a website'), 'description' => __('Choose a domain and place it on an active server.'), 'createUrl' => route('websites.index', ['dialog' => 'create-website']), 'reviewUrl' => route('websites.index')],
-        'repository' => ['title' => __('Connect a repository'), 'description' => __('Attach the Git source and deployment settings.'), 'createUrl' => route('repositories.index', ['dialog' => 'create-repository']), 'reviewUrl' => route('repositories.index')],
-        'deployment' => ['title' => __('Complete a deployment'), 'description' => __('Ship a revision and verify the release succeeds.'), 'createUrl' => route('repositories.index'), 'reviewUrl' => route('builds.index')],
+        'provider' => ['title' => __('Connect a provider'), 'description' => __('Add cloud credentials for server provisioning.'), 'createUrl' => $dashboardProviderCreateUrl, 'reviewUrl' => route('providers.index'), 'modalId' => 'provider-create-dialog'],
+        'server' => ['title' => __('Provision a server'), 'description' => __('Create the application server that will run your sites.'), 'createUrl' => $dashboardServerCreateUrl, 'reviewUrl' => route('servers.index'), 'modalId' => 'server-create-dialog'],
+        'website' => ['title' => __('Add a website'), 'description' => __('Choose a domain and place it on an active server.'), 'createUrl' => $dashboardWebsiteCreateUrl, 'reviewUrl' => route('websites.index'), 'modalId' => 'website-create-dialog'],
+        'repository' => ['title' => __('Connect a repository'), 'description' => __('Attach the Git source and deployment settings.'), 'createUrl' => $dashboardRepositoryCreateUrl, 'reviewUrl' => route('repositories.index'), 'modalId' => 'repository-create-dialog'],
+        'deployment' => ['title' => __('Complete a deployment'), 'description' => __('Ship a revision and verify the release succeeds.'), 'createUrl' => route('repositories.index'), 'reviewUrl' => route('builds.index'), 'modalId' => null],
     ];
     $onboardingCompleted = collect($onboarding)->filter()->count();
     $currentOnboardingStep = collect($onboarding)->search(fn (bool $complete): bool => ! $complete);
@@ -95,7 +95,18 @@
                     @if ($complete)
                         <a href="{{ $step['reviewUrl'] }}" class="mt-3 text-sm font-semibold text-ternary underline sm:mt-4">{{ __('Review') }}</a>
                     @elseif ($current)
-                        <x-ui.button :href="$step['createUrl']" variant="primary" class="mt-3 w-full sm:mt-4">{{ $key === 'deployment' ? __('Deploy repository') : __('Continue setup') }}</x-ui.button>
+                        @if ($step['modalId'])
+                            <x-ui.button
+                                :href="$step['createUrl']"
+                                data-modal-trigger="{{ $step['modalId'] }}"
+                                aria-controls="{{ $step['modalId'] }}"
+                                aria-expanded="{{ ($dashboardModalOpen[$key] ?? false) ? 'true' : 'false' }}"
+                                variant="primary"
+                                class="mt-3 w-full sm:mt-4"
+                            >{{ __('Continue setup') }}</x-ui.button>
+                        @else
+                            <x-ui.button :href="$step['createUrl']" variant="primary" class="mt-3 w-full sm:mt-4">{{ __('Deploy repository') }}</x-ui.button>
+                        @endif
                     @else
                         <span class="mt-3 text-xs font-medium text-secondary sm:mt-4">{{ __('Available after the previous step') }}</span>
                     @endif

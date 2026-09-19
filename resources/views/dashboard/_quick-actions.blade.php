@@ -10,12 +10,19 @@
 
     <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ([
-            [__('Create application'), route('projects.index', ['dialog' => 'create-application']), __('Start with a repository-backed application.'), 'primary'],
-            [__('Provision server'), route('servers.index', ['dialog' => 'create-server']), __('Add the compute that will run your sites.'), 'secondary'],
-            [__('Add website'), route('websites.index', ['dialog' => 'create-website']), __('Connect a domain and deployment target.'), 'secondary'],
-            [__('Open observability'), route('observability.index'), __('Review health, alerts and incidents.'), 'secondary'],
-        ] as [$label, $url, $description, $variant])
-            <a href="{{ $url }}" @class([
+            [__('Create application'), $dashboardApplicationCreateUrl, __('Start with a repository-backed application.'), 'primary', 'application-create-dialog', 'application'],
+            [__('Provision server'), $dashboardServerCreateUrl, __('Add the compute that will run your sites.'), 'secondary', 'server-create-dialog', 'server'],
+            [__('Add website'), $dashboardWebsiteCreateUrl, __('Connect a domain and deployment target.'), 'secondary', 'website-create-dialog', 'website'],
+            [__('Open observability'), route('observability.index'), __('Review health, alerts and incidents.'), 'secondary', null, null],
+        ] as [$label, $url, $description, $variant, $modalId, $modalKey])
+            <a
+                href="{{ $url }}"
+                @if ($modalId)
+                    data-modal-trigger="{{ $modalId }}"
+                    aria-controls="{{ $modalId }}"
+                    aria-expanded="{{ ($dashboardModalOpen[$modalKey] ?? false) ? 'true' : 'false' }}"
+                @endif
+                @class([
                 'ui-dashboard-quick-action ui-card ui-card--interactive flex min-h-16 items-center justify-between gap-3 px-4 py-3',
                 'ui-dashboard-quick-action--primary' => $variant === 'primary',
             ])>

@@ -1,8 +1,34 @@
 <x-layouts.app>
     @php
-        $dashboardPreferencesDialogOpen = request()->query('dialog') === 'customize-dashboard'
-            || $errors->any();
+        $dashboardDialog = request()->query('dialog');
+        $dashboardUrl = route('dashboard');
+        $dashboardPreferencesDialogOpen = $dashboardDialog === 'customize-dashboard'
+            || (old('_dashboard_preferences_form') === '1' && $errors->any());
+        $dashboardProviderCreateOpen = $dashboardDialog === 'create-provider'
+            || (old('_provider_form') === '1' && $errors->any());
+        $dashboardServerCreateOpen = $dashboardDialog === 'create-server'
+            || (old('_server_form') === '1' && $errors->any());
+        $dashboardWebsiteCreateOpen = $dashboardDialog === 'create-website'
+            || (old('_website_form') === '1' && $errors->any());
+        $dashboardRepositoryCreateOpen = $dashboardDialog === 'create-repository'
+            || (old('_repository_form') === '1' && $errors->any());
+        $dashboardApplicationCreateOpen = $dashboardDialog === 'create-application'
+            || (old('_project_form') === '1' && $errors->any());
+        $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
+            || (old('_recipe_form') === 'edit' && $errors->any());
         $dashboardPreferencesDialogUrl = route('dashboard', ['dialog' => 'customize-dashboard']);
+        $dashboardProviderCreateUrl = route('dashboard', ['dialog' => 'create-provider']);
+        $dashboardServerCreateUrl = route('dashboard', ['dialog' => 'create-server']);
+        $dashboardWebsiteCreateUrl = route('dashboard', ['dialog' => 'create-website']);
+        $dashboardRepositoryCreateUrl = route('dashboard', ['dialog' => 'create-repository']);
+        $dashboardApplicationCreateUrl = route('dashboard', ['dialog' => 'create-application']);
+        $dashboardModalOpen = [
+            'provider' => $dashboardProviderCreateOpen,
+            'server' => $dashboardServerCreateOpen,
+            'website' => $dashboardWebsiteCreateOpen,
+            'repository' => $dashboardRepositoryCreateOpen,
+            'application' => $dashboardApplicationCreateOpen,
+        ];
     @endphp
 
     <header class="ui-dashboard-hero ui-card mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
@@ -13,10 +39,22 @@
             <p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
         </div>
         <nav class="flex shrink-0 flex-wrap gap-2" aria-label="{{ __('Dashboard quick actions') }}">
-            <x-ui.button :href="route('servers.index', ['dialog' => 'create-server'])" variant="secondary">
+            <x-ui.button
+                :href="$dashboardServerCreateUrl"
+                data-modal-trigger="server-create-dialog"
+                aria-controls="server-create-dialog"
+                aria-expanded="{{ $dashboardServerCreateOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 {{ __('Create server') }}
             </x-ui.button>
-            <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">
+            <x-ui.button
+                :href="$dashboardWebsiteCreateUrl"
+                data-modal-trigger="website-create-dialog"
+                aria-controls="website-create-dialog"
+                aria-expanded="{{ $dashboardWebsiteCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 {{ __('Add website') }}
             </x-ui.button>
             <x-ui.button
@@ -476,7 +514,16 @@
                                 <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="text-ternary underline">
                                     {{ __('Review changes') }}
                                 </a>
-                                <a href="{{ route('recipes.index', ['dialog' => 'edit-recipe-'.$installedRecipe->id]) }}" class="text-ternary underline">
+                                @php($recipeEditDialogId = 'recipe-edit-dialog-'.$installedRecipe->id)
+                                <a
+                                    href="{{ route('dashboard', ['dialog' => 'edit-recipe-'.$installedRecipe->id]) }}"
+                                    @if ($editingDashboardRecipe?->id === $installedRecipe->id)
+                                        data-modal-trigger="{{ $recipeEditDialogId }}"
+                                        aria-controls="{{ $recipeEditDialogId }}"
+                                        aria-expanded="{{ $dashboardRecipeEditOpen ? 'true' : 'false' }}"
+                                    @endif
+                                    class="text-ternary underline"
+                                >
                                     {{ __('Edit copy') }}
                                 </a>
                             </div>
@@ -514,7 +561,13 @@
                     :description="__('Create a website to begin configuring deployments.')"
                 >
                     <x-slot:button>
-                        <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">{{ __('Add website') }}</x-ui.button>
+                        <x-ui.button
+                            :href="$dashboardWebsiteCreateUrl"
+                            data-modal-trigger="website-create-dialog"
+                            aria-controls="website-create-dialog"
+                            aria-expanded="{{ $dashboardWebsiteCreateOpen ? 'true' : 'false' }}"
+                            variant="primary"
+                        >{{ __('Add website') }}</x-ui.button>
                     </x-slot:button>
                 </x-lists.empty>
             @endforelse
@@ -554,4 +607,55 @@
 
         <x-activity-feed :events="$recentEvents" />
     </section>
+
+    <x-scenes.providers.create-dialog
+        :open="$dashboardProviderCreateOpen"
+        :cancel-url="$dashboardUrl"
+    />
+
+    <x-scenes.servers.create-dialog
+        :types="$dashboardCreationData['server']['types']"
+        :providers="$dashboardCreationData['server']['providers']"
+        :sizes="$dashboardCreationData['server']['sizes']"
+        :images="$dashboardCreationData['server']['images']"
+        :regions="$dashboardCreationData['server']['regions']"
+        :recipes="$dashboardCreationData['server']['recipes']"
+        :plan-usage="$dashboardCreationData['server']['planUsage']"
+        :index-query="[]"
+        :open="$dashboardServerCreateOpen"
+        :cancel-url="$dashboardUrl"
+    />
+
+    <x-scenes.websites.create-dialog
+        :servers="$dashboardCreationData['website']['servers']"
+        :plan-usage="$dashboardCreationData['website']['planUsage']"
+        :website-index-query="[]"
+        :website-store-url="route('websites.store', ['dialog' => 'create-website'])"
+        :open="$dashboardWebsiteCreateOpen"
+        :cancel-url="$dashboardUrl"
+    />
+
+    <x-scenes.repositories.create-dialog
+        :providers="$dashboardCreationData['repository']['providers']"
+        :websites="$dashboardCreationData['repository']['websites']"
+        :index-query="[]"
+        :open="$dashboardRepositoryCreateOpen"
+        :cancel-url="$dashboardUrl"
+    />
+
+    <x-scenes.projects.create-dialog
+        :templates="$dashboardCreationData['application']['templates']"
+        :open="$dashboardApplicationCreateOpen"
+        :cancel-url="$dashboardUrl"
+    />
+
+    @if ($editingDashboardRecipe)
+        <x-scenes.recipes.edit-dialog
+            :recipe="$editingDashboardRecipe"
+            id="recipe-edit-dialog-{{ $editingDashboardRecipe->id }}"
+            :open="$dashboardRecipeEditOpen"
+            :cancel-url="$dashboardUrl"
+            field-prefix="dashboard-recipe-edit-"
+        />
+    @endif
 </x-layouts.app>

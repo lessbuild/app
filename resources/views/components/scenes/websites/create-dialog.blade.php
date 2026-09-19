@@ -4,8 +4,11 @@
     'websiteIndexQuery' => [],
     'websiteStoreUrl',
     'open' => false,
+    'cancelUrl' => null,
     'fieldPrefix' => 'website-create-',
 ])
+
+@php($dialogCancelUrl = $cancelUrl ?? route('websites.index', $websiteIndexQuery))
 
 <x-dialogs.modal
     id="website-create-dialog"
@@ -44,10 +47,11 @@
 
     <form action="{{ $websiteStoreUrl }}" method="POST">
         @csrf
+        <input type="hidden" name="_website_form" value="1">
         <x-scenes.websites._form :servers="$servers" :field-prefix="$fieldPrefix" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('websites.index', $websiteIndexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+            <x-ui.button :href="$dialogCancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
             <x-ui.button type="submit" variant="primary" :disabled="$servers->isEmpty() || ! $planUsage['allowed']">
                 {{ __('Create website') }}
             </x-ui.button>

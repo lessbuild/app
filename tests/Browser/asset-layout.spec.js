@@ -178,6 +178,35 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
     }
 });
 
+test('dashboard creation actions open page-local dialogs without navigating to an inventory page', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/dashboard', { waitUntil: 'networkidle' });
+    const initialDashboardPath = new URL(page.url()).pathname;
+
+    for (const workflow of [
+        { selector: '[data-modal-trigger="server-create-dialog"]:visible', title: 'Add server', query: 'create-server' },
+        { selector: '[data-modal-trigger="website-create-dialog"]:visible', title: 'Add website', query: 'create-website' },
+        { selector: '[data-modal-trigger="application-create-dialog"]:visible', title: 'New application', query: 'create-application' },
+        { selector: '[data-modal-trigger="provider-create-dialog"]:visible', title: 'Add provider', query: 'create-provider' },
+    ]) {
+        const trigger = page.locator(workflow.selector).first();
+        const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
+        const triggerPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
+
+        await trigger.click();
+        await expect(dialog).toBeVisible();
+        expect(new URL(page.url()).pathname).toBe(triggerPath);
+        expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
+
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+        expect(new URL(page.url()).pathname).toBe(initialDashboardPath);
+        expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+    }
+});
+
 test('provider, repository, and recipe edits open server-rendered dialogs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

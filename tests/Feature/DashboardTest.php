@@ -139,6 +139,88 @@ class DashboardTest extends TestCase
         );
     }
 
+    public function test_dashboard_hosts_creation_dialogs_and_keeps_creation_links_on_the_dashboard(): void
+    {
+        $user = User::factory()->create();
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response
+            ->assertSuccessful()
+            ->assertSee('id="provider-create-dialog"', false)
+            ->assertSee('id="server-create-dialog"', false)
+            ->assertSee('id="website-create-dialog"', false)
+            ->assertSee('id="repository-create-dialog"', false)
+            ->assertSee('id="application-create-dialog"', false)
+            ->assertSee('data-modal-trigger="server-create-dialog"', false)
+            ->assertSee('data-modal-trigger="website-create-dialog"', false)
+            ->assertSee('data-modal-trigger="application-create-dialog"', false)
+            ->assertSee('href="'.route('dashboard', ['dialog' => 'create-server']).'"', false)
+            ->assertSee('href="'.route('dashboard', ['dialog' => 'create-website']).'"', false)
+            ->assertSee('action="'.route('servers.store', ['dialog' => 'create-server']).'"', false)
+            ->assertSee('action="'.route('websites.store', ['dialog' => 'create-website']).'"', false)
+            ->assertSee('href="'.route('dashboard').'"', false);
+    }
+
+    public function test_dashboard_keeps_the_repository_setup_step_on_the_dashboard(): void
+    {
+        $user = User::factory()->create();
+        $provider = $user->providers()->create([
+            'name' => 'DigitalOcean',
+            'provider' => Provider::TYPE_DIGITALOCEAN,
+            'token' => 'secret',
+            'description' => 'Cloud provider',
+        ]);
+        $server = $user->servers()->create([
+            'name' => 'Application server',
+            'provider_id' => $provider->id,
+            'type' => 'app',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+            'mysql_root_password' => 'secret',
+        ]);
+        $user->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'Application website',
+            'description' => 'Website',
+            'environment' => 'APP_ENV=production',
+            'url' => 'application.test',
+            'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="repository-create-dialog"', false)
+            ->assertSee('href="'.route('dashboard', ['dialog' => 'create-repository']).'"', false)
+            ->assertSee('data-modal-initial-open="false"', false);
+    }
+
+    public function test_dashboard_server_and_website_validation_reopen_the_local_dialog(): void
+    {
+        $user = User::factory()->create();
+        $serverDialogUrl = route('dashboard', ['dialog' => 'create-server']);
+        $websiteDialogUrl = route('dashboard', ['dialog' => 'create-website']);
+
+        $this->actingAs($user)
+            ->from($serverDialogUrl)
+            ->post(route('servers.store', ['dialog' => 'create-server']), [])
+            ->assertRedirect($serverDialogUrl)
+            ->assertSessionHasErrors(['provider_id', 'name', 'region', 'image', 'size']);
+
+        $this->get($serverDialogUrl)
+            ->assertSee('id="server-create-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
+
+        $this->actingAs($user)
+            ->from($websiteDialogUrl)
+            ->post(route('websites.store', ['dialog' => 'create-website']), [])
+            ->assertRedirect($websiteDialogUrl)
+            ->assertSessionHasErrors(['name', 'server_id', 'url', 'description', 'environment']);
+
+        $this->get($websiteDialogUrl)
+            ->assertSee('id="website-create-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false);
+    }
+
     public function test_dashboard_prioritizes_attention_and_setup_before_secondary_metrics(): void
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
@@ -355,10 +437,17 @@ class DashboardTest extends TestCase
             ->assertSee('Recipe Author')
             ->assertSee(route('gallery.index', ['scope' => 'updates']))
             ->assertSee(route('gallery.compare', ['recipe' => $source, 'copy' => $copy]))
-            ->assertSee(route('recipes.index', ['dialog' => 'edit-recipe-'.$copy->id]))
+            ->assertSee(route('dashboard', ['dialog' => 'edit-recipe-'.$copy->id]))
             ->assertDontSee('Current recipe')
             ->assertDontSee('Foreign stale copy')
             ->assertDontSee('dashboard-secret', false);
+
+        $this->actingAs($owner)
+            ->get(route('dashboard', ['dialog' => 'edit-recipe-'.$copy->id]))
+            ->assertSuccessful()
+            ->assertSee('id="recipe-edit-dialog-'.$copy->id.'"', false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('copy-dashboard-secret', false);
     }
 
     public function test_dashboard_surfaces_only_reports_on_the_owners_published_recipes_without_loading_feedback(): void

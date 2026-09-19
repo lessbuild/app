@@ -8,11 +8,13 @@
     'planUsage',
     'open' => false,
     'indexQuery' => [],
+    'cancelUrl' => null,
     'fieldPrefix' => 'server-create-',
 ])
 
 @php
     $serverStoreUrl = route('servers.store', ['dialog' => 'create-server']);
+    $dialogCancelUrl = $cancelUrl ?? route('servers.index', $indexQuery);
 @endphp
 
 <x-dialogs.modal
@@ -45,6 +47,7 @@
 
     <form action="{{ $serverStoreUrl }}" method="POST">
         @csrf
+        <input type="hidden" name="_server_form" value="1">
         <x-scenes.servers._form
             :types="$types"
             :providers="$providers"
@@ -56,7 +59,7 @@
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('servers.index', $indexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+            <x-ui.button :href="$dialogCancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
             <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || ! $planUsage['allowed']">
                 {{ __('Create server') }}
             </x-ui.button>

@@ -3,8 +3,11 @@
     'websites',
     'indexQuery' => [],
     'open' => false,
+    'cancelUrl' => null,
     'fieldPrefix' => 'repository-create-',
 ])
+
+@php($dialogCancelUrl = $cancelUrl ?? route('repositories.index', $indexQuery))
 
 <x-dialogs.modal
     id="repository-create-dialog"
@@ -33,6 +36,7 @@
 
     <form action="{{ route('repositories.store', ['dialog' => 'create-repository']) }}" method="POST">
         @csrf
+        <input type="hidden" name="_repository_form" value="1">
         <x-scenes.repositories._form
             :providers="$providers"
             :websites="$websites"
@@ -40,7 +44,7 @@
         />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('repositories.index', $indexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+            <x-ui.button :href="$dialogCancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
             <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || $websites->isEmpty()">
                 {{ __('Create Repository') }}
             </x-ui.button>
