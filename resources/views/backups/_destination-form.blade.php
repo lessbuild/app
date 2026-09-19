@@ -1,3 +1,8 @@
+@props([
+    'formMarker' => null,
+    'destinationId' => null,
+])
+
 @php
     $isEdit = isset($destination) && $destination;
     $selectedProvider = old('storage_provider', $isEdit ? $destinationCatalog->forEndpoint($destination->endpoint) : \App\Services\BackupDestinationCatalog::DIGITALOCEAN_SPACES);
@@ -6,6 +11,12 @@
 
 <form method="POST" action="{{ $action }}" class="mt-5 grid gap-4 sm:grid-cols-2">
     @csrf
+    @if (filled($formMarker))
+        <input type="hidden" name="_backup_destination_form" value="{{ $formMarker }}">
+    @endif
+    @if (filled($destinationId))
+        <input type="hidden" name="_backup_destination_id" value="{{ $destinationId }}">
+    @endif
     @if($isEdit)
         @method('PATCH')
     @endif
@@ -16,6 +27,7 @@
                 <option value="{{ $preset->key }}" @selected($selectedProvider === $preset->key)>{{ $preset->name }}</option>
             @endforeach
         </select>
+        <x-forms.errors name="storage_provider" />
         <p class="mt-1 text-xs text-secondary">{{ __('Choose a preset for provider-specific endpoint guidance. The choice is used for setup only and is not stored as a credential.') }}</p>
         <p class="mt-1 text-sm text-primary">{{ $selectedPreset->description }}</p>
         <p class="mt-1 text-xs text-secondary">{{ __('Example endpoint: :endpoint · Region: :region', ['endpoint' => $selectedPreset->endpointHint, 'region' => $selectedPreset->regionHint]) }}</p>
@@ -23,15 +35,18 @@
     <div>
         <label for="{{ $formId }}-name" class="block text-xs font-semibold uppercase text-secondary">{{ __('Name') }}</label>
         <input id="{{ $formId }}-name" name="name" value="{{ old('name', $isEdit ? $destination->name : '') }}" placeholder="{{ __('Offsite backups') }}" class="input secondary mt-1 w-full rounded-md" required>
+        <x-forms.errors name="name" />
     </div>
     <div>
         <label for="{{ $formId }}-region" class="block text-xs font-semibold uppercase text-secondary">{{ __('Region') }}</label>
         <input id="{{ $formId }}-region" name="region" value="{{ old('region', $isEdit ? $destination->region : '') }}" placeholder="{{ __('lon1') }}" class="input secondary mt-1 w-full rounded-md" required>
+        <x-forms.errors name="region" />
         <p class="mt-1 text-xs text-secondary">{{ __('For Spaces, use the region shown by DigitalOcean, such as lon1 or nyc3.') }}</p>
     </div>
     <div class="sm:col-span-2">
         <label for="{{ $formId }}-endpoint" class="block text-xs font-semibold uppercase text-secondary">{{ __('S3 endpoint') }}</label>
         <input id="{{ $formId }}-endpoint" type="url" name="endpoint" value="{{ old('endpoint', $isEdit ? $destination->endpoint : '') }}" placeholder="{{ $selectedPreset->endpointHint }}" class="input secondary mt-1 w-full rounded-md">
+        <x-forms.errors name="endpoint" />
         @if(in_array($selectedProvider, [\App\Services\BackupDestinationCatalog::DIGITALOCEAN_SPACES, \App\Services\BackupDestinationCatalog::AMAZON_S3], true))
             <p class="mt-1 text-xs text-secondary">{{ __('Leave this blank and BuildPusher will derive the endpoint from the region. Do not paste a bucket URL or a control-plane API URL.') }}</p>
         @else
@@ -41,18 +56,22 @@
     <div>
         <label for="{{ $formId }}-bucket" class="block text-xs font-semibold uppercase text-secondary">{{ __('Bucket name') }}</label>
         <input id="{{ $formId }}-bucket" name="bucket" value="{{ old('bucket', $isEdit ? $destination->bucket : '') }}" placeholder="{{ __('buildpusher-backups') }}" class="input secondary mt-1 w-full rounded-md" required>
+        <x-forms.errors name="bucket" />
     </div>
     <div>
         <label for="{{ $formId }}-path_prefix" class="block text-xs font-semibold uppercase text-secondary">{{ __('Folder prefix') }}</label>
         <input id="{{ $formId }}-path_prefix" name="path_prefix" value="{{ old('path_prefix', $isEdit ? $destination->path_prefix : 'buildpusher') }}" placeholder="{{ __('buildpusher') }}" class="input secondary mt-1 w-full rounded-md" required>
+        <x-forms.errors name="path_prefix" />
     </div>
     <div>
         <label for="{{ $formId }}-access_key" class="block text-xs font-semibold uppercase text-secondary">{{ __(':provider access key', ['provider' => $selectedPreset->name]) }}</label>
         <input id="{{ $formId }}-access_key" name="access_key" value="" placeholder="{{ $isEdit ? __('Leave blank to keep current key') : __('Access key') }}" autocomplete="off" class="input secondary mt-1 w-full rounded-md" @required(!$isEdit)>
+        <x-forms.errors name="access_key" />
     </div>
     <div>
         <label for="{{ $formId }}-secret_key" class="block text-xs font-semibold uppercase text-secondary">{{ __(':provider secret key', ['provider' => $selectedPreset->name]) }}</label>
         <input id="{{ $formId }}-secret_key" type="password" name="secret_key" value="" placeholder="{{ $isEdit ? __('Leave blank to keep current secret') : __('Secret key') }}" autocomplete="new-password" class="input secondary mt-1 w-full rounded-md" @required(!$isEdit)>
+        <x-forms.errors name="secret_key" />
     </div>
     <div class="ui-card ui-card--muted p-4 text-sm text-secondary sm:col-span-2">
         <p class="font-bold text-primary">{{ __('Before you save') }}</p>

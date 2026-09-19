@@ -27,7 +27,7 @@ class BackupDestinationSetupTest extends TestCase
     public function test_backup_page_explains_spaces_setup_and_offers_presets(): void
     {
         $owner = User::factory()->create();
-        $this->destination($owner);
+        $destination = $this->destination($owner);
 
         $response = $this->actingAs($owner)->get(route('backups.index'));
 
@@ -36,7 +36,83 @@ class BackupDestinationSetupTest extends TestCase
             ->assertSee('A DigitalOcean control-plane token is different.')
             ->assertSee('No active website or server is required.')
             ->assertSee('https://&lt;region&gt;.digitaloceanspaces.com', false)
+            ->assertSee('data-modal-trigger="backup-destination-create-dialog"', false)
+            ->assertSee('data-modal-trigger="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertDontSee('id="backup-destination-edit-'.$destination->id.'"', false)
             ->assertViewHas('destinationPresets');
+    }
+
+    public function test_backup_destination_create_and_selected_edit_forms_are_url_backed_dialog_components(): void
+    {
+        $owner = User::factory()->create();
+        $destination = $this->destination($owner);
+
+        $createDialogUrl = route('backups.index', ['dialog' => 'add-destination']);
+        $this->actingAs($owner)->get($createDialogUrl)
+            ->assertSuccessful()
+            ->assertSee('id="backup-destination-create-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('name="_backup_destination_form" value="create"', false);
+
+        $editDialogUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
+        $this->actingAs($owner)->get($editDialogUrl)
+            ->assertSuccessful()
+            ->assertSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('name="_backup_destination_form" value="edit"', false)
+            ->assertDontSee('secret-key')
+            ->assertDontSee('access-key');
+    }
+
+    public function test_backup_destination_validation_reopens_the_requested_dialog_without_flashing_credentials(): void
+    {
+        $owner = User::factory()->create();
+        $destination = $this->destination($owner);
+
+        $createDialogUrl = route('backups.index', ['dialog' => 'add-destination']);
+        $createResponse = $this->actingAs($owner)
+            ->from($createDialogUrl)
+            ->followingRedirects()
+            ->post(route('backups.destinations.store', ['dialog' => 'add-destination']), [
+                '_backup_destination_form' => 'create',
+                'storage_provider' => 'digitalocean_spaces',
+                'name' => '',
+                'endpoint' => '',
+                'bucket' => '',
+                'region' => 'lon1',
+                'access_key' => 'do-not-flash-access',
+                'secret_key' => 'do-not-flash-secret',
+                'path_prefix' => 'buildpusher',
+            ])
+            ->assertSuccessful();
+
+        $createResponse->assertSee('id="backup-destination-create-dialog"', false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('The name field is required.')
+            ->assertDontSee('do-not-flash-access')
+            ->assertDontSee('do-not-flash-secret');
+
+        $editDialogUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
+        $editResponse = $this->actingAs($owner)
+            ->from($editDialogUrl)
+            ->followingRedirects()
+            ->patch(route('backups.destinations.update', $destination), [
+                '_backup_destination_form' => 'edit',
+                '_backup_destination_id' => $destination->id,
+                'storage_provider' => 'digitalocean_spaces',
+                'name' => '',
+                'endpoint' => $destination->endpoint,
+                'bucket' => $destination->bucket,
+                'region' => $destination->region,
+                'access_key' => '',
+                'secret_key' => '',
+                'path_prefix' => $destination->path_prefix,
+            ])
+            ->assertSuccessful();
+
+        $editResponse->assertSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('The name field is required.');
     }
 
     public function test_spaces_preset_derives_its_endpoint_without_persisting_form_metadata(): void

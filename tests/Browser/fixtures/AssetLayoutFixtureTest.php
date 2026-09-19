@@ -159,7 +159,7 @@ class AssetLayoutFixtureTest extends TestCase
             'website' => $website,
             'dialog' => 'edit-website',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
-        $owner->currentOrganization->backupDestinations()->create([
+        $destination = $owner->currentOrganization->backupDestinations()->create([
             'created_by' => $owner->id,
             'name' => 'Fixture storage',
             'endpoint' => 'https://storage.example.test',
@@ -241,8 +241,15 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
             ->assertSee('Protection status')
             ->assertSee('data-modal-trigger="backup-schedule-dialog"', false)
+            ->assertSee('data-modal-trigger="backup-destination-create-dialog"', false)
+            ->assertSee('data-modal-trigger="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertDontSee('id="backup-destination-edit-'.$destination->id.'"', false)
             ->getContent());
         File::put($directory.'/backups-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'add-schedule']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/backups-destination-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'add-destination']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/backups-destination-edit-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/domains.html', $this->renderPage(route('domains.index'))->assertOk()
             ->assertSee('Add domain')->getContent());

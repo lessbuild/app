@@ -6,6 +6,22 @@
         $scheduleDialogOpen = (request()->query('dialog') === 'add-schedule' && ! session()->has('success'))
             || (old('_backup_schedule_form') === '1' && $scheduleHasErrors);
         $scheduleDialogUrl = route('backups.index', ['dialog' => 'add-schedule']);
+        $destinationHasErrors = $errors->hasAny([
+            'storage_provider', 'name', 'endpoint', 'bucket', 'region', 'access_key', 'secret_key', 'path_prefix',
+        ]);
+        $destinationDialog = request()->query('dialog');
+        $destinationCreateOpen = ($destinationDialog === 'add-destination' && ! session()->has('success'))
+            || (old('_backup_destination_form') === 'create' && $destinationHasErrors);
+        $destinationCreateUrl = route('backups.index', ['dialog' => 'add-destination']);
+        $editingDestination = null;
+        if (is_string($destinationDialog) && preg_match('/\Aedit-destination-(\d+)\z/', $destinationDialog, $matches) === 1) {
+            $editingDestination = $destinations->firstWhere('id', (int) $matches[1]);
+        }
+        $destinationEditOpen = $editingDestination instanceof \App\Models\BackupDestination
+            && (($destinationDialog === 'edit-destination-'.$editingDestination->id && ! session()->has('success'))
+                || (old('_backup_destination_form') === 'edit'
+                    && (string) old('_backup_destination_id') === (string) $editingDestination->id
+                    && $destinationHasErrors));
     @endphp
 
     <x-layouts.partials.heading
@@ -111,7 +127,20 @@
                     <h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2>
                     <p class="mt-1 text-sm text-secondary">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p>
                 </div>
-                <x-ui.badge>{{ $destinations->count() }}</x-ui.badge>
+                <div class="flex items-center gap-2">
+                    <x-ui.badge>{{ $destinations->count() }}</x-ui.badge>
+                    @if ($canManage)
+                        <x-ui.button
+                            :href="$destinationCreateUrl"
+                            data-modal-trigger="backup-destination-create-dialog"
+                            aria-controls="backup-destination-create-dialog"
+                            aria-expanded="{{ $destinationCreateOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
+                            {{ __('Add destination') }}
+                        </x-ui.button>
+                    @endif
+                </div>
             </div>
 
             <div class="mt-5 space-y-3">
@@ -138,10 +167,19 @@
 
                         @if ($canManage)
                             <div class="mt-4 flex flex-wrap gap-2">
-                                <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
-                                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Edit connection') }}</summary>
-                                    @include('backups._destination-form', ['action' => route('backups.destinations.update', $destination), 'formId' => 'edit-destination-'.$destination->id, 'submitLabel' => __('Save connection'), 'destination' => $destination])
-                                </details>
+                                @php
+                                    $destinationEditDialogId = 'backup-destination-edit-'.$destination->id;
+                                    $destinationEditUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
+                                @endphp
+                                <x-ui.button
+                                    :href="$destinationEditUrl"
+                                    data-modal-trigger="{{ $destinationEditDialogId }}"
+                                    aria-controls="{{ $destinationEditDialogId }}"
+                                    aria-expanded="{{ $destinationEditOpen && $editingDestination?->is($destination) ? 'true' : 'false' }}"
+                                    variant="secondary"
+                                >
+                                    {{ __('Edit connection') }}
+                                </x-ui.button>
                                 <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
                                     <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
                                     <div class="mt-3 space-y-3">
@@ -165,10 +203,19 @@
             </div>
 
             @if ($canManage)
-                <details class="mt-5 rounded-xl border border-primary bg-secondary p-4">
-                    <summary class="cursor-pointer font-bold text-primary">{{ __('Add destination') }}</summary>
-                    @include('backups._destination-form', ['action' => route('backups.destinations.store'), 'formId' => 'new-destination', 'submitLabel' => __('Create encrypted destination'), 'destination' => null])
-                </details>
+                <x-scenes.backups.destination-create-dialog
+                    :destination-catalog="$destinationCatalog"
+                    :destination-presets="$destinationPresets"
+                    :open="$destinationCreateOpen"
+                />
+                @if ($editingDestination)
+                    <x-scenes.backups.destination-edit-dialog
+                        :destination="$editingDestination"
+                        :destination-catalog="$destinationCatalog"
+                        :destination-presets="$destinationPresets"
+                        :open="$destinationEditOpen"
+                    />
+                @endif
             @endif
         </section>
 
@@ -209,61 +256,11 @@
             </div>
 
             @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
-                <x-dialogs.modal
-                    id="backup-schedule-dialog"
-                    :title="__('Add schedule')"
-                    :description="__('Automate retention without managing cron jobs.')"
+                <x-scenes.backups.schedule-dialog
+                    :websites="$websites"
+                    :destinations="$destinations"
                     :open="$scheduleDialogOpen"
-                >
-                    <form method="POST" action="{{ route('backups.schedules.store') }}" class="grid gap-4 sm:grid-cols-2">
-                        @csrf
-                        <input type="hidden" name="_backup_schedule_form" value="1">
-                        <label class="block" for="backup-schedule-website">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span>
-                            <select id="backup-schedule-website" name="website_id" class="input secondary w-full rounded-md">
-                                @foreach ($websites as $website)
-                                    <option value="{{ $website->id }}" @selected((string) old('website_id', $websites->first()->id) === (string) $website->id)>{{ $website->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-forms.errors name="website_id" />
-                        </label>
-                        <label class="block" for="backup-schedule-destination">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Destination') }}</span>
-                            <select id="backup-schedule-destination" name="backup_destination_id" class="input secondary w-full rounded-md">
-                                @foreach ($destinations as $destination)
-                                    <option value="{{ $destination->id }}" @selected((string) old('backup_destination_id', $destinations->first()->id) === (string) $destination->id)>{{ $destination->name }}</option>
-                                @endforeach
-                            </select>
-                            <x-forms.errors name="backup_destination_id" />
-                        </label>
-                        <label class="block" for="backup-schedule-frequency">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Frequency') }}</span>
-                            <select id="backup-schedule-frequency" name="frequency" class="input secondary w-full rounded-md">
-                                <option value="daily" @selected(old('frequency', 'daily') === 'daily')>{{ __('Daily') }}</option>
-                                <option value="weekly" @selected(old('frequency') === 'weekly')>{{ __('Weekly') }}</option>
-                            </select>
-                            <x-forms.errors name="frequency" />
-                        </label>
-                        <label class="block" for="backup-schedule-time">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Run at (UTC)') }}</span>
-                            <input id="backup-schedule-time" type="time" name="run_at" value="{{ old('run_at', '02:00') }}" class="input secondary w-full rounded-md">
-                            <x-forms.errors name="run_at" />
-                        </label>
-                        <label class="block" for="backup-schedule-weekday">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Weekday') }}</span>
-                            <input id="backup-schedule-weekday" type="number" name="weekday" min="0" max="6" value="{{ old('weekday', 0) }}" class="input secondary w-full rounded-md" title="{{ __('Sunday is 0') }}">
-                            <x-forms.errors name="weekday" />
-                        </label>
-                        <label class="block" for="backup-schedule-retention">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Retention count') }}</span>
-                            <input id="backup-schedule-retention" type="number" name="retention_count" min="1" max="365" value="{{ old('retention_count', 14) }}" class="input secondary w-full rounded-md">
-                            <x-forms.errors name="retention_count" />
-                        </label>
-                        <div class="sm:col-span-2">
-                            <x-ui.button type="submit" variant="primary">{{ __('Save schedule') }}</x-ui.button>
-                        </div>
-                    </form>
-                </x-dialogs.modal>
+                />
             @endif
         </section>
     </div>

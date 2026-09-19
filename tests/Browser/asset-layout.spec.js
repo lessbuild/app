@@ -59,6 +59,10 @@ async function serveFixtures(page) {
                             ? 'automation-dialog'
                             : screen === 'backups' && dialog === 'add-schedule'
                                 ? 'backups-dialog'
+                            : screen === 'backups' && dialog === 'add-destination'
+                                ? 'backups-destination-dialog'
+                            : screen === 'backups' && dialog?.startsWith('edit-destination-')
+                                ? 'backups-destination-edit-dialog'
                             : screen === 'build' && dialog === 'operator-note'
                                 ? 'build-note-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
@@ -630,6 +634,32 @@ test('backup schedule workflow uses an accessible URL-backed dialog', async ({ p
     await expect(scheduleDialog).toBeVisible();
     await page.locator('#backup-schedule-dialog [data-modal-close]').click();
     await expect(scheduleDialog).toBeHidden();
+
+    await page.goto('http://buildpusher.test/backups', { waitUntil: 'networkidle' });
+    const destinationTrigger = page.getByRole('link', { name: 'Add destination', exact: true });
+    const destinationDialog = page.getByRole('dialog', { name: 'Add backup destination', exact: true });
+    await destinationTrigger.click();
+    await expect(destinationDialog).toBeVisible();
+    await expect(page.locator('#backup-destination-create-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('add-destination');
+
+    await page.keyboard.press('Escape');
+    await expect(destinationDialog).toBeHidden();
+    await expect(destinationTrigger).toBeFocused();
+
+    const editDestinationTrigger = page.getByRole('link', { name: 'Edit connection', exact: true });
+    const editDestinationUrl = new URL(await editDestinationTrigger.getAttribute('href'), 'http://buildpusher.test');
+    const editDestinationDialog = page.getByRole('dialog', { name: 'Edit backup destination', exact: true });
+    await editDestinationTrigger.click();
+    await expect(editDestinationDialog).toBeVisible();
+    await expect(page.locator('#backup-destination-edit-1 [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('edit-destination-1');
+    await page.keyboard.press('Escape');
+    await expect(editDestinationDialog).toBeHidden();
+    await expect(editDestinationTrigger).toBeFocused();
+
+    await page.goto(`http://buildpusher.test${editDestinationUrl.pathname}${editDestinationUrl.search}`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Edit backup destination', exact: true })).toBeVisible();
 });
 
 test('credential workflows use compact accessible dialogs', async ({ page }) => {
