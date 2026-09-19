@@ -1875,3 +1875,73 @@ Implementation commit and push: `1466933 Render CRUD routes with shared dialogs`
 
 Continue with normal product work from `main`; the modal modernization slice
 is complete and the final handoff record is ready to be committed and pushed.
+
+## Follow-up Slice 21 — dashboard-local creation dialogs
+
+Status: complete locally, pushed to `main` in `577138f` and deployed to the
+served development runtime.
+
+### Responsibility problem
+
+Dashboard create-server, add-website, provider, repository and application
+links navigated to inventory or setup pages before opening their dialogs. That
+lost the dashboard context and made quick actions feel like separate feature
+pages. The dashboard also needed to preserve its setup-step behavior and
+validation reopening when the dialog host moved to the dashboard.
+
+### Boundary and design decision
+
+`DashboardCreationDialogData` owns the workspace-scoped option queries needed
+by the dashboard dialog host. The dashboard includes the existing reusable
+provider, server, website, repository and application scene components and
+opens them through dashboard-local query state. Shared components accept only
+the small cancel-URL and validation-marker presentation inputs required by
+both inventory pages and the dashboard.
+
+Recipe update links also remain on the dashboard when opened from the gallery
+summary. The selected recipe is loaded through the existing workspace scope
+and policy, while the full server page remains the place that renders the
+private recipe selector. This keeps private recipe names out of the dashboard's
+always-rendered quick-create markup.
+
+### Preserved contracts and safety guarantees
+
+- Dashboard create actions open in place, and Escape/close returns to the
+  dashboard URL state instead of navigating to an inventory page.
+- Setup actions stay local when that setup step is currently actionable;
+  future disabled steps remain disabled rather than becoming misleading
+  links.
+- Server and website validation failures redirect back to the dashboard with
+  the relevant dialog query and reopen the submitted dialog. Existing field
+  names, validation keys, policies, actions, flash messages and response
+  routes remain unchanged.
+- Provider, repository, project and recipe direct routes retain their original
+  no-JavaScript fallback and cancel destinations.
+- Workspace scoping, authorization, plan gates, eager option loading and
+  secret-safe old-input behavior remain unchanged. No schema, dependency or
+  queue serialization changes were made.
+
+### Verification
+
+- Focused dashboard and dialog regression coverage: **43 tests / 399
+  assertions** passed under PHP 8.5.10.
+- Complete PHP suite: **1,644 tests / 13,738 assertions** passed in 711.69
+  seconds.
+- Dashboard browser journey for page-local creation dialogs: **1 passed**.
+- Blade view cache, full Pint, `git diff --check` and production Vite build
+  passed.
+- Served runtime smoke checks passed: both application services active,
+  `/api/health` ready, login HTTP 200 and the expected local CSS asset served.
+- No dependency, migration, credential or production-infrastructure change
+  was made. External cloud acceptance remains separate.
+
+### Commit and push
+
+Implementation commit and push: `577138f Keep dashboard creation dialogs on
+page`.
+
+### Exact next task
+
+Continue normal product work from `main`; dashboard quick-create dialogs are
+now page-local and the served development runtime is on the implementation
+commit.

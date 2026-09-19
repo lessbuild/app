@@ -2154,6 +2154,29 @@ The final verification record is in
 `docs/verification/modal-modernization-progress.md`. The next task is normal
 product work from `main`.
 
+## Dashboard local dialog follow-up — 2026-09-19
+
+Dashboard quick-create actions now host their reusable provider, server,
+website, repository and application dialogs on the dashboard itself. Clicking
+Create server stays on the dashboard and opens the page-local dialog; Escape,
+close, validation redirects and setup-step actions preserve the dashboard
+context. Recipe update links opened from the dashboard gallery summary also
+remain on the dashboard and load only the workspace-authorized selected recipe
+dialog. Private recipe names are not included in the dashboard's always-
+rendered quick-create markup; the full selector remains on the Servers page.
+
+The change is implemented in `577138f` and is deployed to
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`. Both
+`buildpusher-dev-main.service` and `buildpusher-dev-main-worker.service` are
+active; `/api/health` returned ready, `/login` returned HTTP 200 and the
+expected local CSS asset was served. No dependency, migration or production
+configuration change was made.
+
+Verification: 43 focused tests / 399 assertions, the complete PHP suite with
+1,644 tests / 13,738 assertions, one targeted browser journey, Blade cache,
+Pint, Vite build and diff checks all passed. This is local/runtime smoke
+evidence only, not the separate paid-cloud or external acceptance drill.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
