@@ -1634,3 +1634,61 @@ only real add/edit workflows into page-included URL-backed components, while
 keeping script inspection, report resolution, deployment actions, imports,
 restores and other long or protocol-sensitive workflows as explicit pages
 when a modal would change ordering or failure semantics.
+
+## Follow-up Slice 17 — dashboard, cost and promotion dialogs
+
+Status: complete locally and pushed to `main` in `4a34ba0`.
+
+### Responsibility problem
+
+Dashboard preferences, the monthly infrastructure budget editor and tested
+release promotion were URL-backed dialogs embedded in otherwise large
+dashboard, cost and project-detail templates. Their inline markup made those
+pages responsible for both the surrounding read model and separate mutation
+presentations.
+
+### Boundary and design decision
+
+- Dashboard preferences now render through
+  `scenes.dashboard.preferences-dialog`.
+- Budget editing now renders through `scenes.costs.budget-dialog`.
+- Tested-release promotion now renders through
+  `scenes.projects.promotion-dialog`.
+- The host pages retain open-state calculation, resource/query context and
+  authorization gating. Components own only the modal form markup and its
+  existing field rendering.
+
+This is a small presentation-only boundary following single responsibility.
+Promotion remains an explicit deployment operation; no business logic or
+generic action abstraction was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Dashboard widget names, hidden form marker, validation keys, preference
+  persistence and redirect behavior remain unchanged.
+- Budget limits, manager authorization, planning-threshold wording, numeric
+  field attributes and update route remain unchanged.
+- Promotion build identity, target options, release-note field, validation
+  reopen behavior, tenant checks, approval gates, queue semantics and API
+  behavior remain unchanged.
+- Components are rendered as part of their host page, so opening a dialog does
+  not load a second feature page.
+
+### Verification
+
+- Dashboard, cost and promotion regression coverage: **42 tests / 373
+  assertions** passed under PHP 8.5.10.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed. No browser fixture currently covers
+  these three dialog workflows; their existing feature tests remain the
+  behavioral gate.
+
+### Commit and push
+
+Implementation commit and push: `4a34ba0 Extract dashboard cost and promotion dialogs`.
+
+### Exact next task
+
+Extract the remaining gallery and deployment-note dialogs into reusable scene
+components. Preserve report visibility, script privacy, gallery publishing,
+review-resolution semantics, Livewire state and deployment authorization.

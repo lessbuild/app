@@ -2060,6 +2060,28 @@ The next task is to audit build-note, gallery, dashboard and cost/budget
 mutation forms. Extract real add/edit workflows into page-included dialogs,
 while keeping long or protocol-sensitive workflows as explicit pages.
 
+## Dashboard, cost and promotion dialog follow-up — 2026-09-19
+
+Dashboard preferences, the monthly infrastructure budget editor and tested
+release promotion now render through reusable scene components:
+`scenes.dashboard.preferences-dialog`, `scenes.costs.budget-dialog` and
+`scenes.projects.promotion-dialog`.
+
+The host pages still own URL open state, query/resource context and
+authorization gating. Widget names, budget validation and manager checks,
+promotion identity/target fields, validation reopening, approval gates,
+queue semantics and responses remain unchanged. Components are included in
+the host page render, so opening a dialog does not load a second feature page.
+
+Verification passed with 42 focused PHP tests / 373 assertions. Blade cache,
+Pint and diff checks passed. No browser fixture currently covers these three
+surfaces. Implementation commit and push: `4a34ba0`.
+
+The next task is to extract the remaining gallery and deployment-note dialogs
+into reusable scene components while preserving report visibility, script
+privacy, gallery publishing, review-resolution semantics, Livewire state and
+deployment authorization.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
