@@ -1,5 +1,37 @@
 # BuildPusher chat handoff
 
+# Latest modal follow-up — 2026-09-19
+
+The latest authorized UI follow-up is complete and pushed on `main` at
+`42d4613` (`Use dialogs for compact settings workflows`). It converts the
+remaining short settings/review tasks into shared URL-backed dialogs:
+
+- Server display-name editing from the server detail page.
+- Dashboard widget customization.
+- Monthly infrastructure budget editing.
+- Saving an observability investigation view.
+- Workspace feedback review/status updates.
+
+The existing full-page server edit route remains available as a direct
+fallback. All other routes, methods, validation keys, policies, actions,
+authorization, flash messages, persistence and query filtering remain
+unchanged. Dialog validation failures reopen the relevant workflow, and
+observability dialog links use normalized context values so unrelated query
+parameters are not carried into the URL.
+
+Verification for this slice:
+
+- Focused PHP coverage: **59 tests / 513 assertions** passed under PHP
+  8.5.10.
+- Pint, Blade view compilation and `git diff --check`: passed.
+- Vite build and built-asset browser matrix: **20 tests passed in 11.4
+  minutes**.
+
+This is source and isolated-test evidence only. The isolated development
+runtime and production site were not deployed or changed by this slice.
+The prior “no further modal slice” notes below are historical and are
+superseded by this follow-up.
+
 # Follow-up modal pass — 2026-09-19
 
 The follow-up modal pass is complete through the observability incident-note

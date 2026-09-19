@@ -660,3 +660,75 @@ Status: complete for the isolated local/development scope.
 This is isolated development evidence only. No production deployment, paid
 cloud operation, provider-backed acceptance or physical-phone verification was
 performed. Those remain separately authorized external gates.
+
+## Follow-up Slice 6 — compact settings and review dialogs
+
+Status: complete locally and pushed on `main` in `42d4613`.
+
+### Responsibility problem
+
+The previous audit left five short workflows inline or on a separate page even
+though their surrounding pages were primarily inventory, evidence or summary
+surfaces: server display-name editing, dashboard widget selection, the monthly
+cost threshold, saving an observability investigation view, and workspace
+feedback review. On mobile these controls either added avoidable page height or
+sent users away from the context they were acting on.
+
+### Boundary and design decision
+
+- The server detail page now opens display-name editing in a shared dialog;
+  the existing `servers.edit` page remains available as a direct full-page
+  fallback.
+- Dashboard customization, cost-budget editing, investigation-view saving and
+  feedback review each use the shared URL-backed dialog component.
+- Existing Form Requests, policies, actions, routes, methods, validation keys,
+  flash messages and persistence remain the application boundary.
+- Inventory, evidence, saved-view lists, feedback content, deployment pages,
+  setup forms, YAML/configuration editors, recovery workflows and security
+  settings remain page workflows where context or safety requires it.
+
+This is a presentation-only extraction. No generic action, repository,
+policy, provider contract or business abstraction was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Server labels still normalize whitespace, clear to the cloud hostname and
+  record the same activity behavior; the technical hostname cannot be
+  changed by the dialog.
+- Dashboard widget preferences still preserve unrelated user preferences and
+  reject unsupported widgets without writing.
+- Cost management retains manager and entitlement authorization before budget
+  validation and writing; the budget remains a planning threshold rather than
+  a provider spending cap.
+- Investigation filters are copied from the normalized context object rather
+  than unrestricted query input, preserving the existing query-safety
+  guarantee. Saved-view authorization, expiry, ownership and evidence
+  revalidation remain unchanged.
+- Feedback review authorization still precedes validation and persistence;
+  workspace visibility, encrypted feedback storage and status transitions are
+  unchanged.
+- Direct dialog URLs, native anchor fallback, validation reopening,
+  Escape/back handling, focus restoration and responsive sizing use the
+  existing shared modal foundation.
+
+### Verification
+
+- Focused feature suite: **59 tests / 513 assertions** passed under PHP
+  8.5.10, including authorization, query-safety, persistence and dialog URL
+  assertions.
+- Pint: passed.
+- Blade view compilation: passed.
+- Vite production build: passed.
+- Built-asset browser matrix: **20 tests passed in 11.4 minutes**.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: `42d4613 Use dialogs for compact settings workflows`.
+
+### Exact next task
+
+Keep long setup, deployment, recovery, credential, YAML, security and
+destructive workflows as explicit pages. Any further modal work requires a
+newly identified compact workflow and separate authorization; production
+deployment, physical-device checks and external acceptance remain outstanding.
