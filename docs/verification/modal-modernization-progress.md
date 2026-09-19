@@ -509,7 +509,7 @@ validation.
 
 ## Follow-up Slice 4 — gallery report-resolution composers
 
-Status: complete locally; ready to commit and push with this verification record.
+Status: complete locally and pushed in `be3ea3f`; the isolated development runtime is next to be updated and restarted at the pushed tip.
 
 ### Responsibility problem
 
@@ -559,6 +559,6 @@ repository was introduced.
 
 ### Exact next task
 
-Commit and push this slice, update the isolated runtime, then convert the
-observability operational-incident investigation-note editor while preserving
-incident authorization, activity timing and status transitions.
+Update the isolated runtime, then convert the observability operational-incident
+investigation-note editor while preserving incident authorization, activity
+timing and status transitions.

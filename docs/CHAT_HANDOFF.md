@@ -6,7 +6,7 @@ The follow-up modal pass is complete through the gallery report-resolution
 slice on `main`. Four cohesive slices are pushed and verified: Automation
 schedule and task composers (`5349f5d`), deployment operator notes (`42080e0`),
 application-detail composers (`c428f04`), and gallery report-resolution
-composers (the current implementation commit).
+composers (`be3ea3f`).
 The isolated development runtime is updated after each pushed slice. Existing
 requests, policies, actions, entitlement checks, encryption, Livewire polling
 and queue behavior remain unchanged.
