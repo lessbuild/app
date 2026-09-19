@@ -1957,6 +1957,22 @@ automation, project child-resource forms, observability, notifications,
 feedback, build notes, gallery actions and budgets. Long configuration,
 import, restore, authentication and protocol workflows remain explicit pages.
 
+## Application/repository create dialog follow-up — 2026-09-19
+
+New application and repository creation now use reusable components:
+`scenes.projects.create-dialog` and `scenes.repositories.create-dialog`.
+Existing form partials, prerequisite guidance, policies, requests, actions,
+template selection, provider/website scoping, transactions, encrypted hooks
+and redirects remain unchanged.
+
+Verification passed with 33 focused PHP tests / 224 assertions. Blade cache,
+Pint and diff checks passed. Implementation commit and push:
+`1316261 Extract application and repository create dialogs`.
+
+The next task is automation token/schedule/task dialogs and organization
+invitation componentization, preserving token secrecy, membership permissions,
+validation, rate limits, dispatch timing and existing feedback.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

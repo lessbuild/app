@@ -1236,6 +1236,60 @@ feature components without changing permissions, secret handling, queued side
 effects or protocol/recovery ordering. Keep configuration authoring, imports,
 restore, authentication and other long workflows as explicit pages.
 
+## Follow-up Slice 17 — application and repository creation dialogs
+
+Status: complete locally and pushed to `main` in `1316261`.
+
+### Responsibility problem
+
+New application and repository creation already used URL-backed dialogs, but
+their markup remained embedded in the two inventory pages. This left each
+inventory responsible for both list rendering and a sizeable creation form.
+
+### Boundary and design decision
+
+- Application creation now uses `scenes.projects.create-dialog`.
+- Repository creation now uses `scenes.repositories.create-dialog`.
+- Existing project and repository form partials remain the field boundary;
+  dialog components own modal markup, prerequisite guidance, actions and
+  cancel URLs.
+- `StoreProjectRequest`, `StoreRepositoryRequest`, policies, template
+  selection, provider/website scoping, `CreateProjectAction`, repository
+  actions, transactions and redirects remain unchanged.
+
+No generic creation service or new interface was introduced. This is a
+presentation-only single-responsibility extraction.
+
+### Preserved contracts and safety guarantees
+
+- Application template defaults/allowlists, transaction-created production
+  environment, entitled processes, slug behavior and flash/redirect behavior
+  remain unchanged.
+- Repository provider and active-website prerequisites, field prefixes,
+  validation keys, encrypted hook handling and deployment behavior remain
+  unchanged.
+- Existing dialog URLs, focus/history behavior and direct full-page routes
+  remain available.
+
+### Verification
+
+- Creation, project and repository regression coverage: **33 tests / 224
+  assertions** passed under PHP 8.5.10.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `1316261 Extract application and repository
+create dialogs`.
+
+### Exact next task
+
+Continue the local-dialog audit with automation tokens/schedules/tasks and
+organization invitations. Preserve token secrecy, schedule/task validation,
+membership authorization, rate limits, dispatch timing and existing named
+error/flash behavior.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.
