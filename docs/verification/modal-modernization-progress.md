@@ -1807,3 +1807,71 @@ Implementation commit and push: `6d9966a Extract deployment note dialog`.
 
 Run the final component audit and focused regression suite across all dialog
 families, then update the handoff with the complete pushed commit sequence.
+
+## Follow-up Slice 20 — legacy CRUD route alignment
+
+Status: complete locally and pushed to `main` in `1466933`.
+
+### Responsibility problem
+
+The main inventory and detail pages already hosted reusable add/edit dialogs,
+but several legacy `/create` and `/edit` routes still rendered their own
+full-page forms. That left duplicate presentation paths and meant the same
+provider, repository, recipe, server, website or project form could drift
+depending on how it was opened.
+
+### Boundary and design decision
+
+The legacy route views now render the same page-included scene dialog
+components with `open` enabled. Inventory and detail pages include those
+components in their normal render and open them through the existing URL/query
+state. Direct routes retain their existing breadcrumbs, route URLs and
+no-JavaScript fallback while sharing the form markup and behavior.
+
+The shared components accept only small presentation compatibility props where
+needed: direct routes keep their established field IDs and server-edit title,
+while inventory pages retain unique prefixes for accessible, collision-free
+markup.
+
+### Preserved contracts and safety guarantees
+
+- Provider, repository, recipe, server, website and project validation rules,
+  authorization, plan gates, prerequisites, old-input behavior and redirects
+  remain unchanged.
+- Existing secret-safe validation behavior remains intact; credentials are not
+  exposed through the modal markup or flashed input.
+- Existing field names, IDs, named error handling, flash messages,
+  breadcrumbs and response routes remain compatible.
+- All audited add/edit CRUD forms are rendered by reusable scene components
+  included by the page that uses them; opening a dialog does not request a
+  second feature page.
+- Destructive confirmations, imports/restores, configuration/protocol
+  workflows, security flows and page-level settings remain explicit inline or
+  full-page workflows where a modal would change ordering, safety or clarity.
+
+### Verification
+
+- Focused provider, repository, recipe, project, website and server regression
+  coverage: **79 tests / 560 assertions** passed under PHP 8.5.10.
+- Complete PHP suite after the final code change: **1,641 tests / 13,696
+  assertions** passed in 522.62 seconds.
+- Blade view cache, full Pint, `git diff --check` and the production Vite
+  build passed.
+- The final view audit found **44** reusable scene dialog components and no
+  non-component `<x-dialogs.modal>` or raw `<dialog>` markup under
+  `resources/views`.
+- Existing browser evidence remains valid: three gallery journeys, two
+  feedback/notification journeys and one isolated mobile authenticated-screen
+  sweep passed. Gallery script inspection remains intentionally lazy so
+  sensitive script data is not included until explicitly requested.
+- No dependency or lockfile changed. No production deployment, live
+  acceptance drill or external cloud operation was performed.
+
+### Commit and push
+
+Implementation commit and push: `1466933 Render CRUD routes with shared dialogs`.
+
+### Exact next task
+
+Continue with normal product work from `main`; the modal modernization slice
+is complete and the final handoff record is ready to be committed and pushed.

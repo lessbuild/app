@@ -2120,6 +2120,40 @@ non-component `<x-dialogs.modal>` or raw `<dialog>` markup under
 The next task is final dialog-family regression verification and a complete
 handoff update with the pushed commit sequence.
 
+## Final CRUD modal alignment — 2026-09-19
+
+The remaining legacy provider, repository, recipe, server, website and project
+`/create` and `/edit` views now render the same reusable scene dialog
+components used by their inventory/detail pages. Direct routes open the shared
+dialog by default, preserving their existing URLs, breadcrumbs and no-
+JavaScript fallback; normal page visits include the dialog markup up front and
+open it through the existing URL/query state.
+
+The final audit covers 44 reusable scene dialog components and found no raw
+`<dialog>` or non-component `<x-dialogs.modal>` markup under
+`resources/views`. Existing validation, authorization, plan gates,
+prerequisites, secret-safe old-input behavior, field IDs, flash messages and
+redirects remain intact. Destructive, import/restore, configuration/protocol,
+security and page-level settings workflows remain explicit where a modal would
+alter their safety or execution ordering.
+
+Verification after the final code change:
+
+- Focused CRUD regression: 79 tests / 560 assertions passed.
+- Complete PHP suite: 1,641 tests / 13,696 assertions passed.
+- Blade view cache, full Pint, `git diff --check` and Vite asset build passed.
+- Existing browser evidence includes three gallery journeys, two
+  feedback/notification journeys and one isolated mobile authenticated-screen
+  sweep. Gallery script inspection remains lazy by design.
+- No dependency or lockfile changed. No production/live acceptance or cloud
+  operation was performed.
+
+Implementation commit and push: `1466933`.
+
+The final verification record is in
+`docs/verification/modal-modernization-progress.md`. The next task is normal
+product work from `main`.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
