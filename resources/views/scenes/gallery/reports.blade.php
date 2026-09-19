@@ -208,29 +208,36 @@
                             <p class="mt-1 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
                         </div>
                     @endif
+                    @php
+                        $resolutionDialogId = 'gallery-report-resolution-'.$report->id;
+                        $resolutionDialogKey = 'resolve-report-'.$report->id;
+                        $resolutionDialogOpen = request()->query('dialog') === $resolutionDialogKey
+                            || ((string) old('_gallery_resolution_report_id') === (string) $report->id && $errors->has('resolution_note'));
+                        $resolutionDialogUrl = route('gallery.reports.index', array_filter([
+                            ...$filters,
+                            'page' => request()->query('page'),
+                            'dialog' => $resolutionDialogKey,
+                        ], fn ($value) => $value !== null));
+                    @endphp
                     <div class="mt-4">
                         @if ($report->resolved_at === null)
-                            <form method="POST" action="{{ route('gallery.reports.resolve', [$report->recipe, $report]) }}" class="space-y-3">
-                                @csrf
-                                @method('PATCH')
-                                <div>
-                                    <label for="resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note (optional)') }}</label>
-                                    <textarea id="resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Briefly explain what was addressed.') }}"></textarea>
-                                </div>
-                                <x-ui.button type="submit" variant="secondary">{{ __('Mark Resolved') }}</x-ui.button>
-                            </form>
+                            @include('scenes.gallery.partials.report-resolution-dialog', [
+                                'dialogId' => $resolutionDialogId,
+                                'dialogOpen' => $resolutionDialogOpen,
+                                'dialogUrl' => $resolutionDialogUrl,
+                                'formAction' => route('gallery.reports.resolve', [$report->recipe, $report]),
+                                'report' => $report,
+                                'resolved' => false,
+                            ])
                         @else
-                            <form method="POST" action="{{ route('gallery.reports.resolution-note.update', [$report->recipe, $report]) }}" class="space-y-3">
-                                @csrf
-                                @method('PATCH')
-                                <div>
-                                    <label for="edit_resolution_note_{{ $report->id }}" class="block text-xs font-semibold uppercase text-secondary">{{ __('Resolution note') }}</label>
-                                    <textarea id="edit_resolution_note_{{ $report->id }}" name="resolution_note" rows="2" maxlength="1000" class="input secondary mt-2 w-full rounded-lg" placeholder="{{ __('Briefly explain what was addressed.') }}">{{ $report->resolution_note }}</textarea>
-                                    <p class="mt-1 text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
-                                    <x-forms.errors name="resolution_note" />
-                                </div>
-                                <x-ui.button type="submit" variant="secondary">{{ $report->resolution_note ? __('Update Resolution Note') : __('Add Resolution Note') }}</x-ui.button>
-                            </form>
+                            @include('scenes.gallery.partials.report-resolution-dialog', [
+                                'dialogId' => $resolutionDialogId,
+                                'dialogOpen' => $resolutionDialogOpen,
+                                'dialogUrl' => $resolutionDialogUrl,
+                                'formAction' => route('gallery.reports.resolution-note.update', [$report->recipe, $report]),
+                                'report' => $report,
+                                'resolved' => true,
+                            ])
                             <form method="POST" action="{{ route('gallery.reports.reopen', [$report->recipe, $report]) }}" class="mt-3">
                                 @csrf
                                 @method('PATCH')

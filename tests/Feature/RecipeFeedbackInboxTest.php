@@ -70,6 +70,56 @@ class RecipeFeedbackInboxTest extends TestCase
             ->assertDontSee($otherReporter->email);
     }
 
+    public function test_resolution_composers_are_dialogs_and_reopen_only_the_submitted_report(): void
+    {
+        [$reporter, $secondReporter, $author] = User::factory()->count(3)->create();
+        $recipe = $this->recipe($author, 'Resolution dialog recipe');
+        $open = $reporter->recipeReports()->create(['recipe_id' => $recipe->id, 'reason' => 'broken']);
+        $resolved = $secondReporter->recipeReports()->create([
+            'recipe_id' => $recipe->id,
+            'reason' => 'security',
+            'resolved_at' => now(),
+            'resolution_note' => 'Existing remediation note.',
+        ]);
+        $dialogPattern = static fn (int $id): string => '/<dialog(?=[^>]*id="gallery-report-resolution-'.$id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($author)->get(route('gallery.reports.index', ['status' => 'all']))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="gallery-report-resolution-'.$open->id.'"', false)
+            ->assertSee('data-modal-trigger="gallery-report-resolution-'.$resolved->id.'"', false);
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($open->id), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($resolved->id), $default->getContent());
+
+        foreach ([$open, $resolved] as $report) {
+            $dialogUrl = route('gallery.reports.index', [
+                'status' => 'all',
+                'dialog' => 'resolve-report-'.$report->id,
+            ]);
+            $this->assertMatchesRegularExpression(
+                $dialogPattern($report->id),
+                $this->actingAs($author)->get($dialogUrl)->assertSuccessful()->getContent(),
+            );
+        }
+
+        $openDialogUrl = route('gallery.reports.index', ['status' => 'all', 'dialog' => 'resolve-report-'.$open->id]);
+        $openError = $this->actingAs($author)->from($openDialogUrl)->followingRedirects()->patch(
+            route('gallery.reports.resolve', [$recipe, $open]),
+            ['_gallery_resolution_report_id' => $open->id, 'resolution_note' => str_repeat('x', 1001)],
+        )->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern($open->id), $openError->getContent());
+        $openError->assertSee('The resolution note must not be greater than 1000 characters.');
+
+        $resolvedDialogUrl = route('gallery.reports.index', ['status' => 'all', 'dialog' => 'resolve-report-'.$resolved->id]);
+        $resolvedError = $this->actingAs($author)->from($resolvedDialogUrl)->followingRedirects()->patch(
+            route('gallery.reports.resolution-note.update', [$recipe, $resolved]),
+            ['_gallery_resolution_report_id' => $resolved->id, 'resolution_note' => str_repeat('x', 1001)],
+        )->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern($resolved->id), $resolvedError->getContent());
+        $resolvedError->assertSee('The resolution note must not be greater than 1000 characters.');
+        $this->assertNull($open->refresh()->resolved_at);
+        $this->assertSame('Existing remediation note.', $resolved->refresh()->resolution_note);
+    }
+
     public function test_inbox_combines_status_and_reason_filters_with_pagination(): void
     {
         [$reporter, $author] = User::factory()->count(2)->create();

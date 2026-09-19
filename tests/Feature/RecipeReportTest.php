@@ -52,6 +52,33 @@ class RecipeReportTest extends TestCase
         $this->assertDatabaseCount('recipe_reports', 0);
     }
 
+    public function test_contributor_resolution_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$reporter, $author] = User::factory()->count(2)->create();
+        $recipe = $this->publishedRecipe($author, 'Resolution composer helper');
+        $report = $reporter->recipeReports()->create([
+            'recipe_id' => $recipe->id,
+            'reason' => 'security',
+        ]);
+        $dialogId = 'gallery-report-resolution-'.$report->id;
+        $dialogUrl = route('gallery.show', ['recipe' => $recipe, 'dialog' => 'resolve-report-'.$report->id]);
+        $dialogPattern = '/<dialog(?=[^>]*id="'.preg_quote($dialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($author)->get(route('gallery.show', $recipe))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="'.$dialogId.'"', false);
+        $this->assertDoesNotMatchRegularExpression($dialogPattern, $default->getContent());
+        $this->assertMatchesRegularExpression($dialogPattern, $this->actingAs($author)->get($dialogUrl)->assertSuccessful()->getContent());
+
+        $errorPage = $this->actingAs($author)->from($dialogUrl)->followingRedirects()->patch(
+            route('gallery.reports.resolve', [$recipe, $report]),
+            ['_gallery_resolution_report_id' => $report->id, 'resolution_note' => str_repeat('x', 1001)],
+        )->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern, $errorPage->getContent());
+        $errorPage->assertSee('The resolution note must not be greater than 1000 characters.');
+        $this->assertNull($report->refresh()->resolved_at);
+    }
+
     public function test_user_can_create_update_and_withdraw_one_private_report(): void
     {
         [$user, $author] = User::factory()->count(2)->create();

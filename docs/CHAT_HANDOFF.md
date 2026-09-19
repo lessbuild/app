@@ -2,10 +2,11 @@
 
 # Follow-up modal pass — 2026-09-19
 
-The follow-up modal pass is complete through the application-detail slice on
-`main`. Three cohesive slices are pushed and verified: Automation schedule and
-task composers (`5349f5d`), deployment operator notes (`42080e0`), and the
-application-detail composers (`c428f04`).
+The follow-up modal pass is complete through the gallery report-resolution
+slice on `main`. Four cohesive slices are pushed and verified: Automation
+schedule and task composers (`5349f5d`), deployment operator notes (`42080e0`),
+application-detail composers (`c428f04`), and gallery report-resolution
+composers (the current implementation commit).
 The isolated development runtime is updated after each pushed slice. Existing
 requests, policies, actions, entitlement checks, encryption, Livewire polling
 and queue behavior remain unchanged.
@@ -18,9 +19,16 @@ focused feature coverage passed **7 tests / 47 assertions** for
 assertions**, and the focused 390px Playwright flow passed **1 test**. Pint,
 Node syntax and `git diff --check` passed.
 
-The next task is the gallery report-resolution dialog, then the observability
-incident-note dialog. Keep each slice independently tested, committed and
-pushed.
+The gallery slice shares only the presentation fragment across the contributor
+recipe page and feedback inbox. Resolution and note-update actions, anonymous
+report scope, unread notifications and encrypted notes remain unchanged. Its
+feature coverage passed **16 tests / 186 assertions** for `RecipeReportTest`,
+**24 tests / 235 assertions** for `RecipeFeedbackInboxTest`, the Blade fixture
+passed **1 test / 66 assertions**, and the focused 390px Playwright flow passed
+**1 test**. Pint, Node syntax and `git diff --check` passed.
+
+The next task is the observability incident-note dialog. Keep each slice
+independently tested, committed and pushed.
 
 # Modal modernization completion — 2026-09-19
 

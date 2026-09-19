@@ -506,3 +506,59 @@ correct environment context.
 Convert the gallery report-resolution dialog while preserving
 reporter/contributor authorization, unread notifications and resolution-note
 validation.
+
+## Follow-up Slice 4 — gallery report-resolution composers
+
+Status: complete locally; ready to commit and push with this verification record.
+
+### Responsibility problem
+
+The contributor recipe page and feedback inbox each rendered the full
+resolution-note editor inside every report card. Most reports only need their
+status, details and existing resolution context; keeping the textareas inline
+made long report lists especially difficult to scan on mobile and duplicated
+the same resolution UI in two entry points.
+
+### Boundary and design decision
+
+- One URL-backed dialog is created per report, with a stable report-specific
+  DOM ID and query key.
+- The shared Blade presentation fragment is used by both the recipe detail and
+  contributor inbox pages.
+- Bulk resolve/reopen and the input-free reopen action remain inline because
+  they are selection/lifecycle controls rather than text composition.
+- Existing `RecipeReportResolutionRequest`, contributor policy checks, locked
+  actions, notification service and encrypted model casts remain unchanged.
+
+This is a view-level reuse boundary only. No generic action or report
+repository was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Existing resolve and resolution-note update routes, PATCH methods, field
+  names, flash messages, response statuses and redirect behavior are unchanged.
+- The dialog URL retains inbox filters and page context. A hidden report ID
+  reopens only the submitted report after resolution-note validation fails.
+- Resolution notes remain escaped and encrypted; the URL contains only the
+  report identity required to reopen the correct editor.
+- Contributor/report ownership, anonymous reporter rendering, unread update
+  behavior, audit events, locks and idempotent actions are unchanged.
+- Direct query URLs, no-JavaScript anchor fallback, Escape, Back navigation and
+  focus restoration remain available through the shared dialog foundation.
+
+### Verification
+
+- `tests/Feature/RecipeReportTest.php`: 16 tests, 186 assertions passed.
+- `tests/Feature/RecipeFeedbackInboxTest.php`: 24 tests, 235 assertions
+  passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 66 assertions
+  passed.
+- Focused 390px gallery contributor-resolution Playwright flow: 1 test passed
+  in 17.9 seconds.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Commit and push this slice, update the isolated runtime, then convert the
+observability operational-incident investigation-note editor while preserving
+incident authorization, activity timing and status transitions.

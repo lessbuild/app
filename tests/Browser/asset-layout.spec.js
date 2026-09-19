@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -544,6 +544,31 @@ test('gallery report composer uses an accessible URL-backed dialog', async ({ pa
     await expect(reportDialog).toBeVisible();
     await page.locator('#gallery-report-dialog [data-modal-close]').click();
     await expect(reportDialog).toBeHidden();
+});
+
+test('gallery contributor resolution uses per-report accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/gallery-review', { waitUntil: 'networkidle' });
+
+    const resolveTrigger = page.getByRole('link', { name: 'Mark Resolved', exact: true });
+    const resolveDialog = page.getByRole('dialog', { name: 'Resolve community report', exact: true });
+    await resolveTrigger.click();
+    await expect(resolveDialog).toBeVisible();
+    await expect(resolveDialog.locator('[data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^resolve-report-\d+$/);
+    await page.keyboard.press('Escape');
+    await expect(resolveDialog).toBeHidden();
+    await expect(resolveTrigger).toBeFocused();
+
+    const noteTrigger = page.getByRole('link', { name: 'Update Resolution Note', exact: true });
+    const noteDialog = page.getByRole('dialog', { name: 'Edit resolution note', exact: true });
+    await noteTrigger.click();
+    await expect(noteDialog).toBeVisible();
+    await expect(noteDialog.locator('[data-modal-close]')).toBeFocused();
+    await noteDialog.locator('[data-modal-close]').click();
+    await expect(noteDialog).toBeHidden();
+    await expect(noteTrigger).toBeFocused();
 });
 
 test('metric alert rule composer uses an accessible URL-backed dialog', async ({ page }) => {

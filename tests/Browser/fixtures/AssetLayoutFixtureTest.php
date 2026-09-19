@@ -60,6 +60,23 @@ class AssetLayoutFixtureTest extends TestCase
             'recipe' => $galleryRecipe,
             'dialog' => 'report',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        $galleryReporter = User::factory()->create(['name' => 'Gallery fixture reporter']);
+        $galleryReporter->recipeReports()->create([
+            'recipe_id' => $galleryRecipe->id,
+            'reason' => 'broken',
+            'details' => 'Fixture contributor report.',
+        ]);
+        User::factory()->create(['name' => 'Gallery fixture reporter two'])->recipeReports()->create([
+            'recipe_id' => $galleryRecipe->id,
+            'reason' => 'security',
+            'resolved_at' => now(),
+            'resolution_note' => 'Fixture resolution note.',
+        ]);
+        $this->actingAs($galleryAuthor);
+        File::put($directory.'/gallery-review.html', $this->renderPage(route('gallery.show', $galleryRecipe))->assertOk()
+            ->assertSee('data-modal-trigger="gallery-report-resolution-', false)
+            ->assertSee('Mark Resolved')->assertSee('Update Resolution Note')->getContent());
+        $this->actingAs($owner);
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());
