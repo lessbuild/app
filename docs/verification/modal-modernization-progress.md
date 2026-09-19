@@ -96,3 +96,51 @@ The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this c
 ### Exact next task
 
 After this slice is pushed and the isolated runtime is updated, inspect backup schedule and load-balancer node workflows. Convert only short create/add forms; preserve destination save-before-verify behavior, entitlements, organization-scoped lookups and remote-job semantics.
+
+## Slice 3 — backup schedules and high-availability node forms
+
+Status: complete and deployed to the isolated development runtime.
+
+### Responsibility problem
+
+The backup schedule form and high-availability route/node forms were embedded in long inventory pages. On mobile, the forms competed with recovery evidence, destinations, route status and node inventory. The load-balancer page also expanded the create form automatically when no route existed, which made the empty state unnecessarily tall.
+
+### Boundary and design decision
+
+- Backup schedule creation uses the shared modal because it is a short, existing Form Request-backed operation with no remote execution in the request.
+- High-availability route creation and application-node addition use the shared modal because they are compact inputs whose existing actions and queued configuration jobs remain the business boundary.
+- Backup destination creation, editing and verification remain page disclosures. Saving encrypted credentials and verifying them are intentionally separate operations and were not combined into a modal workflow.
+- Existing node inventory remains a responsive disclosure so incomplete routes still expose their required next action without hiding status information.
+
+This reduces page-level presentation responsibility while preserving the existing request, policy, action, transaction and job boundaries. No new business abstraction was introduced.
+
+### Preserved contracts and safety guarantees
+
+- Existing routes, methods, validation keys, old input, flash messages, entitlement checks and organization-scoped lookups are unchanged.
+- Schedule defaults and selected values are retained after validation failure; the schedule dialog reopens with the existing errors.
+- Route creation and node validation reopen only their relevant dialog, while incomplete-node disclosure behavior remains unchanged.
+- Existing load-balancer self-routing and dedicated-server safeguards, queue dispatches, deletion behavior and status transitions remain outside the presentation change.
+- Backup destination encryption, save-before-verify behavior, temporary-object verification, sanitized failures and no-server verification remain unchanged.
+- Direct query URLs and no-JavaScript anchor fallbacks are available for each dialog.
+
+### Verification
+
+- Focused backup, destination, recovery and high-availability run: 24 tests, 180 assertions passed.
+- `tests/Feature/ManagedBackupTest.php`: schedule dialog and existing backup/retry/restore coverage passed.
+- `tests/Feature/LoadBalancerOperationsTest.php`: create, node, authorization, entitlement and safety coverage passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 39 assertions passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php npm run test:browser -- tests/Browser/asset-layout.spec.js --grep "backup schedule workflow" --workers=1`: 1 test passed.
+- `npm run build`: passed.
+- Pint: passed.
+- `git diff --check`: passed.
+- Isolated runtime restarted successfully; `https://buildpusher.com/login` returned HTTP 200.
+
+### Commit and push
+
+Commit and push: `65d9dad Use dialogs for backup and load balancer forms`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this commit, rebuilt, view-cached, route-cache-cleared, restarted and verified active on `main`.
+
+### Exact next task
+
+Inspect database-management and API-token/credential workflows. Convert only compact, reversible create or issue forms; keep clone/restore reviews, credential rotation with consequential effects, OAuth/SSO, two-factor and other multi-step or destructive workflows as full-page flows.
