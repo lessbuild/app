@@ -1,5 +1,47 @@
 # BuildPusher chat handoff
 
+# Latest gallery-dialog slice — 2026-09-19
+
+The gallery publish and script-inspection follow-up is complete and pushed on
+`main` at `b2339ba` (`Use dialogs for gallery publishing and script
+inspection`). The gallery page now opens **Publish a Recipe** in the shared
+URL-backed native dialog and opens **Inspect script** in a per-recipe dialog.
+
+Script content is loaded on demand through a published-only endpoint, so the
+default gallery listing still does not load or expose recipe scripts. The
+existing recipe store request, policy, action, entitlement checks, validation
+keys, flash feedback, persistence and encryption remain unchanged. Published
+script inspection is still available as a direct URL and as a no-JavaScript
+full-page fallback; private recipes return the existing not-found response.
+The standalone `/recipes/create` page remains available for the full recipe
+workflow.
+
+Verification for this slice:
+
+- Focused recipe feature coverage: **37 tests / 415 assertions** passed.
+- Browser fixture export: **1 test / 88 assertions** passed.
+- Dedicated 390px gallery dialog flow: **1 test passed in 43.9 seconds**.
+- Complete strict PHP 8.5.10 suite: **1,629 tests / 13,583 assertions**
+  passed in **687.53 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Complete built-asset browser matrix: **22 tests passed in 10.2 minutes**,
+  including light/dark responsive layouts, creation dialogs, gallery publish
+  and script inspection, provider no-JavaScript submission and the existing
+  modal coverage.
+- Full Pint, locked Composer platform requirements, Vite production build,
+  Node syntax, Blade view cache, route cache and `git diff --check` passed.
+
+This is isolated development and test evidence only. No production deployment,
+provider-backed acceptance, paid cloud operation or physical-device check was
+performed. The implementation commit was pushed before this handoff update;
+the documentation commit follows it.
+
+### Exact next task
+
+Keep long recipe editing, installation/update, recovery and other durable
+workflows as explicit pages. Continue with a separately authorized compact UI
+workflow or external acceptance gate.
+
 # Latest creation-dialog slice — 2026-09-19
 
 The authorized creation-dialog slice is complete and pushed on `main` through

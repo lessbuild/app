@@ -800,3 +800,78 @@ deployment, recovery and destructive workflows as pages unless a new compact
 workflow is separately identified and authorized. Production deployment,
 provider-backed acceptance and physical-device verification remain external
 gates.
+
+## Follow-up Slice 8 — gallery publishing and on-demand script inspection
+
+Status: complete locally and pushed on `main` in `b2339ba`.
+
+### Responsibility problem
+
+The gallery page's primary publish action navigated away from the user's
+current discovery context, while script inspection was not available from the
+gallery card. On mobile this added avoidable context switching and made it
+harder to inspect a published recipe before opening its full detail page.
+
+### Boundary and design decision
+
+- The existing gallery publish form is rendered in the shared URL-backed
+  dialog and continues to submit to the existing `recipes.store` operation.
+- Script inspection uses a small presentation endpoint that returns only the
+  published recipe's escaped script fragment. The gallery card opens it in a
+  per-recipe dialog and loads the fragment on demand.
+- The shared modal loader owns only presentation concerns: same-origin fetch,
+  loading/error state, focus, Escape/back behavior and direct-link fallback.
+- `RecipeGalleryIndexRequest` recognizes dialog state separately from the
+  existing filter contract; it does not broaden or normalize gallery filters.
+- No new business action, repository, policy or provider abstraction was
+  introduced. The existing request, policy, action, entitlement and
+  persistence boundaries remain the operation boundary.
+
+This applies the single-responsibility principle at the UI boundary without
+moving business rules into a dialog component or creating a generic CRUD
+abstraction.
+
+### Preserved contracts and safety guarantees
+
+- Existing publish validation keys, old-input behavior, flash messages,
+  entitlement checks, authorization and persistence remain unchanged.
+- Publish validation failures reopen the publish dialog only when the gallery
+  marker is present; the standalone recipe-create flow remains unchanged.
+- The default gallery index does not load or render recipe script bodies.
+- The script endpoint returns a not-found response for private or otherwise
+  unpublished recipes and exposes an escaped script only for published
+  recipes.
+- No recipe script is placed in the default gallery response, logs or session
+  old input by this slice.
+- Existing detail, favorite, rating, report and contributor workflows remain
+  page-based and retain their current routes and response behavior.
+- Native anchors provide direct URL and no-JavaScript fallbacks. URL-backed
+  dialog state, Escape handling and focus restoration use the existing shared
+  modal foundation.
+
+### Verification
+
+- Focused recipe feature coverage: **37 tests / 415 assertions** passed under
+  PHP 8.5.10.
+- Browser fixture export: **1 test / 88 assertions** passed.
+- Dedicated 390px gallery publishing and script-inspection flow: **1 test
+  passed in 43.9 seconds**.
+- Complete strict PHP 8.5.10 suite: **1,629 tests / 13,583 assertions**
+  passed in **687.53 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- Complete built-asset browser matrix: **22 tests passed in 10.2 minutes**.
+- Full Pint, locked Composer platform requirements, Vite production build,
+  Node syntax check, Blade view cache, route cache and `git diff --check`:
+  passed. Composer emitted only the known upstream PHP 8.5 deprecation
+  notices and no dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `b2339ba Use dialogs for gallery publishing
+and script inspection`.
+
+### Exact next task
+
+Keep long recipe editing, installation/update, recovery and other durable
+workflows as explicit pages. Continue with a separately authorized compact UI
+workflow or external acceptance gate.
