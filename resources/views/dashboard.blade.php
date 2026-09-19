@@ -13,10 +13,10 @@
             <p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
         </div>
         <nav class="flex shrink-0 flex-wrap gap-2" aria-label="{{ __('Dashboard quick actions') }}">
-            <x-ui.button :href="route('servers.create')" variant="secondary">
+            <x-ui.button :href="route('servers.index', ['dialog' => 'create-server'])" variant="secondary">
                 {{ __('Create server') }}
             </x-ui.button>
-            <x-ui.button :href="route('websites.create')" variant="primary">
+            <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">
                 {{ __('Add website') }}
             </x-ui.button>
             <x-ui.button
@@ -533,7 +533,7 @@
                     :description="__('Create a website to begin configuring deployments.')"
                 >
                     <x-slot:button>
-                        <x-ui.button :href="route('websites.create')" variant="primary">{{ __('Add website') }}</x-ui.button>
+                        <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">{{ __('Add website') }}</x-ui.button>
                     </x-slot:button>
                 </x-lists.empty>
             @endforelse

@@ -91,7 +91,7 @@
                         $readiness = [
                         ['label' => __('Active server attached'), 'ready' => $environment->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE, 'url' => route('servers.index')],
                         ['label' => __('Active website attached'), 'ready' => $environment->website?->provisioning_status === \App\Models\Website::STATUS_ACTIVE, 'url' => route('websites.index')],
-                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.create')],
+                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.index', ['dialog' => 'create-website'])],
                         ['label' => __('Provider credentials available'), 'ready' => (bool) $repository?->provider_id, 'url' => route('providers.index')],
                         ];
                         $readyCount = collect($readiness)->where('ready', true)->count();
@@ -119,7 +119,7 @@
                     @elseif($environment->website && $canDeploy)
                         <x-ui.button :href="route('repositories.create', ['website_id' => $environment->website_id, 'branch' => $environment->branch])" variant="primary">{{ __('Connect repository') }}</x-ui.button>
                     @elseif($canDeploy)
-                        <x-ui.button :href="route('websites.create')" variant="primary">{{ __('Create website') }}</x-ui.button>
+                        <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">{{ __('Create website') }}</x-ui.button>
                     @endif
                 </div>
 

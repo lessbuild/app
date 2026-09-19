@@ -19,7 +19,7 @@
         <x-ui.alert tone="info" class="my-4" role="status">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You need an active application server with MySQL before you can add a website') }}</p>
-                <a data-turbo="false" href="{{ route('servers.create') }}" class="shrink-0 font-semibold underline">
+                <a data-turbo="false" href="{{ route('servers.index', ['dialog' => 'create-server']) }}" class="shrink-0 font-semibold underline">
                     {{ __('Create Server') }}
                     <span aria-hidden="true">→</span>
                 </a>

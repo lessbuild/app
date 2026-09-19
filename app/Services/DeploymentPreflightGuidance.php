@@ -82,7 +82,7 @@ class DeploymentPreflightGuidance
 
         [$url, $action] = match ($check['name']) {
             'Server' => [
-                $server ? $this->url->route('servers.show', $server) : $this->url->route('servers.create'),
+                $server ? $this->url->route('servers.show', $server) : $this->url->route('servers.index', ['dialog' => 'create-server']),
                 $server ? __('Review server status') : __('Create an application server'),
             ],
             'Website', 'Health verification', 'Release recovery' => [

@@ -130,8 +130,8 @@ class DashboardTest extends TestCase
             ->assertSee('System operational')
             ->assertSee('View system health')
             ->assertSee(route('system-health.index'))
-            ->assertSee(route('servers.create'))
-            ->assertSee(route('websites.create'));
+            ->assertSee(route('servers.index', ['dialog' => 'create-server']))
+            ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
         $this->assertMatchesRegularExpression(
             '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*bg-secondary[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
@@ -192,8 +192,8 @@ class DashboardTest extends TestCase
         $this->assertStringContainsString('id="setup-panel-provider"', $content);
         $this->assertStringContainsString('x-show="activeSetupStep ===', $content);
         $this->assertStringContainsString('href="'.route('providers.create').'"', $content);
-        $this->assertStringContainsString('href="'.route('servers.create').'"', $content);
-        $this->assertStringContainsString('href="'.route('websites.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('servers.index', ['dialog' => 'create-server']).'"', $content);
+        $this->assertStringContainsString('href="'.route('websites.index', ['dialog' => 'create-website']).'"', $content);
         $this->assertStringContainsString('href="'.route('repositories.create').'"', $content);
     }
 

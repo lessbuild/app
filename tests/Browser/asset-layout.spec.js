@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -49,7 +49,13 @@ async function serveFixtures(page) {
                                     ? 'observability-metric-rule-dialog'
                                 : screen === 'notifications' && dialog === 'save-filter'
                                     ? 'notifications-dialog'
-                                : screen;
+                                    : screen === 'projects' && dialog === 'create-application'
+                                        ? 'projects-dialog'
+                                        : screen === 'websites' && dialog === 'create-website'
+                                            ? 'websites-dialog'
+                                            : screen === 'servers' && dialog === 'create-server'
+                                                ? 'servers-dialog'
+                                                : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -84,6 +90,35 @@ test('observability investigation notes use an accessible dialog', async ({ page
     await page.keyboard.press('Escape');
     await expect(noteDialog).toBeHidden();
     await expect(noteTrigger).toBeFocused();
+});
+
+test('primary creation workflows use accessible inventory dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    for (const workflow of [
+        { path: 'projects', trigger: 'New application', title: 'New application', query: 'create-application' },
+        { path: 'servers', trigger: 'Add Server', title: 'Add server', query: 'create-server' },
+        { path: 'websites', trigger: 'Add Website', title: 'Add website', query: 'create-website' },
+    ]) {
+        await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });
+        const trigger = page.getByRole('link', { name: workflow.trigger, exact: true }).first();
+        const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
+
+        await trigger.click();
+        await expect(dialog).toBeVisible();
+        expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
+        await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+        await expect(trigger).toBeFocused();
+        expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+        await page.goto(`http://buildpusher.test/${workflow.path}?dialog=${workflow.query}`, { waitUntil: 'networkidle' });
+        await expect(page.getByRole('dialog', { name: workflow.title, exact: true })).toBeVisible();
+    }
 });
 
 for (const colorScheme of ['light', 'dark']) {
@@ -191,7 +226,9 @@ for (const colorScheme of ['light', 'dark']) {
                     await page.keyboard.press('Escape');
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');
                     await expect(quickAction).toHaveText('New app');
-                    expect(new URL(await quickAction.getAttribute('href')).pathname).toBe('/projects/create');
+                    const quickActionUrl = new URL(await quickAction.getAttribute('href'));
+                    expect(quickActionUrl.pathname).toBe('/projects');
+                    expect(quickActionUrl.searchParams.get('dialog')).toBe('create-application');
                     await expect(quickAction).toHaveCSS('min-height', '44px');
                 }
                 if (screen === 'build') {

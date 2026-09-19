@@ -196,7 +196,7 @@
             <x-ui.card class="p-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-bold text-primary">{{ __('Servers') }}</h3>
-                    <x-ui.button :href="route('servers.create')" variant="ghost">{{ __('Add Server') }}</x-ui.button>
+                    <x-ui.button :href="route('servers.index', ['dialog' => 'create-server'])" variant="ghost">{{ __('Add Server') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 divide-y divide-primary">
                     @forelse($servers as $server)

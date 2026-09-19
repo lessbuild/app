@@ -99,6 +99,8 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/projects.html', $this->renderPage(route('projects.index'))->assertOk()
             ->assertSee('A deliberately long layout fixture application name')->getContent());
+        File::put($directory.'/projects-dialog.html', $this->renderPage(route('projects.index', ['dialog' => 'create-application']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $provider = $owner->providers()->create([
             'name' => 'GitHub', 'provider' => 'github', 'token' => 'fixture-token', 'description' => 'Test',
         ]);
@@ -107,6 +109,14 @@ class AssetLayoutFixtureTest extends TestCase
             'server_id' => $server->id, 'name' => 'App', 'url' => 'app.test', 'description' => 'Test',
             'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
+        File::put($directory.'/servers.html', $this->renderPage(route('servers.index'))->assertOk()
+            ->assertSee('data-modal-trigger="server-create-dialog"', false)->getContent());
+        File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/websites.html', $this->renderPage(route('websites.index'))->assertOk()
+            ->assertSee('data-modal-trigger="website-create-dialog"', false)->getContent());
+        File::put($directory.'/websites-dialog.html', $this->renderPage(route('websites.index', ['dialog' => 'create-website']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $owner->currentOrganization->backupDestinations()->create([
             'created_by' => $owner->id,
             'name' => 'Fixture storage',

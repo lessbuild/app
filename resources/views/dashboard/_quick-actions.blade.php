@@ -10,9 +10,9 @@
 
     <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ([
-            [__('Create application'), route('projects.create'), __('Start with a repository-backed application.'), 'primary'],
-            [__('Provision server'), route('servers.create'), __('Add the compute that will run your sites.'), 'secondary'],
-            [__('Add website'), route('websites.create'), __('Connect a domain and deployment target.'), 'secondary'],
+            [__('Create application'), route('projects.index', ['dialog' => 'create-application']), __('Start with a repository-backed application.'), 'primary'],
+            [__('Provision server'), route('servers.index', ['dialog' => 'create-server']), __('Add the compute that will run your sites.'), 'secondary'],
+            [__('Add website'), route('websites.index', ['dialog' => 'create-website']), __('Connect a domain and deployment target.'), 'secondary'],
             [__('Open observability'), route('observability.index'), __('Review health, alerts and incidents.'), 'secondary'],
         ] as [$label, $url, $description, $variant])
             <a href="{{ $url }}" @class([

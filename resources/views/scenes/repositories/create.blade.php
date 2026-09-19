@@ -33,7 +33,7 @@
         <div class="my-4">
             <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You need an active website before you can add a repository') }}</p>
-                <x-ui.button :href="route('websites.create')" variant="secondary">{{ __('Create Website') }}</x-ui.button>
+                <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="secondary">{{ __('Create Website') }}</x-ui.button>
             </x-ui.alert>
         </div>
     @endif
