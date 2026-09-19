@@ -1165,6 +1165,77 @@ can be preserved; keep import, restore, provisioning and other remote or
 destructive workflows as explicit pages unless a safe URL-backed dialog
 boundary is demonstrated.
 
+## Follow-up Slice 16 — backup setup dialogs
+
+Status: complete locally and pushed to `main` in `9d10672`.
+
+### Responsibility problem
+
+Backup scheduling already used a dialog, but schedule markup was embedded in
+the backup inventory. Destination creation and editing were still disclosure
+forms rendered inline for every destination. That made the recovery page carry
+multiple mutation presentations and rendered every destination edit form even
+when no edit was requested.
+
+### Boundary and design decision
+
+- Destination creation now uses `scenes.backups.destination-create-dialog`.
+- Destination editing uses `scenes.backups.destination-edit-dialog` and is
+  rendered only for the destination selected by
+  `dialog=edit-destination-{id}`.
+- Schedule creation now uses `scenes.backups.schedule-dialog`.
+- The reusable destination form retains provider presets and is used inside the
+  create/edit dialog components. It now renders field-level validation errors
+  and optional form markers for safe dialog reopening.
+- The inventory retains organization-scoped data, management gating, selected
+  destination resolution and verification controls. Existing requests,
+  policies, entitlements, actions, encryption casts, remote verification and
+  restore operations remain unchanged.
+
+This keeps local form presentation separate from backup/recovery operations and
+does not move HTTPS verification, restore, run-backup or destructive cleanup
+into the dialog boundary.
+
+### Preserved contracts and safety guarantees
+
+- S3/Spaces/R2/S3-compatible presets, endpoint derivation, region guidance,
+  bucket/path safeguards and provider documentation remain unchanged.
+- Edit credential fields remain blank; blank values retain encrypted keys and
+  submitted values remain excluded from flashed old input and rendered output.
+- Destination immutability checks for retained snapshots, verification
+  success/failure sanitization, temporary-object semantics and schedule
+  validation remain unchanged.
+- Create/edit URLs, validation error reopening, request field names, response
+  messages and no-JavaScript submissions remain intact.
+- The default backups page does not render the selected destination's edit
+  form or its credential rotation inputs. The explicit edit URL does.
+
+### Verification
+
+- Backup/database regression coverage: **28 tests / 202 assertions** passed
+  under PHP 8.5.10.
+- Browser fixture export: **1 test / 128 assertions** passed.
+- Built-asset backup schedule/destination workflow: **1 test passed in 51.3
+  seconds**.
+- Blade view cache, Pint, Node syntax, Vite/browser asset checks and
+  `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `9d10672 Use reusable dialogs for backup
+setup`.
+
+### Exact next task
+
+Audit remaining product forms that are already local dialogs: organization
+invites, automation tokens/schedules/tasks, project environment variables and
+processes, observability rules/destinations/incidents, notification filters,
+feedback, build notes, gallery actions and cost budgets. Extract them into
+feature components without changing permissions, secret handling, queued side
+effects or protocol/recovery ordering. Keep configuration authoring, imports,
+restore, authentication and other long workflows as explicit pages.
+
 ## Follow-up Slice 13 — high-availability route dialogs
 
 Status: complete locally and pushed to `main` in `063b95b`.

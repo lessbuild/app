@@ -1932,6 +1932,31 @@ The next task is to convert encrypted backup destination creation and editing
 to URL-backed reusable dialogs while preserving blank-on-edit credential
 rotation and destination safety rules.
 
+## Backup setup dialog follow-up — 2026-09-19
+
+Backup destination creation now uses
+`scenes.backups.destination-create-dialog`, selected destination editing uses
+`scenes.backups.destination-edit-dialog`, and schedule creation uses
+`scenes.backups.schedule-dialog`. The default backups page no longer renders
+every destination edit form; an edit form is rendered only for the explicitly
+selected `edit-destination-{id}` URL.
+
+The shared destination form retains provider presets, endpoint derivation,
+encrypted blank-on-edit behavior and now displays field-level validation errors.
+Destination policies, entitlements, actions, encryption, immutability checks,
+verification, restore and queue behavior remain unchanged.
+
+Verification passed with 28 focused backup/database tests / 202 assertions,
+one fixture test / 128 assertions, and one targeted built-asset browser test
+in 51.3 seconds. Blade cache, Pint, Node/Vite/browser checks and diff checks
+passed. Implementation commit and push: `9d10672 Use reusable dialogs for
+backup setup`.
+
+The next task is the remaining local-dialog audit: organization invites,
+automation, project child-resource forms, observability, notifications,
+feedback, build notes, gallery actions and budgets. Long configuration,
+import, restore, authentication and protocol workflows remain explicit pages.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
