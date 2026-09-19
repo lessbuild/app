@@ -33,6 +33,7 @@ class ServerDisplayNameTest extends TestCase
         $this->actingAs($owner)->get(route('servers.show', ['server' => $server, 'dialog' => 'edit-display-name']))
             ->assertSuccessful()
             ->assertSee('data-modal-trigger="server-display-name-dialog"', false)
+            ->assertSee('id="server-display-name-dialog"', false)
             ->assertSee('data-modal-initial-open="true"', false);
 
         $this->patch(route('servers.update', $server), [

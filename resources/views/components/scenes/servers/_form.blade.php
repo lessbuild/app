@@ -1,14 +1,29 @@
+@props([
+    'types',
+    'providers',
+    'sizes',
+    'images',
+    'regions',
+    'recipes',
+    'server' => null,
+    'fieldPrefix' => '',
+])
+
+@php
+    $inputId = fn (string $field): string => $fieldPrefix.$field;
+@endphp
+
 <div class="grid gap-6 bg-primary px-5 py-5 sm:grid-cols-2 sm:px-8" data-server-catalog>
     <div>
-        <label for="provider_id" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('provider_id') }}" class="block text-sm font-semibold text-primary">
             {{ __('Providers') }}
         </label>
-        <select id="provider_id" name="provider_id" class="input secondary mt-2 w-full rounded-lg" required>
+        <select id="{{ $inputId('provider_id') }}" name="provider_id" class="input secondary mt-2 w-full rounded-lg" required>
             @foreach ($providers as $provider)
                 <option
                     value="{{ $provider->id }}"
                     data-catalog-url="{{ route('providers.server-catalog', $provider) }}"
-                    @selected(old('provider_id') == $provider->id || ($server->provider_id ?? null) == $provider->id)
+                    @selected(old('provider_id') == $provider->id || ($server?->provider_id ?? null) == $provider->id)
                 >
                     {{ $provider->name }}
                 </option>
@@ -19,14 +34,14 @@
     </div>
 
     <div>
-        <label for="type" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('type') }}" class="block text-sm font-semibold text-primary">
             {{ __('Server Type') }}
         </label>
-        <select id="type" name="type" class="input secondary mt-2 w-full rounded-lg" required>
+        <select id="{{ $inputId('type') }}" name="type" class="input secondary mt-2 w-full rounded-lg" required>
             @foreach ($types as $type)
                 <option
                     value="{{ $type->value }}"
-                    @selected(old('type') == $type->value || ($server->type ?? null) == $type->value)
+                    @selected(old('type') == $type->value || ($server?->type ?? null) == $type->value)
                 >
                     {{ ucwords($type->value) }} ({{ implode(', ', $type->installs()) }})
                 </option>
@@ -36,14 +51,14 @@
     </div>
 
     <div>
-        <label for="name" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('name') }}" class="block text-sm font-semibold text-primary">
             {{ __('Cloud server name') }}
         </label>
         <input
-            value="{{ old('name') ?? ($server->name ?? null) }}"
+            value="{{ old('name') ?? ($server?->name ?? null) }}"
             type="text"
             name="name"
-            id="name"
+            id="{{ $inputId('name') }}"
             maxlength="255"
             required
             class="input secondary mt-2 w-full rounded-lg"
@@ -53,14 +68,14 @@
     </div>
 
     <div>
-        <label for="image" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('image') }}" class="block text-sm font-semibold text-primary">
             {{ __('Image') }}
         </label>
-        <select id="image" name="image" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('image', $server->image ?? '') }}">
+        <select id="{{ $inputId('image') }}" name="image" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('image', $server?->image ?? '') }}">
             @foreach ($images as $key => $value)
                 <option
                     value="{{ $key }}"
-                    @selected(old('image') == $key || ($server->image ?? null) == $key)
+                    @selected(old('image') == $key || ($server?->image ?? null) == $key)
                 >{{ $value }}</option>
             @endforeach
         </select>
@@ -68,14 +83,14 @@
     </div>
 
     <div>
-        <label for="region" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('region') }}" class="block text-sm font-semibold text-primary">
             {{ __('Region') }}
         </label>
-        <select id="region" name="region" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('region', $server->region ?? '') }}">
+        <select id="{{ $inputId('region') }}" name="region" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('region', $server?->region ?? '') }}">
             @foreach ($regions as $region)
                 <option
                     value="{{ $region->slug }}"
-                    @selected(old('region') == $region->slug || ($server->region ?? null) == $region->slug)
+                    @selected(old('region') == $region->slug || ($server?->region ?? null) == $region->slug)
                 >{{ $region->name }}</option>
             @endforeach
         </select>
@@ -83,10 +98,10 @@
     </div>
 
     <div>
-        <label for="size" class="block text-sm font-semibold text-primary">
+        <label for="{{ $inputId('size') }}" class="block text-sm font-semibold text-primary">
             {{ __('Sizes') }}
         </label>
-        <select id="size" name="size" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('size', $server->size ?? '') }}">
+        <select id="{{ $inputId('size') }}" name="size" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('size', $server?->size ?? '') }}">
             @foreach ($sizes as $size)
                 <option
                     value="{{ $size->slug }}"

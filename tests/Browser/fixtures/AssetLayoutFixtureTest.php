@@ -127,7 +127,13 @@ class AssetLayoutFixtureTest extends TestCase
             'provider' => $provider,
             'dialog' => 'edit-provider',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
-        $server = $owner->servers()->create(['name' => 'Server', 'provisioning_status' => Server::STATUS_ACTIVE]);
+        $server = $owner->servers()->create([
+            'provider_id' => $provider->id,
+            'name' => 'Server',
+            'type' => 'app',
+            'region' => 'nyc1',
+            'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
         $website = $owner->websites()->create([
             'server_id' => $server->id, 'name' => 'App', 'url' => 'app.test', 'description' => 'Test',
             'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
@@ -136,6 +142,12 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="server-create-dialog"', false)->getContent());
         File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/server-show.html', $this->renderPage(route('servers.show', $server))->assertOk()
+            ->assertSee('data-modal-trigger="server-display-name-dialog"', false)->getContent());
+        File::put($directory.'/server-show-edit-dialog.html', $this->renderPage(route('servers.show', [
+            'server' => $server,
+            'dialog' => 'edit-display-name',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/websites.html', $this->renderPage(route('websites.index'))->assertOk()
             ->assertSee('data-modal-trigger="website-create-dialog"', false)->getContent());
         File::put($directory.'/websites-dialog.html', $this->renderPage(route('websites.index', ['dialog' => 'create-website']))

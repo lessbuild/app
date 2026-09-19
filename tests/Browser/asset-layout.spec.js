@@ -30,19 +30,22 @@ async function serveFixtures(page) {
         const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
         const providerPage = /^\/providers\/\d+$/.test(pathname);
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
+        const serverPage = /^\/servers\/\d+$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || repositoryPage || websitePage) {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || repositoryPage || serverPage || websitePage) {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
                     ? 'provider-show'
-                    : repositoryPage
-                        ? 'repository-show'
-                        : websitePage
+                        : repositoryPage
+                            ? 'repository-show'
+                            : serverPage
+                                ? 'server-show'
+                            : websitePage
                             ? 'website-show'
                         : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
@@ -86,6 +89,8 @@ async function serveFixtures(page) {
                                     ? 'provider-show-edit-dialog'
                                 : screen === 'repository-show' && dialog === 'edit-repository'
                                     ? 'repository-show-edit-dialog'
+                                : screen === 'server-show' && dialog === 'edit-display-name'
+                                    ? 'server-show-edit-dialog'
                                 : screen === 'website-show' && dialog === 'edit-website'
                                     ? 'website-show-edit-dialog'
                                 : screen === 'recipes' && dialog === 'create-recipe'
@@ -169,6 +174,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     for (const workflow of [
         { path: 'providers/1', trigger: 'Edit Provider', title: 'Edit provider', query: 'edit-provider' },
         { path: 'repositories/1', trigger: 'Edit', title: 'Edit repository', query: 'edit-repository' },
+        { path: 'servers/1', trigger: 'Edit Display Name', title: 'Edit server display name', query: 'edit-display-name' },
         { path: 'websites/1', trigger: 'Edit Website', title: 'Edit website', query: 'edit-website' },
     ]) {
         await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });

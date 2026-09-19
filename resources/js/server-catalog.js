@@ -13,9 +13,9 @@ const replaceOptions = (select, items) => {
 }
 
 const initialiseCatalog = (container) => {
-    const provider = container.querySelector('#provider_id')
+    const provider = container.querySelector('[name="provider_id"]')
     const status = container.querySelector('[data-server-catalog-status]')
-    const selects = Object.fromEntries(catalogFields.map((field) => [field, container.querySelector(`#${field}`)]))
+    const selects = Object.fromEntries(catalogFields.map((field) => [field, container.querySelector(`[name="${field}"]`)]))
     let request = 0
 
     const load = async () => {

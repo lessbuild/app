@@ -49,7 +49,9 @@ class CreationDialogTest extends TestCase
             ->assertOk()
             ->assertSee('id="server-create-dialog"', false)
             ->assertSee('data-modal-trigger="server-create-dialog"', false)
-            ->assertSee('action="'.route('servers.store', ['dialog' => 'create-server']).'"', false);
+            ->assertSee('action="'.route('servers.store', ['dialog' => 'create-server']).'"', false)
+            ->assertSee('id="server-create-provider_id"', false)
+            ->assertSee('id="server-create-region"', false);
     }
 
     public function test_server_creation_validation_returns_to_the_open_dialog(): void
