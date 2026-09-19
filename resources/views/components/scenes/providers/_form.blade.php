@@ -1,6 +1,12 @@
+@props([
+    'provider' => null,
+    'fieldPrefix' => '',
+])
+
 @php
     $monitoringAllowed = app(\App\Services\Entitlements::class)->allows(auth()->user()->currentOrganization, 'monitoring');
-    $selectedProvider = (string) old('provider', $provider->provider ?? '');
+    $isEditing = $provider !== null;
+    $selectedProvider = (string) old('provider', $provider?->provider ?? '');
     $monitoringHasErrors = $errors->hasAny([
         'connection_monitoring_enabled',
         'connection_check_interval_minutes',
@@ -52,13 +58,13 @@
         <x-forms.errors name="provider" />
     </fieldset>
 
-    @if (! isset($provider) && app(\App\Services\GitHubApp::class)->configured())
+    @if (! $isEditing && app(\App\Services\GitHubApp::class)->configured())
         <x-ui.alert tone="info" class="sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
             <p class="font-semibold">{{ __('Recommended for GitHub') }}</p>
             <p class="mt-1">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p>
             <x-ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-ui.button>
         </x-ui.alert>
-    @elseif (! isset($provider) && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Services\GitHubApp::class)->hasPrivateKey())
+    @elseif (! $isEditing && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Services\GitHubApp::class)->hasPrivateKey())
         <x-ui.alert tone="warning" class="sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
             <p class="font-semibold">{{ __('GitHub App setup is incomplete') }}</p>
             <p class="mt-1">{{ __('A platform administrator can upload the downloaded private key from a phone.') }}</p>
@@ -67,14 +73,14 @@
     @endif
 
     <div>
-        <label for="token" class="block text-sm font-semibold text-primary">{{ __('Provider Token') }}</label>
+        <label for="{{ $fieldPrefix }}token" class="block text-sm font-semibold text-primary">{{ __('Provider Token') }}</label>
         <input
             value="{{ old('token') }}"
             type="password"
             name="token"
-            id="token"
+            id="{{ $fieldPrefix }}token"
             autocomplete="off"
-            @if (! isset($provider)) required @endif
+            @if (! $isEditing) required @endif
             class="input secondary mt-2 w-full rounded-lg"
             placeholder="************"
         >
@@ -83,12 +89,12 @@
     </div>
 
     <div>
-        <label for="name" class="block text-sm font-semibold text-primary">{{ __('Provider Name') }}</label>
+        <label for="{{ $fieldPrefix }}name" class="block text-sm font-semibold text-primary">{{ __('Provider Name') }}</label>
         <input
-            value="{{ old('name') ?? ($provider->name ?? null) }}"
+            value="{{ old('name') ?? ($provider?->name ?? null) }}"
             type="text"
             name="name"
-            id="name"
+            id="{{ $fieldPrefix }}name"
             class="input secondary mt-2 w-full rounded-lg"
             placeholder="Example: Source control access token"
         >
@@ -96,19 +102,19 @@
     </div>
 
     <div class="sm:col-span-2">
-        <label for="description" class="block text-sm font-semibold text-primary">{{ __('Description') }}</label>
+        <label for="{{ $fieldPrefix }}description" class="block text-sm font-semibold text-primary">{{ __('Description') }}</label>
         <textarea
-            id="description"
+            id="{{ $fieldPrefix }}description"
             name="description"
             rows="3"
             class="input secondary mt-2 w-full rounded-lg"
             placeholder="{{ __('Example: To manage one website') }}"
-        >{{ old('description') ?? ($provider->description ?? null) }}</textarea>
+        >{{ old('description') ?? ($provider?->description ?? null) }}</textarea>
         <p class="mt-2 text-xs text-secondary">{{ __('Brief description of the provider token') }}</p>
         <x-forms.errors name="description" />
     </div>
 
-    <details id="provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
+    <details id="{{ $fieldPrefix }}provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="block font-bold text-primary">{{ __('Connection monitoring') }}</span>
@@ -121,7 +127,7 @@
         <div class="flex items-start gap-3">
             <input type="hidden" name="connection_monitoring_enabled" value="0">
             <input
-                id="connection_monitoring_enabled"
+                id="{{ $fieldPrefix }}connection_monitoring_enabled"
                 name="connection_monitoring_enabled"
                 type="checkbox"
                 value="1"
@@ -130,7 +136,7 @@
                 @disabled(! $monitoringAllowed)
             >
             <div>
-                <label for="connection_monitoring_enabled" class="block text-sm font-semibold text-primary">
+                <label for="{{ $fieldPrefix }}connection_monitoring_enabled" class="block text-sm font-semibold text-primary">
                     {{ __('Automatically monitor credential health') }}
                 </label>
                 <p class="mt-1 text-sm text-secondary">
@@ -146,11 +152,11 @@
 
         <div class="mt-5 grid gap-5 border-t border-primary pt-5 sm:grid-cols-2">
             <div>
-                <label for="connection_check_interval_minutes" class="block text-sm font-semibold text-primary">{{ __('Automatic check interval') }}</label>
-                <select id="connection_check_interval_minutes" name="connection_check_interval_minutes" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $fieldPrefix }}connection_check_interval_minutes" class="block text-sm font-semibold text-primary">{{ __('Automatic check interval') }}</label>
+                <select id="{{ $fieldPrefix }}connection_check_interval_minutes" name="connection_check_interval_minutes" class="input secondary mt-2 w-full rounded-lg">
                     @foreach (\App\Models\Provider::CONNECTION_CHECK_INTERVALS as $minutes)
                         @php($hours = intdiv($minutes, 60))
-                        <option value="{{ $minutes }}" @selected((int) old('connection_check_interval_minutes', $provider->connection_check_interval_minutes ?? \App\Models\Provider::defaultConnectionCheckInterval()) === $minutes)>
+                        <option value="{{ $minutes }}" @selected((int) old('connection_check_interval_minutes', $provider?->connection_check_interval_minutes ?? \App\Models\Provider::defaultConnectionCheckInterval()) === $minutes)>
                             {{ trans_choice('Every :count hour|Every :count hours', $hours, ['count' => $hours]) }}
                         </option>
                     @endforeach
@@ -160,10 +166,10 @@
             </div>
 
             <div>
-                <label for="connection_failure_threshold" class="block text-sm font-semibold text-primary">{{ __('Failure confirmation') }}</label>
-                <select id="connection_failure_threshold" name="connection_failure_threshold" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $fieldPrefix }}connection_failure_threshold" class="block text-sm font-semibold text-primary">{{ __('Failure confirmation') }}</label>
+                <select id="{{ $fieldPrefix }}connection_failure_threshold" name="connection_failure_threshold" class="input secondary mt-2 w-full rounded-lg">
                     @foreach (\App\Models\Provider::CONNECTION_FAILURE_THRESHOLDS as $failures)
-                        <option value="{{ $failures }}" @selected((int) old('connection_failure_threshold', $provider->connection_failure_threshold ?? \App\Models\Provider::defaultConnectionFailureThreshold()) === $failures)>
+                        <option value="{{ $failures }}" @selected((int) old('connection_failure_threshold', $provider?->connection_failure_threshold ?? \App\Models\Provider::defaultConnectionFailureThreshold()) === $failures)>
                             {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $failures, ['count' => $failures]) }}
                         </option>
                     @endforeach

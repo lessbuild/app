@@ -73,7 +73,7 @@ class RecipeInventoryInsightsTest extends TestCase
                 && $metrics['assignments'] === 2
                 && $metrics['servers'] === 2
                 && $metrics['latest_at'] !== null)
-            ->assertDontSee(route('recipes.edit', $unused));
+            ->assertDontSee('dialog=edit-recipe-'.$unused->id, false);
     }
 
     public function test_unused_and_empty_filters_have_explicit_metrics(): void

@@ -1,12 +1,17 @@
+@props([
+    'recipe' => null,
+    'fieldPrefix' => '',
+])
+
 <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
     <div>
-        <label for="name" class="block text-sm font-medium text-primary">{{ __('Name') }}</label>
+        <label for="{{ $fieldPrefix }}name" class="block text-sm font-medium text-primary">{{ __('Name') }}</label>
         <input
-            id="name"
+            id="{{ $fieldPrefix }}name"
             class="input secondary mt-2 rounded-lg"
             name="name"
             type="text"
-            value="{{ old('name', $recipe->name ?? '') }}"
+            value="{{ old('name', $recipe?->name ?? '') }}"
             placeholder="Install monitoring agent"
             required
         >
@@ -14,31 +19,31 @@
     </div>
 
     <div>
-        <label for="description" class="block text-sm font-medium text-primary">{{ __('Description') }}</label>
+        <label for="{{ $fieldPrefix }}description" class="block text-sm font-medium text-primary">{{ __('Description') }}</label>
         <textarea
-            id="description"
+            id="{{ $fieldPrefix }}description"
             class="input secondary mt-2 rounded-lg"
             name="description"
             rows="3"
             placeholder="Describe what this recipe changes on a server."
-        >{{ old('description', $recipe->description ?? '') }}</textarea>
+        >{{ old('description', $recipe?->description ?? '') }}</textarea>
         <x-forms.errors name="description" />
     </div>
 
     <div>
-        <label for="script" class="block text-sm font-medium text-primary">{{ __('Bash script') }}</label>
+        <label for="{{ $fieldPrefix }}script" class="block text-sm font-medium text-primary">{{ __('Bash script') }}</label>
         <p class="mb-2 mt-1 text-xs text-secondary">
             {{ __('This runs as root during provisioning. The recipe stops provisioning if any command fails.') }}
         </p>
         <textarea
-            id="script"
+            id="{{ $fieldPrefix }}script"
             class="input secondary rounded-lg font-mono"
             name="script"
             rows="14"
             spellcheck="false"
             placeholder="apt-get install -y fail2ban"
             required
-        >{{ old('script', $recipe->script ?? '') }}</textarea>
+        >{{ old('script', $recipe?->script ?? '') }}</textarea>
         <x-forms.errors name="script" />
     </div>
 
@@ -46,26 +51,26 @@
         <div class="flex items-start gap-3">
             <input type="hidden" name="is_published" value="0">
             <input
-                id="is_published"
+                id="{{ $fieldPrefix }}is_published"
                 name="is_published"
                 type="checkbox"
                 value="1"
                 class="mt-1 rounded-md"
-                @checked(old('is_published', $recipe->is_published ?? false))
+                @checked(old('is_published', $recipe?->is_published ?? false))
             >
             <div>
-                <label for="is_published" class="block text-sm font-medium text-primary">{{ __('Publish to the community gallery') }}</label>
+                <label for="{{ $fieldPrefix }}is_published" class="block text-sm font-medium text-primary">{{ __('Publish to the community gallery') }}</label>
                 <p class="mt-1 text-xs text-secondary">
                     {{ __('Everyone with an account can inspect and copy this script. Never publish passwords, tokens, private keys, or customer data.') }}
                 </p>
             </div>
         </div>
         <div class="mt-4">
-            <label for="category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
-            <select id="category" name="category" class="input secondary mt-2 w-full rounded-lg sm:max-w-xs">
+            <label for="{{ $fieldPrefix }}category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
+            <select id="{{ $fieldPrefix }}category" name="category" class="input secondary mt-2 w-full rounded-lg sm:max-w-xs">
                 <option value="">{{ __('Select a category') }}</option>
                 @foreach (\App\Models\Recipe::CATEGORIES as $category)
-                    <option value="{{ $category }}" @selected(old('category', $recipe->category ?? '') === $category)>
+                    <option value="{{ $category }}" @selected(old('category', $recipe?->category ?? '') === $category)>
                         {{ str($category)->title() }}
                     </option>
                 @endforeach

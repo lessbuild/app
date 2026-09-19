@@ -94,6 +94,10 @@ class AssetLayoutFixtureTest extends TestCase
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());
+        File::put($directory.'/providers.html', $this->renderPage(route('providers.index'))->assertOk()
+            ->assertSee('data-modal-trigger="provider-create-dialog"', false)->getContent());
+        File::put($directory.'/providers-dialog.html', $this->renderPage(route('providers.index', ['dialog' => 'create-provider']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         config(['billing.enforce_entitlements' => $entitlementEnforcement]);
 
         $project = $owner->currentOrganization->projects()->create([
@@ -117,6 +121,12 @@ class AssetLayoutFixtureTest extends TestCase
         $provider = $owner->providers()->create([
             'name' => 'GitHub', 'provider' => 'github', 'token' => 'fixture-token', 'description' => 'Test',
         ]);
+        File::put($directory.'/provider-show.html', $this->renderPage(route('providers.show', $provider))->assertOk()
+            ->assertSee('data-modal-trigger="provider-edit-dialog"', false)->getContent());
+        File::put($directory.'/provider-show-edit-dialog.html', $this->renderPage(route('providers.show', [
+            'provider' => $provider,
+            'dialog' => 'edit-provider',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $server = $owner->servers()->create(['name' => 'Server', 'provisioning_status' => Server::STATUS_ACTIVE]);
         $website = $owner->websites()->create([
             'server_id' => $server->id, 'name' => 'App', 'url' => 'app.test', 'description' => 'Test',
@@ -150,6 +160,27 @@ class AssetLayoutFixtureTest extends TestCase
             ->getContent());
         File::put($directory.'/repositories-dialog.html', $this->renderPage(route('repositories.index', ['dialog' => 'create-repository']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/repository-show.html', $this->renderPage(route('repositories.show', $repository))->assertOk()
+            ->assertSee('data-modal-trigger="repository-edit-dialog"', false)->getContent());
+        File::put($directory.'/repository-show-edit-dialog.html', $this->renderPage(route('repositories.show', [
+            'repository' => $repository,
+            'dialog' => 'edit-repository',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        $recipe = $owner->recipes()->create([
+            'name' => 'Fixture recipe',
+            'description' => 'Recipe used by the modal browser fixture.',
+            'script' => 'echo fixture-recipe',
+        ]);
+        File::put($directory.'/recipes.html', $this->renderPage(route('recipes.index'))->assertOk()
+            ->assertSee('data-modal-trigger="recipe-create-dialog"', false)
+            ->assertDontSee('echo fixture-recipe', false)->getContent());
+        File::put($directory.'/recipes-dialog.html', $this->renderPage(route('recipes.index', ['dialog' => 'create-recipe']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/recipes-edit-dialog.html', $this->renderPage(route('recipes.index', [
+            'dialog' => 'edit-recipe-'.$recipe->id,
+        ]))->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('echo fixture-recipe', false)->getContent());
         $project->environments()->where('type', 'production')->firstOrFail()->update([
             'server_id' => $server->id,
             'website_id' => $website->id,

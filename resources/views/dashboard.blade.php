@@ -495,7 +495,7 @@
                                 <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="text-ternary underline">
                                     {{ __('Review changes') }}
                                 </a>
-                                <a href="{{ route('recipes.edit', $installedRecipe) }}" class="text-ternary underline">
+                                <a href="{{ route('recipes.index', ['dialog' => 'edit-recipe-'.$installedRecipe->id]) }}" class="text-ternary underline">
                                     {{ __('Edit copy') }}
                                 </a>
                             </div>

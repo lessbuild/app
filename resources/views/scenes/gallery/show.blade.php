@@ -36,7 +36,7 @@
                 </form>
             @endif
             @if ($installedRecipe)
-                <x-ui.button href="{{ route('recipes.edit', $installedRecipe) }}" variant="secondary">{{ __('View My Copy') }}</x-ui.button>
+                <x-ui.button href="{{ route('recipes.show', ['recipe' => $installedRecipe, 'dialog' => 'edit-recipe']) }}" variant="secondary">{{ __('View My Copy') }}</x-ui.button>
                 <x-ui.button href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" variant="secondary">{{ __('Compare Scripts') }}</x-ui.button>
                 @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
                     <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $installedRecipe->name])) }})">

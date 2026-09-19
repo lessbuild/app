@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'repositories', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -28,12 +28,20 @@ async function serveFixtures(page) {
         const pathname = new URL(route.request().url()).pathname;
         const galleryPage = /^\/gallery\/\d+$/.test(pathname);
         const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
+        const providerPage = /^\/providers\/\d+$/.test(pathname);
+        const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage) {
-            const screen = galleryPage ? 'gallery-detail' : pathname.slice(1);
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || repositoryPage) {
+            const screen = galleryPage
+                ? 'gallery-detail'
+                : providerPage
+                    ? 'provider-show'
+                    : repositoryPage
+                        ? 'repository-show'
+                        : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fixtureName = screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
@@ -67,9 +75,19 @@ async function serveFixtures(page) {
                                             ? 'websites-dialog'
                                                 : screen === 'servers' && dialog === 'create-server'
                                                     ? 'servers-dialog'
-                                                    : screen === 'repositories' && dialog === 'create-repository'
-                                                        ? 'repositories-dialog'
-                                                        : screen;
+                            : screen === 'repositories' && dialog === 'create-repository'
+                                ? 'repositories-dialog'
+                                : screen === 'providers' && dialog === 'create-provider'
+                                    ? 'providers-dialog'
+                                : screen === 'provider-show' && dialog === 'edit-provider'
+                                    ? 'provider-show-edit-dialog'
+                                : screen === 'repository-show' && dialog === 'edit-repository'
+                                    ? 'repository-show-edit-dialog'
+                                : screen === 'recipes' && dialog === 'create-recipe'
+                                    ? 'recipes-dialog'
+                                : screen === 'recipes' && dialog?.startsWith('edit-recipe-')
+                                    ? 'recipes-edit-dialog'
+                                : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -115,7 +133,9 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
         { path: 'projects', trigger: 'New application', title: 'New application', query: 'create-application' },
         { path: 'servers', trigger: 'Add Server', title: 'Add server', query: 'create-server' },
         { path: 'websites', trigger: 'Add Website', title: 'Add website', query: 'create-website' },
+        { path: 'providers', trigger: 'Add Provider', title: 'Add provider', query: 'create-provider' },
         { path: 'repositories', trigger: 'Add Repository', title: 'Add repository', query: 'create-repository' },
+        { path: 'recipes', trigger: 'Add Recipe', title: 'Add recipe', query: 'create-recipe' },
     ]) {
         await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });
         const trigger = page.getByRole('link', { name: workflow.trigger, exact: true }).first();
@@ -134,6 +154,42 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
         await page.goto(`http://buildpusher.test/${workflow.path}?dialog=${workflow.query}`, { waitUntil: 'networkidle' });
         await expect(page.getByRole('dialog', { name: workflow.title, exact: true })).toBeVisible();
     }
+});
+
+test('provider, repository, and recipe edits open server-rendered dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    for (const workflow of [
+        { path: 'providers/1', trigger: 'Edit Provider', title: 'Edit provider', query: 'edit-provider' },
+        { path: 'repositories/1', trigger: 'Edit', title: 'Edit repository', query: 'edit-repository' },
+    ]) {
+        await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });
+        const trigger = page.getByRole('link', { name: workflow.trigger, exact: true }).first();
+        await trigger.click();
+        const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
+        await expect(dialog).toBeVisible();
+        expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
+        await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(dialog).toBeHidden();
+    }
+
+    await page.goto('http://buildpusher.test/recipes', { waitUntil: 'networkidle' });
+    const recipeTrigger = page.getByRole('link', { name: 'Edit', exact: true }).first();
+    const recipeUrl = new URL(await recipeTrigger.getAttribute('href'), 'http://buildpusher.test');
+    await recipeTrigger.click();
+    const recipeDialog = page.getByRole('dialog', { name: 'Edit recipe', exact: true });
+    await expect(recipeDialog).toBeVisible();
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^edit-recipe-\d+$/);
+    await expect(recipeDialog.locator('[data-modal-close]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(recipeDialog).toBeHidden();
+    await expect(recipeTrigger).toBeFocused();
+
+    await page.goto(`http://buildpusher.test${recipeUrl.pathname}${recipeUrl.search}`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Edit recipe', exact: true })).toBeVisible();
 });
 
 test('gallery publishing and script inspection use accessible dialogs', async ({ page }) => {

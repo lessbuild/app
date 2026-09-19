@@ -1,6 +1,6 @@
 @php
     $onboardingSteps = [
-        'provider' => ['title' => __('Connect a provider'), 'description' => __('Add cloud credentials for server provisioning.'), 'createUrl' => route('providers.create'), 'reviewUrl' => route('providers.index')],
+        'provider' => ['title' => __('Connect a provider'), 'description' => __('Add cloud credentials for server provisioning.'), 'createUrl' => route('providers.index', ['dialog' => 'create-provider']), 'reviewUrl' => route('providers.index')],
         'server' => ['title' => __('Provision a server'), 'description' => __('Create the application server that will run your sites.'), 'createUrl' => route('servers.index', ['dialog' => 'create-server']), 'reviewUrl' => route('servers.index')],
         'website' => ['title' => __('Add a website'), 'description' => __('Choose a domain and place it on an active server.'), 'createUrl' => route('websites.index', ['dialog' => 'create-website']), 'reviewUrl' => route('websites.index')],
         'repository' => ['title' => __('Connect a repository'), 'description' => __('Attach the Git source and deployment settings.'), 'createUrl' => route('repositories.index', ['dialog' => 'create-repository']), 'reviewUrl' => route('repositories.index')],

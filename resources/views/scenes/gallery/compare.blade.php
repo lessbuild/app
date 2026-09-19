@@ -9,7 +9,7 @@
         :description="$recipe->name"
     >
         <x-slot:buttons>
-            <x-ui.button href="{{ route('recipes.edit', $copy) }}" variant="secondary">{{ __('Edit My Copy') }}</x-ui.button>
+            <x-ui.button href="{{ route('recipes.show', ['recipe' => $copy, 'dialog' => 'edit-recipe']) }}" variant="secondary">{{ __('Edit My Copy') }}</x-ui.button>
             @if ($copy->hasGalleryUpdate() && ! $copy->is_published)
                 <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $copy->name])) }})">
                     @csrf

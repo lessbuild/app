@@ -1,5 +1,10 @@
 <x-layouts.app>
 
+    @php
+        $providerEditOpen = request()->query('dialog') === 'edit-provider';
+        $providerEditUrl = route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Breadcrumbs
@@ -34,7 +39,13 @@
                 </x-ui.button>
             </form>
 
-            <x-ui.button :href="route('providers.edit', $provider)" variant="primary">
+            <x-ui.button
+                :href="$providerEditUrl"
+                data-modal-trigger="provider-edit-dialog"
+                aria-controls="provider-edit-dialog"
+                aria-expanded="{{ $providerEditOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
@@ -224,4 +235,7 @@
 
     </div>
 
+    @if ($providerEditOpen)
+        <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
+    @endif
 </x-layouts.app>

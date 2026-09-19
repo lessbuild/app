@@ -1,4 +1,15 @@
 <x-layouts.app>
+    @php
+        $recipeIndexQuery = array_filter($filters, fn ($value) => $value !== null);
+        if (request()->filled('page')) {
+            $recipeIndexQuery['page'] = request()->query('page');
+        }
+        $recipeCreateOpen = request()->query('dialog') === 'create-recipe';
+        $recipeCreateUrl = route('recipes.index', [...$recipeIndexQuery, 'dialog' => 'create-recipe']);
+        $recipeEditOpen = $editingRecipe !== null;
+        $recipeEditDialogId = $editingRecipe ? 'recipe-edit-dialog-'.$editingRecipe->id : null;
+    @endphp
+
     <x-layouts.partials.heading
         :title="__('Provisioning Recipes')"
         :description="__('Create reusable Bash scripts for new servers.')"
@@ -6,7 +17,13 @@
         <x-slot:buttons>
             <x-ui.button href="{{ route('gallery.index') }}" variant="secondary">{{ __('Browse Gallery') }}</x-ui.button>
             <x-ui.button href="{{ route('recipes.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
-            <x-ui.button href="{{ route('recipes.create') }}" variant="primary">
+            <x-ui.button
+                :href="$recipeCreateUrl"
+                data-modal-trigger="recipe-create-dialog"
+                aria-controls="recipe-create-dialog"
+                aria-expanded="{{ $recipeCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#plus-circle"></use></svg>
                 {{ __('Add Recipe') }}
             </x-ui.button>
@@ -78,7 +95,13 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <x-ui.button href="{{ route('recipes.index') }}" variant="secondary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <x-ui.button href="{{ route('recipes.create') }}" variant="primary">{{ __('Add Recipe') }}</x-ui.button>
+                        <x-ui.button
+                            :href="$recipeCreateUrl"
+                            data-modal-trigger="recipe-create-dialog"
+                            aria-controls="recipe-create-dialog"
+                            aria-expanded="{{ $recipeCreateOpen ? 'true' : 'false' }}"
+                            variant="primary"
+                        >{{ __('Add Recipe') }}</x-ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>
@@ -119,7 +142,17 @@
                     </div>
                     <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
                         <x-ui.button href="{{ route('recipes.show', $recipe) }}" variant="secondary">{{ __('View') }}</x-ui.button>
-                        <x-ui.button href="{{ route('recipes.edit', $recipe) }}" variant="secondary">{{ __('Edit') }}</x-ui.button>
+                        @php
+                            $recipeEditUrl = route('recipes.index', [...$recipeIndexQuery, 'dialog' => 'edit-recipe-'.$recipe->id]);
+                            $recipeEditDialogIdForRow = 'recipe-edit-dialog-'.$recipe->id;
+                        @endphp
+                        <x-ui.button
+                            :href="$recipeEditUrl"
+                            data-modal-trigger="{{ $recipeEditDialogIdForRow }}"
+                            aria-controls="{{ $recipeEditDialogIdForRow }}"
+                            aria-expanded="{{ $editingRecipe?->id === $recipe->id ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >{{ __('Edit') }}</x-ui.button>
                         <form method="POST" action="{{ route('recipes.duplicate', $recipe) }}">
                             @csrf
                             <x-ui.button type="submit" variant="secondary">{{ __('Duplicate') }}</x-ui.button>
@@ -134,5 +167,14 @@
             @endforeach
             <div class="p-4">{{ $recipes->links() }}</div>
         </div>
+    @endif
+    <x-scenes.recipes.create-dialog :open="$recipeCreateOpen" />
+
+    @if ($editingRecipe)
+        <x-scenes.recipes.edit-dialog
+            :recipe="$editingRecipe"
+            :id="$recipeEditDialogId"
+            :open="$recipeEditOpen"
+        />
     @endif
 </x-layouts.app>

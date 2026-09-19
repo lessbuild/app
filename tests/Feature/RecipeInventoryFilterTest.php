@@ -32,7 +32,7 @@ class RecipeInventoryFilterTest extends TestCase
             'usage' => 'in_use',
         ]))
             ->assertSuccessful()
-            ->assertSee(route('recipes.edit', $matching))
+            ->assertSee('dialog=edit-recipe-'.$matching->id, false)
             ->assertSee('1 server')
             ->assertSee('value="Security"', false)
             ->assertSee('value="in_use" selected', false)
@@ -48,13 +48,13 @@ class RecipeInventoryFilterTest extends TestCase
 
         $this->actingAs($owner)->get(route('recipes.index'))
             ->assertSuccessful()
-            ->assertSee(route('recipes.edit', $recipe))
+            ->assertSee(route('recipes.index', ['dialog' => 'edit-recipe-'.$recipe->id]), false)
             ->assertDontSee('hidden-token-value');
 
         $this->actingAs($owner)->get(route('recipes.index', ['search' => 'hidden-token-value']))
             ->assertSuccessful()
             ->assertSee('No recipes match these filters')
-            ->assertDontSee(route('recipes.edit', $recipe));
+            ->assertDontSee('dialog=edit-recipe-'.$recipe->id, false);
     }
 
     public function test_invalid_filters_are_ignored_and_empty_results_can_be_reset(): void

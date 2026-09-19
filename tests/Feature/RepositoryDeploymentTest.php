@@ -79,7 +79,7 @@ class RepositoryDeploymentTest extends TestCase
         $this->actingAs($user)->get(route('repositories.show', $repository))
             ->assertSee('rejected the credential (HTTP 401)')
             ->assertSee('Update provider credential')
-            ->assertSee(route('providers.edit', $provider), false);
+            ->assertSee(route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider']), false);
 
         $provider->connectionChecks()->create([
             'successful' => false,

@@ -1,5 +1,11 @@
 <x-layouts.app>
 
+    @php
+        $providerIndexQuery = array_filter($filters, fn ($value) => $value !== null);
+        $providerCreateOpen = request()->query('dialog') === 'create-provider';
+        $providerCreateUrl = route('providers.index', [...$providerIndexQuery, 'dialog' => 'create-provider']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Heading
@@ -15,7 +21,13 @@
             <x-ui.button :href="route('providers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
             </x-ui.button>
-            <x-ui.button :href="route('providers.create')" variant="primary">
+            <x-ui.button
+                :href="$providerCreateUrl"
+                data-modal-trigger="provider-create-dialog"
+                aria-controls="provider-create-dialog"
+                aria-expanded="{{ $providerCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
@@ -197,10 +209,18 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <x-ui.button :href="route('providers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <x-ui.button :href="route('providers.create')" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
+                        <x-ui.button
+                            :href="$providerCreateUrl"
+                            data-modal-trigger="provider-create-dialog"
+                            aria-controls="provider-create-dialog"
+                            aria-expanded="{{ $providerCreateOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >{{ __('Add Provider') }}</x-ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>
         </div>
     @endif
+
+    <x-scenes.providers.create-dialog :open="$providerCreateOpen" />
 </x-layouts.app>

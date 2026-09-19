@@ -1,4 +1,9 @@
 <x-layouts.app>
+    @php
+        $recipeEditOpen = $editDialogOpen;
+        $recipeEditUrl = route('recipes.show', ['recipe' => $recipe, 'dialog' => 'edit-recipe']);
+    @endphp
+
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
     <x-layouts.partials.heading
@@ -13,7 +18,13 @@
                 @csrf
                 <x-ui.button type="submit" variant="secondary">{{ __('Duplicate') }}</x-ui.button>
             </form>
-            <x-ui.button :href="route('recipes.edit', $recipe)" variant="primary">
+            <x-ui.button
+                :href="$recipeEditUrl"
+                data-modal-trigger="recipe-edit-dialog"
+                aria-controls="recipe-edit-dialog"
+                aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="mr-2 h-4 w-4 stroke-2 text-secondary">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
@@ -94,4 +105,7 @@
             <div class="py-4">{{ $servers->links() }}</div>
         @endif
     </section>
+    @if ($recipeEditOpen)
+        <x-scenes.recipes.edit-dialog :recipe="$recipe" :open="$recipeEditOpen" />
+    @endif
 </x-layouts.app>

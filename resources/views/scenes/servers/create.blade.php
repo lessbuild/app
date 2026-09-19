@@ -7,7 +7,7 @@
     @if ($providers->isEmpty())
         <x-ui.alert tone="warning" class="my-4">
             <p class="font-semibold">{{ __('You must add a cloud provider before you can add a server') }}</p>
-            <x-ui.button :href="route('providers.create')" variant="secondary" class="mt-3">{{ __('Add cloud provider') }}</x-ui.button>
+            <x-ui.button :href="route('providers.index', ['dialog' => 'create-provider'])" variant="secondary" class="mt-3">{{ __('Add cloud provider') }}</x-ui.button>
         </x-ui.alert>
     @endif
 

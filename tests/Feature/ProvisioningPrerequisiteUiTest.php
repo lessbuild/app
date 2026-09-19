@@ -16,7 +16,7 @@ class ProvisioningPrerequisiteUiTest extends TestCase
             ->assertSuccessful()
             ->assertSee('You must add a cloud provider before you can add a server')
             ->assertSee('Add cloud provider')
-            ->assertSee(route('providers.create'))
+            ->assertSee(route('providers.index', ['dialog' => 'create-provider']))
             ->assertSee('id="provider_id"', false)
             ->assertSee('id="type"', false)
             ->assertSee('id="image"', false)

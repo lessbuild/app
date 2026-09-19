@@ -223,7 +223,7 @@
             <div class="m-5">
                 <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                     <p>{{ __('You must add a source control provider before you can add a repository') }}</p>
-                    <x-ui.button :href="route('providers.create')" variant="secondary">{{ __('Add source provider') }}</x-ui.button>
+                    <x-ui.button :href="route('providers.index', ['dialog' => 'create-provider'])" variant="secondary">{{ __('Add source provider') }}</x-ui.button>
                 </x-ui.alert>
             </div>
         @endif

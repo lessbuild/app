@@ -31,6 +31,7 @@ class RecipesController extends Controller
     public function index(RecipeIndexRequest $request): View
     {
         $filters = $request->filters();
+        $editingRecipe = $this->editingRecipe($request);
         $recipes = $this->recipeInventory->for($request->user(), $filters)
             ->with([
                 'source' => fn ($query) => $query->published()->select(['id', 'gallery_revision_at']),
@@ -45,6 +46,7 @@ class RecipesController extends Controller
             'filters' => $filters,
             'metrics' => $this->recipeInventory->metrics($request->user(), $filters),
             'usages' => ['in_use', 'unused'],
+            'editingRecipe' => $editingRecipe,
         ]);
     }
 
@@ -70,9 +72,16 @@ class RecipesController extends Controller
     public function show(Request $request, Recipe $recipe): View
     {
         $this->authorize('view', $recipe);
+        $editDialogOpen = $request->query('dialog') === 'edit-recipe';
         $recipe = $request->user()->workspaceRecipes()
-            ->select(['id', 'user_id', 'name', 'description', 'is_published', 'created_at', 'updated_at'])
+            ->when(! $editDialogOpen, fn ($query) => $query->select(['id', 'user_id', 'name', 'description', 'is_published', 'created_at', 'updated_at']))
+            ->when($editDialogOpen, fn ($query) => $query->with([
+                'source' => fn ($source) => $source->published()->with('user:id,name'),
+            ]))
             ->findOrFail($recipe->id);
+        if ($editDialogOpen) {
+            $this->authorize('update', $recipe);
+        }
         $assignedServers = $recipe->servers()
             ->where('servers.user_id', $request->user()->id);
         $statusCounts = (clone $assignedServers)
@@ -103,7 +112,33 @@ class RecipesController extends Controller
                     ->sum(fn (string $status): int => (int) $statusCounts->get($status, 0)),
                 'failed' => (int) $statusCounts->get(Server::STATUS_FAILED, 0),
             ],
+            'editDialogOpen' => $editDialogOpen,
         ]);
+    }
+
+    /**
+     * Resolve one explicitly requested recipe editor without decrypting scripts for the entire inventory.
+     */
+    private function editingRecipe(RecipeIndexRequest $request): ?Recipe
+    {
+        $dialog = $request->query('dialog');
+        if (! is_string($dialog) || ! str_starts_with($dialog, 'edit-recipe-')) {
+            return null;
+        }
+
+        $recipeId = str($dialog)->after('edit-recipe-')->toString();
+        if ($recipeId === '' || ! ctype_digit($recipeId)) {
+            return null;
+        }
+
+        $recipe = $request->user()->workspaceRecipes()
+            ->with([
+                'source' => fn ($query) => $query->published()->with('user:id,name'),
+            ])
+            ->findOrFail((int) $recipeId);
+        $this->authorize('update', $recipe);
+
+        return $recipe;
     }
 
     /**

@@ -65,7 +65,7 @@
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
                 </dl>
-                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.edit', $build->repository)" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
+                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.show', ['repository' => $build->repository, 'dialog' => 'edit-repository'])" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
             </section>
         @endif
         @if ($rollbackCandidate)

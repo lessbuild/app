@@ -120,7 +120,7 @@ class DashboardTest extends TestCase
             ->assertSee('0 of 5 complete')
             ->assertSee('Connect a provider')
             ->assertSee('Current step')
-            ->assertSee(route('providers.create'))
+            ->assertSee(route('providers.index', ['dialog' => 'create-provider']))
             ->assertSee('Available after the previous step')
             ->assertDontSee('Active deployments')
             ->assertDontSee('Active server commands')
@@ -191,7 +191,7 @@ class DashboardTest extends TestCase
         $this->assertStringContainsString('id="setup-tab-provider"', $content);
         $this->assertStringContainsString('id="setup-panel-provider"', $content);
         $this->assertStringContainsString('x-show="activeSetupStep ===', $content);
-        $this->assertStringContainsString('href="'.route('providers.create').'"', $content);
+        $this->assertStringContainsString('href="'.route('providers.index', ['dialog' => 'create-provider']).'"', $content);
         $this->assertStringContainsString('href="'.route('servers.index', ['dialog' => 'create-server']).'"', $content);
         $this->assertStringContainsString('href="'.route('websites.index', ['dialog' => 'create-website']).'"', $content);
         $this->assertStringContainsString('href="'.route('repositories.index', ['dialog' => 'create-repository']).'"', $content);
@@ -355,7 +355,7 @@ class DashboardTest extends TestCase
             ->assertSee('Recipe Author')
             ->assertSee(route('gallery.index', ['scope' => 'updates']))
             ->assertSee(route('gallery.compare', ['recipe' => $source, 'copy' => $copy]))
-            ->assertSee(route('recipes.edit', $copy))
+            ->assertSee(route('recipes.index', ['dialog' => 'edit-recipe-'.$copy->id]))
             ->assertDontSee('Current recipe')
             ->assertDontSee('Foreign stale copy')
             ->assertDontSee('dashboard-secret', false);

@@ -75,7 +75,7 @@ class DeploymentPreflightGuidance
     {
         $website = $repository->website;
         $server = $website?->server;
-        $repositoryUrl = $this->url->route('repositories.edit', $repository);
+        $repositoryUrl = $this->url->route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-repository']);
         $websiteUrl = $website && ! $website->trashed()
             ? $this->url->route('websites.edit', $website)
             : $this->url->route('websites.index');
@@ -124,8 +124,8 @@ class DeploymentPreflightGuidance
     {
         $provider = $repository->provider;
         $settingsUrl = $provider
-            ? $this->url->route('providers.edit', $provider)
-            : $this->url->route('repositories.edit', $repository);
+            ? $this->url->route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider'])
+            : $this->url->route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-repository']);
         $providerUrl = $provider
             ? $this->url->route('providers.show', $provider)
             : $settingsUrl;

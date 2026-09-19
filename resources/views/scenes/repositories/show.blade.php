@@ -1,5 +1,10 @@
 <x-layouts.app>
 
+    @php
+        $repositoryEditOpen = $editDialogOpen;
+        $repositoryEditUrl = route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-repository']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Breadcrumbs
@@ -31,7 +36,13 @@
                 </x-ui.button>
             </form>
 
-            <x-ui.button :href="route('repositories.edit', $repository)" variant="secondary">
+            <x-ui.button
+                :href="$repositoryEditUrl"
+                data-modal-trigger="repository-edit-dialog"
+                aria-controls="repository-edit-dialog"
+                aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
@@ -166,7 +177,13 @@
                     @csrf
                     <x-ui.button type="submit" variant="primary" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">{{ __('Launch first deployment') }}</x-ui.button>
                 </form>
-                <x-ui.button :href="route('repositories.edit', $repository)" variant="secondary">{{ __('Review source settings') }}</x-ui.button>
+                <x-ui.button
+                    :href="$repositoryEditUrl"
+                    data-modal-trigger="repository-edit-dialog"
+                    aria-controls="repository-edit-dialog"
+                    aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('Review source settings') }}</x-ui.button>
                 <x-ui.button :href="route('websites.edit', $repository->website)" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
             </div>
 
@@ -659,4 +676,12 @@
         </div>
     </details>
 
+    @if ($repositoryEditOpen)
+        <x-scenes.repositories.edit-dialog
+            :repository="$repository"
+            :providers="$providers"
+            :websites="$websites"
+            :open="$repositoryEditOpen"
+        />
+    @endif
 </x-layouts.app>

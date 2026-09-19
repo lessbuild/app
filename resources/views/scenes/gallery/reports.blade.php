@@ -186,7 +186,7 @@
                                 <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
                             </div>
                             <h2 class="mt-3 text-lg font-bold text-primary">
-                                <a href="{{ $report->recipe->is_published ? route('gallery.show', $report->recipe) : route('recipes.edit', $report->recipe) }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                <a href="{{ $report->recipe->is_published ? route('gallery.show', $report->recipe) : route('recipes.show', ['recipe' => $report->recipe, 'dialog' => 'edit-recipe']) }}" class="text-ternary">{{ $report->recipe->name }}</a>
                             </h2>
                             <p class="mt-1 text-xs text-secondary">
                                 {{ str($report->recipe->category)->headline() }}

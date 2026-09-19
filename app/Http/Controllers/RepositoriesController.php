@@ -111,9 +111,25 @@ class RepositoriesController extends Controller
         $deploymentGuidance = $isFirstDeployment
             ? $guidance->for($repository, $environment, $request->user(), $deploymentPreflight)
             : null;
+        $editDialogOpen = $request->query('dialog') === 'edit-repository';
+        $providers = null;
+        $websites = null;
+        if ($editDialogOpen) {
+            $providers = $request->user()->workspaceProviders()
+                ->forRepositories()
+                ->orderBy('name')
+                ->get();
+            $websites = $request->user()->workspaceWebsites()
+                ->readyForDeployments()
+                ->orderBy('name')
+                ->get();
+        }
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
+            'editDialogOpen' => $editDialogOpen,
+            'providers' => $providers,
+            'websites' => $websites,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
             'deploymentMetrics' => $deploymentInsights->metrics($repository),
             'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters)
