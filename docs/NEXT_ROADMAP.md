@@ -2,6 +2,28 @@
 
 Reviewed 2026-09-17. Work one item at a time; passing a narrow test does not establish completion of a whole workflow. The original roadmap checkmarks describe existing implementation, not demonstrated production parity.
 
+## UI redesign completion — 2026-09-19
+
+The separate application-wide UI redesign plan is complete locally on
+isolated `main`. It covered the dashboard, shared headers and local navigation,
+deployment/infrastructure inventory, operations, account/workspace, public
+and authentication surfaces, plus responsive/accessibility verification.
+Existing routes, policies, validation, persistence, Livewire behavior,
+non-JavaScript fallbacks and workflow contracts were preserved.
+
+The implementation is pushed through `1dd8d3e` on `origin/main`. The strict
+PHP 8.5.10 suite passed **1,609 tests / 13,362 assertions**; Pint, Composer
+platform checks, the Vite build, route listing, route-cache/Livewire serving
+and `git diff --check` passed. The final built-asset/provider browser suite
+passed **10 tests**, with the authenticated navigation/accessibility sweep
+and responsive route audit adding **9 tests**. This is local/dev evidence;
+production release and external acceptance remain separate release gates.
+
+The next development work should return to the roadmap’s feature and
+provider-acceptance priorities below, one cohesive slice at a time. Do not
+reopen completed UI slices without new evidence or a documented product
+decision.
+
 ## Current acceptance checkpoint — 2026-09-17
 
 The configuration-specific provider acceptance sequence and the representative

@@ -1,4 +1,4 @@
-# UI redesign progress — 2026-09-18
+# UI redesign progress — 2026-09-19
 
 ## Working agreement
 
@@ -198,11 +198,73 @@ Current BuildPusher evidence from the development fixture:
   product route inventory, fix only evidenced visual regressions, then run
   the full regression and browser verification gates.
 
+### Slice 6 — semantic alert compatibility and final release gate
+
+- User problem: the intentional border-only alert treatment changed the
+  rendered utility classes used by notification, health and account status
+  surfaces, so the existing compatibility assertions needed to describe the
+  new visual contract precisely.
+- Entry points: border-only notification/health/account presentation and the
+  corresponding feature assertions.
+- Boundary: retained the application change as presentation-only and aligned
+  five existing assertions with the concrete `border-l-*` classes. No
+  controller, query, policy, route, form, persistence or workflow behavior
+  changed.
+- SOLID/Laravel rationale: semantic status styling remains a shared UI
+  concern; the tests verify the rendered contract without moving business
+  state or authorization into the view layer.
+- Preserved contracts: status badges, alert meaning, flash text, response
+  behavior, no-JavaScript flows and all existing notification/health
+  semantics remain unchanged.
+- Verification: the focused compatibility set passed **36 tests / 504
+  assertions**. The complete strict PHP 8.5.10 suite passed **1,609 tests /
+  13,362 assertions** in **585.57 seconds**, with no failures, warnings,
+  risky tests, deprecations or PHPUnit deprecations. Required-PHP Pint,
+  Vite, Composer platform checks, route listing and `git diff --check` all
+  passed.
+- Commit and push: `1dd8d3e Align alert style regression assertions`,
+  pushed to `origin/main`.
+- Next task: complete the documentation handoff and leave production/live
+  acceptance as a separately authorized release activity.
+
+## Final verification — 2026-09-19
+
+The local UI redesign plan is complete on isolated `main`. The implementation
+covered the dashboard first-value hierarchy, shared resource headers and
+local navigation, deployment/infrastructure inventory surfaces, operational
+and account pages, public landing/authentication surfaces, and the final
+semantic alert compatibility contract. Existing mobile navigation, text-based
+provider selectors and the `DEPLOYMENT TIMELINE` presentation were retained.
+
+The final disposable browser runtime used a temporary file-backed SQLite
+database, seeded demo records, file sessions, synchronous queues and an
+independent application key. It was stopped after verification. A fresh
+route-cache runtime served `/login` with HTTP 200 and the generated Livewire
+asset with HTTP 200. The Laravel development server was run with
+`--no-reload` because its reload mode intentionally strips temporary
+environment overrides from the child process; this was an isolation harness
+detail, not an application behavior change.
+
+Browser evidence:
+
+- The complete built-asset layout and provider fallback suite passed **10
+  tests** in **6.2 minutes** across light/dark 320px, 390px, 768px and
+  1440px viewports.
+- The authenticated navigation/accessibility sweep passed **6 tests** and
+  the broad mobile/tablet/desktop route audit passed **3 tests** against the
+  isolated runtime. The route audit found no runtime errors or horizontal
+  overflow.
+- The earlier mobile/tablet/desktop Livewire/public-navigation smoke passed
+  **1 test**; the selected visual audit cases passed at mobile, tablet and
+  desktop widths.
+
+The checkout is clean and `main` is aligned with `origin/main` at the source
+commit above before this documentation follow-up. No production checkout,
+acceptance-drill checkout, credentials, paid cloud resource or live provider
+acceptance was used. Production release, physical-device checks, provider
+acceptance, mail, billing, GitHub App, independent monitoring and recovery
+drills remain external release gates.
+
 ## Remaining sequence
 
-1. Dashboard hierarchy and first-value experience.
-2. Shared shell, resource headers and local navigation.
-3. Deployment, infrastructure and recovery page-family polish.
-4. Operational, automation, account and public-surface polish — complete
-   through the public/auth portion.
-5. Responsive accessibility and complete regression verification.
+1. External/live acceptance when separately authorized.

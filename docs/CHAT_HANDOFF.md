@@ -1,5 +1,37 @@
 # BuildPusher chat handoff
 
+## UI redesign completion — 2026-09-19
+
+The application-wide UI redesign plan is complete locally on isolated `main`.
+The verified slices improved the dashboard first-value hierarchy, shared
+resource headers, local section navigation, deployment/infrastructure
+inventory pages, operational/account/workspace surfaces, and the public and
+authentication shells. The established flat mobile navigation, text-based
+provider selectors, border-only semantic alerts and `DEPLOYMENT TIMELINE`
+presentation were preserved. No route, authorization, persistence, form,
+flash-message, Livewire or workflow contract changed.
+
+The source implementation and compatibility follow-up are pushed through
+`1dd8d3e` on `origin/main`. The strict PHP 8.5.10 suite passed **1,609 tests /
+13,362 assertions** in **585.57 seconds** with no failures, warnings, risky
+tests or deprecations. Required-PHP Pint, Composer platform checks, the Vite
+build, route listing, route-cache serving, Livewire asset serving and
+`git diff --check` passed.
+
+The final isolated browser gate passed the complete built-asset/provider suite
+(**10 tests** across light/dark mobile, tablet and desktop widths), the
+authenticated navigation/accessibility sweep (**6 tests**) and the broad
+responsive route audit (**3 tests**). A separate Livewire/public-navigation
+smoke passed. The disposable runtime used a temporary SQLite database,
+independent application key, file sessions and synchronous queues, and was
+stopped after verification.
+
+This is local/dev evidence only. Production release, physical-phone checks,
+provider-backed acceptance, mail, billing, GitHub App, independent monitoring
+and recovery drills remain separately authorized external release gates. The
+full evidence and per-slice ledger are in
+`docs/verification/ui-redesign-progress.md`.
+
 ## GitHub App repository acceptance and isolated deployment attempt — 2026-09-18
 
 The isolated development runtime now has a valid GitHub App private key, and
