@@ -144,3 +144,49 @@ The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this c
 ### Exact next task
 
 Inspect database-management and API-token/credential workflows. Convert only compact, reversible create or issue forms; keep clone/restore reviews, credential rotation with consequential effects, OAuth/SSO, two-factor and other multi-step or destructive workflows as full-page flows.
+
+## Slice 4 — API tokens and database credentials
+
+Status: complete and deployed to the isolated development runtime.
+
+### Responsibility problem
+
+The automation page kept API-token issuance inline with the token inventory and quick-start material. Database-resource cards kept credential issuance inline with credential history and destructive clone controls. Both forms are short, but their one-time secrets and validation state deserve a focused interaction rather than more permanent page height.
+
+### Boundary and design decision
+
+- API-token creation uses the shared modal; token inventory remains in its responsive disclosure.
+- Database-credential issuance uses one resource-specific modal per supported database; existing credential inventory and clone safety controls remain in the resource disclosure.
+- Existing Form Requests, policies, entitlement checks, token/database actions, encryption and one-time secret flash behavior are unchanged.
+- Token rotation/revocation, database inspection, database clone confirmation, OAuth/SSO, two-factor and other consequential operations remain explicit page or action workflows.
+
+The extraction is presentational only. HTTP controllers still receive the same validated input and actions still own persistence and queued side effects.
+
+### Preserved contracts and safety guarantees
+
+- Existing routes, methods, validation keys, default expiry values, selected abilities, flash messages and response behavior are unchanged.
+- Invalid token and database-credential submissions reopen only their relevant modal and preserve safe old input; generated plaintext secrets are still shown once through the existing session flash.
+- Database credential passwords and API token plaintext never enter persisted token/password columns or unrelated rendered markup.
+- Resource ownership, current-workspace scoping, plan checks, unsupported-resource responses and no-write-on-denial behavior remain unchanged.
+- Database clone target restrictions and exact confirmation remain outside the modal boundary.
+- Direct query URLs and normal anchor fallbacks remain available without JavaScript.
+
+### Verification
+
+- `tests/Feature/AutomationTest.php` and `tests/Feature/DatabaseOperationsTest.php`: 42 tests, 222 assertions passed.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php`: 1 test, 42 assertions passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php npm run test:browser -- tests/Browser/asset-layout.spec.js --grep "credential workflows" --workers=1`: 1 test passed.
+- `npm run build`: passed.
+- Pint: passed.
+- `git diff --check`: passed.
+- Isolated runtime restarted successfully; after the startup window `https://buildpusher.com/login` returned HTTP 200.
+
+### Commit and push
+
+Commit and push: `47aa5a8 Use dialogs for credential issuance`.
+
+The isolated `buildpusher-dev-main.service` runtime was fast-forwarded to this commit, rebuilt, view-cached, route-cache-cleared, restarted and verified active on `main`.
+
+### Exact next task
+
+Audit the remaining product pages for compact, reversible forms: deployment approvals/promotions, small domain or repository settings, and notification/report composers. Do not modalize full deployment timelines, restore/rollback confirmation, provider/server setup, YAML configuration, security settings or destructive operations.
