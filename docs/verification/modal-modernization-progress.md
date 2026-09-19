@@ -1223,3 +1223,58 @@ Extract the existing domain-add and temporary-domain dialogs into reusable
 components. Preserve website authorization, Cloudflare provider scoping,
 temporary-domain configuration failures, DNS side effects and validation-error
 reopening before moving to encrypted backup destination forms.
+
+## Follow-up Slice 14 — domain dialogs
+
+Status: complete locally and pushed to `main` in `5dd80bc`.
+
+### Responsibility problem
+
+Domain addition and temporary-domain issuance already used URL-backed dialogs,
+but both forms were embedded in the domain inventory view. They have different
+validation and remote DNS behavior, so keeping their markup in the inventory
+made the page responsible for two separate mutation presentations.
+
+### Boundary and design decision
+
+- Domain aliases/redirects now render through
+  `scenes.domains.add-dialog`.
+- Temporary hostname issuance now renders through
+  `scenes.domains.temporary-dialog`.
+- The inventory retains modal URL state, workspace data and authorization
+  gating; each component owns only its corresponding form presentation.
+- The existing `StoreWebsiteDomainRequest`,
+  `IssueTemporaryWebsiteDomainRequest`, website policy checks, Cloudflare
+  provider scoping, actions, DNS jobs and response mapping remain unchanged.
+
+This separates two cohesive UI responsibilities without merging operations
+that have different side effects or failure semantics.
+
+### Preserved contracts and safety guarantees
+
+- Website selection, hostname normalization, alias/redirect rules, DNS
+  provider selection and validation keys remain unchanged.
+- Temporary-domain base-domain configuration errors, Cloudflare checks,
+  generated hostnames, DNS side effects, proxy queueing and warning/success
+  feedback remain unchanged.
+- Dialog URLs, validation-error reopening and native form submission remain
+  intact. The components use unique field IDs while preserving request names.
+
+### Verification
+
+- `DomainManagementTest`: **8 tests / 55 assertions** passed under PHP 8.5.10.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `5dd80bc Extract domain dialogs into
+components`.
+
+### Exact next task
+
+Extract database credential issuance into a reusable component, then convert
+backup destination create/edit forms to URL-backed server-rendered dialogs.
+Keep encrypted credentials blank on edit, preserve safe validation failures,
+and do not move backup verification or restore operations into the modal
+boundary.

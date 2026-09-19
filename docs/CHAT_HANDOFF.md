@@ -1896,6 +1896,22 @@ Pint and diff checks passed. The next task is domain-add and temporary-domain
 dialog componentization, followed by the encrypted backup destination
 create/edit forms.
 
+## Domain dialog follow-up — 2026-09-19
+
+Domain aliases/redirects and temporary-domain issuance now use separate
+reusable server-rendered components: `scenes.domains.add-dialog` and
+`scenes.domains.temporary-dialog`. The inventory retains modal URL state,
+workspace data and authorization gating; each component owns only its form
+presentation.
+
+Existing Form Requests, website policy checks, Cloudflare provider scoping,
+DNS actions/jobs, validation keys, error reopening and response mapping remain
+unchanged. The implementation is pushed as `5dd80bc`.
+
+`DomainManagementTest` passed with 8 tests / 55 assertions. Blade cache, Pint
+and diff checks passed. The next task is database credential componentization,
+followed by the encrypted backup destination create/edit dialogs.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.
