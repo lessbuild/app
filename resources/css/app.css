@@ -29,6 +29,15 @@
     max-width: 100%;
 }
 
+/* Keep editable controls at the iOS zoom threshold on narrow screens. */
+@media (max-width: 639px) {
+    #main-content input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+    #main-content select,
+    #main-content textarea {
+        font-size: 1rem;
+    }
+}
+
 /* Status and notice panels use colour as an outline, not as a full surface.
    Buttons, progress indicators, and compact badges keep their filled states. */
 #main-content .border:is(

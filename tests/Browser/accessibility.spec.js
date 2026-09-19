@@ -18,6 +18,10 @@ for (const viewport of viewports) {
         await page.goto(new URL('/login', baseURL).toString());
         await page.locator('#email').fill('ncorkish@icloud.com');
         await page.locator('#password').fill('password');
+        if (viewport.width < 640) {
+            await expect(page.locator('#email')).toHaveCSS('font-size', '16px');
+            await expect(page.locator('#password')).toHaveCSS('font-size', '16px');
+        }
         await Promise.all([
             page.waitForURL((url) => url.pathname === '/home'),
             page.getByRole('button', { name: 'Login' }).click(),
