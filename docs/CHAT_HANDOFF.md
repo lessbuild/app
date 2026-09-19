@@ -1853,6 +1853,30 @@ Long import, configuration-review, security, recovery and remote-side-effect
 workflows remain explicit pages until their ordering and failure behavior can
 be preserved in a dialog.
 
+## Server modal follow-up — 2026-09-19
+
+Server creation and display-name editing now use reusable server-rendered dialog
+components. The server inventory includes `scenes.servers.create-dialog`, and
+the Livewire server detail includes `scenes.servers.edit-dialog`. The existing
+full-page routes remain available as no-JavaScript fallbacks.
+
+The server form partial now supports prefixed IDs. The provider catalog script
+was updated to scope by field names inside each server form, preserving
+provider-dependent region, size and image loading. No provisioning, credential,
+plan-limit, policy, request, action, retry or redirect behavior changed.
+
+Verification passed with 29 focused PHP tests / 266 assertions, one fixture
+test / 121 assertions, and two targeted built-asset browser workflows in 1.3
+minutes. Pint, Blade cache, Node syntax, Vite build and diff checks passed.
+
+Implementation commit and push: `e39bc00 Use reusable dialogs for server
+workflows`.
+
+The next task is to audit database resources, load balancers, domains and
+backup destinations for similarly safe compact add/edit dialogs. Import,
+restore, provisioning and destructive remote workflows remain explicit until
+their ordering and failure behavior can be preserved.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

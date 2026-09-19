@@ -1094,3 +1094,73 @@ Continue with remaining compact server/infrastructure add/edit forms and audit
 their encrypted fields, plan gates, remote side effects, and authorization
 ordering before deciding whether each belongs in a dialog or remains a direct
 workflow page.
+
+## Follow-up Slice 12 — server dialogs
+
+Status: complete locally and pushed to `main` in `e39bc00`.
+
+### Responsibility problem
+
+Server creation was already URL-backed, but the dialog markup lived directly
+inside the inventory view. Server display-name editing was likewise embedded
+inside the Livewire detail view, while the standalone routes remained the only
+reusable form boundary. This made server creation/editing inconsistent with
+the other resource dialogs and made the form partial assume fixed element IDs.
+
+### Boundary and design decision
+
+- Server inventory now includes a reusable
+  `scenes.servers.create-dialog` component.
+- Server detail now includes a reusable `scenes.servers.edit-dialog`
+  component for display-name changes.
+- The existing server form partial accepts an optional field prefix and
+  explicit nullable server model, preserving the standalone create page while
+  making modal controls unique.
+- Server catalog JavaScript now finds fields by their form names within each
+  `[data-server-catalog]` component. This preserves provider-dependent catalog
+  loading for prefixed modal fields without relying on duplicate-prone IDs.
+- Existing full-page create/edit routes, `ServerRequest`,
+  `ServerDisplayNameRequest`, policies, plan checks, provisioning action,
+  retries, redirects and one-time credential handling remain unchanged.
+
+This applies single responsibility at the presentation boundary only: dialog
+components own modal markup and URL state, while existing requests, policies,
+actions and jobs retain validation, authorization, persistence and provisioning
+responsibilities.
+
+### Preserved contracts and safety guarantees
+
+- Provider selection, region/size/image catalog refresh, recipe selection,
+  plan-limit handling and provisioning submission remain unchanged.
+- Display-name updates still change only the BuildPusher label; cloud hostname,
+  authorization, event recording, normalization, validation keys and redirects
+  remain unchanged.
+- No server credentials or remote provisioning fields were added to the edit
+  dialog. Existing direct routes remain available for no-JavaScript clients.
+- Modal field prefixes prevent ID collisions while request names and error keys
+  remain the existing persisted/validation contract.
+
+### Verification
+
+- Focused server/modal coverage: **29 tests / 266 assertions** passed under
+  PHP 8.5.10.
+- Browser fixture export: **1 test / 121 assertions** passed.
+- Built-asset creation/edit dialog workflows: **2 tests passed in 1.3
+  minutes**.
+- Pint, Blade view cache, Node syntax, Vite asset build and
+  `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `e39bc00 Use reusable dialogs for server
+workflows`.
+
+### Exact next task
+
+Audit the remaining infrastructure add/edit surfaces in order: database
+resources, load balancers, domains and backup destinations. Extract only
+compact local forms whose authorization, plan checks and side-effect ordering
+can be preserved; keep import, restore, provisioning and other remote or
+destructive workflows as explicit pages unless a safe URL-backed dialog
+boundary is demonstrated.
