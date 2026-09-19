@@ -40,7 +40,11 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/feedback-dialog.html', $this->renderPage(route('feedback.index', ['dialog' => 'compose-feedback']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
-            ->assertSee('Automate routine release work')->getContent());
+            ->assertSee('Automate routine release work')
+            ->assertSee('data-modal-trigger="automation-token-dialog"', false)
+            ->getContent());
+        File::put($directory.'/automation-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'create-token']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());

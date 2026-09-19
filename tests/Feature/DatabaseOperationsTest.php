@@ -81,6 +81,48 @@ class DatabaseOperationsTest extends TestCase
         );
     }
 
+    public function test_database_credential_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$owner, $resource] = $this->infrastructure();
+
+        $default = $this->actingAs($owner)
+            ->get(route('databases.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="database-credential-'.$resource->id.'"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="database-credential-'.$resource->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('databases.index', [
+            'dialog' => 'issue-credential',
+            'resource_id' => $resource->id,
+        ]);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="database-credential-'.$resource->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('databases.users.store', $resource), [
+                '_database_credential_resource' => $resource->id,
+                'username' => 'not valid',
+                'privilege' => 'invalid',
+                'expires_in_days' => 2,
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="database-credential-'.$resource->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The username format is invalid.');
+        $this->assertDatabaseCount('database_users', 0);
+    }
+
     public function test_viewer_can_inspect_but_cannot_issue_database_credentials(): void
     {
         [$owner, $resource] = $this->infrastructure();

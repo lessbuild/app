@@ -36,9 +36,11 @@ async function serveFixtures(page) {
                     ? 'organization-dialog'
                     : screen === 'feedback' && dialog === 'compose-feedback'
                         ? 'feedback-dialog'
-                        : screen === 'backups' && dialog === 'add-schedule'
-                            ? 'backups-dialog'
-                        : screen;
+                        : screen === 'automation' && dialog === 'create-token'
+                            ? 'automation-dialog'
+                            : screen === 'backups' && dialog === 'add-schedule'
+                                ? 'backups-dialog'
+                                : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -386,4 +388,26 @@ test('backup schedule workflow uses an accessible URL-backed dialog', async ({ p
     await expect(scheduleDialog).toBeVisible();
     await page.locator('#backup-schedule-dialog [data-modal-close]').click();
     await expect(scheduleDialog).toBeHidden();
+});
+
+test('credential workflows use compact accessible dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/automation', { waitUntil: 'networkidle' });
+
+    const tokenTrigger = page.getByRole('link', { name: 'Create token', exact: true });
+    const tokenDialog = page.getByRole('dialog', { name: 'Create personal access token', exact: true });
+    await tokenTrigger.click();
+    await expect(tokenDialog).toBeVisible();
+    await expect(page.locator('#automation-token-dialog [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-token');
+    await page.keyboard.press('Escape');
+    await expect(tokenDialog).toBeHidden();
+    await expect(tokenTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/automation?dialog=create-token', { waitUntil: 'networkidle' });
+    await expect(tokenDialog).toBeVisible();
+    await page.locator('#automation-token-dialog [data-modal-close]').click();
+    await expect(tokenDialog).toBeHidden();
 });

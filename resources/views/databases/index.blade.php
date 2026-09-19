@@ -59,6 +59,16 @@
         @forelse ($resources as $resource)
             @php
                 $latest = $resource->snapshots->first();
+                $databaseCredentialDialogId = 'database-credential-'.$resource->id;
+                $databaseCredentialHasErrors = old('_database_credential_resource') == $resource->id
+                    && $errors->hasAny(['username', 'privilege', 'expires_in_days']);
+                $databaseCredentialDialogOpen = (request()->query('dialog') === 'issue-credential'
+                    && (string) request()->query('resource_id') === (string) $resource->id
+                    && ! session()->has('success')) || $databaseCredentialHasErrors;
+                $databaseCredentialDialogUrl = route('databases.index', [
+                    'dialog' => 'issue-credential',
+                    'resource_id' => $resource->id,
+                ]);
             @endphp
 
             <section class="ui-card p-5">
@@ -68,10 +78,23 @@
                         <h2 class="mt-2 break-words text-lg font-black text-primary">{{ $resource->name }}</h2>
                         <p class="text-sm text-secondary">{{ $resource->environment->project->name }} · {{ $resource->environment->name }}</p>
                     </div>
-                    <form method="POST" action="{{ route('databases.inspect', $resource) }}" class="shrink-0">
-                        @csrf
-                        <x-ui.button type="submit" variant="secondary">{{ __('Inspect') }}</x-ui.button>
-                    </form>
+                    <div class="flex shrink-0 flex-wrap justify-end gap-2">
+                        <form method="POST" action="{{ route('databases.inspect', $resource) }}">
+                            @csrf
+                            <x-ui.button type="submit" variant="secondary">{{ __('Inspect') }}</x-ui.button>
+                        </form>
+                        @if ($canManage)
+                            <x-ui.button
+                                href="{{ $databaseCredentialDialogUrl }}"
+                                data-modal-trigger="{{ $databaseCredentialDialogId }}"
+                                aria-controls="{{ $databaseCredentialDialogId }}"
+                                aria-expanded="{{ $databaseCredentialDialogOpen ? 'true' : 'false' }}"
+                                variant="primary"
+                            >
+                                {{ __('Issue credential') }}
+                            </x-ui.button>
+                        @endif
+                    </div>
                 </div>
 
                 <dl class="mt-5 grid grid-cols-2 gap-3">
@@ -117,41 +140,6 @@
                             <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
                         </summary>
                         <div class="space-y-5 border-t border-primary p-4">
-                    <form method="POST" action="{{ route('databases.users.store', $resource) }}" class="space-y-3">
-                        @csrf
-                        <div>
-                            <h3 class="font-bold text-primary">{{ __('Issue a database credential') }}</h3>
-                            <p class="mt-1 text-xs text-secondary">{{ __('Credentials can be limited by privilege and expiration.') }}</p>
-                        </div>
-                        <div class="grid gap-3 sm:grid-cols-2">
-                            <label class="block">
-                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Username') }}</span>
-                            <input name="username" class="input secondary w-full rounded-lg" placeholder="report_reader" required>
-                            </label>
-                            <label class="block">
-                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Privilege') }}</span>
-                                <select name="privilege" class="input secondary w-full rounded-lg">
-                                    <option value="read">{{ __('Read only') }}</option>
-                                    <option value="write">{{ __('Read/write') }}</option>
-                                    <option value="admin">{{ __('Admin') }}</option>
-                                </select>
-                            </label>
-                            <label class="block">
-                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Expires') }}</span>
-                                <select name="expires_in_days" class="input secondary w-full rounded-lg">
-                                    <option value="">{{ __('Never expires') }}</option>
-                                    <option value="1">1 day</option>
-                                    <option value="7">7 days</option>
-                                    <option value="30">30 days</option>
-                                    <option value="90">90 days</option>
-                                </select>
-                            </label>
-                            <div class="flex items-end">
-                                <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Create credential') }}</x-ui.button>
-                            </div>
-                        </div>
-                    </form>
-
                     <div class="mt-4 space-y-2" aria-label="{{ __('Database credentials') }}">
                         @foreach ($resource->databaseUsers as $databaseUser)
                             <div class="flex items-center justify-between gap-3 rounded-lg bg-secondary p-3">
@@ -193,6 +181,44 @@
                     </form>
                         </div>
                     </details>
+
+                    <x-dialogs.modal
+                        :id="$databaseCredentialDialogId"
+                        :title="__('Issue a database credential')"
+                        :description="__('Credentials can be limited by privilege and expiration.')"
+                        :open="$databaseCredentialDialogOpen"
+                    >
+                        <form method="POST" action="{{ route('databases.users.store', $resource) }}" class="space-y-4">
+                            @csrf
+                            <input type="hidden" name="_database_credential_resource" value="{{ $resource->id }}">
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Username') }}</span>
+                                <input name="username" value="{{ old('username') }}" class="input secondary w-full rounded-lg" placeholder="report_reader" required>
+                                <x-forms.errors name="username" />
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Privilege') }}</span>
+                                <select name="privilege" class="input secondary w-full rounded-lg">
+                                    <option value="read" @selected(old('privilege', 'read') === 'read')>{{ __('Read only') }}</option>
+                                    <option value="write" @selected(old('privilege') === 'write')>{{ __('Read/write') }}</option>
+                                    <option value="admin" @selected(old('privilege') === 'admin')>{{ __('Admin') }}</option>
+                                </select>
+                                <x-forms.errors name="privilege" />
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Expires') }}</span>
+                                <select name="expires_in_days" class="input secondary w-full rounded-lg">
+                                    <option value="" @selected(old('expires_in_days') === null || old('expires_in_days') === '')>{{ __('Never expires') }}</option>
+                                    <option value="1" @selected((string) old('expires_in_days') === '1')>1 day</option>
+                                    <option value="7" @selected((string) old('expires_in_days') === '7')>7 days</option>
+                                    <option value="30" @selected((string) old('expires_in_days') === '30')>30 days</option>
+                                    <option value="90" @selected((string) old('expires_in_days') === '90')>90 days</option>
+                                </select>
+                                <x-forms.errors name="expires_in_days" />
+                            </label>
+                            <x-ui.button type="submit" variant="primary">{{ __('Create credential') }}</x-ui.button>
+                        </form>
+                    </x-dialogs.modal>
                 @endif
             </section>
         @empty

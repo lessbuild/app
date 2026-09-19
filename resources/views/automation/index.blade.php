@@ -1,10 +1,32 @@
 <x-layouts.app>
+    @php
+        $tokenDialogHasErrors = old('_automation_token_form') === '1'
+            && $errors->hasAny(['name', 'expires_in_days', 'abilities', 'abilities.0', 'abilities.1', 'abilities.2']);
+        $tokenDialogOpen = (request()->query('dialog') === 'create-token' && ! session()->has('success'))
+            || $tokenDialogHasErrors;
+        $tokenDialogUrl = route('automation.index', ['dialog' => 'create-token']);
+    @endphp
+
     <x-layouts.partials.heading
         eyebrow="{{ __('Release automation') }}"
         icon="terminal"
         :title="__('Automation')"
         :description="__('API access, deploy schedules, scaling and versioned workflow configuration.')"
-    />
+    >
+        @if ($features['api'] && $canManage)
+            <x-slot:buttons>
+                <x-ui.button
+                    href="{{ $tokenDialogUrl }}"
+                    data-modal-trigger="automation-token-dialog"
+                    aria-controls="automation-token-dialog"
+                    aria-expanded="{{ $tokenDialogOpen ? 'true' : 'false' }}"
+                    variant="primary"
+                >
+                    {{ __('Create token') }}
+                </x-ui.button>
+            </x-slot:buttons>
+        @endif
+    </x-layouts.partials.heading>
 
     @if (session('success'))
         <div class="ui-alert ui-alert--success mt-6" role="status">{{ session('success') }}</div>
@@ -108,39 +130,6 @@
                 @endunless
             </div>
 
-            @if ($features['api'] && $canManage)
-                <form method="POST" action="{{ route('automation.tokens.store') }}" class="mt-6 space-y-4">
-                    @csrf
-                    <div class="grid gap-3 sm:grid-cols-[1fr_11rem]">
-                        <label class="block">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Token name') }}</span>
-                            <input name="name" required maxlength="100" class="input secondary w-full rounded-md" placeholder="CI deployment">
-                        </label>
-                        <label class="block">
-                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Expires') }}</span>
-                            <select name="expires_in_days" class="input secondary w-full rounded-md">
-                                <option value="30">{{ __('30 days') }}</option>
-                                <option value="90">{{ __('90 days') }}</option>
-                                <option value="180">{{ __('180 days') }}</option>
-                                <option value="365" selected>{{ __('1 year') }}</option>
-                            </select>
-                        </label>
-                    </div>
-                    <fieldset>
-                        <legend class="mb-2 text-xs font-bold uppercase text-secondary">{{ __('Abilities') }}</legend>
-                        <div class="flex flex-wrap gap-4 text-sm text-secondary">
-                            @foreach (['read', 'deploy', 'manage'] as $ability)
-                                <label class="flex items-center gap-2">
-                                    <input type="checkbox" name="abilities[]" value="{{ $ability }}" @checked($ability === 'read')>
-                                    {{ ucfirst($ability) }}
-                                </label>
-                            @endforeach
-                        </div>
-                    </fieldset>
-                    <x-ui.button type="submit" variant="primary">{{ __('Create token') }}</x-ui.button>
-                </form>
-            @endif
-
             <div class="mt-6 space-y-2">
                 @forelse ($tokens as $token)
                     <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary p-3">
@@ -175,6 +164,50 @@
             </div>
             </div>
         </details>
+
+        @if ($features['api'] && $canManage)
+            <x-dialogs.modal
+                id="automation-token-dialog"
+                :title="__('Create personal access token')"
+                :description="__('Use the smallest set of abilities and an explicit expiry for each integration.')"
+                :open="$tokenDialogOpen"
+            >
+                <form method="POST" action="{{ route('automation.tokens.store') }}" class="space-y-4">
+                    @csrf
+                    <input type="hidden" name="_automation_token_form" value="1">
+                    <div class="grid gap-3 sm:grid-cols-[1fr_11rem]">
+                        <label class="block">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Token name') }}</span>
+                            <input name="name" required maxlength="100" value="{{ old('name') }}" class="input secondary w-full rounded-md" placeholder="CI deployment">
+                            <x-forms.errors name="name" />
+                        </label>
+                        <label class="block">
+                            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Expires') }}</span>
+                            <select name="expires_in_days" class="input secondary w-full rounded-md">
+                                <option value="30" @selected((string) old('expires_in_days', 365) === '30')>{{ __('30 days') }}</option>
+                                <option value="90" @selected((string) old('expires_in_days', 365) === '90')>{{ __('90 days') }}</option>
+                                <option value="180" @selected((string) old('expires_in_days', 365) === '180')>{{ __('180 days') }}</option>
+                                <option value="365" @selected((string) old('expires_in_days', 365) === '365')>{{ __('1 year') }}</option>
+                            </select>
+                            <x-forms.errors name="expires_in_days" />
+                        </label>
+                    </div>
+                    <fieldset>
+                        <legend class="mb-2 text-xs font-bold uppercase text-secondary">{{ __('Abilities') }}</legend>
+                        <div class="flex flex-wrap gap-4 text-sm text-secondary">
+                            @foreach (['read', 'deploy', 'manage'] as $ability)
+                                <label class="flex items-center gap-2">
+                                    <input type="checkbox" name="abilities[]" value="{{ $ability }}" @checked(in_array($ability, (array) old('abilities', ['read']), true))>
+                                    {{ ucfirst($ability) }}
+                                </label>
+                            @endforeach
+                        </div>
+                        <x-forms.errors name="abilities" />
+                    </fieldset>
+                    <x-ui.button type="submit" variant="primary">{{ __('Create token') }}</x-ui.button>
+                </form>
+            </x-dialogs.modal>
+        @endif
 
         <details id="automation-quick-start" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false">
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">

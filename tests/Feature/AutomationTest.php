@@ -533,6 +533,45 @@ class AutomationTest extends TestCase
         $this->assertMatchesRegularExpression('/<details\s+id="automation-quick-start"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
     }
 
+    public function test_token_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        $user = User::factory()->create();
+
+        $default = $this->actingAs($user)
+            ->get(route('automation.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="automation-token-dialog"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="automation-token-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('automation.index', ['dialog' => 'create-token']);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="automation-token-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($user)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($user)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('automation.tokens.store'), [
+                '_automation_token_form' => '1',
+                'name' => '',
+                'abilities' => [],
+                'expires_in_days' => 999,
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="automation-token-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The name field is required.');
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
     public function test_owner_can_create_expiring_token_and_rotate_it(): void
     {
         $user = User::factory()->create();
