@@ -33,6 +33,12 @@ class AssetLayoutFixtureTest extends TestCase
         $this->actingAs($owner);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
+        File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/feedback.html', $this->renderPage(route('feedback.index'))->assertOk()
+            ->assertSee('Send private feedback')->getContent());
+        File::put($directory.'/feedback-dialog.html', $this->renderPage(route('feedback.index', ['dialog' => 'compose-feedback']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
             ->assertSee('Automate routine release work')->getContent());
         $entitlementEnforcement = config('billing.enforce_entitlements');

@@ -116,6 +116,11 @@
                         trigger.dataset.modalTriggerBound = 'true';
 
                         dialog.addEventListener('close', () => {
+                            if (dialog.modalTrigger !== trigger) {
+                                return;
+                            }
+
+                            dialog.modalTrigger = null;
                             trigger.setAttribute('aria-expanded', 'false');
 
                             if (dialog.dataset.modalHistory === 'pushed'
@@ -141,6 +146,7 @@
                                 dialog.showModal();
                             }
 
+                            dialog.modalTrigger = trigger;
                             trigger.setAttribute('aria-expanded', 'true');
                             dialog.dataset.modalHistory = 'pushed';
 
@@ -157,6 +163,7 @@
 
                         if (dialog.dataset.modalInitialOpen === 'true') {
                             trigger.setAttribute('aria-expanded', 'true');
+                            dialog.modalTrigger ??= trigger;
 
                             if (typeof dialog.showModal === 'function' && dialog.open) {
                                 dialog.removeAttribute('open');

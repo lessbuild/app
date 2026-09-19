@@ -1,10 +1,32 @@
 <x-layouts.app>
+    @php
+        $feedbackDialogOpen = request()->query('dialog') === 'compose-feedback'
+            || ($errors->hasAny(['category', 'severity', 'title', 'description', 'reproduction_steps', 'page']) && request()->query('dialog') === null);
+        $feedbackDialogUrl = route('feedback.index', array_filter([
+            'dialog' => 'compose-feedback',
+            'status' => $status,
+            'category' => $category,
+        ], static fn ($value): bool => filled($value)));
+    @endphp
+
     <x-layouts.partials.heading
         eyebrow="{{ __('Product loop') }}"
         icon="information-circle"
         :title="__('Product feedback')"
         :description="__('Report a bug, share an idea, or tell us where the product became confusing.')"
-    />
+    >
+        <x-slot:buttons>
+            <x-ui.button
+                href="{{ $feedbackDialogUrl }}"
+                data-modal-trigger="feedback-compose"
+                aria-controls="feedback-compose"
+                aria-expanded="{{ $feedbackDialogOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
+                {{ __('Send feedback') }}
+            </x-ui.button>
+        </x-slot:buttons>
+    </x-layouts.partials.heading>
 
     <x-ui.insights
         id="feedback-insights"
@@ -36,22 +58,31 @@
     </x-ui.insights>
 
     <x-ui.local-nav :label="__('Feedback sections')">
-        <a href="#feedback-compose" class="ui-local-nav__link">{{ __('Send feedback') }}</a>
+        <a
+            href="{{ $feedbackDialogUrl }}"
+            class="ui-local-nav__link"
+            data-modal-trigger="feedback-compose"
+            aria-controls="feedback-compose"
+            aria-expanded="{{ $feedbackDialogOpen ? 'true' : 'false' }}"
+        >{{ __('Send feedback') }}</a>
         <a href="#feedback-list" class="ui-local-nav__link">{{ __('Workspace feedback') }}</a>
     </x-ui.local-nav>
 
-    <div class="mt-8 grid gap-6 xl:grid-cols-[22rem_1fr]">
-        <x-ui.card id="feedback-compose" class="h-fit scroll-mt-24 p-5 sm:p-6">
-            <h2 class="text-lg font-black text-primary">{{ __('Send private feedback') }}</h2>
-            <p class="mt-1 text-sm leading-6 text-secondary">{{ __('Visible only to you and workspace administrators. Never include passwords, tokens, private keys, or environment values.') }}</p>
-            <form method="POST" action="{{ route('feedback.store') }}" class="mt-5 space-y-4">
+    <div class="mt-8">
+        <x-dialogs.modal
+            id="feedback-compose"
+            :title="__('Send private feedback')"
+            :description="__('Visible only to you and workspace administrators. Never include passwords, tokens, private keys, or environment values.')"
+            :open="$feedbackDialogOpen"
+        >
+            <form method="POST" action="{{ route('feedback.store') }}" class="space-y-4">
                 @csrf
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label for="feedback-category" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Type') }}</label>
                         <select id="feedback-category" name="category" class="input secondary mt-2 w-full rounded-lg">
                             @foreach (\App\Models\ProductFeedback::CATEGORIES as $value)
-                                <option value="{{ $value }}">{{ str($value)->headline() }}</option>
+                                <option value="{{ $value }}" @selected($value === old('category', 'bug'))>{{ str($value)->headline() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -59,7 +90,7 @@
                         <label for="feedback-severity" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Impact') }}</label>
                         <select id="feedback-severity" name="severity" class="input secondary mt-2 w-full rounded-lg">
                             @foreach (\App\Models\ProductFeedback::SEVERITIES as $value)
-                                <option value="{{ $value }}" @selected($value === 'normal')>{{ str($value)->headline() }}</option>
+                                <option value="{{ $value }}" @selected($value === old('severity', 'normal'))>{{ str($value)->headline() }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -88,7 +119,7 @@
                 <x-forms.errors name="page" />
                 <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Submit feedback') }}</x-ui.button>
             </form>
-        </x-ui.card>
+        </x-dialogs.modal>
 
         <section id="feedback-list" class="scroll-mt-24" aria-labelledby="feedback-list-heading">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">

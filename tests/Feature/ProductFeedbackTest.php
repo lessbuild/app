@@ -12,6 +12,42 @@ class ProductFeedbackTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_feedback_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        $owner = User::factory()->create();
+        $default = $this->actingAs($owner)->get(route('feedback.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="feedback-compose"', false);
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="feedback-compose")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $default->getContent(),
+        );
+
+        $dialogUrl = route('feedback.index', ['dialog' => 'compose-feedback']);
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="feedback-compose")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)->get($dialogUrl)->assertSuccessful()->getContent(),
+        );
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('feedback.store'), [
+                'category' => 'bug',
+                'severity' => 'normal',
+                'title' => '',
+                'description' => '',
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="feedback-compose")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The title field is required.');
+    }
+
     public function test_member_submits_encrypted_private_feedback_and_sees_only_their_own(): void
     {
         $owner = User::factory()->create();

@@ -4,7 +4,21 @@
         icon="user-circle"
         :title="__('Workspace')"
         :description="__('Manage members, roles, and workspace access.')"
-    />
+    >
+        @if ($canManage)
+            <x-slot:buttons>
+                <x-ui.button
+                    href="{{ route('organizations.index', ['dialog' => 'invite-member']) }}"
+                    data-modal-trigger="organization-invite"
+                    aria-controls="organization-invite"
+                    aria-expanded="{{ request()->query('dialog') === 'invite-member' ? 'true' : 'false' }}"
+                    variant="primary"
+                >
+                    {{ __('Invite member') }}
+                </x-ui.button>
+            </x-slot:buttons>
+        @endif
+    </x-layouts.partials.heading>
 
     @php
         $organizationDefaultErrorKeys = array_keys($errors->getBag('default')->getMessages());
@@ -19,7 +33,8 @@
             'sso_client_secret', 'sso_enforced',
         ]);
         $notificationPreferencesOpen = $hasOrganizationError(['categories', 'recoveries']);
-        $invitationOpen = $errors->getBag('default')->has('email') || old('email') !== null;
+        $invitationOpen = request()->query('dialog') === 'invite-member'
+            || ($errors->getBag('default')->has('email') || old('email') !== null);
         $deleteWorkspaceOpen = $errors->getBag('deleteWorkspace')->any();
     @endphp
 
@@ -60,7 +75,15 @@
     <x-ui.local-nav :label="__('Workspace sections')">
         <a href="#organization-security-policy" class="ui-local-nav__link">{{ __('Security') }}</a>
         <a href="#organization-notification-preferences" class="ui-local-nav__link">{{ __('Notifications') }}</a>
-        <a href="#organization-invite" class="ui-local-nav__link">{{ __('Invitations') }}</a>
+        @if ($canManage)
+            <a
+                href="{{ route('organizations.index', ['dialog' => 'invite-member']) }}"
+                class="ui-local-nav__link"
+                data-modal-trigger="organization-invite"
+                aria-controls="organization-invite"
+                aria-expanded="{{ $invitationOpen ? 'true' : 'false' }}"
+            >{{ __('Invitations') }}</a>
+        @endif
         <a href="#organization-workspaces" class="ui-local-nav__link">{{ __('Workspaces') }}</a>
         <a href="#organization-delete" class="ui-local-nav__link">{{ __('Delete workspace') }}</a>
     </x-ui.local-nav>
@@ -221,38 +244,6 @@
                 </x-forms.section>
             @endif
 
-            @if ($canManage)
-                <x-forms.section
-                    :title="__('Invite member')"
-                    :description="__('Invitations expire after seven days.')"
-                    :collapsible="true"
-                    id="organization-invite"
-                    :open="$invitationOpen"
-                >
-                    <form method="POST" action="{{ route('organizations.invitations.store') }}" class="space-y-5 bg-primary p-5 sm:p-6">
-                        @csrf
-                        <div>
-                            <label for="invitation-email" class="block text-sm font-bold text-primary">{{ __('Email') }}</label>
-                            <input id="invitation-email" required type="email" name="email" class="input secondary mt-2 w-full rounded-lg">
-                        </div>
-                        <div>
-                            <label for="invitation-role" class="block text-sm font-bold text-primary">{{ __('Role') }}</label>
-                            <select id="invitation-role" name="role" class="input secondary mt-2 w-full rounded-lg">
-                                @foreach (\App\Models\Organization::ROLES as $role)
-                                    <option value="{{ $role }}">{{ ucfirst($role) }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <x-ui.button type="submit" variant="primary" :disabled="! $memberUsage['allowed']">{{ __('Send invitation') }}</x-ui.button>
-                            @unless ($memberUsage['allowed'])
-                                <p class="text-sm text-secondary">{{ __('Your plan’s member limit has been reached.') }} <a href="{{ route('billing.index') }}" class="font-bold text-ternary underline">{{ __('Upgrade') }}</a></p>
-                            @endunless
-                        </div>
-                    </form>
-                </x-forms.section>
-            @endif
-
             <x-forms.section
                 :title="__('Your workspaces')"
                 :description="__('Switch the active workspace.')"
@@ -273,6 +264,39 @@
             </x-forms.section>
         </div>
     </div>
+
+    @if ($canManage)
+        <x-dialogs.modal
+            id="organization-invite"
+            :title="__('Invite member')"
+            :description="__('Invitations expire after seven days.')"
+            :open="$invitationOpen"
+        >
+            <form method="POST" action="{{ route('organizations.invitations.store') }}" class="space-y-5">
+                @csrf
+                <div>
+                    <label for="invitation-email" class="block text-sm font-bold text-primary">{{ __('Email') }}</label>
+                    <input id="invitation-email" required type="email" name="email" value="{{ old('email') }}" class="input secondary mt-2 w-full rounded-lg" autocomplete="email">
+                </div>
+                <div>
+                    <label for="invitation-role" class="block text-sm font-bold text-primary">{{ __('Role') }}</label>
+                    <select id="invitation-role" name="role" class="input secondary mt-2 w-full rounded-lg">
+                        @foreach (\App\Models\Organization::ROLES as $role)
+                            <option value="{{ $role }}" @selected($role === old('role', \App\Models\Organization::ROLES[0]))>{{ ucfirst($role) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <x-forms.errors name="email" />
+                <x-forms.errors name="role" />
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-ui.button type="submit" variant="primary" :disabled="! $memberUsage['allowed']">{{ __('Send invitation') }}</x-ui.button>
+                    @unless ($memberUsage['allowed'])
+                        <p class="text-sm text-secondary">{{ __('Your plan’s member limit has been reached.') }} <a href="{{ route('billing.index') }}" class="font-bold text-ternary underline">{{ __('Upgrade') }}</a></p>
+                    @endunless
+                </div>
+            </form>
+        </x-dialogs.modal>
+    @endif
 
     @if ($organization->owner->is(auth()->user()))
         <details id="organization-delete" class="ui-responsive-details group ui-card mt-8 border-red-200 bg-red-50" open data-responsive-details data-responsive-details-mobile-open="{{ $deleteWorkspaceOpen ? 'true' : 'false' }}">

@@ -27,11 +27,16 @@ async function serveFixtures(page) {
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
-        if ([...screens, 'provider-create'].includes(pathname.slice(1))) {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1))) {
             const screen = pathname.slice(1);
-            const fixtureName = screen === 'domains' && new URL(route.request().url()).searchParams.get('dialog') === 'add-domain'
+            const dialog = new URL(route.request().url()).searchParams.get('dialog');
+            const fixtureName = screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
-                : screen;
+                : screen === 'organization' && dialog === 'invite-member'
+                    ? 'organization-dialog'
+                    : screen === 'feedback' && dialog === 'compose-feedback'
+                        ? 'feedback-dialog'
+                        : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
             html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
@@ -318,4 +323,32 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await expect(content).toBeHidden();
     await monitoring.locator('summary').click();
     await expect(content).toBeVisible();
+});
+
+test('compact invitation and feedback workflows use accessible URL-backed dialogs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
+    const inviteTrigger = page.getByRole('link', { name: 'Invite member', exact: true });
+    const inviteDialog = page.getByRole('dialog', { name: 'Invite member', exact: true });
+    await inviteTrigger.click();
+    await expect(inviteDialog).toBeVisible();
+    await expect(page.locator('#organization-invite [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('invite-member');
+    await page.keyboard.press('Escape');
+    await expect(inviteDialog).toBeHidden();
+    await expect(inviteTrigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goto('http://buildpusher.test/feedback', { waitUntil: 'networkidle' });
+    const feedbackTrigger = page.getByRole('link', { name: 'Send feedback', exact: true }).first();
+    const feedbackDialog = page.getByRole('dialog', { name: 'Send private feedback', exact: true });
+    await feedbackTrigger.click();
+    await expect(feedbackDialog).toBeVisible();
+    await expect(page.locator('#feedback-compose [data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('compose-feedback');
+    await page.locator('#feedback-compose [data-modal-close]').click();
+    await expect(feedbackDialog).toBeHidden();
+    await expect(feedbackTrigger).toBeFocused();
 });

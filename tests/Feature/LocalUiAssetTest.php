@@ -82,7 +82,7 @@ class LocalUiAssetTest extends TestCase
         foreach ([
             'commands/index.blade.php' => ['#command-filters', '#command-insights', '#command-history'],
             'notifications/index.blade.php' => ['#notifications-insights', '#notification-list', '#notification-filters'],
-            'feedback/index.blade.php' => ['#feedback-compose', '#feedback-list'],
+            'feedback/index.blade.php' => ['#feedback-list'],
             'scenes/users/index.blade.php' => ['#account-profile', '#account-two-factor', '#account-data'],
             'scenes/organizations/index.blade.php' => ['#organization-security-policy', '#organization-delete'],
             'system-health/index.blade.php' => ['#system-health-insights', '#system-health-checks', '#system-health-help'],
@@ -94,6 +94,9 @@ class LocalUiAssetTest extends TestCase
                 $this->assertStringContainsString('href="'.$anchor.'"', $source, $view);
             }
         }
+
+        $feedback = File::get(resource_path('views/feedback/index.blade.php'));
+        $this->assertStringContainsString('data-modal-trigger="feedback-compose"', $feedback);
 
         $notifications = File::get(resource_path('views/notifications/index.blade.php'));
         $this->assertStringContainsString('border-l-4 border-l-red-400', $notifications);

@@ -39,7 +39,7 @@ class OrganizationManagementTest extends TestCase
         Notification::assertSentOnDemand(OrganizationInvitationNotification::class);
     }
 
-    public function test_workspace_page_keeps_members_visible_and_marks_secondary_panels_for_responsive_disclosure(): void
+    public function test_workspace_page_keeps_members_visible_and_uses_a_dialog_for_invitations(): void
     {
         $owner = User::factory()->create();
 
@@ -48,14 +48,50 @@ class OrganizationManagementTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        foreach (['organization-security-policy', 'organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete'] as $id) {
+        foreach (['organization-security-policy', 'organization-notification-preferences', 'organization-workspaces', 'organization-delete'] as $id) {
             $this->assertStringContainsString('id="'.$id.'"', $content);
             $this->assertMatchesRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
         }
 
+        $this->assertStringContainsString('data-modal-trigger="organization-invite"', $content);
+        $this->assertStringNotContainsString('<details id="organization-invite"', $content);
+        $this->assertDoesNotMatchRegularExpression(
+            '/<dialog(?=[^>]*id="organization-invite")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $content,
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="organization-invite")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $this->actingAs($owner)
+                ->get(route('organizations.index', ['dialog' => 'invite-member']))
+                ->assertSuccessful()
+                ->getContent(),
+        );
+
         $this->assertStringContainsString('Members', $content);
         $this->assertStringContainsString('Save security policy', $content);
         $this->assertStringContainsString('Permanently delete workspace', $content);
+    }
+
+    public function test_invitation_validation_reopens_the_invitation_dialog(): void
+    {
+        $owner = User::factory()->create();
+        $dialogUrl = route('organizations.index', ['dialog' => 'invite-member']);
+
+        $response = $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->post(route('organizations.invitations.store'), [
+                'email' => 'not-an-email',
+                'role' => 'not-a-role',
+            ])
+            ->assertSuccessful();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="organization-invite")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
+        $response->assertSee('The email must be a valid email address.');
     }
 
     public function test_workspace_security_validation_reopens_only_the_relevant_panel(): void
@@ -80,7 +116,7 @@ class OrganizationManagementTest extends TestCase
         $content = $response->getContent();
 
         $this->assertMatchesRegularExpression('/<details\s+id="organization-security-policy"[^>]*data-responsive-details-mobile-open="true"[^>]*>/', $content);
-        foreach (['organization-notification-preferences', 'organization-invite', 'organization-workspaces', 'organization-delete'] as $id) {
+        foreach (['organization-notification-preferences', 'organization-workspaces', 'organization-delete'] as $id) {
             $this->assertMatchesRegularExpression('/<details\s+id="'.$id.'"[^>]*data-responsive-details-mobile-open="false"[^>]*>/', $content);
         }
     }
