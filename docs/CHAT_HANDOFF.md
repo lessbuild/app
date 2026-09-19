@@ -2040,6 +2040,26 @@ cache, Pint and diff checks passed. Implementation commit and push:
 Next task: audit notification and feedback add/edit forms, then continue with
 build notes, gallery actions and cost/budget workflows.
 
+## Notification and feedback dialog follow-up — 2026-09-19
+
+Notification saved-filter, private feedback compose and workspace feedback
+review/update forms now render through reusable scene dialog components:
+`scenes.notifications.save-filter-dialog`,
+`scenes.feedback.compose-dialog` and `scenes.feedback.review-dialog`.
+Components are included by the page render, so opening a URL-backed dialog
+does not require loading a second feature page. Existing filters, validation
+reopen behavior, authorization ordering, named form markers, privacy warning,
+encrypted feedback persistence and response messages remain unchanged.
+
+Verification passed with 39 focused PHP tests / 555 assertions, one fixture
+test / 140 assertions and two targeted mobile browser journeys. Blade cache,
+Pint and diff checks passed. Implementation commit and push:
+`9780fef`.
+
+The next task is to audit build-note, gallery, dashboard and cost/budget
+mutation forms. Extract real add/edit workflows into page-included dialogs,
+while keeping long or protocol-sensitive workflows as explicit pages.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

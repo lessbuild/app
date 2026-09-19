@@ -1569,3 +1569,68 @@ Convert backup destination creation and editing from inline disclosure forms to
 URL-backed server-rendered components. Preserve encrypted credential omission,
 blank-on-edit rotation semantics, destination immutability safeguards,
 provider guidance, verification actions and safe validation failure behavior.
+
+## Follow-up Slice 16 — notification and feedback dialogs
+
+Status: complete locally and pushed to `main` in `9780fef`.
+
+### Responsibility problem
+
+The notification saved-filter form and the feedback compose/review forms were
+already URL-backed dialogs, but their markup lived inside the large page
+templates. That coupled inbox/filter and feedback-list rendering to mutation
+forms and made the same dialog presentation harder to reuse consistently.
+
+### Boundary and design decision
+
+- Notification saved-filter markup now lives in
+  `scenes.notifications.save-filter-dialog`.
+- Private feedback submission now lives in
+  `scenes.feedback.compose-dialog`.
+- Workspace feedback review/update now lives in
+  `scenes.feedback.review-dialog`, rendered for each authorized feedback item
+  on the list page.
+- The pages retain URL state, filtering, list context and authorization
+  decisions; the components own only their corresponding modal form markup.
+
+This is a presentation boundary following single responsibility. No generic
+form abstraction or new business service was introduced. Existing routes,
+requests, policies, actions, encrypted storage and response behavior remain
+the application boundary.
+
+### Preserved contracts and safety guarantees
+
+- Saved-filter names, active filter query parameters, validation reopening and
+  saved-filter persistence remain unchanged.
+- Feedback category, severity, title, description, reproduction and related
+  page fields retain their names, limits, private-content warning and error
+  behavior.
+- Workspace review authorization still precedes validation and mutation;
+  status, response, named marker and redirect behavior remain unchanged.
+- Feedback review dialogs are only rendered for users who can review the
+  workspace. Existing submitter/organization scoping and encrypted feedback
+  persistence are untouched.
+- Components are included by the page render itself, so opening a dialog does
+  not require loading a second feature page or fetching a separate form.
+
+### Verification
+
+- Product feedback, notification bulk/inbox and local UI regression coverage:
+  **39 tests / 555 assertions** passed under PHP 8.5.10.
+- Browser fixture: **1 test / 140 assertions** passed.
+- Targeted mobile browser journeys for feedback and saved filters: **2
+  passed**.
+- Blade view cache, Pint and `git diff --check` passed.
+- No dependency or lockfile changed.
+
+### Commit and push
+
+Implementation commit and push: `9780fef Extract notification and feedback dialogs`.
+
+### Exact next task
+
+Audit build-note, gallery, dashboard and cost/budget mutation forms. Extract
+only real add/edit workflows into page-included URL-backed components, while
+keeping script inspection, report resolution, deployment actions, imports,
+restores and other long or protocol-sensitive workflows as explicit pages
+when a modal would change ordering or failure semantics.
