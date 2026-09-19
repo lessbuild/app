@@ -1,5 +1,12 @@
 <x-layouts.app>
 
+    @php
+        $websiteCreateOpen = request()->query('dialog') === 'create-website';
+        $websiteIndexQuery = array_filter($filters, fn ($value) => $value !== null);
+        $websiteCreateUrl = route('websites.index', [...$websiteIndexQuery, 'dialog' => 'create-website']);
+        $websiteStoreUrl = route('websites.store', ['dialog' => 'create-website']);
+    @endphp
+
     <!--
      ! ------------------------------------------------------------
      ! Heading
@@ -13,7 +20,13 @@
     >
         <x-slot:buttons>
             <x-ui.button :href="route('websites.import.create')" variant="secondary">{{ __('Import existing') }}</x-ui.button>
-            <x-ui.button :href="route('websites.create')" variant="primary">
+            <x-ui.button
+                :href="$websiteCreateUrl"
+                data-modal-trigger="website-create-dialog"
+                aria-controls="website-create-dialog"
+                aria-expanded="{{ $websiteCreateOpen ? 'true' : 'false' }}"
+                variant="primary"
+            >
                 <svg class="mr-2 h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
@@ -187,7 +200,13 @@
                     @if (array_filter($filters, fn ($value) => $value !== null))
                         <x-ui.button :href="route('websites.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
                     @else
-                        <x-ui.button :href="route('websites.create')" variant="secondary">
+                        <x-ui.button
+                            :href="$websiteCreateUrl"
+                            data-modal-trigger="website-create-dialog"
+                            aria-controls="website-create-dialog"
+                            aria-expanded="{{ $websiteCreateOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
                             <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
                                 <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                             </svg>
@@ -198,4 +217,52 @@
             </x-lists.empty>
         </div>
     @endif
+
+    <x-dialogs.modal
+        id="website-create-dialog"
+        :title="__('Add website')"
+        :description="__('Choose a server, configure deployment health checks, and create a new deployment target.')"
+        :open="$websiteCreateOpen"
+        body-class="p-0"
+    >
+        @if ($servers->isEmpty())
+            <x-ui.alert tone="info" class="m-5" role="status">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p>{{ __('You need an active application server with MySQL before you can add a website.') }}</p>
+                    <a data-turbo="false" href="{{ route('servers.index', ['dialog' => 'create-server']) }}" class="shrink-0 font-semibold underline">
+                        {{ __('Create server') }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </x-ui.alert>
+        @endif
+
+        @if (! $planUsage['allowed'])
+            <x-ui.alert tone="warning" class="m-5" role="status">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <p>{{ __('Your plan’s website limit has been reached.') }}</p>
+                    <a data-turbo="false" href="{{ route('billing.index') }}" class="shrink-0 font-semibold underline">
+                        {{ __('Upgrade plan') }}
+                        <span aria-hidden="true">→</span>
+                    </a>
+                </div>
+            </x-ui.alert>
+        @endif
+
+        @error('plan')
+            <x-ui.alert tone="danger" class="m-5">{{ $message }} <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a></x-ui.alert>
+        @enderror
+
+        <form action="{{ $websiteStoreUrl }}" method="POST">
+            @csrf
+            <x-scenes.websites._form :servers="$servers" />
+
+            <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+                <x-ui.button :href="route('websites.index', $websiteIndexQuery)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+                <x-ui.button type="submit" variant="primary" :disabled="$servers->isEmpty() || ! $planUsage['allowed']">
+                    {{ __('Create website') }}
+                </x-ui.button>
+            </div>
+        </form>
+    </x-dialogs.modal>
 </x-layouts.app>

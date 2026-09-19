@@ -3,6 +3,7 @@
     'title',
     'description' => null,
     'open' => false,
+    'bodyClass' => 'px-5 py-5 sm:px-6',
 ])
 
 @php($titleId = $id.'-title')
@@ -37,7 +38,7 @@
                     </button>
                 </form>
             </header>
-            <div class="ui-modal__body px-5 py-5 sm:px-6">
+            <div class="ui-modal__body {{ $bodyClass }}">
                 {{ $slot }}
             </div>
         </div>

@@ -45,7 +45,7 @@ class WebsitesController extends Controller
     /**
      * List all created websites for the user
      */
-    public function index(Request $request): View
+    public function index(Request $request, PlanLimits $limits): View
     {
         $filters = $this->indexFilters($request);
         $websites = $this->websiteInventory->for($request->user(), $filters)
@@ -60,6 +60,8 @@ class WebsitesController extends Controller
             'metrics' => $this->websiteInventory->metrics($request->user(), $filters),
             'statuses' => $this->websiteStatuses(),
             'healthStatuses' => ['disabled', Website::HEALTH_UNKNOWN, Website::HEALTH_HEALTHY, Website::HEALTH_UNHEALTHY],
+            'servers' => $request->user()->workspaceServers()->readyForWebsites()->get(),
+            'planUsage' => $limits->usage($request->user(), 'websites'),
         ]);
     }
 
