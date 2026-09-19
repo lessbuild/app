@@ -2,6 +2,13 @@
     $incidentTone = $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED
         ? 'success'
         : ($incident->severity === 'critical' ? 'danger' : 'warning');
+    $noteDialogId = 'operational-incident-note-'.$incident->id;
+    $noteDialogKey = 'incident-note-'.$incident->id;
+    $noteDialogHasErrors = old('_operational_incident_form') === 'note'
+        && (string) old('_operational_incident_id') === (string) $incident->id
+        && $errors->has('message');
+    $noteDialogOpen = request()->query('dialog') === $noteDialogKey || $noteDialogHasErrors;
+    $noteDialogUrl = route('observability.index', ['dialog' => $noteDialogKey]);
 @endphp
 
 <article class="rounded-xl border border-primary bg-secondary p-4">
@@ -22,7 +29,7 @@
         @endif
     </div>
 
-    <details class="mt-4 rounded-lg border border-primary bg-primary p-3" @if ($openDetails || $errors->any()) open @endif>
+    <details class="mt-4 rounded-lg border border-primary bg-primary p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
         <summary class="cursor-pointer text-xs font-bold text-ternary">{{ __('Timeline and response') }}</summary>
         <p class="mt-3 text-sm text-secondary">{{ $incident->summary }}</p>
         <ol class="mt-3 space-y-3 border-l border-primary pl-4">
@@ -50,14 +57,33 @@
                     </label>
                     <x-ui.button type="submit" variant="secondary">{{ __('Assign') }}</x-ui.button>
                 </form>
-                <form method="POST" action="{{ route('observability.operational-incidents.notes.store', $incident) }}" class="flex items-end gap-2">
-                    @csrf
-                    <label class="min-w-0 flex-1">
-                        <span class="sr-only">{{ __('Investigation note') }}</span>
-                        <input name="message" maxlength="5000" required class="input secondary w-full rounded-md" placeholder="{{ __('Investigation note') }}">
-                    </label>
-                    <x-ui.button type="submit" variant="secondary">{{ __('Add note') }}</x-ui.button>
-                </form>
+                <div>
+                    <x-ui.button
+                        :href="$noteDialogUrl"
+                        data-modal-trigger="{{ $noteDialogId }}"
+                        aria-controls="{{ $noteDialogId }}"
+                        aria-expanded="{{ $noteDialogOpen ? 'true' : 'false' }}"
+                        variant="secondary"
+                    >
+                        {{ __('Add investigation note') }}
+                    </x-ui.button>
+                    <x-dialogs.modal
+                        :id="$noteDialogId"
+                        :title="__('Add investigation note')"
+                        :description="__('Record bounded evidence in the incident timeline without changing its status.')"
+                        :open="$noteDialogOpen"
+                    >
+                        <form method="POST" action="{{ route('observability.operational-incidents.notes.store', $incident) }}" class="space-y-3">
+                            @csrf
+                            <input type="hidden" name="_operational_incident_form" value="note">
+                            <input type="hidden" name="_operational_incident_id" value="{{ $incident->id }}">
+                            <label for="{{ $noteDialogId }}-message" class="block text-xs font-semibold uppercase text-secondary">{{ __('Investigation note') }}</label>
+                            <textarea id="{{ $noteDialogId }}-message" name="message" rows="5" maxlength="5000" required class="input secondary w-full rounded-md" placeholder="{{ __('Investigation note') }}">{{ old('message') }}</textarea>
+                            <x-forms.errors name="message" />
+                            <x-ui.button type="submit" variant="primary">{{ __('Add note') }}</x-ui.button>
+                        </form>
+                    </x-dialogs.modal>
+                </div>
                 <form method="POST" action="{{ route('observability.operational-incidents.resolve', $incident) }}" class="flex items-end gap-2">
                     @csrf
                     <label class="min-w-0 flex-1">

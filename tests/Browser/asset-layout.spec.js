@@ -65,6 +65,27 @@ async function serveFixtures(page) {
     });
 }
 
+test('observability investigation notes use an accessible dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability', { waitUntil: 'networkidle' });
+
+    const incidentTimeline = page.locator('#operational-incidents article details').first();
+    if (! await incidentTimeline.evaluate((element) => element.open)) {
+        await incidentTimeline.locator('summary').click();
+    }
+    const noteTrigger = page.getByRole('link', { name: 'Add investigation note', exact: true });
+    const noteDialog = page.getByRole('dialog', { name: 'Add investigation note', exact: true });
+    await noteTrigger.click();
+    await expect(noteDialog).toBeVisible();
+    await expect(noteDialog.locator('[data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^incident-note-\d+$/);
+    await page.keyboard.press('Escape');
+    await expect(noteDialog).toBeHidden();
+    await expect(noteTrigger).toBeFocused();
+});
+
 for (const colorScheme of ['light', 'dark']) {
     for (const width of widths) {
         test(`${colorScheme} at ${width}px: built assets preserve layouts and navigation`, async ({ page }) => {
@@ -244,6 +265,19 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(page.locator('#observability-overview')).toBeVisible();
                     await expect(page.locator('#operational-incidents')).toBeVisible();
                     await expect(page.locator('#server-telemetry')).toBeVisible();
+                    const incidentTimeline = page.locator('#operational-incidents article details').first();
+                    if (! await incidentTimeline.evaluate((element) => element.open)) {
+                        await incidentTimeline.locator('summary').click();
+                    }
+                    const noteTrigger = page.getByRole('link', { name: 'Add investigation note', exact: true });
+                    const noteDialog = page.getByRole('dialog', { name: 'Add investigation note', exact: true });
+                    await noteTrigger.click();
+                    await expect(noteDialog).toBeVisible();
+                    await expect(noteDialog.locator('[data-modal-close]')).toBeFocused();
+                    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^incident-note-\d+$/);
+                    await page.keyboard.press('Escape');
+                    await expect(noteDialog).toBeHidden();
+                    await expect(noteTrigger).toBeFocused();
                     const signals = page.locator('#correlated-signals');
                     const content = signals.locator('.ui-responsive-details__content');
                     if (width >= 1024) {

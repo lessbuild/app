@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationReviews;
+use App\Services\IncidentNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Testing\TestResponse;
@@ -169,9 +170,11 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Add domain')->getContent());
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Fixture server incident', 'Fixture incident summary.');
         File::put($directory.'/observability.html', $this->renderPage(route('observability.index'))->assertOk()
             ->assertSee('Start with what needs attention')
             ->assertSee('data-modal-trigger="metric-rule-dialog"', false)
+            ->assertSee('data-modal-trigger="operational-incident-note-', false)
             ->getContent());
         File::put($directory.'/observability-metric-rule-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-metric-rule']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());

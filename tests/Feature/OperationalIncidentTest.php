@@ -103,6 +103,38 @@ class OperationalIncidentTest extends TestCase
         $this->actingAs($intruder)->post(route('observability.operational-incidents.notes.store', $incident), ['message' => 'No access'])->assertForbidden();
     }
 
+    public function test_investigation_note_composer_is_a_dialog_and_reopens_for_validation_errors(): void
+    {
+        [$owner, $server] = $this->server();
+        $operator = User::factory()->create();
+        $owner->currentOrganization->members()->attach($operator, ['role' => 'operator']);
+        $operator->update(['current_organization_id' => $owner->current_organization_id]);
+        app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Server failed', 'Connection refused');
+        $incident = OperationalIncident::query()->sole();
+        $dialogId = 'operational-incident-note-'.$incident->id;
+        $dialogKey = 'incident-note-'.$incident->id;
+        $dialogUrl = route('observability.index', ['dialog' => $dialogKey]);
+        $dialogPattern = '/<dialog(?=[^>]*id="'.preg_quote($dialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
+
+        $default = $this->actingAs($operator)->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="'.$dialogId.'"', false);
+        $this->assertDoesNotMatchRegularExpression($dialogPattern, $default->getContent());
+        $this->assertMatchesRegularExpression($dialogPattern, $this->actingAs($operator)->get($dialogUrl)->assertSuccessful()->getContent());
+
+        $errorPage = $this->actingAs($operator)->from($dialogUrl)->followingRedirects()->post(
+            route('observability.operational-incidents.notes.store', $incident),
+            [
+                '_operational_incident_form' => 'note',
+                '_operational_incident_id' => $incident->id,
+                'message' => str_repeat('x', 5001),
+            ],
+        )->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern, $errorPage->getContent());
+        $errorPage->assertSee('must not be greater than 5000 characters.');
+        $this->assertSame(1, $incident->events()->count());
+    }
+
     public function test_observability_keeps_active_response_visible_and_collapses_resolved_history(): void
     {
         [$owner, $server] = $this->server();
