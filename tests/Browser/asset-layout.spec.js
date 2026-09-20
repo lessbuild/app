@@ -113,6 +113,8 @@ async function serveFixtures(page) {
                                     ? 'server-show-edit-dialog'
                                 : screen === 'website-show' && dialog === 'edit-website'
                                     ? 'website-show-edit-dialog'
+                                : screen === 'website-show' && dialog === 'website-log-retention'
+                                    ? 'website-show-log-retention-dialog'
                                 : screen === 'recipes' && dialog === 'create-recipe'
                                     ? 'recipes-dialog'
                                 : screen === 'recipes' && dialog?.startsWith('edit-recipe-')
@@ -289,6 +291,27 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
 
     await page.goto(`http://buildpusher.test${recipeUrl.pathname}${recipeUrl.search}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Edit recipe', exact: true })).toBeVisible();
+});
+
+test('website log retention opens in a contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
+
+    await page.locator('#website-runtime-logs summary').click();
+    const trigger = page.getByRole('link', { name: 'Configure retention', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Log retention settings', exact: true });
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('website-log-retention');
+    await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/websites/1?dialog=website-log-retention', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Log retention settings', exact: true })).toBeVisible();
 });
 
 test('gallery publishing and script inspection use accessible dialogs', async ({ page }) => {

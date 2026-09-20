@@ -2315,9 +2315,16 @@ remain unchanged; modal-originated enable/rotate redirects preserve the
 dialog so the secret is copyable. Focused PHP, fixture, browser, Blade, Pint
 and diff checks pass.
 
-The next task is to finish the detail-page audit. Full history/report/export
-flows remain pages, with any remaining inline action documented by its
-safety or execution-order reason.
+The current local slice moves website runtime log-retention settings into a
+website-context dialog. It keeps the existing retention request/controller and
+policy boundary, hides the control for actors who cannot update the website,
+and reopens the dialog after modal-originated validation failures. The focused
+observability/health-history regression and both relevant browser journeys pass;
+final Blade/Pint/diff verification and the feature commit are pending.
+
+The next task after pushing this slice is to finish the detail-page audit. Full
+history/report/export flows remain pages, with any remaining inline action
+documented by its safety or execution-order reason.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local

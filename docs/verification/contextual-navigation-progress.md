@@ -372,3 +372,50 @@ Commit and push: ec85060 Move repository webhook settings into a dialog.
 Finish the detail-page audit. Keep full history/report/export flows as pages
 and document any remaining inline action with a concrete safety or
 execution-order reason.
+
+## Slice 8 — website log retention in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+The website detail page placed the runtime log-retention editor beneath the
+log snapshots as an inline form. On mobile this made an already long
+operational section taller and separated a bounded settings change from the
+website controls used elsewhere in the application.
+
+### Boundary
+
+- `log-retention-dialog.blade.php` owns the bounded retention form surface.
+- The website page owns the runtime-log summary, update-policy gate, trigger and
+  URL-backed dialog state.
+- The existing runtime-log retention request, controller and persistence path
+  remain the validation, authorization and write boundaries.
+- Runtime log refresh, health history and provisioning timeline remain inline
+  operational views; their pagination and polling behavior is unchanged.
+
+### Preserved behavior and safety
+
+- The existing `log_retention_lines` values, validation key, PATCH route and
+  policy behavior remain unchanged.
+- Modal-originated invalid input returns to the website with the dialog open;
+  the canonical endpoint still keeps its existing redirect behavior.
+- Retention controls are hidden for actors who cannot update the website, while
+  the endpoint continues to enforce authorization independently.
+- No log output, credentials or old input is added to the dialog beyond the
+  existing safe retention field.
+
+### Verification
+
+- Observability and website health-history coverage: 32 tests / 311 assertions
+  passed.
+- Isolated website fixture export is exercised by the browser harness.
+- Website retention dialog browser journey: 1 passed, including expansion of
+  runtime logs, URL state, focus restoration, Escape and direct dialog loading.
+- Provider/repository/recipe dialog regression: 1 passed.
+- JavaScript syntax check passed; Blade cache, Pint and `git diff --check` are
+  pending final slice verification.
+
+### Exact next task
+
+Commit and push this slice, then complete the remaining detail-page audit.

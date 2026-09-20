@@ -540,9 +540,18 @@ class ObservabilityTest extends TestCase
             'log_retention_lines' => 5000,
         ])->assertRedirect();
         $this->assertSame(5000, $website->fresh()->log_retention_lines);
-        $this->actingAs($owner)->patch(route('websites.runtime-logs.retention', $website), [
+        $dialogUrl = route('websites.show', ['website' => $website, 'dialog' => 'website-log-retention']);
+        $this->actingAs($owner)->from($dialogUrl)->patch(route('websites.runtime-logs.retention', [
+            'website' => $website,
+            'dialog' => 'website-log-retention',
+        ]), [
+            '_website_form' => 'log-retention',
             'log_retention_lines' => 999999,
-        ])->assertSessionHasErrors('log_retention_lines');
+        ])->assertRedirect($dialogUrl)->assertSessionHasErrors('log_retention_lines');
+        $this->actingAs($owner)->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Log retention settings');
     }
 
     public function test_active_website_can_queue_a_runtime_log_refresh_but_inactive_website_cannot(): void

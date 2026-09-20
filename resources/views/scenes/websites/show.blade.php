@@ -7,6 +7,10 @@
         $repositoryCreateUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'create-repository']);
         $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $websitePageUrl, 'website_id' => $website->id]);
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
+        $logRetentionDialogId = 'website-log-retention-dialog';
+        $logRetentionDialogOpen = request()->query('dialog') === 'website-log-retention';
+        $logRetentionDialogUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'website-log-retention']);
+        $canUpdateWebsite = auth()->user()?->can('update', $website) ?? false;
     @endphp
 
     <!--
@@ -328,21 +332,25 @@
                 <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
             </div>
         @endforeach
-        <form method="POST" action="{{ route('websites.runtime-logs.retention', $website) }}" class="mt-4 flex flex-wrap items-end gap-3 border-t border-primary pt-4">
-            @csrf
-            @method('PATCH')
-            <label>
-                <span class="block text-xs font-bold uppercase text-secondary">{{ __('Snapshot retention') }}</span>
-                <select name="log_retention_lines" class="input secondary mt-2 min-h-[2.75rem] rounded-lg">
-                    @foreach([100, 500, 1000, 5000, 10000] as $lines)
-                        <option value="{{ $lines }}" @selected($website->log_retention_lines === $lines)>{{ number_format($lines) }} {{ __('lines') }}</option>
-                    @endforeach
-                </select>
-            </label>
-            <x-ui.button type="submit" variant="secondary">{{ __('Save retention') }}</x-ui.button>
-        </form>
+        @if ($canUpdateWebsite)
+            <div class="mt-4 border-t border-primary pt-4">
+                <x-ui.button
+                    :href="$logRetentionDialogUrl"
+                    data-modal-trigger="{{ $logRetentionDialogId }}"
+                    aria-controls="{{ $logRetentionDialogId }}"
+                    aria-expanded="{{ $logRetentionDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('Configure retention') }}</x-ui.button>
+            </div>
+        @endif
         </section>
     </details>
+    @if ($canUpdateWebsite)
+        <x-scenes.websites.log-retention-dialog
+            :website="$website"
+            :open="$logRetentionDialogOpen"
+        />
+    @endif
 
     <!--
      ! ------------------------------------------------------------
