@@ -23,7 +23,7 @@ Status: recorded before implementation.
 
 ## Slice 1 — shared filter and modal lifecycle reliability
 
-Status: implemented locally; focused verification passed; ready to commit.
+Status: complete; committed and pushed as `3e69b7b`.
 
 ### Responsibility problem
 
@@ -68,7 +68,7 @@ introduced for a UI lifecycle fix.
 
 ### Commit and push
 
-Pending the cohesive implementation commit and push.
+Commit and push: `3e69b7b Fix modal history and filter fallbacks`.
 
 ### Exact next task
 
