@@ -681,7 +681,7 @@ test('provider creation submits the selected provider without JavaScript', async
         const tokenBounds = await page.locator('#token').boundingBox();
         expect(tokenBounds.y).toBeLessThan(700);
         const request = page.waitForRequest(request => request.method() === 'POST');
-        await page.getByRole('button', { name: 'Create Provider', exact: true }).click();
+        await page.getByRole('button', { name: 'Add Provider', exact: true }).click();
         const submitted = new URLSearchParams((await request).postData());
         expect(submitted.get('provider')).toBe('digitalocean');
         expect(submitted.get('name')).toBe('Disposable connection');
