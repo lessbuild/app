@@ -741,6 +741,64 @@ notification read-state transitions, runtime log access and incident response
 actions explicit unless a separate bounded read fragment can preserve their
 security and fallback semantics.
 
+## Slice 16 — dashboard workspace-activity inspector
+
+Status: complete; committed and pushed as 1055beb.
+
+### Responsibility problem
+
+The dashboard’s Recent activity section sent “View all” to the full Activity
+page, interrupting the workspace context for a read-only question. The full
+page remains the right place for search, category/date filters and export; the
+dashboard needed a compact, lazy activity inspector instead.
+
+### Boundaries and benefit
+
+- `ActivityController` remains the owner-scoped activity read boundary and now
+  serves `fragment=workspace-activity` alongside the existing full page and
+  account-audit fragment.
+- The dashboard owns the contextual trigger and modal shell; the new activity
+  partial owns compact metrics, feed, pagination and links to the full page.
+- Existing `ActivityQuery`, metrics, entitlement checks and activity feed
+  presentation are reused. No dashboard-specific query or generic repository
+  was introduced.
+- Filtering, CSV export and notification state changes remain explicit on
+  their existing pages/workflows.
+
+### Preserved behavior and safety
+
+- Activity remains scoped to the authenticated owner and keeps its existing
+  event ordering, escaping, pagination and secret-safe presentation.
+- The direct `/activity` link remains the no-JavaScript fallback, while the
+  canonical dashboard URL receives bookmarkable dialog state.
+- Opening the inspector is a GET-only read: it creates no events, jobs or
+  mutations.
+- Full activity filtering and export remain available from the modal without
+  pretending the compact view is a complete replacement.
+
+### Verification
+
+- Activity, insights and account-security regression: **21 tests / 167
+  assertions passed**.
+- Dashboard dialog and active-deployment regression: **3 tests / 30 assertions
+  passed**.
+- PHP syntax checks, Pint, Node syntax check and `git diff --check`: passed.
+- Focused browser journey: **1 test passed in 58.1 seconds** using PHP 8.5.10;
+  verified the dashboard trigger, lazy fragment loading, canonical `/home`
+  path stability, deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+
+### Commit and push
+
+Commit and push: `1055beb Open dashboard activity in a dialog`.
+
+### Exact next task
+
+Audit dashboard operational links: active deployments, system health,
+provisioning, recent inventory and feedback. Modalize only bounded read-only
+views; leave deployment control, provisioning and moderation workflows as
+explicit pages/actions.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
