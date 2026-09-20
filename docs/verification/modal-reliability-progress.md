@@ -1024,6 +1024,65 @@ Audit provisioning and recent inventory links. Keep provisioning retries,
 deletion, provider operations, feedback moderation and setup flows explicit;
 only add a dialog where the destination is a bounded read-only result.
 
+## Slice 21 — dashboard provisioning inspector
+
+Status: complete; committed and pushed as e752775.
+
+### Responsibility problem
+
+The dashboard’s provisioning summary sent users to separate server and website
+inventory pages even when they only needed a quick, read-only view of resources
+currently being prepared. That context switch was particularly costly on
+mobile. The existing dashboard snapshot is already owner-scoped and bounded;
+the missing boundary was a compact presentation, not another provisioning
+query.
+
+### Boundaries and benefit
+
+- DashboardController remains responsible for the organization-scoped counts
+  and limited five-resource projection.
+- The dashboard owns the trigger and dialog shell; the provisioning partial
+  owns the compact status list and links to the complete inventories.
+- Server and website detail pages remain the explicit destinations for retry,
+  deletion, logs and other lifecycle operations.
+
+This applies single responsibility at the presentation boundary and reuses the
+existing safe projection instead of introducing a new provisioning service or
+generic resource repository.
+
+### Preserved behavior and safety
+
+- The existing server and website inventory links remain the no-JavaScript
+  fallbacks, including their provisioning filters.
+- Owner scoping, status counts, five-item limit, ordering and secret-free
+  selected columns are unchanged.
+- Opening the inspector performs no writes, queues no jobs and does not expose
+  credentials or environment text.
+- Empty dashboards do not render a provisioning dialog shell.
+- Retry, deletion, provider operations and setup workflows remain normal page
+  or explicit action flows.
+
+### Verification
+
+- Provisioning and empty-dashboard regression: **2 tests / 47 assertions
+  passed**.
+- Browser fixture export: **1 test / 248 assertions passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed in 1.3 minutes** using PHP 8.5.10;
+  verified the server and website fallback triggers, same-page dialog opening,
+  bounded resource content, deep-link opening, Escape and focus restoration.
+
+### Commit and push
+
+Commit and push: e752775 Open provisioning status in a dialog.
+
+### Exact next task
+
+Audit dashboard recent inventory and setup/update links. Keep full inventories,
+recipe installation/update actions, provider connection actions and feedback
+moderation explicit unless an existing bounded read-only fragment can be reused
+without changing query, authorization or side-effect semantics.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
