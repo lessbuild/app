@@ -1205,6 +1205,70 @@ because they mutate state. Only add a notification detail inspector if it
 provides a bounded authorized read that does not duplicate the existing inline
 message or bypass the destination resolver’s security checks.
 
+## Slice 24 — safe notification destinations
+
+Status: complete; committed and pushed as 60d819a.
+
+### Responsibility problem
+
+Notification payloads stored a category and numeric resource ID, and the inbox
+turned those values directly into links. When a resource had been removed or
+was outside the current workspace, the inbox showed an actionable link that
+ended at a 404. A notification may outlive its resource, and a foreign or
+concealed resource must not be confirmed by the inbox.
+
+### Boundaries and benefit
+
+- `NotificationInbox::destination()` remains the allowlisted URL-shape
+  resolver used by existing notification producers and compatibility tests.
+- The injected `NotificationDestinationResolver` performs bounded, actor-scoped
+  availability checks for the current inbox page and for the read transition.
+- The notification view renders the existing inline event text, an available
+  destination, or a neutral related-inventory fallback; it does not duplicate
+  resource pages or make a notification detail modal.
+- `NotificationsController` continues to authorize and mark read through the
+  existing policy/action, redirecting to the inbox when a destination is no
+  longer available.
+
+This applies single responsibility and dependency inversion at the read/query
+boundary. It uses one batch existence query per represented resource category,
+not one model lookup per notification, and does not weaken the resource
+controllers' own 404 and policy behavior.
+
+### Preserved behavior and safety
+
+- Valid, visible deployment, website, server, provider, recipe, gallery and
+  account destinations still use their existing routes and read redirect.
+- Report notifications retain private reporter/contributor visibility,
+  including status links for unpublished recipes.
+- Foreign, missing, unpublished or otherwise unavailable resources show a
+  neutral message and a safe inventory link; the inbox does not claim that a
+  resource was deleted.
+- “View and mark read”, mark unread, deletion, bulk state changes, delivery
+  tests and incident response remain explicit state-changing workflows.
+- No secrets or arbitrary persisted notification payload fields are used to
+  construct links.
+
+### Verification
+
+- Notification destination regression: **14 tests / 143 assertions passed**.
+- Adjacent notification, report, account-security and provider-monitoring
+  regression: **32 tests / 277 assertions passed**.
+- Browser fixture export: **1 test / 258 assertions passed**.
+- PHP syntax checks, Pint and git diff --check: passed.
+
+### Commit and push
+
+Commit and push: 60d819a Handle unavailable notification destinations safely.
+
+### Exact next task
+
+Audit the remaining secondary candidate with repeated inline writes: platform
+admin access-request review. If the queue benefits from it, move only the short
+status/note editor into a page-local dialog, preserve the admin gate, accepted
+record immutability, resend behavior, validation keys and notification timing,
+and keep the applicant record itself visible in the queue.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
