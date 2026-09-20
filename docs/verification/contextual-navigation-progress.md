@@ -51,8 +51,48 @@ not invent per-stage timestamps.
   health history; `Setup Information` is absent.
 - Pint and `git diff --check`: passed.
 
+### Commit and push
+
+Commit and push: `0af32ac Replace website setup with provisioning timeline`.
+
+## Slice 2 — shared modal-loader reliability
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+The shared modal loader used one generic recipe-specific error, allowed a slow
+response to replace newer content, did not distinguish an expired session,
+and did not initialize triggers inserted into lazy-loaded content. Modified
+links were also intercepted even when the browser should open a new tab or
+window.
+
+### Boundary
+
+- The shared layout script now owns request cancellation, response identity,
+  error presentation, retry and modal-trigger initialization.
+- Laravel endpoints, policies, requests and actions remain unchanged.
+- Full-page fallback links continue to use the originating anchor URL, so a
+  server-rendered modal URL and the no-JavaScript path remain available.
+
+### Preserved behavior
+
+- Same-origin content is still fetched only when a dialog opens.
+- Existing URL-backed modal history, Escape handling, focus restoration and
+  background scroll locking remain in place.
+- A canceled or stale response cannot replace content from a newer request.
+- 401/419 responses and redirects to login receive a sign-in message rather
+  than rendering the login page inside the dialog.
+- Retry does not duplicate form submissions or alter application state.
+
+### Verification
+
+- New lazy-loader failure/retry browser flow: passed.
+- Existing creation, dashboard, application, provider, repository, recipe,
+  gallery, mobile form and modal-scroll flows: 7 passed.
+- PHP test behavior was unchanged; no dependency or lockfile changed.
+
 ### Exact next task
 
-Commit and push this slice, then implement the shared modal-loader reliability
-slice before converting configuration as code into an application-context
-modal.
+Commit and push this slice, then convert application configuration authoring,
+review and receipt views into an application-context modal.

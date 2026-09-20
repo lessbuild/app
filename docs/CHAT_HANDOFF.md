@@ -2277,6 +2277,14 @@ The slice is still uncommitted at handoff; commit and push it before beginning
 the shared modal-loader reliability work. No production, cloud or external
 acceptance operation was performed.
 
+The shared modal loader has since been hardened in the working tree with
+request cancellation, stale-response protection, session-expiry handling,
+retry/full-page error actions, dynamic trigger initialization and modified-link
+preservation. The focused browser regression passes seven existing modal/mobile
+flows plus the new lazy-loader failure/retry flow. This second slice remains
+uncommitted and must be committed and pushed before configuration authoring is
+moved into a modal.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

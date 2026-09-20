@@ -343,6 +343,28 @@ test('mobile forms keep focused fields reachable and lazy dialog content exposes
     await expect(content).not.toHaveAttribute('aria-busy', 'true');
 });
 
+test('lazy dialog failures provide a retry and a contextual full-page fallback', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/gallery', { waitUntil: 'networkidle' });
+
+    await page.route('**/gallery/1/script', async (route) => {
+        await route.fulfill({ status: 503, body: 'temporarily unavailable' });
+    });
+
+    const trigger = page.getByRole('link', { name: 'Inspect script', exact: true }).first();
+    const dialog = page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true });
+    await trigger.click();
+    await expect(dialog.getByRole('alert')).toContainText('could not be loaded');
+    await expect(dialog.getByRole('button', { name: 'Retry', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'Open full page', exact: true })).toHaveAttribute('href', /dialog=inspect-script-1/);
+
+    await page.unroute('**/gallery/1/script');
+    await dialog.getByRole('button', { name: 'Retry', exact: true }).click();
+    await expect(dialog).toContainText('echo gallery-fixture');
+    await expect(dialog.locator('[data-modal-content]')).not.toHaveAttribute('aria-busy', 'true');
+});
+
 test('open dialogs lock the page and scroll their own body', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);

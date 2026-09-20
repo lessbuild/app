@@ -200,6 +200,55 @@
                     document.body?.toggleAttribute('data-modal-open', modalOpen);
                 };
 
+                const renderModalLoadError = (dialog, trigger, error, fallbackUrl) => {
+                    const content = dialog.querySelector('[data-modal-content]');
+                    if (! content) {
+                        return;
+                    }
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'space-y-4 p-5 sm:p-6';
+                    wrapper.setAttribute('role', 'alert');
+
+                    const title = document.createElement('p');
+                    title.className = 'font-semibold text-primary';
+                    title.textContent = error.code === 'session'
+                        ? 'Your session has expired.'
+                        : 'This dialog could not be loaded.';
+                    wrapper.append(title);
+
+                    const message = document.createElement('p');
+                    message.className = 'text-sm text-secondary';
+                    message.textContent = error.code === 'session'
+                        ? 'Sign in again, then reopen this action.'
+                        : 'Check your connection and try again, or open the full page to continue.';
+                    wrapper.append(message);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'flex flex-wrap gap-2';
+
+                    const retry = document.createElement('button');
+                    retry.type = 'button';
+                    retry.className = 'button button--primary';
+                    retry.textContent = 'Retry';
+                    retry.addEventListener('click', () => void loadModalContent(dialog, trigger));
+                    actions.append(retry);
+
+                    const pageUrl = error.code === 'session' && error.loginUrl
+                        ? error.loginUrl
+                        : fallbackUrl;
+                    if (pageUrl) {
+                        const fullPage = document.createElement('a');
+                        fullPage.className = 'button button--secondary';
+                        fullPage.href = pageUrl;
+                        fullPage.textContent = error.code === 'session' ? 'Sign in' : 'Open full page';
+                        actions.append(fullPage);
+                    }
+
+                    wrapper.append(actions);
+                    content.replaceChildren(wrapper);
+                };
+
                 const loadModalContent = async (dialog, trigger) => {
                     const contentUrl = trigger.dataset.modalContentUrl;
                     const content = dialog.querySelector('[data-modal-content]');
@@ -219,19 +268,46 @@
                         return;
                     }
 
+                    dialog.modalRequest?.abort();
+                    const requestId = (dialog.modalRequestId ?? 0) + 1;
+                    dialog.modalRequestId = requestId;
+                    const controller = new AbortController();
+                    dialog.modalRequest = controller;
                     dialog.dataset.modalContentLoading = 'true';
                     content.setAttribute('aria-busy', 'true');
+                    content.innerHTML = '<p class="p-5 text-sm text-secondary">Loading…</p>';
 
                     try {
                         const response = await fetch(url, {
+                            signal: controller.signal,
                             headers: {
                                 Accept: 'text/html',
                                 'X-Requested-With': 'XMLHttpRequest',
                             },
                         });
 
+                        const finalUrl = new URL(response.url || url.href, window.location.href);
+                        if (response.redirected && /\/(?:login|sign-in)(?:\/|$)/.test(finalUrl.pathname)) {
+                            const error = new Error('Modal session expired.');
+                            error.code = 'session';
+                            error.loginUrl = finalUrl.href;
+                            throw error;
+                        }
+
+                        if (response.status === 401 || response.status === 419) {
+                            const error = new Error('Modal session expired.');
+                            error.code = 'session';
+                            throw error;
+                        }
+
                         if (! response.ok) {
-                            throw new Error(`Modal content request failed with ${response.status}`);
+                            const error = new Error(`Modal content request failed with ${response.status}`);
+                            error.status = response.status;
+                            throw error;
+                        }
+
+                        if (dialog.modalRequestId !== requestId) {
+                            return;
                         }
 
                         content.innerHTML = await response.text();
@@ -239,13 +315,25 @@
                         document.dispatchEvent(new CustomEvent('modal:content-loaded', {
                             detail: { content, dialog },
                         }));
+                        initialiseModals();
                         dialog.dataset.modalContentLoaded = 'true';
                         dialog.dataset.modalContentUrl = url.href;
                     } catch (error) {
-                        content.innerHTML = '<p class="text-sm text-secondary">Unable to load this content. Open the recipe details page instead.</p>';
+                        if (error.name === 'AbortError' || dialog.modalRequestId !== requestId) {
+                            return;
+                        }
+
+                        renderModalLoadError(dialog, trigger, error, trigger instanceof HTMLAnchorElement ? trigger.href : null);
                     } finally {
+                        if (dialog.modalRequestId !== requestId) {
+                            return;
+                        }
+
                         content.removeAttribute('aria-busy');
                         delete dialog.dataset.modalContentLoading;
+                        if (dialog.modalRequest === controller) {
+                            delete dialog.modalRequest;
+                        }
                     }
                 };
 
@@ -281,6 +369,8 @@
                                 return;
                             }
 
+                            dialog.modalRequest?.abort();
+                            delete dialog.modalRequest;
                             dialog.modalTrigger = null;
                             trigger.setAttribute('aria-expanded', 'false');
 
@@ -297,7 +387,13 @@
                         });
 
                         trigger.addEventListener('click', (event) => {
-                            if (typeof dialog.showModal !== 'function') {
+                            if (typeof dialog.showModal !== 'function'
+                                || event.button !== 0
+                                || event.metaKey
+                                || event.ctrlKey
+                                || event.shiftKey
+                                || event.altKey
+                                || trigger instanceof HTMLAnchorElement && trigger.target === '_blank') {
                                 return;
                             }
 
