@@ -912,6 +912,64 @@ execution, cancellation, rerun, deletion, provisioning and feedback
 moderation as explicit workflows; add dialogs only for bounded read-only
 evidence.
 
+## Slice 19 — dashboard active-command inspector
+
+Status: complete; committed and pushed as 85dd8fc.
+
+### Responsibility problem
+
+The dashboard’s “Open Command Center” link left the current context for a
+workspace command inventory, even when the user only needed to see which
+commands were still queued or running. Command text, output and lifecycle
+mutations must remain protected and explicit.
+
+### Boundaries and benefit
+
+- CommandsController keeps the existing organization-scoped command query,
+  metadata projection, filters, metrics and pagination, and now serves an
+  active-command-history fragment.
+- The dashboard owns the contextual dialog shell; commands._content owns a
+  compact status-only view and links to the full per-server history.
+- The full Command Center remains the place for filtering, CSV export and
+  refresh; server history remains the place for output download and command
+  actions.
+
+This separates status inspection from remote execution without introducing a
+second command query or exposing command bodies.
+
+### Preserved behavior and safety
+
+- Verified-account requirements, organization scoping, active-status filtering,
+  ordering and pagination are preserved; fragment pagination retains its
+  fragment query.
+- Command text and retained output remain absent from the projection, response
+  and fixture.
+- Opening the inspector is a GET-only read and cannot run, cancel, rerun or
+  delete a command.
+- Empty dashboards do not render the active-command dialog; direct Command
+  Center navigation remains the no-JavaScript fallback.
+
+### Verification
+
+- Command Center regression: **7 tests / 84 assertions passed**.
+- Dashboard active-command/empty-state regression: **3 tests / 55 assertions
+  passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed in 34.7 seconds** using PHP 8.5.10;
+  verified active-command trigger, lazy status-only content, canonical /home
+  path stability, deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+
+### Commit and push
+
+Commit and push: 85dd8fc Open active commands in a dialog.
+
+### Exact next task
+
+Audit dashboard webhook activity, provisioning and recent-inventory links.
+Keep webhook/repository actions, provisioning retries/deletion and feedback
+moderation explicit; add another dialog only for a bounded read-only result.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
