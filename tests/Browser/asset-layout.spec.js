@@ -7,6 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
 const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -33,8 +34,25 @@ async function serveFixtures(page) {
         const serverPage = /^\/servers\/\d+$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const projectPage = /^\/projects\/\d+$/.test(pathname);
+        const modalContentFixture = pathname === '/providers/1/edit'
+            ? 'provider-edit-content'
+            : pathname === '/repositories/1/edit'
+                ? 'repository-edit-content'
+                : pathname === '/websites/1/edit'
+                    ? 'website-edit-content'
+                    : /^\/recipes\/\d+\/edit$/.test(pathname)
+                        ? 'recipe-edit-content'
+                        : /^\/backups\/destinations\/\d+\/edit$/.test(pathname)
+                            ? 'backup-destination-edit-content'
+                            : null;
         const configurationDialogPage = /^\/projects\/\d+\/configuration\/dialog$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
+        if (modalContentFixture) {
+            return route.fulfill({
+                contentType: 'text/html',
+                body: fs.readFileSync(path.join(fixtures, `${modalContentFixture}.html`)),
+            });
+        }
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
@@ -268,10 +286,13 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     ]) {
         await page.goto(`http://buildpusher.test/${workflow.path}`, { waitUntil: 'networkidle' });
         const trigger = page.getByRole('link', { name: workflow.trigger, exact: true }).first();
+        const initialPath = new URL(page.url()).pathname;
         await trigger.click();
         const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
         await expect(dialog).toBeVisible();
+        await expect(dialog.locator('form[method="POST"]')).toBeVisible();
         expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
+        expect(new URL(page.url()).pathname).toBe(initialPath);
         await expect(dialog.locator('[data-modal-close]')).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(dialog).toBeHidden();
@@ -280,10 +301,13 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     await page.goto('http://buildpusher.test/recipes', { waitUntil: 'networkidle' });
     const recipeTrigger = page.getByRole('link', { name: 'Edit', exact: true }).first();
     const recipeUrl = new URL(await recipeTrigger.getAttribute('href'), 'http://buildpusher.test');
+    const recipeInitialPath = new URL(page.url()).pathname;
     await recipeTrigger.click();
     const recipeDialog = page.getByRole('dialog', { name: 'Edit recipe', exact: true });
     await expect(recipeDialog).toBeVisible();
+    await expect(recipeDialog.locator('form[method="POST"]')).toBeVisible();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^edit-recipe-\d+$/);
+    expect(new URL(page.url()).pathname).toBe(recipeInitialPath);
     await expect(recipeDialog.locator('[data-modal-close]')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(recipeDialog).toBeHidden();
@@ -431,6 +455,96 @@ test('open dialogs lock the page and scroll their own body', async ({ page }) =>
     await expect(dialog).toBeHidden();
     await expect(page.locator('html')).not.toHaveAttribute('data-modal-open', '');
     await expect(page.locator('body')).not.toHaveAttribute('data-modal-open', '');
+});
+
+test('every rendered link and modal hook has a usable destination', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+
+    for (const screen of modalAuditScreens) {
+        await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
+
+        const audit = await page.evaluate(() => ({
+            links: [...document.querySelectorAll('a')].map((link) => ({
+                href: link.getAttribute('href'),
+                label: link.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80),
+            })),
+            dialogs: [...document.querySelectorAll('dialog[id]')].map((dialog) => ({
+                id: dialog.id,
+                isNativeSheet: dialog.matches('[data-modal-sheet]'),
+            })),
+            triggers: [...document.querySelectorAll('[data-modal-trigger], [data-filter-dialog-trigger]')].map((trigger) => ({
+                id: trigger.getAttribute('data-modal-trigger') || trigger.getAttribute('aria-controls'),
+                contentUrl: trigger.getAttribute('data-modal-content-url'),
+                label: trigger.textContent?.trim().replace(/\s+/g, ' ').slice(0, 80),
+            })),
+        }));
+
+        expect(audit.links.filter((link) => !link.href || link.href.trim() === ''), screen).toEqual([]);
+        expect(audit.dialogs.filter((dialog) => !dialog.isNativeSheet), screen).toEqual([]);
+
+        const dialogIds = new Set(audit.dialogs.map((dialog) => dialog.id));
+        for (const trigger of audit.triggers) {
+            expect(trigger.id, `${screen}: ${trigger.label}`).toBeTruthy();
+            expect(dialogIds.has(trigger.id), `${screen}: ${trigger.id}`).toBe(true);
+
+            if (trigger.contentUrl) {
+                const contentUrl = new URL(trigger.contentUrl, page.url());
+                expect(contentUrl.origin, `${screen}: ${trigger.id}`).toBe('http://buildpusher.test');
+            }
+        }
+
+        for (const link of audit.links) {
+            const url = new URL(link.href, page.url());
+            expect(['http:', 'https:', 'mailto:', 'tel:'], `${screen}: ${link.label}`).toContain(url.protocol);
+            if (['http:', 'https:'].includes(url.protocol) && url.origin === 'http://buildpusher.test') {
+                expect(url.pathname, `${screen}: ${link.label}`).toMatch(/^\//);
+            }
+        }
+    }
+});
+
+test('rendered modal openers use native sheets and keep page scrolling locked', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+
+    for (const screen of modalAuditScreens.filter((screen) => !['landing', 'login', 'pricing'].includes(screen))) {
+        await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
+        await page.locator('details').evaluateAll((details) => details.forEach((detail) => { detail.open = true; }));
+
+        const dialogIds = await page.locator('dialog[data-modal-sheet]').evaluateAll((dialogs) => dialogs.map((dialog) => dialog.id));
+        for (const id of dialogIds) {
+            const dialog = page.locator(`#${id}`);
+            const trigger = page.locator(`[data-modal-trigger][aria-controls="${id}"]:visible, [data-filter-dialog-trigger][aria-controls="${id}"]:visible`).first();
+
+            if (! await trigger.isVisible().catch(() => false)) {
+                continue;
+            }
+
+            await trigger.scrollIntoViewIfNeeded();
+            await trigger.click();
+            await expect(dialog).toBeVisible();
+            await expect(page.locator('html')).toHaveAttribute('data-modal-open', '');
+            await expect(page.locator('body')).toHaveAttribute('data-modal-open', '');
+            await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+
+            const pageScrollTop = await page.evaluate(() => document.scrollingElement.scrollTop);
+            await page.mouse.wheel(0, 1200);
+            await page.waitForTimeout(100);
+            const pageScrollAfterWheel = await page.evaluate(() => document.scrollingElement.scrollTop);
+            expect(pageScrollAfterWheel, `${screen}: ${id} should keep the page scroll position fixed`).toBe(pageScrollTop);
+
+            await page.keyboard.press('Escape');
+            await expect(dialog).toBeHidden();
+            await page.waitForTimeout(100);
+            const lockState = await page.evaluate(() => ({
+                html: document.documentElement.hasAttribute('data-modal-open'),
+                body: document.body.hasAttribute('data-modal-open'),
+                open: [...document.querySelectorAll('dialog[open]')].map((openDialog) => openDialog.id),
+            }));
+            expect(lockState, `${screen}: ${id} should release the page lock`).toEqual({ html: false, body: false, open: [] });
+        }
+    }
 });
 
 for (const colorScheme of ['light', 'dark']) {
@@ -823,6 +937,9 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
         await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
         await expect(filter.locator('.ui-filter-dialog__body')).toHaveCSS('overscroll-behavior', 'contain');
         expect(new URL(page.url()).pathname).toBe(initialPath);
+        const pageScrollTop = await page.evaluate(() => document.scrollingElement.scrollTop);
+        await page.mouse.wheel(0, 1200);
+        await expect.poll(() => page.evaluate(() => document.scrollingElement.scrollTop)).toBe(pageScrollTop);
 
         await page.keyboard.press('Escape');
         await expect(filter).not.toHaveAttribute('open', '');
@@ -917,8 +1034,10 @@ test('backup schedule workflow uses an accessible URL-backed dialog', async ({ p
     const editDestinationDialog = page.getByRole('dialog', { name: 'Edit backup destination', exact: true });
     await editDestinationTrigger.click();
     await expect(editDestinationDialog).toBeVisible();
+    await expect(editDestinationDialog.locator('form[method="POST"]')).toBeVisible();
     await expect(page.locator('#backup-destination-edit-1 [data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('edit-destination-1');
+    expect(new URL(page.url()).pathname).toBe('/backups');
     await page.keyboard.press('Escape');
     await expect(editDestinationDialog).toBeHidden();
     await expect(editDestinationTrigger).toBeFocused();

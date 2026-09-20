@@ -130,6 +130,12 @@ class AssetLayoutFixtureTest extends TestCase
             'provider' => $provider,
             'dialog' => 'edit-provider',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/provider-edit-content.html', $this->renderPage(route('providers.edit', [
+            'provider' => $provider,
+            'dialog' => 'edit-provider',
+            'fragment' => 1,
+            'return_to' => route('providers.show', $provider),
+        ]))->assertOk()->assertSee('<form', false)->getContent());
         $server = $owner->servers()->create([
             'provider_id' => $provider->id,
             'name' => 'Server',
@@ -169,6 +175,12 @@ class AssetLayoutFixtureTest extends TestCase
             'website' => $website,
             'dialog' => 'edit-website',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/website-edit-content.html', $this->renderPage(route('websites.edit', [
+            'website' => $website,
+            'dialog' => 'edit-website',
+            'fragment' => 1,
+            'return_to' => route('websites.show', $website),
+        ]))->assertOk()->assertSee('<form', false)->getContent());
         $destination = $owner->currentOrganization->backupDestinations()->create([
             'created_by' => $owner->id,
             'name' => 'Fixture storage',
@@ -201,6 +213,12 @@ class AssetLayoutFixtureTest extends TestCase
             'repository' => $repository,
             'dialog' => 'edit-repository',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/repository-edit-content.html', $this->renderPage(route('repositories.edit', [
+            'repository' => $repository,
+            'dialog' => 'edit-repository',
+            'fragment' => 1,
+            'return_to' => route('repositories.show', $repository),
+        ]))->assertOk()->assertSee('<form', false)->getContent());
         $recipe = $owner->recipes()->create([
             'name' => 'Fixture recipe',
             'description' => 'Recipe used by the modal browser fixture.',
@@ -216,6 +234,12 @@ class AssetLayoutFixtureTest extends TestCase
         ]))->assertOk()
             ->assertSee('data-modal-initial-open="true"', false)
             ->assertSee('echo fixture-recipe', false)->getContent());
+        File::put($directory.'/recipe-edit-content.html', $this->renderPage(route('recipes.edit', [
+            'recipe' => $recipe,
+            'dialog' => 'edit-recipe-'.$recipe->id,
+            'fragment' => 1,
+            'return_to' => route('recipes.index'),
+        ]))->assertOk()->assertSee('<form', false)->getContent());
         $project->environments()->where('type', 'production')->firstOrFail()->update([
             'server_id' => $server->id,
             'website_id' => $website->id,
@@ -269,7 +293,8 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="backup-schedule-dialog"', false)
             ->assertSee('data-modal-trigger="backup-destination-create-dialog"', false)
             ->assertSee('data-modal-trigger="backup-destination-edit-'.$destination->id.'"', false)
-            ->assertDontSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('data-modal-content-loaded="false"', false)
             ->getContent());
         File::put($directory.'/backups-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'add-schedule']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
@@ -277,6 +302,11 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/backups-destination-edit-dialog.html', $this->renderPage(route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/backup-destination-edit-content.html', $this->renderPage(route('backups.destinations.edit', [
+            'destination' => $destination,
+            'fragment' => 1,
+            'return_to' => route('backups.index'),
+        ]))->assertOk()->assertSee('<form', false)->getContent());
         File::put($directory.'/domains.html', $this->renderPage(route('domains.index'))->assertOk()
             ->assertSee('Add domain')->getContent());
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
