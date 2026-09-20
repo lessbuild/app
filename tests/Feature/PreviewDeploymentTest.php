@@ -404,11 +404,12 @@ class PreviewDeploymentTest extends TestCase
         $this->assertSame(48, $project->preview_ttl_hours);
     }
 
-    public function test_preview_settings_validation_reopens_the_preview_panel(): void
+    public function test_preview_settings_validation_reopens_the_preview_settings_dialog(): void
     {
         [$owner, , $project] = $this->application(previews: false);
+        $dialogUrl = route('projects.show', ['project' => $project, 'dialog' => 'preview-settings']);
 
-        $this->from(route('projects.show', $project))
+        $this->from($dialogUrl)
             ->actingAs($owner)
             ->patch(route('projects.previews.update', $project), [
                 '_project_form' => 'previews',
@@ -416,12 +417,16 @@ class PreviewDeploymentTest extends TestCase
                 'preview_domain' => '',
                 'preview_ttl_hours' => 48,
             ])
-            ->assertRedirect(route('projects.show', $project))
+            ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors('preview_domain');
 
-        $response = $this->actingAs($owner)->get(route('projects.show', $project));
+        $response = $this->actingAs($owner)->get($dialogUrl);
         $response->assertOk();
 
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="project-preview-settings-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $response->getContent(),
+        );
         $this->assertMatchesRegularExpression(
             '/<details(?=[^>]*id="preview-environments")(?=[^>]*\bopen\b)[^>]*>/',
             $response->getContent(),

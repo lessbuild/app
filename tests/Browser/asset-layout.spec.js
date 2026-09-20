@@ -958,11 +958,15 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         ['Add variable', 'Add encrypted variable', '[id^="environment-variable-dialog-"]'],
         ['Add process', 'Add worker or scheduler', '[id^="environment-process-dialog-"]'],
         ['Attach resource', 'Attach resource', '[id^="environment-resource-dialog-"]'],
+        ['Configure previews', 'Preview environment settings', '#project-preview-settings-dialog'],
     ];
 
     for (const [triggerName, dialogName, dialogSelector] of workflows) {
         if (triggerName === 'Attach resource') {
             await page.locator('details[id$="-resources"] summary').first().click();
+        }
+        if (triggerName === 'Configure previews') {
+            await page.locator('#preview-environments summary').click();
         }
 
         const trigger = page.getByRole('link', { name: triggerName, exact: true });
@@ -971,15 +975,14 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         await expect(dialog).toBeVisible();
         await expect(page.locator(`${dialogSelector} [data-modal-close]`)).toBeFocused();
         const dialogKey = new URL(page.url()).searchParams.get('dialog');
-        if (triggerName === 'Add environment') {
-            expect(dialogKey).toBe('add-environment');
-        } else {
-            expect(dialogKey).toMatch(triggerName === 'Add variable'
-                ? /^add-variable-\d+$/
-                : triggerName === 'Add process'
-                    ? /^add-process-\d+$/
-                    : /^add-resource-\d+$/);
-        }
+        const expectedDialog = {
+            'Add environment': /^add-environment$/,
+            'Add variable': /^add-variable-\d+$/,
+            'Add process': /^add-process-\d+$/,
+            'Attach resource': /^add-resource-\d+$/,
+            'Configure previews': /^preview-settings$/,
+        }[triggerName];
+        expect(dialogKey).toMatch(expectedDialog);
         await page.keyboard.press('Escape');
         await expect(dialog).toBeHidden();
         await expect(trigger).toBeFocused();

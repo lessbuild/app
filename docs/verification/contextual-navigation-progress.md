@@ -212,3 +212,50 @@ Inventory the remaining detail-page history and settings links. Keep long
 reports, imports, restores, destructive operations and protocol callbacks as
 explicit pages unless a bounded modal preserves their pagination,
 authorization and execution ordering.
+
+## Slice 5 — preview settings in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+The application detail page summarized preview environments inside a collapsible
+section but still rendered the multi-field enablement, hostname and lifetime
+form inline. This added avoidable vertical scrolling and made preview settings
+inconsistent with the other application-level composers.
+
+### Boundary
+
+- preview-settings-dialog.blade.php owns the bounded preview-settings form
+  presentation.
+- The application page owns the preview summary, entitlement gate, trigger and
+  URL-backed dialog state.
+- UpdateProjectPreviewsRequest and UpdateProjectPreviewsAction remain the
+  authorization, normalization, entitlement and persistence boundaries.
+
+### Preserved behavior and safety
+
+- Preview enablement, hostname normalization, lifetime bounds, _project_form
+  context, validation keys and redirect/flash behavior remain unchanged.
+- Entitlement authorization still runs before validation and no preview write
+  occurs when the plan check fails.
+- Validation failures reopen the preview dialog and retain the existing preview
+  panel context; successful updates still use the existing action and lifecycle.
+- The no-JavaScript URL fallback remains the application page with
+  dialog=preview-settings, while long preview history remains on the page.
+
+### Verification
+
+- Preview lifecycle and settings coverage: 23 tests / 259 assertions passed.
+- Project/environment dialog regression: 7 tests / 64 assertions passed.
+- Isolated Blade fixture export: 1 test / 146 assertions passed.
+- Application-detail mobile composer journey: 1 passed, including preview
+  section expansion, URL state, focus restoration and Escape behavior.
+- Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
+
+### Exact next task
+
+Commit and push this slice, then continue the detail-page audit with the
+existing long history links and bounded settings actions. Prefer context
+preserving summary/timeline improvements over embedding paginated reports in
+large modals.

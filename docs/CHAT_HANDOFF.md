@@ -2288,6 +2288,13 @@ Long reports, imports, restores, destructive operations and protocol callbacks
 remain explicit unless a bounded modal can preserve their pagination,
 authorization and execution ordering.
 
+The current local slice moves application preview settings into a reusable
+URL-backed dialog. It preserves the existing preview Form Request and Action,
+entitlement-before-validation behavior, hostname normalization, lifetime
+bounds, _project_form context and validation reopening. Focused PHP, fixture,
+mobile browser, Blade, Pint and diff checks pass; the slice is pending its
+cohesive commit/push.
+
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local
 browser and isolated-render evidence is not the separate live acceptance

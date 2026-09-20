@@ -13,6 +13,10 @@
             'project' => $project,
             ...($configurationReviewId > 0 ? ['configuration_review' => $configurationReviewId] : []),
         ]);
+        $previewSettingsDialogId = 'project-preview-settings-dialog';
+        $previewSettingsDialogOpen = $canManage && $featureAccess['previews']
+            && (request()->query('dialog') === 'preview-settings' || old('_project_form') === 'previews');
+        $previewSettingsDialogUrl = route('projects.show', ['project' => $project, 'dialog' => 'preview-settings']);
     @endphp
 
     <x-layouts.partials.breadcrumbs :route="route('projects.index')" :title="__('Back to applications')" />
@@ -327,7 +331,7 @@
         <details id="preview-environments" class="ui-card p-5" @if($previewPanelOpen) open @endif>
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-black text-primary"><span>{{ __('Preview environments') }} <span class="text-secondary">({{ $project->previews->count() }})</span></span><x-ui.badge :tone="$project->preview_enabled ? 'success' : 'neutral'">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</x-ui.badge></summary>
             @if($canManage && $featureAccess['previews'])
-                <form method="POST" action="{{ route('projects.previews.update', $project) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input type="hidden" name="_project_form" value="previews"> @method('PATCH')<label class="flex items-center gap-2"><input type="hidden" name="preview_enabled" value="0"><input type="checkbox" name="preview_enabled" value="1" @checked($project->preview_enabled)><span class="text-sm text-primary">{{ __('Enable previews') }}</span></label><input type="number" name="preview_ttl_hours" min="1" max="720" value="{{ old('preview_ttl_hours', $project->preview_ttl_hours ?: 72) }}" class="input secondary rounded-lg" aria-label="{{ __('Lifetime in hours') }}"><input name="preview_domain" value="{{ old('preview_domain', $project->preview_domain) }}" placeholder="previews.example.com" class="input secondary rounded-lg sm:col-span-2"><x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save previews') }}</x-ui.button></form>
+                <x-ui.button :href="$previewSettingsDialogUrl" data-modal-trigger="{{ $previewSettingsDialogId }}" aria-controls="{{ $previewSettingsDialogId }}" aria-expanded="{{ $previewSettingsDialogOpen ? 'true' : 'false' }}" variant="secondary" class="mt-4">{{ __('Configure previews') }}</x-ui.button>
             @elseif($canManage)
                 <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
             @endif
@@ -369,6 +373,9 @@
                 @endforelse
             </div>
         </details>
+        @if($canManage && $featureAccess['previews'])
+            <x-scenes.projects.preview-settings-dialog :project="$project" :open="$previewSettingsDialogOpen" />
+        @endif
     </div>
     @if($canManage)
         <x-dialogs.modal
