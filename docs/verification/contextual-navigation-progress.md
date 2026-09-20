@@ -265,7 +265,7 @@ improvements over embedding paginated reports in large modals.
 
 ## Slice 6 — environment settings and deployment controls in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as 4e26121.
 
 ### Responsibility problem
 
@@ -309,9 +309,13 @@ already formed clear operation boundaries.
   deployment-control, variable, process, resource and preview dialogs.
 - Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
 
+### Commit and push
+
+Commit and push: 4e26121 Move environment controls into contextual dialogs.
+
 ### Exact next task
 
-Commit and push this slice, then review remaining detail-page history links
-and other bounded settings surfaces. Keep paginated history, exports,
-imports, restores, destructive operations and protocol callbacks as explicit
-pages unless a smaller read-only summary genuinely improves the flow.
+Review remaining detail-page history links and other bounded settings
+surfaces. Keep paginated history, exports, imports, restores, destructive
+operations and protocol callbacks as explicit pages unless a smaller read-only
+summary genuinely improves the flow.
