@@ -106,8 +106,16 @@ class AccessRequestTest extends TestCase
         $this->actingAs($admin)->get(route('admin.access-requests.index'))
             ->assertOk()
             ->assertSee('<details id="access-request-insights"', false)
+            ->assertSee('data-modal-trigger="review-access-request-'.$lead->id.'"', false)
+            ->assertSee('Review request')
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)
             ->assertDontSee('<script>alert(1)</script>', false);
+        $dialogUrl = route('admin.access-requests.index', ['dialog' => 'review-access-request-'.$lead->id]);
+        $this->actingAs($admin)->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('name="review_notes"', false)
+            ->assertSee('Save review');
         $this->actingAs($admin)->patch(route('admin.access-requests.update', $lead), [
             'status' => 'invited', 'review_notes' => 'Invite sent manually.',
         ])->assertSessionHas('success');
@@ -118,6 +126,34 @@ class AccessRequestTest extends TestCase
         $this->assertNotNull($lead->reviewed_at);
         $this->assertNotNull($lead->invitation_token_hash);
         Notification::assertSentOnDemand(AccessInvitationNotification::class);
+    }
+
+    public function test_review_dialog_reopens_for_validation_errors_without_losing_the_applicant_context(): void
+    {
+        config(['lessbuild.platform_admin_emails' => ['admin@example.com']]);
+        $admin = User::factory()->create(['email' => 'admin@example.com']);
+        $lead = AccessRequest::query()->create([
+            'email_hash' => hash('sha256', 'dialog@example.com'), 'email' => 'dialog@example.com',
+            'name' => 'Dialog Lead', 'use_case' => 'A sufficiently detailed deployment use case.',
+        ]);
+        $dialogUrl = route('admin.access-requests.index', ['dialog' => 'review-access-request-'.$lead->id]);
+
+        $response = $this->actingAs($admin)
+            ->from($dialogUrl)
+            ->followingRedirects()
+            ->patch(route('admin.access-requests.update', $lead), [
+                '_access_request_review' => $lead->id,
+                'status' => 'unsupported',
+                'review_notes' => str_repeat('x', 2001),
+            ])
+            ->assertOk();
+
+        $response
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Review access request')
+            ->assertSee('The selected status is invalid.')
+            ->assertSee('The review notes must not be greater than 2000 characters.');
+        $this->assertSame('pending', $lead->fresh()->status);
     }
 
     public function test_invited_applicant_can_register_once_while_public_registration_is_closed(): void

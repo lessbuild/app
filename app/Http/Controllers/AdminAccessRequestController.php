@@ -21,11 +21,38 @@ class AdminAccessRequestController extends Controller
     {
         $this->authorize('platform-admin');
         $status = in_array($request->query('status'), AccessRequest::STATUSES, true) ? $request->query('status') : null;
+        $requests = AccessRequest::query()
+            ->with('reviewer:id,name')
+            ->when($status, fn ($query) => $query->where('status', $status))
+            ->latest()
+            ->paginate(25)
+            ->withQueryString();
+        $dialog = $request->string('dialog')->toString();
+        $dialogId = preg_match('/\Areview-access-request-(\d+)\z/D', $dialog, $matches) === 1
+            ? (int) $matches[1]
+            : null;
+        $oldRequestId = filter_var(old('_access_request_review'), FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]) ?: null;
+        $editingRequestId = $dialogId ?? $oldRequestId;
+        $editingRequest = $editingRequestId === null
+            ? null
+            : $requests->getCollection()->firstWhere('id', $editingRequestId)
+                ?? AccessRequest::query()->with('reviewer:id,name')->find($editingRequestId);
+        $reviewDialogId = $editingRequest?->id === null
+            ? null
+            : 'review-access-request-'.$editingRequest->id;
 
         return view('admin.access-requests', [
-            'requests' => AccessRequest::query()->with('reviewer:id,name')->when($status, fn ($query) => $query->where('status', $status))->latest()->paginate(25)->withQueryString(),
+            'requests' => $requests,
             'status' => $status,
             'counts' => AccessRequest::query()->selectRaw('status, count(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status'),
+            'editingRequest' => $editingRequest,
+            'reviewDialogId' => $reviewDialogId,
+            'reviewDialogOpen' => $reviewDialogId !== null
+                && (($dialog === $reviewDialogId && ! session()->has('success'))
+                    || (old('_access_request_review') !== null
+                        && (string) old('_access_request_review') === (string) $editingRequest->id)),
         ]);
     }
 

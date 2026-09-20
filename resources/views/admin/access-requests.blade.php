@@ -58,30 +58,17 @@
                 </div>
 
                 @if (! $lead->accepted_at)
-                    <form method="POST" action="{{ route('admin.access-requests.update', $lead) }}" class="mt-5 grid gap-3 sm:grid-cols-[10rem_1fr_auto]">
-                        @csrf
-                        @method('PATCH')
-                        <div>
-                            <label class="sr-only" for="access-status-{{ $lead->id }}">{{ __('Request status') }}</label>
-                            <select id="access-status-{{ $lead->id }}" name="status" class="input secondary w-full rounded-lg">
-                                @foreach (\App\Models\AccessRequest::STATUSES as $item)
-                                    @if ($item !== 'accepted')
-                                        <option value="{{ $item }}" @selected($lead->status === $item)>{{ ucfirst($item) }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="sr-only" for="review-notes-{{ $lead->id }}">{{ __('Private review note') }}</label>
-                            <input id="review-notes-{{ $lead->id }}" name="review_notes" value="{{ $lead->review_notes }}" maxlength="2000" placeholder="{{ __('Private review note') }}" class="input secondary w-full rounded-lg">
-                        </div>
-                        <div class="flex flex-wrap gap-2">
-                            <x-ui.button type="submit" variant="primary">{{ __('Save') }}</x-ui.button>
-                            @if ($lead->status === 'invited')
-                                <x-ui.button type="submit" name="resend_invitation" value="1" variant="secondary">{{ __('Resend') }}</x-ui.button>
-                            @endif
-                        </div>
-                    </form>
+                    @php($reviewUrl = route('admin.access-requests.index', array_filter(['dialog' => 'review-access-request-'.$lead->id, 'status' => $status])))
+                    <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-sm text-secondary">{{ __('Review status, notes and invitation delivery in a focused editor.') }}</p>
+                        <x-ui.button
+                            href="{{ $reviewUrl }}"
+                            data-modal-trigger="review-access-request-{{ $lead->id }}"
+                            aria-controls="review-access-request-{{ $lead->id }}"
+                            aria-expanded="{{ $reviewDialogOpen && $reviewDialogId === 'review-access-request-'.$lead->id ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >{{ __('Review request') }}</x-ui.button>
+                    </div>
                 @else
                     <p class="mt-5 text-sm font-semibold text-secondary">{{ __('Invitation accepted; this onboarding record is now read-only.') }}</p>
                 @endif
@@ -99,4 +86,11 @@
     </div>
 
     <div class="mt-6">{{ $requests->links() }}</div>
+
+    @if ($editingRequest)
+        <x-scenes.admin.access-request-review-dialog
+            :access-request="$editingRequest"
+            :open="$reviewDialogOpen"
+        />
+    @endif
 </x-layouts.app>
