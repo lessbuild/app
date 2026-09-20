@@ -2177,6 +2177,32 @@ Verification: 43 focused tests / 399 assertions, the complete PHP suite with
 Pint, Vite build and diff checks all passed. This is local/runtime smoke
 evidence only, not the separate paid-cloud or external acceptance drill.
 
+## Current-page New app footer follow-up — 2026-09-20
+
+The mobile footer **New app** action and the command-palette Create
+application action now stay on the current route and open the reusable
+application dialog in place. The shared authenticated layout hosts that dialog
+on pages that do not already render it; dashboard, Applications and direct
+application-create pages keep their existing hosts to avoid duplicate IDs.
+Close/Escape focus restoration, validation reopening and the existing
+authorization/action contracts remain intact.
+
+The action uses only the current route path plus `dialog=create-application`.
+It does not copy arbitrary query values into global markup, preventing invalid
+filter input such as `not-a-status` from being echoed into footer links. The
+command palette closes before opening the modal.
+
+Implementation commit `0131ee7` is pushed and deployed to
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`. Both application
+services are active; `/api/health` returned ready, `/login` returned HTTP 200
+and the expected local CSS asset was served. Verification passed with 49
+focused tests / 692 assertions, the complete PHP suite with 1,645 tests /
+13,753 assertions, one targeted browser journey, Blade cache, Pint, Vite and
+diff checks. No dependency, migration or production configuration changed.
+
+This is local/runtime smoke evidence only, not the separate paid-cloud or
+external acceptance drill.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

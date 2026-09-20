@@ -1945,3 +1945,68 @@ page`.
 Continue normal product work from `main`; dashboard quick-create dialogs are
 now page-local and the served development runtime is on the implementation
 commit.
+
+## Follow-up Slice 22 — current-page New app footer action
+
+Status: complete locally, pushed to `main` in `0131ee7` and deployed to the
+served development runtime.
+
+### Responsibility problem
+
+The mobile footer's **New app** action and the equivalent command-palette item
+were hard-coded to the Applications inventory route. That made a quick action
+leave the current page before opening the application dialog. A shared layout
+action also needs a dialog host on pages that do not otherwise render the
+application inventory or dashboard component.
+
+### Boundary and design decision
+
+The authenticated layout now builds a route-local application dialog URL and
+renders the existing `scenes.projects.create-dialog` component on pages that
+do not already host it. The dashboard, applications inventory and direct
+application-create route retain their existing page-owned component so dialog
+IDs are not duplicated. The layout view composer supplies the existing
+`ApplicationTemplateCatalog` definitions; no new business or persistence
+abstraction was introduced.
+
+The shared action intentionally uses the current route path plus the modal
+state, rather than copying arbitrary query parameters into the rendered link.
+This keeps the user on the same page without echoing malformed or sensitive
+filter input. The command palette closes before opening the same modal.
+
+### Preserved contracts and safety guarantees
+
+- New app stays on the current page and opens the reusable application dialog;
+  the dashboard and applications page keep their existing local hosts.
+- Close/Escape returns focus to the originating footer trigger and removes only
+  the modal state from the browser history.
+- Application validation still returns to the dialog URL, and the existing
+  policy, Form Request, action, field names, plan checks and success response
+  remain unchanged.
+- Direct `/projects/create` behavior is unchanged; no duplicate dialog IDs
+  are rendered on routes that already include the application component.
+- Invalid query values are not copied into global modal links or markup.
+- No schema, dependency, credential, queue or production-infrastructure
+  change was made.
+
+### Verification
+
+- Focused shared-layout/dialog regression: **49 tests / 692 assertions**
+  passed under PHP 8.5.10.
+- Complete PHP suite: **1,645 tests / 13,753 assertions** passed in 931.85
+  seconds.
+- Current-page footer and command-palette browser journey: **1 passed**.
+- Blade view cache, full Pint, `git diff --check` and production Vite build
+  passed.
+- Served runtime smoke checks passed: both application services active,
+  `/api/health` ready, login HTTP 200 and the expected local CSS asset served.
+
+### Commit and push
+
+Implementation commit and push: `0131ee7 Keep mobile New app on the current
+page`.
+
+### Exact next task
+
+Continue normal product work from `main`; the mobile New app action no longer
+navigates to the Applications inventory from another page.
