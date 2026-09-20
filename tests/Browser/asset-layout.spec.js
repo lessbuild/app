@@ -151,6 +151,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog?.startsWith('member-role-')
                     ? 'organization-member-role-dialog'
+                : screen === 'organization' && dialog === 'organization-notification-preferences-dialog'
+                    ? 'organization-notification-preferences-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
                     ? 'organization-dialog'
                     : screen === 'feedback' && dialog === 'compose-feedback'
@@ -1526,6 +1528,16 @@ for (const colorScheme of ['light', 'dark']) {
 
                         await page.goto(`http://buildpusher.test/organization?${roleUrl.searchParams.toString()}`, { waitUntil: 'networkidle' });
                         await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
+
+                        await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
+                        const preferenceTrigger = page.getByRole('link', { name: 'Edit preferences', exact: true });
+                        const preferenceDialog = page.getByRole('dialog', { name: 'Notification preferences', exact: true });
+                        await preferenceTrigger.click();
+                        await expect(preferenceDialog).toBeVisible();
+                        await expect(preferenceDialog.locator('input[name="categories[]"]')).toHaveCount(6);
+                        await page.keyboard.press('Escape');
+                        await expect(preferenceDialog).toBeHidden();
+                        await expect(preferenceTrigger).toBeFocused();
                     }
                     if (screen === 'automation') {
                         await expect(page.locator('#automation-overview')).toBeVisible();
@@ -1687,6 +1699,30 @@ test('organization member roles open in a page-local dialog', async ({ page }) =
 
     await page.goto(`http://buildpusher.test/organization?${roleHref.searchParams.toString()}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
+});
+
+test('organization notification preferences open in a page-local dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Edit preferences', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Notification preferences', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('input[name="categories[]"]')).toHaveCount(6);
+    await expect(dialog.locator('input[name="recoveries"]')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('organization-notification-preferences-dialog');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/organization?dialog=organization-notification-preferences-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Notification preferences', exact: true })).toBeVisible();
 });
 
 test('backup schedule workflow uses an accessible URL-backed dialog', async ({ page }) => {

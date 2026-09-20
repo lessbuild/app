@@ -33,6 +33,10 @@
             'sso_client_secret', 'sso_enforced',
         ]);
         $notificationPreferencesOpen = $hasOrganizationError(['categories', 'recoveries']);
+        $notificationPreferencesDialogId = 'organization-notification-preferences-dialog';
+        $notificationPreferencesDialogOpen = request()->query('dialog') === $notificationPreferencesDialogId
+            || $notificationPreferencesOpen;
+        $notificationPreferencesDialogUrl = route('organizations.index', ['dialog' => $notificationPreferencesDialogId]);
         $invitationOpen = request()->query('dialog') === 'invite-member'
             || ($errors->getBag('default')->has('email') || old('email') !== null);
         $deleteWorkspaceOpen = $errors->getBag('deleteWorkspace')->any();
@@ -82,7 +86,15 @@
 
     <x-ui.local-nav :label="__('Workspace sections')">
         <a href="#organization-security-policy" class="ui-local-nav__link">{{ __('Security') }}</a>
-        <a href="#organization-notification-preferences" class="ui-local-nav__link">{{ __('Notifications') }}</a>
+        @if ($canManage)
+            <a
+                href="{{ $notificationPreferencesDialogUrl }}"
+                class="ui-local-nav__link"
+                data-modal-trigger="{{ $notificationPreferencesDialogId }}"
+                aria-controls="{{ $notificationPreferencesDialogId }}"
+                aria-expanded="{{ $notificationPreferencesDialogOpen ? 'true' : 'false' }}"
+            >{{ __('Notifications') }}</a>
+        @endif
         @if ($canManage)
             <a
                 href="{{ route('organizations.index', ['dialog' => 'invite-member']) }}"
@@ -221,33 +233,24 @@
                     id="organization-notification-preferences"
                     :open="$notificationPreferencesOpen"
                 >
-                    <form method="POST" action="{{ route('organizations.notification-preferences.update') }}" class="space-y-5 bg-primary p-5 sm:p-6">
-                        @csrf
-                        @method('PATCH')
-                        @php
-                            $enabledCategories = $organization->notification_preferences['categories'] ?? ['website', 'server', 'deployment', 'provider', 'security', 'recipe'];
-                        @endphp
-
-                        <fieldset>
-                            <legend class="text-sm font-bold text-primary">{{ __('Inbox categories') }}</legend>
-                            <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                                @foreach (['website' => __('Websites'), 'server' => __('Servers'), 'deployment' => __('Deployments'), 'provider' => __('Providers'), 'security' => __('Security'), 'recipe' => __('Recipes')] as $value => $label)
-                                    <label class="flex items-center gap-3 text-sm text-secondary">
-                                        <input type="checkbox" name="categories[]" value="{{ $value }}" @checked(in_array($value, old('categories', $enabledCategories), true))>
-                                        <span>{{ $label }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-                        </fieldset>
-
-                        <input type="hidden" name="recoveries" value="0">
-                        <label class="flex items-start gap-3 text-sm text-secondary">
-                            <input type="checkbox" name="recoveries" value="1" @checked(old('recoveries', $organization->notification_preferences['recoveries'] ?? true))>
-                            <span><strong class="block text-primary">{{ __('Recovery notifications') }}</strong>{{ __('Notify when a failed resource becomes healthy again.') }}</span>
-                        </label>
-
-                        <x-ui.button type="submit" variant="primary">{{ __('Save preferences') }}</x-ui.button>
-                    </form>
+                    @php($enabledNotificationCategories = $organization->notification_preferences['categories'] ?? ['website', 'server', 'deployment', 'provider', 'security', 'recipe'])
+                    <div class="flex flex-wrap items-start justify-between gap-4 bg-primary p-5 sm:p-6">
+                        <div>
+                            <p class="font-semibold text-primary">
+                                {{ trans_choice(':count inbox category enabled|:count inbox categories enabled', count($enabledNotificationCategories), ['count' => count($enabledNotificationCategories)]) }}
+                            </p>
+                            <p class="mt-1 text-sm text-secondary">
+                                {{ ($organization->notification_preferences['recoveries'] ?? true) ? __('Recovery alerts are enabled.') : __('Recovery alerts are disabled.') }}
+                            </p>
+                        </div>
+                        <x-ui.button
+                            href="{{ $notificationPreferencesDialogUrl }}"
+                            data-modal-trigger="{{ $notificationPreferencesDialogId }}"
+                            aria-controls="{{ $notificationPreferencesDialogId }}"
+                            aria-expanded="{{ $notificationPreferencesDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >{{ __('Edit preferences') }}</x-ui.button>
+                    </div>
                 </x-forms.section>
             @endif
 
@@ -274,6 +277,10 @@
 
     @if ($canManage)
         <x-scenes.organizations.invite-dialog :member-usage="$memberUsage" :open="$invitationOpen" />
+        <x-scenes.organizations.notification-preferences-dialog
+            :open="$notificationPreferencesDialogOpen"
+            :organization="$organization"
+        />
         @foreach ($organization->members as $member)
             @if ($member->id !== $organization->owner_id)
                 <x-scenes.organizations.member-role-dialog

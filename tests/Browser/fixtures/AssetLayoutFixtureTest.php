@@ -100,9 +100,15 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Provisioning fixture server')->getContent());
         $organizationMember = User::factory()->create(['name' => 'Organization fixture member', 'email' => 'member@fixture.test']);
         $owner->currentOrganization->members()->attach($organizationMember, ['role' => 'developer']);
-        File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
+        File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()
+            ->assertSee('data-modal-trigger="organization-notification-preferences-dialog"', false)
+            ->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/organization-notification-preferences-dialog.html', $this->renderPage(route('organizations.index', [
+            'dialog' => 'organization-notification-preferences-dialog',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Save preferences')->getContent());
         File::put($directory.'/organization-member-role-dialog.html', $this->renderPage(route('organizations.index', [
             'dialog' => 'member-role-'.$organizationMember->id,
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)

@@ -72,7 +72,9 @@ class OrganizationManagementTest extends TestCase
 
         $this->assertStringContainsString('Members', $content);
         $this->assertStringContainsString('data-modal-trigger="organization-member-role-'.$member->id.'"', $content);
+        $this->assertStringContainsString('data-modal-trigger="organization-notification-preferences-dialog"', $content);
         $this->assertStringContainsString('Edit role', $content);
+        $this->assertStringContainsString('Edit preferences', $content);
         $this->assertStringContainsString('Save security policy', $content);
         $this->assertStringContainsString('Permanently delete workspace', $content);
 
@@ -87,6 +89,18 @@ class OrganizationManagementTest extends TestCase
         );
         $this->assertStringContainsString('name="role"', $roleDialogContent);
         $this->assertStringContainsString('Save role', $roleDialogContent);
+
+        $preferencesDialogContent = $this->actingAs($owner)
+            ->get(route('organizations.index', ['dialog' => 'organization-notification-preferences-dialog']))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="organization-notification-preferences-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $preferencesDialogContent,
+        );
+        $this->assertStringContainsString('name="categories[]"', $preferencesDialogContent);
+        $this->assertStringContainsString('Save preferences', $preferencesDialogContent);
     }
 
     public function test_invitation_validation_reopens_the_invitation_dialog(): void
@@ -277,7 +291,8 @@ class OrganizationManagementTest extends TestCase
         $this->assertSame('developer', $organization->roleFor($target));
         $this->actingAs($viewer)->get(route('organizations.index'))
             ->assertSuccessful()
-            ->assertDontSee('Edit role');
+            ->assertDontSee('Edit role')
+            ->assertDontSee('data-modal-trigger="organization-notification-preferences-dialog"', false);
     }
 
     public function test_manager_member_updates_preserve_owner_protection_and_scoped_not_found_behavior(): void
@@ -364,6 +379,25 @@ class OrganizationManagementTest extends TestCase
             'categories' => ['website'],
             'recoveries' => '1',
         ])->assertForbidden();
+    }
+
+    public function test_notification_preference_validation_reopens_the_settings_dialog(): void
+    {
+        $owner = User::factory()->create();
+        $dialogUrl = route('organizations.index', ['dialog' => 'organization-notification-preferences-dialog']);
+
+        $this->actingAs($owner)
+            ->from($dialogUrl)
+            ->patch(route('organizations.notification-preferences.update'), [
+                'categories' => ['invalid-category'],
+                'recoveries' => 'not-a-boolean',
+            ])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors(['categories.0', 'recoveries']);
+
+        $this->get($dialogUrl)
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false);
     }
 
     public function test_settings_authorization_precedes_malformed_input_without_writes(): void
