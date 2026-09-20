@@ -81,6 +81,21 @@ class BackupController extends Controller
     }
 
     /**
+     * Return one authorized destination editor for a page-local native dialog.
+     */
+    public function editDestination(Request $request, BackupDestination $destination): View
+    {
+        $this->authorize('update', $destination);
+
+        return view('components.scenes.backups.destination-edit-dialog-content', [
+            'destination' => $destination,
+            'destinationCatalog' => $this->destinationCatalog,
+            'destinationPresets' => $this->destinationCatalog->all(),
+            'cancelUrl' => $this->safeReturnUrl($request, route('backups.index')),
+        ]);
+    }
+
+    /**
      * Validate editable destination details and preserve retained snapshot locations while rotating its connection.
      *
      * @return RedirectResponse The unverified updated destination, or the existing safety rejection.
@@ -95,6 +110,30 @@ class BackupController extends Controller
         }
 
         return back()->with('success', __('Backup destination updated. Verify it before the next backup.'));
+    }
+
+    /**
+     * Keep dialog cancellation on the current same-origin page.
+     */
+    private function safeReturnUrl(Request $request, string $fallback): string
+    {
+        $candidate = $request->string('return_to')->toString();
+
+        if ($candidate === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($candidate);
+
+        if ($parts === false || isset($parts['host']) && $parts['host'] !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if (isset($parts['scheme']) && $parts['scheme'] !== $request->getScheme()) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 
     /** Verify a destination with a temporary S3-compatible object without requiring a managed website server. */

@@ -170,10 +170,12 @@
                                 @php
                                     $destinationEditDialogId = 'backup-destination-edit-'.$destination->id;
                                     $destinationEditUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
+                                    $destinationEditContentUrl = route('backups.destinations.edit', ['destination' => $destination, 'return_to' => request()->fullUrlWithoutQuery('dialog')]);
                                 @endphp
                                 <x-ui.button
                                     :href="$destinationEditUrl"
                                     data-modal-trigger="{{ $destinationEditDialogId }}"
+                                    data-modal-content-url="{{ $destinationEditContentUrl }}"
                                     aria-controls="{{ $destinationEditDialogId }}"
                                     aria-expanded="{{ $destinationEditOpen && $editingDestination?->is($destination) ? 'true' : 'false' }}"
                                     variant="secondary"
@@ -190,6 +192,14 @@
                                         </form>
                                     </div>
                                 </details>
+                                <x-scenes.backups.destination-edit-dialog
+                                    :destination="$destination"
+                                    :destination-catalog="$destinationCatalog"
+                                    :destination-presets="$destinationPresets"
+                                    :open="$destinationEditOpen && $editingDestination?->is($destination)"
+                                    :content-url="$destinationEditContentUrl"
+                                    :cancel-url="request()->fullUrlWithoutQuery('dialog')"
+                                />
                             </div>
                         @endif
                     </article>
@@ -208,14 +218,6 @@
                     :destination-presets="$destinationPresets"
                     :open="$destinationCreateOpen"
                 />
-                @if ($editingDestination)
-                    <x-scenes.backups.destination-edit-dialog
-                        :destination="$editingDestination"
-                        :destination-catalog="$destinationCatalog"
-                        :destination-presets="$destinationPresets"
-                        :open="$destinationEditOpen"
-                    />
-                @endif
             @endif
         </section>
 

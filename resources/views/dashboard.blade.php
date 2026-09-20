@@ -517,17 +517,24 @@
                                 @php($recipeEditDialogId = 'recipe-edit-dialog-'.$installedRecipe->id)
                                 <a
                                     href="{{ route('dashboard', ['dialog' => 'edit-recipe-'.$installedRecipe->id]) }}"
-                                    @if ($editingDashboardRecipe?->id === $installedRecipe->id)
-                                        data-modal-trigger="{{ $recipeEditDialogId }}"
-                                        aria-controls="{{ $recipeEditDialogId }}"
-                                        aria-expanded="{{ $dashboardRecipeEditOpen ? 'true' : 'false' }}"
-                                    @endif
+                                    data-modal-trigger="{{ $recipeEditDialogId }}"
+                                    data-modal-content-url="{{ route('recipes.edit', ['recipe' => $installedRecipe, 'dialog' => 'edit-recipe-'.$installedRecipe->id, 'fragment' => 1, 'return_to' => $dashboardUrl]) }}"
+                                    aria-controls="{{ $recipeEditDialogId }}"
+                                    aria-expanded="{{ $dashboardRecipeEditOpen && $editingDashboardRecipe?->id === $installedRecipe->id ? 'true' : 'false' }}"
                                     class="text-ternary underline"
                                 >
                                     {{ __('Edit copy') }}
                                 </a>
-                            </div>
-                        </div>
+                    </div>
+                    <x-scenes.recipes.edit-dialog
+                        :recipe="$editingDashboardRecipe?->id === $installedRecipe->id ? $editingDashboardRecipe : $installedRecipe"
+                        :id="$recipeEditDialogId"
+                        :open="$dashboardRecipeEditOpen && $editingDashboardRecipe?->id === $installedRecipe->id"
+                        :cancel-url="$dashboardUrl"
+                        :content-url="route('recipes.edit', ['recipe' => $installedRecipe, 'dialog' => 'edit-recipe-'.$installedRecipe->id, 'fragment' => 1, 'return_to' => $dashboardUrl])"
+                        field-prefix="dashboard-recipe-edit-"
+                    />
+                </div>
                     </div>
                 @endforeach
             </div>
@@ -649,13 +656,4 @@
         :cancel-url="$dashboardUrl"
     />
 
-    @if ($editingDashboardRecipe)
-        <x-scenes.recipes.edit-dialog
-            :recipe="$editingDashboardRecipe"
-            id="recipe-edit-dialog-{{ $editingDashboardRecipe->id }}"
-            :open="$dashboardRecipeEditOpen"
-            :cancel-url="$dashboardUrl"
-            field-prefix="dashboard-recipe-edit-"
-        />
-    @endif
 </x-layouts.app>

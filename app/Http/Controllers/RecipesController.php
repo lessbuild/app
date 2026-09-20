@@ -154,14 +154,48 @@ class RecipesController extends Controller
     /**
      * Authorize recipe updates and render its editor with any currently published source and contributor context.
      */
-    public function edit(Recipe $recipe): View
+    public function edit(Request $request, Recipe $recipe): View
     {
         $this->authorize('update', $recipe);
         $recipe->load([
             'source' => fn ($query) => $query->published()->with('user:id,name'),
         ]);
 
+        if ($request->boolean('fragment')) {
+            return view('components.scenes.recipes.edit-dialog-content', [
+                'recipe' => $recipe,
+                'cancelUrl' => $this->safeReturnUrl($request, route('recipes.show', $recipe)),
+                // The inventory selector uses an id-specific dialog key, but the update
+                // contract has historically used the shared edit-recipe marker.
+                'dialogKey' => 'edit-recipe',
+            ]);
+        }
+
         return view('scenes.recipes.edit', ['recipe' => $recipe]);
+    }
+
+    /**
+     * Keep dialog cancellation on the current same-origin page.
+     */
+    private function safeReturnUrl(Request $request, string $fallback): string
+    {
+        $candidate = $request->string('return_to')->toString();
+
+        if ($candidate === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($candidate);
+
+        if ($parts === false || isset($parts['host']) && $parts['host'] !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if (isset($parts['scheme']) && $parts['scheme'] !== $request->getScheme()) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 
     /**

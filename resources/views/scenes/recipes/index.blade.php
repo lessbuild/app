@@ -6,8 +6,6 @@
         }
         $recipeCreateOpen = request()->query('dialog') === 'create-recipe';
         $recipeCreateUrl = route('recipes.index', [...$recipeIndexQuery, 'dialog' => 'create-recipe']);
-        $recipeEditOpen = $editingRecipe !== null;
-        $recipeEditDialogId = $editingRecipe ? 'recipe-edit-dialog-'.$editingRecipe->id : null;
     @endphp
 
     <x-layouts.partials.heading
@@ -145,10 +143,13 @@
                         @php
                             $recipeEditUrl = route('recipes.index', [...$recipeIndexQuery, 'dialog' => 'edit-recipe-'.$recipe->id]);
                             $recipeEditDialogIdForRow = 'recipe-edit-dialog-'.$recipe->id;
+                            $recipeEditContentUrl = route('recipes.edit', ['recipe' => $recipe, 'dialog' => 'edit-recipe-'.$recipe->id, 'fragment' => 1, 'return_to' => request()->fullUrlWithoutQuery('dialog')]);
+                            $recipeDialogRecipe = $editingRecipe?->is($recipe) ? $editingRecipe : $recipe;
                         @endphp
                         <x-ui.button
                             :href="$recipeEditUrl"
                             data-modal-trigger="{{ $recipeEditDialogIdForRow }}"
+                            data-modal-content-url="{{ $recipeEditContentUrl }}"
                             aria-controls="{{ $recipeEditDialogIdForRow }}"
                             aria-expanded="{{ $editingRecipe?->id === $recipe->id ? 'true' : 'false' }}"
                             variant="secondary"
@@ -163,6 +164,14 @@
                             <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
                         </form>
                     </div>
+                    <x-scenes.recipes.edit-dialog
+                        :recipe="$recipeDialogRecipe"
+                        :id="$recipeEditDialogIdForRow"
+                        :open="$editingRecipe?->is($recipe) ?? false"
+                        :cancel-url="route('recipes.index', $recipeIndexQuery)"
+                        :content-url="$recipeEditContentUrl"
+                        field-prefix="recipe-edit-"
+                    />
                 </article>
             @endforeach
             <div class="p-4">{{ $recipes->links() }}</div>
@@ -170,11 +179,4 @@
     @endif
     <x-scenes.recipes.create-dialog :open="$recipeCreateOpen" />
 
-    @if ($editingRecipe)
-        <x-scenes.recipes.edit-dialog
-            :recipe="$editingRecipe"
-            :id="$recipeEditDialogId"
-            :open="$recipeEditOpen"
-        />
-    @endif
 </x-layouts.app>

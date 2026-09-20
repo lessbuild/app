@@ -38,7 +38,9 @@ class BackupDestinationSetupTest extends TestCase
             ->assertSee('https://&lt;region&gt;.digitaloceanspaces.com', false)
             ->assertSee('data-modal-trigger="backup-destination-create-dialog"', false)
             ->assertSee('data-modal-trigger="backup-destination-edit-'.$destination->id.'"', false)
-            ->assertDontSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('id="backup-destination-edit-'.$destination->id.'"', false)
+            ->assertSee('data-modal-content-loaded="false"', false)
+            ->assertDontSee('name="secret-key"', false)
             ->assertViewHas('destinationPresets');
     }
 

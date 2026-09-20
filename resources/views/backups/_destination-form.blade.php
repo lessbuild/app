@@ -1,6 +1,7 @@
 @props([
     'formMarker' => null,
     'destinationId' => null,
+    'cancelUrl' => null,
 ])
 
 @php
@@ -84,6 +85,9 @@
         @endif
     </div>
     <div class="sm:col-span-2">
+        @if ($cancelUrl)
+            <x-ui.button :href="$cancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+        @endif
         <x-ui.button type="submit" variant="primary">{{ $submitLabel }}</x-ui.button>
     </div>
 </form>

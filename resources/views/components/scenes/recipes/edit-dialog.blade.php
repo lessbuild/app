@@ -3,10 +3,13 @@
     'open' => false,
     'id' => 'recipe-edit-dialog',
     'cancelUrl' => null,
+    'contentUrl' => null,
+    'dialogKey' => 'edit-recipe',
     'fieldPrefix' => 'recipe-edit-',
 ])
 
 @php($dialogCancelUrl = $cancelUrl ?? route('recipes.show', $recipe))
+@php($dialogContentUrl = $contentUrl ?? route('recipes.edit', ['recipe' => $recipe, 'dialog' => $dialogKey, 'fragment' => 1]))
 
 <x-dialogs.modal
     :id="$id"
@@ -14,22 +17,19 @@
     :description="__('Changes apply when this recipe is used for a new server.')"
     :open="$open"
     body-class="p-0"
+    data-modal-content-loaded="{{ $open ? 'true' : 'false' }}"
+    data-modal-content-url="{{ $open ? $dialogContentUrl : '' }}"
 >
-    @if ($recipe->source && $recipe->hasGalleryUpdate())
-        <x-ui.alert tone="warning" class="m-5 mb-0">
-            {{ __('A newer gallery revision is available. Review it before replacing your private snapshot.') }}
-        </x-ui.alert>
-    @endif
-
-    <form action="{{ route('recipes.update', ['recipe' => $recipe, 'dialog' => 'edit-recipe']) }}" method="POST">
-        @csrf
-        @method('PATCH')
-        <input type="hidden" name="_recipe_form" value="edit">
-        <x-scenes.recipes._form :recipe="$recipe" :field-prefix="$fieldPrefix" />
-
-        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="$dialogCancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-            <x-ui.button type="submit" variant="primary">{{ __('Save Recipe') }}</x-ui.button>
-        </div>
-    </form>
+    <div data-modal-content>
+        @if ($open)
+            <x-scenes.recipes.edit-dialog-content
+                :recipe="$recipe"
+                :cancel-url="$dialogCancelUrl"
+                :dialog-key="$dialogKey"
+                :field-prefix="$fieldPrefix"
+            />
+        @else
+            <p class="p-5 text-sm text-secondary">{{ __('Loading recipe form…') }}</p>
+        @endif
+    </div>
 </x-dialogs.modal>

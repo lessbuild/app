@@ -3,11 +3,13 @@
     'destinationCatalog',
     'destinationPresets',
     'open' => false,
+    'contentUrl' => null,
+    'cancelUrl' => null,
 ])
 
 @php
     $dialogId = 'backup-destination-edit-'.$destination->id;
-    $dialogUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
+    $dialogContentUrl = $contentUrl ?? route('backups.destinations.edit', ['destination' => $destination, 'return_to' => request()->fullUrlWithoutQuery('dialog')]);
 @endphp
 
 <x-dialogs.modal
@@ -16,15 +18,19 @@
     :description="__('Update the connection or rotate credentials. Leave credential fields blank to retain the encrypted values.')"
     :open="$open"
     body-class="p-0"
+    data-modal-content-loaded="{{ $open ? 'true' : 'false' }}"
+    data-modal-content-url="{{ $open ? $dialogContentUrl : '' }}"
 >
-    @include('backups._destination-form', [
-        'action' => route('backups.destinations.update', $destination),
-        'formId' => $dialogId,
-        'formMarker' => 'edit',
-        'destinationId' => $destination->id,
-        'submitLabel' => __('Save connection'),
-        'destination' => $destination,
-        'destinationCatalog' => $destinationCatalog,
-        'destinationPresets' => $destinationPresets,
-    ])
+    <div data-modal-content>
+        @if ($open)
+            <x-scenes.backups.destination-edit-dialog-content
+                :destination="$destination"
+                :destination-catalog="$destinationCatalog"
+                :destination-presets="$destinationPresets"
+                :cancel-url="$cancelUrl"
+            />
+        @else
+            <p class="p-5 text-sm text-secondary">{{ __('Loading backup destination form…') }}</p>
+        @endif
+    </div>
 </x-dialogs.modal>
