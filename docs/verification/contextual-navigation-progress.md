@@ -262,3 +262,56 @@ Commit and push: aaa8861 Move preview settings into a contextual dialog.
 Continue the detail-page audit with the existing long history links and
 bounded settings actions. Prefer context-preserving summary/timeline
 improvements over embedding paginated reports in large modals.
+
+## Slice 6 — environment settings and deployment controls in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+Each application environment rendered two large edit forms inline: runtime and
+placement settings, plus deployment locks, maintenance windows and rollout
+controls. These forms dominated the mobile page and made the environment
+inventory harder to scan, even though their existing requests and actions
+already formed clear operation boundaries.
+
+### Boundary
+
+- The application page now presents compact summaries and per-environment
+  dialog triggers.
+- environment-settings-dialog.blade.php and
+  deployment-controls-dialog.blade.php own only the reusable form surfaces.
+- EnvironmentRequest, DeploymentControlsRequest, EnvironmentController and the
+  existing update actions remain the validation, authorization and persistence
+  boundaries.
+
+### Preserved behavior and safety
+
+- Existing field names, hidden environment/panel identity, defaults, feature
+  gates, validation keys, old-input values, policy checks and flash messages
+  remain unchanged.
+- Runtime entitlement checks, production uniqueness protection, scoped server
+  and website selection, deployment locks, maintenance-window validation,
+  strategy settings and rollback semantics still execute in the original
+  requests/actions.
+- Validation failures reopen only the submitted dialog and preserve the
+  existing panel context; denied or malformed requests still perform no write.
+- The current page remains the canonical no-JavaScript fallback, with a
+  dialog query identifying the selected operation.
+
+### Verification
+
+- Project/environment dialog coverage: 7 tests / 72 assertions passed.
+- Deployment controls, strategy, lifecycle and runtime regressions: 18 tests /
+  109 assertions passed.
+- Isolated Blade fixture export: 1 test / 148 assertions passed.
+- Application-detail mobile composer journey: 1 passed, including settings,
+  deployment-control, variable, process, resource and preview dialogs.
+- Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
+
+### Exact next task
+
+Commit and push this slice, then review remaining detail-page history links
+and other bounded settings surfaces. Keep paginated history, exports,
+imports, restores, destructive operations and protocol callbacks as explicit
+pages unless a smaller read-only summary genuinely improves the flow.

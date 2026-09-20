@@ -955,6 +955,8 @@ test('application detail composers use compact accessible dialogs', async ({ pag
 
     const workflows = [
         ['Add environment', 'Add environment', '#add-environment-dialog'],
+        ['Edit settings', 'Environment settings', '[id^="environment-settings-dialog-"]'],
+        ['Edit controls', 'Deployment controls', '[id^="environment-deployment-controls-dialog-"]'],
         ['Add variable', 'Add encrypted variable', '[id^="environment-variable-dialog-"]'],
         ['Add process', 'Add worker or scheduler', '[id^="environment-process-dialog-"]'],
         ['Attach resource', 'Attach resource', '[id^="environment-resource-dialog-"]'],
@@ -977,6 +979,8 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         const dialogKey = new URL(page.url()).searchParams.get('dialog');
         const expectedDialog = {
             'Add environment': /^add-environment$/,
+            'Edit settings': /^edit-environment-settings-\d+$/,
+            'Edit controls': /^edit-deployment-controls-\d+$/,
             'Add variable': /^add-variable-\d+$/,
             'Add process': /^add-process-\d+$/,
             'Attach resource': /^add-resource-\d+$/,

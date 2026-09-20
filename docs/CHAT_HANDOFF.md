@@ -2297,6 +2297,13 @@ mobile browser, Blade, Pint and diff checks pass.
 The next task is the remaining detail-page audit: keep long history reports as
 pages and improve only bounded context-preserving settings or timeline flows.
 
+The current local slice moves environment runtime settings and deployment
+controls into per-environment dialogs. Compact summaries stay on the
+application page; the existing EnvironmentRequest, DeploymentControlsRequest,
+policies, controllers and actions remain unchanged. Focused PHP, fixture,
+mobile browser, Blade, Pint and diff checks pass; the slice is pending its
+cohesive commit/push.
+
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local
 browser and isolated-render evidence is not the separate live acceptance

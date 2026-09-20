@@ -209,6 +209,8 @@ class AssetLayoutFixtureTest extends TestCase
         ]);
         File::put($directory.'/project-detail.html', $this->renderPage(route('projects.show', $project))->assertOk()
             ->assertSee('data-modal-trigger="add-environment-dialog"', false)
+            ->assertSee('data-modal-trigger="environment-settings-dialog-', false)
+            ->assertSee('data-modal-trigger="environment-deployment-controls-dialog-', false)
             ->assertSee('data-modal-trigger="environment-variable-dialog-', false)
             ->assertSee('data-modal-trigger="environment-process-dialog-', false)
             ->assertSee('data-modal-trigger="environment-resource-dialog-', false)

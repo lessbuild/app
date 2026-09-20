@@ -73,12 +73,13 @@ class ProjectEnvironmentTest extends TestCase
             ->assertDontSee('super-secret-value');
     }
 
-    public function test_environment_settings_validation_reopens_only_the_submitted_panel(): void
+    public function test_environment_settings_validation_reopens_only_the_submitted_dialog(): void
     {
         [$owner, $developer, $project] = $this->workspaceProject();
         $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+        $dialogUrl = route('projects.show', ['project' => $project, 'dialog' => 'edit-environment-settings-'.$environment->id]);
 
-        $this->from(route('projects.show', $project))
+        $this->from($dialogUrl)
             ->actingAs($developer)
             ->patch(route('environments.update', $environment), [
                 '_environment_id' => $environment->id,
@@ -91,29 +92,30 @@ class ProjectEnvironmentTest extends TestCase
                 'minimum_replicas' => 1,
                 'maximum_replicas' => 1,
             ])
-            ->assertRedirect(route('projects.show', $project))
+            ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors('name');
 
-        $response = $this->actingAs($developer)->get(route('projects.show', $project));
+        $response = $this->actingAs($developer)->get($dialogUrl);
         $response->assertOk();
 
         $content = $response->getContent();
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="environment-'.$environment->id.'-settings")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="environment-settings-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*id="environment-'.$environment->id.'-deployment-controls")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="environment-deployment-controls-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
     }
 
-    public function test_deployment_control_validation_reopens_the_deployment_panel(): void
+    public function test_deployment_control_validation_reopens_the_deployment_dialog(): void
     {
         [$owner, $developer, $project] = $this->workspaceProject();
         $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+        $dialogUrl = route('projects.show', ['project' => $project, 'dialog' => 'edit-deployment-controls-'.$environment->id]);
 
-        $this->from(route('projects.show', $project))
+        $this->from($dialogUrl)
             ->actingAs($developer)
             ->patch(route('environments.deployment-controls.update', $environment), [
                 '_environment_id' => $environment->id,
@@ -124,19 +126,19 @@ class ProjectEnvironmentTest extends TestCase
                 'rolling_pause_seconds' => '2',
                 'automatic_rollback' => '0',
             ])
-            ->assertRedirect(route('projects.show', $project))
+            ->assertRedirect($dialogUrl)
             ->assertSessionHasErrors('deployment_window_days');
 
-        $response = $this->actingAs($developer)->get(route('projects.show', $project));
+        $response = $this->actingAs($developer)->get($dialogUrl);
         $response->assertOk();
 
         $content = $response->getContent();
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="environment-'.$environment->id.'-deployment-controls")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="environment-deployment-controls-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*id="environment-'.$environment->id.'-settings")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*id="environment-settings-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
     }
@@ -146,6 +148,8 @@ class ProjectEnvironmentTest extends TestCase
         config(['billing.enforce_entitlements' => false]);
         [$owner, $developer, $project] = $this->workspaceProject();
         $environment = $project->environments()->where('type', 'staging')->firstOrFail();
+        $environmentSettingsDialogId = 'environment-settings-dialog-'.$environment->id;
+        $deploymentControlsDialogId = 'environment-deployment-controls-dialog-'.$environment->id;
         $variableDialogId = 'environment-variable-dialog-'.$environment->id;
         $processDialogId = 'environment-process-dialog-'.$environment->id;
         $resourceDialogId = 'environment-resource-dialog-'.$environment->id;
@@ -153,16 +157,22 @@ class ProjectEnvironmentTest extends TestCase
 
         $default = $this->actingAs($developer)->get(route('projects.show', $project))
             ->assertSuccessful()
+            ->assertSee('data-modal-trigger="'.$environmentSettingsDialogId.'"', false)
+            ->assertSee('data-modal-trigger="'.$deploymentControlsDialogId.'"', false)
             ->assertSee('data-modal-trigger="add-environment-dialog"', false)
             ->assertSee('data-modal-trigger="'.$variableDialogId.'"', false)
             ->assertSee('data-modal-trigger="'.$processDialogId.'"', false)
             ->assertSee('data-modal-trigger="'.$resourceDialogId.'"', false);
         $this->assertDoesNotMatchRegularExpression($dialogPattern('add-environment-dialog'), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($environmentSettingsDialogId), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($deploymentControlsDialogId), $default->getContent());
         $this->assertDoesNotMatchRegularExpression($dialogPattern($variableDialogId), $default->getContent());
         $this->assertDoesNotMatchRegularExpression($dialogPattern($processDialogId), $default->getContent());
         $this->assertDoesNotMatchRegularExpression($dialogPattern($resourceDialogId), $default->getContent());
 
         foreach ([
+            ['dialog' => 'edit-environment-settings-'.$environment->id, 'id' => $environmentSettingsDialogId],
+            ['dialog' => 'edit-deployment-controls-'.$environment->id, 'id' => $deploymentControlsDialogId],
             ['dialog' => 'add-environment', 'id' => 'add-environment-dialog'],
             ['dialog' => 'add-variable-'.$environment->id, 'id' => $variableDialogId],
             ['dialog' => 'add-process-'.$environment->id, 'id' => $processDialogId],

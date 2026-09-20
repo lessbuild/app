@@ -97,6 +97,16 @@
                 $processesOpen = $environmentErrorPanel === 'processes';
                 $resourcesOpen = $environmentErrorPanel === 'resources';
                 $canUpdateEnvironment = auth()->user()?->can('update', $environment) ?? false;
+                $environmentSettingsDialogId = 'environment-settings-dialog-'.$environment->id;
+                $environmentSettingsDialogKey = 'edit-environment-settings-'.$environment->id;
+                $environmentSettingsDialogOpen = $canUpdateEnvironment
+                    && ($environmentSettingsOpen || request()->query('dialog') === $environmentSettingsDialogKey);
+                $environmentSettingsDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $environmentSettingsDialogKey]);
+                $deploymentControlsDialogId = 'environment-deployment-controls-dialog-'.$environment->id;
+                $deploymentControlsDialogKey = 'edit-deployment-controls-'.$environment->id;
+                $deploymentControlsDialogOpen = $canUpdateEnvironment
+                    && ($deploymentControlsOpen || request()->query('dialog') === $deploymentControlsDialogKey);
+                $deploymentControlsDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $deploymentControlsDialogKey]);
                 $variableDialogId = 'environment-variable-dialog-'.$environment->id;
                 $variableDialogKey = 'add-variable-'.$environment->id;
                 $variableDialogOpen = $canUpdateEnvironment && ($variablesOpen || request()->query('dialog') === $variableDialogKey);
@@ -197,47 +207,49 @@
                 @endif
 
                 <div class="grid gap-px bg-secondary lg:grid-cols-3">
-                    <details id="environment-{{ $environment->id }}-settings" class="group bg-primary p-5" @if($environmentSettingsOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Environment settings') }}</span><span class="text-secondary group-open:rotate-45">+</span></summary>
-                        <form method="POST" action="{{ route('environments.update', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input type="hidden" name="_environment_id" value="{{ $environment->id }}"><input type="hidden" name="_environment_panel" value="settings"> @method('PATCH')
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span><input name="name" value="{{ $environment->name }}" class="input secondary rounded-lg" required></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Type') }}</span><select name="type" class="input secondary rounded-lg">@foreach(\App\Models\Environment::TYPES as $type)<option value="{{ $type }}" @selected($environment->type === $type)>{{ ucfirst($type) }}</option>@endforeach</select></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Branch') }}</span><input name="branch" value="{{ $environment->branch }}" class="input secondary rounded-lg" required></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Runtime') }}</span><select name="runtime_type" class="input secondary rounded-lg">@foreach(\App\Models\Environment::RUNTIME_TYPES as $runtime)<option value="{{ $runtime }}" @selected(($environment->runtime_type ?: 'php') === $runtime)>{{ ucfirst($runtime) }}</option>@endforeach</select></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Runtime version') }}</span><input name="runtime_version" value="{{ $environment->runtime_version }}" placeholder="20" class="input secondary rounded-lg"></label>
-                            <label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Build command') }}</span><input name="build_command" value="{{ $environment->build_command }}" placeholder="npm run build" class="input secondary rounded-lg font-mono"></label>
-                            <label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Start command') }}</span><input name="start_command" value="{{ $environment->start_command }}" placeholder="npm start" class="input secondary rounded-lg font-mono"></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Application port') }}</span><input type="number" min="1" max="65535" name="container_port" value="{{ $environment->container_port }}" placeholder="3000" class="input secondary rounded-lg"></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Dockerfile path') }}</span><input name="dockerfile_path" value="{{ $environment->dockerfile_path }}" placeholder="Dockerfile" class="input secondary rounded-lg font-mono"></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Server') }}</span><select name="server_id" class="input secondary rounded-lg"><option value="">{{ __('None') }}</option>@foreach($servers as $server)<option value="{{ $server->id }}" @selected($environment->server_id === $server->id)>{{ $server->label }}</option>@endforeach</select></label>
-                            <label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Website') }}</span><select name="website_id" class="input secondary rounded-lg"><option value="">{{ __('None') }}</option>@foreach($websites as $website)<option value="{{ $website->id }}" @selected($environment->website_id === $website->id)>{{ $website->name }}</option>@endforeach</select></label>
-                            @if($featureAccess['hibernation'])<label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Hibernate after inactivity') }}</span><select name="hibernate_after_minutes" class="input secondary rounded-lg"><option value="">{{ __('Never') }}</option>@foreach([5, 15, 30, 60, 120, 1440] as $minutes)<option value="{{ $minutes }}" @selected($environment->hibernate_after_minutes === $minutes)>{{ trans_choice(':count minute|:count minutes', $minutes, ['count' => $minutes]) }}</option>@endforeach</select></label>@endif
-                            @if($featureAccess['monitoring'])<label class="sm:col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Observe after deployment') }}</span><select name="post_deployment_observation_minutes" class="input secondary rounded-lg"><option value="">{{ __('Disabled') }}</option>@foreach(\App\Models\Environment::POST_DEPLOYMENT_OBSERVATION_MINUTES as $minutes)<option value="{{ $minutes }}" @selected($environment->post_deployment_observation_minutes === $minutes)>{{ __('For :minutes minutes', ['minutes' => $minutes]) }}</option>@endforeach</select><span class="mt-1 block text-xs text-secondary">{{ __('Check the deployed website for this window and keep the revision-linked result available for troubleshooting.') }}</span></label>@endif
-                            <input type="hidden" name="is_protected" value="0"><label class="flex items-center gap-2"><input type="checkbox" name="is_protected" value="1" @checked($environment->is_protected)><span class="text-sm text-secondary">{{ __('Protect') }}</span></label>
-                            <input type="hidden" name="requires_deployment_approval" value="0"><label class="flex items-center gap-2"><input type="checkbox" name="requires_deployment_approval" value="1" @checked($environment->requires_deployment_approval)><span class="text-sm text-secondary">{{ __('Require approval') }}</span></label>
-                            @can('update', $environment)<x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save settings') }}</x-ui.button>@endcan
-                        </form>
-                    </details>
+                    <section id="environment-{{ $environment->id }}-settings" class="bg-primary p-5" aria-labelledby="environment-{{ $environment->id }}-settings-heading">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 id="environment-{{ $environment->id }}-settings-heading" class="font-bold text-primary">{{ __('Environment settings') }}</h3>
+                                <p class="mt-1 text-xs text-secondary">{{ ucfirst($environment->runtime_type ?: 'php') }} · {{ $environment->branch }} · {{ $environment->website?->name ?? __('No website') }}</p>
+                            </div>
+                            @can('update', $environment)
+                                <x-ui.button :href="$environmentSettingsDialogUrl" data-modal-trigger="{{ $environmentSettingsDialogId }}" aria-controls="{{ $environmentSettingsDialogId }}" aria-expanded="{{ $environmentSettingsDialogOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit settings') }}</x-ui.button>
+                            @endcan
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-2 text-xs">
+                            <x-ui.badge :tone="$environment->is_protected ? 'accent' : 'neutral'">{{ $environment->is_protected ? __('Protected') : __('Unprotected') }}</x-ui.badge>
+                            <x-ui.badge :tone="$environment->requires_deployment_approval ? 'accent' : 'neutral'">{{ $environment->requires_deployment_approval ? __('Approval required') : __('Auto deploy') }}</x-ui.badge>
+                            <span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->server?->label ?? __('No server') }}</span>
+                        </div>
+                    </section>
+                    @can('update', $environment)
+                        <x-scenes.projects.environment-settings-dialog
+                            :environment="$environment"
+                            :servers="$servers"
+                            :websites="$websites"
+                            :feature-access="$featureAccess"
+                            :open="$environmentSettingsDialogOpen"
+                        />
+                    @endcan
 
-                    <details id="environment-{{ $environment->id }}-deployment-controls" class="group bg-primary p-5" @if($deploymentControlsOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Deployment controls') }}</span><span class="text-secondary group-open:rotate-45">+</span></summary>
-                        <div class="mt-3 flex flex-wrap gap-2 text-xs"><x-ui.badge :tone="$environment->deployment_locked_at ? 'danger' : 'success'">{{ $environment->deployment_locked_at ? __('Locked') : __('Unlocked') }}</x-ui.badge>@if($environment->deployment_window_days)<x-ui.badge tone="neutral">{{ __('Maintenance window active') }}</x-ui.badge>@endif</div>
-                        @can('update', $environment)
-                            <form method="POST" action="{{ route('environments.deployment-controls.update', $environment) }}" class="mt-4 space-y-4">@csrf<input type="hidden" name="_environment_id" value="{{ $environment->id }}"><input type="hidden" name="_environment_panel" value="deployment-controls"> @method('PATCH')
-                                <label class="flex items-start gap-3"><input type="hidden" name="deployment_locked" value="0"><input type="checkbox" name="deployment_locked" value="1" class="mt-1" @checked($environment->deployment_locked_at)><span><span class="block text-sm font-bold text-primary">{{ __('Lock deployments') }}</span><span class="text-xs text-secondary">{{ __('Manual, API, scheduled, and webhook deployments will wait.') }}</span></span></label>
-                                <input name="deployment_lock_reason" maxlength="500" value="{{ old('deployment_lock_reason', $environment->deployment_lock_reason) }}" class="input secondary rounded-lg" placeholder="{{ __('Reason for the lock (optional)') }}">
-                                <div class="border-t border-primary pt-4"><label class="flex items-start gap-3"><input type="hidden" name="deployment_window_enabled" value="0"><input type="checkbox" name="deployment_window_enabled" value="1" class="mt-1" @checked($environment->deployment_window_days)><span><span class="block text-sm font-bold text-primary">{{ __('Restrict deployment times') }}</span><span class="text-xs text-secondary">{{ __('Allow new deployments only within this weekly window.') }}</span></span></label></div>
-                                <fieldset><legend class="text-xs font-bold uppercase text-secondary">{{ __('Window days') }}</legend><div class="mt-2 flex flex-wrap gap-3">@foreach([1 => __('Mon'), 2 => __('Tue'), 3 => __('Wed'), 4 => __('Thu'), 5 => __('Fri'), 6 => __('Sat'), 7 => __('Sun')] as $day => $label)<label class="flex items-center gap-1.5 text-sm text-primary"><input type="checkbox" name="deployment_window_days[]" value="{{ $day }}" @checked(in_array($day, old('deployment_window_days', $environment->deployment_window_days ?? [])))>{{ $label }}</label>@endforeach</div></fieldset>
-                                <div class="grid gap-3 sm:grid-cols-2"><label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Starts') }}</span><input type="time" name="deployment_window_start" value="{{ old('deployment_window_start', $environment->deployment_window_start ? substr($environment->deployment_window_start, 0, 5) : '09:00') }}" class="input secondary mt-1 rounded-lg"></label><label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Ends') }}</span><input type="time" name="deployment_window_end" value="{{ old('deployment_window_end', $environment->deployment_window_end ? substr($environment->deployment_window_end, 0, 5) : '17:00') }}" class="input secondary mt-1 rounded-lg"></label></div>
-                                <label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Timezone') }}</span><input name="deployment_window_timezone" list="deployment-timezones-{{ $environment->id }}" value="{{ old('deployment_window_timezone', $environment->deployment_window_timezone ?: 'UTC') }}" class="input secondary mt-1 rounded-lg" placeholder="Europe/London"><datalist id="deployment-timezones-{{ $environment->id }}"><option value="UTC"><option value="Europe/London"><option value="Europe/Berlin"><option value="America/New_York"><option value="America/Chicago"><option value="America/Denver"><option value="America/Los_Angeles"><option value="Asia/Singapore"><option value="Asia/Tokyo"><option value="Australia/Sydney"></datalist></label>
-                                <div class="border-t border-primary pt-4"><label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Release strategy') }}</span><select name="deployment_strategy" class="input secondary mt-1 w-full rounded-lg"><option value="blue_green" @selected($environment->deployment_strategy === 'blue_green')>{{ __('Blue/green atomic switch') }}</option><option value="canary" @selected($environment->deployment_strategy === 'canary')>{{ __('Canary candidate validation') }}</option><option value="rolling" @selected($environment->deployment_strategy === 'rolling')>{{ __('Rolling worker restart') }}</option></select></label><p class="mt-2 text-xs leading-5 text-secondary">{{ __('Blue/green atomically switches release directories. Canary sends loopback HTTP requests to the candidate before the switch. Rolling keeps replicated workers available while restarting them one at a time; web traffic still switches atomically.') }}</p></div>
-                                <label><span class="block text-xs font-bold uppercase text-secondary">{{ __('Pause between rolling workers') }}</span><select name="rolling_pause_seconds" class="input secondary mt-1 w-full rounded-lg">@foreach([0,1,2,5,10,30] as $seconds)<option value="{{ $seconds }}" @selected((int) $environment->rolling_pause_seconds === $seconds)>{{ trans_choice(':count second|:count seconds', $seconds, ['count' => $seconds]) }}</option>@endforeach</select></label>
-                                <label class="flex items-start gap-3 rounded-xl border border-primary bg-secondary p-3"><input type="hidden" name="automatic_rollback" value="0"><input type="checkbox" name="automatic_rollback" value="1" class="mt-1" @checked($environment->automatic_rollback)><span><span class="block text-sm font-bold text-primary">{{ __('Automatic rollback') }}</span><span class="text-xs leading-5 text-secondary">{{ __('If an activated release fails, immediately switch back to the most recent retained successful release.') }}</span></span></label>
-                                <x-forms.errors name="deployment_window_days" /><x-forms.errors name="deployment_window_start" /><x-forms.errors name="deployment_window_end" /><x-forms.errors name="deployment_window_timezone" />
-                                <x-ui.button type="submit" variant="primary">{{ __('Save deployment controls') }}</x-ui.button>
-                            </form>
-                        @endcan
-                    </details>
+                    <section id="environment-{{ $environment->id }}-deployment-controls" class="bg-primary p-5" aria-labelledby="environment-{{ $environment->id }}-deployment-controls-heading">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 id="environment-{{ $environment->id }}-deployment-controls-heading" class="font-bold text-primary">{{ __('Deployment controls') }}</h3>
+                                <div class="mt-2 flex flex-wrap gap-2 text-xs"><x-ui.badge :tone="$environment->deployment_locked_at ? 'danger' : 'success'">{{ $environment->deployment_locked_at ? __('Locked') : __('Unlocked') }}</x-ui.badge>@if($environment->deployment_window_days)<x-ui.badge tone="neutral">{{ __('Maintenance window active') }}</x-ui.badge>@endif<x-ui.badge tone="neutral">{{ str($environment->deployment_strategy ?: 'blue_green')->replace('_', ' ')->title() }}</x-ui.badge></div>
+                            </div>
+                            @can('update', $environment)
+                                <x-ui.button :href="$deploymentControlsDialogUrl" data-modal-trigger="{{ $deploymentControlsDialogId }}" aria-controls="{{ $deploymentControlsDialogId }}" aria-expanded="{{ $deploymentControlsDialogOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit controls') }}</x-ui.button>
+                            @endcan
+                        </div>
+                    </section>
+                    @can('update', $environment)
+                        <x-scenes.projects.deployment-controls-dialog
+                            :environment="$environment"
+                            :open="$deploymentControlsDialogOpen"
+                        />
+                    @endcan
 
                     <details id="environment-{{ $environment->id }}-runtime-capacity" class="group bg-primary p-5">
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Runtime capacity') }}</span><span class="text-secondary group-open:rotate-45">+</span></summary>
