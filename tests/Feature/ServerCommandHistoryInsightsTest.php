@@ -47,6 +47,26 @@ class ServerCommandHistoryInsightsTest extends TestCase
             ->assertDontSee('other-output-secret');
     }
 
+    public function test_command_history_fragment_reuses_server_scoping_for_the_read_only_dialog(): void
+    {
+        [$owner, $server] = $this->resources();
+        $execution = $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'uptime', 'output-secret');
+
+        $response = $this->actingAs($owner)->get(route('servers.commands.index', [
+            'server' => $server,
+            'fragment' => 'server-command-history',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.servers.command-history-content')
+            ->assertSee('data-command-execution', false)
+            ->assertSee('uptime')
+            ->assertSee(route('servers.commands.output', ['server' => $server, 'execution' => $execution]))
+            ->assertDontSee('output-secret')
+            ->assertDontSee('<html', false);
+    }
+
     public function test_metrics_apply_status_and_queued_date_filters(): void
     {
         [$owner, $server] = $this->resources();

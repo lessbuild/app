@@ -26,16 +26,29 @@ class ServerCommandsController extends Controller
     {
         $this->authorize('view', $server);
         $filters = $this->filters($request);
-
-        return view('scenes.servers.commands', [
+        $isFragment = $request->string('fragment')->toString() === 'server-command-history';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'server-command-history';
+        }
+        $executions = $this->filteredExecutions($server, $filters)
+            ->with('rerunFrom:id')
+            ->latest('id')
+            ->paginate($isFragment ? 10 : 25, pageName: $isFragment ? 'command_history_page' : 'page')
+            ->appends($paginationQuery);
+        $viewData = [
             'server' => $server,
-            'executions' => $this->filteredExecutions($server, $filters)
-                ->with('rerunFrom:id')
-                ->latest('id')
-                ->paginate(25)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'executions' => $executions,
             'filters' => $filters,
             'metrics' => $this->metrics($server, $filters),
+        ];
+
+        if ($isFragment) {
+            return view('components.scenes.servers.command-history-content', $viewData);
+        }
+
+        return view('scenes.servers.commands', [
+            ...$viewData,
             'statuses' => ServerCommandExecution::STATUSES,
         ]);
     }

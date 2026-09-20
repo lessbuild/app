@@ -3,6 +3,7 @@
 use App\Models\Build;
 use App\Models\Recipe;
 use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\ApplicationConfigurationReconciler;
@@ -156,7 +157,19 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/server-show.html', $this->renderPage(route('servers.show', $server))->assertOk()
-            ->assertSee('data-modal-trigger="server-display-name-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="server-display-name-dialog"', false)
+            ->assertSee('data-modal-trigger="server-command-history-dialog"', false)->getContent());
+        $server->commandExecutions()->create([
+            'user_id' => $owner->id,
+            'command' => 'uname -a',
+            'status' => ServerCommandExecution::STATUS_SUCCEEDED,
+            'output' => 'fixture command output',
+            'finished_at' => now(),
+        ]);
+        File::put($directory.'/server-command-history.html', $this->renderPage(route('servers.commands.index', [
+            'server' => $server,
+            'fragment' => 'server-command-history',
+        ]))->assertOk()->assertSee('data-command-execution', false)->getContent());
         File::put($directory.'/server-show-edit-dialog.html', $this->renderPage(route('servers.show', [
             'server' => $server,
             'dialog' => 'edit-display-name',

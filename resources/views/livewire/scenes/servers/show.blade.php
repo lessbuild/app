@@ -2,6 +2,12 @@
     $displayNameDialogOpen = request()->query('dialog') === 'edit-display-name'
         || $errors->has('display_name');
     $displayNameDialogUrl = route('servers.show', ['server' => $server, 'dialog' => 'edit-display-name']);
+    $commandHistoryDialogOpen = request()->query('dialog') === 'server-command-history';
+    $commandHistoryDialogUrl = route('servers.show', ['server' => $server, 'dialog' => 'server-command-history']);
+    $commandHistoryContentUrl = route('servers.commands.index', [
+        'server' => $server,
+        'fragment' => 'server-command-history',
+    ]);
 @endphp
 
 <div @if ($shouldPoll) wire:poll.5s @endif>
@@ -61,7 +67,15 @@
                 {{ __('Edit Display Name') }}
             </x-ui.button>
 
-            <x-ui.button :href="route('servers.commands.index', $server)" variant="secondary">
+            <x-ui.button
+                :href="route('servers.commands.index', $server)"
+                data-modal-trigger="server-command-history-dialog"
+                data-modal-content-url="{{ $commandHistoryContentUrl }}"
+                data-modal-history-url="{{ $commandHistoryDialogUrl }}"
+                aria-controls="server-command-history-dialog"
+                aria-expanded="{{ $commandHistoryDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#clock"></use>
                 </svg>
@@ -97,6 +111,19 @@
     </x-layouts.partials.heading>
 
     <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
+
+    <x-dialogs.modal
+        id="server-command-history-dialog"
+        :title="__('Command history')"
+        :description="__('Review recent server commands without leaving this server.')"
+        :open="$commandHistoryDialogOpen"
+        body-class="p-0"
+        wire:ignore
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading command history…') }}</p>
+        </div>
+    </x-dialogs.modal>
 
     @if ($server->provisioning_status === \App\Models\Server::STATUS_FAILED)
         <x-ui.alert tone="danger" class="my-4">

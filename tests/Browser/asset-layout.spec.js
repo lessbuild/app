@@ -36,6 +36,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const providerConnectionChecksPage = /^\/providers\/\d+\/connection-checks$/.test(pathname);
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         const serverPage = /^\/servers\/\d+$/.test(pathname);
+        const serverCommandsPage = /^\/servers\/\d+\/commands$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
         const projectPage = /^\/projects\/\d+$/.test(pathname);
@@ -61,7 +62,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
@@ -70,6 +71,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'provider-connection-checks'
                         : repositoryPage
                             ? 'repository-show'
+                        : serverCommandsPage
+                            ? 'server-commands'
                                 : serverPage
                                     ? 'server-show'
                             : websitePage
@@ -85,6 +88,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
             const fragment = new URL(route.request().url()).searchParams.get('fragment');
             const fixtureName = screen === 'builds' && fragment === 'deployment-history'
                 ? 'website-deployment-history'
+                : screen === 'server-commands' && fragment === 'server-command-history'
+                    ? 'server-command-history'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -440,6 +445,29 @@ test('website deployment history opens as a contextual timeline', async ({ page 
     expect(new URL(page.url()).pathname).toBe(initialPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('website-deployment-history');
     await expect(dialog.getByRole('link', { name: 'Open full history', exact: true })).toHaveAttribute('href', /builds\?website_id=/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+});
+
+test('server command history opens as a read-only contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/servers/1', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Command History', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Command history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-command-execution]')).toBeVisible();
+    await expect(dialog.getByText('uname -a', { exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'Download output', exact: true })).toBeVisible();
+    await expect(dialog).not.toContainText('fixture command output');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('server-command-history');
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();

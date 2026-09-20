@@ -252,13 +252,76 @@ query and policy boundaries.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `8339d5e Show website deployment history in a dialog`.
 
 ### Exact next task
 
 After this slice is committed and pushed, inspect bounded server command/task
 output and report-status links for the next read-only contextual inspector.
 Keep remote execution, retry, provisioning and report mutations explicit.
+
+## Slice 6 — server command-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The server detail page sent users to the full command center just to inspect
+recent execution state or retrieve retained output. That was a costly context
+switch, but the command center also contains cancel, rerun and delete actions
+that must remain explicit workflows. The right boundary is a read-only
+history/output inspector, not a modal copy of the command center.
+
+### Boundaries and benefit
+
+- `ServerCommandsController::index()` remains the authorized, server-scoped
+  history read boundary and now serves a body-only
+  `fragment=server-command-history` response.
+- The fragment reuses the existing command filters, metrics and ownership
+  checks, but intentionally renders only bounded metadata and output-download
+  links.
+- The Livewire server detail view owns the trigger and a `wire:ignore` modal
+  shell so server polling cannot replace the read-only dialog contents.
+- Remote command execution remains in the existing Livewire command component;
+  cancel, rerun and delete remain on the full history page.
+
+This separates inspection from operation while preserving the existing action,
+authorization and queue boundaries.
+
+### Preserved behavior and safety
+
+- The full command-history page, filters, pagination, export, cancel, rerun,
+  deletion and download routes remain unchanged for normal requests.
+- Fragment requests authorize before querying and remain scoped to the exact
+  server; command text is escaped and retained output is not rendered inline.
+- Opening the modal does not execute, cancel, rerun or delete a command and
+  does not expose output to the page; existing download authorization remains
+  the boundary for retrieving it.
+- JavaScript-disabled users retain the original command-history URL.
+- The modal works alongside Livewire's polling without making the modal itself
+  a Livewire state-changing surface.
+
+### Verification
+
+- Server command-history regression: **4 tests / 28 assertions passed**.
+- Pint on changed PHP files: passed.
+- Vite assets were already built for this Blade-only slice; no asset source
+  changed.
+- Focused browser test: **1 test passed in 1.6 minutes** using PHP 8.5.10;
+  verified command metadata, download-link presence, output non-disclosure,
+  contextual URL stability and focus restoration.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+After this slice is committed and pushed, inspect scheduled-task output and
+report-status/notification destinations for one more bounded read-only
+inspector. Keep task execution, retry, incident changes and report mutations
+as explicit workflows.
 
 ## Slice 2 — shared workspace search
 
