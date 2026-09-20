@@ -747,7 +747,7 @@ authorized fragment and a useful full-page fallback.
 
 ## Slice 14 — observability health-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 4bb3538.
 
 ### Responsibility problem
 
@@ -793,11 +793,11 @@ queries or weakening the website policy check.
   8.5.10; verified the canonical context path, lazy health fragment loading,
   URL stability, deep-link opening, Escape and focus restoration.
 - Browser fixture export passed as part of the focused journey.
-- `git diff --check`: pending final commit check.
+- `git diff --check`: passed before commit.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `4bb3538 Open observability health history in a dialog`.
 
 ### Exact next task
 
