@@ -685,7 +685,7 @@ response actions explicit.
 
 ## Slice 12 — build health-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 5ec64fd.
 
 ### Responsibility problem
 
@@ -730,11 +730,11 @@ implementation.
 - Focused browser journey: **1 test passed in 45.9 seconds** using PHP
   8.5.10; verified lazy health-history loading, contextual URL stability,
   direct dialog opening, Escape and focus restoration.
-- `git diff --check`: pending final commit check.
+- `git diff --check`: passed before commit.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `5ec64fd Open build health history in a dialog`.
 
 ### Exact next task
 
