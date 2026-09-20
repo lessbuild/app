@@ -21,12 +21,15 @@ test.beforeAll(() => {
 test.afterAll(() => fs.rmSync(fixtures, { recursive: true, force: true }));
 
 /** Fulfill every request locally so fixture actions can never contact real services. */
-async function serveFixtures(page) {
+async function serveFixtures(page, { delays = {} } = {}) {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/build/manifest.json'), 'utf8'));
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
+        if (delays[pathname]) {
+            await new Promise((resolve) => setTimeout(resolve, delays[pathname]));
+        }
         const galleryPage = /^\/gallery\/\d+$/.test(pathname);
         const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
         const providerPage = /^\/providers\/\d+$/.test(pathname);
@@ -373,7 +376,7 @@ test('gallery publishing and script inspection use accessible dialogs', async ({
 
 test('mobile forms keep focused fields reachable and lazy dialog content exposes busy state', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await serveFixtures(page);
+    await serveFixtures(page, { delays: { '/gallery/1/script': 500 } });
     await page.goto('http://buildpusher.test/provider-create', { waitUntil: 'networkidle' });
 
     const token = page.locator('#token');
@@ -382,13 +385,6 @@ test('mobile forms keep focused fields reachable and lazy dialog content exposes
     await expect(page.locator('#provider-errors')).toHaveCount(0);
 
     await page.goto('http://buildpusher.test/gallery', { waitUntil: 'networkidle' });
-    await page.route('**/gallery/1/script', async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await route.fulfill({
-            contentType: 'text/html',
-            body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')),
-        });
-    });
 
     const inspectTrigger = page.getByRole('link', { name: 'Inspect script', exact: true }).first();
     await inspectTrigger.click();
