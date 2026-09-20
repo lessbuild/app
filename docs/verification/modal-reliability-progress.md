@@ -83,6 +83,66 @@ reduces context switching—especially incident/event/webhook delivery details�
 while keeping backup restores, remote tests, provisioning, terminals and other
 destructive or externally stateful workflows as explicit pages/actions.
 
+## Slice 27 — repository webhook-delivery inspector
+
+Status: complete; implementation commit and ledger commit are being finalized
+and will be pushed separately.
+
+### Responsibility problem
+
+Repository webhook history showed status, revision and a truncated commit
+message, but investigating why a delivery was skipped, superseded or
+unavailable required leaving the repository context. The accepted delivery
+record already retained changed paths and the associated build outcome; showing
+those values inline for every row would make the mobile history substantially
+longer and would not improve the normal scan.
+
+### Boundaries and benefit
+
+- `RepositoriesController::show()` remains the authorized parent boundary and
+  serves a body-only `fragment=webhook-delivery` response after scoping the
+  delivery through the repository relationship.
+- The repository view owns one lazy dialog and per-delivery history links,
+  preserving its existing filters, pagination and export controls.
+- `webhook-delivery-content` owns only read-only evidence presentation:
+  normalized status explanation, revision/build links, timestamps, commit text
+  and changed paths.
+- Webhook settings, deployment, exports and any future retry/replay operation
+  remain explicit workflows outside the inspector.
+
+This applies single responsibility at the read/presentation boundary and
+reuses the existing repository policy and delivery model without adding a
+generic event repository or a second delivery query abstraction.
+
+### Preserved behavior and safety
+
+- Repository authorization runs before both full-page dialog state and the
+  fragment. A delivery from another repository remains a 404, an intruder
+  remains forbidden, and an unknown delivery remains a 404.
+- The normal repository page, filters, ordering, pagination, export CSV and
+  webhook-settings form remain available without JavaScript.
+- Source-control payloads, signing secrets and provider credentials are not
+  exposed. Commit text and changed paths remain escaped, and the inspector
+  performs no remote call or state mutation.
+- Direct dialog URLs can open records outside the current filtered page through
+  the safe hidden trigger fallback; closing restores the repository context.
+
+### Verification
+
+- Repository webhook delivery regression: **7 tests / 97 assertions passed**.
+- Isolated browser fixture export: **1 test / 275 assertions passed**.
+- Focused Playwright delivery-inspector journey: **1 test passed in 1.2 minutes**
+  with PHP 8.5.10; verified same-page opening, lazy content, Escape/focus
+  restoration and direct dialog opening.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Audit observability incident and environment-evidence links next. Keep
+acknowledge, assign, note, resolve and other state-changing incident controls
+explicit; add a modal only if a bounded read-only evidence view removes context
+switching without nesting those workflows.
+
 ## Slice 1 — shared filter and modal lifecycle reliability
 
 Status: complete; committed and pushed as `3e69b7b`.
