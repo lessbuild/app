@@ -683,6 +683,64 @@ Audit notification destinations, observability evidence links and remaining
 read-only product pages; keep notification read-state changes and incident
 response actions explicit.
 
+## Slice 15 — account audit inspector
+
+Status: complete; committed and pushed as 10510fc.
+
+### Responsibility problem
+
+The account security section’s “View full account audit” link left account
+settings for the full activity page, even though the first useful view is a
+small, read-only owner-scoped security summary. That navigation was especially
+costly on mobile and duplicated the context switch already solved for sign-in
+history.
+
+### Boundaries and benefit
+
+- `ActivityController` remains the authorized activity read boundary and now
+  serves the `fragment=account-audit` representation as well as the existing
+  full page.
+- The account view owns the trigger and dialog shell; the audit partial owns
+  the compact summary, feed and links back to full filtering/export.
+- The existing activity query, metrics, owner scoping, pagination and audit
+  entitlement are reused. No generic audit repository or second query path was
+  introduced.
+- Notification “View and mark read” links remain excluded because they mutate
+  read state and intentionally redirect to a different workflow.
+
+### Preserved behavior and safety
+
+- Account activity remains owner-scoped and excludes credential, provider
+  identity, session and network details.
+- The direct full activity URL remains the no-JavaScript fallback, while the
+  account URL receives bookmarkable dialog state.
+- Pagination and full-audit/export links retain their existing filters and
+  entitlement behavior.
+- Opening the inspector is a GET-only read and creates no activity, jobs or
+  other side effects.
+
+### Verification
+
+- Activity, insights and account-security regression: **20 tests / 160
+  assertions passed**.
+- PHP syntax checks, Pint and Node syntax check: passed.
+- Focused browser journey: **1 test passed in 1.5 minutes** using PHP 8.5.10;
+  verified mobile opening, lazy fragment loading, URL stability, deep-link
+  opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+- `git diff --check`: passed before commit.
+
+### Commit and push
+
+Commit and push: `10510fc Open account audit in a dialog`.
+
+### Exact next task
+
+Audit notification destinations and remaining read-only product links. Keep
+notification read-state transitions, runtime log access and incident response
+actions explicit unless a separate bounded read fragment can preserve their
+security and fallback semantics.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
