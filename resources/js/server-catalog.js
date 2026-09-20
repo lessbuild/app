@@ -62,3 +62,7 @@ const initialiseCatalog = (container) => {
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-server-catalog]').forEach(initialiseCatalog)
 })
+
+document.addEventListener('modal:content-loaded', (event) => {
+    event.detail?.content?.querySelectorAll('[data-server-catalog]').forEach(initialiseCatalog)
+})

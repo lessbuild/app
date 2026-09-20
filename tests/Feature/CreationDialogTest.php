@@ -173,6 +173,63 @@ class CreationDialogTest extends TestCase
             ->assertSessionHasErrors(['provider', 'token', 'name', 'description']);
     }
 
+    public function test_shared_creation_dialog_endpoint_returns_only_the_requested_form_for_the_current_page(): void
+    {
+        $user = User::factory()->create();
+        $returnUrl = route('activity.index', ['category' => 'account']);
+
+        foreach (['provider', 'server', 'website', 'repository'] as $resource) {
+            $response = $this->actingAs($user)->get(route('dialogs.create', [
+                'resource' => $resource,
+                'return_to' => $returnUrl,
+            ]));
+
+            $response
+                ->assertOk()
+                ->assertDontSee('<html', false)
+                ->assertSee($returnUrl, false);
+        }
+    }
+
+    public function test_provider_show_creation_links_open_repository_and_server_dialogs_in_place(): void
+    {
+        $user = User::factory()->create();
+        $provider = $user->providers()->create([
+            'name' => 'DigitalOcean',
+            'provider' => Provider::TYPE_DIGITALOCEAN,
+            'token' => 'provider-secret',
+            'description' => 'Cloud provider',
+        ]);
+
+        $pageUrl = route('providers.show', $provider);
+
+        $this->actingAs($user)
+            ->get($pageUrl)
+            ->assertOk()
+            ->assertSee('href="'.route('providers.show', ['provider' => $provider, 'dialog' => 'create-repository']).'"', false)
+            ->assertSee('data-modal-trigger="repository-create-dialog"', false)
+            ->assertSee('href="'.route('providers.show', ['provider' => $provider, 'dialog' => 'create-server']).'"', false)
+            ->assertSee('data-modal-trigger="server-create-dialog"', false);
+    }
+
+    public function test_direct_current_page_creation_urls_render_the_form_for_no_javascript_fallbacks(): void
+    {
+        $user = User::factory()->create();
+        $provider = $user->providers()->create([
+            'name' => 'GitHub',
+            'provider' => Provider::TYPE_GITHUB,
+            'token' => 'provider-secret',
+            'description' => 'Source provider',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('providers.show', ['provider' => $provider, 'dialog' => 'create-repository']))
+            ->assertOk()
+            ->assertSee('id="repository-create-dialog"', false)
+            ->assertSee('action="'.route('repositories.store', ['dialog' => 'create-repository']).'"', false)
+            ->assertSee('id="repository-create-name"', false);
+    }
+
     public function test_the_provider_show_page_hosts_its_edit_dialog_when_requested(): void
     {
         $user = User::factory()->create();
@@ -205,6 +262,19 @@ class CreationDialogTest extends TestCase
             ->assertSee('data-modal-trigger="repository-edit-dialog"', false)
             ->assertSee('action="'.route('repositories.update', ['repository' => $repository, 'dialog' => 'edit-repository']).'"', false)
             ->assertSee('for="repository-edit-provider_id"', false);
+    }
+
+    public function test_repository_show_hosts_the_linked_website_editor_in_place(): void
+    {
+        [$user, $repository] = $this->repository();
+        $dialogUrl = route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-website']);
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('id="website-edit-dialog"', false)
+            ->assertSee('action="'.route('websites.update', ['website' => $repository->website, 'dialog' => 'edit-website']).'"', false)
+            ->assertSee('data-modal-trigger="website-edit-dialog"', false);
     }
 
     public function test_the_website_show_page_hosts_its_edit_dialog_when_requested(): void

@@ -104,6 +104,9 @@ class RecipeGalleryController extends Controller
             ->latest('id')
             ->first();
         $installedRecipe?->setRelation('source', $recipe);
+        if ($request->query('dialog') === 'edit-recipe' && $installedRecipe) {
+            $this->authorize('update', $installedRecipe);
+        }
 
         return view('scenes.gallery.show', [
             'recipe' => $recipe,

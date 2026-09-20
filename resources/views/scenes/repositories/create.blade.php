@@ -1,4 +1,11 @@
 <x-layouts.app>
+    @php
+        $repositoryCreatePageUrl = request()->fullUrlWithoutQuery('dialog');
+        $providerCreateUrl = (string) \Illuminate\Support\Uri::of($repositoryCreatePageUrl)->withQuery(['dialog' => 'create-provider']);
+        $providerCreateContentUrl = route('dialogs.create', ['resource' => 'provider', 'return_to' => $repositoryCreatePageUrl]);
+        $websiteCreateUrl = (string) \Illuminate\Support\Uri::of($repositoryCreatePageUrl)->withQuery(['dialog' => 'create-website']);
+        $websiteCreateContentUrl = route('dialogs.create', ['resource' => 'website', 'return_to' => $repositoryCreatePageUrl]);
+    @endphp
 
     <!--
      ! ------------------------------------------------------------
@@ -19,7 +26,7 @@
         <div class="my-4">
             <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You must add a source control provider before you can add a repository') }}</p>
-                <x-ui.button :href="route('providers.index', ['dialog' => 'create-provider'])" variant="secondary">{{ __('Add source provider') }}</x-ui.button>
+                <x-ui.button :href="$providerCreateUrl" data-modal-trigger="provider-create-dialog" data-modal-content-url="{{ $providerCreateContentUrl }}" aria-controls="provider-create-dialog" aria-expanded="false" variant="secondary">{{ __('Add source provider') }}</x-ui.button>
             </x-ui.alert>
         </div>
     @endif
@@ -33,7 +40,7 @@
         <div class="my-4">
             <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You need an active website before you can add a repository') }}</p>
-                <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="secondary">{{ __('Create Website') }}</x-ui.button>
+                <x-ui.button :href="$websiteCreateUrl" data-modal-trigger="website-create-dialog" data-modal-content-url="{{ $websiteCreateContentUrl }}" aria-controls="website-create-dialog" aria-expanded="false" variant="secondary">{{ __('Create Website') }}</x-ui.button>
             </x-ui.alert>
         </div>
     @endif

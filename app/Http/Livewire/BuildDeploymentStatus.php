@@ -41,6 +41,28 @@ class BuildDeploymentStatus extends Component
             ->where('type', Build::DEPLOYMENT_LOG_TYPE)
             ->first();
 
+        $repositoryEditOpen = request()->query('dialog') === 'edit-repository';
+        $websiteEditOpen = request()->query('dialog') === 'edit-website';
+        $repositoryProviders = null;
+        $repositoryWebsites = null;
+        $websiteServers = null;
+        if ($repositoryEditOpen) {
+            $repositoryProviders = request()->user()->workspaceProviders()
+                ->forRepositories()
+                ->orderBy('name')
+                ->get();
+            $repositoryWebsites = request()->user()->workspaceWebsites()
+                ->readyForDeployments()
+                ->orderBy('name')
+                ->get();
+        }
+        if ($websiteEditOpen) {
+            $websiteServers = request()->user()->workspaceServers()
+                ->readyForWebsites()
+                ->orderBy('name')
+                ->get();
+        }
+
         return view('livewire.build-deployment-status', [
             'deploymentLog' => $log,
             'previousBuild' => $this->build->previousInRepository(),
@@ -56,6 +78,11 @@ class BuildDeploymentStatus extends Component
             'deploymentTimeline' => $timeline->for($this->build),
             'deploymentObservation' => $this->build->deploymentObservation,
             'website' => $this->build->repository->website,
+            'repositoryEditOpen' => $repositoryEditOpen,
+            'repositoryProviders' => $repositoryProviders,
+            'repositoryWebsites' => $repositoryWebsites,
+            'websiteEditOpen' => $websiteEditOpen,
+            'websiteServers' => $websiteServers,
         ]);
     }
 }

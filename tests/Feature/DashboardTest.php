@@ -287,10 +287,10 @@ class DashboardTest extends TestCase
         $this->assertStringContainsString('id="setup-tab-provider"', $content);
         $this->assertStringContainsString('id="setup-panel-provider"', $content);
         $this->assertStringContainsString('x-show="activeSetupStep ===', $content);
-        $this->assertStringContainsString('href="'.route('providers.index', ['dialog' => 'create-provider']).'"', $content);
-        $this->assertStringContainsString('href="'.route('servers.index', ['dialog' => 'create-server']).'"', $content);
-        $this->assertStringContainsString('href="'.route('websites.index', ['dialog' => 'create-website']).'"', $content);
-        $this->assertStringContainsString('href="'.route('repositories.index', ['dialog' => 'create-repository']).'"', $content);
+        $this->assertStringContainsString('href="'.route('dashboard', ['dialog' => 'create-provider']).'"', $content);
+        $this->assertStringContainsString('href="'.route('dashboard', ['dialog' => 'create-server']).'"', $content);
+        $this->assertStringContainsString('href="'.route('dashboard', ['dialog' => 'create-website']).'"', $content);
+        $this->assertStringContainsString('href="'.route('dashboard', ['dialog' => 'create-repository']).'"', $content);
     }
 
     public function test_dashboard_setup_progresses_in_dependency_order_and_hides_after_a_successful_deployment(): void

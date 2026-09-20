@@ -1,5 +1,7 @@
 <div @if ($shouldPoll) wire:poll.5s @endif>
     @php
+        $repositoryEditUrl = route('builds.show', ['build' => $build, 'dialog' => 'edit-repository']);
+        $websiteEditUrl = route('builds.show', ['build' => $build, 'dialog' => 'edit-website']);
         $statusTone = match ($build->status) {
             \App\Models\Build::STATUS_SUCCEEDED => 'success',
             \App\Models\Build::STATUS_FAILED, \App\Models\Build::STATUS_REJECTED => 'danger',
@@ -65,7 +67,7 @@
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
                     <div class="rounded-lg bg-secondary p-3"><dt class="text-xs font-semibold uppercase text-secondary">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-primary">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
                 </dl>
-                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="route('repositories.show', ['repository' => $build->repository, 'dialog' => 'edit-repository'])" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
+                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="$repositoryEditUrl" data-modal-trigger="repository-edit-dialog" aria-controls="repository-edit-dialog" aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
             </section>
         @endif
         @if ($rollbackCandidate)
@@ -473,7 +475,7 @@
         @endif
         <section class="ui-card mt-4 p-5" aria-labelledby="deployment-health-title">
             <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-1 text-lg font-black text-primary">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-secondary">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><x-ui.badge :tone="$website->health_status === 'healthy' ? 'success' : ($website->health_status === 'unhealthy' ? 'danger' : 'neutral')">{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</x-ui.badge></div>
-            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" variant="secondary">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="route('websites.show', ['website' => $website, 'dialog' => 'edit-website'])" variant="secondary">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
+            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" variant="secondary">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
         </section>
     @endif
 
@@ -532,4 +534,23 @@
             @endif
         </section>
     </details>
+
+    @if ($repositoryEditOpen)
+        <x-scenes.repositories.edit-dialog
+            :repository="$build->repository"
+            :providers="$repositoryProviders"
+            :websites="$repositoryWebsites"
+            :open="$repositoryEditOpen"
+            :cancel-url="route('builds.show', $build)"
+        />
+    @endif
+
+    @if ($websiteEditOpen)
+        <x-scenes.websites.edit-dialog
+            :website="$website"
+            :servers="$websiteServers"
+            :open="$websiteEditOpen"
+            :cancel-url="route('builds.show', $build)"
+        />
+    @endif
 </div>

@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $galleryReportsPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $recipeEditDialogId = 'gallery-reports-recipe-edit-dialog';
+        $recipeEditOpen = $editingRecipe !== null;
+    @endphp
+
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
 
     <x-layouts.partials.heading
@@ -185,8 +191,16 @@
                                 >{{ str($report->reason)->headline() }}</x-ui.badge>
                                 <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
                             </div>
+                            @php
+                                $reportRecipeEditKey = 'edit-recipe-'.$report->recipe->id;
+                                $reportRecipeEditUrl = (string) \Illuminate\Support\Uri::of($galleryReportsPageUrl)->withQuery(['dialog' => $reportRecipeEditKey]);
+                            @endphp
                             <h2 class="mt-3 text-lg font-bold text-primary">
-                                <a href="{{ $report->recipe->is_published ? route('gallery.show', $report->recipe) : route('recipes.show', ['recipe' => $report->recipe, 'dialog' => 'edit-recipe']) }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                @if ($report->recipe->is_published)
+                                    <a href="{{ route('gallery.show', $report->recipe) }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                @else
+                                    <a href="{{ $reportRecipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen && $editingRecipe->id === $report->recipe->id ? 'true' : 'false' }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                @endif
                             </h2>
                             <p class="mt-1 text-xs text-secondary">
                                 {{ str($report->recipe->category)->headline() }}
@@ -253,5 +267,15 @@
             {{ $reports->links() }}
         </div>
         </div>
+    @endif
+
+    @if ($editingRecipe)
+        <x-scenes.recipes.edit-dialog
+            :id="$recipeEditDialogId"
+            :recipe="$editingRecipe"
+            :open="$recipeEditOpen"
+            :cancel-url="$galleryReportsPageUrl"
+            field-prefix="gallery-reports-recipe-edit-"
+        />
     @endif
 </x-layouts.app>

@@ -1,4 +1,9 @@
 <x-layouts.app>
+    @php
+        $repositoryEditPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $providerCreateUrl = (string) \Illuminate\Support\Uri::of($repositoryEditPageUrl)->withQuery(['dialog' => 'create-provider']);
+        $providerCreateContentUrl = route('dialogs.create', ['resource' => 'provider', 'return_to' => $repositoryEditPageUrl]);
+    @endphp
 
     <!--
      ! ------------------------------------------------------------
@@ -19,7 +24,7 @@
         <div class="my-4">
             <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You must add a provider before you can add a repository') }}</p>
-                <x-ui.button :href="route('providers.index', ['dialog' => 'create-provider'])" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
+                <x-ui.button :href="$providerCreateUrl" data-modal-trigger="provider-create-dialog" data-modal-content-url="{{ $providerCreateContentUrl }}" aria-controls="provider-create-dialog" aria-expanded="false" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
             </x-ui.alert>
         </div>
     @endif

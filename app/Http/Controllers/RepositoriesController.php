@@ -112,8 +112,10 @@ class RepositoriesController extends Controller
             ? $guidance->for($repository, $environment, $request->user(), $deploymentPreflight)
             : null;
         $editDialogOpen = $request->query('dialog') === 'edit-repository';
+        $websiteEditDialogOpen = $request->query('dialog') === 'edit-website';
         $providers = null;
         $websites = null;
+        $websiteEditServers = null;
         if ($editDialogOpen) {
             $providers = $request->user()->workspaceProviders()
                 ->forRepositories()
@@ -124,12 +126,20 @@ class RepositoriesController extends Controller
                 ->orderBy('name')
                 ->get();
         }
+        if ($websiteEditDialogOpen) {
+            $websiteEditServers = $request->user()->workspaceServers()
+                ->readyForWebsites()
+                ->orderBy('name')
+                ->get();
+        }
 
         return view('scenes.repositories.show', [
             'repository' => $repository,
             'editDialogOpen' => $editDialogOpen,
+            'websiteEditDialogOpen' => $websiteEditDialogOpen,
             'providers' => $providers,
             'websites' => $websites,
+            'websiteEditServers' => $websiteEditServers,
             'builds' => $repository->builds()->latest()->limit(10)->get(),
             'deploymentMetrics' => $deploymentInsights->metrics($repository),
             'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters)

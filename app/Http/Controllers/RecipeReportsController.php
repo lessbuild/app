@@ -114,6 +114,7 @@ class RecipeReportsController extends Controller
     {
         $filters = $request->filters();
         $query = $this->reportQuery->forContributor($request->user(), $filters);
+        $editingRecipe = $this->editingRecipe($request);
 
         return view('scenes.gallery.reports', [
             'reports' => $this->reportQuery->ordered(
@@ -126,6 +127,7 @@ class RecipeReportsController extends Controller
                 ->withQueryString(),
             'filters' => $filters,
             'reasons' => RecipeReport::REASONS,
+            'editingRecipe' => $editingRecipe,
             'metrics' => [
                 'matching' => (clone $query)->count(),
                 'unresolved' => (clone $query)->whereNull('resolved_at')->count(),
@@ -133,6 +135,31 @@ class RecipeReportsController extends Controller
                 'recipes' => (clone $query)->distinct()->count('recipe_id'),
             ],
         ]);
+    }
+
+    /**
+     * Resolve only the explicitly requested contributor recipe for the page-local editor.
+     */
+    private function editingRecipe(RecipeReportInboxRequest $request): ?Recipe
+    {
+        $dialog = $request->query('dialog');
+        if (! is_string($dialog) || ! str_starts_with($dialog, 'edit-recipe-')) {
+            return null;
+        }
+
+        $recipeId = str($dialog)->after('edit-recipe-')->toString();
+        if ($recipeId === '' || ! ctype_digit($recipeId)) {
+            return null;
+        }
+
+        $recipe = $request->user()->workspaceRecipes()
+            ->with([
+                'source' => fn ($source) => $source->published()->with('user:id,name'),
+            ])
+            ->findOrFail((int) $recipeId);
+        $this->authorize('update', $recipe);
+
+        return $recipe;
     }
 
     /**

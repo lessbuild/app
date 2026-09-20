@@ -1,4 +1,11 @@
 <x-layouts.app>
+    @php
+        $galleryComparePageUrl = request()->fullUrlWithoutQuery('dialog');
+        $recipeEditDialogId = 'gallery-compare-recipe-edit-dialog';
+        $recipeEditOpen = request()->query('dialog') === 'edit-recipe';
+        $recipeEditUrl = (string) \Illuminate\Support\Uri::of($galleryComparePageUrl)->withQuery(['dialog' => 'edit-recipe']);
+    @endphp
+
     <x-layouts.partials.breadcrumbs
         :route="route('gallery.show', $recipe)"
         :title="__('Back to gallery recipe')"
@@ -9,7 +16,7 @@
         :description="$recipe->name"
     >
         <x-slot:buttons>
-            <x-ui.button href="{{ route('recipes.show', ['recipe' => $copy, 'dialog' => 'edit-recipe']) }}" variant="secondary">{{ __('Edit My Copy') }}</x-ui.button>
+            <x-ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit My Copy') }}</x-ui.button>
             @if ($copy->hasGalleryUpdate() && ! $copy->is_published)
                 <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $copy->name])) }})">
                     @csrf
@@ -72,4 +79,12 @@
             <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
         </x-ui.card>
     </div>
+
+    <x-scenes.recipes.edit-dialog
+        :id="$recipeEditDialogId"
+        :recipe="$copy"
+        :open="$recipeEditOpen"
+        :cancel-url="$galleryComparePageUrl"
+        field-prefix="gallery-compare-recipe-edit-"
+    />
 </x-layouts.app>

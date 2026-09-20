@@ -1,4 +1,10 @@
 <x-layouts.app>
+    @php
+        $projectPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
+        $websiteCreateOpen = request()->query('dialog') === 'create-website';
+    @endphp
+
     <x-layouts.partials.breadcrumbs :route="route('projects.index')" :title="__('Back to applications')" />
 
     <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
@@ -78,6 +84,22 @@
                 $processDialogKey = 'add-process-'.$environment->id;
                 $processDialogOpen = $canUpdateEnvironment && $featureAccess['workers'] && ($processesOpen || request()->query('dialog') === $processDialogKey);
                 $processDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $processDialogKey]);
+                $environmentRepositoryCreateUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery([
+                    'dialog' => 'create-repository',
+                    'website_id' => $environment->website_id,
+                    'branch' => $environment->branch,
+                ]);
+                $environmentRepositoryCreateContentUrl = route('dialogs.create', [
+                    'resource' => 'repository',
+                    'return_to' => $projectPageUrl,
+                    'website_id' => $environment->website_id,
+                    'branch' => $environment->branch,
+                ]);
+                $environmentWebsiteCreateUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery(['dialog' => 'create-website']);
+                $environmentWebsiteCreateContentUrl = route('dialogs.create', [
+                    'resource' => 'website',
+                    'return_to' => $projectPageUrl,
+                ]);
             @endphp
             <section class="ui-card overflow-hidden shadow-xs" aria-labelledby="environment-{{ $environment->id }}-heading">
                 <div class="flex flex-wrap items-center gap-4 border-b border-primary px-5 py-4">
@@ -91,14 +113,14 @@
                         $readiness = [
                         ['label' => __('Active server attached'), 'ready' => $environment->server?->provisioning_status === \App\Models\Server::STATUS_ACTIVE, 'url' => route('servers.index')],
                         ['label' => __('Active website attached'), 'ready' => $environment->website?->provisioning_status === \App\Models\Website::STATUS_ACTIVE, 'url' => route('websites.index')],
-                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? route('repositories.index', ['dialog' => 'create-repository', 'website_id' => $environment->website_id, 'branch' => $environment->branch]) : route('websites.index', ['dialog' => 'create-website'])],
+                        ['label' => __('Repository and branch connected'), 'ready' => (bool) $repository, 'url' => $environment->website ? $environmentRepositoryCreateUrl : $environmentWebsiteCreateUrl, 'modal' => $environment->website ? 'repository-create-dialog' : 'website-create-dialog', 'content_url' => $environment->website ? $environmentRepositoryCreateContentUrl : $environmentWebsiteCreateContentUrl],
                         ['label' => __('Provider credentials available'), 'ready' => (bool) $repository?->provider_id, 'url' => route('providers.index')],
                         ];
                         $readyCount = collect($readiness)->where('ready', true)->count();
                     @endphp
                     <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4" aria-label="{{ __('First deployment readiness') }}">
                         <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-primary">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-secondary">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="text-xs font-bold text-ternary underline">{{ __('Open setup guide') }}</a></div>
-                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-secondary"><span aria-hidden="true" class="font-black text-ternary">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" class="font-bold text-ternary underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
+                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-secondary"><span aria-hidden="true" class="font-black text-ternary">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" @if(isset($check['modal'])) data-modal-trigger="{{ $check['modal'] }}" data-modal-content-url="{{ $check['content_url'] }}" aria-controls="{{ $check['modal'] }}" aria-expanded="{{ ($check['modal'] === 'repository-create-dialog' ? $repositoryCreateOpen : $websiteCreateOpen) ? 'true' : 'false' }}" @endif class="font-bold text-ternary underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
                     </aside>
                 @endif
 
@@ -117,9 +139,9 @@
                         <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View source') }}</x-ui.button>
                         @if($canDeploy)<form method="POST" action="{{ route('repositories.deploy', $repository) }}">@csrf<x-ui.button type="submit" variant="primary" :disabled="! $deploymentReady || $deploymentInProgress">{{ $deploymentInProgress ? __('Deploying…') : ($deploymentReady ? __('Deploy now') : __('Not ready')) }}</x-ui.button></form>@endif
                     @elseif($environment->website && $canDeploy)
-                        <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository', 'website_id' => $environment->website_id, 'branch' => $environment->branch])" variant="primary">{{ __('Connect repository') }}</x-ui.button>
+                        <x-ui.button :href="$environmentRepositoryCreateUrl" data-modal-trigger="repository-create-dialog" data-modal-content-url="{{ $environmentRepositoryCreateContentUrl }}" aria-controls="repository-create-dialog" aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}" variant="primary">{{ __('Connect repository') }}</x-ui.button>
                     @elseif($canDeploy)
-                        <x-ui.button :href="route('websites.index', ['dialog' => 'create-website'])" variant="primary">{{ __('Create website') }}</x-ui.button>
+                        <x-ui.button :href="$environmentWebsiteCreateUrl" data-modal-trigger="website-create-dialog" data-modal-content-url="{{ $environmentWebsiteCreateContentUrl }}" aria-controls="website-create-dialog" aria-expanded="{{ $websiteCreateOpen ? 'true' : 'false' }}" variant="primary">{{ __('Create website') }}</x-ui.button>
                     @endif
                 </div>
 

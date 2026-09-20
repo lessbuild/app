@@ -3,6 +3,10 @@
         $reportDialogHasErrors = old('_gallery_report_form') === '1' && $errors->hasAny(['reason', 'details']);
         $reportDialogOpen = (request()->query('dialog') === 'report' && ! session()->has('status')) || $reportDialogHasErrors;
         $reportDialogUrl = route('gallery.show', ['recipe' => $recipe, 'dialog' => 'report']);
+        $galleryPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $recipeEditDialogId = 'gallery-recipe-edit-dialog';
+        $recipeEditOpen = request()->query('dialog') === 'edit-recipe' && $installedRecipe !== null;
+        $recipeEditUrl = (string) \Illuminate\Support\Uri::of($galleryPageUrl)->withQuery(['dialog' => 'edit-recipe']);
     @endphp
 
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
@@ -36,7 +40,7 @@
                 </form>
             @endif
             @if ($installedRecipe)
-                <x-ui.button href="{{ route('recipes.show', ['recipe' => $installedRecipe, 'dialog' => 'edit-recipe']) }}" variant="secondary">{{ __('View My Copy') }}</x-ui.button>
+                <x-ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('View My Copy') }}</x-ui.button>
                 <x-ui.button href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" variant="secondary">{{ __('Compare Scripts') }}</x-ui.button>
                 @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
                     <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $installedRecipe->name])) }})">
@@ -264,4 +268,14 @@
     <p class="mt-4 text-xs text-secondary">
         {{ __('Published :date. Adding this recipe creates a private snapshot you can review and edit independently.', ['date' => $recipe->published_at->diffForHumans()]) }}
     </p>
+
+    @if ($installedRecipe)
+        <x-scenes.recipes.edit-dialog
+            :id="$recipeEditDialogId"
+            :recipe="$installedRecipe"
+            :open="$recipeEditOpen"
+            :cancel-url="$galleryPageUrl"
+            field-prefix="gallery-recipe-edit-"
+        />
+    @endif
 </x-layouts.app>

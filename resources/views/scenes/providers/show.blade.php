@@ -3,6 +3,13 @@
     @php
         $providerEditOpen = request()->query('dialog') === 'edit-provider';
         $providerEditUrl = route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider']);
+        $providerPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $repositoryCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-repository']);
+        $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $providerPageUrl]);
+        $serverCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-server']);
+        $serverCreateContentUrl = route('dialogs.create', ['resource' => 'server', 'return_to' => $providerPageUrl]);
+        $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
+        $serverCreateOpen = request()->query('dialog') === 'create-server';
     @endphp
 
     <!--
@@ -177,7 +184,14 @@
             <x-ui.card class="p-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-bold text-primary">{{ __('Repositories') }}</h3>
-                <x-ui.button :href="route('repositories.index', ['dialog' => 'create-repository'])" variant="ghost">{{ __('Add Repository') }}</x-ui.button>
+                <x-ui.button
+                    :href="$repositoryCreateUrl"
+                    data-modal-trigger="repository-create-dialog"
+                    data-modal-content-url="{{ $repositoryCreateContentUrl }}"
+                    aria-controls="repository-create-dialog"
+                    aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
+                    variant="ghost"
+                >{{ __('Add Repository') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 divide-y divide-primary">
                     @forelse($repositories as $repository)
@@ -207,7 +221,14 @@
             <x-ui.card class="p-5">
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="text-lg font-bold text-primary">{{ __('Servers') }}</h3>
-                    <x-ui.button :href="route('servers.index', ['dialog' => 'create-server'])" variant="ghost">{{ __('Add Server') }}</x-ui.button>
+                    <x-ui.button
+                        :href="$serverCreateUrl"
+                        data-modal-trigger="server-create-dialog"
+                        data-modal-content-url="{{ $serverCreateContentUrl }}"
+                        aria-controls="server-create-dialog"
+                        aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
+                        variant="ghost"
+                    >{{ __('Add Server') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 divide-y divide-primary">
                     @forelse($servers as $server)

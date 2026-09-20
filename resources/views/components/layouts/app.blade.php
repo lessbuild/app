@@ -3,11 +3,41 @@
     'description' => null,
 ])
 
-@php($resolvedTitle = $title ?: app(\App\View\PageTitle::class)->for(request()->route()))
-@php($applicationCreateDialogOpen = request()->query('dialog') === 'create-application')
-@php($applicationCreateDialogUrl = request()->url().'?dialog=create-application')
-@php($applicationCreateDialogCancelUrl = request()->url())
-@php($applicationCreateDialogHosted = ! request()->routeIs('dashboard') && ! request()->routeIs('projects.index') && ! request()->routeIs('projects.create'))
+@php
+    $resolvedTitle = $title ?: app(\App\View\PageTitle::class)->for(request()->route());
+    $applicationCreateDialogOpen = request()->query('dialog') === 'create-application';
+    $applicationCreateDialogUrl = request()->url().'?dialog=create-application';
+    $applicationCreateDialogCancelUrl = request()->url();
+    $applicationCreateDialogHosted = ! request()->routeIs('dashboard') && ! request()->routeIs('projects.index') && ! request()->routeIs('projects.create');
+    /*
+        Quick-create links intentionally keep the current path but not arbitrary
+        query input. The current page's own filters can contain rejected values;
+        rendering those values into every shared dialog link would leak them into
+        the page and into nested modal URLs. Page-specific actions preserve their
+        own normalized query state where it is meaningful.
+    */
+    $quickCreateReturnUrl = request()->url();
+    $quickCreateDialog = request()->query('dialog');
+    $providerCreateDialogHosted = ! request()->routeIs('dashboard', 'providers.index', 'providers.create');
+    $serverCreateDialogHosted = ! request()->routeIs('dashboard', 'servers.index', 'servers.create');
+    $websiteCreateDialogHosted = ! request()->routeIs('dashboard', 'websites.index', 'websites.create');
+    $repositoryCreateDialogHosted = ! request()->routeIs('dashboard', 'repositories.index', 'repositories.create');
+    $providerCreateDialogOpen = $providerCreateDialogHosted && $quickCreateDialog === 'create-provider';
+    $serverCreateDialogOpen = $serverCreateDialogHosted && $quickCreateDialog === 'create-server';
+    $websiteCreateDialogOpen = $websiteCreateDialogHosted && $quickCreateDialog === 'create-website';
+    $repositoryCreateDialogOpen = $repositoryCreateDialogHosted && $quickCreateDialog === 'create-repository';
+    $providerCreateDialogUrl = (string) \Illuminate\Support\Uri::of($quickCreateReturnUrl)->withQuery(['dialog' => 'create-provider']);
+    $serverCreateDialogUrl = (string) \Illuminate\Support\Uri::of($quickCreateReturnUrl)->withQuery(['dialog' => 'create-server']);
+    $websiteCreateDialogUrl = (string) \Illuminate\Support\Uri::of($quickCreateReturnUrl)->withQuery(['dialog' => 'create-website']);
+    $repositoryCreateDialogUrl = (string) \Illuminate\Support\Uri::of($quickCreateReturnUrl)->withQuery(['dialog' => 'create-repository']);
+    $providerCreateContentUrl = route('dialogs.create', ['resource' => 'provider', 'return_to' => $quickCreateReturnUrl]);
+    $serverCreateContentUrl = route('dialogs.create', ['resource' => 'server', 'return_to' => $quickCreateReturnUrl]);
+    $websiteCreateContentUrl = route('dialogs.create', ['resource' => 'website', 'return_to' => $quickCreateReturnUrl]);
+    $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $quickCreateReturnUrl]);
+    $serverCreateDialogData = $creationDialogData['server'] ?? null;
+    $websiteCreateDialogData = $creationDialogData['website'] ?? null;
+    $repositoryCreateDialogData = $creationDialogData['repository'] ?? null;
+@endphp
 
 <x-layouts.core :title="$resolvedTitle" :description="$description">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
@@ -103,10 +133,10 @@
                     @foreach ([
                         [__('Dashboard'), route('dashboard'), __('overview home')],
                         [__('Create application'), $applicationCreateDialogUrl, __('new project app')],
-                        [__('Provision server'), route('servers.index', ['dialog' => 'create-server']), __('new cloud infrastructure')],
+                        [__('Provision server'), $serverCreateDialogUrl, __('new cloud infrastructure')],
                         [__('Import existing server'), route('servers.import.create'), __('ssh migrate')],
-                        [__('Add website'), route('websites.index', ['dialog' => 'create-website']), __('domain site')],
-                        [__('Connect repository'), route('repositories.index', ['dialog' => 'create-repository']), __('git source deploy')],
+                        [__('Add website'), $websiteCreateDialogUrl, __('domain site')],
+                        [__('Connect repository'), $repositoryCreateDialogUrl, __('git source deploy')],
                         [__('View deployments'), route('builds.index'), __('build history releases')],
                         [__('Open live logs'), route('websites.index'), __('runtime logs')],
                         [__('Observability'), route('observability.index'), __('alerts status incidents')],
@@ -115,7 +145,16 @@
                         [__('API and automation'), route('automation.index'), __('tokens schedules workflow')],
                         [__('Product guide'), route('docs'), __('help documentation')],
                     ] as [$label, $url, $keywords])
-                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($label === __('Create application')) data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
+                        @php
+                            $commandModal = match ($label) {
+                                __('Create application') => ['application-create-dialog', null, $applicationCreateDialogOpen],
+                                __('Provision server') => ['server-create-dialog', $serverCreateContentUrl, $serverCreateDialogOpen],
+                                __('Add website') => ['website-create-dialog', $websiteCreateContentUrl, $websiteCreateDialogOpen],
+                                __('Connect repository') => ['repository-create-dialog', $repositoryCreateContentUrl, $repositoryCreateDialogOpen],
+                                default => null,
+                            };
+                        @endphp
+                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
                             <span>{{ $label }}</span><span aria-hidden="true" class="text-secondary">↵</span>
                         </a>
                     @endforeach
@@ -135,6 +174,109 @@
                 :open="$applicationCreateDialogOpen"
                 :cancel-url="$applicationCreateDialogCancelUrl"
             />
+        @endif
+
+        @if ($providerCreateDialogHosted)
+            <x-dialogs.modal
+                id="provider-create-dialog"
+                :title="__('Add provider')"
+                :description="__('Connect an infrastructure or source-control credential to this workspace.')"
+                :open="$providerCreateDialogOpen"
+                body-class="p-0"
+                data-modal-content-loaded="{{ $providerCreateDialogOpen ? 'true' : 'false' }}"
+                data-modal-content-url="{{ $providerCreateContentUrl }}"
+            >
+                <div data-modal-content>
+                    @if ($providerCreateDialogOpen)
+                        <x-scenes.providers.create-dialog-content :cancel-url="$quickCreateReturnUrl" />
+                    @else
+                        <p class="p-5 text-sm text-secondary">{{ __('Loading provider form…') }}</p>
+                    @endif
+                </div>
+            </x-dialogs.modal>
+        @endif
+
+        @if ($serverCreateDialogHosted)
+            <x-dialogs.modal
+                id="server-create-dialog"
+                :title="__('Add server')"
+                :description="__('Choose a provider and infrastructure profile, then start server provisioning.')"
+                :open="$serverCreateDialogOpen"
+                body-class="p-0"
+                data-modal-content-loaded="{{ $serverCreateDialogData !== null ? 'true' : 'false' }}"
+                data-modal-content-url="{{ $serverCreateContentUrl }}"
+            >
+                <div data-modal-content>
+                    @if ($serverCreateDialogData !== null)
+                        <x-scenes.servers.create-dialog-content
+                            :types="$serverCreateDialogData['types']"
+                            :providers="$serverCreateDialogData['providers']"
+                            :sizes="$serverCreateDialogData['sizes']"
+                            :images="$serverCreateDialogData['images']"
+                            :regions="$serverCreateDialogData['regions']"
+                            :recipes="$serverCreateDialogData['recipes']"
+                            :plan-usage="$serverCreateDialogData['planUsage']"
+                            :cancel-url="$quickCreateReturnUrl"
+                            :return-url="$quickCreateReturnUrl"
+                        />
+                    @else
+                        <p class="p-5 text-sm text-secondary">{{ __('Loading server form…') }}</p>
+                    @endif
+                </div>
+            </x-dialogs.modal>
+        @endif
+
+        @if ($websiteCreateDialogHosted)
+            <x-dialogs.modal
+                id="website-create-dialog"
+                :title="__('Add website')"
+                :description="__('Choose a server, configure deployment health checks, and create a new deployment target.')"
+                :open="$websiteCreateDialogOpen"
+                body-class="p-0"
+                data-modal-content-loaded="{{ $websiteCreateDialogData !== null ? 'true' : 'false' }}"
+                data-modal-content-url="{{ $websiteCreateContentUrl }}"
+            >
+                <div data-modal-content>
+                    @if ($websiteCreateDialogData !== null)
+                        <x-scenes.websites.create-dialog-content
+                            :servers="$websiteCreateDialogData['servers']"
+                            :plan-usage="$websiteCreateDialogData['planUsage']"
+                            :website-index-query="[]"
+                            :website-store-url="route('websites.store', ['dialog' => 'create-website'])"
+                            :cancel-url="$quickCreateReturnUrl"
+                            :return-url="$quickCreateReturnUrl"
+                        />
+                    @else
+                        <p class="p-5 text-sm text-secondary">{{ __('Loading website form…') }}</p>
+                    @endif
+                </div>
+            </x-dialogs.modal>
+        @endif
+
+        @if ($repositoryCreateDialogHosted)
+            <x-dialogs.modal
+                id="repository-create-dialog"
+                :title="__('Add repository')"
+                :description="__('Connect a source repository to an active website and deployment branch.')"
+                :open="$repositoryCreateDialogOpen"
+                body-class="p-0"
+                data-modal-content-loaded="{{ $repositoryCreateDialogData !== null ? 'true' : 'false' }}"
+                data-modal-content-url="{{ $repositoryCreateContentUrl }}"
+            >
+                <div data-modal-content>
+                    @if ($repositoryCreateDialogData !== null)
+                        <x-scenes.repositories.create-dialog-content
+                            :providers="$repositoryCreateDialogData['providers']"
+                            :websites="$repositoryCreateDialogData['websites']"
+                            :index-query="[]"
+                            :cancel-url="$quickCreateReturnUrl"
+                            :return-url="$quickCreateReturnUrl"
+                        />
+                    @else
+                        <p class="p-5 text-sm text-secondary">{{ __('Loading repository form…') }}</p>
+                    @endif
+                </div>
+            </x-dialogs.modal>
         @endif
 
         <!--

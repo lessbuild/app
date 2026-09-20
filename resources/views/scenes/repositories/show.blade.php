@@ -3,6 +3,12 @@
     @php
         $repositoryEditOpen = $editDialogOpen;
         $repositoryEditUrl = route('repositories.show', ['repository' => $repository, 'dialog' => 'edit-repository']);
+        $repositoryPageUrl = route('repositories.show', [
+            'repository' => $repository,
+            ...array_filter($deliveryFilters, fn ($value) => $value !== null),
+        ]);
+        $websiteEditOpen = $websiteEditDialogOpen;
+        $websiteEditUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'edit-website']);
     @endphp
 
     <!--
@@ -184,7 +190,7 @@
                     aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
                     variant="secondary"
                 >{{ __('Review source settings') }}</x-ui.button>
-                <x-ui.button :href="route('websites.show', ['website' => $repository->website, 'dialog' => 'edit-website'])" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
+                <x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
             </div>
 
             @if ($deploymentGuidance['steps'])
@@ -682,6 +688,15 @@
             :providers="$providers"
             :websites="$websites"
             :open="$repositoryEditOpen"
+        />
+    @endif
+
+    @if ($websiteEditOpen)
+        <x-scenes.websites.edit-dialog
+            :website="$repository->website"
+            :servers="$websiteEditServers"
+            :open="$websiteEditOpen"
+            :cancel-url="$repositoryPageUrl"
         />
     @endif
 </x-layouts.app>

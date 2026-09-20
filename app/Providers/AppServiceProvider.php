@@ -12,6 +12,7 @@ use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
 use App\Models\User;
 use App\Services\ApplicationTemplateCatalog;
+use App\Services\DashboardCreationDialogData;
 use App\Services\SshServerTroubleshootingTransport;
 use App\View\Navigation\WorkspaceNavigation;
 use Illuminate\Support\Facades\DB;
@@ -57,12 +58,21 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('components.layouts.app', function (ViewInstance $view): void {
             $user = auth()->user();
+            $creationDialogData = null;
+            $dialog = request()->query('dialog');
+
+            if ($user instanceof User
+                && in_array($dialog, ['create-server', 'create-website', 'create-repository'], true)
+                && ! request()->routeIs('dashboard', 'providers.index', 'servers.index', 'websites.index', 'repositories.index', 'projects.index')) {
+                $creationDialogData = app(DashboardCreationDialogData::class)->for($user);
+            }
 
             $view->with([
                 'navigation' => $user instanceof User ? app(WorkspaceNavigation::class)->for($user) : [],
                 'applicationCreationTemplates' => $user instanceof User
                     ? app(ApplicationTemplateCatalog::class)->all()
                     : [],
+                'creationDialogData' => $creationDialogData,
             ]);
         });
     }

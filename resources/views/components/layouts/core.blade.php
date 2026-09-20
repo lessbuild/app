@@ -204,13 +204,18 @@
                     const contentUrl = trigger.dataset.modalContentUrl;
                     const content = dialog.querySelector('[data-modal-content]');
 
-                    if (! contentUrl || ! content || dialog.dataset.modalContentLoaded === 'true') {
+                    if (! contentUrl || ! content) {
                         return;
                     }
 
                     const url = new URL(contentUrl, window.location.href);
 
                     if (url.origin !== window.location.origin) {
+                        return;
+                    }
+
+                    if (dialog.dataset.modalContentLoaded === 'true'
+                        && dialog.dataset.modalContentUrl === url.href) {
                         return;
                     }
 
@@ -230,7 +235,12 @@
                         }
 
                         content.innerHTML = await response.text();
+                        window.Alpine?.initTree?.(content);
+                        document.dispatchEvent(new CustomEvent('modal:content-loaded', {
+                            detail: { content, dialog },
+                        }));
                         dialog.dataset.modalContentLoaded = 'true';
+                        dialog.dataset.modalContentUrl = url.href;
                     } catch (error) {
                         content.innerHTML = '<p class="text-sm text-secondary">Unable to load this content. Open the recipe details page instead.</p>';
                     } finally {
@@ -317,6 +327,18 @@
                         });
 
                         if (dialog.dataset.modalInitialOpen === 'true') {
+                            const currentUrl = new URL(window.location.href);
+                            const triggerUrl = trigger instanceof HTMLAnchorElement
+                                ? new URL(trigger.href, window.location.href)
+                                : currentUrl;
+                            const isInitialTrigger = triggerUrl.pathname === currentUrl.pathname
+                                && triggerUrl.search === currentUrl.search
+                                && triggerUrl.hash === currentUrl.hash;
+
+                            if (! isInitialTrigger) {
+                                return;
+                            }
+
                             trigger.setAttribute('aria-expanded', 'true');
                             dialog.modalTrigger ??= trigger;
 

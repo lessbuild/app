@@ -20,6 +20,7 @@ use App\Http\Controllers\Callbacks\ServerCallbackController;
 use App\Http\Controllers\Callbacks\WebsiteCallbackController;
 use App\Http\Controllers\CommandsController;
 use App\Http\Controllers\CostController;
+use App\Http\Controllers\CreationDialogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DatabaseController;
 use App\Http\Controllers\DomainController;
@@ -209,6 +210,9 @@ Route::middleware('auth')->group(function () {
         Route::patch('environments/{environment}/deployment-controls', [EnvironmentController::class, 'updateDeploymentControls'])->name('environments.deployment-controls.update');
         Route::delete('environments/{environment}/resources/{resource}', [EnvironmentController::class, 'destroyResource'])->scopeBindings()->name('environments.resources.destroy');
         Route::get('home', DashboardController::class)->name('dashboard');
+        Route::get('dialogs/create/{resource}', CreationDialogController::class)
+            ->whereIn('resource', ['provider', 'server', 'website', 'repository'])
+            ->name('dialogs.create');
         Route::get('admin/analytics', AdminAnalyticsController::class)
             ->middleware('throttle:30,1')
             ->name('admin.analytics');
