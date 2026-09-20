@@ -1083,6 +1083,65 @@ recipe installation/update actions, provider connection actions and feedback
 moderation explicit unless an existing bounded read-only fragment can be reused
 without changing query, authorization or side-effect semantics.
 
+## Slice 22 — account profile editor
+
+Status: complete; committed and pushed as e1ed1c5.
+
+### Responsibility problem
+
+The account page rendered the full profile write form inline at the top of an
+already long security page. On mobile, editing a name or email required
+scrolling through unrelated password, two-factor, session and account-data
+sections. The profile operation already had its own request, named error bag
+and action; the UI needed a compact editor boundary, not a new account
+workflow.
+
+### Boundaries and benefit
+
+- The account page now owns a read-only profile summary and the trigger.
+- The reusable profile-dialog component owns only the existing profile form
+  presentation and error display.
+- UsersController, UpdateProfileRequest and UpdateProfileAction remain the
+  HTTP validation, normalization and write boundaries.
+- Password, two-factor, session, social-account and account-deletion workflows
+  remain explicit security sections and are not hidden inside this dialog.
+
+This applies single responsibility at the presentation boundary while keeping
+the existing dependency direction and sensitive account operation unchanged.
+
+### Preserved behavior and safety
+
+- `profile` validation errors reopen the profile dialog and retain the existing
+  name/email/current-password keys and old-input behavior.
+- Email normalization, uniqueness, current-password requirements, verification
+  reset/email delivery feedback, session revocation and account activity remain
+  in the existing request/action/controller flow.
+- The direct account page and bookmarkable `dialog=account-profile-dialog`
+  URL remain available without JavaScript.
+- The editor contains no passwords, tokens or social credentials unless the
+  existing current-password field is required for the selected account.
+- Opening and closing the editor does not submit, reload or mutate the account.
+
+### Verification
+
+- Account-management regression: **19 tests / 147 assertions passed**.
+- Browser fixture export: **1 test / 254 assertions passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed in 1.0 minute** using PHP 8.5.10;
+  verified mobile same-page opening, background scroll lock, form visibility,
+  URL-backed deep linking, Escape and focus restoration.
+
+### Commit and push
+
+Commit and push: e1ed1c5 Open account profile editing in a dialog.
+
+### Exact next task
+
+Audit organization notification preferences and notification destination links.
+Treat preference changes, read-state changes, deletion, delivery tests and
+incident response as explicit writes; use a dialog only for a short form or a
+bounded authorized read that keeps its full-page fallback.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
