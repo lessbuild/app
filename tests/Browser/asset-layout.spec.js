@@ -32,6 +32,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
         }
         const galleryPage = /^\/gallery\/\d+$/.test(pathname);
         const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
+        const galleryMyReportsPage = pathname === '/gallery/my-reports';
+        const galleryReportStatusPage = /^\/gallery\/reports\/\d+\/status$/.test(pathname);
         const providerPage = /^\/providers\/\d+$/.test(pathname);
         const providerConnectionChecksPage = /^\/providers\/\d+\/connection-checks$/.test(pathname);
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
@@ -63,9 +65,13 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
+                : galleryMyReportsPage
+                    ? 'gallery-my-reports'
+                : galleryReportStatusPage
+                    ? 'gallery-report-status'
                 : providerPage
                     ? 'provider-show'
                         : providerConnectionChecksPage
@@ -95,6 +101,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'server-command-history'
                 : screen === 'automation-task-run-output' && fragment === 'scheduled-task-output'
                     ? 'automation-task-run-output'
+                : screen === 'gallery-report-status' && fragment === 'report-status'
+                    ? 'gallery-report-status-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -123,7 +131,9 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'gallery-dialog'
                             : screen === 'gallery-detail'
                                 ? 'gallery'
-                                : screen === 'observability' && dialog === 'create-metric-rule'
+                            : screen === 'gallery-my-reports' && dialog?.startsWith('report-status-')
+                                ? 'gallery-my-reports-dialog'
+                            : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
                                 : screen === 'observability' && dialog === 'create-alert-destination'
                                     ? 'observability-destination-dialog'
@@ -1331,6 +1341,31 @@ test('scheduled task output opens as a read-only contextual dialog', async ({ pa
     await expect(trigger).toBeFocused();
 
     await page.goto('http://buildpusher.test/automation?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
+    await expect(dialog).toBeVisible();
+});
+
+test('report status opens as a private contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/gallery/my-reports', { waitUntil: 'networkidle' });
+
+    const trigger = page.locator('[data-modal-trigger="gallery-report-status-dialog"]').first();
+    const dialog = page.getByRole('dialog', { name: 'Report status', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-report-status-content]')).toBeVisible();
+    await expect(dialog).toContainText('Fixture private report details.');
+    await expect(dialog.getByRole('link', { name: 'Open full report status', exact: true })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    const dialogQuery = new URL(page.url()).searchParams.get('dialog');
+    expect(dialogQuery).toMatch(/^report-status-\d+$/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/gallery/my-reports?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
     await expect(dialog).toBeVisible();
 });
 

@@ -95,6 +95,22 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="gallery-report-resolution-', false)
             ->assertSee('Mark Resolved')->assertSee('Update Resolution Note')->getContent());
         $this->actingAs($owner);
+        $galleryHistoryReport = $owner->recipeReports()->create([
+            'recipe_id' => $galleryRecipe->id,
+            'reason' => 'broken',
+            'details' => 'Fixture private report details.',
+            'resolved_at' => now(),
+            'resolution_note' => 'Fixture contributor resolution.',
+        ]);
+        File::put($directory.'/gallery-my-reports.html', $this->renderPage(route('gallery.reports.mine'))->assertOk()
+            ->assertSee('data-modal-trigger="gallery-report-status-dialog"', false)->getContent());
+        File::put($directory.'/gallery-my-reports-dialog.html', $this->renderPage(route('gallery.reports.mine', [
+            'dialog' => 'report-status-'.$galleryHistoryReport->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/gallery-report-status-content.html', $this->renderPage(route('gallery.report.status', [
+            'report' => $galleryHistoryReport,
+            'fragment' => 'report-status',
+        ]))->assertOk()->assertSee('Fixture private report details.')->getContent());
         $entitlementEnforcement = config('billing.enforce_entitlements');
         config(['billing.enforce_entitlements' => true]);
         File::put($directory.'/provider-create.html', $this->renderPage(route('providers.create'))->assertOk()->getContent());

@@ -101,6 +101,12 @@ class RecipeReportsController extends Controller
         $this->authorize('view', $report);
         $report->load('recipe:id,user_id,name,category,is_published,published_at');
 
+        if ($request->string('fragment')->toString() === 'report-status') {
+            return view('components.scenes.gallery.report-status-content', [
+                'report' => $report,
+            ]);
+        }
+
         return view('scenes.gallery.report-status', [
             'report' => $report,
             'unreadUpdate' => $this->reportQuery->unread($request->user(), [$report->id])->get($report->id),

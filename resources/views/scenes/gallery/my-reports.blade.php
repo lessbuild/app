@@ -22,6 +22,16 @@
             && ($key === 'status' || $key === 'availability' || $key === 'updates'
                 ? $value !== 'all'
                 : ($key === 'sort' ? $value !== 'newest' : true)))->count();
+        $reportStatusDialogQuery = request()->query('dialog');
+        $reportStatusDialogId = is_string($reportStatusDialogQuery)
+            && preg_match('/^report-status-(\d+)$/', $reportStatusDialogQuery, $reportStatusMatches) === 1
+            ? (int) $reportStatusMatches[1]
+            : null;
+        $reportStatusDialogReport = $reportStatusDialogId === null
+            ? null
+            : $reports->getCollection()->first(fn ($report) => (int) $report->id === $reportStatusDialogId);
+        $reportStatusDialogOpen = $reportStatusDialogReport !== null
+            && $reportStatusDialogQuery === 'report-status-'.$reportStatusDialogReport->id;
     @endphp
 
     <x-ui.filter-panel
@@ -117,7 +127,18 @@
     @else
         <div class="mt-6 space-y-4">
             @foreach ($reports as $report)
-                @php($unreadUpdate = $unreadUpdates->get($report->id))
+                @php
+                    $unreadUpdate = $unreadUpdates->get($report->id);
+                    $reportStatusDialogKey = 'report-status-'.$report->id;
+                    $reportStatusUrl = route('gallery.report.status', $report);
+                    $reportStatusContentUrl = route('gallery.report.status', ['report' => $report, 'fragment' => 'report-status']);
+                    $reportStatusHistoryUrl = route('gallery.reports.mine', array_filter([
+                        ...$filters,
+                        'page' => request()->query('page'),
+                        'dialog' => $reportStatusDialogKey,
+                    ], fn ($value) => $value !== null));
+                    $reportStatusIsOpen = $reportStatusDialogOpen && $reportStatusDialogReport->id === $report->id;
+                @endphp
                 <x-ui.card @class([
                     'p-5',
                     'border-blue-400 ring-1 ring-blue-200' => $unreadUpdate,
@@ -136,7 +157,15 @@
                                 @endif
                             </div>
                             <h2 class="mt-3 text-lg font-bold text-primary">
-                                <a href="{{ route('gallery.report.status', $report) }}" class="underline-offset-2 hover:underline">{{ $report->recipe->name }}</a>
+                                <a
+                                    href="{{ $reportStatusUrl }}"
+                                    data-modal-trigger="gallery-report-status-dialog"
+                                    data-modal-content-url="{{ $reportStatusContentUrl }}"
+                                    data-modal-history-url="{{ $reportStatusHistoryUrl }}"
+                                    aria-controls="gallery-report-status-dialog"
+                                    aria-expanded="{{ $reportStatusIsOpen ? 'true' : 'false' }}"
+                                    class="underline-offset-2 hover:underline"
+                                >{{ $report->recipe->name }}</a>
                             </h2>
                             <p class="mt-1 text-sm text-secondary">{{ str($report->recipe->category)->headline() }}</p>
                         </div>
@@ -152,7 +181,15 @@
                                 <x-ui.button type="submit" variant="primary">{{ __('Review new update') }}</x-ui.button>
                             </form>
                         @else
-                            <x-ui.button href="{{ route('gallery.report.status', $report) }}" variant="secondary">{{ __('View report status') }}</x-ui.button>
+                            <x-ui.button
+                                :href="$reportStatusUrl"
+                                data-modal-trigger="gallery-report-status-dialog"
+                                data-modal-content-url="{{ $reportStatusContentUrl }}"
+                                data-modal-history-url="{{ $reportStatusHistoryUrl }}"
+                                aria-controls="gallery-report-status-dialog"
+                                aria-expanded="{{ $reportStatusIsOpen ? 'true' : 'false' }}"
+                                variant="secondary"
+                            >{{ __('View report status') }}</x-ui.button>
                         @endif
                     </div>
                 </x-ui.card>
@@ -162,5 +199,16 @@
         <div class="mt-6">
             {{ $reports->links() }}
         </div>
+
+        <x-dialogs.modal
+            id="gallery-report-status-dialog"
+            :title="__('Report status')"
+            :description="__('Review the current report state without leaving your filtered report history.')"
+            :open="$reportStatusDialogOpen"
+        >
+            <div data-modal-content>
+                <div class="space-y-3 text-sm text-secondary">{{ __('Loading report status…') }}</div>
+            </div>
+        </x-dialogs.modal>
     @endif
 </x-layouts.app>

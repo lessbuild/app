@@ -114,6 +114,46 @@ class RecipeReportHistoryTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-history-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
     }
 
+    public function test_report_status_opens_as_a_private_read_only_fragment_without_replacing_the_full_status_page(): void
+    {
+        [$reporter, $author, $outsider] = User::factory()->count(3)->create();
+        $recipe = $this->recipe($author, 'Contextual report status', true);
+        $report = $reporter->recipeReports()->create([
+            'recipe_id' => $recipe->id,
+            'reason' => 'broken',
+            'details' => 'Private contextual report details.',
+            'resolved_at' => now(),
+            'resolution_note' => 'Contributor fixed the reported issue.',
+        ]);
+
+        $this->actingAs($reporter)->get(route('gallery.reports.mine'))
+            ->assertSuccessful()
+            ->assertSee('data-modal-trigger="gallery-report-status-dialog"', false)
+            ->assertSee(route('gallery.report.status', $report));
+
+        $this->actingAs($reporter)->get(route('gallery.report.status', ['report' => $report, 'fragment' => 'report-status']))
+            ->assertSuccessful()
+            ->assertSee('data-report-status-content', false)
+            ->assertSee('Private contextual report details.')
+            ->assertSee('Contributor fixed the reported issue.')
+            ->assertSee('Open full report status')
+            ->assertDontSee('Withdraw Report');
+
+        $this->actingAs($reporter)->get(route('gallery.reports.mine', ['dialog' => 'report-status-'.$report->id]))
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('data-modal-trigger="gallery-report-status-dialog"', false);
+
+        $this->actingAs($outsider)->get(route('gallery.report.status', ['report' => $report, 'fragment' => 'report-status']))
+            ->assertNotFound()
+            ->assertDontSee('Private contextual report details.');
+
+        $this->actingAs($reporter)->get(route('gallery.report.status', $report))
+            ->assertSuccessful()
+            ->assertSee('My Report Status')
+            ->assertSee('Withdraw Report');
+    }
+
     public function test_reporter_history_combines_filters_and_normalizes_invalid_values(): void
     {
         [$reporter, $author] = User::factory()->count(2)->create();

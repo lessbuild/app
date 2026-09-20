@@ -140,7 +140,7 @@ as pages or explicit workflows.
 
 ## Slice 4 — website health-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 4a80c23.
 
 ### Responsibility problem
 
@@ -436,10 +436,73 @@ and encrypted output model, and preserves the no-JavaScript endpoint.
 
 ### Commit and push
 
+Commit and push: `4a80c23 Open scheduled task output in a dialog`.
+
+### Exact next task
+
+Inspect notification-destination links for one bounded read-only contextual
+inspector. Keep report mutations, incident changes, destination tests and
+notification delivery as explicit workflows.
+
+## Slice 8 — recipe report-status inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+My Community Reports linked directly to a full report-status page. That made a
+read-only check of a report interrupt the filtered report history, while the
+full page also contains withdrawal and notification-review workflows that must
+remain explicit mutations.
+
+### Boundaries and benefit
+
+- RecipeReportsController::status() remains the authorized report-status
+  boundary and serves a `fragment=report-status` body-only response after the
+  existing policy check and scoped eager load.
+- The report-status partial owns only private report details, resolution state,
+  timestamps and safe navigation links; it does not include withdrawal or
+  notification mutations.
+- My Community Reports owns one shared lazy dialog, per-report history keys and
+  the full-page fallback href. The filtered list remains the source of valid
+  deep-linked dialog records.
+- The existing full report-status page and report mutation endpoints are
+  unchanged for direct navigation and no-JavaScript use.
+
+This keeps inspection separate from mutation, preserves deliberate 404
+concealment for foreign reports and avoids adding a second report query or
+generic modal abstraction.
+
+### Preserved behavior and safety
+
+- Report ownership policy runs before both full-page and fragment rendering;
+  foreign actors receive the existing 404 response and private details are not
+  disclosed.
+- Report details and contributor resolution notes remain absent from the
+  history list and are shown only after the authorized status lookup.
+- Withdrawal, update-review notification handling and full-page status remain
+  available through their existing routes and forms.
+- Opening the dialog preserves the filtered history URL path, supports a
+  bookmarkable `dialog=report-status-{id}` state, and keeps the direct status
+  link as the JavaScript-disabled fallback.
+
+### Verification
+
+- Recipe report-history regression: **9 tests / 136 assertions passed**.
+- PHP syntax checks: passed for the controller, feature test and browser
+  fixture; Node syntax check passed for the browser spec.
+- Pint on changed PHP files: passed.
+- Focused browser journey: **1 test passed in 44.2 seconds** using PHP 8.5.10;
+  verified mobile lazy loading, private details, URL stability, deep-link
+  opening, Escape and focus restoration.
+- `git diff --check`: passed.
+
+### Commit and push
+
 Commit and push: pending in this working slice.
 
 ### Exact next task
 
-Inspect report-status and notification-destination links for one bounded
-read-only contextual inspector. Keep report mutations, incident changes,
-destination tests and notification delivery as explicit workflows.
+Audit notification destination/status links and the remaining route inventory;
+keep delivery tests, incident changes and other state-changing workflows as
+explicit pages or forms.
