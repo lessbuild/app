@@ -76,6 +76,30 @@ class RepositoryImpactPreviewTest extends TestCase
         Queue::assertNothingPushed();
     }
 
+    public function test_workspace_member_can_open_the_same_preview_in_a_private_contextual_fragment(): void
+    {
+        Queue::fake();
+        $owner = User::factory()->create();
+        [$provider, $website] = $this->infrastructure($owner, 'Owner');
+        $this->repository($owner, $provider, $website, 'Storefront', true, [
+            'auto_deploy_include_paths' => ['apps/storefront/**'],
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('repositories.impact-preview', [
+            'changed_paths' => 'apps/storefront/app.php',
+            'fragment' => 'repository-impact-preview',
+        ]));
+
+        $response->assertSuccessful()
+            ->assertSee('data-repository-impact-preview-content', false)
+            ->assertSee('Storefront')
+            ->assertSee('Affected')
+            ->assertDontSee('<html', false);
+
+        $this->assertDatabaseCount('builds', 0);
+        Queue::assertNothingPushed();
+    }
+
     public function test_unavailable_changed_paths_show_unknown_for_every_enabled_target(): void
     {
         Queue::fake();

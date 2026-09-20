@@ -260,11 +260,25 @@ class AssetLayoutFixtureTest extends TestCase
             'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'App',
             'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
         ]);
+        $repository->update([
+            'webhook_enabled' => true,
+            'auto_deploy_include_paths' => ['apps/**'],
+        ]);
         File::put($directory.'/repositories.html', $this->renderPage(route('repositories.index'))->assertOk()
             ->assertSee('data-modal-trigger="repository-create-dialog"', false)
+            ->assertSee('data-modal-trigger="repository-impact-preview-dialog"', false)
             ->getContent());
         File::put($directory.'/repositories-dialog.html', $this->renderPage(route('repositories.index', ['dialog' => 'create-repository']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/repositories-impact-preview-dialog.html', $this->renderPage(route('repositories.index', ['dialog' => 'impact-preview']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/repositories-impact-preview-content.html', $this->renderPage(route('repositories.impact-preview', [
+            'changed_paths' => 'apps/app.php',
+            'fragment' => 'repository-impact-preview',
+        ]))->assertOk()
+            ->assertSee('data-repository-impact-preview-content', false)
+            ->assertSee('App')
+            ->assertSee('Affected')->getContent());
         File::put($directory.'/repository-show.html', $this->renderPage(route('repositories.show', $repository))->assertOk()
             ->assertSee('data-modal-trigger="repository-edit-dialog"', false)->getContent());
         File::put($directory.'/repository-show-webhook-dialog.html', $this->renderPage(route('repositories.show', [

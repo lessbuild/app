@@ -34,6 +34,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const galleryScriptPage = /^\/gallery\/\d+\/script$/.test(pathname);
         const galleryMyReportsPage = pathname === '/gallery/my-reports';
         const galleryReportStatusPage = /^\/gallery\/reports\/\d+\/status$/.test(pathname);
+        const repositoryImpactPreviewPage = pathname === '/repositories/impact-preview';
         const providerPage = /^\/providers\/\d+$/.test(pathname);
         const providerConnectionChecksPage = /^\/providers\/\d+\/connection-checks$/.test(pathname);
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
@@ -65,13 +66,15 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
                     ? 'gallery-my-reports'
                 : galleryReportStatusPage
                     ? 'gallery-report-status'
+                : repositoryImpactPreviewPage
+                    ? 'repository-impact-preview'
                 : providerPage
                     ? 'provider-show'
                         : providerConnectionChecksPage
@@ -103,6 +106,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'automation-task-run-output'
                 : screen === 'gallery-report-status' && fragment === 'report-status'
                     ? 'gallery-report-status-content'
+                : screen === 'repository-impact-preview' && fragment === 'repository-impact-preview'
+                    ? 'repositories-impact-preview-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -133,6 +138,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'gallery'
                             : screen === 'gallery-my-reports' && dialog?.startsWith('report-status-')
                                 ? 'gallery-my-reports-dialog'
+                            : screen === 'repositories' && dialog === 'impact-preview'
+                                ? 'repositories-impact-preview-dialog'
                             : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
                                 : screen === 'observability' && dialog === 'create-alert-destination'
@@ -391,6 +398,44 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
 
     await page.goto(`http://buildpusher.test${recipeUrl.pathname}${recipeUrl.search}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Edit recipe', exact: true })).toBeVisible();
+});
+
+test('repository deployment impact preview opens and refreshes inside a contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/repositories', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Preview push impact', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Deployment impact preview', exact: true });
+    const documentRequests = [];
+    page.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            documentRequests.push(new URL(request.url()).pathname);
+        }
+    });
+
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-repository-impact-preview-content]')).toBeVisible();
+    await expect(dialog).toContainText('App');
+    await expect(dialog).toContainText('Affected');
+    expect(new URL(page.url()).pathname).toBe('/repositories');
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('impact-preview');
+    expect(documentRequests).toEqual([]);
+
+    await dialog.locator('textarea[name="changed_paths"]').fill('apps/app.php');
+    await dialog.getByRole('button', { name: 'Preview deployment impact', exact: true }).click();
+    await expect(dialog.locator('[data-impact-target]')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe('/repositories');
+    expect(documentRequests).toEqual([]);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/repositories?dialog=impact-preview', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Deployment impact preview', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

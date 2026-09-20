@@ -4,6 +4,9 @@
         $repositoryIndexQuery = array_filter($filters, fn ($value) => $value !== null);
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
         $repositoryCreateUrl = route('repositories.index', [...$repositoryIndexQuery, 'dialog' => 'create-repository']);
+        $impactPreviewDialogOpen = request()->query('dialog') === 'impact-preview';
+        $impactPreviewDialogUrl = route('repositories.index', [...$repositoryIndexQuery, 'dialog' => 'impact-preview']);
+        $impactPreviewContentUrl = route('repositories.impact-preview', ['fragment' => 'repository-impact-preview']);
     @endphp
 
     <!--
@@ -18,7 +21,15 @@
         :description="__('Manage source targets and review their latest filtered deployment state.')"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('repositories.impact-preview')" variant="secondary">
+            <x-ui.button
+                :href="$impactPreviewDialogUrl"
+                data-modal-trigger="repository-impact-preview-dialog"
+                data-modal-content-url="{{ $impactPreviewContentUrl }}"
+                data-modal-history-url="{{ $impactPreviewDialogUrl }}"
+                aria-controls="repository-impact-preview-dialog"
+                aria-expanded="{{ $impactPreviewDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 {{ __('Preview push impact') }}
             </x-ui.button>
             <x-ui.button
@@ -210,6 +221,17 @@
             </x-ui.empty-state>
         </div>
     @endif
+
+    <x-dialogs.modal
+        id="repository-impact-preview-dialog"
+        :title="__('Deployment impact preview')"
+        :description="__('See which enabled repository targets are affected by a changed-file set before any automatic push deployment.')"
+        :open="$impactPreviewDialogOpen"
+    >
+        <div data-modal-content>
+            <div class="space-y-3 text-sm text-secondary">{{ __('Loading deployment impact preview…') }}</div>
+        </div>
+    </x-dialogs.modal>
 
     <x-scenes.repositories.create-dialog
         :providers="$providers"

@@ -383,7 +383,7 @@ connection history in context, while preserving the full history page and export
 
 ## Slice 7 — scheduled-task output inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 4a80c23.
 
 ### Responsibility problem
 
@@ -446,7 +446,7 @@ notification delivery as explicit workflows.
 
 ## Slice 8 — recipe report-status inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 027f931.
 
 ### Responsibility problem
 
@@ -509,7 +509,7 @@ explicit pages or forms.
 
 ## Slice 9 — provider filter and edit modal reliability
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as c1d2c22.
 
 ### Responsibility problem
 
@@ -556,10 +556,66 @@ provider filtering or edit workflows.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `c1d2c22 Lock background while provider filters are open`.
 
 ### Exact next task
 
 Audit notification destination/status links and the remaining route inventory;
 choose the next bounded contextual inspector while keeping delivery, incident
 and other state-changing workflows explicit.
+
+## Slice 10 — repository deployment-impact inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The repository inventory linked to a full-page deployment-impact preview for a
+read-only changed-path analysis. That interrupted the inventory context on
+mobile even though the preview has no persistence, queue, provider call or
+deployment side effect.
+
+### Boundaries and benefit
+
+- `RepositoriesController::impactPreview()` remains the policy-authorized
+  request boundary and now returns either the existing full-page shell or a
+  body-only `fragment=repository-impact-preview` response.
+- The extracted impact-preview partial owns the existing path form, bounded
+  target results and safe repository links for both surfaces.
+- The repository inventory owns the lazy dialog trigger, contextual history
+  URL and shared content target; it does not evaluate path impact itself.
+- The full-page route remains the no-JavaScript/deep-link fallback, while
+  deployment, webhook and repository mutation workflows remain explicit.
+
+This reuses the existing request normalization, authorization and pure impact
+query without introducing a second evaluator or a generic repository layer.
+
+### Preserved behavior and safety
+
+- Changed-path validation, conservative unavailable-path behavior, target
+  ordering, counts, path limits and organization scoping remain unchanged.
+- The preview remains read-only: it does not create builds, dispatch jobs,
+  contact providers or modify repository settings.
+- Foreign users are still denied before malformed preview validation, and
+  invalid paths produce no preview or side effects.
+- Full-page navigation and repository links from results remain available;
+  valid modal submissions refresh only the dialog and retain the inventory URL.
+
+### Verification
+
+- Repository impact regression: **5 tests / 35 assertions passed**.
+- PHP syntax checks and Pint on changed PHP files: passed.
+- Focused browser journey: **1 test passed in 1.5 minutes** using PHP 8.5.10;
+  verified initial lazy load, result refresh, no document navigation, URL
+  stability, Escape/focus restoration and direct deep-link opening.
+- Browser fixture export, Node syntax check and `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Audit notification destinations and the remaining read-only inventory links;
+prioritize a contextual inspector only where it preserves ownership, read
+state and no-JavaScript fallback semantics.

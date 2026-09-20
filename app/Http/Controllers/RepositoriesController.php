@@ -82,11 +82,21 @@ class RepositoriesController extends Controller
     public function impactPreview(RepositoryImpactPreviewRequest $request): View
     {
         $this->authorize('viewAny', Repository::class);
+        $preview = $request->hasPreviewInput()
+            ? $this->impactPreview->for($request->user(), $request->changedPaths())
+            : null;
+
+        if ($request->string('fragment')->toString() === 'repository-impact-preview') {
+            return view('components.scenes.repositories.impact-preview-content', [
+                'preview' => $preview,
+                'changedPathsInput' => $request->changedPathsInput(),
+                'pathsUnavailable' => $request->pathsUnavailable(),
+                'fragment' => true,
+            ]);
+        }
 
         return view('scenes.repositories.impact-preview', [
-            'preview' => $request->hasPreviewInput()
-                ? $this->impactPreview->for($request->user(), $request->changedPaths())
-                : null,
+            'preview' => $preview,
             'changedPathsInput' => $request->changedPathsInput(),
             'pathsUnavailable' => $request->pathsUnavailable(),
         ]);
