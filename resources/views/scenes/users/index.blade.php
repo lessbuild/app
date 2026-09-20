@@ -12,6 +12,13 @@
         $signInHistoryDialogOpen = request()->query('dialog') === $signInHistoryDialogId;
         $signInHistoryDialogUrl = route('account.index', ['dialog' => $signInHistoryDialogId]);
         $signInHistoryContentUrl = route('account.sign-ins.index', ['fragment' => 'sign-in-history']);
+        $accountAuditDialogId = 'account-audit-dialog';
+        $accountAuditDialogOpen = request()->query('dialog') === $accountAuditDialogId;
+        $accountAuditDialogUrl = route('account.index', ['dialog' => $accountAuditDialogId]);
+        $accountAuditContentUrl = route('activity.index', [
+            'category' => 'account',
+            'fragment' => 'account-audit',
+        ]);
         $securityCheckCount = collect([
             auth()->user()->hasVerifiedEmail(),
             auth()->user()->hasLocalPassword(),
@@ -288,7 +295,15 @@
             @if (auth()->user()->hasVerifiedEmail())
                 <x-slot:footer>
                     <div class="flex justify-end bg-tertiary px-4 py-3 sm:px-6">
-                        <x-ui.button href="{{ route('activity.index', ['category' => 'account']) }}" variant="secondary">
+                        <x-ui.button
+                            href="{{ route('activity.index', ['category' => 'account']) }}"
+                            data-modal-trigger="{{ $accountAuditDialogId }}"
+                            data-modal-content-url="{{ $accountAuditContentUrl }}"
+                            data-modal-history-url="{{ $accountAuditDialogUrl }}"
+                            aria-controls="{{ $accountAuditDialogId }}"
+                            aria-expanded="{{ $accountAuditDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
                             {{ __('View full account audit') }}
                         </x-ui.button>
                     </div>
@@ -618,6 +633,18 @@
     >
         <div data-modal-content>
             <p class="p-5 text-sm text-secondary">{{ __('Loading sign-in history…') }}</p>
+        </div>
+    </x-dialogs.modal>
+
+    <x-dialogs.modal
+        id="{{ $accountAuditDialogId }}"
+        :title="__('Account audit')"
+        :description="__('Review security activity without leaving account settings.')"
+        :open="$accountAuditDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading account audit…') }}</p>
         </div>
     </x-dialogs.modal>
 </x-layouts.app>

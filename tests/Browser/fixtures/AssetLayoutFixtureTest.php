@@ -50,14 +50,21 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/account.html', $this->renderPage(route('account.index'))->assertOk()
-            ->assertSee('data-modal-trigger="account-sign-in-history-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="account-sign-in-history-dialog"', false)
+            ->assertSee('data-modal-trigger="account-audit-dialog"', false)->getContent());
         File::put($directory.'/account-sign-in-history-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-sign-in-history-dialog']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/account-audit-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-audit-dialog']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/sign-in-history.html', $this->renderPage(route('account.sign-ins.index'))->assertOk()
             ->assertSee('No sign-in history yet.')->getContent());
         File::put($directory.'/sign-in-history-content.html', $this->renderPage(route('account.sign-ins.index', [
             'fragment' => 'sign-in-history',
         ]))->assertOk()->assertSee('data-modal-fragment-form', false)->getContent());
+        File::put($directory.'/account-audit-content.html', $this->renderPage(route('activity.index', [
+            'category' => 'account',
+            'fragment' => 'account-audit',
+        ]))->assertOk()->assertSee('data-activity-audit-content', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

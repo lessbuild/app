@@ -47,6 +47,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
         const signInHistoryPage = pathname === '/account/sign-ins';
         const environmentContextPage = /^\/observability\/environments\/\d+\/context$/.test(pathname);
+        const activityPage = pathname === '/activity';
         const projectPage = /^\/projects\/\d+$/.test(pathname);
         const modalContentFixture = pathname === '/providers/1/edit'
             ? 'provider-edit-content'
@@ -70,7 +71,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || activityPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
@@ -103,6 +104,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'sign-in-history'
                         : environmentContextPage
                             ? 'observability-environment-context'
+                        : activityPage
+                            ? 'activity'
                         : configurationDialogPage
                             ? 'configuration-dialog'
                         : projectPage
@@ -126,6 +129,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'sign-in-history-content'
                 : screen === 'observability-environment-context' && dialog === 'environment-health-checks-dialog'
                     ? 'observability-environment-context-dialog'
+                : screen === 'activity' && fragment === 'account-audit'
+                    ? 'account-audit-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -150,6 +155,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'build-website-health-checks-dialog'
                             : screen === 'account' && dialog === 'account-sign-in-history-dialog'
                                 ? 'account-sign-in-history-dialog'
+                            : screen === 'account' && dialog === 'account-audit-dialog'
+                                ? 'account-audit-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -561,6 +568,32 @@ test('environment evidence health history opens without leaving the investigatio
 
     await page.goto('http://buildpusher.test/observability/environments/1/context?dialog=environment-health-checks-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
+});
+
+test('account audit opens as a compact read-only security inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/account', { waitUntil: 'networkidle' });
+
+    const securitySection = page.locator('#account-security-activity');
+    await securitySection.locator('summary').click();
+    const trigger = page.getByRole('link', { name: 'View full account audit', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Account audit', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-activity-audit-content]')).toBeVisible();
+    await expect(dialog).toContainText('No account activity yet');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('account-audit-dialog');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/account?dialog=account-audit-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Account audit', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

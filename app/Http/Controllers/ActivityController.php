@@ -28,18 +28,34 @@ class ActivityController extends Controller
     {
         $filters = $request->filters();
         $user = $request->user();
+        $isFragment = $request->string('fragment')->toString() === 'account-audit';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'account-audit';
+        }
 
-        return view('activity.index', [
-            'events' => $this->activity->for($user, $filters)
-                ->with('parentable')
-                ->latest()
-                ->paginate(25)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+        $events = $this->activity->for($user, $filters)
+            ->with('parentable')
+            ->latest()
+            ->paginate(25)
+            ->appends($paginationQuery);
+        $auditAvailable = $this->entitlements->allows($request->user()->currentOrganization, 'audit');
+        $viewData = [
+            'events' => $events,
             'filters' => $filters,
             'metrics' => $this->activity->metrics($user, $filters),
             'categories' => Event::CATEGORIES,
-            'auditAvailable' => $this->entitlements->allows($request->user()->currentOrganization, 'audit'),
-        ]);
+            'auditAvailable' => $auditAvailable,
+        ];
+
+        if ($isFragment) {
+            return view('components.activity.audit-content', [
+                ...$viewData,
+                'fullPageUrl' => route('activity.index', array_filter($filters, fn ($value) => $value !== null)),
+            ]);
+        }
+
+        return view('activity.index', $viewData);
     }
 
     /**

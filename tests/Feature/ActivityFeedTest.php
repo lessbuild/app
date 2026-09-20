@@ -9,6 +9,7 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\ActivityRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
@@ -124,6 +125,29 @@ class ActivityFeedTest extends TestCase
             ->assertDontSee('Needle deployment too early')
             ->assertDontSee('Needle deployment from another owner')
             ->assertSee(route('activity.export', $filters));
+    }
+
+    public function test_account_audit_fragment_reuses_owner_scoping_without_rendering_a_full_page(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $recorder = app(ActivityRecorder::class);
+        $recorder->recordAccount($owner, 'Owner audit event.');
+        $recorder->recordAccount($other, 'Foreign audit event.');
+
+        $response = $this->actingAs($owner)->get(route('activity.index', [
+            'category' => 'account',
+            'fragment' => 'account-audit',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.activity.audit-content')
+            ->assertSee('data-activity-audit-content', false)
+            ->assertSee('Owner audit event.')
+            ->assertDontSee('Foreign audit event.')
+            ->assertDontSee('<html', false)
+            ->assertSee(route('activity.index', ['category' => 'account']), false);
     }
 
     public function test_invalid_activity_filters_are_normalized_without_affecting_history(): void
