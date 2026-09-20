@@ -77,7 +77,7 @@ connection history in context, while preserving the full history page and export
 
 ## Slice 3 — provider connection-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 0bd0bda.
 
 ### Responsibility problem
 
@@ -262,7 +262,7 @@ Keep remote execution, retry, provisioning and report mutations explicit.
 
 ## Slice 6 — server command-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 32fabc1.
 
 ### Responsibility problem
 
@@ -314,7 +314,7 @@ authorization and queue boundaries.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: 32fabc1 Open server command history in a dialog.
 
 ### Exact next task
 
@@ -380,3 +380,66 @@ Commit and push: `af2e8eb Open workspace search in a shared dialog`.
 
 Implement the first bounded read-only inspector from the route audit: provider
 connection history in context, while preserving the full history page and export.
+
+## Slice 7 — scheduled-task output inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+Recent scheduled-task run links on Automation navigated directly to a plain-text
+output response. That discarded the application and environment context, while
+the task controls themselves should remain explicit state-changing workflows.
+The existing authorized output endpoint already owns the correct environment
+policy and raw-response compatibility, so the modal adds only a read-only
+presentation boundary.
+
+### Boundaries and benefit
+
+- AutomationController::scheduledTaskOutput() remains the single authorized
+  run-output boundary and now serves a body-only
+  fragment=scheduled-task-output response in addition to the existing raw text
+  response.
+- The scheduled-task output partial owns only run metadata, bounded scrolling
+  presentation and the existing raw-output fallback link.
+- The Automation page owns one shared lazy dialog shell and contextual history
+  URLs for all recent runs; it does not duplicate task execution logic.
+- Run, delete, retry and incident workflows remain explicit forms/jobs rather
+  than being folded into an inspector.
+
+This keeps inspection separate from mutation, reuses the existing authorization
+and encrypted output model, and preserves the no-JavaScript endpoint.
+
+### Preserved behavior and safety
+
+- Raw output requests retain their plain-text content type, no-store/private
+  headers and existing response body.
+- Fragment requests authorize before rendering; foreign actors receive 403 and
+  the encrypted output is not rendered by the Automation page itself.
+- Output remains escaped in the HTML fragment, encrypted at rest and bounded by
+  the existing scheduled-task worker retention limit.
+- Opening the dialog does not queue, cancel, delete or retry a run.
+- JavaScript-disabled users retain the original raw-output link.
+- The dialog uses a shared content target, same-origin lazy loading, URL
+  history and focus restoration.
+
+### Verification
+
+- Automation regression: 38 tests / 210 assertions passed.
+- PHP syntax checks: passed for the controller, feature test and browser
+  fixture.
+- Pint on changed PHP files: passed.
+- Focused browser journey: 1 test passed in 1.3 minutes using PHP 8.5.10;
+  verified lazy output loading, contextual URL stability, direct deep-link
+  opening, Escape and focus restoration.
+- git diff --check: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Inspect report-status and notification-destination links for one bounded
+read-only contextual inspector. Keep report mutations, incident changes,
+destination tests and notification delivery as explicit workflows.

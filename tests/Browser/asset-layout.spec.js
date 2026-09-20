@@ -37,6 +37,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         const serverPage = /^\/servers\/\d+$/.test(pathname);
         const serverCommandsPage = /^\/servers\/\d+\/commands$/.test(pathname);
+        const scheduledTaskRunOutputPage = /^\/automation\/task-runs\/\d+\/output$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
         const projectPage = /^\/projects\/\d+$/.test(pathname);
@@ -62,7 +63,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
@@ -73,6 +74,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'repository-show'
                         : serverCommandsPage
                             ? 'server-commands'
+                                : scheduledTaskRunOutputPage
+                                    ? 'automation-task-run-output'
                                 : serverPage
                                     ? 'server-show'
                             : websitePage
@@ -90,6 +93,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                 ? 'website-deployment-history'
                 : screen === 'server-commands' && fragment === 'server-command-history'
                     ? 'server-command-history'
+                : screen === 'automation-task-run-output' && fragment === 'scheduled-task-output'
+                    ? 'automation-task-run-output'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -98,6 +103,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                         ? 'feedback-dialog'
                         : screen === 'automation' && dialog === 'create-token'
                             ? 'automation-dialog'
+                            : screen === 'automation' && dialog?.startsWith('scheduled-task-run-')
+                                ? 'automation-run-dialog'
                             : screen === 'backups' && dialog === 'add-schedule'
                                 ? 'backups-dialog'
                             : screen === 'backups' && dialog === 'add-destination'
@@ -1299,6 +1306,32 @@ test('automation schedule and task composers use compact accessible dialogs', as
     await page.locator('[id^="automation-task-dialog-"] [data-modal-close]').click();
     await expect(taskDialog).toBeHidden();
     await expect(taskTrigger).toBeFocused();
+});
+
+test('scheduled task output opens as a read-only contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/automation', { waitUntil: 'networkidle' });
+    await page.locator('details[id^="automation-project-"]').first().locator('summary').click();
+
+    const trigger = page.locator('[data-modal-trigger="automation-task-run-dialog"]').first();
+    const dialog = page.getByRole('dialog', { name: 'Scheduled task run output', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-task-run-output]')).toBeVisible();
+    await expect(dialog.locator('[data-task-run-output-text]')).toContainText('fixture scheduled task output');
+    await expect(dialog.getByRole('link', { name: 'Open raw output', exact: true })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    const dialogQuery = new URL(page.url()).searchParams.get('dialog');
+    expect(dialogQuery).toMatch(/^scheduled-task-run-\d+$/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/automation?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
+    await expect(dialog).toBeVisible();
 });
 
 test('application detail composers use compact accessible dialogs', async ({ page }) => {

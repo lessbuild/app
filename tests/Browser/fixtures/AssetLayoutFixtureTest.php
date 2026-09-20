@@ -107,17 +107,42 @@ class AssetLayoutFixtureTest extends TestCase
         $project = $owner->currentOrganization->projects()->create([
             'name' => 'A deliberately long layout fixture application name', 'slug' => 'layout-fixture', 'created_by' => $owner->id,
         ]);
-        $project->environments()->create([
+        $environment = $project->environments()->create([
             'name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main',
+        ]);
+        $scheduledTask = $environment->scheduledTasks()->create([
+            'created_by' => $owner->id,
+            'name' => 'Warm cache',
+            'command' => 'php artisan cache:warm',
+            'cron_expression' => '0 * * * *',
+            'timezone' => 'UTC',
+            'timeout_seconds' => 300,
+            'without_overlapping' => true,
+            'alert_on_failure' => true,
+            'is_enabled' => true,
+        ]);
+        $scheduledTaskRun = $scheduledTask->runs()->create([
+            'status' => 'succeeded',
+            'output' => 'fixture scheduled task output',
+            'started_at' => now()->subMinute(),
+            'finished_at' => now(),
+            'duration_ms' => 800,
         ]);
         File::put($directory.'/automation.html', $this->renderPage(route('automation.index'))->assertOk()
             ->assertSee('Automate routine release work')
             ->assertSee('data-modal-trigger="automation-token-dialog"', false)
             ->assertSee('data-modal-trigger="automation-schedule-dialog-', false)
             ->assertSee('data-modal-trigger="automation-task-dialog-', false)
+            ->assertSee('data-modal-trigger="automation-task-run-dialog"', false)
             ->getContent());
         File::put($directory.'/automation-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'create-token']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/automation-run-dialog.html', $this->renderPage(route('automation.index', ['dialog' => 'scheduled-task-run-'.$scheduledTaskRun->id]))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/automation-task-run-output.html', $this->renderPage(route('automation.task-runs.output', [
+            'run' => $scheduledTaskRun,
+            'fragment' => 'scheduled-task-output',
+        ]))->assertOk()->assertSee('fixture scheduled task output')->getContent());
         File::put($directory.'/projects.html', $this->renderPage(route('projects.index'))->assertOk()
             ->assertSee('A deliberately long layout fixture application name')->getContent());
         File::put($directory.'/projects-dialog.html', $this->renderPage(route('projects.index', ['dialog' => 'create-application']))

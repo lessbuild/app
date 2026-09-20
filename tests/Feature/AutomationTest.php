@@ -294,6 +294,63 @@ class AutomationTest extends TestCase
         Queue::assertNotPushed(RunScheduledTaskJob::class);
     }
 
+    public function test_owner_can_open_scheduled_task_output_in_a_contextual_fragment_and_keep_raw_output_compatible(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['created_by' => $user->id, 'name' => 'Tasks', 'slug' => 'tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $user->id, 'name' => 'Warm cache', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+        $run = $task->runs()->create([
+            'status' => 'succeeded',
+            'output' => 'scheduled-task-output-secret',
+            'started_at' => now()->subMinute(),
+            'finished_at' => now(),
+            'duration_ms' => 1234,
+        ]);
+
+        $this->actingAs($user)->get(route('automation.index'))
+            ->assertOk()
+            ->assertSee('data-modal-trigger="automation-task-run-dialog"', false)
+            ->assertDontSee('scheduled-task-output-secret');
+
+        $this->actingAs($user)->get(route('automation.task-runs.output', ['run' => $run, 'fragment' => 'scheduled-task-output']))
+            ->assertOk()
+            ->assertSee('data-task-run-output', false)
+            ->assertSee('scheduled-task-output-secret')
+            ->assertSee('Open raw output');
+
+        $raw = $this->actingAs($user)->get(route('automation.task-runs.output', $run));
+        $raw->assertOk()->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+        $this->assertSame('scheduled-task-output-secret', $raw->getContent());
+
+        $this->actingAs($user)->get(route('automation.index', ['dialog' => 'scheduled-task-run-'.$run->id]))
+            ->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('data-modal-trigger="automation-task-run-dialog"', false);
+    }
+
+    public function test_foreign_actor_cannot_open_scheduled_task_output_fragment(): void
+    {
+        $owner = User::factory()->create();
+        $foreign = User::factory()->create();
+        $project = $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => 'Private tasks', 'slug' => 'private-tasks', 'preset' => 'custom']);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main']);
+        $task = $environment->scheduledTasks()->create([
+            'created_by' => $owner->id, 'name' => 'Private task', 'cron_expression' => '*/5 * * * *', 'timezone' => 'UTC',
+            'command' => 'php artisan private:task', 'timeout_seconds' => 120,
+            'without_overlapping' => true, 'alert_on_failure' => true, 'is_enabled' => true,
+        ]);
+        $run = $task->runs()->create(['status' => 'failed', 'output' => 'private-scheduled-task-output']);
+
+        $this->actingAs($foreign)->get(route('automation.task-runs.output', ['run' => $run, 'fragment' => 'scheduled-task-output']))
+            ->assertForbidden()
+            ->assertDontSee('private-scheduled-task-output');
+    }
+
     public function test_owner_can_delete_automation_schedule_and_task_records(): void
     {
         $user = User::factory()->create();

@@ -55,6 +55,21 @@
         $scalingScheduleCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->scalingSchedules->count()));
         $scheduledTaskCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->scheduledTasks->count()));
         $scheduledOperationCount = $deploymentScheduleCount + $scalingScheduleCount + $scheduledTaskCount;
+        $scheduledTaskRuns = $projects
+            ->flatMap(fn ($project) => $project->environments)
+            ->flatMap(fn ($environment) => $environment->scheduledTasks)
+            ->flatMap(fn ($task) => $task->runs)
+            ->values();
+        $scheduledTaskRunDialogKey = request()->query('dialog');
+        $scheduledTaskRunId = is_string($scheduledTaskRunDialogKey)
+            && preg_match('/^scheduled-task-run-(\d+)$/', $scheduledTaskRunDialogKey, $matches) === 1
+            ? (int) $matches[1]
+            : null;
+        $scheduledTaskRun = $scheduledTaskRunId === null
+            ? null
+            : $scheduledTaskRuns->first(fn ($run) => (int) $run->id === $scheduledTaskRunId);
+        $scheduledTaskRunDialogOpen = $scheduledTaskRun !== null
+            && $scheduledTaskRunDialogKey === 'scheduled-task-run-'.$scheduledTaskRun->id;
     @endphp
 
     <x-ui.insights
@@ -320,10 +335,21 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                             <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
                                                         </form>
                                                     </div>
-                                                    @if ($task->runs->isNotEmpty())
+                                                            @if ($task->runs->isNotEmpty())
                                                         <div class="mt-2 flex flex-wrap gap-2">
                                                             @foreach ($task->runs->take(5) as $run)
-                                                                <a href="{{ route('automation.task-runs.output', $run) }}" class="rounded-md bg-secondary px-2 py-1 text-[10px] text-secondary">{{ $run->status }} · {{ $run->created_at->diffForHumans() }}</a>
+                                                                @php
+                                                                    $taskRunDialogKey = 'scheduled-task-run-'.$run->id;
+                                                                @endphp
+                                                                <a
+                                                                    href="{{ route('automation.task-runs.output', $run) }}"
+                                                                    data-modal-trigger="automation-task-run-dialog"
+                                                                    data-modal-content-url="{{ route('automation.task-runs.output', ['run' => $run, 'fragment' => 'scheduled-task-output']) }}"
+                                                                    data-modal-history-url="{{ route('automation.index', ['dialog' => $taskRunDialogKey]) }}"
+                                                                    aria-controls="automation-task-run-dialog"
+                                                                    aria-expanded="{{ $scheduledTaskRunDialogOpen && $scheduledTaskRun->id === $run->id ? 'true' : 'false' }}"
+                                                                    class="rounded-md bg-secondary px-2 py-1 text-[10px] text-secondary"
+                                                                >{{ $run->status }} · {{ $run->created_at->diffForHumans() }}</a>
                                                             @endforeach
                                                         </div>
                                                     @endif
@@ -368,4 +394,17 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
             @endforelse
         </div>
     </section>
+
+    @if ($scheduledTaskRuns->isNotEmpty())
+        <x-dialogs.modal
+            id="automation-task-run-dialog"
+            :title="__('Scheduled task run output')"
+            :description="__('Review the retained output and timing for this run without leaving Automation.')"
+            :open="$scheduledTaskRunDialogOpen"
+        >
+            <div data-modal-content>
+                <div class="space-y-3 text-sm text-secondary">{{ __('Loading task-run details…') }}</div>
+            </div>
+        </x-dialogs.modal>
+    @endif
 </x-layouts.app>

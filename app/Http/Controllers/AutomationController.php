@@ -167,11 +167,18 @@ class AutomationController extends Controller
     }
 
     /**
-     * Authorize viewing the run's environment and return uncached plain-text output or an empty-output message.
+     * Authorize viewing the run's environment and return either a contextual inspector or uncached plain-text output.
      */
-    public function scheduledTaskOutput(ScheduledTaskRun $run): Response
+    public function scheduledTaskOutput(Request $request, ScheduledTaskRun $run): View|Response
     {
         $this->authorize('view', $run->task->environment);
+
+        if ($request->string('fragment')->toString() === 'scheduled-task-output') {
+            return view('components.scenes.automation.scheduled-task-output-content', [
+                'run' => $run,
+                'task' => $run->task,
+            ]);
+        }
 
         return response($run->output ?: __('No output was recorded.'), 200, [
             'Content-Type' => 'text/plain; charset=UTF-8',
