@@ -503,9 +503,20 @@ modal and navigation slices.
   not authenticated journey coverage, physical-device coverage, provider
   acceptance or production deployment.
 
+### Authenticated dev-domain acceptance — 2026-09-20
+
+- The live-domain browser smoke suite passed **7 tests in 1.2 minutes** across
+  mobile, tablet and desktop accessibility, keyboard behavior, merged
+  navigation groups, Livewire/Alpine loading and Escape navigation.
+- The authenticated visual audit passed **3 tests in 9.7 minutes** at 390px,
+  768px and 1440px. It crawled the seeded product routes and found no asserted
+  HTTP failures, browser runtime errors or horizontal-overflow regressions.
+- These checks ran against the isolated `buildpusher.com` dev runtime after
+  it was synchronized to `5763c08`.
+
 ### Scope boundary
 
-This is isolated local/dev evidence. It does not claim production deployment,
-authenticated real-user journey coverage, live cloud/provider acceptance,
-physical-device testing or the separate acceptance-drill checkout. Those
-remain explicitly external follow-up work.
+This is isolated local/dev browser evidence. It does not claim production
+deployment, physical-device testing, live provider/cloud acceptance or the
+separate acceptance-drill checkout. Those remain explicitly external
+follow-up work.

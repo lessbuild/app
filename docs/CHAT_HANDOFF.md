@@ -41,6 +41,14 @@ This remains isolated local/dev evidence. It does not claim production
 deployment, authenticated real-user journey coverage, live cloud/provider
 acceptance, physical-device testing or acceptance-drill completion.
 
+The subsequent isolated dev-domain acceptance also passed: the authenticated
+live smoke suite passed **7 browser tests in 1.2 minutes** across responsive
+accessibility, keyboard behavior, navigation groups and Livewire/Alpine loading.
+The broad authenticated visual audit passed **3 browser tests in 9.7 minutes**
+at 390px, 768px and 1440px, with no asserted HTTP failures, browser runtime
+errors or horizontal overflow. This is still dev-domain evidence, not
+production, physical-device or provider/cloud acceptance.
+
 # Latest repository-dialog slice — 2026-09-19
 
 The repository creation follow-up is complete and pushed on `main` at
