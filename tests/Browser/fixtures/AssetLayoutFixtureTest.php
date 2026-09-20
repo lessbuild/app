@@ -169,6 +169,7 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="website-edit-dialog"', false)
             ->assertSee('data-modal-trigger="website-log-retention-dialog"', false)
             ->assertSee('data-modal-trigger="website-health-checks-dialog"', false)
+            ->assertSee('data-modal-trigger="website-deployment-history-dialog"', false)
             ->assertDontSee('APP_ENV=production')->getContent());
         File::put($directory.'/website-health-checks.html', $this->renderPage(route('websites.health-checks.index', [
             'website' => $website,
@@ -289,6 +290,10 @@ class AssetLayoutFixtureTest extends TestCase
             'started_at' => now()->subMinutes(2),
             'finished_at' => now(),
         ]);
+        File::put($directory.'/website-deployment-history.html', $this->renderPage(route('builds.index', [
+            'website_id' => $website->id,
+            'fragment' => 'deployment-history',
+        ]))->assertOk()->assertSee('data-build-card', false)->getContent());
         File::put($directory.'/build.html', $this->renderPage(route('builds.show', $build))->assertOk()
             ->assertSee('Deployment evidence')
             ->assertSee('data-modal-trigger="build-note-dialog"', false)

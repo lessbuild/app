@@ -17,6 +17,12 @@
             'website' => $website,
             'fragment' => 'website-health-checks',
         ]);
+        $deploymentHistoryDialogOpen = request()->query('dialog') === 'website-deployment-history';
+        $deploymentHistoryDialogUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'website-deployment-history']);
+        $deploymentHistoryContentUrl = route('builds.index', [
+            'website_id' => $website->id,
+            'fragment' => 'deployment-history',
+        ]);
         $canUpdateWebsite = auth()->user()?->can('update', $website) ?? false;
     @endphp
 
@@ -57,7 +63,15 @@
         :description="$website->description"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('builds.index', ['website_id' => $website->id])" variant="secondary">
+            <x-ui.button
+                :href="route('builds.index', ['website_id' => $website->id])"
+                data-modal-trigger="website-deployment-history-dialog"
+                data-modal-content-url="{{ $deploymentHistoryContentUrl }}"
+                data-modal-history-url="{{ $deploymentHistoryDialogUrl }}"
+                aria-controls="website-deployment-history-dialog"
+                aria-expanded="{{ $deploymentHistoryDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 {{ __('Deployment history') }}
             </x-ui.button>
 
@@ -377,6 +391,18 @@
     >
         <div data-modal-content>
             <p class="p-5 text-sm text-secondary">{{ __('Loading health check history…') }}</p>
+        </div>
+    </x-dialogs.modal>
+
+    <x-dialogs.modal
+        id="website-deployment-history-dialog"
+        :title="__('Deployment history')"
+        :description="__('Review recent deployments without leaving this website.')"
+        :open="$deploymentHistoryDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading deployment history…') }}</p>
         </div>
     </x-dialogs.modal>
 

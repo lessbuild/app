@@ -1,0 +1,78 @@
+@php
+    $historyUrl = route('builds.index', array_filter($filters, fn ($value) => $value !== null));
+@endphp
+
+<div class="space-y-5 p-4 sm:p-5">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Release operations') }}</p>
+            <h3 class="mt-1 text-xl font-black text-primary">{{ __('Recent deployments') }}</h3>
+            <p class="mt-1 text-sm text-secondary">{{ __('Review revision, status and timing without leaving this website.') }}</p>
+        </div>
+        <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>
+    </div>
+
+    <x-ui.insights
+        id="deployment-history-dialog-insights"
+        :summary="trans_choice(':count matching deployment|:count matching deployments', $metrics['total'], ['count' => $metrics['total']])"
+    >
+        <dl class="ui-insight-grid grid gap-3 sm:grid-cols-3">
+            <x-ui.stat class="ui-card" :label="__('Deployments')" :value="$metrics['total']" :description="__('Matching workspace history.')" />
+            <x-ui.stat class="ui-card" :label="__('Active')" :value="$metrics['active']" :description="__('Queued or running work.')" />
+            <x-ui.stat class="ui-card" :label="__('Observed success')" :value="$metrics['success_rate'] !== null ? $metrics['success_rate'].'%' : __('Not available')" :description="__('Succeeded versus failed outcomes.')" />
+        </dl>
+    </x-ui.insights>
+
+    @if ($builds->isEmpty())
+        <x-ui.empty-state
+            :title="array_filter($filters, fn ($value) => $value !== null) ? __('No deployments match this website.') : __('No deployments have been recorded yet.')"
+            :description="__('Deployment history will appear here after the first deployment request.')"
+        />
+    @else
+        <ol class="relative space-y-3 border-l border-primary pl-4" aria-label="{{ __('Deployment timeline') }}">
+            @foreach ($builds as $build)
+                <li data-build-card class="relative rounded-xl border border-primary bg-primary p-4">
+                    <span class="absolute -left-[1.35rem] top-5 h-3 w-3 rounded-full border-2 border-primary bg-accent" aria-hidden="true"></span>
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
+                            @if ($build->commit_message)
+                                <p class="mt-1 line-clamp-2 text-xs text-secondary">{{ $build->commit_message }}</p>
+                            @endif
+                            <p class="mt-1 text-xs text-secondary">
+                                {{ ucfirst($build->trigger_source) }} · {{ $build->created_at?->diffForHumans() ?? __('Date unavailable') }}
+                            </p>
+                        </div>
+                        <x-ui.badge :tone="match ($build->status) {
+                            \App\Models\Build::STATUS_SUCCEEDED => 'success',
+                            \App\Models\Build::STATUS_FAILED => 'danger',
+                            \App\Models\Build::STATUS_CANCELED, \App\Models\Build::STATUS_REJECTED => 'warning',
+                            \App\Models\Build::STATUS_RUNNING, \App\Models\Build::STATUS_QUEUED, \App\Models\Build::STATUS_TIMING_OUT => 'accent',
+                            default => 'neutral',
+                        }">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                    </div>
+                    <dl class="mt-3 grid gap-3 text-xs sm:grid-cols-3">
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Revision') }}</dt>
+                            <dd class="mt-1 break-all font-mono text-primary">{{ $build->revision ? $build->shortRevision() : __('Current branch') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</dd>
+                        </div>
+                        <div>
+                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
+                        </div>
+                    </dl>
+                    <div class="mt-3">
+                        <x-ui.button :href="route('builds.show', $build)" variant="ghost">{{ __('View deployment') }}</x-ui.button>
+                    </div>
+                </li>
+            @endforeach
+        </ol>
+        @if ($builds->hasMorePages())
+            <div class="pt-1">{{ $builds->links() }}</div>
+        @endif
+    @endif
+</div>

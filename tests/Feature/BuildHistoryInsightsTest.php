@@ -47,6 +47,30 @@ class BuildHistoryInsightsTest extends TestCase
             ->assertDontSee('Foreign private deployment');
     }
 
+    public function test_deployment_history_fragment_reuses_workspace_scoping_for_the_website_dialog(): void
+    {
+        [$owner, $repository] = $this->repository('Dialog');
+        $build = $this->build($repository, Build::STATUS_FAILED, now(), 'Dialog deployment');
+        [, $foreignRepository] = $this->repository('Foreign dialog');
+        $foreignBuild = $this->build($foreignRepository, Build::STATUS_SUCCEEDED, now(), 'Private deployment');
+
+        $response = $this->actingAs($owner)->get(route('builds.index', [
+            'website_id' => $repository->website_id,
+            'fragment' => 'deployment-history',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.builds.deployment-history-content')
+            ->assertViewHas('filters', fn (array $filters): bool => $filters['website_id'] === $repository->website_id)
+            ->assertSee('data-build-card', false)
+            ->assertSee('Dialog deployment')
+            ->assertSee(route('builds.show', $build))
+            ->assertDontSee(route('builds.show', $foreignBuild))
+            ->assertDontSee('Private deployment')
+            ->assertDontSee('<html', false);
+    }
+
     public function test_deployment_history_page_does_not_render_the_local_section_links(): void
     {
         [$owner, $repository] = $this->repository('Owner');

@@ -61,7 +61,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage) {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
@@ -82,7 +82,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'project-detail'
                         : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
-            const fixtureName = screen === 'domains' && dialog === 'add-domain'
+            const fragment = new URL(route.request().url()).searchParams.get('fragment');
+            const fixtureName = screen === 'builds' && fragment === 'deployment-history'
+                ? 'website-deployment-history'
+                : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
                     ? 'organization-dialog'
@@ -415,6 +418,28 @@ test('website health history opens and filters inside a contextual dialog', asyn
     await dialog.getByRole('button', { name: 'Apply filters', exact: true }).click();
     await expect(dialog.locator('#health-dialog-result')).toHaveValue('failed');
     expect(new URL(page.url()).pathname).toBe(initialPath);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+});
+
+test('website deployment history opens as a contextual timeline', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Deployment history', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Deployment history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('list', { name: 'Deployment timeline', exact: true })).toBeVisible();
+    await expect(dialog.getByText('Recent deployments', { exact: true })).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('website-deployment-history');
+    await expect(dialog.getByRole('link', { name: 'Open full history', exact: true })).toHaveAttribute('href', /builds\?website_id=/);
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();

@@ -191,13 +191,74 @@ introducing a generic cross-resource repository.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `5d3e515 Open website health history in a dialog`.
 
 ### Exact next task
 
 After this slice is committed and pushed, inspect deployment history and
 bounded command/task output links for contextual read-only inspectors. Keep
 deployment execution, rollback, cancellation and retry as explicit workflows.
+
+## Slice 5 — website deployment-history timeline
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The website detail page sent users to the full deployment inventory for a
+common read-only question: what changed recently and what state is it in? That
+transition was especially costly on mobile. Deployment execution, approvals,
+rollback and cancellation are state-changing workflows and should not be
+collapsed into a read-only modal, so the bounded improvement is a timeline
+inspector only.
+
+### Boundaries and benefit
+
+- `BuildsController::index()` remains the workspace-scoped deployment-history
+  read boundary and now serves a body-only `fragment=deployment-history` view
+  for a website filter.
+- `BuildInventoryQuery` remains the source of filtered builds and metrics;
+  no website-page-specific query or repository wrapper was introduced.
+- The website detail view owns the trigger and modal shell.
+- The new timeline partial presents bounded revision, status, trigger, timing
+  and full-detail links. Build show pages retain all operational actions.
+
+This keeps HTTP coordination, scoped inventory reads, presentation and
+state-changing deployment operations separate while reusing the existing
+query and policy boundaries.
+
+### Preserved behavior and safety
+
+- The full `/builds` inventory, all existing filters, pagination, export and
+  workspace scoping remain unchanged for normal requests.
+- The fragment uses the validated `BuildIndexRequest` filters and the same
+  organization-scoped query, so foreign website/repository builds cannot leak.
+- The modal is read-only. Links to a deployment detail page deliberately leave
+  the modal so approval, retry, rollback, cancellation and logs keep their
+  existing page/workflow semantics.
+- No deployment, remote command, queue dispatch or database write happens on
+  modal open.
+- JavaScript-disabled users retain the original filtered builds URL.
+
+### Verification
+
+- Build-history regression: **6 tests / 47 assertions passed**.
+- Pint on changed PHP files: passed.
+- Vite production asset build: passed.
+- Focused browser test: **1 test passed in 1.5 minutes** using PHP 8.5.10;
+  verified timeline rendering, contextual URL stability, full-history fallback
+  and focus restoration.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+After this slice is committed and pushed, inspect bounded server command/task
+output and report-status links for the next read-only contextual inspector.
+Keep remote execution, retry, provisioning and report mutations explicit.
 
 ## Slice 2 — shared workspace search
 

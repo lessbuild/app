@@ -40,16 +40,29 @@ class BuildsController extends Controller
     public function index(BuildIndexRequest $request): View
     {
         $filters = $request->filters();
+        $isFragment = $request->string('fragment')->toString() === 'deployment-history';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'deployment-history';
+        }
 
         $builds = $this->buildInventory->for($request->user(), $filters)
             ->latest('builds.created_at')
-            ->simplePaginate()
-            ->appends(array_filter($filters, fn ($value) => $value !== null));
+            ->simplePaginate($isFragment ? 10 : 15, pageName: $isFragment ? 'deployment_history_page' : 'page')
+            ->appends($paginationQuery);
 
-        return view('scenes.builds.index', [
+        $viewData = [
             'builds' => $builds,
             'filters' => $filters,
             'metrics' => $this->buildInventory->metrics($request->user(), $filters),
+        ];
+
+        if ($isFragment) {
+            return view('components.scenes.builds.deployment-history-content', $viewData);
+        }
+
+        return view('scenes.builds.index', [
+            ...$viewData,
             'repositories' => $request->user()->workspaceRepositories()->orderBy('name')->get(['id', 'name']),
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(['id', 'name']),
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(['id', 'name', 'display_name']),
