@@ -143,6 +143,64 @@ acknowledge, assign, note, resolve and other state-changing incident controls
 explicit; add a modal only if a bounded read-only evidence view removes context
 switching without nesting those workflows.
 
+## Slice 28 — operational incident timeline inspector
+
+Status: complete; implementation commit and ledger commit are being finalized
+and will be pushed separately.
+
+### Responsibility problem
+
+Operational incident cards expanded encrypted summaries and event timelines
+inline for every incident. That increased mobile scrolling and made the normal
+incident scan carry detailed response evidence before it was requested. The
+same cards also contain acknowledge, assign, note and resolve controls, so
+moving the whole card into a dialog would hide state-changing workflows.
+
+### Boundaries and benefit
+
+- `ObservabilityController::index()` keeps current-workspace authorization and
+  serves a body-only `fragment=operational-incident` response for one incident
+  selected through the organization relationship.
+- The operational incident card now exposes one read-only “Timeline and
+  response” trigger and a separate “Response actions” disclosure.
+- `operational-incident-content` owns summary, event timeline and resolution
+  presentation; it has no mutation form or remote operation.
+- The observability page owns one reusable lazy dialog and a deep-link fallback
+  trigger for records outside the bounded dashboard result set.
+
+This applies single responsibility to read evidence versus response actions,
+reuses the existing organization-scoped dashboard query and incident model,
+and avoids a generic incident repository or a second authorization system.
+
+### Preserved behavior and safety
+
+- Acknowledge, assign, add-note, resolve and validation-reopen behavior remain
+  explicit and use their existing routes, policies, error bags and actions.
+- The fragment resolves incidents through the current organization; a foreign
+  incident is concealed with the existing 404-style scope boundary, and no
+  incident or event is written by a read.
+- Encrypted summaries, event messages and resolutions remain escaped and are
+  fetched only after the user opens the inspector; the list page no longer
+  eagerly renders those detailed bodies.
+- Resolved incident history, active-response visibility, incident export and
+  status-page incident management remain unchanged.
+
+### Verification
+
+- Operational incident, observability management and environment-context
+  regression: **38 tests / 356 assertions passed**.
+- Isolated browser fixture export: **1 test / 282 assertions passed**.
+- Focused Playwright timeline journey: **1 test passed in 1.2 minutes** with
+  PHP 8.5.10; existing investigation-note journey also passed in 1.0 minute.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Finish the remaining read-only evidence audit around status updates, incident
+links and deployment evidence. Keep the existing status-incident edit/create
+dialogs and deployment pages explicit, and only add another inspector when it
+removes a real context switch without hiding a state transition.
+
 ## Slice 1 — shared filter and modal lifecycle reliability
 
 Status: complete; committed and pushed as `3e69b7b`.
