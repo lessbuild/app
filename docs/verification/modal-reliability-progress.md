@@ -855,6 +855,63 @@ recipe-update and recent-inventory links. Keep diagnostics read-only only when
 their authorization and bounded evidence can be preserved; leave provisioning,
 moderation and deployment controls explicit.
 
+## Slice 18 — dashboard system-health inspector
+
+Status: complete; committed and pushed as 47c65e5.
+
+### Responsibility problem
+
+The manager-only dashboard System Health link left the dashboard for a full
+diagnostic page, even though the first question is a bounded read-only status
+check. Public-status users must continue to use the public status page, and
+JSON report downloads must remain explicit.
+
+### Boundaries and benefit
+
+- SystemHealthController keeps authorization before the fresh diagnostic
+  snapshot and now serves a fragment=system-health representation.
+- The existing system-health body is shared between the full page and the
+  dialog through system-health._content; the full page retains its heading,
+  navigation, refresh and download controls.
+- The dashboard owns the manager-only trigger and modal shell. No new health
+  service, cache policy or authorization abstraction was introduced.
+
+This preserves single responsibility at the presentation boundary while
+keeping the existing policy and diagnostic service authoritative.
+
+### Preserved behavior and safety
+
+- Workspace owner/admin authorization, verified-account requirements and
+  deliberate forbidden/redirect responses remain unchanged.
+- Both full and fragment responses retain Cache-Control: no-store, private
+  and Pragma: no-cache.
+- Diagnostic details remain summarized and escaped; application keys, queue
+  payloads and exception details are not exposed.
+- Public status links and machine-readable report downloads remain normal links.
+- Opening the dialog performs a fresh GET only; it does not mutate health,
+  queue, storage or infrastructure state.
+
+### Verification
+
+- System Health regression: **7 tests / 69 assertions passed**.
+- Full dashboard regression: **29 tests / 316 assertions passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed in 1.4 minutes** using PHP 8.5.10;
+  verified manager dashboard trigger, lazy no-store diagnostics, canonical
+  /home path stability, deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+
+### Commit and push
+
+Commit and push: 47c65e5 Open system health in a dialog.
+
+### Exact next task
+
+Audit dashboard webhook activity and active-command links. Keep remote command
+execution, cancellation, rerun, deletion, provisioning and feedback
+moderation as explicit workflows; add dialogs only for bounded read-only
+evidence.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
