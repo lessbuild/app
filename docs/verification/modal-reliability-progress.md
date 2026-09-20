@@ -683,6 +683,68 @@ Audit notification destinations, observability evidence links and remaining
 read-only product pages; keep notification read-state changes and incident
 response actions explicit.
 
+## Slice 13 — account sign-in-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The account page’s recent sign-in section sent “View full history” to a
+separate page, interrupting security review on mobile. The full history already
+had a bounded owner-scoped query, derived client metadata, filters, metrics and
+export. The missing boundary was a reusable read-only fragment, not a second
+security-history implementation.
+
+### Boundaries and benefit
+
+- `SignInHistoryController::index()` remains the authenticated account-scoped
+  read boundary and now serves either the existing full-page shell or a
+  `fragment=sign-in-history` body.
+- The extracted sign-in content partial owns filters, metrics, derived device
+  labels, pagination and the export link for both surfaces.
+- The account page owns the mounted dialog shell and contextual trigger.
+- Sign-in history deletion remains on the account page as an explicit,
+  password-protected destructive operation; no mutation is available inside
+  the inspector.
+
+This applies single responsibility at the page/fragment presentation boundary,
+reuses the existing query and privacy transformation, and avoids a generic
+account repository or a security-specific modal framework.
+
+### Preserved behavior and safety
+
+- Owner scoping, filter normalization, pagination query values, metrics,
+  derived device/IP display and CSV export remain unchanged.
+- Raw user agents and other sensitive account metadata remain excluded from
+  both full and fragment responses.
+- The full sign-in-history route and no-JavaScript fallback remain available.
+- Fragment requests are GET-only and do not clear history, change sessions or
+  revoke credentials.
+- Filter submissions stay inside the dialog and preserve the account path and
+  modal history state.
+
+### Verification
+
+- Account/sign-in regression: **18 tests / 142 assertions passed**.
+- Fixture export: **1 test / 210 assertions passed**.
+- PHP syntax checks, Pint and Node syntax check: passed.
+- Focused browser journey: **1 test passed in 46.8 seconds** using PHP
+  8.5.10; verified the mobile collapsible section, lazy fragment loading,
+  read-only content, contextual URL stability, deep-link opening, Escape and
+  focus restoration.
+- `git diff --check`: pending final commit check.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Audit notification destinations and observability evidence links. Preserve
+notification read-state transitions and incident response actions as explicit
+workflows; choose another read-only inspector only where it has a bounded
+authorized fragment and a useful full-page fallback.
+
 ## Slice 12 — build health-history inspector
 
 Status: complete; committed and pushed as 5ec64fd.

@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'configuration-create', 'configuration-review', 'configuration-receipt'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'configuration-create', 'configuration-review', 'configuration-receipt'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -45,6 +45,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const scheduledTaskRunOutputPage = /^\/automation\/task-runs\/\d+\/output$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
+        const signInHistoryPage = pathname === '/account/sign-ins';
         const projectPage = /^\/projects\/\d+$/.test(pathname);
         const modalContentFixture = pathname === '/providers/1/edit'
             ? 'provider-edit-content'
@@ -68,7 +69,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
@@ -97,6 +98,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'website-show'
                         : websiteHealthChecksPage
                             ? 'website-health-checks'
+                        : signInHistoryPage
+                            ? 'sign-in-history'
                         : configurationDialogPage
                             ? 'configuration-dialog'
                         : projectPage
@@ -116,6 +119,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'repositories-impact-preview-content'
                 : screen === 'build-comparison' && fragment === 'build-comparison'
                     ? 'build-comparison-content'
+                : screen === 'sign-in-history' && fragment === 'sign-in-history'
+                    ? 'sign-in-history-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -138,6 +143,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'build-comparison-dialog'
                             : screen === 'build' && dialog === 'build-website-health-checks-dialog'
                                 ? 'build-website-health-checks-dialog'
+                            : screen === 'account' && dialog === 'account-sign-in-history-dialog'
+                                ? 'account-sign-in-history-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -498,6 +505,33 @@ test('build health history opens as a contextual read-only dialog', async ({ pag
 
     await page.goto('http://buildpusher.test/builds/2?dialog=build-website-health-checks-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
+});
+
+test('account sign-in history opens as a contextual read-only dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/account', { waitUntil: 'networkidle' });
+
+    const signInSection = page.locator('#account-sign-ins');
+    await signInSection.locator('summary').click();
+    const trigger = page.getByRole('link', { name: 'View full history', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Sign-in history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
+    await expect(dialog.locator('#sign-in-dialog-method')).toBeVisible();
+    await expect(dialog).toContainText('No sign-in history yet.');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('account-sign-in-history-dialog');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/account?dialog=account-sign-in-history-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Sign-in history', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

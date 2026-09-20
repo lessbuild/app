@@ -49,6 +49,15 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Save current')->getContent());
         File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/account.html', $this->renderPage(route('account.index'))->assertOk()
+            ->assertSee('data-modal-trigger="account-sign-in-history-dialog"', false)->getContent());
+        File::put($directory.'/account-sign-in-history-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-sign-in-history-dialog']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/sign-in-history.html', $this->renderPage(route('account.sign-ins.index'))->assertOk()
+            ->assertSee('No sign-in history yet.')->getContent());
+        File::put($directory.'/sign-in-history-content.html', $this->renderPage(route('account.sign-ins.index', [
+            'fragment' => 'sign-in-history',
+        ]))->assertOk()->assertSee('data-modal-fragment-form', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

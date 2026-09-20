@@ -70,6 +70,35 @@ class SignInHistoryFilterTest extends TestCase
             ->assertDontSee('192.0.2.126');
     }
 
+    public function test_history_fragment_reuses_the_authorized_filters_without_rendering_a_full_page(): void
+    {
+        $owner = User::factory()->create();
+        $this->signIn($owner, [
+            'method' => 'github',
+            'ip_address' => '198.51.100.42',
+            'signed_in_at' => '2026-09-03 10:00:00',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('account.sign-ins.index', [
+            'fragment' => 'sign-in-history',
+            'method' => 'github',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.users.sign-ins-content')
+            ->assertViewHas('filters', [
+                'method' => 'github',
+                'date_from' => null,
+                'date_to' => null,
+            ])
+            ->assertSee('data-modal-fragment-form', false)
+            ->assertSee('sign-in-dialog-method', false)
+            ->assertSee('198.51.100.42')
+            ->assertDontSee('<html', false)
+            ->assertDontSee('Clear history');
+    }
+
     public function test_invalid_filters_are_normalized_and_filtered_empty_state_is_explicit(): void
     {
         $owner = User::factory()->create();

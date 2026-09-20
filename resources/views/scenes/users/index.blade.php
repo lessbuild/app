@@ -8,6 +8,10 @@
 
     @php
         $connectedProviderCount = $socialProviders->where('connected', true)->count();
+        $signInHistoryDialogId = 'account-sign-in-history-dialog';
+        $signInHistoryDialogOpen = request()->query('dialog') === $signInHistoryDialogId;
+        $signInHistoryDialogUrl = route('account.index', ['dialog' => $signInHistoryDialogId]);
+        $signInHistoryContentUrl = route('account.sign-ins.index', ['fragment' => 'sign-in-history']);
         $securityCheckCount = collect([
             auth()->user()->hasVerifiedEmail(),
             auth()->user()->hasLocalPassword(),
@@ -337,7 +341,15 @@
             <x-slot:footer>
                 <div class="flex flex-wrap items-end justify-between gap-4 bg-tertiary px-4 py-3 sm:px-6">
                     <div class="flex flex-wrap gap-3">
-                        <x-ui.button href="{{ route('account.sign-ins.index') }}" variant="secondary">
+                        <x-ui.button
+                            href="{{ route('account.sign-ins.index') }}"
+                            data-modal-trigger="{{ $signInHistoryDialogId }}"
+                            data-modal-content-url="{{ $signInHistoryContentUrl }}"
+                            data-modal-history-url="{{ $signInHistoryDialogUrl }}"
+                            aria-controls="{{ $signInHistoryDialogId }}"
+                            aria-expanded="{{ $signInHistoryDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
                             {{ __('View full history') }}
                         </x-ui.button>
                         <x-ui.button href="{{ route('account.sign-ins.export') }}" variant="secondary">
@@ -596,4 +608,16 @@
             </div>
         </x-forms.section>
     </div>
+
+    <x-dialogs.modal
+        id="{{ $signInHistoryDialogId }}"
+        :title="__('Sign-in history')"
+        :description="__('Review successful sign-ins without leaving account security settings.')"
+        :open="$signInHistoryDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading sign-in history…') }}</p>
+        </div>
+    </x-dialogs.modal>
 </x-layouts.app>

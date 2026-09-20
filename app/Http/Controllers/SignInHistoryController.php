@@ -27,12 +27,18 @@ class SignInHistoryController extends Controller
     public function index(SignInHistoryIndexRequest $request): View
     {
         $filters = $request->filters();
+        $isFragment = $request->string('fragment')->toString() === 'sign-in-history';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'sign-in-history';
+        }
+
         $signIns = $this->signIns->for($request->user(), $filters)
             ->select(['id', 'method', 'ip_address', 'user_agent', 'signed_in_at'])
             ->orderByDesc('signed_in_at')
             ->orderByDesc('id')
             ->paginate(25)
-            ->appends(array_filter($filters, fn ($value) => $value !== null));
+            ->appends($paginationQuery);
         $signIns->setCollection($signIns->getCollection()
             ->map(fn (SignInEvent $event): array => [
                 'id' => $event->id,
@@ -42,13 +48,25 @@ class SignInHistoryController extends Controller
                 'signed_in_at' => $event->signed_in_at,
             ]));
 
-        return view('scenes.users.sign-ins', [
+        $viewData = [
             'signIns' => $signIns,
             'filters' => $filters,
             'metrics' => $this->signIns->metrics($request->user(), $filters),
             'methods' => collect(SignInEvent::METHODS)
                 ->mapWithKeys(fn (string $method): array => [$method => SignInEvent::methodLabel($method)]),
-        ]);
+        ];
+
+        if ($isFragment) {
+            return view('components.scenes.users.sign-ins-content', [
+                ...$viewData,
+                'filterAction' => route('account.sign-ins.index', ['fragment' => 'sign-in-history']),
+                'filterFragmentAction' => route('account.sign-ins.index', ['fragment' => 'sign-in-history']),
+                'clearFiltersUrl' => route('account.sign-ins.index'),
+                'filterIdPrefix' => 'sign-in-dialog-',
+            ]);
+        }
+
+        return view('scenes.users.sign-ins', $viewData);
     }
 
     /**
