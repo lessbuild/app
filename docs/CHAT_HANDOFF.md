@@ -2315,16 +2315,24 @@ remain unchanged; modal-originated enable/rotate redirects preserve the
 dialog so the secret is copyable. Focused PHP, fixture, browser, Blade, Pint
 and diff checks pass.
 
-The current local slice moves website runtime log-retention settings into a
-website-context dialog. It keeps the existing retention request/controller and
-policy boundary, hides the control for actors who cannot update the website,
-and reopens the dialog after modal-originated validation failures. The focused
-observability/health-history regression and both relevant browser journeys pass;
-final Blade/Pint/diff verification and the feature commit are pending.
+`5b3ad50` moves website runtime log-retention settings into a website-context
+dialog. It keeps the existing retention request/controller and policy boundary,
+hides the control for actors who cannot update the website, and reopens the
+dialog after modal-originated validation failures. The focused
+observability/health-history regression, browser journeys, Blade cache, Pint,
+JavaScript syntax and diff checks pass.
 
-The next task after pushing this slice is to finish the detail-page audit. Full
-history/report/export flows remain pages, with any remaining inline action
-documented by its safety or execution-order reason.
+The detail-page audit is complete. Application configuration, preview settings,
+environment settings/controls, provider/repository/server/website bounded
+editors and webhook settings use reusable contextual dialogs. Paginated
+histories/exports, imports/restores, destructive or irreversible operations,
+immediate deployment/health/retry actions and protocol/security workflows remain
+explicit by design so pagination, execution ordering and consequences stay
+visible. Full-page create/edit routes remain accessible no-JavaScript fallbacks.
+
+The next task is final repository/remote verification and handoff. Local
+isolated tests do not claim the separate live acceptance drill, cloud/provider
+acceptance or real-device verification.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local

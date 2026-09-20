@@ -375,7 +375,7 @@ execution-order reason.
 
 ## Slice 8 — website log retention in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `5b3ad50`.
 
 ### Responsibility problem
 
@@ -413,9 +413,59 @@ website controls used elsewhere in the application.
 - Website retention dialog browser journey: 1 passed, including expansion of
   runtime logs, URL state, focus restoration, Escape and direct dialog loading.
 - Provider/repository/recipe dialog regression: 1 passed.
-- JavaScript syntax check passed; Blade cache, Pint and `git diff --check` are
-  pending final slice verification.
+- JavaScript syntax check, Blade cache, Pint and `git diff --check` passed.
 
 ### Exact next task
 
-Commit and push this slice, then complete the remaining detail-page audit.
+Complete the detail-page audit and record the intentional full-page and direct
+action exceptions.
+
+## Detail-page audit — 2026-09-20
+
+Status: complete locally; commit and push pending.
+
+### Reviewed boundaries
+
+- Application detail: configuration-as-code, preview settings, environment
+  settings, deployment controls, variables, processes, resource attachment,
+  environment creation and contextual repository/website creation use
+  URL-backed dialogs. Existing application deletion and deployment actions stay
+  explicit.
+- Provider, repository, server and website details: bounded edit/settings
+  controls use reusable dialogs. Provider connection testing, server
+  provisioning/retry, website health checks, runtime refresh, provisioning
+  retry and cleanup remain direct operational actions.
+- Repository webhook lifecycle uses its contextual dialog, while webhook
+  delivery history and CSV export remain a filterable history page.
+- Configuration review remains available as a full-page no-JavaScript fallback;
+  the application-context dialog is the primary in-context path.
+
+### Intentional exceptions
+
+- Paginated histories, reports, filters and CSV exports remain pages so URL
+  state, pagination, downloads and query bounds are not hidden in a modal.
+- Imports, restores, deployment rollback/cancellation and other destructive or
+  irreversible workflows remain explicit or confirmation-bound actions so
+  consequences and execution ordering stay visible.
+- Health checks, log refreshes, deploy/retry commands and cleanup retries remain
+  direct actions because they are immediate operations rather than bounded
+  editors.
+- Callback, webhook-signature, OAuth/SSO and other protocol workflows retain
+  their existing page or integration boundaries; they are not ordinary UI
+  settings.
+- Full-page edit/create routes remain as accessible no-JavaScript fallbacks for
+  the server-rendered dialogs. They are not duplicate application workflows.
+
+### Verification
+
+- Detail-page inventory reviewed for inline forms, edit/create triggers,
+  histories, exports, imports, restores and destructive actions.
+- No new dependency, route, persisted value, validation key, queued-job
+  payload or provider behavior was introduced by the audit.
+- The website, provider/repository/recipe and application contextual-dialog
+  browser journeys and focused PHP regressions pass.
+
+### Exact next task
+
+Run the final repository status and pushed-commit verification, then hand off
+the remaining live/real-device acceptance work explicitly.
