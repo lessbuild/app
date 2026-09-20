@@ -286,7 +286,7 @@ class CreationDialogTest extends TestCase
         $this->actingAs($user)
             ->get(route('websites.show', $website))
             ->assertOk()
-            ->assertDontSee('id="website-edit-dialog"', false)
+            ->assertSee('id="website-edit-dialog"', false)
             ->assertDontSee('APP_ENV=production');
 
         $this->actingAs($user)

@@ -87,7 +87,7 @@
                 :description="__('Are you sure you want to delete this server?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" onclick="document.getElementById('delete-server').showModal()">
+            <button type="button" class="button button--danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>

@@ -4,6 +4,7 @@
         $websiteEditOpen = $editDialogOpen;
         $websiteEditUrl = route('websites.show', ['website' => $website, 'dialog' => 'edit-website']);
         $websitePageUrl = request()->fullUrlWithoutQuery('dialog');
+        $websiteEditContentUrl = route('websites.edit', ['website' => $website, 'dialog' => 'edit-website', 'fragment' => 1, 'return_to' => $websitePageUrl]);
         $repositoryCreateUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'create-repository']);
         $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $websitePageUrl, 'website_id' => $website->id]);
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
@@ -68,6 +69,7 @@
             <x-ui.button
                 :href="$websiteEditUrl"
                 data-modal-trigger="website-edit-dialog"
+                data-modal-content-url="{{ $websiteEditContentUrl }}"
                 aria-controls="website-edit-dialog"
                 aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}"
                 variant="primary"
@@ -85,7 +87,7 @@
                 :description="__('Are you sure you want to delete this website?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" onclick="document.getElementById('delete-website').showModal()">
+            <button type="button" class="button button--danger" data-modal-trigger="delete-website" aria-controls="delete-website" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -401,11 +403,11 @@
         </x-ui.card>
     </section>
 
-    @if ($websiteEditOpen)
-        <x-scenes.websites.edit-dialog
-            :website="$website"
-            :servers="$servers"
-            :open="$websiteEditOpen"
-        />
-    @endif
+    <x-scenes.websites.edit-dialog
+        :website="$website"
+        :servers="$servers"
+        :open="$websiteEditOpen"
+        :cancel-url="$websitePageUrl"
+        :content-url="$websiteEditContentUrl"
+    />
 </x-layouts.app>

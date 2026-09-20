@@ -21,11 +21,11 @@ class RepositoryInventoryFilterTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Filter repositories');
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*\bid="repositories-filters")(?=[^>]*\boverflow-hidden)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="repositories-filters")(?=[^>]*\bdata-filter-dialog\b)[^>]*>/',
             $defaultContent,
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*\bid="repositories-filters")(?=[^>]*\bopen)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="repositories-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*(?:\sopen(?:\s|>)))[^>]*>/',
             $defaultContent,
         );
 
@@ -36,7 +36,7 @@ class RepositoryInventoryFilterTest extends TestCase
             ->assertSee('1 active')
             ->assertSee('value="storefront"', false);
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*\bid="repositories-filters")(?=[^>]*\bopen)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="repositories-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*(?:\sopen(?:\s|>)))[^>]*>/',
             $active->getContent(),
         );
     }

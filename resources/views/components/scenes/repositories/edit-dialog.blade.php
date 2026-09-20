@@ -4,7 +4,11 @@
     'websites',
     'open' => false,
     'fieldPrefix' => 'repository-edit-',
+    'contentUrl' => null,
+    'cancelUrl' => null,
 ])
+
+@php($dialogContentUrl = $contentUrl ?? route('repositories.edit', ['repository' => $repository, 'dialog' => 'edit-repository', 'fragment' => 1]))
 
 <x-dialogs.modal
     id="repository-edit-dialog"
@@ -12,20 +16,20 @@
     :description="__('Update the deployment target, source settings, and deployment hooks.')"
     :open="$open"
     body-class="p-0"
+    data-modal-content-loaded="{{ $open ? 'true' : 'false' }}"
+    data-modal-content-url="{{ $open ? $dialogContentUrl : '' }}"
 >
-    <form action="{{ route('repositories.update', ['repository' => $repository, 'dialog' => 'edit-repository']) }}" method="POST">
-        @csrf
-        @method('PATCH')
-        <x-scenes.repositories._form
-            :providers="$providers"
-            :websites="$websites"
-            :repository="$repository"
-            :field-prefix="$fieldPrefix"
-        />
-
-        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('repositories.show', $repository)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-            <x-ui.button type="submit" variant="primary">{{ __('Save Repository') }}</x-ui.button>
-        </div>
-    </form>
+    <div data-modal-content>
+        @if ($open)
+            <x-scenes.repositories.edit-dialog-content
+                :repository="$repository"
+                :providers="$providers"
+                :websites="$websites"
+                :cancel-url="$cancelUrl"
+                :field-prefix="$fieldPrefix"
+            />
+        @else
+            <p class="p-5 text-sm text-secondary">{{ __('Loading repository form…') }}</p>
+        @endif
+    </div>
 </x-dialogs.modal>

@@ -251,10 +251,42 @@ class WebsitesController extends Controller
 
         $servers = $request->user()->workspaceServers()->readyForWebsites()->get();
 
+        if ($request->boolean('fragment')) {
+            return view('components.scenes.websites.edit-dialog-content', [
+                'servers' => $servers,
+                'website' => $website,
+                'cancelUrl' => $this->safeReturnUrl($request, route('websites.show', $website)),
+            ]);
+        }
+
         return view('scenes.websites.edit', [
             'servers' => $servers,
             'website' => $website,
         ]);
+    }
+
+    /**
+     * Keep dialog cancellation on the current same-origin page.
+     */
+    private function safeReturnUrl(Request $request, string $fallback): string
+    {
+        $candidate = $request->string('return_to')->toString();
+
+        if ($candidate === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($candidate);
+
+        if ($parts === false || isset($parts['host']) && $parts['host'] !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if (isset($parts['scheme']) && $parts['scheme'] !== $request->getScheme()) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 
     /**

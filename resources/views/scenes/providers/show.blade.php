@@ -4,6 +4,7 @@
         $providerEditOpen = request()->query('dialog') === 'edit-provider';
         $providerEditUrl = route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider']);
         $providerPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $providerEditContentUrl = route('providers.edit', ['provider' => $provider, 'dialog' => 'edit-provider', 'fragment' => 1, 'return_to' => $providerPageUrl]);
         $repositoryCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-repository']);
         $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $providerPageUrl]);
         $serverCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-server']);
@@ -49,6 +50,7 @@
             <x-ui.button
                 :href="$providerEditUrl"
                 data-modal-trigger="provider-edit-dialog"
+                data-modal-content-url="{{ $providerEditContentUrl }}"
                 aria-controls="provider-edit-dialog"
                 aria-expanded="{{ $providerEditOpen ? 'true' : 'false' }}"
                 variant="primary"
@@ -66,7 +68,7 @@
                 :description="__('Are you sure you want to delete this provider?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" onclick="document.getElementById('delete-provider').showModal()">
+            <button type="button" class="button button--danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -256,7 +258,5 @@
 
     </div>
 
-    @if ($providerEditOpen)
-        <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
-    @endif
+    <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
 </x-layouts.app>

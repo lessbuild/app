@@ -105,7 +105,5 @@
             <div class="py-4">{{ $servers->links() }}</div>
         @endif
     </section>
-    @if ($recipeEditOpen)
-        <x-scenes.recipes.edit-dialog :recipe="$recipe" :open="$recipeEditOpen" />
-    @endif
+    <x-scenes.recipes.edit-dialog :recipe="$recipe" :open="$recipeEditOpen" />
 </x-layouts.app>

@@ -2,7 +2,11 @@
     'provider',
     'open' => false,
     'fieldPrefix' => 'provider-edit-',
+    'contentUrl' => null,
+    'cancelUrl' => null,
 ])
+
+@php($dialogContentUrl = $contentUrl ?? route('providers.edit', ['provider' => $provider, 'dialog' => 'edit-provider', 'fragment' => 1]))
 
 <x-dialogs.modal
     id="provider-edit-dialog"
@@ -10,17 +14,18 @@
     :description="__('Update the credential label, token, and connection monitoring settings.')"
     :open="$open"
     body-class="p-0"
+    data-modal-content-loaded="{{ $open ? 'true' : 'false' }}"
+    data-modal-content-url="{{ $open ? $dialogContentUrl : '' }}"
 >
-    <x-scenes.providers.validation-errors />
-
-    <form action="{{ route('providers.update', ['provider' => $provider, 'dialog' => 'edit-provider']) }}" method="POST">
-        @csrf
-        @method('PATCH')
-        <x-scenes.providers._form :provider="$provider" :field-prefix="$fieldPrefix" />
-
-        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('providers.show', $provider)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-            <x-ui.button type="submit" variant="primary">{{ __('Save Provider') }}</x-ui.button>
-        </div>
-    </form>
+    <div data-modal-content>
+        @if ($open)
+            <x-scenes.providers.edit-dialog-content
+                :provider="$provider"
+                :cancel-url="$cancelUrl"
+                :field-prefix="$fieldPrefix"
+            />
+        @else
+            <p class="p-5 text-sm text-secondary">{{ __('Loading provider form…') }}</p>
+        @endif
+    </div>
 </x-dialogs.modal>

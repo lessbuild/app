@@ -89,9 +89,9 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-modal-panel', $modal);
         $this->assertStringContainsString('data-modal-header', $modal);
         $this->assertStringContainsString('data-modal-body', $modal);
-        $this->assertStringContainsString('data-mobile-filter-panel', $filter);
-        $this->assertStringContainsString('data-mobile-filter-summary', $filter);
-        $this->assertStringContainsString('data-mobile-filter-backdrop', $filter);
+        $this->assertStringContainsString('data-filter-dialog', $filter);
+        $this->assertStringContainsString('data-filter-dialog-trigger', $filter);
+        $this->assertStringContainsString('data-filter-dialog-close', $filter);
 
         $appStyles = File::get(resource_path('css/app.css'));
         $this->assertStringContainsString('html:has(dialog[data-modal-sheet][open])', $appStyles);
@@ -584,9 +584,9 @@ class LocalUiAssetTest extends TestCase
             $source = File::get($view);
 
             $this->assertMatchesRegularExpression(
-                '/<button\s+type="button"[^>]+\.showModal\(\)/s',
+                '/<button\s+type="button"[^>]+data-modal-trigger="delete-[^"]+"[^>]*>/s',
                 $source,
-                basename($view).' must not submit an enclosing form when it opens a delete dialog.',
+                basename($view).' must use the shared modal trigger without submitting an enclosing form.',
             );
         }
     }

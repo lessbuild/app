@@ -116,39 +116,81 @@
 
         <script>
             (() => {
-                const closeMobileFilter = (panel) => {
-                    if (! panel || ! mobileMedia.matches) {
-                        return false;
+                const mobileMedia = window.matchMedia('(max-width: 63.999rem)');
+                const filterDialogs = () => document.querySelectorAll('[data-filter-dialog]');
+                const dispatchModalStateChange = () => document.dispatchEvent(new CustomEvent('modal:state-changed'));
+
+                const focusFilterTrigger = (dialog) => {
+                    document.querySelector(`[data-filter-dialog-trigger][aria-controls="${CSS.escape(dialog.id)}"]`)?.focus();
+                };
+
+                const openMobileFilter = (dialog, trigger) => {
+                    if (! mobileMedia.matches || typeof dialog.showModal !== 'function') {
+                        return;
                     }
 
-                    panel.removeAttribute('open');
-                    panel.querySelector('[data-mobile-filter-summary]')?.focus();
+                    if (dialog.open) {
+                        dialog.close();
+                    }
 
-                    return true;
+                    dialog.showModal();
+                    trigger?.setAttribute('aria-expanded', 'true');
+                    dispatchModalStateChange();
                 };
-                const mobileMedia = window.matchMedia('(max-width: 63.999rem)');
+
+                const syncFilterDialogs = () => {
+                    filterDialogs().forEach((dialog) => {
+                        const trigger = document.querySelector(`[data-filter-dialog-trigger][aria-controls="${CSS.escape(dialog.id)}"]`);
+
+                        if (mobileMedia.matches) {
+                            if (dialog.dataset.filterInitialOpen === 'true' && ! dialog.matches(':modal')) {
+                                openMobileFilter(dialog, trigger);
+                            }
+
+                            return;
+                        }
+
+                        if (dialog.matches(':modal')) {
+                            dialog.close();
+                        }
+
+                        trigger?.setAttribute('aria-expanded', 'false');
+                    });
+
+                    dispatchModalStateChange();
+                };
 
                 document.addEventListener('click', (event) => {
-                    const backdrop = event.target.closest('[data-mobile-filter-backdrop]');
+                    const trigger = event.target.closest('[data-filter-dialog-trigger]');
 
-                    if (! backdrop) {
+                    if (! trigger || ! mobileMedia.matches) {
                         return;
                     }
 
-                    closeMobileFilter(backdrop.previousElementSibling);
-                });
+                    const dialog = document.getElementById(trigger.getAttribute('aria-controls'));
 
-                document.addEventListener('keydown', (event) => {
-                    if (event.key !== 'Escape') {
+                    if (! dialog) {
                         return;
                     }
 
-                    const panel = document.querySelector('[data-mobile-filter-panel][open]');
-
-                    if (closeMobileFilter(panel)) {
-                        event.stopPropagation();
-                    }
+                    event.preventDefault();
+                    openMobileFilter(dialog, trigger);
                 });
+
+                filterDialogs().forEach((dialog) => {
+                    dialog.addEventListener('close', () => {
+                        const trigger = document.querySelector(`[data-filter-dialog-trigger][aria-controls="${CSS.escape(dialog.id)}"]`);
+                        trigger?.setAttribute('aria-expanded', 'false');
+                        dispatchModalStateChange();
+
+                        if (mobileMedia.matches) {
+                            window.requestAnimationFrame(() => focusFilterTrigger(dialog));
+                        }
+                    });
+                });
+
+                mobileMedia.addEventListener('change', syncFilterDialogs);
+                syncFilterDialogs();
             })();
         </script>
 
@@ -194,11 +236,16 @@
         <script>
             (() => {
                 const syncModalScrollLock = () => {
-                    const modalOpen = Boolean(document.querySelector('dialog[data-modal-sheet][open]'));
+                    const mobileFilterOpen = window.matchMedia('(max-width: 63.999rem)').matches
+                        && Boolean(document.querySelector('dialog[data-filter-dialog][open]'));
+                    const modalOpen = Boolean(document.querySelector('dialog[data-modal-sheet][open]:not([data-filter-dialog])'))
+                        || mobileFilterOpen;
 
                     document.documentElement.toggleAttribute('data-modal-open', modalOpen);
                     document.body?.toggleAttribute('data-modal-open', modalOpen);
                 };
+
+                document.addEventListener('modal:state-changed', syncModalScrollLock);
 
                 const renderModalLoadError = (dialog, trigger, error, fallbackUrl) => {
                     const content = dialog.querySelector('[data-modal-content]');
@@ -348,7 +395,24 @@
                     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
                 };
 
+                const bindModalCloseButtons = (dialog) => {
+                    dialog.querySelectorAll('[data-modal-close]').forEach((closeButton) => {
+                        if (closeButton.dataset.modalCloseBound === 'true') {
+                            return;
+                        }
+
+                        closeButton.dataset.modalCloseBound = 'true';
+                        closeButton.addEventListener('click', (event) => {
+                            event.preventDefault();
+                            if (dialog.open) {
+                                dialog.close('cancel');
+                            }
+                        });
+                    });
+                };
+
                 const initialiseModals = () => {
+                    document.querySelectorAll('dialog[data-modal-sheet]').forEach(bindModalCloseButtons);
                     document.querySelectorAll('[data-modal-trigger]').forEach((trigger) => {
                         if (trigger.dataset.modalTriggerBound === 'true') {
                             return;

@@ -3,7 +3,11 @@
     'servers',
     'open' => false,
     'fieldPrefix' => 'website-edit-',
+    'contentUrl' => null,
+    'cancelUrl' => null,
 ])
+
+@php($dialogContentUrl = $contentUrl ?? route('websites.edit', ['website' => $website, 'dialog' => 'edit-website', 'fragment' => 1]))
 
 <x-dialogs.modal
     id="website-edit-dialog"
@@ -11,19 +15,19 @@
     :description="__('Update placement, environment, retention, and health monitoring settings.')"
     :open="$open"
     body-class="p-0"
+    data-modal-content-loaded="{{ $open ? 'true' : 'false' }}"
+    data-modal-content-url="{{ $open ? $dialogContentUrl : '' }}"
 >
-    <form action="{{ route('websites.update', ['website' => $website, 'dialog' => 'edit-website']) }}" method="POST">
-        @csrf
-        @method('PATCH')
-        <x-scenes.websites._form
-            :servers="$servers"
-            :website="$website"
-            :field-prefix="$fieldPrefix"
-        />
-
-        <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-            <x-ui.button :href="route('websites.show', $website)" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-            <x-ui.button type="submit" variant="primary">{{ __('Save Website') }}</x-ui.button>
-        </div>
-    </form>
+    <div data-modal-content>
+        @if ($open)
+            <x-scenes.websites.edit-dialog-content
+                :website="$website"
+                :servers="$servers"
+                :cancel-url="$cancelUrl"
+                :field-prefix="$fieldPrefix"
+            />
+        @else
+            <p class="p-5 text-sm text-secondary">{{ __('Loading website form…') }}</p>
+        @endif
+    </div>
 </x-dialogs.modal>

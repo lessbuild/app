@@ -7,8 +7,10 @@
             'repository' => $repository,
             ...array_filter($deliveryFilters, fn ($value) => $value !== null),
         ]);
+        $repositoryEditContentUrl = route('repositories.edit', ['repository' => $repository, 'dialog' => 'edit-repository', 'fragment' => 1, 'return_to' => $repositoryPageUrl]);
         $websiteEditOpen = $websiteEditDialogOpen;
         $websiteEditUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'edit-website']);
+        $websiteEditContentUrl = route('websites.edit', ['website' => $repository->website, 'dialog' => 'edit-website', 'fragment' => 1, 'return_to' => $repositoryPageUrl]);
         $webhookDialogId = 'repository-webhook-settings-dialog';
         $webhookDialogOpen = request()->query('dialog') === 'repository-webhook-settings';
         $webhookDialogUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'repository-webhook-settings']);
@@ -49,6 +51,7 @@
             <x-ui.button
                 :href="$repositoryEditUrl"
                 data-modal-trigger="repository-edit-dialog"
+                data-modal-content-url="{{ $repositoryEditContentUrl }}"
                 aria-controls="repository-edit-dialog"
                 aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
                 variant="secondary"
@@ -66,7 +69,7 @@
                 :description="__('Are you sure you want to delete this repository?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" onclick="document.getElementById('delete-repository').showModal()">
+            <button type="button" class="button button--danger" data-modal-trigger="delete-repository" aria-controls="delete-repository" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -190,11 +193,12 @@
                 <x-ui.button
                     :href="$repositoryEditUrl"
                     data-modal-trigger="repository-edit-dialog"
+                    data-modal-content-url="{{ $repositoryEditContentUrl }}"
                     aria-controls="repository-edit-dialog"
                     aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
                     variant="secondary"
                 >{{ __('Review source settings') }}</x-ui.button>
-                <x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
+                <x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
             </div>
 
             @if ($deploymentGuidance['steps'])
@@ -662,21 +666,19 @@
         </div>
     </details>
 
-    @if ($repositoryEditOpen)
-        <x-scenes.repositories.edit-dialog
-            :repository="$repository"
-            :providers="$providers"
-            :websites="$websites"
-            :open="$repositoryEditOpen"
-        />
-    @endif
+    <x-scenes.repositories.edit-dialog
+        :repository="$repository"
+        :providers="$providers"
+        :websites="$websites"
+        :open="$repositoryEditOpen"
+        :cancel-url="$repositoryPageUrl"
+    />
 
-    @if ($websiteEditOpen)
-        <x-scenes.websites.edit-dialog
-            :website="$repository->website"
-            :servers="$websiteEditServers"
-            :open="$websiteEditOpen"
-            :cancel-url="$repositoryPageUrl"
-        />
-    @endif
+    <x-scenes.websites.edit-dialog
+        :website="$repository->website"
+        :servers="$websiteEditServers"
+        :open="$websiteEditOpen"
+        :cancel-url="$repositoryPageUrl"
+        :content-url="$websiteEditContentUrl"
+    />
 </x-layouts.app>

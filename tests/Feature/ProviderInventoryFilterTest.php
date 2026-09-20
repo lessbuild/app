@@ -58,7 +58,7 @@ class ProviderInventoryFilterTest extends TestCase
             ->assertDontSee('Private Production DigitalOcean');
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*\bid="providers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="providers-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*(?:\sopen(?:\s|>)))[^>]*>/',
             $response->getContent(),
         );
 
@@ -66,7 +66,7 @@ class ProviderInventoryFilterTest extends TestCase
 
         $default->assertSuccessful();
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*\bid="providers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="providers-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*(?:\sopen(?:\s|>)))[^>]*>/',
             $default->getContent(),
         );
     }

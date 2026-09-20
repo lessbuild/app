@@ -802,31 +802,33 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await expect(content).toBeVisible();
 });
 
-test('mobile filters use dismissible bottom sheets without changing filter URLs', async ({ page }) => {
+test('mobile filters use native bottom-sheet dialogs without changing filter URLs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
-    await page.goto('http://buildpusher.test/repositories', { waitUntil: 'networkidle' });
 
-    const filter = page.locator('#repositories-filters');
-    const summary = filter.locator('[data-mobile-filter-summary]');
-    const backdrop = page.locator('[data-mobile-filter-backdrop]');
-    const initialPath = new URL(page.url()).pathname;
+    for (const screen of ['repositories', 'providers']) {
+        await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
 
-    await expect(filter).not.toHaveAttribute('open', '');
-    await summary.click();
-    await expect(filter).toHaveAttribute('open', '');
-    await expect(filter).toHaveCSS('position', 'fixed');
-    await expect(backdrop).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe(initialPath);
+        const filter = page.locator(`#${screen}-filters`);
+        const trigger = page.locator(`[data-filter-dialog-trigger][aria-controls="${screen}-filters"]`);
+        const initialPath = new URL(page.url()).pathname;
 
-    await page.keyboard.press('Escape');
-    await expect(filter).not.toHaveAttribute('open', '');
-    await expect(summary).toBeFocused();
+        await expect(filter).toHaveAttribute('data-filter-dialog', '');
+        await expect(filter).not.toHaveAttribute('open', '');
+        await trigger.click();
+        await expect(filter).toHaveAttribute('open', '');
+        await expect(filter.locator('.ui-filter-dialog__panel')).toBeVisible();
+        await expect(page.locator('html')).toHaveAttribute('data-modal-open', '');
+        await expect(page.locator('body')).toHaveAttribute('data-modal-open', '');
+        await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+        await expect(filter.locator('.ui-filter-dialog__body')).toHaveCSS('overscroll-behavior', 'contain');
+        expect(new URL(page.url()).pathname).toBe(initialPath);
 
-    await summary.click();
-    await backdrop.click({ position: { x: 4, y: 4 } });
-    await expect(filter).not.toHaveAttribute('open', '');
-    await expect(summary).toBeFocused();
+        await page.keyboard.press('Escape');
+        await expect(filter).not.toHaveAttribute('open', '');
+        await expect(page.locator('html')).not.toHaveAttribute('data-modal-open', '');
+        await expect(trigger).toBeFocused();
+    }
 });
 
 test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {

@@ -176,13 +176,44 @@ class ProviderController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Provider $provider): View
+    public function edit(Request $request, Provider $provider): View
     {
         $this->authorize('update', $provider);
+
+        if ($request->boolean('fragment')) {
+            return view('components.scenes.providers.edit-dialog-content', [
+                'provider' => $provider,
+                'cancelUrl' => $this->safeReturnUrl($request, route('providers.show', $provider)),
+            ]);
+        }
 
         return view('scenes.providers.edit', [
             'provider' => $provider,
         ]);
+    }
+
+    /**
+     * Keep dialog cancellation on the current same-origin page.
+     */
+    private function safeReturnUrl(Request $request, string $fallback): string
+    {
+        $candidate = $request->string('return_to')->toString();
+
+        if ($candidate === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($candidate);
+
+        if ($parts === false || isset($parts['host']) && $parts['host'] !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if (isset($parts['scheme']) && $parts['scheme'] !== $request->getScheme()) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 
     /**

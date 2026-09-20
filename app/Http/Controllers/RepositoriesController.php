@@ -211,11 +211,44 @@ class RepositoriesController extends Controller
         $providers = $request->user()->workspaceProviders()->forRepositories()->get();
         $websites = $request->user()->workspaceWebsites()->readyForDeployments()->get();
 
+        if ($request->boolean('fragment')) {
+            return view('components.scenes.repositories.edit-dialog-content', [
+                'repository' => $repository,
+                'providers' => $providers,
+                'websites' => $websites,
+                'cancelUrl' => $this->safeReturnUrl($request, route('repositories.show', $repository)),
+            ]);
+        }
+
         return view('scenes.repositories.edit', [
             'repository' => $repository,
             'providers' => $providers,
             'websites' => $websites,
         ]);
+    }
+
+    /**
+     * Keep dialog cancellation on the current same-origin page.
+     */
+    private function safeReturnUrl(Request $request, string $fallback): string
+    {
+        $candidate = $request->string('return_to')->toString();
+
+        if ($candidate === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($candidate);
+
+        if ($parts === false || isset($parts['host']) && $parts['host'] !== $request->getHost()) {
+            return $fallback;
+        }
+
+        if (isset($parts['scheme']) && $parts['scheme'] !== $request->getScheme()) {
+            return $fallback;
+        }
+
+        return $candidate;
     }
 
     /**
