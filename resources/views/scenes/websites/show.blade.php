@@ -11,6 +11,12 @@
         $logRetentionDialogId = 'website-log-retention-dialog';
         $logRetentionDialogOpen = request()->query('dialog') === 'website-log-retention';
         $logRetentionDialogUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'website-log-retention']);
+        $healthChecksDialogOpen = request()->query('dialog') === 'website-health-checks';
+        $healthChecksDialogUrl = (string) \Illuminate\Support\Uri::of($websitePageUrl)->withQuery(['dialog' => 'website-health-checks']);
+        $healthChecksContentUrl = route('websites.health-checks.index', [
+            'website' => $website,
+            'fragment' => 'website-health-checks',
+        ]);
         $canUpdateWebsite = auth()->user()?->can('update', $website) ?? false;
     @endphp
 
@@ -232,7 +238,15 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <x-ui.button :href="route('websites.health-checks.index', $website)" variant="secondary">{{ __('View all health checks') }}</x-ui.button>
+                <x-ui.button
+                    :href="route('websites.health-checks.index', $website)"
+                    data-modal-trigger="website-health-checks-dialog"
+                    data-modal-content-url="{{ $healthChecksContentUrl }}"
+                    data-modal-history-url="{{ $healthChecksDialogUrl }}"
+                    aria-controls="website-health-checks-dialog"
+                    aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('View all health checks') }}</x-ui.button>
                 @if ($healthChecks->isNotEmpty())
                     <x-ui.button :href="route('websites.health-checks.export', $website)" variant="secondary">{{ __('Export health history') }}</x-ui.button>
                 @endif
@@ -353,6 +367,18 @@
             :open="$logRetentionDialogOpen"
         />
     @endif
+
+    <x-dialogs.modal
+        id="website-health-checks-dialog"
+        :title="__('Health check history')"
+        :description="__('Review retained health evidence without leaving this website.')"
+        :open="$healthChecksDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading health check history…') }}</p>
+        </div>
+    </x-dialogs.modal>
 
     <!--
      ! ------------------------------------------------------------

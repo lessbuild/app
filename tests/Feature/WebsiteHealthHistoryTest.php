@@ -112,6 +112,48 @@ class WebsiteHealthHistoryTest extends TestCase
         $this->actingAs($owner)->get(route('websites.health-checks.export', $website))->assertSuccessful();
     }
 
+    public function test_health_history_fragment_reuses_filters_and_authorization_for_the_website_dialog(): void
+    {
+        [$owner, $website] = $this->infrastructure('Dialog');
+        $website->healthChecks()->create([
+            'successful' => false,
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+            'http_status' => 503,
+            'duration_ms' => 180,
+            'endpoint' => 'http://dialog.example.com/health',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('websites.health-checks.index', [
+            'website' => $website,
+            'fragment' => 'website-health-checks',
+            'result' => 'failed',
+            'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.websites.health-checks-content')
+            ->assertViewHas('filters', [
+                'result' => 'failed',
+                'source' => WebsiteHealthCheck::SOURCE_MANUAL,
+                'date_from' => null,
+                'date_to' => null,
+            ])
+            ->assertSee('data-modal-fragment-form', false)
+            ->assertSee('health-dialog-result', false)
+            ->assertSee('fragment=website-health-checks', false)
+            ->assertSee('HTTP 503')
+            ->assertDontSee('<html', false);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('websites.health-checks.index', [
+                'website' => $website,
+                'fragment' => 'website-health-checks',
+            ]))
+            ->assertForbidden();
+    }
+
     public function test_health_rows_are_collapsed_and_runtime_logs_open_when_refresh_is_pending(): void
     {
         [$owner, $website] = $this->infrastructure('Disclosure');

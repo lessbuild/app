@@ -129,7 +129,7 @@ are reused unchanged.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `0bd0bda Open provider connection history in a dialog`.
 
 ### Exact next task
 
@@ -137,6 +137,67 @@ After this slice is committed and pushed, inspect the website detail route for
 a bounded read-only health/checks inspector. Reuse its existing query and
 authorization boundary, and keep setup, provisioning and destructive actions
 as pages or explicit workflows.
+
+## Slice 4 — website health-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The website detail page exposed only a full-page link for retained health
+checks, even though the page already summarized current health and recent
+results. Moving to the history page interrupted investigation on small screens.
+The existing health-history controller and query collaborator already provided
+the correct scoped filters, ordering, metrics, pagination and export behavior;
+the UI needed a contextual read-only shell rather than a second health system.
+
+### Boundaries and benefit
+
+- `WebsitesController::healthChecks()` remains the single authorized read
+  boundary and now renders either the existing full-page shell or a body-only
+  `fragment=website-health-checks` response.
+- The health-history content partial owns filter, insight, result-list and
+  pagination presentation for both surfaces.
+- The website detail view owns only the trigger and modal shell.
+- The existing health monitor, manual-check action, runtime logs and
+  provisioning lifecycle remain outside the inspector.
+
+This mirrors the provider inspector where the data semantics genuinely match,
+while keeping website-specific health labels and cards explicit rather than
+introducing a generic cross-resource repository.
+
+### Preserved behavior and safety
+
+- The direct health-history route, no-JavaScript fallback, result/source/date
+  filters, pagination and spreadsheet-safe export remain available.
+- Fragment requests authorize before querying and use the existing normalized
+  filters and bounded history query.
+- Health checks remain read-only in the modal; “Check health now” continues to
+  be an explicit POST workflow with its existing queue and status behavior.
+- Website URLs, response errors and retained observation data keep their
+  existing escaping and scoped-authorization behavior.
+- Applying filters refreshes only the dialog content and keeps the website
+  detail page and scroll position in place.
+
+### Verification
+
+- Website health-history regression: **11 tests / 113 assertions passed**.
+- Pint on changed PHP files: passed.
+- Vite production asset build: passed.
+- Focused browser test: **1 test passed in 1.5 minutes** using PHP 8.5.10;
+  verified modal opening, fragment filter refresh, background path stability,
+  Escape and focus restoration.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+After this slice is committed and pushed, inspect deployment history and
+bounded command/task output links for contextual read-only inspectors. Keep
+deployment execution, rollback, cancellation and retry as explicit workflows.
 
 ## Slice 2 — shared workspace search
 

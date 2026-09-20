@@ -160,18 +160,37 @@ class WebsitesController extends Controller
     {
         $this->authorize('view', $website);
         $filters = $this->healthCheckFilters($request);
-
-        return view('scenes.websites.health-checks', [
+        $isFragment = $request->string('fragment')->toString() === 'website-health-checks';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'website-health-checks';
+        }
+        $healthChecks = $this->healthHistory->for($website, $filters)
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->appends($paginationQuery);
+        $viewData = [
             'website' => $website,
-            'healthChecks' => $this->healthHistory->for($website, $filters)
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->paginate(20)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'healthChecks' => $healthChecks,
             'filters' => $filters,
             'metrics' => $this->healthHistory->filteredMetrics($website, $filters),
             'sources' => [WebsiteHealthCheck::SOURCE_MANUAL, WebsiteHealthCheck::SOURCE_AUTOMATIC],
-        ]);
+        ];
+
+        if ($isFragment) {
+            return view('components.scenes.websites.health-checks-content', [
+                ...$viewData,
+                'filterAction' => route('websites.health-checks.index', $website),
+                'filterFragmentAction' => route('websites.health-checks.index', [
+                    'website' => $website,
+                    'fragment' => 'website-health-checks',
+                ]),
+                'filterIdPrefix' => 'health-dialog-',
+            ]);
+        }
+
+        return view('scenes.websites.health-checks', $viewData);
     }
 
     /**

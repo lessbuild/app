@@ -168,7 +168,12 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/website-show.html', $this->renderPage(route('websites.show', $website))->assertOk()
             ->assertSee('data-modal-trigger="website-edit-dialog"', false)
             ->assertSee('data-modal-trigger="website-log-retention-dialog"', false)
+            ->assertSee('data-modal-trigger="website-health-checks-dialog"', false)
             ->assertDontSee('APP_ENV=production')->getContent());
+        File::put($directory.'/website-health-checks.html', $this->renderPage(route('websites.health-checks.index', [
+            'website' => $website,
+            'fragment' => 'website-health-checks',
+        ]))->assertOk()->assertSee('data-modal-fragment-form', false)->getContent());
         File::put($directory.'/website-show-log-retention-dialog.html', $this->renderPage(route('websites.show', [
             'website' => $website,
             'dialog' => 'website-log-retention',

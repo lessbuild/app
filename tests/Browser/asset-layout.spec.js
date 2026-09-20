@@ -37,6 +37,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         const serverPage = /^\/servers\/\d+$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
+        const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
         const projectPage = /^\/projects\/\d+$/.test(pathname);
         const modalContentFixture = pathname === '/providers/1/edit'
             ? 'provider-edit-content'
@@ -60,7 +61,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || websitePage || projectPage || configurationDialogPage) {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage) {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
@@ -73,6 +74,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                     ? 'server-show'
                             : websitePage
                             ? 'website-show'
+                        : websiteHealthChecksPage
+                            ? 'website-health-checks'
                         : configurationDialogPage
                             ? 'configuration-dialog'
                         : projectPage
@@ -145,7 +148,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                     ? 'recipes-edit-dialog'
                                 : screen;
             let html = fs.readFileSync(path.join(fixtures, `${fixtureName}.html`), 'utf8');
-            if (screen === 'provider-connection-checks') {
+            if (screen === 'provider-connection-checks' || screen === 'website-health-checks') {
                 const result = new URL(route.request().url()).searchParams.get('result');
                 if (result) {
                     html = html.replace(`value="${result}"`, `value="${result}" selected`);
@@ -385,6 +388,32 @@ test('provider connection history opens and filters inside a contextual dialog',
     await dialog.getByRole('button', { name: 'Apply filters', exact: true }).click();
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('#connection-dialog-result')).toHaveValue('failed');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+});
+
+test('website health history opens and filters inside a contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View all health checks', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Health check history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
+    await expect(dialog.locator('#health-dialog-result')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('website-health-checks');
+
+    await dialog.locator('#health-dialog-result').selectOption('failed');
+    await dialog.getByRole('button', { name: 'Apply filters', exact: true }).click();
+    await expect(dialog.locator('#health-dialog-result')).toHaveValue('failed');
     expect(new URL(page.url()).pathname).toBe(initialPath);
 
     await page.keyboard.press('Escape');
