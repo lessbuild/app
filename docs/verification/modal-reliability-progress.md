@@ -21,6 +21,68 @@ Status: recorded before implementation.
   modal history restoration, desktop active-filter overflow and no-JavaScript
   filter fallback.
 
+## Slice 26 — server command retained-output inspector
+
+Status: complete; implementation commit and ledger commit are being finalized
+and will be pushed separately.
+
+### Responsibility problem
+
+The full server command-history page exposed retained output only as a download
+link. That forced a context switch for a common read-only troubleshooting task,
+while putting output directly into every history card would increase page size
+and expose sensitive command results before the user asked to inspect them.
+
+### Boundaries and benefit
+
+- `ServerCommandsController::index()` resolves only an explicitly requested,
+  server-scoped output execution for the dialog shell.
+- `ServerCommandsController::downloadOutput()` keeps its existing authorization,
+  nested ownership and missing-output checks, and serves a body-only fragment
+  only for the explicit `fragment=server-command-output` request.
+- `command-output-content` owns escaped output presentation, bounded scrolling,
+  execution metadata and the existing explicit download link.
+- The command-history view owns one shared lazy dialog and per-execution links;
+  cancel, rerun and delete remain visible workflows rather than being hidden in
+  the inspector.
+
+This applies single responsibility at the read/presentation boundary and
+reuses the existing controller and download service without introducing a
+second command-output store or a generic modal abstraction.
+
+### Preserved behavior and safety
+
+- The normal output endpoint still returns the same plain-text download with
+  the same filename, headers and response body.
+- Server authorization and foreign-execution 404 behavior run before either
+  the fragment or download response; missing output remains a 404.
+- Output is not rendered in the history list or dialog shell. It is fetched
+  only after the user opens the inspector, escaped in a focusable bounded
+  `<pre>`, and remains separately downloadable.
+- Filter values and current page are preserved in modal history URLs, and a
+  direct dialog URL can open even when its execution is outside the current
+  pagination page.
+- The nested server-show command-history dialog remains download-only to avoid
+  overlapping dialogs; the full command-history page provides the output
+  inspector.
+
+### Verification
+
+- Server command history and lifecycle regression: **17 tests / 178 assertions
+  passed**.
+- Isolated browser fixture export: **1 test / 267 assertions passed**.
+- Focused Playwright retained-output journey: **1 test passed in 1.2 minutes**
+  with PHP 8.5.10; verified lazy loading, same-page history, Escape/focus
+  restoration and direct dialog opening.
+- Pint, Node syntax check and `git diff --check`: passed.
+
+### Exact next task
+
+Audit remaining operational read-only links for one bounded inspector where it
+reduces context switching—especially incident/event/webhook delivery details—
+while keeping backup restores, remote tests, provisioning, terminals and other
+destructive or externally stateful workflows as explicit pages/actions.
+
 ## Slice 1 — shared filter and modal lifecycle reliability
 
 Status: complete; committed and pushed as `3e69b7b`.
