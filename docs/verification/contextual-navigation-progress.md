@@ -322,7 +322,7 @@ summary genuinely improves the flow.
 
 ## Slice 7 — repository webhook settings in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as ec85060.
 
 ### Responsibility problem
 
@@ -363,8 +363,12 @@ focused settings operation and should not compete with deployment history.
   webhook URL state, focus restoration and direct dialog rendering.
 - Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
 
+### Commit and push
+
+Commit and push: ec85060 Move repository webhook settings into a dialog.
+
 ### Exact next task
 
-Commit and push this slice, then finish the detail-page audit. Keep full
-history/report/export flows as pages and document any remaining inline action
-with a concrete safety or execution-order reason.
+Finish the detail-page audit. Keep full history/report/export flows as pages
+and document any remaining inline action with a concrete safety or
+execution-order reason.

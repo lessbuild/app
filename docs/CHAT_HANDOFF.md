@@ -2308,12 +2308,16 @@ settings surfaces. Paginated history, exports, imports, restores, destructive
 operations and protocol callbacks should remain explicit unless a smaller
 read-only summary genuinely improves the flow.
 
-The current local slice moves repository webhook enable/rotate/disable controls
-into a repository-context dialog. Existing policy ordering, GitLab token
-validation, generated one-time secret flashes, confirmations and canonical
-redirects remain unchanged; modal-originated enable/rotate redirects preserve
-the dialog so the secret is copyable. Focused PHP, fixture, browser, Blade,
-Pint and diff checks pass; the slice is pending its cohesive commit/push.
+ec85060 moves repository webhook enable/rotate/disable controls into a
+repository-context dialog. Existing policy ordering, GitLab token validation,
+generated one-time secret flashes, confirmations and canonical redirects
+remain unchanged; modal-originated enable/rotate redirects preserve the
+dialog so the secret is copyable. Focused PHP, fixture, browser, Blade, Pint
+and diff checks pass.
+
+The next task is to finish the detail-page audit. Full history/report/export
+flows remain pages, with any remaining inline action documented by its
+safety or execution-order reason.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local
