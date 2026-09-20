@@ -215,7 +215,7 @@ authorization and execution ordering.
 
 ## Slice 5 — preview settings in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as aaa8861.
 
 ### Responsibility problem
 
@@ -253,9 +253,12 @@ inconsistent with the other application-level composers.
   section expansion, URL state, focus restoration and Escape behavior.
 - Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
 
+### Commit and push
+
+Commit and push: aaa8861 Move preview settings into a contextual dialog.
+
 ### Exact next task
 
-Commit and push this slice, then continue the detail-page audit with the
-existing long history links and bounded settings actions. Prefer context
-preserving summary/timeline improvements over embedding paginated reports in
-large modals.
+Continue the detail-page audit with the existing long history links and
+bounded settings actions. Prefer context-preserving summary/timeline
+improvements over embedding paginated reports in large modals.
