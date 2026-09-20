@@ -11,6 +11,7 @@
 
 <dialog
     id="{{ $id }}"
+    data-modal-sheet
     data-modal-initial-open="{{ $open ? 'true' : 'false' }}"
     aria-labelledby="{{ $titleId }}"
     @if ($description) aria-describedby="{{ $descriptionId }}" @endif
@@ -18,8 +19,8 @@
     {{ $attributes->class(['ui-modal']) }}
 >
     <div class="ui-modal__viewport">
-        <div class="ui-modal__panel">
-            <header class="flex items-start justify-between gap-4 border-b border-primary px-5 py-4 sm:px-6">
+        <div class="ui-modal__panel" data-modal-panel>
+            <header data-modal-header class="ui-modal__header flex items-start justify-between gap-4 border-b border-primary px-5 py-4 sm:px-6">
                 <div class="min-w-0">
                     <h2 id="{{ $titleId }}" tabindex="-1" class="text-lg font-black text-primary">{{ $title }}</h2>
                     @if ($description)
@@ -38,7 +39,7 @@
                     </button>
                 </form>
             </header>
-            <div class="ui-modal__body {{ $bodyClass }}">
+            <div data-modal-body class="ui-modal__body {{ $bodyClass }}">
                 {{ $slot }}
             </div>
         </div>

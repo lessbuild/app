@@ -114,6 +114,44 @@
             })();
         </script>
 
+        <script>
+            (() => {
+                const closeMobileFilter = (panel) => {
+                    if (! panel || ! mobileMedia.matches) {
+                        return false;
+                    }
+
+                    panel.removeAttribute('open');
+                    panel.querySelector('[data-mobile-filter-summary]')?.focus();
+
+                    return true;
+                };
+                const mobileMedia = window.matchMedia('(max-width: 63.999rem)');
+
+                document.addEventListener('click', (event) => {
+                    const backdrop = event.target.closest('[data-mobile-filter-backdrop]');
+
+                    if (! backdrop) {
+                        return;
+                    }
+
+                    closeMobileFilter(backdrop.previousElementSibling);
+                });
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Escape') {
+                        return;
+                    }
+
+                    const panel = document.querySelector('[data-mobile-filter-panel][open]');
+
+                    if (closeMobileFilter(panel)) {
+                        event.stopPropagation();
+                    }
+                });
+            })();
+        </script>
+
         @if ($livewire)
             @livewireScripts
         @endif

@@ -130,6 +130,7 @@ a,
     max-height: calc(100dvh - 2rem);
     flex-direction: column;
     overflow: hidden;
+    overscroll-behavior: contain;
     border: 1px solid var(--border-primary);
     border-radius: 1rem;
     background: var(--bg-primary);
@@ -139,17 +140,82 @@ a,
 .ui-modal__body {
     min-height: 0;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 @media (max-width: 639px) {
     .ui-modal__viewport {
         align-items: flex-end;
-        padding: 0.5rem;
+        padding: 0;
     }
 
     .ui-modal__panel {
+        width: 100%;
         max-height: calc(100dvh - 1rem);
-        border-radius: 1rem 1rem 0.75rem 0.75rem;
+        padding-bottom: env(safe-area-inset-bottom);
+        border-radius: 1rem 1rem 0 0;
+    }
+
+    .ui-modal__panel::before {
+        width: 2.5rem;
+        height: 0.25rem;
+        flex: 0 0 auto;
+        align-self: center;
+        margin-top: 0.5rem;
+        border-radius: 9999px;
+        background-color: var(--border-secondary);
+        content: "";
+    }
+
+    .ui-modal__header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: var(--bg-primary);
+    }
+
+    .ui-modal__body > form > .border-t {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        background-color: var(--bg-secondary);
+    }
+}
+
+@media (max-width: 639px) {
+    [data-mobile-filter-panel][open] {
+        position: fixed;
+        inset: auto 0.5rem calc(var(--mobile-quick-navigation-space) + 0.5rem) 0.5rem;
+        z-index: 45;
+        display: flex;
+        max-height: min(calc(100dvh - var(--mobile-quick-navigation-space) - 1rem), 38rem);
+        flex-direction: column;
+        border-radius: 1rem;
+        box-shadow: 0 1.5rem 4rem rgb(15 23 42 / 0.3);
+    }
+
+    [data-mobile-filter-panel][open] > summary {
+        flex: 0 0 auto;
+        background-color: var(--bg-primary);
+    }
+
+    [data-mobile-filter-panel][open] > div {
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        -webkit-overflow-scrolling: touch;
+    }
+
+    [data-mobile-filter-panel][open] + [data-mobile-filter-backdrop] {
+        display: block;
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] [data-mobile-filter-panel][open] {
+        bottom: 0.5rem;
+        max-height: calc(100dvh - 1rem);
     }
 }
 

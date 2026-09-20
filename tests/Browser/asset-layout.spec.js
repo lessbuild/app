@@ -656,6 +656,12 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/provider-create', { waitUntil: 'networkidle' });
 
+    const providerDialog = page.locator('#provider-create-dialog');
+    const providerPanel = providerDialog.locator('[data-modal-panel]');
+    await expect(providerDialog).toHaveAttribute('data-modal-sheet', '');
+    await expect(providerPanel).toHaveCSS('border-top-left-radius', '16px');
+    await expect(providerDialog.locator('[data-modal-body]')).toHaveCSS('overscroll-behavior', 'contain');
+
     const tokenBounds = await page.locator('#token').boundingBox();
     expect(tokenBounds.y).toBeLessThan(700);
 
@@ -664,6 +670,33 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await expect(content).toBeHidden();
     await monitoring.locator('summary').click();
     await expect(content).toBeVisible();
+});
+
+test('mobile filters use dismissible bottom sheets without changing filter URLs', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/repositories', { waitUntil: 'networkidle' });
+
+    const filter = page.locator('#repositories-filters');
+    const summary = filter.locator('[data-mobile-filter-summary]');
+    const backdrop = page.locator('[data-mobile-filter-backdrop]');
+    const initialPath = new URL(page.url()).pathname;
+
+    await expect(filter).not.toHaveAttribute('open', '');
+    await summary.click();
+    await expect(filter).toHaveAttribute('open', '');
+    await expect(filter).toHaveCSS('position', 'fixed');
+    await expect(backdrop).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+
+    await page.keyboard.press('Escape');
+    await expect(filter).not.toHaveAttribute('open', '');
+    await expect(summary).toBeFocused();
+
+    await summary.click();
+    await backdrop.click({ position: { x: 4, y: 4 } });
+    await expect(filter).not.toHaveAttribute('open', '');
+    await expect(summary).toBeFocused();
 });
 
 test('compact invitation and feedback workflows use accessible URL-backed dialogs', async ({ page }) => {

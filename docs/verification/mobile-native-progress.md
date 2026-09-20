@@ -27,7 +27,8 @@ Each verified slice is committed and pushed before the next slice starts.
 
 | Slice | Responsibility boundary | Status | Verification | Commit / push |
 | --- | --- | --- | --- | --- |
-| 1. Shared mobile shell | Shell owns safe-area, keyboard and mobile document-flow behavior; page views remain unchanged. | Complete | 50 PHP tests / 763 assertions; 3 bounded browser journeys; Pint and Vite passed. | Pending push |
+| 1. Shared mobile shell | Shell owns safe-area, keyboard and mobile document-flow behavior; page views remain unchanged. | Complete | 50 PHP tests / 763 assertions; 3 bounded browser journeys; Pint and Vite passed. | `85ef0fe` pushed |
+| 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | Pending push |
 
 ## Preserved contracts
 
@@ -77,15 +78,44 @@ move application logic into the browser.
 
 ### Commit and push
 
+Implementation commit and push: `85ef0fe Improve mobile shell behavior`.
+
+## Slice 2 — mobile sheets and filters
+
+### Responsibility problem
+
+Dialogs and filters used different mobile presentation rules. Long dialog
+content could scroll independently without a shared safe-area/action contract,
+and filter disclosures did not provide a native-feeling mobile dismissal path.
+
+### Boundary and design decision
+
+The shared dialog component now exposes sheet, panel, header and body hooks.
+The shared CSS owns mobile bottom-sheet geometry, the visual handle, sticky
+headers, sticky bordered action rows, safe-area padding and contained scrolling.
+The shared filter component owns its mobile sheet state and backdrop; a small
+core-layout listener closes it through Escape or the backdrop and returns focus
+to the filter summary.
+
+No individual feature form was rewritten. Existing dialog URLs, browser
+history, validation fields, no-JavaScript fallbacks and filter query behavior
+remain unchanged.
+
+### Verification
+
+- Focused PHP regression: **45 tests / 612 assertions passed**.
+- Pint: passed.
+- Vite production build: passed.
+- `git diff --check`: passed.
+- Focused browser verification with PHP 8.5.10: **2 passed** for mobile
+  provider-sheet geometry and dismissible repository filters.
+
+### Commit and push
+
 Implementation commit: pending.
 
 ### Exact next task
 
-Implement Slice 2: make the existing mobile dialogs, filters and long forms
-behave as consistent bottom sheets with keyboard-safe action areas, without
-changing their URLs, validation contracts or no-JavaScript fallbacks.
-
-## Exact next task
-
-Finish and verify Slice 1, commit and push it, then inspect mobile dialogs and
-long-form interactions for Slice 2.
+Implement Slice 3: improve mobile page hierarchy for dashboard and inventory
+surfaces, starting with compact result cards, sticky context actions and
+filter summaries while preserving pagination, URL state and authorization.

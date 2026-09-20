@@ -77,6 +77,20 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('href="#inventory"', $html);
     }
 
+    public function test_mobile_dialog_and_filter_primitives_expose_native_sheet_hooks(): void
+    {
+        $modal = File::get(resource_path('views/components/dialogs/modal.blade.php'));
+        $filter = File::get(resource_path('views/components/ui/filter-panel.blade.php'));
+
+        $this->assertStringContainsString('data-modal-sheet', $modal);
+        $this->assertStringContainsString('data-modal-panel', $modal);
+        $this->assertStringContainsString('data-modal-header', $modal);
+        $this->assertStringContainsString('data-modal-body', $modal);
+        $this->assertStringContainsString('data-mobile-filter-panel', $filter);
+        $this->assertStringContainsString('data-mobile-filter-summary', $filter);
+        $this->assertStringContainsString('data-mobile-filter-backdrop', $filter);
+    }
+
     public function test_long_workspace_surfaces_use_compact_local_navigation_and_border_only_notice_states(): void
     {
         foreach ([
