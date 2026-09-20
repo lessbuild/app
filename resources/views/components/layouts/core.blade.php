@@ -84,6 +84,36 @@
             })();
         </script>
 
+        <script>
+            (() => {
+                const mobileMedia = window.matchMedia('(max-width: 63.999rem)');
+                const editableSelector = 'input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), select, textarea, [contenteditable="true"]';
+
+                const syncMobileKeyboard = () => {
+                    const viewport = window.visualViewport;
+                    const active = document.activeElement;
+                    const editing = active instanceof Element && active.matches(editableSelector);
+                    const keyboardOpen = Boolean(
+                        mobileMedia.matches
+                        && viewport
+                        && editing
+                        && window.innerHeight - viewport.height > 120,
+                    );
+
+                    document.querySelectorAll('[data-mobile-shell]').forEach((shell) => {
+                        shell.toggleAttribute('data-mobile-keyboard-open', keyboardOpen);
+                    });
+                };
+
+                document.addEventListener('focusin', syncMobileKeyboard);
+                document.addEventListener('focusout', () => window.setTimeout(syncMobileKeyboard, 0));
+                window.addEventListener('resize', syncMobileKeyboard);
+                mobileMedia.addEventListener('change', syncMobileKeyboard);
+                window.visualViewport?.addEventListener('resize', syncMobileKeyboard);
+                syncMobileKeyboard();
+            })();
+        </script>
+
         @if ($livewire)
             @livewireScripts
         @endif

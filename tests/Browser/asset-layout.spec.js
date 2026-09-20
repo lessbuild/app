@@ -421,7 +421,14 @@ for (const colorScheme of ['light', 'dark']) {
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');
                     await expect(quickAction).toHaveText('New app');
                     const quickActionUrl = new URL(await quickAction.getAttribute('href'));
-                    expect(quickActionUrl.pathname).toBe(new URL(page.url()).pathname);
+                    // The dashboard fixture is requested through its historical
+                    // /dashboard screen name, while the named application route
+                    // is /home. Compare with the rendered canonical dashboard
+                    // link so this fixture still tests same-page modal state.
+                    const expectedCurrentPath = screen === 'dashboard'
+                        ? new URL(await page.locator('[data-auth-brand]').getAttribute('href'), page.url()).pathname
+                        : new URL(page.url()).pathname;
+                    expect(quickActionUrl.pathname).toBe(expectedCurrentPath);
                     expect(quickActionUrl.searchParams.get('dialog')).toBe('create-application');
                     await expect(quickAction).toHaveCSS('min-height', '44px');
                 }

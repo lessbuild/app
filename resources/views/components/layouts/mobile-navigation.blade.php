@@ -2,6 +2,7 @@
 
 <section
     id="primary-navigation"
+    data-mobile-navigation
     x-cloak
     x-show="menu"
     x-trap.inert.noscroll="menu"

@@ -10,6 +10,67 @@
 
 @plugin "@tailwindcss/forms";
 
+:root {
+    --mobile-quick-navigation-space: calc(4.5rem + env(safe-area-inset-bottom));
+}
+
+html {
+    overscroll-behavior-x: none;
+}
+
+body,
+button,
+a,
+[role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
+
+[data-mobile-main] {
+    scroll-margin-top: 4rem;
+}
+
+[data-mobile-content] {
+    scroll-padding-bottom: var(--mobile-quick-navigation-space);
+}
+
+[data-mobile-quick-navigation] {
+    transition: transform 180ms ease;
+}
+
+[data-mobile-quick-navigation] a,
+[data-mobile-quick-navigation] button {
+    touch-action: manipulation;
+}
+
+@media (max-width: 63.999rem) {
+    [data-mobile-shell] {
+        padding-bottom: var(--mobile-quick-navigation-space);
+    }
+
+    [data-mobile-shell] [data-mobile-main] {
+        min-height: 100svh;
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] [data-mobile-quick-navigation] {
+        pointer-events: none;
+        transform: translateY(100%);
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] [data-mobile-content] {
+        scroll-padding-bottom: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-mobile-quick-navigation] {
+        transition: none;
+    }
+}
+
 [x-cloak] {
     display: none !important;
 }

@@ -14,6 +14,7 @@
         {{ __('Skip to main content') }}
     </a>
     <div
+        data-mobile-shell
         class="flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
         x-data="{ menu: false, palette: false, paletteQuery: '', paletteIndex: -1, paletteLinks() { return [...(this.$refs.paletteResults?.querySelectorAll('[data-palette-item]') ?? [])].filter((element) => element.offsetParent !== null); }, movePalette(delta) { const links = this.paletteLinks(); if (!links.length) { this.paletteIndex = -1; this.$refs.paletteInput.focus(); return; } if (this.paletteIndex < 0) { this.paletteIndex = delta > 0 ? 0 : links.length - 1; } else { this.paletteIndex = (this.paletteIndex + delta + links.length) % links.length; } links[this.paletteIndex]?.focus(); }, movePaletteTo(index) { const links = this.paletteLinks(); if (!links.length) { this.paletteIndex = -1; this.$refs.paletteInput.focus(); return; } this.paletteIndex = Math.min(Math.max(index, 0), links.length - 1); links[this.paletteIndex]?.focus(); }, resetPaletteSelection() { this.paletteIndex = -1; }, restorePaletteFocus() { this.$nextTick(() => { const trigger = [this.$refs.paletteToggle, this.$refs.mobilePaletteToggle, this.$refs.mobileQuickPaletteToggle].find((element) => element && element.offsetParent !== null); trigger?.focus(); }) } }"
         @keydown.escape.window="if (palette) { palette = false; restorePaletteFocus() } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
@@ -42,8 +43,8 @@
          ! Website main content
          ! ------------------------------------------------------------
          !-->
-        <main id="main-content" tabindex="-1" class="min-w-0 w-full bg-secondary pl-0 lg:pl-64 min-h-screen">
-            <div class="sticky top-0 z-30 bg-gray-800 text-gray-100 border-b border-primary shadow-xs">
+        <main id="main-content" tabindex="-1" data-mobile-main class="min-w-0 w-full bg-secondary pl-0 lg:pl-64 min-h-screen">
+            <div class="sticky top-0 z-30 bg-gray-800 text-gray-100 border-b border-primary shadow-xs" data-mobile-header>
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-gray-100">{{ config('app.name') }}</a>
                     <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
@@ -68,13 +69,13 @@
                 </div>
             </div>
 
-            <div class="mb-20 p-4 sm:p-6">
+            <div data-mobile-content class="mb-0 p-4 sm:mb-20 sm:p-6">
                 <x-alerts.flash />
                 {{ $slot }}
             </div>
         </main>
 
-        <nav class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
+        <nav data-mobile-quick-navigation class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
             <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('dashboard'), 'text-secondary' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
             <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => $applicationCreateDialogOpen, 'text-secondary' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
             <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
@@ -131,7 +132,7 @@
          ! Footer and links
          ! ------------------------------------------------------------
          !-->
-        <div class="flex w-full items-center justify-between border-t border-primary bg-primary px-6 py-6 text-sm text-primary sm:px-8 lg:flex">
+        <div data-mobile-footer class="hidden w-full items-center justify-between border-t border-primary bg-primary px-6 py-6 text-sm text-primary sm:px-8 lg:flex">
             <p class="mb-2 lg:mb-0">
                 &copy; {{ now()->year }} {{ config('app.name') }}
             </p>

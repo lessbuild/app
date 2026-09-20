@@ -79,6 +79,20 @@ class DashboardTest extends TestCase
             ->assertDontSee('fixed inset-x-3', false);
     }
 
+    public function test_mobile_shell_uses_the_quick_navigation_space_and_desktop_only_footer(): void
+    {
+        $this->actingAs(User::factory()->create())->get(route('dashboard'))
+            ->assertSuccessful()
+            ->assertSee('data-mobile-shell', false)
+            ->assertSee('data-mobile-main', false)
+            ->assertSee('data-mobile-content', false)
+            ->assertSee('data-mobile-quick-navigation', false)
+            ->assertSee('data-mobile-footer', false)
+            ->assertSee('class="hidden w-full items-center justify-between border-t border-primary', false)
+            ->assertSee('data-mobile-keyboard-open', false)
+            ->assertSee('visualViewport', false);
+    }
+
     public function test_dashboard_shows_only_the_authenticated_users_activity(): void
     {
         Queue::fake();
