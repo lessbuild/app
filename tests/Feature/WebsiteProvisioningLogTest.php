@@ -58,6 +58,8 @@ class WebsiteProvisioningLogTest extends TestCase
         $this->actingAs($user)->get(route('websites.show', $website))
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)
+            ->assertSee('Provisioning timeline')
+            ->assertDontSee('Setup Information')
             ->assertSeeText('Creating database')
             ->assertDontSee("<script>alert('xss')</script>", false);
 

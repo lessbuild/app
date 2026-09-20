@@ -2257,6 +2257,26 @@ The detailed ledger is [mobile-native verification](verification/mobile-native-p
 The remaining release work is real-device verification plus the separate live
 and paid-provider acceptance drill.
 
+## Contextual navigation modernization — 2026-09-20
+
+Implementation has started on `main` for the contextual modal and navigation
+plan. The first slice replaces the website detail page's legacy `Setup
+Information` presentation with a dedicated `Provisioning timeline` derived
+from `WebsiteProvisioningPlan` and the shared `DeploymentTimelineEntry` view.
+The timeline is now above health history, while existing polling, logs, retry,
+cleanup warnings and authorization remain in place. The website empty-state
+repository label was corrected and its already-paginated relation now renders
+pagination controls.
+
+The isolated render at 390px confirms the timeline appears near the top of the
+website page and the old `Setup Information` label is absent. Focused PHP,
+Pint, Blade fixture and diff checks pass. The verification ledger is
+`docs/verification/contextual-navigation-progress.md`.
+
+The slice is still uncommitted at handoff; commit and push it before beginning
+the shared modal-loader reliability work. No production, cloud or external
+acceptance operation was performed.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

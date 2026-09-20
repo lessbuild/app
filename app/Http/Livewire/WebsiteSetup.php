@@ -3,7 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\Website;
-use App\Services\WebsiteProvisioningPlan;
+use App\Services\WebsiteProvisioningTimeline;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -15,13 +15,22 @@ class WebsiteSetup extends Component
     /**
      * @throws \Exception
      */
-    public function render(WebsiteProvisioningPlan $plan): View
+    public function render(WebsiteProvisioningTimeline $timeline): View
     {
         $this->model->refresh();
         Gate::authorize('view', $this->model);
 
-        return view('livewire.setup', [
-            'processes' => $plan->scripts(),
+        $finished = in_array($this->model->provisioning_status, [
+            Website::STATUS_ACTIVE,
+            Website::STATUS_FAILED,
+            WebsiteProvisioningTimeline::STATUS_CANCELED,
+        ], true);
+
+        return view('livewire.website-provisioning-timeline', [
+            'deploymentTimeline' => $timeline->for($this->model),
+            'provisioningFailed' => $this->model->provisioning_status === Website::STATUS_FAILED,
+            'provisioningCanceled' => $this->model->provisioning_status === WebsiteProvisioningTimeline::STATUS_CANCELED,
+            'poll' => ! $finished,
         ]);
     }
 }

@@ -193,6 +193,30 @@
         </x-ui.alert>
     @endif
 
+    @php
+        $websiteOperationsNeedAttention = $website->provisioning_status !== \App\Models\Website::STATUS_ACTIVE
+            || $website->previous_server_id !== null;
+    @endphp
+    <details id="website-operations" class="group ui-card mt-6 overflow-hidden" @if ($websiteOperationsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <span>
+                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                <span class="mt-1 block text-lg">{{ __('Provisioning timeline') }}</span>
+                <span class="mt-1 block text-sm font-normal text-secondary">
+                    {{ str($website->provisioning_status ?? 'unknown')->replace('_', ' ')->headline() }}
+                    @if ($website->previous_server_id)
+                        · {{ __('Previous placement cleanup pending') }}
+                    @endif
+                </span>
+            </span>
+            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+        </summary>
+        <div class="space-y-6 border-t border-primary p-5">
+            <livewire:website-setup :model="$website" />
+            <livewire:website-provisioning-log :website="$website" />
+        </div>
+    </details>
+
     <section class="mt-8" aria-labelledby="health-history-heading">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -320,36 +344,6 @@
         </section>
     </details>
 
-    @php
-        $websiteOperationsNeedAttention = $website->provisioning_status !== \App\Models\Website::STATUS_ACTIVE
-            || $website->previous_server_id !== null;
-    @endphp
-    <details id="website-operations" class="group ui-card mt-6 overflow-hidden" @if ($websiteOperationsNeedAttention) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
-            <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
-                <span class="mt-1 block text-lg">{{ __('Provisioning and setup') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">
-                    {{ str($website->provisioning_status ?? 'unknown')->replace('_', ' ')->headline() }}
-                    @if ($website->previous_server_id)
-                        · {{ __('Previous placement cleanup pending') }}
-                    @endif
-                </span>
-            </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
-        </summary>
-        <div class="space-y-6 border-t border-primary p-5">
-            <livewire:website-provisioning-log :website="$website" />
-
-            <!--
-             ! ------------------------------------------------------------
-             ! Website Setup
-             ! ------------------------------------------------------------
-             !-->
-            <livewire:website-setup :model="$website" />
-        </div>
-    </details>
-
     <!--
      ! ------------------------------------------------------------
      ! Quick Actions
@@ -369,7 +363,7 @@
                     aria-controls="repository-create-dialog"
                     aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
                     variant="ghost"
-                >{{ __('Add Repo') }}</x-ui.button>
+                >{{ __('Add repository') }}</x-ui.button>
             </div>
             <ul role="list" class="mt-4 divide-y divide-primary">
                 @forelse($repositories as $repository)
@@ -389,10 +383,13 @@
                     </li>
                 @empty
                     <li class="pt-3">
-                        <x-ui.alert tone="info" role="status">{{ __('No repositories attached to server') }}</x-ui.alert>
+                        <x-ui.alert tone="info" role="status">{{ __('No repositories attached to website') }}</x-ui.alert>
                     </li>
                 @endforelse
             </ul>
+            @if ($repositories->hasPages())
+                <div class="mt-4 border-t border-primary pt-4">{{ $repositories->links() }}</div>
+            @endif
         </x-ui.card>
     </section>
 
