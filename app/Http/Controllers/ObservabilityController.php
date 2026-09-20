@@ -27,6 +27,8 @@ use App\Models\AlertDestination;
 use App\Models\Environment;
 use App\Models\MetricAlertRule;
 use App\Models\ObservabilityInvestigationView;
+use App\Models\OperationalIncident;
+use App\Models\Organization;
 use App\Models\StatusIncident;
 use App\Models\StatusPage;
 use App\Services\ObservabilityDashboardQuery;
@@ -45,6 +47,24 @@ class ObservabilityController extends Controller
     public function index(Request $request, ObservabilityDashboardQuery $dashboard): View
     {
         $organization = $request->user()->currentOrganization;
+
+        if ($request->string('fragment')->toString() === 'operational-incident') {
+            $incidentId = filter_var($request->query('incident_id'), FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+            abort_if($incidentId === false, 404);
+
+            $incident = $organization->operationalIncidents()
+                ->with(['assignee', 'events.actor'])
+                ->whereKey($incidentId)
+                ->first();
+            abort_if($incident === null, 404);
+
+            return view('components.scenes.observability.operational-incident-content', [
+                'incident' => $incident,
+            ]);
+        }
+
         $data = $dashboard->for($organization);
 
         return view('observability.index', [
@@ -52,7 +72,22 @@ class ObservabilityController extends Controller
             'canManage' => $organization->permits($request->user(), 'manage'),
             'canOperate' => $organization->permits($request->user(), 'operate'),
             'canExportIncidents' => $organization->permits($request->user(), 'operate') || $organization->permits($request->user(), 'audit'),
+            'selectedOperationalIncident' => $this->selectedOperationalIncident($request, $organization),
         ]);
+    }
+
+    private function selectedOperationalIncident(Request $request, Organization $organization): ?OperationalIncident
+    {
+        $dialog = $request->string('dialog')->toString();
+
+        if (! preg_match('/^operational-incident-(\d+)$/', $dialog, $matches)) {
+            return null;
+        }
+
+        return $organization->operationalIncidents()
+            ->with(['assignee', 'events.actor'])
+            ->whereKey((int) $matches[1])
+            ->first();
     }
 
     /**

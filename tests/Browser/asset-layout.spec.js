@@ -210,6 +210,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'gallery-my-reports-dialog'
                             : screen === 'repositories' && dialog === 'impact-preview'
                                 ? 'repositories-impact-preview-dialog'
+                            : screen === 'observability' && fragment === 'operational-incident'
+                                ? 'observability-operational-incident-content'
+                            : screen === 'observability' && dialog?.startsWith('operational-incident-')
+                                ? 'observability-operational-incident-dialog'
                             : screen === 'observability' && dialog === 'create-metric-rule'
                                     ? 'observability-metric-rule-dialog'
                                 : screen === 'observability' && dialog === 'create-alert-destination'
@@ -273,6 +277,33 @@ async function serveFixtures(page, { delays = {} } = {}) {
         return route.fulfill({ contentType: contentTypes[path.extname(file)] || 'text/plain', body: fs.readFileSync(file) });
     });
 }
+
+test('operational incident timeline opens as a contextual evidence dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Timeline and response', exact: true }).first();
+    const triggerHref = await trigger.getAttribute('href');
+    const dialog = page.getByRole('dialog', { name: 'Incident timeline', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-operational-incident-content]')).toBeVisible();
+    await expect(dialog).toContainText('Fixture incident summary.');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^operational-incident-/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto(new URL(triggerHref, page.url()).href, { waitUntil: 'networkidle' });
+    const directDialog = page.getByRole('dialog', { name: 'Incident timeline', exact: true });
+    await expect(directDialog).toBeVisible();
+    await expect(directDialog.locator('[data-operational-incident-content]')).toBeVisible();
+});
 
 test('observability investigation notes use an accessible dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });

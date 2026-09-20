@@ -23,6 +23,17 @@
         $statusIncidentDialogOpen = (request()->query('dialog') === 'create-status-incident' && ! session()->has('success'))
             || $statusIncidentDialogHasErrors;
         $statusIncidentDialogUrl = route('observability.index', ['dialog' => 'create-status-incident']);
+        $operationalIncidentDialogId = 'operational-incident-timeline-dialog';
+        $operationalIncidentDialogOpen = $selectedOperationalIncident !== null;
+        $operationalIncidentDialogHistoryUrl = $selectedOperationalIncident
+            ? route('observability.index', ['dialog' => 'operational-incident-'.$selectedOperationalIncident->id])
+            : null;
+        $operationalIncidentDialogContentUrl = $selectedOperationalIncident
+            ? route('observability.index', [
+                'fragment' => 'operational-incident',
+                'incident_id' => $selectedOperationalIncident->id,
+            ])
+            : null;
     @endphp
 
     <x-layouts.partials.heading
@@ -434,4 +445,28 @@
         @endif
         </details>
     </section>
+
+    @if ($selectedOperationalIncident && ! $operationalIncidents->contains('id', $selectedOperationalIncident->id))
+        <a
+            href="{{ $operationalIncidentDialogHistoryUrl }}"
+            data-modal-trigger="{{ $operationalIncidentDialogId }}"
+            data-modal-content-url="{{ $operationalIncidentDialogContentUrl }}"
+            data-modal-history-url="{{ $operationalIncidentDialogHistoryUrl }}"
+            aria-controls="{{ $operationalIncidentDialogId }}"
+            aria-expanded="{{ $operationalIncidentDialogOpen ? 'true' : 'false' }}"
+            class="sr-only"
+        >{{ __('Open incident timeline') }}</a>
+    @endif
+
+    <x-dialogs.modal
+        id="{{ $operationalIncidentDialogId }}"
+        :title="__('Incident timeline')"
+        :description="__('Review encrypted incident evidence without leaving observability.')"
+        :open="$operationalIncidentDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading incident timeline…') }}</p>
+        </div>
+    </x-dialogs.modal>
 </x-layouts.app>

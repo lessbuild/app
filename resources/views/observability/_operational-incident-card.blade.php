@@ -9,6 +9,13 @@
         && $errors->has('message');
     $noteDialogOpen = request()->query('dialog') === $noteDialogKey || $noteDialogHasErrors;
     $noteDialogUrl = route('observability.index', ['dialog' => $noteDialogKey]);
+    $timelineDialogId = 'operational-incident-timeline-dialog';
+    $timelineDialogKey = 'operational-incident-'.$incident->id;
+    $timelineDialogUrl = route('observability.index', ['dialog' => $timelineDialogKey]);
+    $timelineContentUrl = route('observability.index', [
+        'fragment' => 'operational-incident',
+        'incident_id' => $incident->id,
+    ]);
 @endphp
 
 <article class="rounded-xl border border-primary bg-secondary p-4">
@@ -29,19 +36,24 @@
         @endif
     </div>
 
-    <details class="mt-4 rounded-lg border border-primary bg-primary p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
-        <summary class="cursor-pointer text-xs font-bold text-ternary">{{ __('Timeline and response') }}</summary>
-        <p class="mt-3 text-sm text-secondary">{{ $incident->summary }}</p>
-        <ol class="mt-3 space-y-3 border-l border-primary pl-4">
-            @foreach ($incident->events->sortByDesc('occurred_at') as $event)
-                <li>
-                    <p class="text-xs font-bold text-primary">{{ str($event->type)->headline() }} · {{ $event->occurred_at->utc()->format('M j H:i').' UTC' }} @if ($event->actor)· {{ $event->actor->name }}@endif</p>
-                    <p class="text-sm text-secondary">{{ $event->message }}</p>
-                </li>
-            @endforeach
-        </ol>
+    <div class="mt-4 flex flex-wrap gap-2">
+        <x-ui.button
+            :href="$timelineDialogUrl"
+            data-modal-trigger="{{ $timelineDialogId }}"
+            data-modal-content-url="{{ $timelineContentUrl }}"
+            data-modal-history-url="{{ $timelineDialogUrl }}"
+            aria-controls="{{ $timelineDialogId }}"
+            aria-expanded="{{ request()->query('dialog') === $timelineDialogKey ? 'true' : 'false' }}"
+            variant="secondary"
+        >
+            {{ __('Timeline and response') }}
+        </x-ui.button>
+    </div>
 
-        @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)
+    @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)
+        <details class="mt-4 rounded-lg border border-primary bg-primary p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
+            <summary class="cursor-pointer text-xs font-bold text-ternary">{{ __('Response actions') }}</summary>
+            <div class="mt-3">
             <div class="mt-5 grid gap-4 border-t border-primary pt-4 lg:grid-cols-3">
                 <form method="POST" action="{{ route('observability.operational-incidents.assign', $incident) }}" class="flex items-end gap-2">
                     @csrf
@@ -78,13 +90,7 @@
                     <x-ui.button type="submit" variant="primary">{{ __('Resolve') }}</x-ui.button>
                 </form>
             </div>
-        @endif
-
-        @if ($incident->resolution)
-            <div class="ui-card ui-card--muted mt-4 p-3">
-                <p class="text-xs font-bold uppercase text-secondary">{{ __('Resolution') }}</p>
-                <p class="mt-1 text-sm text-primary">{{ $incident->resolution }}</p>
             </div>
-        @endif
-    </details>
+        </details>
+    @endif
 </article>

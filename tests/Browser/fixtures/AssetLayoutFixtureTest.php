@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Build;
+use App\Models\OperationalIncident;
 use App\Models\Recipe;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
@@ -567,6 +568,7 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/domains-dialog.html', $this->renderPage(route('domains.index', ['dialog' => 'add-domain']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Fixture server incident', 'Fixture incident summary.');
+        $fixtureOperationalIncident = OperationalIncident::query()->sole();
         $statusPage = $owner->currentOrganization->statusPages()->create([
             'created_by' => $owner->id,
             'name' => 'Fixture status page',
@@ -590,8 +592,18 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="status-page-create-dialog"', false)
             ->assertSee('data-modal-trigger="status-incident-create-dialog"', false)
             ->assertSee('data-modal-trigger="operational-incident-note-', false)
+            ->assertSee('data-modal-trigger="operational-incident-timeline-dialog"', false)
             ->assertSee('data-modal-trigger="status-incident-edit-dialog-', false)
             ->getContent());
+        File::put($directory.'/observability-operational-incident-dialog.html', $this->renderPage(route('observability.index', [
+            'dialog' => 'operational-incident-'.$fixtureOperationalIncident->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)
+            ->assertDontSee('Fixture incident summary.')->getContent());
+        File::put($directory.'/observability-operational-incident-content.html', $this->renderPage(route('observability.index', [
+            'fragment' => 'operational-incident',
+            'incident_id' => $fixtureOperationalIncident->id,
+        ]))->assertOk()->assertSee('data-operational-incident-content', false)
+            ->assertSee('Fixture incident summary.')->getContent());
         File::put($directory.'/observability-environment-context.html', $this->renderPage(route('observability.environments.context', $environment))->assertOk()
             ->assertSee('data-modal-trigger="environment-health-checks-dialog"', false)
             ->getContent());

@@ -135,6 +135,47 @@ class OperationalIncidentTest extends TestCase
         $this->assertSame(1, $incident->events()->count());
     }
 
+    public function test_incident_timeline_is_lazy_loaded_while_response_actions_remain_explicit(): void
+    {
+        [$owner, $server] = $this->server();
+        app(IncidentNotifier::class)->fail($owner, 'server', $server->id, 'Server failed', '<script>alert("incident")</script>');
+        $incident = OperationalIncident::query()->sole();
+
+        $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('Timeline and response')
+            ->assertSee('Response actions')
+            ->assertSee('data-modal-trigger="operational-incident-timeline-dialog"', false)
+            ->assertDontSee('incident")</script>', false)
+            ->assertDontSee('Connection refused');
+
+        $this->get(route('observability.index', [
+            'dialog' => 'operational-incident-'.$incident->id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('selectedOperationalIncident', fn ($selected): bool => $selected?->is($incident) ?? false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertDontSee('incident")</script>', false);
+
+        $this->get(route('observability.index', [
+            'fragment' => 'operational-incident',
+            'incident_id' => $incident->id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.observability.operational-incident-content')
+            ->assertSee('data-operational-incident-content', false)
+            ->assertSee('&lt;script&gt;alert(&quot;incident&quot;)&lt;/script&gt;', false)
+            ->assertDontSee('<script>', false)
+            ->assertSee('Timeline');
+
+        $intruder = User::factory()->create();
+        $this->actingAs($intruder)->get(route('observability.index', [
+            'fragment' => 'operational-incident',
+            'incident_id' => $incident->id,
+        ]))->assertNotFound();
+    }
+
     public function test_observability_keeps_active_response_visible_and_collapses_resolved_history(): void
     {
         [$owner, $server] = $this->server();
