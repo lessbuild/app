@@ -1,0 +1,2017 @@
+{
+  "date": "2026-09-20",
+  "codeRevision": "490b21d",
+  "deployedRevision": "aa84baf",
+  "safety": "GET-only browsing except ordinary dev login. No product forms, provider probes or remote mutations submitted. Login creates ordinary session/sign-in metadata.",
+  "scope": "One dev owner/admin account plus guest views. Not an exhaustive role, form, modal-variant or device acceptance claim.",
+  "mobile": {
+    "viewport": "390x844",
+    "urlChecks": 251,
+    "successful": 246,
+    "uniqueHrefValues": 1083,
+    "pendingCrawlablePageUrls": 0,
+    "finalSnapshotExcludedModalVariants": 17,
+    "failures": [
+      {
+        "target": "/admin/github-app/setup",
+        "status": 404
+      },
+      {
+        "target": "/servers/13",
+        "status": 404
+      },
+      {
+        "target": "/websites/7",
+        "status": 404
+      },
+      {
+        "target": "/websites/6",
+        "status": 404
+      },
+      {
+        "target": "/servers/8",
+        "status": 404
+      }
+    ],
+    "harnessErrors": 0,
+    "horizontalOverflow": 0,
+    "pageErrors": 0
+  },
+  "desktop": {
+    "viewport": "1440x1000",
+    "urlChecks": 83,
+    "successful": 82,
+    "pageErrors": 0
+  },
+  "extraDesktop": {
+    "urlChecks": 8,
+    "successful": 8,
+    "pageErrors": 0
+  },
+  "guestMobile": {
+    "urlChecks": 12,
+    "successful": 12,
+    "pageErrors": 0
+  },
+  "currentCodeDiagnostics": [
+    {
+      "name": "latest mobile filter scroll lock",
+      "result": {
+        "before": {
+          "y": 0,
+          "native": true,
+          "overflow": "hidden"
+        },
+        "after": {
+          "y": 0,
+          "overflow": "hidden"
+        }
+      }
+    },
+    {
+      "name": "latest desktop active-filter markup scroll lock",
+      "result": {
+        "filterNative": false,
+        "open": true,
+        "overflow": "hidden",
+        "bodyOverflow": "hidden",
+        "scrollHeight": 1254
+      }
+    },
+    {
+      "name": "latest edit open and Cancel document requests",
+      "result": {
+        "openingDocs": [],
+        "cancelDocs": [
+          "/providers/1"
+        ]
+      }
+    },
+    {
+      "name": "latest native modal forward navigation",
+      "result": {
+        "backOpen": false,
+        "forwardOpen": false,
+        "url": "http://buildpusher.test/providers/1?dialog=edit-provider"
+      }
+    },
+    {
+      "name": "latest mobile filter without JavaScript",
+      "result": {
+        "triggerVisible": true,
+        "fieldsVisible": false
+      }
+    }
+  ],
+  "fixtureExport": {
+    "tests": 1,
+    "assertions": 164,
+    "result": "passed",
+    "database": ":memory:",
+    "php": "8.5.10"
+  },
+  "routeCoverage": {
+    "webGetRoutesClassified": 130,
+    "directlyVisited": 76,
+    "notDirectlyVisited": 54,
+    "routes": [
+      {
+        "name": null,
+        "uri": "/",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/"
+        ]
+      },
+      {
+        "name": "account.index",
+        "uri": "account",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/account"
+        ]
+      },
+      {
+        "name": "account.export",
+        "uri": "account/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "account.sign-ins.index",
+        "uri": "account/sign-ins",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 10,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/account/sign-ins",
+          "/account/sign-ins?page=2",
+          "/account/sign-ins?page=3"
+        ]
+      },
+      {
+        "name": "account.sign-ins.export",
+        "uri": "account/sign-ins/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "account.social.connect",
+        "uri": "account/social/{provider}/connect",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "activity.index",
+        "uri": "activity",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 10,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/activity",
+          "/activity?category=account",
+          "/activity?page=2"
+        ]
+      },
+      {
+        "name": "activity.export",
+        "uri": "activity/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "admin.access-requests.index",
+        "uri": "admin/access-requests",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 7,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/admin/access-requests",
+          "/admin/access-requests?status=pending",
+          "/admin/access-requests?status=contacted"
+        ]
+      },
+      {
+        "name": "admin.access-requests.export",
+        "uri": "admin/access-requests/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "admin.analytics",
+        "uri": "admin/analytics",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/admin/analytics"
+        ]
+      },
+      {
+        "name": "admin.github-app.setup",
+        "uri": "admin/github-app/setup",
+        "classification": "Conditional setup page; guarded 404 verified from controller",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "404"
+        ],
+        "examples": [
+          "/admin/github-app/setup"
+        ]
+      },
+      {
+        "name": "api-docs",
+        "uri": "api-docs",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/api-docs"
+        ]
+      },
+      {
+        "name": "social.callback",
+        "uri": "auth/social/callback/{provider}",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "social.login",
+        "uri": "auth/social/redirect/{provider}",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "automation.index",
+        "uri": "automation",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/automation"
+        ]
+      },
+      {
+        "name": "automation.task-runs.output",
+        "uri": "automation/task-runs/{run}/output",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "backups.index",
+        "uri": "backups",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/backups"
+        ]
+      },
+      {
+        "name": "backups.destinations.edit",
+        "uri": "backups/destinations/{destination}/edit",
+        "classification": "New editor endpoint not present in deployed revision; isolated fixture coverage",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "billing.index",
+        "uri": "billing",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/billing",
+          "/billing?interval=monthly",
+          "/billing?interval=yearly"
+        ]
+      },
+      {
+        "name": "builds.index",
+        "uri": "builds",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 34,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/builds",
+          "/builds?search=demo",
+          "/builds?website_id=3"
+        ]
+      },
+      {
+        "name": "builds.export",
+        "uri": "builds/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "builds.show",
+        "uri": "builds/{build}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 9,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/builds/44",
+          "/builds/6",
+          "/builds/7"
+        ]
+      },
+      {
+        "name": "builds.compare",
+        "uri": "builds/{build}/compare/{baseline}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 9,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/builds/6/compare/5",
+          "/builds/5/compare/4",
+          "/builds/3/compare/2"
+        ]
+      },
+      {
+        "name": "builds.log.download",
+        "uri": "builds/{build}/log",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "commands.index",
+        "uri": "commands",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/commands",
+          "/commands?active=1",
+          "/commands?page=1"
+        ]
+      },
+      {
+        "name": "commands.export",
+        "uri": "commands/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "password.confirm",
+        "uri": "confirm-password",
+        "classification": "Authentication/state-dependent form; available GET/redirect checks only",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-extra"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/confirm-password"
+        ]
+      },
+      {
+        "name": "costs.index",
+        "uri": "costs",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/costs"
+        ]
+      },
+      {
+        "name": "databases.index",
+        "uri": "databases",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/databases"
+        ]
+      },
+      {
+        "name": "dialogs.create",
+        "uri": "dialogs/create/{resource}",
+        "classification": "Fragment endpoint; isolated fixture and focused interaction coverage is separate",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "docs",
+        "uri": "docs",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/docs"
+        ]
+      },
+      {
+        "name": "domains.index",
+        "uri": "domains",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/domains"
+        ]
+      },
+      {
+        "name": "feedback.index",
+        "uri": "feedback",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 3,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/feedback",
+          "/feedback?from=%2Fdocs"
+        ]
+      },
+      {
+        "name": "password.request",
+        "uri": "forgot-password",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-guest",
+          "mobile-guest"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/forgot-password"
+        ]
+      },
+      {
+        "name": "gallery.index",
+        "uri": "gallery",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery",
+          "/gallery?scope=updates",
+          "/gallery?scope=all&sort=recent"
+        ]
+      },
+      {
+        "name": "gallery.reports.mine",
+        "uri": "gallery/my-reports",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery/my-reports"
+        ]
+      },
+      {
+        "name": "gallery.reports.mine.export",
+        "uri": "gallery/my-reports/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "gallery.reports.export",
+        "uri": "gallery/reports/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "gallery.reports.index",
+        "uri": "gallery/reports/inbox",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 6,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery/reports/inbox",
+          "/gallery/reports/inbox?reason=security&sort=priority",
+          "/gallery/reports/inbox?age=7d&sort=oldest"
+        ]
+      },
+      {
+        "name": "gallery.report.status",
+        "uri": "gallery/reports/{report}/status",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery/reports/1/status"
+        ]
+      },
+      {
+        "name": "gallery.show",
+        "uri": "gallery/{recipe}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery/4",
+          "/gallery/1",
+          "/gallery/6"
+        ]
+      },
+      {
+        "name": "gallery.compare",
+        "uri": "gallery/{recipe}/compare/{copy}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/gallery/4/compare/7"
+        ]
+      },
+      {
+        "name": "gallery.script",
+        "uri": "gallery/{recipe}/script",
+        "classification": "Fragment endpoint; isolated fixture and focused interaction coverage is separate",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "github-app.callback",
+        "uri": "github-app/callback",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "github-app.connect",
+        "uri": "github-app/connect",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "github-app.repositories",
+        "uri": "github-app/providers/{provider}/repositories",
+        "classification": "External-service read; not automatically invoked",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "dashboard",
+        "uri": "home",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/home"
+        ]
+      },
+      {
+        "name": "load-balancers.index",
+        "uri": "load-balancers",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/load-balancers"
+        ]
+      },
+      {
+        "name": "login",
+        "uri": "login",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/login"
+        ]
+      },
+      {
+        "name": "notifications.index",
+        "uri": "notifications",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/notifications",
+          "/notifications?page=2",
+          "/notifications?page=3"
+        ]
+      },
+      {
+        "name": "notifications.export",
+        "uri": "notifications/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "observability.index",
+        "uri": "observability",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/observability"
+        ]
+      },
+      {
+        "name": "observability.environments.context",
+        "uri": "observability/environments/{environment}/context",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 20,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/observability/environments/9/context",
+          "/observability/environments/8/context",
+          "/observability/environments/1/context"
+        ]
+      },
+      {
+        "name": "observability.investigations.show",
+        "uri": "observability/investigations/{view}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "observability.operational-incidents.export",
+        "uri": "observability/operational-incidents/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "openapi",
+        "uri": "openapi.json",
+        "classification": "Machine-readable/download response; not a UI page",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "organizations.index",
+        "uri": "organization",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/organization"
+        ]
+      },
+      {
+        "name": "organizations.invitations.accept",
+        "uri": "organization/invitations/{invitation}/accept",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "organizations.sso.callback",
+        "uri": "organization/sso/callback",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "organizations.sso.connect",
+        "uri": "organization/sso/connect",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "pricing",
+        "uri": "pricing",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/pricing"
+        ]
+      },
+      {
+        "name": "privacy",
+        "uri": "privacy",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/privacy"
+        ]
+      },
+      {
+        "name": "projects.index",
+        "uri": "projects",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/projects"
+        ]
+      },
+      {
+        "name": "projects.create",
+        "uri": "projects/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/projects/create"
+        ]
+      },
+      {
+        "name": "projects.show",
+        "uri": "projects/{project}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 6,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/projects/5",
+          "/projects/1",
+          "/projects/4"
+        ]
+      },
+      {
+        "name": "projects.configuration.create",
+        "uri": "projects/{project}/configuration",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-extra"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/projects/1/configuration",
+          "/projects/2/configuration",
+          "/projects/3/configuration"
+        ]
+      },
+      {
+        "name": "projects.configuration.compare",
+        "uri": "projects/{project}/configuration/compare",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "projects.configuration.dialog",
+        "uri": "projects/{project}/configuration/dialog",
+        "classification": "Fragment endpoint; isolated fixture and focused interaction coverage is separate",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "projects.configuration.observe",
+        "uri": "projects/{project}/configuration/observe",
+        "classification": "External-service read; not automatically invoked",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "projects.configuration.review",
+        "uri": "projects/{project}/configuration/{review}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "providers.index",
+        "uri": "providers",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/providers",
+          "/providers?connection=healthy",
+          "/providers?connection=failed"
+        ]
+      },
+      {
+        "name": "providers.create",
+        "uri": "providers/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/providers/create"
+        ]
+      },
+      {
+        "name": "providers.export",
+        "uri": "providers/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "providers.show",
+        "uri": "providers/{provider}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 9,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/providers/3",
+          "/providers/8",
+          "/providers/7"
+        ]
+      },
+      {
+        "name": "providers.connection-checks.index",
+        "uri": "providers/{provider}/connection-checks",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 9,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/providers/3/connection-checks",
+          "/providers/8/connection-checks",
+          "/providers/7/connection-checks"
+        ]
+      },
+      {
+        "name": "providers.connection-checks.export",
+        "uri": "providers/{provider}/connection-checks/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "providers.edit",
+        "uri": "providers/{provider}/edit",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/providers/7/edit"
+        ]
+      },
+      {
+        "name": "providers.server-catalog",
+        "uri": "providers/{provider}/server-catalog",
+        "classification": "External-service read; not automatically invoked",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "recipes.index",
+        "uri": "recipes",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/recipes"
+        ]
+      },
+      {
+        "name": "recipes.create",
+        "uri": "recipes/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/recipes/create"
+        ]
+      },
+      {
+        "name": "recipes.export",
+        "uri": "recipes/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "recipes.show",
+        "uri": "recipes/{recipe}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 5,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/recipes/7",
+          "/recipes/3",
+          "/recipes/2"
+        ]
+      },
+      {
+        "name": "recipes.edit",
+        "uri": "recipes/{recipe}/edit",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/recipes/2/edit"
+        ]
+      },
+      {
+        "name": "register",
+        "uri": "register",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-guest",
+          "mobile-guest"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/register"
+        ]
+      },
+      {
+        "name": "repositories.index",
+        "uri": "repositories",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/repositories"
+        ]
+      },
+      {
+        "name": "repositories.create",
+        "uri": "repositories/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/repositories/create"
+        ]
+      },
+      {
+        "name": "repositories.export",
+        "uri": "repositories/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "repositories.impact-preview",
+        "uri": "repositories/impact-preview",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/repositories/impact-preview"
+        ]
+      },
+      {
+        "name": "repositories.show",
+        "uri": "repositories/{repository}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 6,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/repositories/13",
+          "/repositories/4",
+          "/repositories/3"
+        ]
+      },
+      {
+        "name": "repositories.edit",
+        "uri": "repositories/{repository}/edit",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/repositories/1/edit"
+        ]
+      },
+      {
+        "name": "repositories.webhook-deliveries.export",
+        "uri": "repositories/{repository}/webhook-deliveries/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "access-request.create",
+        "uri": "request-access",
+        "classification": "Authentication/state-dependent form; available GET/redirect checks only",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/request-access"
+        ]
+      },
+      {
+        "name": "password.reset",
+        "uri": "reset-password/{token}",
+        "classification": "Authentication/state-dependent form; available GET/redirect checks only",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "search.index",
+        "uri": "search",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 3,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/search?q=demo",
+          "/search"
+        ]
+      },
+      {
+        "name": "servers.index",
+        "uri": "servers",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 3,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/servers",
+          "/servers?provisioning=1"
+        ]
+      },
+      {
+        "name": "servers.create",
+        "uri": "servers/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/servers/create"
+        ]
+      },
+      {
+        "name": "servers.export",
+        "uri": "servers/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.import.create",
+        "uri": "servers/import",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/servers/import"
+        ]
+      },
+      {
+        "name": "servers.import.review",
+        "uri": "servers/import/{assessment}/review",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.show",
+        "uri": "servers/{server}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 33,
+        "outcomes": [
+          "200",
+          "404"
+        ],
+        "examples": [
+          "/servers/2",
+          "/servers/5",
+          "/servers/4"
+        ]
+      },
+      {
+        "name": "servers.commands.index",
+        "uri": "servers/{server}/commands",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 19,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/servers/1/commands?status=queued",
+          "/servers/1/commands?status=running",
+          "/servers/1/commands?execution=6"
+        ]
+      },
+      {
+        "name": "servers.commands.export",
+        "uri": "servers/{server}/commands/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.commands.output",
+        "uri": "servers/{server}/commands/{execution}/output",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.edit",
+        "uri": "servers/{server}/edit",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/servers/1/edit"
+        ]
+      },
+      {
+        "name": "servers.logs.download",
+        "uri": "servers/{server}/logs/{type}",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.troubleshooting-sessions.show",
+        "uri": "servers/{server}/troubleshooting-sessions/{troubleshootingSession}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "servers.troubleshooting-sessions.output",
+        "uri": "servers/{server}/troubleshooting-sessions/{troubleshootingSession}/output",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "platform-status.show",
+        "uri": "status",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/status"
+        ]
+      },
+      {
+        "name": "platform-status.report",
+        "uri": "status/report.json",
+        "classification": "Machine-readable/download response; not a UI page",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "status.subscriptions.confirm",
+        "uri": "status/subscriptions/{subscription}/confirm/{token}",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "status.subscriptions.unsubscribe",
+        "uri": "status/subscriptions/{subscription}/unsubscribe/{token}",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "status.show",
+        "uri": "status/{slug}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 3,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/status/demo-status"
+        ]
+      },
+      {
+        "name": "status.report",
+        "uri": "status/{slug}/report.json",
+        "classification": "Machine-readable/download response; not a UI page",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "system-health.index",
+        "uri": "system-health",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/system-health"
+        ]
+      },
+      {
+        "name": "system-health.report",
+        "uri": "system-health/report",
+        "classification": "Machine-readable/download response; not a UI page",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "terms",
+        "uri": "terms",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-guest",
+          "desktop-authenticated",
+          "mobile-guest"
+        ],
+        "visits": 4,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/terms"
+        ]
+      },
+      {
+        "name": "two-factor.login",
+        "uri": "two-factor-challenge",
+        "classification": "Authentication/state-dependent form; available GET/redirect checks only",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-extra"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/two-factor-challenge"
+        ]
+      },
+      {
+        "name": "verification.notice",
+        "uri": "verify-email",
+        "classification": "Authentication/state-dependent form; available GET/redirect checks only",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-extra"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/verify-email"
+        ]
+      },
+      {
+        "name": "verification.verify",
+        "uri": "verify-email/{id}/{hash}",
+        "classification": "Protocol or potentially mutating GET; requires controlled isolated test",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "websites.index",
+        "uri": "websites",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 3,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/websites",
+          "/websites?provisioning=1"
+        ]
+      },
+      {
+        "name": "websites.create",
+        "uri": "websites/create",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/websites/create"
+        ]
+      },
+      {
+        "name": "websites.export",
+        "uri": "websites/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "websites.import.create",
+        "uri": "websites/import",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 2,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/websites/import"
+        ]
+      },
+      {
+        "name": "websites.show",
+        "uri": "websites/{website}",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 8,
+        "outcomes": [
+          "200",
+          "404"
+        ],
+        "examples": [
+          "/websites/3",
+          "/websites/2",
+          "/websites/5"
+        ]
+      },
+      {
+        "name": "websites.edit",
+        "uri": "websites/{website}/edit",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "desktop-authenticated"
+        ],
+        "visits": 1,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/websites/1/edit"
+        ]
+      },
+      {
+        "name": "websites.health-checks.index",
+        "uri": "websites/{website}/health-checks",
+        "classification": "Product page or state-dependent workflow",
+        "auditStatus": "GET visited; response is final after any redirects",
+        "browserContexts": [
+          "mobile-authenticated",
+          "desktop-authenticated"
+        ],
+        "visits": 7,
+        "outcomes": [
+          "200"
+        ],
+        "examples": [
+          "/websites/3/health-checks",
+          "/websites/2/health-checks",
+          "/websites/5/health-checks"
+        ]
+      },
+      {
+        "name": "websites.health-checks.export",
+        "uri": "websites/{website}/health-checks/export",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "websites.runtime-logs.show",
+        "uri": "websites/{website}/logs/{type}",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      },
+      {
+        "name": "websites.provisioning-log.download",
+        "uri": "websites/{website}/provisioning-log",
+        "classification": "Download or bounded output; no automatic retrieval in live audit",
+        "auditStatus": "Not directly visited; not a pass",
+        "browserContexts": [],
+        "visits": 0,
+        "outcomes": [],
+        "examples": []
+      }
+    ]
+  },
+  "remainingAcceptance": [
+    "Every modal variant/source-context interaction",
+    "Mutation/form and all role/entitlement combinations in isolation",
+    "Sensitive downloads and provider/OAuth/integration paths",
+    "WebKit and physical iPhone/touch-keyboard acceptance",
+    "Latest-code dev deployment after remaining regressions are fixed"
+  ]
+}
