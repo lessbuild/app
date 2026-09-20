@@ -7,7 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
 const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'configuration-create', 'configuration-review', 'configuration-receipt'];
-const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1'];
+const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
 
@@ -46,6 +46,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
         const signInHistoryPage = pathname === '/account/sign-ins';
+        const environmentContextPage = /^\/observability\/environments\/\d+\/context$/.test(pathname);
         const projectPage = /^\/projects\/\d+$/.test(pathname);
         const modalContentFixture = pathname === '/providers/1/edit'
             ? 'provider-edit-content'
@@ -69,7 +70,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
@@ -100,6 +101,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'website-health-checks'
                         : signInHistoryPage
                             ? 'sign-in-history'
+                        : environmentContextPage
+                            ? 'observability-environment-context'
                         : configurationDialogPage
                             ? 'configuration-dialog'
                         : projectPage
@@ -121,6 +124,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'build-comparison-content'
                 : screen === 'sign-in-history' && fragment === 'sign-in-history'
                     ? 'sign-in-history-content'
+                : screen === 'observability-environment-context' && dialog === 'environment-health-checks-dialog'
+                    ? 'observability-environment-context-dialog'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -532,6 +537,30 @@ test('account sign-in history opens as a contextual read-only dialog', async ({ 
 
     await page.goto('http://buildpusher.test/account?dialog=account-sign-in-history-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Sign-in history', exact: true })).toBeVisible();
+});
+
+test('environment evidence health history opens without leaving the investigation context', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability/environments/1/context', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View health history', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Health check history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
+    await expect(dialog.locator('#health-dialog-result')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('environment-health-checks-dialog');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/observability/environments/1/context?dialog=environment-health-checks-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

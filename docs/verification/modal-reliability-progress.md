@@ -745,6 +745,67 @@ notification read-state transitions and incident response actions as explicit
 workflows; choose another read-only inspector only where it has a bounded
 authorized fragment and a useful full-page fallback.
 
+## Slice 14 — observability health-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The environment evidence page linked “View health history” to the website
+history page, interrupting an investigation that was already scoped to an
+environment. Runtime log links return bounded JSON and incident links lead to
+response workflows, so they should not be copied into a generic read-only
+modal.
+
+### Boundaries and benefit
+
+- `ObservabilityController::environmentContext()` remains the authorized,
+  bounded environment-evidence read boundary.
+- The environment-context view owns the contextual trigger and modal shell.
+- `WebsitesController::healthChecks()` remains the single website-scoped
+  health-history query/fragment boundary; no observability-specific health
+  query was added.
+- Runtime-log retrieval, incident response and evidence-page filtering remain
+  explicit routes and workflows.
+
+This preserves single responsibility and dependency direction by composing two
+existing read boundaries only at the presentation edge, without duplicating
+queries or weakening the website policy check.
+
+### Preserved behavior and safety
+
+- Environment filters, shareable links, tenant scoping, bounded evidence and
+  sensitive-body exclusion remain unchanged.
+- The direct website health-history URL remains the no-JavaScript fallback.
+- Opening the dialog performs an authorized GET fragment request only; it does
+  not refresh runtime logs, change monitoring, create incidents or mutate an
+  investigation view.
+- The canonical `/observability/environments/{id}/context` path and its
+  existing filters are retained in the modal history URL.
+- Log bodies and incident summaries remain outside the evidence page/modal.
+
+### Verification
+
+- Observability context and website health regression: **19 tests / 185
+  assertions passed**.
+- PHP syntax checks, Pint and Node syntax check: passed.
+- Focused browser journey: **1 test passed in 59.2 seconds** using PHP
+  8.5.10; verified the canonical context path, lazy health fragment loading,
+  URL stability, deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+- `git diff --check`: pending final commit check.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Audit notification destinations and the remaining read-only product links.
+Keep notification read-state transitions, runtime log access and incident
+response actions explicit unless a separate bounded read fragment can preserve
+their security and fallback semantics.
+
 ## Slice 12 — build health-history inspector
 
 Status: complete; committed and pushed as 5ec64fd.

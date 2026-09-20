@@ -129,6 +129,11 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->assertSee('Recent website recovery')
             ->assertSee('Open deployment evidence')
             ->assertSee('data-testid="incident-deployment-evidence-link"', false)
+            ->assertSee('data-modal-trigger="environment-health-checks-dialog"', false)
+            ->assertSee(route('websites.health-checks.index', [
+                'website' => $website,
+                'fragment' => 'website-health-checks',
+            ]), false)
             ->assertSee($recentBuild->shortRevision())
             ->assertSee(route('builds.show', $recentBuild), false)
             ->assertSee(route('websites.runtime-logs.show', [$website, 'application']), false)
@@ -163,6 +168,26 @@ class ObservabilityEnvironmentContextTest extends TestCase
             ->get(route('observability.index'))
             ->assertSuccessful()
             ->assertSee(route('observability.environments.context', $environment), false);
+    }
+
+    public function test_health_history_dialog_preserves_the_environment_context_url(): void
+    {
+        [$owner, $environment, $website] = $this->environment();
+
+        $response = $this->actingAs($owner)->get(route('observability.environments.context', [
+            'environment' => $environment,
+            'window' => '7d',
+            'dialog' => 'environment-health-checks-dialog',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('data-modal-trigger="environment-health-checks-dialog"', false)
+            ->assertSee(route('websites.health-checks.index', [
+                'website' => $website,
+                'fragment' => 'website-health-checks',
+            ]), false);
     }
 
     public function test_context_read_is_tenant_authorized_before_window_validation(): void

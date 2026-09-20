@@ -454,6 +454,13 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="operational-incident-note-', false)
             ->assertSee('data-modal-trigger="status-incident-edit-dialog-', false)
             ->getContent());
+        File::put($directory.'/observability-environment-context.html', $this->renderPage(route('observability.environments.context', $environment))->assertOk()
+            ->assertSee('data-modal-trigger="environment-health-checks-dialog"', false)
+            ->getContent());
+        File::put($directory.'/observability-environment-context-dialog.html', $this->renderPage(route('observability.environments.context', [
+            'environment' => $environment,
+            'dialog' => 'environment-health-checks-dialog',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/observability-metric-rule-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-metric-rule']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/observability-destination-dialog.html', $this->renderPage(route('observability.index', ['dialog' => 'create-alert-destination']))

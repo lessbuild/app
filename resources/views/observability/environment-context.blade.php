@@ -17,6 +17,13 @@
             'severity' => $context->severity,
             'dialog' => 'save-investigation',
         ]);
+        $healthChecksDialogId = 'environment-health-checks-dialog';
+        $healthChecksDialogOpen = request()->query('dialog') === $healthChecksDialogId;
+        $healthChecksDialogUrl = (string) \Illuminate\Support\Uri::of($shareUrl)->withQuery(['dialog' => $healthChecksDialogId]);
+        $healthChecksContentUrl = $website ? route('websites.health-checks.index', [
+            'website' => $website,
+            'fragment' => 'website-health-checks',
+        ]) : null;
     @endphp
 
     <x-layouts.partials.breadcrumbs
@@ -266,7 +273,16 @@
                     <h2 id="context-health-heading" class="mt-1 text-xl font-black text-primary">{{ __('Website observations') }}</h2>
                 </div>
                 @if($website)
-                    <x-ui.button :href="route('websites.health-checks.index', $website)" variant="ghost" class="text-xs">{{ __('View health history') }}</x-ui.button>
+                    <x-ui.button
+                        :href="route('websites.health-checks.index', $website)"
+                        data-modal-trigger="{{ $healthChecksDialogId }}"
+                        data-modal-content-url="{{ $healthChecksContentUrl }}"
+                        data-modal-history-url="{{ $healthChecksDialogUrl }}"
+                        aria-controls="{{ $healthChecksDialogId }}"
+                        aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}"
+                        variant="ghost"
+                        class="text-xs"
+                    >{{ __('View health history') }}</x-ui.button>
                 @endif
             </div>
             <div class="mt-4 space-y-2">
@@ -347,4 +363,18 @@
             <p class="mt-4 text-xs text-secondary">{{ __('Only concrete category/resource relationships are shown. Incident titles and status are context; the incident centre contains the authorized response timeline.') }}</p>
         </section>
     </div>
+
+    @if($website)
+        <x-dialogs.modal
+            id="{{ $healthChecksDialogId }}"
+            :title="__('Health check history')"
+            :description="__('Review retained website observations without leaving this evidence context.')"
+            :open="$healthChecksDialogOpen"
+            body-class="p-0"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading health history…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
 </x-layouts.app>
