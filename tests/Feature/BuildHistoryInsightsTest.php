@@ -137,11 +137,11 @@ class BuildHistoryInsightsTest extends TestCase
         $defaultContent = $default->getContent();
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*overflow-hidden)[^>]*>/',
+            '/<dialog(?=[^>]*id="deployment-filters")(?=[^>]*\bdata-filter-dialog\b)[^>]*>/',
             $defaultContent,
         );
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*open)[^>]*>/',
+            '/<dialog(?=[^>]*id="deployment-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $defaultContent,
         );
         $default->assertSee('Filter deployments')->assertSee('Matching deployments');
@@ -149,7 +149,7 @@ class BuildHistoryInsightsTest extends TestCase
         $active = $this->actingAs($owner)->get(route('builds.index', ['status' => Build::STATUS_SUCCEEDED]));
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*id="deployment-filters")(?=[^>]*open)[^>]*>/',
+            '/<dialog(?=[^>]*id="deployment-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $active->getContent(),
         );
         $active->assertSee('1 active')->assertSee('value="succeeded" selected', false);

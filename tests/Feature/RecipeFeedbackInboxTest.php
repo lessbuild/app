@@ -187,7 +187,7 @@ class RecipeFeedbackInboxTest extends TestCase
             ->assertSee('Visible report details.')
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<dialog(?=[^>]*id="gallery-report-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $content);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-insights"[^>]*\bopen\b[^>]*>/', $content);
 
         $filteredContent = $this->actingAs($author)
@@ -195,7 +195,7 @@ class RecipeFeedbackInboxTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details[^>]*id="gallery-report-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertMatchesRegularExpression('/<dialog(?=[^>]*id="gallery-report-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $filteredContent);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-report-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
     }
 

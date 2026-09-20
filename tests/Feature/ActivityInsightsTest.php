@@ -84,7 +84,7 @@ class ActivityInsightsTest extends TestCase
             ->assertSee('Visible activity event')
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="activity-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<dialog(?=[^>]*id="activity-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $content);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="activity-insights"[^>]*\bopen\b[^>]*>/', $content);
 
         $filteredContent = $this->actingAs($owner)
@@ -92,7 +92,7 @@ class ActivityInsightsTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details[^>]*id="activity-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertMatchesRegularExpression('/<dialog(?=[^>]*id="activity-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $filteredContent);
     }
 
     public function test_empty_filtered_activity_has_explicit_zero_and_unknown_metrics(): void

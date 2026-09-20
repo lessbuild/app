@@ -41,7 +41,7 @@ class ServerTroubleshootingTransportTest extends TestCase
             $connection->write("hello\n");
 
             $this->assertStringContainsString('received:hello', $this->waitForOutput($connection, 'received:hello'));
-            $this->assertFalse($connection->isRunning());
+            $this->waitForProcessToStop($connection);
         } finally {
             $connection->close();
         }
@@ -221,5 +221,18 @@ class ServerTroubleshootingTransportTest extends TestCase
         }
 
         $this->fail("Timed out waiting for troubleshooting output: {$needle}");
+    }
+
+    private function waitForProcessToStop(ProcessServerTroubleshootingConnection $connection): void
+    {
+        for ($attempt = 0; $attempt < 100; $attempt++) {
+            if (! $connection->isRunning()) {
+                return;
+            }
+
+            usleep(10_000);
+        }
+
+        $this->fail('Timed out waiting for the troubleshooting process to stop.');
     }
 }

@@ -68,7 +68,7 @@ class InfrastructureListFilterTest extends TestCase
             ->assertDontSee('Customer Private');
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*\bid="websites-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="websites-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $response->getContent(),
         );
     }
@@ -107,7 +107,7 @@ class InfrastructureListFilterTest extends TestCase
             ->assertDontSee('Private Production Edge');
 
         $this->assertMatchesRegularExpression(
-            '/<details(?=[^>]*\bid="servers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="servers-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $response->getContent(),
         );
 
@@ -115,7 +115,7 @@ class InfrastructureListFilterTest extends TestCase
 
         $default->assertSuccessful();
         $this->assertDoesNotMatchRegularExpression(
-            '/<details(?=[^>]*\bid="servers-filters")(?=[^>]*\bopen\b)[^>]*>/',
+            '/<dialog(?=[^>]*\bid="servers-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $default->getContent(),
         );
     }

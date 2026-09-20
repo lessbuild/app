@@ -62,7 +62,7 @@ class RecipeGalleryTest extends TestCase
             ->assertSee($recipe->name)
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-filters"[^>]*\bopen\b[^>]*>/', $defaultContent);
+        $this->assertDoesNotMatchRegularExpression('/<dialog(?=[^>]*id="gallery-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $defaultContent);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-insights"[^>]*\bopen\b[^>]*>/', $defaultContent);
 
         $filteredContent = $this->actingAs($visitor)
@@ -70,7 +70,7 @@ class RecipeGalleryTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details[^>]*id="gallery-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertMatchesRegularExpression('/<dialog(?=[^>]*id="gallery-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $filteredContent);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="gallery-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
     }
 

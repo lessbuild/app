@@ -116,7 +116,7 @@ class RecipeInventoryInsightsTest extends TestCase
             ->assertSee($recipe->name)
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-filters"[^>]*\bopen\b[^>]*>/', $defaultContent);
+        $this->assertDoesNotMatchRegularExpression('/<dialog(?=[^>]*id="recipe-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $defaultContent);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-insights"[^>]*\bopen\b[^>]*>/', $defaultContent);
 
         $filteredContent = $this->actingAs($owner)
@@ -124,7 +124,7 @@ class RecipeInventoryInsightsTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details[^>]*id="recipe-filters"[^>]*\bopen\b[^>]*>/', $filteredContent);
+        $this->assertMatchesRegularExpression('/<dialog(?=[^>]*id="recipe-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $filteredContent);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="recipe-insights"[^>]*\bopen\b[^>]*>/', $filteredContent);
     }
 

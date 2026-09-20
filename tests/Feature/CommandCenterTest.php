@@ -88,7 +88,7 @@ class CommandCenterTest extends TestCase
             ->assertSee('History server')
             ->getContent();
 
-        $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="command-filters"[^>]*\bopen\b[^>]*>/', $content);
+        $this->assertDoesNotMatchRegularExpression('/<dialog(?=[^>]*id="command-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $content);
         $this->assertDoesNotMatchRegularExpression('/<details[^>]*id="command-insights"[^>]*\bopen\b[^>]*>/', $content);
 
         $running = $this->execution($owner, $server, ServerCommandExecution::STATUS_RUNNING, 'running-secret');
@@ -97,7 +97,7 @@ class CommandCenterTest extends TestCase
             ->assertSuccessful()
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details[^>]*id="command-filters"[^>]*\bopen\b[^>]*>/', $activeContent);
+        $this->assertMatchesRegularExpression('/<dialog(?=[^>]*id="command-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/', $activeContent);
         $this->assertMatchesRegularExpression('/<details[^>]*id="command-insights"[^>]*\bopen\b[^>]*>/', $activeContent);
         $this->assertStringContainsString('#'.$running->id, $activeContent);
     }
