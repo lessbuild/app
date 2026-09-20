@@ -685,7 +685,7 @@ response actions explicit.
 
 ## Slice 13 — account sign-in-history inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 3ce2366.
 
 ### Responsibility problem
 
@@ -732,11 +732,11 @@ account repository or a security-specific modal framework.
   8.5.10; verified the mobile collapsible section, lazy fragment loading,
   read-only content, contextual URL stability, deep-link opening, Escape and
   focus restoration.
-- `git diff --check`: pending final commit check.
+- `git diff --check`: passed before commit.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `3ce2366 Open account sign-in history in a dialog`.
 
 ### Exact next task
 
