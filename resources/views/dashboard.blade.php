@@ -15,6 +15,9 @@
         $dashboardApplicationCreateOpen = $dashboardDialog === 'create-application'
             || (old('_project_form') === '1' && $errors->any());
         $dashboardActivityDialogOpen = $dashboardDialog === 'dashboard-activity';
+        $dashboardHasProvisioning = array_sum($provisioningCounts) > 0;
+        $dashboardProvisioningDialogOpen = $dashboardDialog === 'provisioning'
+            && $dashboardHasProvisioning;
         $dashboardHasActiveDeployments = array_sum($activeDeploymentCounts) > 0;
         $dashboardActiveDeploymentsDialogOpen = $dashboardDialog === 'active-deployments'
             && $dashboardHasActiveDeployments;
@@ -35,6 +38,7 @@
         $dashboardApplicationCreateUrl = route('dashboard', ['dialog' => 'create-application']);
         $dashboardActivityDialogUrl = route('dashboard', ['dialog' => 'dashboard-activity']);
         $dashboardActivityContentUrl = route('activity.index', ['fragment' => 'workspace-activity']);
+        $dashboardProvisioningDialogUrl = route('dashboard', ['dialog' => 'provisioning']);
         $dashboardActiveDeploymentsDialogUrl = route('dashboard', ['dialog' => 'active-deployments']);
         $dashboardActiveDeploymentsContentUrl = route('builds.index', [
             'active' => 1,
@@ -259,8 +263,22 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-3 text-sm font-medium text-ternary">
-                    <a href="{{ route('servers.index', ['provisioning' => 1]) }}" class="underline">{{ __('View provisioning servers') }}</a>
-                    <a href="{{ route('websites.index', ['provisioning' => 1]) }}" class="underline">{{ __('View provisioning websites') }}</a>
+                    <a
+                        href="{{ route('servers.index', ['provisioning' => 1]) }}"
+                        data-modal-trigger="dashboard-provisioning-dialog"
+                        data-modal-history-url="{{ $dashboardProvisioningDialogUrl }}"
+                        aria-controls="dashboard-provisioning-dialog"
+                        aria-expanded="{{ $dashboardProvisioningDialogOpen ? 'true' : 'false' }}"
+                        class="underline"
+                    >{{ __('View provisioning servers') }}</a>
+                    <a
+                        href="{{ route('websites.index', ['provisioning' => 1]) }}"
+                        data-modal-trigger="dashboard-provisioning-dialog"
+                        data-modal-history-url="{{ $dashboardProvisioningDialogUrl }}"
+                        aria-controls="dashboard-provisioning-dialog"
+                        aria-expanded="{{ $dashboardProvisioningDialogOpen ? 'true' : 'false' }}"
+                        class="underline"
+                    >{{ __('View provisioning websites') }}</a>
                 </div>
             </div>
 
@@ -794,6 +812,20 @@
         >
             <div data-modal-content>
                 <p class="p-5 text-sm text-secondary">{{ __('Loading deployment activity…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
+
+    @if ($dashboardHasProvisioning)
+        <x-dialogs.modal
+            id="dashboard-provisioning-dialog"
+            :title="__('Infrastructure provisioning')"
+            :description="__('Review resources being prepared without leaving the dashboard.')"
+            :open="$dashboardProvisioningDialogOpen"
+            body-class="p-0"
+        >
+            <div class="p-5">
+                @include('dashboard._provisioning-dialog-content')
             </div>
         </x-dialogs.modal>
     @endif

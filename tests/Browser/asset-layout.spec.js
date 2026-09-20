@@ -183,6 +183,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'dashboard-active-commands-dialog'
                             : screen === 'dashboard' && dialog === 'webhook-activity'
                                 ? 'dashboard-webhook-activity-dialog'
+                            : screen === 'dashboard' && dialog === 'provisioning'
+                                ? 'dashboard-provisioning-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -740,6 +742,30 @@ test('dashboard deployment activity opens as a category-scoped inspector', async
 
     await page.goto('http://buildpusher.test/home?dialog=webhook-activity', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Deployment activity', exact: true })).toBeVisible();
+});
+
+test('dashboard provisioning opens as an instant snapshot inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/home', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View provisioning servers', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Infrastructure provisioning', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-dashboard-provisioning-content]')).toBeVisible();
+    await expect(dialog).toContainText('Provisioning fixture server');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('provisioning');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/home?dialog=provisioning', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Infrastructure provisioning', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

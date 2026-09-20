@@ -951,6 +951,8 @@ class DashboardTest extends TestCase
             ->assertSee('1 more resource is provisioning')
             ->assertSee(route('servers.index', ['provisioning' => 1]))
             ->assertSee(route('websites.index', ['provisioning' => 1]))
+            ->assertSee('data-modal-trigger="dashboard-provisioning-dialog"', false)
+            ->assertSee('dialog=provisioning')
             ->assertSee('View provisioning servers')
             ->assertSee('View provisioning websites')
             ->assertSee(route('websites.show', $latestWebsite))

@@ -52,6 +52,10 @@ class AssetLayoutFixtureTest extends TestCase
             'provider_id' => $dashboardProvider->id, 'name' => 'Dashboard server', 'type' => 'app',
             'region' => 'nyc1', 'provisioning_status' => Server::STATUS_ACTIVE,
         ]);
+        $owner->servers()->create([
+            'provider_id' => $dashboardProvider->id, 'name' => 'Provisioning fixture server', 'type' => 'app',
+            'region' => 'nyc1', 'provisioning_status' => Server::STATUS_PROVISIONING,
+        ]);
         $dashboardWebsite = $owner->websites()->create([
             'server_id' => $dashboardServer->id, 'name' => 'Dashboard website', 'url' => 'dashboard.test',
             'description' => 'Dashboard fixture website', 'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
@@ -79,6 +83,7 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)
             ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)
             ->assertSee('data-modal-trigger="dashboard-active-commands-dialog"', false)
+            ->assertSee('data-modal-trigger="dashboard-provisioning-dialog"', false)
             ->assertSee('data-modal-trigger="dashboard-webhook-activity-dialog"', false)->getContent());
         File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
@@ -90,6 +95,9 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-webhook-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'webhook-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/dashboard-provisioning-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'provisioning']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Provisioning fixture server')->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
