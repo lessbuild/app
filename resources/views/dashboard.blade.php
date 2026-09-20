@@ -14,6 +14,7 @@
             || (old('_repository_form') === '1' && $errors->any());
         $dashboardApplicationCreateOpen = $dashboardDialog === 'create-application'
             || (old('_project_form') === '1' && $errors->any());
+        $dashboardActivityDialogOpen = $dashboardDialog === 'dashboard-activity';
         $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
             || (old('_recipe_form') === 'edit' && $errors->any());
         $dashboardPreferencesDialogUrl = route('dashboard', ['dialog' => 'customize-dashboard']);
@@ -22,6 +23,8 @@
         $dashboardWebsiteCreateUrl = route('dashboard', ['dialog' => 'create-website']);
         $dashboardRepositoryCreateUrl = route('dashboard', ['dialog' => 'create-repository']);
         $dashboardApplicationCreateUrl = route('dashboard', ['dialog' => 'create-application']);
+        $dashboardActivityDialogUrl = route('dashboard', ['dialog' => 'dashboard-activity']);
+        $dashboardActivityContentUrl = route('activity.index', ['fragment' => 'workspace-activity']);
         $dashboardModalOpen = [
             'provider' => $dashboardProviderCreateOpen,
             'server' => $dashboardServerCreateOpen,
@@ -609,7 +612,15 @@
     <section class="mt-12">
         <div class="mb-4 flex items-center justify-between">
             <h2 class="text-xl font-semibold text-primary">{{ __('Recent activity') }}</h2>
-            <a href="{{ route('activity.index') }}" class="text-sm text-ternary">{{ __('View all') }}</a>
+            <a
+                href="{{ route('activity.index') }}"
+                data-modal-trigger="dashboard-activity-dialog"
+                data-modal-content-url="{{ $dashboardActivityContentUrl }}"
+                data-modal-history-url="{{ $dashboardActivityDialogUrl }}"
+                aria-controls="dashboard-activity-dialog"
+                aria-expanded="{{ $dashboardActivityDialogOpen ? 'true' : 'false' }}"
+                class="text-sm text-ternary"
+            >{{ __('View all') }}</a>
         </div>
 
         <x-activity-feed :events="$recentEvents" />
@@ -655,5 +666,17 @@
         :open="$dashboardApplicationCreateOpen"
         :cancel-url="$dashboardUrl"
     />
+
+    <x-dialogs.modal
+        id="dashboard-activity-dialog"
+        :title="__('Workspace activity')"
+        :description="__('Review recent workspace events without leaving the dashboard.')"
+        :open="$dashboardActivityDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading workspace activity…') }}</p>
+        </div>
+    </x-dialogs.modal>
 
 </x-layouts.app>

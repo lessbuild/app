@@ -150,6 +150,37 @@ class ActivityFeedTest extends TestCase
             ->assertSee(route('activity.index', ['category' => 'account']), false);
     }
 
+    public function test_workspace_activity_fragment_reuses_owner_scoping_without_rendering_a_full_page(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        [, $ownerWebsite] = $this->createResources($owner, 'Owner workspace');
+        [, $otherWebsite] = $this->createResources($other, 'Foreign workspace');
+        $ownerWebsite->events()->create([
+            'user_id' => $owner->id,
+            'category' => 'deployment',
+            'event' => 'Owner deployment event.',
+        ]);
+        $otherWebsite->events()->create([
+            'user_id' => $other->id,
+            'category' => 'deployment',
+            'event' => 'Foreign deployment event.',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('activity.index', [
+            'fragment' => 'workspace-activity',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.activity.history-content')
+            ->assertSee('data-activity-history-content', false)
+            ->assertSee('Owner deployment event.')
+            ->assertDontSee('Foreign deployment event.')
+            ->assertDontSee('<html', false)
+            ->assertSee(route('activity.index'), false);
+    }
+
     public function test_invalid_activity_filters_are_normalized_without_affecting_history(): void
     {
         $user = User::factory()->create();

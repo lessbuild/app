@@ -28,10 +28,11 @@ class ActivityController extends Controller
     {
         $filters = $request->filters();
         $user = $request->user();
-        $isFragment = $request->string('fragment')->toString() === 'account-audit';
+        $fragment = $request->string('fragment')->toString();
+        $isFragment = in_array($fragment, ['account-audit', 'workspace-activity'], true);
         $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
         if ($isFragment) {
-            $paginationQuery['fragment'] = 'account-audit';
+            $paginationQuery['fragment'] = $fragment;
         }
 
         $events = $this->activity->for($user, $filters)
@@ -49,6 +50,13 @@ class ActivityController extends Controller
         ];
 
         if ($isFragment) {
+            if ($fragment === 'workspace-activity') {
+                return view('components.activity.history-content', [
+                    ...$viewData,
+                    'fullPageUrl' => route('activity.index', array_filter($filters, fn ($value) => $value !== null)),
+                ]);
+            }
+
             return view('components.activity.audit-content', [
                 ...$viewData,
                 'fullPageUrl' => route('activity.index', array_filter($filters, fn ($value) => $value !== null)),

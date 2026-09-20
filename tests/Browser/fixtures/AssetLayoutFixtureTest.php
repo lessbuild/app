@@ -37,7 +37,10 @@ class AssetLayoutFixtureTest extends TestCase
 
         $owner = User::factory()->create(['name' => 'Layout fixture owner']);
         $this->actingAs($owner);
-        File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()->getContent());
+        File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()
+            ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)->getContent());
+        File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
@@ -65,6 +68,9 @@ class AssetLayoutFixtureTest extends TestCase
             'category' => 'account',
             'fragment' => 'account-audit',
         ]))->assertOk()->assertSee('data-activity-audit-content', false)->getContent());
+        File::put($directory.'/workspace-activity-content.html', $this->renderPage(route('activity.index', [
+            'fragment' => 'workspace-activity',
+        ]))->assertOk()->assertSee('data-activity-history-content', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

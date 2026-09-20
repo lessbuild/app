@@ -48,6 +48,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const signInHistoryPage = pathname === '/account/sign-ins';
         const environmentContextPage = /^\/observability\/environments\/\d+\/context$/.test(pathname);
         const activityPage = pathname === '/activity';
+        const dashboardPage = pathname === '/dashboard' || pathname === '/home';
         const projectPage = /^\/projects\/\d+$/.test(pathname);
         const modalContentFixture = pathname === '/providers/1/edit'
             ? 'provider-edit-content'
@@ -71,8 +72,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || activityPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
-            const screen = galleryPage
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || dashboardPage || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || activityPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+            const screen = dashboardPage
+                ? 'dashboard'
+                : galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
                     ? 'gallery-my-reports'
@@ -131,6 +134,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'observability-environment-context-dialog'
                 : screen === 'activity' && fragment === 'account-audit'
                     ? 'account-audit-content'
+                : screen === 'activity' && fragment === 'workspace-activity'
+                    ? 'workspace-activity-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -157,6 +162,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'account-sign-in-history-dialog'
                             : screen === 'account' && dialog === 'account-audit-dialog'
                                 ? 'account-audit-dialog'
+                            : screen === 'dashboard' && dialog === 'dashboard-activity'
+                                ? 'dashboard-activity-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -594,6 +601,30 @@ test('account audit opens as a compact read-only security inspector', async ({ p
 
     await page.goto('http://buildpusher.test/account?dialog=account-audit-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Account audit', exact: true })).toBeVisible();
+});
+
+test('dashboard activity opens as a compact workspace inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/home', { waitUntil: 'networkidle' });
+
+    const trigger = page.locator('[data-modal-trigger="dashboard-activity-dialog"]');
+    const dialog = page.getByRole('dialog', { name: 'Workspace activity', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-activity-history-content]')).toBeVisible();
+    await expect(dialog).toContainText('No activity yet');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('dashboard-activity');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/dashboard?dialog=dashboard-activity', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Workspace activity', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {
