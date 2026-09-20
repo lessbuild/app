@@ -2330,9 +2330,10 @@ immediate deployment/health/retry actions and protocol/security workflows remain
 explicit by design so pagination, execution ordering and consequences stay
 visible. Full-page create/edit routes remain accessible no-JavaScript fallbacks.
 
-The next task is final repository/remote verification and handoff. Local
-isolated tests do not claim the separate live acceptance drill, cloud/provider
-acceptance or real-device verification.
+Final verification is complete: the isolated worktree is clean and both
+`HEAD` and `origin/main` are `aa63ee3`. Local isolated tests do not claim the
+separate live acceptance drill, cloud/provider acceptance or real-device
+verification; those remain explicit follow-up work.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local

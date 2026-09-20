@@ -422,7 +422,7 @@ action exceptions.
 
 ## Detail-page audit — 2026-09-20
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `aa63ee3`.
 
 ### Reviewed boundaries
 
@@ -467,5 +467,5 @@ Status: complete locally; commit and push pending.
 
 ### Exact next task
 
-Run the final repository status and pushed-commit verification, then hand off
-the remaining live/real-device acceptance work explicitly.
+Keep the remaining live, cloud/provider and real-device acceptance work
+separate from this locally verified UI slice.
