@@ -159,7 +159,7 @@ Commit and push: `8986dba Keep configuration workflow in application context`.
 
 ## Slice 4 — environment resources in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `c7592ae`.
 
 ### Responsibility problem
 
@@ -202,9 +202,13 @@ other application composers.
   section expansion, URL state, focus restoration and Escape behavior.
 - Blade cache, Pint and `git diff --check`: passed.
 
+### Commit and push
+
+Commit and push: `c7592ae Make environment resources contextual dialogs`.
+
 ### Exact next task
 
-Commit and push this slice, then inspect the remaining detail-page history and
-settings links. Keep long reports, imports, restores, destructive operations
-and protocol callbacks as explicit pages unless a bounded modal preserves
-their pagination, authorization and execution ordering.
+Inventory the remaining detail-page history and settings links. Keep long
+reports, imports, restores, destructive operations and protocol callbacks as
+explicit pages unless a bounded modal preserves their pagination,
+authorization and execution ordering.

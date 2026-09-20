@@ -2277,12 +2277,16 @@ submissions preserve explicit review identity and return to the application,
 while full-page routes, validation keys, secret-safe old-input behavior and
 stale-review semantics remain unchanged.
 
-The current local slice moves the application environment-resource composer
-into the same contextual dialog pattern. It reuses the existing resource
-request, action and controller, preserving entitlement checks, encrypted
-variables, validation keys, panel reopening and redirect behavior. Focused PHP
-coverage, fixture rendering, browser interaction, Blade cache, Pint and diff
-checks pass; the slice is pending its cohesive commit/push.
+`c7592ae` moves the application environment-resource composer into the same
+contextual dialog pattern. It reuses the existing resource request, action and
+controller, preserving entitlement checks, encrypted variables, validation
+keys, panel reopening and redirect behavior. Focused PHP coverage, fixture
+rendering, browser interaction, Blade cache, Pint and diff checks pass.
+
+The next task is to inventory remaining detail-page history and settings links.
+Long reports, imports, restores, destructive operations and protocol callbacks
+remain explicit unless a bounded modal can preserve their pagination,
+authorization and execution ordering.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local
