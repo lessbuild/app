@@ -101,6 +101,10 @@
                 $processDialogKey = 'add-process-'.$environment->id;
                 $processDialogOpen = $canUpdateEnvironment && $featureAccess['workers'] && ($processesOpen || request()->query('dialog') === $processDialogKey);
                 $processDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $processDialogKey]);
+                $resourceDialogId = 'environment-resource-dialog-'.$environment->id;
+                $resourceDialogKey = 'add-resource-'.$environment->id;
+                $resourceDialogOpen = $canUpdateEnvironment && $featureAccess['resources'] && ($resourcesOpen || request()->query('dialog') === $resourceDialogKey);
+                $resourceDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $resourceDialogKey]);
                 $environmentRepositoryCreateUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery([
                     'dialog' => 'create-repository',
                     'website_id' => $environment->website_id,
@@ -285,8 +289,19 @@
                     <details id="environment-{{ $environment->id }}-resources" class="ui-card ui-card--muted group p-4" @if($resourcesOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Attached resources') }} <span class="text-secondary">({{ $environment->resources->count() }})</span></span><span class="text-secondary group-open:rotate-45">+</span></summary>
                         <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<div class="flex items-center gap-3 rounded-lg border border-primary bg-primary p-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $resource->name }}</p><p class="text-xs text-secondary">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Detach') }}</button></form>@endcan</div>@endforeach</div>
-                        @can('update', $environment)@if($featureAccess['resources'])<form method="POST" action="{{ route('environments.resources.store', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf<input type="hidden" name="_environment_id" value="{{ $environment->id }}"><input type="hidden" name="_environment_panel" value="resources"><input name="name" placeholder="primary-database" class="input secondary rounded-lg" required><select name="type" class="input secondary rounded-lg"><option value="mysql">MySQL</option><option value="postgresql">PostgreSQL</option><option value="redis">Redis</option><option value="valkey">Valkey</option><option value="object_storage">{{ __('Object storage') }}</option></select><label class="flex items-center gap-2 sm:col-span-2"><input type="hidden" name="is_managed" value="0"><input type="checkbox" name="is_managed" value="1"><span class="text-sm text-secondary">{{ __('Manage on attached server') }}</span></label><textarea name="variables" rows="3" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="input secondary rounded-lg font-mono sm:col-span-2"></textarea><x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-ui.button></form>@else<p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>@endif @endcan
+                        @can('update', $environment)
+                            @if($featureAccess['resources'])
+                                <x-ui.button :href="$resourceDialogUrl" data-modal-trigger="{{ $resourceDialogId }}" aria-controls="{{ $resourceDialogId }}" aria-expanded="{{ $resourceDialogOpen ? 'true' : 'false' }}" variant="secondary" class="mt-4">{{ __('Attach resource') }}</x-ui.button>
+                            @else
+                                <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
+                            @endif
+                        @endcan
                     </details>
+                    @can('update', $environment)
+                        @if($featureAccess['resources'])
+                            <x-scenes.projects.resource-create-dialog :environment="$environment" :open="$resourceDialogOpen" />
+                        @endif
+                    @endcan
                 </div>
             </section>
         @endforeach

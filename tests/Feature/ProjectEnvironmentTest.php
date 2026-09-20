@@ -148,21 +148,25 @@ class ProjectEnvironmentTest extends TestCase
         $environment = $project->environments()->where('type', 'staging')->firstOrFail();
         $variableDialogId = 'environment-variable-dialog-'.$environment->id;
         $processDialogId = 'environment-process-dialog-'.$environment->id;
+        $resourceDialogId = 'environment-resource-dialog-'.$environment->id;
         $dialogPattern = static fn (string $id): string => '/<dialog(?=[^>]*id="'.preg_quote($id, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/';
 
         $default = $this->actingAs($developer)->get(route('projects.show', $project))
             ->assertSuccessful()
             ->assertSee('data-modal-trigger="add-environment-dialog"', false)
             ->assertSee('data-modal-trigger="'.$variableDialogId.'"', false)
-            ->assertSee('data-modal-trigger="'.$processDialogId.'"', false);
+            ->assertSee('data-modal-trigger="'.$processDialogId.'"', false)
+            ->assertSee('data-modal-trigger="'.$resourceDialogId.'"', false);
         $this->assertDoesNotMatchRegularExpression($dialogPattern('add-environment-dialog'), $default->getContent());
         $this->assertDoesNotMatchRegularExpression($dialogPattern($variableDialogId), $default->getContent());
         $this->assertDoesNotMatchRegularExpression($dialogPattern($processDialogId), $default->getContent());
+        $this->assertDoesNotMatchRegularExpression($dialogPattern($resourceDialogId), $default->getContent());
 
         foreach ([
             ['dialog' => 'add-environment', 'id' => 'add-environment-dialog'],
             ['dialog' => 'add-variable-'.$environment->id, 'id' => $variableDialogId],
             ['dialog' => 'add-process-'.$environment->id, 'id' => $processDialogId],
+            ['dialog' => 'add-resource-'.$environment->id, 'id' => $resourceDialogId],
         ] as $dialog) {
             $this->assertMatchesRegularExpression(
                 $dialogPattern($dialog['id']),
@@ -196,9 +200,19 @@ class ProjectEnvironmentTest extends TestCase
         $this->assertMatchesRegularExpression($dialogPattern($processDialogId), $processError->getContent());
         $processError->assertSee('The name field is required.');
 
+        $resourceUrl = route('projects.show', ['project' => $project, 'dialog' => 'add-resource-'.$environment->id]);
+        $resourceError = $this->actingAs($developer)->from($resourceUrl)->followingRedirects()->post(route('environments.resources.store', $environment), [
+            '_environment_id' => $environment->id, '_environment_panel' => 'resources',
+            'name' => '', 'type' => 'mysql', 'is_managed' => '0',
+            'variables' => 'DB_PASSWORD=private-resource-value',
+        ])->assertSuccessful();
+        $this->assertMatchesRegularExpression($dialogPattern($resourceDialogId), $resourceError->getContent());
+        $resourceError->assertSee('The name field is required.')->assertSee('private-resource-value');
+
         $this->assertSame(2, $project->environments()->count());
         $this->assertDatabaseCount('environment_variables', 0);
         $this->assertDatabaseCount('environment_processes', 0);
+        $this->assertDatabaseCount('environment_resources', 0);
     }
 
     private function workspaceProject(): array

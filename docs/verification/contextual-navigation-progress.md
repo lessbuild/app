@@ -99,7 +99,7 @@ application-context modal.
 
 ## Slice 3 — application configuration in context
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `8986dba`.
 
 ### Responsibility problem
 
@@ -153,10 +153,58 @@ assembly between the canonical page and the new contextual surface.
   failure/retry, and modal scroll-lock flows passed (3 tests).
 - Blade compilation, Pint and `git diff --check` passed.
 
+### Commit and push
+
+Commit and push: `8986dba Keep configuration workflow in application context`.
+
+## Slice 4 — environment resources in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+The application detail page had contextual dialogs for environments, encrypted
+variables and worker processes, but attaching an environment resource still
+used an inline write form inside the resources section. On a narrow screen the
+form expanded the page and its validation state was less consistent with the
+other application composers.
+
+### Boundary
+
+- `resource-create-dialog.blade.php` owns only the reusable HTTP form surface
+  for attaching one environment resource.
+- The application page owns the trigger, entitlement gate, URL-backed open
+  state and per-environment dialog identity.
+- `StoreEnvironmentResourceRequest`, `SaveEnvironmentResourceAction` and
+  `EnvironmentController::storeResource` remain the validation, authorization,
+  encryption and persistence boundaries; no new service or abstraction was
+  introduced.
+
+### Preserved behavior and safety
+
+- The existing field names, hidden environment/panel context, resource type
+  values, managed checkbox and variables format remain unchanged.
+- Existing resource entitlement and environment authorization checks still run
+  before invalid input is processed.
+- Encrypted variables, validation keys, old-input behavior, redirect flash
+  messages and no-write-on-validation-failure behavior remain unchanged.
+- The resources section reopens when its dialog is requested, and the modal
+  has a full-page URL fallback for direct or no-JavaScript navigation.
+- Resource sections remain collapsed by default; the browser journey expands
+  the section before activating the accessible trigger.
+
+### Verification
+
+- Environment operations, runtime and project/environment regression coverage:
+  18 tests / 144 assertions passed.
+- Isolated Blade fixture export: 1 test / 145 assertions passed.
+- Application-detail composer browser journey: 1 passed, including resource
+  section expansion, URL state, focus restoration and Escape behavior.
+- Blade cache, Pint and `git diff --check`: passed.
+
 ### Exact next task
 
-Commit and push this slice, then inventory the remaining page-level workflows
-that genuinely benefit from contextual dialogs. Prioritize safety-preserving
-detail-page actions and keep imports, restores, destructive operations and
-protocol callbacks as explicit pages unless a tested modal boundary preserves
-their execution ordering.
+Commit and push this slice, then inspect the remaining detail-page history and
+settings links. Keep long reports, imports, restores, destructive operations
+and protocol callbacks as explicit pages unless a bounded modal preserves
+their pagination, authorization and execution ordering.

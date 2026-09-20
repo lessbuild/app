@@ -957,9 +957,14 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         ['Add environment', 'Add environment', '#add-environment-dialog'],
         ['Add variable', 'Add encrypted variable', '[id^="environment-variable-dialog-"]'],
         ['Add process', 'Add worker or scheduler', '[id^="environment-process-dialog-"]'],
+        ['Attach resource', 'Attach resource', '[id^="environment-resource-dialog-"]'],
     ];
 
     for (const [triggerName, dialogName, dialogSelector] of workflows) {
+        if (triggerName === 'Attach resource') {
+            await page.locator('details[id$="-resources"] summary').first().click();
+        }
+
         const trigger = page.getByRole('link', { name: triggerName, exact: true });
         const dialog = page.getByRole('dialog', { name: dialogName, exact: true });
         await trigger.click();
@@ -969,7 +974,11 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         if (triggerName === 'Add environment') {
             expect(dialogKey).toBe('add-environment');
         } else {
-            expect(dialogKey).toMatch(triggerName === 'Add variable' ? /^add-variable-\d+$/ : /^add-process-\d+$/);
+            expect(dialogKey).toMatch(triggerName === 'Add variable'
+                ? /^add-variable-\d+$/
+                : triggerName === 'Add process'
+                    ? /^add-process-\d+$/
+                    : /^add-resource-\d+$/);
         }
         await page.keyboard.press('Escape');
         await expect(dialog).toBeHidden();

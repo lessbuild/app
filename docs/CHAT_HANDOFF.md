@@ -2270,13 +2270,19 @@ retry, cleanup warnings, pagination and authorization remain in place.
 stale-response protection, session-expiry handling, retry/full-page error
 actions, dynamic trigger initialization and modified-link preservation.
 
-The next local slice adds application-context configuration-as-code. The
-application page now hosts a lazy configuration dialog; the authorized fragment
-reuses existing configuration read services for authoring, review and receipt
-states. Modal submissions preserve explicit review identity and return to the
-application, while full-page routes, validation keys, secret-safe old-input
-behavior and stale-review semantics remain unchanged. This slice is locally
-verified and is pending its cohesive commit/push.
+`8986dba` now adds application-context configuration-as-code. The application
+page hosts a lazy configuration dialog; the authorized fragment reuses existing
+configuration read services for authoring, review and receipt states. Modal
+submissions preserve explicit review identity and return to the application,
+while full-page routes, validation keys, secret-safe old-input behavior and
+stale-review semantics remain unchanged.
+
+The current local slice moves the application environment-resource composer
+into the same contextual dialog pattern. It reuses the existing resource
+request, action and controller, preserving entitlement checks, encrypted
+variables, validation keys, panel reopening and redirect behavior. Focused PHP
+coverage, fixture rendering, browser interaction, Blade cache, Pint and diff
+checks pass; the slice is pending its cohesive commit/push.
 
 The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
 No production, cloud or external acceptance operation was performed. Local
