@@ -799,6 +799,62 @@ provisioning, recent inventory and feedback. Modalize only bounded read-only
 views; leave deployment control, provisioning and moderation workflows as
 explicit pages/actions.
 
+## Slice 17 — dashboard active-deployments timeline
+
+Status: complete; committed and pushed as 33f6dcc.
+
+### Responsibility problem
+
+The dashboard’s “View active deployments” links navigated to the full Builds
+inventory, even though the immediate need is to inspect current deployment
+progress without losing dashboard context. The full build page remains the
+correct surface for filters, logs, approval, cancellation, retry and rollback.
+
+### Boundaries and benefit
+
+- `BuildsController::index()` and `BuildInventoryQuery` remain the authorized,
+  organization-scoped read boundary and serve the existing
+  `fragment=deployment-history` body with the active filter.
+- The dashboard owns the contextual trigger and modal shell; the shared
+  deployment-history partial owns the compact timeline and full-history link.
+- Deployment actions remain on the build detail/inventory workflows. No modal
+  action was added for approval, cancellation, retry, rollback or execution.
+
+This keeps read-only inspection separate from deployment operations while
+reusing the already-tested query and fragment contract.
+
+### Preserved behavior and safety
+
+- Active-status filtering, workspace scoping, pagination, metrics, ordering and
+  deployment detail links are unchanged.
+- The direct Builds URL remains the no-JavaScript fallback, while the canonical
+  dashboard URL receives bookmarkable dialog state.
+- Opening the timeline performs an authorized GET only; it does not queue,
+  cancel, approve, retry or roll back a deployment.
+- The shared copy now says “this page” and its empty state refers to filters,
+  so it is accurate for both website and dashboard contexts.
+
+### Verification
+
+- Dashboard ownership and modal regression: **3 tests / 32 assertions passed**.
+- Deployment-history regression: **6 tests / 47 assertions passed**.
+- PHP syntax checks, Pint, Node syntax check and `git diff --check`: passed.
+- Focused browser journey: **1 test passed in 59.6 seconds** using PHP 8.5.10;
+  verified active-deployment trigger, lazy timeline loading, canonical `/home`
+  path stability, deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+
+### Commit and push
+
+Commit and push: `33f6dcc Open active deployments in a dialog`.
+
+### Exact next task
+
+Audit dashboard system-health, provisioning, webhook, command, feedback,
+recipe-update and recent-inventory links. Keep diagnostics read-only only when
+their authorization and bounded evidence can be preserved; leave provisioning,
+moderation and deployment controls explicit.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
