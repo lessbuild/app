@@ -35,6 +35,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const galleryMyReportsPage = pathname === '/gallery/my-reports';
         const galleryReportStatusPage = /^\/gallery\/reports\/\d+\/status$/.test(pathname);
         const repositoryImpactPreviewPage = pathname === '/repositories/impact-preview';
+        const buildComparisonPage = /^\/builds\/\d+\/compare\/\d+$/.test(pathname);
+        const buildPage = /^\/builds\/\d+$/.test(pathname);
         const providerPage = /^\/providers\/\d+$/.test(pathname);
         const providerConnectionChecksPage = /^\/providers\/\d+\/connection-checks$/.test(pathname);
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
@@ -66,7 +68,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : galleryMyReportsPage
@@ -75,6 +77,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'gallery-report-status'
                 : repositoryImpactPreviewPage
                     ? 'repository-impact-preview'
+                : buildComparisonPage
+                    ? 'build-comparison'
+                : buildPage
+                    ? 'build'
                 : providerPage
                     ? 'provider-show'
                         : providerConnectionChecksPage
@@ -108,6 +114,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'gallery-report-status-content'
                 : screen === 'repository-impact-preview' && fragment === 'repository-impact-preview'
                     ? 'repositories-impact-preview-content'
+                : screen === 'build-comparison' && fragment === 'build-comparison'
+                    ? 'build-comparison-content'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -126,6 +134,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'backups-destination-edit-dialog'
                             : screen === 'build' && dialog === 'operator-note'
                                 ? 'build-note-dialog'
+                            : screen === 'build' && dialog?.startsWith('compare-build-')
+                                ? 'build-comparison-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -436,6 +446,32 @@ test('repository deployment impact preview opens and refreshes inside a contextu
 
     await page.goto('http://buildpusher.test/repositories?dialog=impact-preview', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Deployment impact preview', exact: true })).toBeVisible();
+});
+
+test('build comparison opens as a read-only contextual dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/builds/2', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Compare with previous', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Compare deployments', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-build-comparison-content]')).toBeVisible();
+    await expect(dialog).toContainText('Fixture baseline failure');
+    await expect(dialog).toContainText('Current status');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    const dialogQuery = new URL(page.url()).searchParams.get('dialog');
+    expect(dialogQuery).toMatch(/^compare-build-\d+-\d+$/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/builds/2?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Compare deployments', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

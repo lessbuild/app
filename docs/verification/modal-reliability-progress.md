@@ -566,7 +566,7 @@ and other state-changing workflows explicit.
 
 ## Slice 10 — repository deployment-impact inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as ff8945b.
 
 ### Responsibility problem
 
@@ -612,10 +612,72 @@ query without introducing a second evaluator or a generic repository layer.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `ff8945b Open repository impact preview in a dialog`.
 
 ### Exact next task
 
 Audit notification destinations and the remaining read-only inventory links;
 prioritize a contextual inspector only where it preserves ownership, read
 state and no-JavaScript fallback semantics.
+
+## Slice 11 — build comparison inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The build detail page sent “Compare with previous” to a separate comparison
+page, even though comparison is a bounded read-only view. That interrupted the
+deployment timeline and evidence context, while the same build page contains
+approval, rollback, cancellation, note and log workflows that must remain
+explicit.
+
+### Boundaries and benefit
+
+- `BuildsController::compare()` remains the single policy-authorized comparison
+  boundary and now serves either the existing full-page shell or a body-only
+  `fragment=build-comparison` response.
+- The extracted comparison partial owns the existing escaped metadata,
+  duration calculation presentation and safe build links for both surfaces.
+- The Livewire deployment-status view owns the trigger and a `wire:ignore`
+  dialog shell so polling cannot replace the read-only modal content.
+- Build operations remain on the deployment page; the direct comparison route
+  remains the no-JavaScript and deep-link fallback.
+
+This preserves the existing policy checks and same-repository/distinct-build
+guard while separating read-only inspection from deployment operations.
+
+### Preserved behavior and safety
+
+- Comparison authorization runs before fragment rendering; the existing
+  forbidden/not-found behavior for foreign, cross-repository and identical
+  builds is unchanged.
+- Escaping of commit messages, operator notes and failure messages remains in
+  the shared presentation; no source-code or provider request is added.
+- Duration comparisons continue to distinguish faster, slower, equal and
+  unavailable values honestly.
+- Livewire polling and the existing operator-note/editor dialogs remain
+  compatible, while comparison open/close changes only browser history and
+  dialog presentation.
+
+### Verification
+
+- Deployment comparison regression: **4 tests / 40 assertions passed**.
+- PHP syntax checks and Pint on changed PHP files: passed.
+- Focused browser journey: **1 test passed in 1.3 minutes** using PHP 8.5.10;
+  verified canonical build URL stability, lazy authorized content, deep-link
+  opening, Escape and focus restoration.
+- Browser fixture export, Node syntax check and `git diff --check`: passed.
+- An initial focused run caught an undefined controller request parameter;
+  adding the explicit `Request` dependency fixed it before commit and the
+  complete focused regression then passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Audit notification destinations, observability evidence links and remaining
+read-only product pages; keep notification read-state changes and incident
+response actions explicit.

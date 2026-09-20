@@ -350,6 +350,15 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/configuration-create.html', $this->renderPage(route('projects.configuration.create', $project))
             ->assertOk()->assertSee('Recent application receipts')->getContent());
 
+        $previousBuild = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'revision' => str_repeat('b', 40),
+            'failure_message' => 'Fixture baseline failure',
+            'started_at' => now()->subMinutes(6),
+            'finished_at' => now()->subMinutes(3),
+            'created_at' => now()->subMinutes(6),
+        ]);
         $build = $repository->builds()->create([
             'status' => Build::STATUS_SUCCEEDED,
             'setup_stage' => 15,
@@ -365,11 +374,23 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/build.html', $this->renderPage(route('builds.show', $build))->assertOk()
             ->assertSee('Deployment evidence')
             ->assertSee('data-modal-trigger="build-note-dialog"', false)
+            ->assertSee('data-modal-trigger="build-comparison-dialog"', false)
             ->getContent());
         File::put($directory.'/build-note-dialog.html', $this->renderPage(route('builds.show', [
             'build' => $build,
             'dialog' => 'operator-note',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/build-comparison-dialog.html', $this->renderPage(route('builds.show', [
+            'build' => $build,
+            'dialog' => 'compare-build-'.$build->id.'-'.$previousBuild->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/build-comparison-content.html', $this->renderPage(route('builds.compare', [
+            'build' => $build,
+            'baseline' => $previousBuild,
+            'fragment' => 'build-comparison',
+        ]))->assertOk()
+            ->assertSee('data-build-comparison-content', false)
+            ->assertSee('Fixture baseline failure')->getContent());
         File::put($directory.'/backups.html', $this->renderPage(route('backups.index'))->assertOk()
             ->assertSee('Protection status')
             ->assertSee('data-modal-trigger="backup-schedule-dialog"', false)

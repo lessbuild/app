@@ -73,6 +73,41 @@ class DeploymentComparisonTest extends TestCase
             ->assertSee('Compare with previous');
     }
 
+    public function test_owner_can_open_the_comparison_as_a_private_contextual_fragment(): void
+    {
+        [$owner, $repository] = $this->repositories();
+        $baseline = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'revision' => str_repeat('a', 40),
+            'failure_message' => 'Baseline failure',
+            'started_at' => '2026-08-20 08:00:00',
+            'finished_at' => '2026-08-20 08:03:00',
+            'created_at' => '2026-08-20 08:00:00',
+        ]);
+        $current = $repository->builds()->create([
+            'status' => Build::STATUS_SUCCEEDED,
+            'trigger_source' => Build::TRIGGER_REDEPLOY,
+            'revision' => str_repeat('b', 40),
+            'operator_note' => 'Current release note',
+            'started_at' => '2026-08-20 09:00:00',
+            'finished_at' => '2026-08-20 09:01:00',
+            'created_at' => '2026-08-20 09:00:00',
+        ]);
+
+        $this->actingAs($owner)->get(route('builds.compare', [
+            'build' => $current,
+            'baseline' => $baseline,
+            'fragment' => 'build-comparison',
+        ]))
+            ->assertSuccessful()
+            ->assertSee('data-build-comparison-content', false)
+            ->assertSee('Baseline failure')
+            ->assertSee('Current release note')
+            ->assertSee('2m faster')
+            ->assertDontSee('<html', false);
+    }
+
     public function test_comparison_reports_slower_equal_and_unavailable_durations_honestly(): void
     {
         [$owner, $repository] = $this->repositories();

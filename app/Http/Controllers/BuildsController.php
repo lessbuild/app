@@ -98,7 +98,7 @@ class BuildsController extends Controller
     /**
      * Authorize two distinct builds in the same repository and render their comparison with a nullable duration delta.
      */
-    public function compare(Build $build, Build $baseline): View
+    public function compare(Request $request, Build $build, Build $baseline): View
     {
         $this->authorize('view', $build);
         $this->authorize('view', $baseline);
@@ -108,13 +108,23 @@ class BuildsController extends Controller
         $baseline->load('repository.website.server');
         $buildDuration = $build->durationSeconds();
         $baselineDuration = $baseline->durationSeconds();
+        $durationDelta = $buildDuration !== null && $baselineDuration !== null
+            ? $buildDuration - $baselineDuration
+            : null;
+
+        if ($request->string('fragment')->toString() === 'build-comparison') {
+            return view('components.scenes.builds.comparison-content', [
+                'build' => $build,
+                'baseline' => $baseline,
+                'durationDelta' => $durationDelta,
+                'fragment' => true,
+            ]);
+        }
 
         return view('scenes.builds.compare', [
             'build' => $build,
             'baseline' => $baseline,
-            'durationDelta' => $buildDuration !== null && $baselineDuration !== null
-                ? $buildDuration - $baselineDuration
-                : null,
+            'durationDelta' => $durationDelta,
         ]);
     }
 
