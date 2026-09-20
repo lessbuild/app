@@ -86,7 +86,7 @@
     </div>
     <div class="sm:col-span-2">
         @if ($cancelUrl)
-            <x-ui.button :href="$cancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+            <x-ui.button :href="$cancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
         @endif
         <x-ui.button type="submit" variant="primary">{{ $submitLabel }}</x-ui.button>
     </div>

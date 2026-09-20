@@ -15,7 +15,7 @@
         <input type="hidden" name="_recipe_publish_form" value="1">
         <x-scenes.recipes._form />
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-4 py-4 sm:px-6">
-            <x-ui.button href="{{ $cancelUrl }}" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+            <x-ui.button href="{{ $cancelUrl }}" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
             <x-ui.button type="submit" variant="primary">{{ __('Publish Recipe') }}</x-ui.button>
         </div>
     </form>

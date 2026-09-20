@@ -13,7 +13,7 @@
     <x-scenes.providers._form :field-prefix="$fieldPrefix" />
 
     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
-        <x-ui.button :href="$dialogCancelUrl" variant="ghost">{{ __('Cancel') }}</x-ui.button>
+        <x-ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
         <x-ui.button type="submit" variant="primary">{{ __('Add Provider') }}</x-ui.button>
     </div>
 </form>

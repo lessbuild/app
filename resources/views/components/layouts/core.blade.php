@@ -120,6 +120,11 @@
                 const filterDialogs = () => document.querySelectorAll('[data-filter-dialog]');
                 const dispatchModalStateChange = () => document.dispatchEvent(new CustomEvent('modal:state-changed'));
 
+                // Closed filter dialogs remain visible as a no-JavaScript fallback
+                // until this marker is set. The component's noscript-free markup is
+                // still a usable inline form while the enhancement is unavailable.
+                document.documentElement.setAttribute('data-modal-js-ready', '');
+
                 const focusFilterTrigger = (dialog) => {
                     document.querySelector(`[data-filter-dialog-trigger][aria-controls="${CSS.escape(dialog.id)}"]`)?.focus();
                 };
@@ -357,7 +362,13 @@
                             return;
                         }
 
-                        content.innerHTML = await response.text();
+                        const responseBody = await response.text();
+
+                        if (dialog.modalRequestId !== requestId) {
+                            return;
+                        }
+
+                        content.innerHTML = responseBody;
                         window.Alpine?.initTree?.(content);
                         document.dispatchEvent(new CustomEvent('modal:content-loaded', {
                             detail: { content, dialog },
@@ -410,6 +421,19 @@
                         });
                     });
                 };
+
+                document.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+                    const cancel = target?.closest('[data-modal-cancel]');
+                    const dialog = cancel?.closest('dialog[data-modal-sheet]');
+
+                    if (! cancel || ! dialog?.open || typeof dialog.close !== 'function') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    dialog.close('cancel');
+                });
 
                 const initialiseModals = () => {
                     document.querySelectorAll('dialog[data-modal-sheet]').forEach(bindModalCloseButtons);
@@ -516,14 +540,44 @@
                 };
 
                 window.addEventListener('popstate', () => {
-                    document.querySelectorAll('dialog[data-modal-history][open]').forEach((dialog) => {
-                        if (! ['pushed', 'server'].includes(dialog.dataset.modalHistory)) {
-                            return;
-                        }
+                    const currentUrl = new URL(window.location.href);
+                    const openTarget = [...document.querySelectorAll('[data-modal-trigger]')]
+                        .find((trigger) => {
+                            if (! (trigger instanceof HTMLAnchorElement)) {
+                                return false;
+                            }
 
-                        dialog.dataset.modalHistory = 'popped';
-                        dialog.close('history');
+                            const triggerUrl = new URL(trigger.href, window.location.href);
+
+                            return triggerUrl.pathname === currentUrl.pathname
+                                && triggerUrl.search === currentUrl.search
+                                && triggerUrl.hash === currentUrl.hash;
+                        });
+
+                    document.querySelectorAll('dialog[data-modal-history][open]').forEach((dialog) => {
+                        if (dialog !== (openTarget ? document.getElementById(openTarget.dataset.modalTrigger) : null)) {
+                            dialog.dataset.modalHistory = 'popped';
+                            dialog.close('history');
+                        }
                     });
+
+                    if (! openTarget) {
+                        syncModalScrollLock();
+                        return;
+                    }
+
+                    const dialog = document.getElementById(openTarget.dataset.modalTrigger);
+
+                    if (! dialog || dialog.open || typeof dialog.showModal !== 'function') {
+                        return;
+                    }
+
+                    dialog.showModal();
+                    dialog.modalTrigger = openTarget;
+                    dialog.dataset.modalHistory = 'pushed';
+                    openTarget.setAttribute('aria-expanded', 'true');
+                    syncModalScrollLock();
+                    void loadModalContent(dialog, openTarget);
                 });
 
                 if (document.readyState === 'loading') {

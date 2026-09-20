@@ -94,7 +94,8 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-filter-dialog-close', $filter);
 
         $appStyles = File::get(resource_path('css/app.css'));
-        $this->assertStringContainsString('html:has(dialog[data-modal-sheet][open])', $appStyles);
+        $this->assertStringContainsString('html:has(dialog[data-modal-sheet][open]:not([data-filter-dialog]))', $appStyles);
+        $this->assertStringContainsString('html:not([data-modal-js-ready]) dialog.ui-filter-dialog', $appStyles);
         $this->assertStringContainsString('body[data-modal-open]', $appStyles);
     }
 

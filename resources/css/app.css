@@ -18,9 +18,9 @@ html {
     overscroll-behavior-x: none;
 }
 
-html:has(dialog[data-modal-sheet][open]),
+html:has(dialog[data-modal-sheet][open]:not([data-filter-dialog])),
 html[data-modal-open],
-body:has(dialog[data-modal-sheet][open]),
+body:has(dialog[data-modal-sheet][open]:not([data-filter-dialog])),
 body[data-modal-open] {
     overflow: hidden;
     overscroll-behavior-y: none;
@@ -295,7 +295,7 @@ dialog.ui-filter-dialog:not([open]) {
         background: transparent;
     }
 
-    dialog.ui-filter-dialog:not([open]) {
+    html[data-modal-js-ready] dialog.ui-filter-dialog:not([open]) {
         display: none;
     }
 
@@ -348,6 +348,45 @@ dialog.ui-filter-dialog:not([open]) {
         padding-bottom: max(1rem, env(safe-area-inset-bottom));
         -webkit-overflow-scrolling: touch;
     }
+}
+
+/* A closed dialog is not interactive without JavaScript. Keep the same form
+   readable inline so GET filters remain usable in the server-rendered fallback. */
+html:not([data-modal-js-ready]) dialog.ui-filter-dialog {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    margin: 2rem 0 0;
+    border: 1px solid var(--ui-border);
+    border-radius: 0.75rem;
+    background: var(--ui-surface);
+}
+
+html:not([data-modal-js-ready]) .ui-filter-dialog__viewport {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+    padding: 0;
+}
+
+html:not([data-modal-js-ready]) .ui-filter-dialog__panel {
+    display: block;
+    max-height: none;
+    overflow: visible;
+    border: 0;
+    border-radius: 0.75rem;
+    box-shadow: none;
+}
+
+html:not([data-modal-js-ready]) .ui-filter-dialog__body {
+    overflow: visible;
+    padding-bottom: 1rem;
+}
+
+html:not([data-modal-js-ready]) [data-filter-dialog-close] {
+    display: none;
 }
 
 /* Keep editable controls at the iOS zoom threshold on narrow screens. */

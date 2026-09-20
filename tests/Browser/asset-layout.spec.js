@@ -320,6 +320,62 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     await expect(page.getByRole('dialog', { name: 'Edit recipe', exact: true })).toBeVisible();
 });
 
+test('modal history and contextual cancellation preserve the background document', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/providers/1', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Edit Provider', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Edit provider', exact: true });
+    const documentRequests = [];
+    page.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            documentRequests.push(new URL(request.url()).pathname);
+        }
+    });
+
+    await trigger.click();
+    await expect(dialog.locator('form[method="POST"]')).toBeVisible();
+    await dialog.getByRole('link', { name: 'Cancel', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+    expect(documentRequests).toEqual([]);
+
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('edit-provider');
+
+    await page.goBack();
+    await expect(dialog).toBeHidden();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.goForward();
+    await expect(dialog).toBeVisible();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('edit-provider');
+});
+
+test('mobile filters remain usable without JavaScript', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    const browser = page.context().browser();
+    const noScriptContext = await browser.newContext({
+        viewport: { width: 390, height: 844 },
+        javaScriptEnabled: false,
+        colorScheme: 'light',
+    });
+    const noScriptPage = await noScriptContext.newPage();
+    await serveFixtures(noScriptPage);
+
+    await noScriptPage.goto('http://buildpusher.test/providers', { waitUntil: 'domcontentloaded' });
+    await expect(noScriptPage.locator('#providers-filters input[name="search"]')).toBeVisible();
+    await expect(noScriptPage.getByRole('button', { name: 'Apply filters', exact: true })).toBeVisible();
+
+    await noScriptContext.close();
+});
+
 test('website log retention opens in a contextual dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
