@@ -5,6 +5,15 @@
         $buildPageUrl = route('builds.show', $build);
         $repositoryEditContentUrl = route('repositories.edit', ['repository' => $build->repository, 'dialog' => 'edit-repository', 'fragment' => 1, 'return_to' => $buildPageUrl]);
         $websiteEditContentUrl = route('websites.edit', ['website' => $build->repository->website, 'dialog' => 'edit-website', 'fragment' => 1, 'return_to' => $buildPageUrl]);
+        $comparisonDialogId = 'build-comparison-dialog';
+        $comparisonDialogKey = $previousBuild ? 'compare-build-'.$build->id.'-'.$previousBuild->id : null;
+        $comparisonDialogOpen = $comparisonDialogKey !== null && request()->query('dialog') === $comparisonDialogKey;
+        $comparisonDialogUrl = $comparisonDialogKey === null ? null : route('builds.show', ['build' => $build, 'dialog' => $comparisonDialogKey]);
+        $comparisonContentUrl = $previousBuild === null ? null : route('builds.compare', [
+            'build' => $build,
+            'baseline' => $previousBuild,
+            'fragment' => 'build-comparison',
+        ]);
         $statusTone = match ($build->status) {
             \App\Models\Build::STATUS_SUCCEEDED => 'success',
             \App\Models\Build::STATUS_FAILED, \App\Models\Build::STATUS_REJECTED => 'danger',
@@ -239,7 +248,15 @@
 
     @if ($previousBuild)
         <div class="mt-3 flex justify-end">
-            <x-ui.button :href="route('builds.compare', ['build' => $build, 'baseline' => $previousBuild])" variant="secondary">
+            <x-ui.button
+                :href="$comparisonDialogUrl"
+                data-modal-trigger="{{ $comparisonDialogId }}"
+                data-modal-content-url="{{ $comparisonContentUrl }}"
+                data-modal-history-url="{{ $comparisonDialogUrl }}"
+                aria-controls="{{ $comparisonDialogId }}"
+                aria-expanded="{{ $comparisonDialogOpen ? 'true' : 'false' }}"
+                variant="secondary"
+            >
                 {{ __('Compare with previous') }}
             </x-ui.button>
         </div>
@@ -554,4 +571,17 @@
         :cancel-url="route('builds.show', $build)"
         :content-url="$websiteEditContentUrl"
     />
+
+    <x-dialogs.modal
+        id="{{ $comparisonDialogId }}"
+        :title="__('Compare deployments')"
+        :description="__('Review recorded outcomes without leaving this deployment.')"
+        :open="$comparisonDialogOpen"
+        body-class="p-0"
+        wire:ignore
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading deployment comparison…') }}</p>
+        </div>
+    </x-dialogs.modal>
 </div>
