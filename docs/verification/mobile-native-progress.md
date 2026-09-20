@@ -31,6 +31,7 @@ Each verified slice is committed and pushed before the next slice starts.
 | 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | `57da0b8` pushed |
 | 3. Mobile page hierarchy | Shared page headers, dashboard actions and inventory cards own compact mobile spacing; data and routes remain page-owned. | Complete | 53 PHP tests / 785 assertions; 1 full 320px fixture case; Pint and Vite passed. | `56ea637` pushed |
 | 4. Mobile feedback states | Shared feedback primitives and the authenticated shell own compact alerts, empty states and connectivity recovery messaging; operation state remains server-owned. | Complete | 51 PHP tests / 774 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | Pending push |
+| 5. Mobile form affordances | Shared form feedback and modal loading styles own focus-safe mobile presentation; validation contracts and server operation state remain unchanged. | Complete | 30 PHP tests / 503 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | Pending push |
 
 ## Preserved contracts
 
@@ -191,3 +192,39 @@ authorization.
 Implement Slice 5: harden mobile form focus, validation visibility and loading
 affordances without changing validation keys, named error bags or no-JavaScript
 submission behavior.
+
+## Slice 5 — mobile form affordances
+
+### Responsibility problem
+
+The shared shell already prevented narrow controls from triggering browser zoom,
+but focused fields did not declare a header-safe scroll margin and lazy dialog
+content had no visible busy affordance. Field-level errors and the provider
+validation summary also lacked a consistent hook for compact mobile treatment.
+
+### Boundary and design decision
+
+The shared form-error component exposes field-error hooks, while the provider's
+existing summary exposes a summary hook without changing its text, focus order,
+error bag or secret-safe behavior. The global mobile stylesheet owns control
+scroll margins, compact error sizing and a reduced-motion-aware busy indicator
+for the existing `aria-busy` modal-content lifecycle.
+
+No request validation, route, named error bag, persisted value, queued job or
+no-JavaScript form path changed. The busy indicator reflects the existing lazy
+content request and does not create a new retry or optimistic state.
+
+### Verification
+
+- Focused PHP regression: **30 tests / 503 assertions passed**.
+- Pint: passed.
+- Vite production build: passed.
+- `git diff --check`: passed.
+- Focused browser verification with PHP 8.5.10: **1 passed** for 16px mobile
+  controls, modal-safe scroll margins and lazy-content busy-state feedback.
+
+### Exact next task
+
+Run the final mobile-native verification slice: refresh the full focused PHP and
+asset checks, audit responsive regressions, update the handoff and record
+external-device acceptance as outstanding rather than claiming it locally.

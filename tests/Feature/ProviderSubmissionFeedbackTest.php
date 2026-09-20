@@ -94,6 +94,7 @@ class ProviderSubmissionFeedbackTest extends TestCase
 
         $this->withCookie(session()->getName(), session()->getId())->get(route('providers.create'))->assertOk()
             ->assertSee('Provider could not be saved.')
+            ->assertSee('data-form-error-summary', false)
             ->assertSee('The name field is required.');
     }
 

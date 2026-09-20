@@ -315,6 +315,34 @@ test('gallery publishing and script inspection use accessible dialogs', async ({
     await expect(page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true })).toContainText('echo gallery-fixture');
 });
 
+test('mobile forms keep focused fields reachable and lazy dialog content exposes busy state', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/provider-create', { waitUntil: 'networkidle' });
+
+    const token = page.locator('#token');
+    await expect(token).toHaveCSS('font-size', '16px');
+    await expect(token).toHaveCSS('scroll-margin-block-start', '64px');
+    await expect(page.locator('#provider-errors')).toHaveCount(0);
+
+    await page.goto('http://buildpusher.test/gallery', { waitUntil: 'networkidle' });
+    await page.route('**/gallery/1/script', async (route) => {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await route.fulfill({
+            contentType: 'text/html',
+            body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')),
+        });
+    });
+
+    const inspectTrigger = page.getByRole('link', { name: 'Inspect script', exact: true }).first();
+    await inspectTrigger.click();
+    const inspectDialog = page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true });
+    const content = inspectDialog.locator('[data-modal-content]');
+    await expect(content).toHaveAttribute('aria-busy', 'true');
+    await expect(content).toContainText('echo gallery-fixture');
+    await expect(content).not.toHaveAttribute('aria-busy', 'true');
+});
+
 for (const colorScheme of ['light', 'dark']) {
     for (const width of widths) {
         test(`${colorScheme} at ${width}px: built assets preserve layouts and navigation`, async ({ page }) => {

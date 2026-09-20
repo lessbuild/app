@@ -94,6 +94,18 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-mobile-filter-backdrop', $filter);
     }
 
+    public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
+    {
+        $errors = File::get(resource_path('views/components/forms/errors.blade.php'));
+        $providerErrors = File::get(resource_path('views/components/scenes/providers/validation-errors.blade.php'));
+        $appStyles = File::get(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('data-form-error', $errors);
+        $this->assertStringContainsString('data-form-error-summary', $providerErrors);
+        $this->assertStringContainsString('[data-modal-content][aria-busy="true"]', $appStyles);
+        $this->assertStringContainsString('scroll-margin-block: 6rem', $appStyles);
+    }
+
     public function test_long_workspace_surfaces_use_compact_local_navigation_and_border_only_notice_states(): void
     {
         foreach ([

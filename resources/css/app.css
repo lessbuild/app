@@ -69,6 +69,10 @@ a,
     [data-mobile-quick-navigation] {
         transition: none;
     }
+
+    [data-modal-content][aria-busy="true"]::after {
+        animation: none;
+    }
 }
 
 [x-cloak] {
@@ -142,6 +146,31 @@ a,
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
+}
+
+[data-modal-content][aria-busy="true"] {
+    position: relative;
+    min-height: 4rem;
+    opacity: 0.72;
+}
+
+[data-modal-content][aria-busy="true"]::after {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--border-secondary);
+    border-top-color: var(--ui-accent);
+    border-radius: 9999px;
+    animation: ui-feedback-spin 700ms linear infinite;
+    content: "";
+}
+
+@keyframes ui-feedback-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @media (max-width: 639px) {
@@ -225,6 +254,23 @@ a,
     #main-content select,
     #main-content textarea {
         font-size: 1rem;
+        scroll-margin-block: 6rem;
+    }
+
+    #main-content .ui-modal__body input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+    #main-content .ui-modal__body select,
+    #main-content .ui-modal__body textarea {
+        scroll-margin-block: 4rem;
+    }
+
+    [data-form-error] .ui-alert,
+    [data-form-error-summary] {
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    [data-form-error-summary] ul {
+        padding-left: 1rem;
     }
 }
 
