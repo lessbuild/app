@@ -970,6 +970,60 @@ Audit dashboard webhook activity, provisioning and recent-inventory links.
 Keep webhook/repository actions, provisioning retries/deletion and feedback
 moderation explicit; add another dialog only for a bounded read-only result.
 
+## Slice 20 — dashboard deployment-activity inspector
+
+Status: complete; committed and pushed as 1d09099.
+
+### Responsibility problem
+
+The dashboard’s webhook-delivery summary linked to deployment activity on the
+full Activity page, which discarded the dashboard context for a read-only
+investigation. The destination already used the deployment category, so the
+smallest safe improvement was a contextual presentation of that same route.
+
+### Boundaries and benefit
+
+- ActivityController and ActivityQuery remain the owner-scoped activity read
+  boundary; the dashboard requests the existing
+  fragment=workspace-activity with category=deployment.
+- The dashboard owns the dialog shell; the shared activity-history partial
+  owns metrics, feed, pagination and the full activity fallback.
+- Repository delivery details, webhook settings, build actions and moderation
+  remain on their explicit pages.
+
+No webhook-specific query or provider abstraction was introduced, because the
+link’s existing semantics are already the deployment activity feed.
+
+### Preserved behavior and safety
+
+- Deployment-category filtering, owner scoping, ordering, pagination, escaping
+  and activity export links remain unchanged.
+- The direct Activity URL remains the no-JavaScript fallback, while the
+  dashboard receives bookmarkable webhook-activity dialog state.
+- Opening the inspector is a GET-only read and does not acknowledge, retry,
+  delete or replay a webhook.
+- Empty dashboards do not render the webhook dialog shell.
+
+### Verification
+
+- Empty-dashboard and webhook-owner regression: **2 tests / 42 assertions
+  passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed in 1.3 minutes** using PHP 8.5.10;
+  verified category-scoped lazy content, canonical /home path stability,
+  deep-link opening, Escape and focus restoration.
+- Browser fixture export passed as part of the focused journey.
+
+### Commit and push
+
+Commit and push: 1d09099 Open deployment activity in a dialog.
+
+### Exact next task
+
+Audit provisioning and recent inventory links. Keep provisioning retries,
+deletion, provider operations, feedback moderation and setup flows explicit;
+only add a dialog where the destination is a bounded read-only result.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
