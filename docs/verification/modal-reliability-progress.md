@@ -1142,6 +1142,69 @@ Treat preference changes, read-state changes, deletion, delivery tests and
 incident response as explicit writes; use a dialog only for a short form or a
 bounded authorized read that keeps its full-page fallback.
 
+## Slice 23 — organization notification-preferences editor
+
+Status: complete; committed and pushed as 4c77e3f.
+
+### Responsibility problem
+
+The organization page rendered the complete notification-preferences write
+form inline inside the long security/settings page. That made a small,
+manager-only preference change require mobile scrolling through unrelated
+workspace sections. Viewers also received a Notifications anchor without an
+operation they could perform. Notification delivery, read-state changes and
+incident response are separate workflows and should remain explicit.
+
+### Boundaries and benefit
+
+- The organization page owns the current preference summary and trigger.
+- The reusable notification-preferences dialog owns the short category and
+  recovery-alert form presentation.
+- `UpdateOrganizationNotificationPreferencesRequest`, the existing action and
+  controller remain the authorization, validation and persistence boundaries.
+- The existing Observability destination configuration remains a separate
+  workflow; this dialog does not imply that destinations or alert rules are
+  being changed.
+
+This applies single responsibility at the presentation boundary and reuses
+the existing manager authorization and update operation. It does not add a
+generic settings action or move policy decisions into the view.
+
+### Preserved behavior and safety
+
+- The `categories` and `recoveries` field names, defaults, PATCH route and
+  existing validation messages remain unchanged.
+- Validation failures reopen the dialog with the existing old input and error
+  keys; opening or closing it performs no write and queues no delivery job.
+- Only the existing organization managers see the trigger and mounted form;
+  viewers retain no dead settings link.
+- The direct organization page and bookmarkable
+  `dialog=organization-notification-preferences-dialog` URL remain available
+  without JavaScript.
+- Notification read-state changes, deletion, delivery tests and incident
+  response remain explicit actions with their existing timing and safeguards.
+
+### Verification
+
+- Organization-management regression: **21 tests / 131 assertions passed**.
+- Browser fixture export: **1 test / 258 assertions passed**.
+- PHP syntax checks, Pint, Node syntax check and git diff --check: passed.
+- Focused browser journey: **1 test passed** using PHP 8.5.10; verified the
+  mobile same-page dialog, six category controls, recovery toggle, background
+  scroll lock, URL-backed deep link, Escape and focus restoration.
+
+### Commit and push
+
+Commit and push: 4c77e3f Open organization notification preferences in a dialog.
+
+### Exact next task
+
+Audit notification destination and read-state links. Keep “View and mark
+read”, mark unread, deletion, delivery tests and incident actions explicit
+because they mutate state. Only add a notification detail inspector if it
+provides a bounded authorized read that does not duplicate the existing inline
+message or bypass the destination resolver’s security checks.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
