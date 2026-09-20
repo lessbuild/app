@@ -432,6 +432,18 @@ for (const colorScheme of ['light', 'dark']) {
                     expect(quickActionUrl.searchParams.get('dialog')).toBe('create-application');
                     await expect(quickAction).toHaveCSS('min-height', '44px');
                 }
+                if (width <= 390 && ['projects', 'servers', 'providers', 'repositories', 'websites', 'recipes'].includes(screen)) {
+                    const pageHeader = page.locator('[data-ui-page-header]');
+                    const pageHeaderActions = page.locator('[data-ui-page-header-actions]');
+                    await expect(pageHeader).toBeVisible();
+                    await expect(pageHeaderActions).toHaveCSS('display', 'grid');
+                    expect(await pageHeaderActions.evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(2);
+                }
+                if (screen === 'projects' && width <= 390) {
+                    const projectCard = page.locator('[data-project-card]').first();
+                    await expect(projectCard).toBeVisible();
+                    await expect(projectCard).toHaveCSS('min-height', '0px');
+                }
                 if (screen === 'build') {
                     const evidence = page.locator('#deployment-evidence');
                     const content = evidence.locator('.ui-responsive-details__content');

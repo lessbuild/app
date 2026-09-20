@@ -28,7 +28,8 @@ Each verified slice is committed and pushed before the next slice starts.
 | Slice | Responsibility boundary | Status | Verification | Commit / push |
 | --- | --- | --- | --- | --- |
 | 1. Shared mobile shell | Shell owns safe-area, keyboard and mobile document-flow behavior; page views remain unchanged. | Complete | 50 PHP tests / 763 assertions; 3 bounded browser journeys; Pint and Vite passed. | `85ef0fe` pushed |
-| 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | Pending push |
+| 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | `57da0b8` pushed |
+| 3. Mobile page hierarchy | Shared page headers, dashboard actions and inventory cards own compact mobile spacing; data and routes remain page-owned. | Complete | 53 PHP tests / 785 assertions; 1 full 320px fixture case; Pint and Vite passed. | Pending push |
 
 ## Preserved contracts
 
@@ -112,10 +113,39 @@ remain unchanged.
 
 ### Commit and push
 
-Implementation commit: pending.
+Implementation commit and push: pending.
+
+## Slice 3 — mobile page hierarchy
+
+### Responsibility problem
+
+Shared page headers and dashboard action groups used desktop-sized spacing on
+small screens, while application cards retained a large minimum height. This
+made common inventory and dashboard journeys longer without adding information.
+
+### Boundary and design decision
+
+The shared UI component stylesheet now owns compact mobile page-header spacing,
+two-column action layout, two-line description clamping, dashboard hero and
+quick-action density, and compact inventory list rows. The application card
+view uses responsive utility classes so its mobile and desktop sizing is
+explicit in the view contract.
+
+No query, pagination, authorization, resource data or action placement was
+changed. Desktop layout remains unchanged at the existing breakpoint.
+
+### Verification
+
+- Focused PHP regression: **53 tests / 785 assertions passed**.
+- Pint: passed.
+- Vite production build: passed.
+- `git diff --check`: passed.
+- Full 320px built-asset fixture case: **1 passed**, including page-header
+  action layout, compact application card sizing, navigation, dialogs and
+  mobile overflow checks.
 
 ### Exact next task
 
-Implement Slice 3: improve mobile page hierarchy for dashboard and inventory
-surfaces, starting with compact result cards, sticky context actions and
-filter summaries while preserving pagination, URL state and authorization.
+Implement Slice 4: standardize mobile loading, empty, error and queued-operation
+feedback so long-running BuildPusher actions feel native without changing job
+semantics or optimistic-state guarantees.

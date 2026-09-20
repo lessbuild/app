@@ -68,7 +68,7 @@
 
     <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @forelse($projects as $project)
-            <a href="{{ route('projects.show', $project) }}" data-project-card class="ui-card ui-card--interactive group flex min-h-52 flex-col justify-between p-6">
+            <a href="{{ route('projects.show', $project) }}" data-project-card class="ui-card ui-card--interactive group flex min-h-0 flex-col justify-between p-4 sm:min-h-52 sm:p-6">
                 <div class="flex min-w-0 flex-wrap items-start justify-between gap-4">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">

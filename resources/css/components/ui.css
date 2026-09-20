@@ -482,7 +482,90 @@
         }
 
         .ui-page-header {
-            padding: 0.875rem 1rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem 0.875rem;
+            border-left-width: 2px;
+        }
+
+        .ui-page-header__layout {
+            gap: 0.75rem;
+        }
+
+        .ui-page-header__identity {
+            gap: 0.625rem;
+        }
+
+        .ui-page-header__icon {
+            width: 2.25rem;
+            height: 2.25rem;
+        }
+
+        .ui-page-header__title {
+            font-size: 1.375rem;
+        }
+
+        .ui-page-header__description {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .ui-page-header__actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+        }
+
+        .ui-page-header__actions > .button,
+        .ui-page-header__actions > form,
+        .ui-page-header__actions > form > .button {
+            width: 100%;
+            min-width: 0;
+        }
+
+        [data-dashboard-hero] {
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+        }
+
+        [data-dashboard-hero] h1 {
+            font-size: 1.5rem;
+        }
+
+        [data-dashboard-hero] > nav {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            width: 100%;
+        }
+
+        [data-dashboard-hero] > nav > .button {
+            width: 100%;
+            min-width: 0;
+        }
+
+        [data-dashboard-quick-actions] {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+        }
+
+        [data-dashboard-quick-actions] .ui-dashboard-quick-action {
+            min-height: 3.25rem;
+            padding: 0.75rem;
+        }
+
+        [data-project-card] {
+            min-width: 0;
+        }
+
+        [data-project-card] h2 {
+            font-size: 1rem;
+        }
+
+        .ui-inventory-list > article,
+        .ui-inventory-list > a {
+            padding: 0.875rem 0.75rem;
         }
 
         .ui-insight-grid {
