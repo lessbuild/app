@@ -52,7 +52,7 @@ for (const viewport of viewports) {
         await expect(page.locator('#main-content')).toHaveCount(1);
 
         await page.keyboard.press('Control+k');
-        const palette = page.getByRole('dialog', { name: 'Command palette' });
+        const palette = page.getByRole('dialog', { name: 'Search workspace' });
         await expect(palette).toBeVisible();
         await expect(page.locator('#command-palette-query')).toBeFocused();
         await page.keyboard.press('ArrowDown');

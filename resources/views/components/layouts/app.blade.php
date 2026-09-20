@@ -46,10 +46,132 @@
     <div
         data-mobile-shell
         class="flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
-        x-data="{ menu: false, palette: false, paletteQuery: '', paletteIndex: -1, paletteLinks() { return [...(this.$refs.paletteResults?.querySelectorAll('[data-palette-item]') ?? [])].filter((element) => element.offsetParent !== null); }, movePalette(delta) { const links = this.paletteLinks(); if (!links.length) { this.paletteIndex = -1; this.$refs.paletteInput.focus(); return; } if (this.paletteIndex < 0) { this.paletteIndex = delta > 0 ? 0 : links.length - 1; } else { this.paletteIndex = (this.paletteIndex + delta + links.length) % links.length; } links[this.paletteIndex]?.focus(); }, movePaletteTo(index) { const links = this.paletteLinks(); if (!links.length) { this.paletteIndex = -1; this.$refs.paletteInput.focus(); return; } this.paletteIndex = Math.min(Math.max(index, 0), links.length - 1); links[this.paletteIndex]?.focus(); }, resetPaletteSelection() { this.paletteIndex = -1; }, restorePaletteFocus() { this.$nextTick(() => { const trigger = [this.$refs.paletteToggle, this.$refs.mobilePaletteToggle, this.$refs.mobileQuickPaletteToggle].find((element) => element && element.offsetParent !== null); trigger?.focus(); }) } }"
-        @keydown.escape.window="if (palette) { palette = false; restorePaletteFocus() } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
-        @keydown.window.prevent.cmd.k="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"
-        @keydown.window.prevent.ctrl.k="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"
+        x-data="{
+            menu: false,
+            palette: false,
+            paletteQuery: '',
+            paletteIndex: -1,
+            lastPaletteTrigger: null,
+            workspaceSearchTimer: null,
+            workspaceSearchRequest: null,
+            workspaceSearchSequence: 0,
+            workspaceSearchResults: '',
+            workspaceSearchLoading: false,
+            workspaceSearchError: false,
+            paletteLinks() {
+                return [...(this.$refs.paletteResults?.querySelectorAll('[data-palette-item]') ?? [])]
+                    .filter((element) => element.offsetParent !== null);
+            },
+            movePalette(delta) {
+                const links = this.paletteLinks();
+                if (!links.length) {
+                    this.paletteIndex = -1;
+                    this.$refs.paletteInput.focus();
+                    return;
+                }
+                if (this.paletteIndex < 0) {
+                    this.paletteIndex = delta > 0 ? 0 : links.length - 1;
+                } else {
+                    this.paletteIndex = (this.paletteIndex + delta + links.length) % links.length;
+                }
+                links[this.paletteIndex]?.focus();
+            },
+            movePaletteTo(index) {
+                const links = this.paletteLinks();
+                if (!links.length) {
+                    this.paletteIndex = -1;
+                    this.$refs.paletteInput.focus();
+                    return;
+                }
+                this.paletteIndex = Math.min(Math.max(index, 0), links.length - 1);
+                links[this.paletteIndex]?.focus();
+            },
+            resetPaletteSelection() {
+                this.paletteIndex = -1;
+            },
+            openPalette(trigger = null) {
+                this.palette = true;
+                this.lastPaletteTrigger = trigger;
+                this.paletteQuery = '';
+                this.paletteIndex = -1;
+                this.workspaceSearchResults = '';
+                this.workspaceSearchError = false;
+                this.workspaceSearchLoading = false;
+                this.workspaceSearchSequence += 1;
+                this.workspaceSearchRequest?.abort();
+                this.$nextTick(() => this.$refs.paletteInput.focus());
+            },
+            closePalette() {
+                this.palette = false;
+                this.workspaceSearchRequest?.abort();
+                this.workspaceSearchSequence += 1;
+                this.restorePaletteFocus();
+            },
+            queueWorkspaceSearch() {
+                window.clearTimeout(this.workspaceSearchTimer);
+                this.workspaceSearchRequest?.abort();
+                this.workspaceSearchSequence += 1;
+                const sequence = this.workspaceSearchSequence;
+                const query = this.paletteQuery.trim();
+                this.workspaceSearchResults = '';
+                this.workspaceSearchError = false;
+
+                if (query === '') {
+                    this.workspaceSearchLoading = false;
+                    return;
+                }
+
+                this.workspaceSearchLoading = true;
+                this.workspaceSearchTimer = window.setTimeout(async () => {
+                    const controller = new AbortController();
+                    this.workspaceSearchRequest = controller;
+                    const url = new URL('{{ route('search.index') }}', window.location.href);
+                    url.searchParams.set('q', query);
+                    url.searchParams.set('fragment', 'workspace');
+
+                    try {
+                        const response = await fetch(url, {
+                            signal: controller.signal,
+                            headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`Workspace search failed with ${response.status}`);
+                        }
+
+                        const body = await response.text();
+                        if (sequence !== this.workspaceSearchSequence) {
+                            return;
+                        }
+
+                        this.workspaceSearchResults = body;
+                    } catch (error) {
+                        if (error.name !== 'AbortError' && sequence === this.workspaceSearchSequence) {
+                            this.workspaceSearchError = true;
+                        }
+                    } finally {
+                        if (sequence === this.workspaceSearchSequence) {
+                            this.workspaceSearchLoading = false;
+                            this.workspaceSearchRequest = null;
+                        }
+                    }
+                }, 180);
+            },
+            restorePaletteFocus() {
+                this.$nextTick(() => {
+                    const remembered = this.lastPaletteTrigger;
+                    const trigger = remembered?.isConnected && remembered.offsetParent !== null
+                        ? remembered
+                        : [this.$refs.paletteToggle, this.$refs.mobilePaletteToggle, this.$refs.mobileQuickPaletteToggle]
+                            .find((element) => element && element.offsetParent !== null);
+                    this.lastPaletteTrigger = null;
+                    trigger?.focus();
+                });
+            }
+        }"
+        @keydown.escape.window="if (palette) { closePalette() } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
+        @keydown.window.prevent.cmd.k="openPalette()"
+        @keydown.window.prevent.ctrl.k="openPalette()"
     >
 
         <!--
@@ -77,13 +199,13 @@
             <div class="sticky top-0 z-30 bg-gray-800 text-gray-100 border-b border-primary shadow-xs" data-mobile-header>
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-gray-100">{{ config('app.name') }}</a>
-                    <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
+                    <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
                     <button type="button" x-ref="navigationToggle" class="button secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
                 <div class="hidden h-14 w-full items-center justify-between border-b border-primary px-6 lg:flex">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:block">
-                            <button type="button" x-ref="paletteToggle" class="button secondary" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">⌘K</kbd></button>
+                            <button type="button" x-ref="paletteToggle" class="button secondary" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">⌘K</kbd></button>
                         </div>
                     </div>
                     <div class="relative flex items-center">
@@ -108,7 +230,7 @@
         <nav data-mobile-quick-navigation class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
             <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('dashboard'), 'text-secondary' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
             <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => $applicationCreateDialogOpen, 'text-secondary' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
-            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
+            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
             <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('notifications.*'), 'text-secondary' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
 
@@ -122,12 +244,12 @@
             data-online-message="{{ __('Connection restored. Refresh if the current page is stale.') }}"
         ></div>
 
-        <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" @click.self="palette = false; restorePaletteFocus()">
+        <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" data-workspace-search-dialog @click.self="closePalette()">
             <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
-                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Command palette') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close command palette') }}" @click="palette = false; restorePaletteFocus()">×</x-ui.button></div>
+                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Search workspace') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</x-ui.button></div>
                 <form method="GET" action="{{ route('search.index') }}" class="border-b border-primary p-3">
-                    <label for="command-palette-query" class="sr-only">{{ __('Search commands and resources') }}</label>
-                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection()" name="q" type="search" maxlength="100" autocomplete="off" class="input secondary w-full rounded-xl text-base" placeholder="{{ __('Type a command or resource name…') }}">
+                    <label for="command-palette-query" class="sr-only">{{ __('Search commands and workspace resources') }}</label>
+                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="input secondary w-full rounded-xl text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
                 </form>
                 <nav x-ref="paletteResults" class="max-h-[55vh] overflow-y-auto p-2" aria-label="{{ __('Quick actions') }}" role="listbox">
                     @foreach ([
@@ -158,7 +280,13 @@
                             <span>{{ $label }}</span><span aria-hidden="true" class="text-secondary">↵</span>
                         </a>
                     @endforeach
-                    <p x-show="paletteQuery !== '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-secondary">
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-4 py-3 text-sm text-secondary">{{ __('Searching workspace…') }}</div>
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-4 py-3 text-sm text-secondary">
+                        <p>{{ __('Workspace search could not be loaded.') }}</p>
+                        <button type="button" class="font-semibold text-ternary underline" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
+                    </div>
+                    <div x-show="workspaceSearchResults !== ''" x-html="workspaceSearchResults"></div>
+                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-secondary">
                         {{ __('No matching quick actions. Press Enter to search all workspace resources.') }}
                     </p>
                     <div class="border-t border-primary px-4 py-3 text-xs text-secondary">

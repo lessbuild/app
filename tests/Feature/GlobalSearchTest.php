@@ -81,6 +81,26 @@ class GlobalSearchTest extends TestCase
             ->assertSee('Enter a resource name, URL, IP address, revision, or description to begin.');
     }
 
+    public function test_workspace_fragment_reuses_scoped_search_results_without_rendering_a_full_page(): void
+    {
+        $owner = User::factory()->create();
+        $recipe = $owner->recipes()->create([
+            'name' => 'Dialog recipe',
+            'description' => 'Workspace search fragment fixture',
+            'script' => 'echo private',
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('search.index', ['q' => 'Dialog', 'fragment' => 'workspace']))
+            ->assertSuccessful()
+            ->assertViewIs('search._workspace-results')
+            ->assertSee('Workspace search results')
+            ->assertSee($recipe->name)
+            ->assertSee(route('recipes.show', $recipe))
+            ->assertDontSee('<html', false)
+            ->assertDontSee('echo private', false);
+    }
+
     public function test_each_group_is_limited_and_links_to_the_filtered_inventory_for_more_results(): void
     {
         $owner = User::factory()->create();
@@ -207,7 +227,7 @@ class GlobalSearchTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
             ->assertSee(route('search.index'))
-            ->assertSee('Search account');
+            ->assertSee('Search or jump to…');
     }
 
     /** @return array<string, mixed> */

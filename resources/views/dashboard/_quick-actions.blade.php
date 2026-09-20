@@ -5,7 +5,12 @@
             <h2 id="dashboard-quick-actions-title" class="mt-1 text-xl font-semibold text-primary">{{ __('Quick actions') }}</h2>
             <p class="mt-1 text-sm leading-6 text-secondary">{{ __('Jump straight to the work that moves this workspace forward.') }}</p>
         </div>
-        <a href="{{ route('search.index') }}" class="text-sm font-semibold text-ternary underline">{{ __('Search workspace') }}</a>
+        <a
+            href="{{ route('search.index') }}"
+            data-workspace-search-trigger
+            class="text-sm font-semibold text-ternary underline"
+            @click.prevent="openPalette($event.currentTarget)"
+        >{{ __('Search workspace') }}</a>
     </div>
 
     <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">

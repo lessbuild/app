@@ -23,9 +23,15 @@ class SearchController extends Controller
     {
         $query = str($request->string('q')->toString())->trim()->limit(100, '')->toString();
 
+        $groups = $query === '' ? [] : $this->groups($request, $query);
+
+        if ($request->string('fragment')->toString() === 'workspace') {
+            return view('search._workspace-results', compact('query', 'groups'));
+        }
+
         return view('search.index', [
             'query' => $query,
-            'groups' => $query === '' ? [] : $this->groups($request, $query),
+            'groups' => $groups,
         ]);
     }
 

@@ -265,14 +265,50 @@ test('mobile New app stays on the current page while opening the application dia
     expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
 
     await page.keyboard.press('Control+k');
-    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
     await page.locator('#command-palette-result-1').click();
-    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeHidden();
     await expect(dialog).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-application');
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
+});
+
+test('dashboard workspace search opens in place and renders debounced results', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.route('**/search*', async (route) => {
+        const url = new URL(route.request().url());
+
+        if (url.pathname === '/search' && url.searchParams.get('fragment') === 'workspace') {
+            return route.fulfill({
+                contentType: 'text/html',
+                body: '<a href="/projects/1" data-palette-item role="option" class="block p-3">Demo result</a>',
+            });
+        }
+
+        return route.fallback();
+    });
+    await page.goto('http://buildpusher.test/dashboard', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Search workspace', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+
+    const dialog = page.getByRole('dialog', { name: 'Search workspace', exact: true });
+    await expect(dialog).toBeVisible();
+    await expect(page.locator('#command-palette-query')).toBeFocused();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+
+    await page.locator('#command-palette-query').fill('demo');
+    await expect(dialog.getByRole('option', { name: 'Demo result', exact: true })).toBeVisible();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
 });
 
 test('provider, repository, and recipe edits open server-rendered dialogs', async ({ page }) => {
@@ -699,7 +735,7 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(toggle).toBeHidden();
                     }
                     await page.keyboard.press('Control+k');
-                    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+                    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
                     await expect(page.locator('#command-palette-query')).toBeFocused();
                     await page.keyboard.press('Escape');
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');

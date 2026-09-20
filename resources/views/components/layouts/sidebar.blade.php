@@ -25,19 +25,15 @@
         </button>
     </div>
 
-    <form method="GET" action="{{ route('search.index') }}" class="flex gap-2 px-3 py-4">
-        <label for="global-search" class="sr-only">{{ __('Search account') }}</label>
-        <input
-            id="global-search"
-            name="q"
-            type="search"
-            maxlength="100"
-            value="{{ request()->routeIs('search.index') ? request()->string('q') : '' }}"
-            placeholder="{{ __('Search or jump to…') }}"
-            class="input secondary min-w-0 flex-1 rounded-lg"
-        >
-        <x-ui.button type="submit" variant="primary">{{ __('Go') }}</x-ui.button>
-    </form>
+    <a
+        href="{{ route('search.index') }}"
+        data-workspace-search-trigger
+        class="mx-3 my-4 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-primary bg-secondary px-3 text-sm text-secondary hover:text-primary"
+        @click.prevent="openPalette($event.currentTarget)"
+    >
+        <span>{{ __('Search or jump to…') }}</span>
+        <kbd class="rounded border border-primary px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+    </a>
 
     <div class="space-y-5 px-3 pb-4">
         @foreach ($navigation['groups'] ?? [] as $group)

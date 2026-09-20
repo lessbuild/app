@@ -14,10 +14,14 @@
 >
     <div class="flex shrink-0 items-center gap-3 border-b border-primary bg-primary px-4 py-3 text-primary shadow-xs">
         <a href="{{ route('dashboard') }}" class="max-w-[35%] truncate text-sm font-bold text-primary">{{ config('app.name') }}</a>
-        <form method="GET" action="{{ route('search.index') }}" class="min-w-0 flex-1">
-            <label for="mobile-workspace-search" class="sr-only">{{ __('Search workspace') }}</label>
-            <input id="mobile-workspace-search" type="search" name="q" maxlength="100" placeholder="{{ __('Search workspace') }}" class="input secondary h-11 w-full rounded-lg text-sm">
-        </form>
+        <a
+            href="{{ route('search.index') }}"
+            data-workspace-search-trigger
+            class="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-primary bg-secondary px-3 text-sm text-secondary"
+            @click.prevent="openPalette($event.currentTarget)"
+        >
+            {{ __('Search workspace') }}
+        </a>
         <button type="button" x-ref="closeNavigation" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl text-secondary hover:bg-secondary hover:text-primary" aria-label="{{ __('Close navigation') }}" @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())">×</button>
     </div>
 
