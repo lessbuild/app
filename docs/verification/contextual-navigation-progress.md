@@ -469,3 +469,29 @@ Status: complete; committed and pushed as `aa63ee3`.
 
 Keep the remaining live, cloud/provider and real-device acceptance work
 separate from this locally verified UI slice.
+
+## Final local verification — 2026-09-20
+
+The implementation tip `127732a` was re-audited after the detail-page work and
+the complete local verification gate was rerun. This verification changes no
+application behavior; it records current evidence for the already-pushed
+modal and navigation slices.
+
+### Results
+
+- Strict PHP 8.5.10 suite: **1,657 tests / 13,874 assertions** passed in
+  **645.54 seconds**, with no failures, warnings, risky tests or deprecations.
+- Full built-asset browser matrix: **33 tests passed in 15.7 minutes**.
+  This includes contextual creation/editing, application configuration,
+  website log retention, modal scroll locking, focus/Escape behavior,
+  responsive light/dark layouts and no-JavaScript provider submission.
+- Required-PHP Pint, Vite production build, JavaScript syntax check, Blade view
+  cache, route cache and `git diff --check`: passed.
+- The working tree was clean and `origin/main` matched `127732a` before this
+  documentation update.
+
+### Scope boundary
+
+This is isolated local evidence. It does not claim production deployment,
+live cloud/provider acceptance, physical-device testing or the separate
+acceptance-drill checkout. Those remain explicitly external follow-up work.

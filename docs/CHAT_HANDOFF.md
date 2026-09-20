@@ -1,5 +1,39 @@
 # BuildPusher chat handoff
 
+# Latest contextual-navigation verification — 2026-09-20
+
+The contextual modal/navigation implementation is complete on isolated `main`.
+The implementation tip before this documentation update was `127732a`, with
+all functional slices already committed and pushed. The latest audit confirms
+that bounded create/edit and contextual settings workflows use shared
+URL-backed dialogs while long histories, imports, restores, destructive or
+irreversible operations, credentials/security flows, and immediate remote
+operations remain deliberate full-page or direct-action boundaries.
+
+The website detail page no longer renders `SETUP INFORMATION`; it uses the
+shared provisioning timeline treatment. Application configuration-as-code,
+application resources and preview settings, environment controls, repository
+webhook settings and website log retention are available in their owning
+context through reusable dialogs. Existing full-page routes remain as
+server-rendered and no-JavaScript fallbacks.
+
+Current isolated verification:
+
+- Strict PHP 8.5.10 suite: **1,657 tests / 13,874 assertions** passed in
+  **645.54 seconds**, with no failures, warnings, risky tests or deprecations.
+- Complete built-asset browser matrix: **33 tests passed in 15.7 minutes**,
+  covering modal scroll locking, focus/Escape behavior, contextual dialogs,
+  configuration-as-code, website retention, responsive layouts and
+  no-JavaScript provider submission.
+- Required-PHP Pint, Vite production build, JavaScript syntax, Blade view
+  cache, route cache and `git diff --check`: passed.
+- The isolated worktree was clean and `origin/main` matched `127732a` before
+  this documentation-only handoff update.
+
+This remains isolated local evidence. It does not claim production deployment,
+live cloud/provider acceptance, physical-device testing or acceptance-drill
+completion.
+
 # Latest repository-dialog slice — 2026-09-19
 
 The repository creation follow-up is complete and pushed on `main` at
