@@ -19,6 +19,10 @@
             'category' => 'account',
             'fragment' => 'account-audit',
         ]);
+        $profileDialogId = 'account-profile-dialog';
+        $profileDialogOpen = request()->query('dialog') === $profileDialogId
+            || $errors->getBag('profile')->any();
+        $profileDialogUrl = route('account.index', ['dialog' => $profileDialogId]);
         $securityCheckCount = collect([
             auth()->user()->hasVerifiedEmail(),
             auth()->user()->hasLocalPassword(),
@@ -56,7 +60,13 @@
     </x-ui.insights>
 
     <x-ui.local-nav :label="__('Account sections')">
-        <a href="#account-profile" class="ui-local-nav__link">{{ __('Profile') }}</a>
+        <a
+            href="{{ $profileDialogUrl }}"
+            class="ui-local-nav__link"
+            data-modal-trigger="{{ $profileDialogId }}"
+            aria-controls="{{ $profileDialogId }}"
+            aria-expanded="{{ $profileDialogOpen ? 'true' : 'false' }}"
+        >{{ __('Profile') }}</a>
         <a href="#password" class="ui-local-nav__link">{{ __('Password') }}</a>
         <a href="#account-two-factor" class="ui-local-nav__link">{{ __('Two-factor') }}</a>
         <a href="#account-security-activity" class="ui-local-nav__link">{{ __('Security activity') }}</a>
@@ -84,71 +94,29 @@
             </div>
         @endif
 
-        <form id="account-profile" method="POST" action="{{ route('account.profile.update') }}" class="scroll-mt-24">
-            @csrf
-            @method('PATCH')
-
+        <section id="account-profile" class="scroll-mt-24">
             <x-forms.section
                 :title="__('Profile information')"
-                :description="__('Update the name and email address associated with your account.')"
+                :description="__('Keep your account identity and contact details current.')"
             >
-                <div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
-                    @if (session('profile_status'))
-                        <div class="ui-alert ui-alert--success p-3" role="status">
-                            {{ session('profile_status') }}
-                        </div>
-                    @endif
-
-                    <label class="block">
-                        <span class="text-secondary text-sm pb-1 block">{{ __('Name') }}</span>
-                        <input
-                            class="input secondary rounded-lg"
-                            name="name"
-                            type="text"
-                            autocomplete="name"
-                            value="{{ old('name', auth()->user()->name) }}"
-                            required
-                        >
-                    </label>
-                    <x-forms.errors name="name" bag="profile" />
-
-                    <label class="block">
-                        <span class="text-secondary text-sm pb-1 block">{{ __('Email') }}</span>
-                        <input
-                            class="input secondary rounded-lg"
-                            name="email"
-                            type="email"
-                            autocomplete="email"
-                            value="{{ old('email', auth()->user()->email) }}"
-                            required
-                        >
-                    </label>
-                    <x-forms.errors name="email" bag="profile" />
-
-                    @if (auth()->user()->hasLocalPassword())
-                        <label class="block">
-                            <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
-                            <input
-                                class="input secondary rounded-lg"
-                                name="current_password"
-                                type="password"
-                                autocomplete="current-password"
-                            >
-                        </label>
-                        <p class="text-sm text-secondary">
-                            {{ __('Required only when changing your email address. Other browser sessions will be logged out after the change.') }}
+                <div class="flex flex-wrap items-start justify-between gap-4 bg-primary px-4 py-5 sm:p-6">
+                    <div>
+                        <p class="text-lg font-semibold text-primary">{{ auth()->user()->name }}</p>
+                        <p class="mt-1 text-sm text-secondary">{{ auth()->user()->email }}</p>
+                        <p class="mt-3 text-xs text-secondary">
+                            {{ auth()->user()->hasVerifiedEmail() ? __('Email verified') : __('Email verification required before managing infrastructure.') }}
                         </p>
-                        <x-forms.errors name="current_password" bag="profile" />
-                    @endif
-                </div>
-
-                <x-slot:footer>
-                    <div class="px-4 py-3 bg-tertiary text-right sm:px-6">
-                        <x-ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-ui.button>
                     </div>
-                </x-slot:footer>
+                    <x-ui.button
+                        href="{{ $profileDialogUrl }}"
+                        data-modal-trigger="{{ $profileDialogId }}"
+                        aria-controls="{{ $profileDialogId }}"
+                        aria-expanded="{{ $profileDialogOpen ? 'true' : 'false' }}"
+                        variant="secondary"
+                    >{{ __('Edit profile') }}</x-ui.button>
+                </div>
             </x-forms.section>
-        </form>
+        </section>
 
         <form id="password" method="POST" action="{{ route('account.password.update') }}">
             @csrf
@@ -635,6 +603,8 @@
             <p class="p-5 text-sm text-secondary">{{ __('Loading sign-in history…') }}</p>
         </div>
     </x-dialogs.modal>
+
+    <x-scenes.users.profile-dialog :open="$profileDialogOpen" />
 
     <x-dialogs.modal
         id="{{ $accountAuditDialogId }}"

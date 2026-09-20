@@ -46,6 +46,8 @@ class AccountManagementTest extends TestCase
             ->assertSuccessful()
             ->assertSee($user->name)
             ->assertSee($user->email)
+            ->assertSee('data-modal-trigger="account-profile-dialog"', false)
+            ->assertSee('Edit profile')
             ->assertSee('Save profile')
             ->assertSee('Update password')
             ->assertSee(route('account.sessions.revoke'))
@@ -68,8 +70,14 @@ class AccountManagementTest extends TestCase
         }
 
         $this->assertStringContainsString('Save profile', $content);
+        $this->assertStringContainsString('Edit profile', $content);
         $this->assertStringContainsString('Update password', $content);
         $this->assertStringContainsString('ui-card overflow-hidden lg:block', $content);
+
+        $this->actingAs($user)->get(route('account.index', ['dialog' => 'account-profile-dialog']))
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('name="email"', false);
     }
 
     public function test_user_can_update_their_profile(): void
@@ -127,6 +135,25 @@ class AccountManagementTest extends TestCase
         $this->assertNotSame('replacement@example.com', $user->email);
         $this->assertTrue($user->hasVerifiedEmail());
         Notification::assertNotSentTo($user, VerifyEmail::class);
+    }
+
+    public function test_profile_validation_reopens_the_profile_dialog_with_its_named_error_bag(): void
+    {
+        $user = User::factory()->create();
+        $dialogUrl = route('account.index', ['dialog' => 'account-profile-dialog']);
+
+        $response = $this->actingAs($user)
+            ->from($dialogUrl)
+            ->patch(route('account.profile.update'), [
+                'name' => '',
+                'email' => 'not-an-email',
+            ])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors(['name', 'email'], errorBag: 'profile');
+
+        $this->get($dialogUrl)
+            ->assertSuccessful()
+            ->assertSee('data-modal-initial-open="true"', false);
     }
 
     public function test_social_only_user_can_change_email_without_a_local_password(): void

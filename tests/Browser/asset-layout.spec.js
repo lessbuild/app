@@ -173,6 +173,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'build-website-health-checks-dialog'
                             : screen === 'account' && dialog === 'account-sign-in-history-dialog'
                                 ? 'account-sign-in-history-dialog'
+                            : screen === 'account' && dialog === 'account-profile-dialog'
+                                ? 'account-profile-dialog'
                             : screen === 'account' && dialog === 'account-audit-dialog'
                                 ? 'account-audit-dialog'
                             : screen === 'dashboard' && dialog === 'dashboard-activity'
@@ -574,6 +576,31 @@ test('account sign-in history opens as a contextual read-only dialog', async ({ 
 
     await page.goto('http://buildpusher.test/account?dialog=account-sign-in-history-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Sign-in history', exact: true })).toBeVisible();
+});
+
+test('account profile opens as a page-local editor dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/account', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Edit profile', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Profile information', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('input[name="name"]')).toBeVisible();
+    await expect(dialog.locator('input[name="email"]')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('account-profile-dialog');
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/account?dialog=account-profile-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Profile information', exact: true })).toBeVisible();
 });
 
 test('environment evidence health history opens without leaving the investigation context', async ({ page }) => {

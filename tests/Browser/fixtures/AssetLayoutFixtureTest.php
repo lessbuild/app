@@ -116,8 +116,11 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/account.html', $this->renderPage(route('account.index'))->assertOk()
+            ->assertSee('data-modal-trigger="account-profile-dialog"', false)
             ->assertSee('data-modal-trigger="account-sign-in-history-dialog"', false)
             ->assertSee('data-modal-trigger="account-audit-dialog"', false)->getContent());
+        File::put($directory.'/account-profile-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-profile-dialog']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/account-sign-in-history-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-sign-in-history-dialog']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/account-audit-dialog.html', $this->renderPage(route('account.index', ['dialog' => 'account-audit-dialog']))
