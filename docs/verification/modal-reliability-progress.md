@@ -72,5 +72,63 @@ Commit and push: `3e69b7b Fix modal history and filter fallbacks`.
 
 ### Exact next task
 
-Commit and push Slice 1, then implement the dashboard/navigation workspace
-search dialog using the existing `SearchController` query semantics.
+Implement the first bounded read-only inspector from the route audit: provider
+connection history in context, while preserving the full history page and export.
+
+## Slice 2 — shared workspace search
+
+Status: complete; committed and pushed as `af2e8eb`.
+
+### Responsibility problem
+
+The dashboard Search workspace link navigated to a long full-page search result,
+while the sidebar, mobile navigation and command palette each exposed separate
+search entry points. This made a common navigation task especially costly on
+small screens and duplicated the user's mental model.
+
+### Boundaries and benefit
+
+- `SearchController` remains the single workspace-scoped read boundary and now
+  serves a body-only `fragment=workspace` response using the same query and
+  result groups as the canonical page.
+- The authenticated layout owns one shared search/navigation dialog and its
+  debounced, abortable client interaction.
+- `_workspace-results.blade.php` owns only compact result presentation.
+- Existing resource routes and full-page `/search` remain the no-JavaScript and
+  deep-link boundaries.
+
+This keeps HTTP coordination, scoped reads and presentation separate without
+adding a generic repository or a second search implementation.
+
+### Preserved behavior and safety
+
+- Organization scoping, literal LIKE escaping, query length, result limits,
+  ordering, group labels and View more URLs remain unchanged.
+- Search results never expose provider tokens, scripts, environment values or
+  other secret metadata.
+- Dashboard, desktop sidebar, mobile navigation, mobile quick action and
+  Ctrl/Cmd+K all use the same shell; their full-page `/search` links remain
+  available when JavaScript is disabled.
+- Resource selection still navigates intentionally; opening search itself does
+  not change the background URL.
+- Superseded queries are aborted and stale response bodies are ignored.
+- Existing modal creation actions and keyboard focus flows remain intact.
+
+### Verification
+
+- Global search regression: **10 tests / 89 assertions passed**.
+- Local UI asset regression: passed in the focused run.
+- Blade view cache: passed.
+- Pint: passed.
+- Focused browser matrix: **3 tests passed in 1.6 minutes**, including the
+  dashboard dialog, debounced result fragment and existing modal flows.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: `af2e8eb Open workspace search in a shared dialog`.
+
+### Exact next task
+
+Implement the first bounded read-only inspector from the route audit: provider
+connection history in context, while preserving the full history page and export.
