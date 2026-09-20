@@ -6,7 +6,7 @@ checkout, committed, pushed and then considered closed before the next slice.
 
 ## Slice 1 — website provisioning timeline
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `0af32ac`.
 
 ### Responsibility problem
 
@@ -57,7 +57,7 @@ Commit and push: `0af32ac Replace website setup with provisioning timeline`.
 
 ## Slice 2 — shared modal-loader reliability
 
-Status: complete locally; commit and push pending.
+Status: complete; committed and pushed as `14dcfd4`.
 
 ### Responsibility problem
 
@@ -94,5 +94,69 @@ window.
 
 ### Exact next task
 
-Commit and push this slice, then convert application configuration authoring,
-review and receipt views into an application-context modal.
+Convert application configuration authoring, review and receipt views into an
+application-context modal.
+
+## Slice 3 — application configuration in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+The application detail page sent users to a separate configuration page for
+authoring, reviewing and recovering configuration. That broke the application
+context and made the most important setup workflow unnecessarily long on
+mobile. The existing configuration controller also duplicated review-state
+assembly between the canonical page and the new contextual surface.
+
+### Boundary
+
+- `ApplicationConfigurationController::dialog()` is an authorized,
+  body-only fragment boundary. It reuses `authoringPageData()` and the shared
+  `reviewState()` read path instead of duplicating configuration services.
+- `configuration-dialog.blade.php` presents authoring, review and receipt
+  states in the reusable modal shell hosted by the application page.
+- The existing Form Request, review service, planner, reconciler, cancellation
+  and retry services remain the business and safety boundaries.
+- Modal submissions carry only the explicit `dialog` context and redirect back
+  to the application with the review identity; ordinary full-page URLs retain
+  their existing redirects.
+
+### Preserved behavior and safety
+
+- Workspace management authorization remains enforced before fragment access or
+  validation; non-managers receive the existing denial.
+- YAML and JSON validation still never flashes submitted commands, bindings or
+  secrets. Modal validation failures return to the application context and the
+  fragment renders the error without old input.
+- Review identity, project ownership, receipt visibility, secret-safe plans,
+  apply/retry/cancel guards, no-op behavior, leases and transaction semantics
+  remain in the existing services.
+- Canonical review pages keep their existing 422 stale-review response. The
+  contextual fragment renders the same safe stale-review recovery message as a
+  normal in-dialog outcome.
+- The body-only endpoint does not expose a full HTML document or secret values.
+
+### Verification
+
+- Configuration/API/OpenAPI/planner/document/resource/concurrency and related
+  environment regressions: 209 tests / 1,974 assertions passed before the
+  final modal-only request assertions.
+- Configuration web coverage after the final changes: 5 tests / 71 assertions
+  passed, including authorization-before-validation, modal validation
+  redirect, no old input, review submission, stale-review recovery and
+  secret-safe rendering.
+- Project creation, environment runtime and shared tenancy coverage passed in
+  the affected regression run.
+- Asset fixture export: 1 test / 144 assertions passed.
+- Browser coverage: configuration application-context modal, lazy-loader
+  failure/retry, and modal scroll-lock flows passed (3 tests).
+- Blade compilation, Pint and `git diff --check` passed.
+
+### Exact next task
+
+Commit and push this slice, then inventory the remaining page-level workflows
+that genuinely benefit from contextual dialogs. Prioritize safety-preserving
+detail-page actions and keep imports, restores, destructive operations and
+protocol callbacks as explicit pages unless a tested modal boundary preserves
+their execution ordering.

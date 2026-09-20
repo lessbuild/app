@@ -32,21 +32,27 @@ async function serveFixtures(page) {
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         const serverPage = /^\/servers\/\d+$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
+        const projectPage = /^\/projects\/\d+$/.test(pathname);
+        const configurationDialogPage = /^\/projects\/\d+\/configuration\/dialog$/.test(pathname);
         if (route.request().method() !== 'GET') return route.fulfill({ status: 204, body: '' });
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || repositoryPage || serverPage || websitePage) {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || galleryPage || providerPage || repositoryPage || serverPage || websitePage || projectPage || configurationDialogPage) {
             const screen = galleryPage
                 ? 'gallery-detail'
                 : providerPage
                     ? 'provider-show'
                         : repositoryPage
                             ? 'repository-show'
-                            : serverPage
-                                ? 'server-show'
+                                : serverPage
+                                    ? 'server-show'
                             : websitePage
                             ? 'website-show'
+                        : configurationDialogPage
+                            ? 'configuration-dialog'
+                        : projectPage
+                            ? 'project-detail'
                         : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fixtureName = screen === 'domains' && dialog === 'add-domain'
@@ -970,6 +976,26 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         await expect(trigger).toBeFocused();
         expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
     }
+});
+
+test('configuration as code opens in the application context', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/project-detail', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Configuration as code', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Configuration as code', exact: true });
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Create a review', { exact: true })).toBeVisible();
+    await expect(dialog.locator('textarea[name="document"]')).toBeVisible();
+    await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('application-configuration');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
 });
 
 test('gallery report composer uses an accessible URL-backed dialog', async ({ page }) => {

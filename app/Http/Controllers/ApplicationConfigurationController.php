@@ -62,6 +62,37 @@ class ApplicationConfigurationController extends Controller
     }
 
     /**
+     * Render the authorized configuration workflow as a body-only fragment for
+     * the application-context modal. Review state is selected explicitly by
+     * query identity and is never inferred from arbitrary return URLs.
+     *
+     * @return View|Response The authoring, review or application-receipt fragment.
+     */
+    public function dialog(
+        Request $request,
+        Project $project,
+        ApplicationConfigurationReviews $reviews,
+    ): View|Response {
+        $this->access($project);
+        $reviewId = $request->integer('configuration_review');
+
+        if ($reviewId === 0) {
+            return view('scenes.projects.configuration-dialog', $this->authoringPageData($project));
+        }
+
+        $review = ConfigurationReview::query()->findOrFail($reviewId);
+        $data = $this->reviewState($request, $project, $review, $reviews);
+        $status = $data['_status'] ?? 200;
+        unset($data['_status']);
+
+        // A stale review is an expected in-dialog outcome. Keep the canonical
+        // page's 422 response, while allowing the fragment loader to render
+        // the safe recovery message instead of replacing it with a transport
+        // error.
+        return response()->view('scenes.projects.configuration-dialog', $data, $status === 422 ? 200 : $status);
+    }
+
+    /**
      * Render a manager-only comparison of two environments' recorded local metadata.
      *
      * @param  CompareApplicationConfigurationRequest  $request  Validated environment IDs.
@@ -144,7 +175,7 @@ class ApplicationConfigurationController extends Controller
             return back()->withErrors($exception->errors());
         }
 
-        return redirect()->route('projects.configuration.review', [$project, $review]);
+        return $this->configurationRedirect($request, $project, $review);
     }
 
     /**
@@ -157,6 +188,30 @@ class ApplicationConfigurationController extends Controller
     public function show(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReviews $reviews): View|Response
     {
         $this->access($project);
+        $data = $this->reviewState($request, $project, $review, $reviews);
+        $status = $data['_status'] ?? 200;
+        unset($data['_status']);
+
+        if ($status !== 200) {
+            return response()->view('scenes.projects.configuration', $data, $status);
+        }
+
+        return view('scenes.projects.configuration', $data);
+    }
+
+    /**
+     * Assemble the existing review and receipt state for both the canonical
+     * page and the contextual fragment without changing its authorization or
+     * stale-review behavior.
+     *
+     * @return array<string, mixed> View data, optionally including `_status` for a stale review response.
+     */
+    private function reviewState(
+        Request $request,
+        Project $project,
+        ConfigurationReview $review,
+        ApplicationConfigurationReviews $reviews,
+    ): array {
         abort_unless((int) $review->project_id === (int) $project->id, 404);
         $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->with('operations')->first();
         abort_unless($application || (int) $review->requested_by === (int) $request->user()->id, 404);
@@ -164,16 +219,21 @@ class ApplicationConfigurationController extends Controller
             $this->authorize('view', $review);
             $application = $this->results->refresh($application);
         }
+
         try {
             $plan = $application ? $review->summary : $reviews->inspect($review, $request->user());
         } catch (ValidationException $exception) {
-            return response()->view('scenes.projects.configuration', [
-                'project' => $project, 'review' => $review, 'application' => null, 'plan' => null,
+            return [
+                'project' => $project,
+                'review' => $review,
+                'application' => null,
+                'plan' => null,
                 'reviewError' => collect($exception->errors())->flatten()->first(),
-            ], 422);
+                '_status' => 422,
+            ];
         }
 
-        return view('scenes.projects.configuration', compact('project', 'review', 'plan', 'application'));
+        return compact('project', 'review', 'plan', 'application');
     }
 
     /**
@@ -197,7 +257,7 @@ class ApplicationConfigurationController extends Controller
             return back()->withErrors($exception->errors());
         }
 
-        return redirect()->route('projects.configuration.review', [$project, $review]);
+        return $this->configurationRedirect($request, $project, $review);
     }
 
     /**
@@ -221,7 +281,7 @@ class ApplicationConfigurationController extends Controller
             return back()->withErrors($exception->errors());
         }
 
-        return redirect()->route('projects.configuration.review', [$project, $review]);
+        return $this->configurationRedirect($request, $project, $review);
     }
 
     /**
@@ -239,7 +299,32 @@ class ApplicationConfigurationController extends Controller
         try {
             $reconciler->apply($review, $request->user());
         } catch (ValidationException $exception) {
+            if ($request->query('dialog') === 'application-configuration') {
+                return redirect()->route('projects.show', [
+                    'project' => $project,
+                    'dialog' => 'application-configuration',
+                    'configuration_review' => $review->id,
+                ])->withErrors($exception->errors());
+            }
+
             return redirect()->route('projects.configuration.create', $project)->withErrors($exception->errors());
+        }
+
+        return $this->configurationRedirect($request, $project, $review);
+    }
+
+    /**
+     * Return to the application context for modal operations while preserving
+     * the canonical review URL for ordinary full-page requests.
+     */
+    private function configurationRedirect(Request $request, Project $project, ConfigurationReview $review): RedirectResponse
+    {
+        if ($request->query('dialog') === 'application-configuration') {
+            return redirect()->route('projects.show', [
+                'project' => $project,
+                'dialog' => 'application-configuration',
+                'configuration_review' => $review->id,
+            ]);
         }
 
         return redirect()->route('projects.configuration.review', [$project, $review]);

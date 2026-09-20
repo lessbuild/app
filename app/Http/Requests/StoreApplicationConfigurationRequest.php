@@ -98,7 +98,11 @@ class StoreApplicationConfigurationRequest extends FormRequest
      */
     private function redirectWithErrors(Validator|array $errors): RedirectResponse
     {
-        $response = new RedirectResponse($this->getRedirectUrl());
+        $project = $this->route('project');
+        $redirectUrl = $this->query('dialog') === 'application-configuration' && $project instanceof Project
+            ? route('projects.show', ['project' => $project, 'dialog' => 'application-configuration'])
+            : $this->getRedirectUrl();
+        $response = new RedirectResponse($redirectUrl);
         $response->setSession($this->session());
 
         return $response->withErrors($errors, $this->errorBag);

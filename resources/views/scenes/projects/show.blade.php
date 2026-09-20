@@ -1,8 +1,18 @@
 <x-layouts.app>
     @php
-        $projectPageUrl = request()->fullUrlWithoutQuery('dialog');
+        $projectPageUrl = request()->fullUrlWithoutQuery(['dialog', 'configuration_review']);
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
         $websiteCreateOpen = request()->query('dialog') === 'create-website';
+        $configurationDialogOpen = request()->query('dialog') === 'application-configuration';
+        $configurationReviewId = request()->integer('configuration_review');
+        $configurationDialogUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery([
+            'dialog' => 'application-configuration',
+            ...($configurationReviewId > 0 ? ['configuration_review' => $configurationReviewId] : []),
+        ]);
+        $configurationDialogContentUrl = route('projects.configuration.dialog', [
+            'project' => $project,
+            ...($configurationReviewId > 0 ? ['configuration_review' => $configurationReviewId] : []),
+        ]);
     @endphp
 
     <x-layouts.partials.breadcrumbs :route="route('projects.index')" :title="__('Back to applications')" />
@@ -10,7 +20,14 @@
     <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
         <x-slot:buttons>
             @if($canManage)
-                <x-ui.button :href="route('projects.configuration.create', $project)" variant="secondary">{{ __('Configuration as code') }}</x-ui.button>
+                <x-ui.button
+                    :href="$configurationDialogUrl"
+                    data-modal-trigger="application-configuration-dialog"
+                    data-modal-content-url="{{ $configurationDialogContentUrl }}"
+                    aria-controls="application-configuration-dialog"
+                    aria-expanded="{{ $configurationDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('Configuration as code') }}</x-ui.button>
                 <form method="POST" action="{{ route('projects.destroy', $project) }}">
                     @csrf
                     @method('DELETE')
@@ -338,4 +355,19 @@
             </div>
         </details>
     </div>
+    @if($canManage)
+        <x-dialogs.modal
+            id="application-configuration-dialog"
+            :title="__('Configuration as code')"
+            :description="__('Author, review and apply portable application configuration in context.')"
+            :open="$configurationDialogOpen"
+            body-class="p-0"
+            data-modal-content-loaded="false"
+            data-modal-content-url="{{ $configurationDialogContentUrl }}"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading configuration workflow…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
 </x-layouts.app>

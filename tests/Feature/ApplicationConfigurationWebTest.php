@@ -42,6 +42,81 @@ class ApplicationConfigurationWebTest extends TestCase
         $this->assertDatabaseCount('configuration_reviews', 0);
     }
 
+    public function test_manager_can_open_configuration_in_application_context_and_submit_a_review(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create(['name' => 'App', 'slug' => 'app', 'created_by' => $user->id]);
+        $server = $user->servers()->create(['name' => 'Test']);
+        $website = $user->websites()->create([
+            'server_id' => $server->id,
+            'name' => 'App',
+            'url' => 'app.test',
+            'description' => 'Test',
+            'environment' => '',
+        ]);
+        $applicationUrl = route('projects.show', ['project' => $project, 'dialog' => 'application-configuration']);
+        $storeUrl = route('projects.configuration.store', [
+            'project' => $project,
+            'dialog' => 'application-configuration',
+        ]);
+
+        $this->actingAs($user)->get($applicationUrl)
+            ->assertOk()
+            ->assertSee('application-configuration-dialog', false)
+            ->assertSee('data-modal-content-url', false)
+            ->assertSee('Loading configuration workflow');
+
+        $fragment = $this->actingAs($user)->get(route('projects.configuration.dialog', $project));
+        $fragment->assertOk()
+            ->assertSee('Create a review')
+            ->assertSee('Version 2 YAML document')
+            ->assertDontSee('<html', false)
+            ->assertDontSee('Setup Information');
+
+        $this->from($storeUrl)->post($storeUrl, ['bindings' => '{"submitted":"private-binding"}'])
+            ->assertRedirect($applicationUrl)
+            ->assertSessionHasErrors('document')
+            ->assertSessionMissing('_old_input');
+        $this->get(route('projects.configuration.dialog', $project))
+            ->assertSee('required')
+            ->assertDontSee('private-binding');
+
+        $response = $this->post($storeUrl, [
+            'document' => "version: 2\nenvironments:\n  staging:\n    type: staging\n    placement: site\n    runtime:\n      type: php\n",
+            'bindings' => json_encode(['placements' => ['site' => $website->id]]),
+        ]);
+        $review = ConfigurationReview::query()->sole();
+
+        $response->assertRedirect(route('projects.show', [
+            'project' => $project,
+            'dialog' => 'application-configuration',
+            'configuration_review' => $review->id,
+        ]));
+
+        $this->actingAs($user)->get(route('projects.configuration.dialog', [
+            'project' => $project,
+            'configuration_review' => $review->id,
+        ]))->assertOk()->assertSee('Apply reviewed configuration')->assertDontSee('<html', false);
+
+        $review->update(['expires_at' => now()->subMinute()]);
+        $this->get(route('projects.configuration.dialog', [
+            'project' => $project,
+            'configuration_review' => $review->id,
+        ]))->assertOk()->assertSee('This review cannot be applied')->assertDontSee('Apply reviewed configuration');
+    }
+
+    public function test_configuration_fragment_keeps_workspace_authorization(): void
+    {
+        $owner = User::factory()->create();
+        $viewer = User::factory()->create();
+        $organization = $owner->currentOrganization;
+        $organization->members()->attach($viewer, ['role' => 'viewer']);
+        $viewer->update(['current_organization_id' => $organization->id]);
+        $project = $organization->projects()->create(['name' => 'App', 'slug' => 'app', 'created_by' => $owner->id]);
+
+        $this->actingAs($viewer)->get(route('projects.configuration.dialog', $project))->assertForbidden();
+    }
+
     public function test_browser_can_review_and_apply_without_echoing_commands(): void
     {
         $user = User::factory()->create();

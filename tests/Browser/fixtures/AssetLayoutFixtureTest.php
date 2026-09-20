@@ -25,6 +25,9 @@ class AssetLayoutFixtureTest extends TestCase
         $directory = getenv('BROWSER_FIXTURE_DIRECTORY');
         $this->assertNotFalse($directory);
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
+        // Keep absolute route-generated modal URLs same-origin with the fixture browser host.
+        config(['app.url' => 'http://buildpusher.test']);
+        url()->forceRootUrl('http://buildpusher.test');
         File::ensureDirectoryExists($directory);
 
         foreach (['landing' => '/', 'login' => '/login', 'pricing' => '/pricing'] as $name => $url) {
@@ -208,6 +211,12 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('data-modal-trigger="add-environment-dialog"', false)
             ->assertSee('data-modal-trigger="environment-variable-dialog-', false)
             ->assertSee('data-modal-trigger="environment-process-dialog-', false)
+            ->assertSee('data-modal-trigger="application-configuration-dialog"', false)
+            ->getContent());
+        File::put($directory.'/configuration-dialog.html', $this->renderPage(route('projects.configuration.dialog', $project))
+            ->assertOk()
+            ->assertSee('Create a review')
+            ->assertDontSee('<html', false)
             ->getContent());
         $review = app(ApplicationConfigurationReviews::class)->create($project, $owner,
             "version: 2\nenvironments:\n  staging:\n    type: staging\n    placement: site\n    runtime:\n      type: php\n      build_command: fixture-private-command\n    deploy:\n      repository: app\n",

@@ -2259,31 +2259,29 @@ and paid-provider acceptance drill.
 
 ## Contextual navigation modernization — 2026-09-20
 
-Implementation has started on `main` for the contextual modal and navigation
-plan. The first slice replaces the website detail page's legacy `Setup
+The contextual navigation work is progressing on `main` in cohesive pushed
+slices. `0af32ac` replaces the website detail page's legacy `Setup
 Information` presentation with a dedicated `Provisioning timeline` derived
 from `WebsiteProvisioningPlan` and the shared `DeploymentTimelineEntry` view.
-The timeline is now above health history, while existing polling, logs, retry,
-cleanup warnings and authorization remain in place. The website empty-state
-repository label was corrected and its already-paginated relation now renders
-pagination controls.
+The timeline appears before health history, while existing polling, logs,
+retry, cleanup warnings, pagination and authorization remain in place.
 
-The isolated render at 390px confirms the timeline appears near the top of the
-website page and the old `Setup Information` label is absent. Focused PHP,
-Pint, Blade fixture and diff checks pass. The verification ledger is
-`docs/verification/contextual-navigation-progress.md`.
+`14dcfd4` hardens the shared lazy-modal loader with request cancellation,
+stale-response protection, session-expiry handling, retry/full-page error
+actions, dynamic trigger initialization and modified-link preservation.
 
-The slice is still uncommitted at handoff; commit and push it before beginning
-the shared modal-loader reliability work. No production, cloud or external
-acceptance operation was performed.
+The next local slice adds application-context configuration-as-code. The
+application page now hosts a lazy configuration dialog; the authorized fragment
+reuses existing configuration read services for authoring, review and receipt
+states. Modal submissions preserve explicit review identity and return to the
+application, while full-page routes, validation keys, secret-safe old-input
+behavior and stale-review semantics remain unchanged. This slice is locally
+verified and is pending its cohesive commit/push.
 
-The shared modal loader has since been hardened in the working tree with
-request cancellation, stale-response protection, session-expiry handling,
-retry/full-page error actions, dynamic trigger initialization and modified-link
-preservation. The focused browser regression passes seven existing modal/mobile
-flows plus the new lazy-loader failure/retry flow. This second slice remains
-uncommitted and must be committed and pushed before configuration authoring is
-moved into a modal.
+The detailed ledger is `docs/verification/contextual-navigation-progress.md`.
+No production, cloud or external acceptance operation was performed. Local
+browser and isolated-render evidence is not the separate live acceptance
+drill.
 
 ## Moving to a new chat
 
