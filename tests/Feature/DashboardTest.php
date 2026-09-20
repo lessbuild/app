@@ -144,6 +144,8 @@ class DashboardTest extends TestCase
             ->assertSee('System operational')
             ->assertSee('View system health')
             ->assertSee(route('system-health.index'))
+            ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)
+            ->assertSee('fragment=system-health')
             ->assertSee(route('servers.index', ['dialog' => 'create-server']))
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 

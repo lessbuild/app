@@ -51,6 +51,26 @@ class SystemHealthPageTest extends TestCase
             ->assertSee(route('system-health.index'));
     }
 
+    public function test_verified_account_can_review_the_same_snapshot_as_a_no_store_fragment(): void
+    {
+        $user = User::factory()->create();
+        $this->mock(OperationalDiagnostics::class)
+            ->shouldReceive('run')
+            ->once()
+            ->andReturn([
+                ['name' => 'Application key', 'passed' => true, 'detail' => 'Configured'],
+            ]);
+
+        $this->actingAs($user)->get(route('system-health.index', ['fragment' => 'system-health']))
+            ->assertSuccessful()
+            ->assertViewIs('system-health._content')
+            ->assertHeader('cache-control', 'no-store, private')
+            ->assertHeader('pragma', 'no-cache')
+            ->assertSee('Operational')
+            ->assertSee('Application key')
+            ->assertDontSee('<html', false);
+    }
+
     public function test_detailed_health_is_restricted_to_workspace_owners_and_admins(): void
     {
         $owner = User::factory()->create();

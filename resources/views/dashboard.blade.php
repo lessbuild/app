@@ -15,7 +15,10 @@
         $dashboardApplicationCreateOpen = $dashboardDialog === 'create-application'
             || (old('_project_form') === '1' && $errors->any());
         $dashboardActivityDialogOpen = $dashboardDialog === 'dashboard-activity';
-        $dashboardActiveDeploymentsDialogOpen = $dashboardDialog === 'active-deployments';
+        $dashboardHasActiveDeployments = array_sum($activeDeploymentCounts) > 0;
+        $dashboardActiveDeploymentsDialogOpen = $dashboardDialog === 'active-deployments'
+            && $dashboardHasActiveDeployments;
+        $dashboardSystemHealthDialogOpen = $dashboardDialog === 'system-health';
         $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
             || (old('_recipe_form') === 'edit' && $errors->any());
         $dashboardPreferencesDialogUrl = route('dashboard', ['dialog' => 'customize-dashboard']);
@@ -31,6 +34,8 @@
             'active' => 1,
             'fragment' => 'deployment-history',
         ]);
+        $dashboardSystemHealthDialogUrl = route('dashboard', ['dialog' => 'system-health']);
+        $dashboardSystemHealthContentUrl = route('system-health.index', ['fragment' => 'system-health']);
         $dashboardModalOpen = [
             'provider' => $dashboardProviderCreateOpen,
             'server' => $dashboardServerCreateOpen,
@@ -186,9 +191,19 @@
                     </p>
                 @endif
             </div>
-            <a href="{{ $canManageSystemHealth ? route('system-health.index') : route('platform-status.show') }}" class="text-sm font-medium text-ternary underline">
-                {{ $canManageSystemHealth ? __('View system health') : __('View public status') }}
-            </a>
+            @if ($canManageSystemHealth)
+                <a
+                    href="{{ route('system-health.index') }}"
+                    data-modal-trigger="dashboard-system-health-dialog"
+                    data-modal-content-url="{{ $dashboardSystemHealthContentUrl }}"
+                    data-modal-history-url="{{ $dashboardSystemHealthDialogUrl }}"
+                    aria-controls="dashboard-system-health-dialog"
+                    aria-expanded="{{ $dashboardSystemHealthDialogOpen ? 'true' : 'false' }}"
+                    class="text-sm font-medium text-ternary underline"
+                >{{ __('View system health') }}</a>
+            @else
+                <a href="{{ route('platform-status.show') }}" class="text-sm font-medium text-ternary underline">{{ __('View public status') }}</a>
+            @endif
         </div>
     </section>
     @endif
@@ -701,16 +716,32 @@
         </div>
     </x-dialogs.modal>
 
-    <x-dialogs.modal
-        id="dashboard-active-deployments-dialog"
-        :title="__('Active deployments')"
-        :description="__('Review active deployment progress without leaving the dashboard.')"
-        :open="$dashboardActiveDeploymentsDialogOpen"
-        body-class="p-0"
-    >
-        <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading active deployments…') }}</p>
-        </div>
-    </x-dialogs.modal>
+    @if ($dashboardHasActiveDeployments)
+        <x-dialogs.modal
+            id="dashboard-active-deployments-dialog"
+            :title="__('Active deployments')"
+            :description="__('Review active deployment progress without leaving the dashboard.')"
+            :open="$dashboardActiveDeploymentsDialogOpen"
+            body-class="p-0"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading active deployments…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
+
+    @if ($canManageSystemHealth)
+        <x-dialogs.modal
+            id="dashboard-system-health-dialog"
+            :title="__('System health')"
+            :description="__('Review a fresh sanitized diagnostic snapshot without leaving the dashboard.')"
+            :open="$dashboardSystemHealthDialogOpen"
+            body-class="p-0"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading system health…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
 
 </x-layouts.app>

@@ -17,13 +17,21 @@ class SystemHealthController extends Controller
     {
         $this->authorizeAccess($request);
         $snapshot = $systemHealth->fresh();
-
-        return response()->view('system-health.index', [
+        $viewData = [
             'checks' => $snapshot['checks'],
             'passed' => $snapshot['passed'],
             'passedCount' => $snapshot['passed_count'],
             'checkedAt' => $snapshot['checked_at'],
-        ])->withHeaders([
+        ];
+
+        if ($request->string('fragment')->toString() === 'system-health') {
+            return response()->view('system-health._content', $viewData)->withHeaders([
+                'Cache-Control' => 'no-store, private',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        return response()->view('system-health.index', $viewData)->withHeaders([
             'Cache-Control' => 'no-store, private',
             'Pragma' => 'no-cache',
         ]);

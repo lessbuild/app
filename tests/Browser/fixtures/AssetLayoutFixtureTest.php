@@ -9,6 +9,7 @@ use App\Models\Website;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationReviews;
 use App\Services\IncidentNotifier;
+use App\Services\OperationalDiagnostics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Testing\TestResponse;
@@ -37,6 +38,12 @@ class AssetLayoutFixtureTest extends TestCase
 
         $owner = User::factory()->create(['name' => 'Layout fixture owner']);
         $this->actingAs($owner);
+        $this->mock(OperationalDiagnostics::class)
+            ->shouldReceive('run')
+            ->andReturn([
+                ['name' => 'Application key', 'passed' => true, 'detail' => 'Configured'],
+                ['name' => 'Queue worker', 'passed' => true, 'detail' => 'Ready'],
+            ]);
         $dashboardProvider = $owner->providers()->create([
             'name' => 'Dashboard provider', 'provider' => 'github', 'token' => 'dashboard-token', 'description' => 'Dashboard fixture provider',
         ]);
@@ -57,10 +64,13 @@ class AssetLayoutFixtureTest extends TestCase
             'revision' => str_repeat('d', 40), 'started_at' => now(),
         ]);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()
-            ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)
+            ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)->getContent());
         File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-active-deployments-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-deployments']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/dashboard-system-health-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'system-health']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
@@ -96,6 +106,9 @@ class AssetLayoutFixtureTest extends TestCase
             'active' => 1,
             'fragment' => 'deployment-history',
         ]))->assertOk()->assertSee('data-build-card', false)->getContent());
+        File::put($directory.'/system-health-content.html', $this->renderPage(route('system-health.index', [
+            'fragment' => 'system-health',
+        ]))->assertOk()->assertSee('id="system-health-insights"', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',
