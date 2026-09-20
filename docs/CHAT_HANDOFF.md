@@ -2203,6 +2203,37 @@ diff checks. No dependency, migration or production configuration changed.
 This is local/runtime smoke evidence only, not the separate paid-cloud or
 external acceptance drill.
 
+## Current-page create/edit modal follow-up — 2026-09-20
+
+The remaining contextual create and edit links now use the shared URL-backed
+modal pattern while keeping the user on the current page. The authenticated
+layout hosts lazy provider, server, website and repository creation shells on
+pages that do not already render an inventory dialog. A small authenticated
+body-only endpoint reuses `DashboardCreationDialogData`; inventory pages keep
+their existing eager dialog components and query behavior.
+
+Provider, project and website detail actions now create related resources in
+place. Repository, deployment, gallery and feedback-context actions edit the
+selected related resource in place. The modal loader supports different
+prefill URLs from multiple environment actions, while direct dialog URLs
+render the form server-side for the no-JavaScript fallback. Imports,
+configuration authoring and other multi-step safety-sensitive workflows remain
+explicit full-page flows.
+
+Implementation commit `62d06e7` is pushed to `origin/main` and deployed to
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`. Focused coverage
+is **20 tests / 134 assertions**, the final affected regression set is **55
+tests / 590 assertions**, and the complete built-asset/browser suite is **30
+passed**. The complete strict PHP suite passed with **1,652 tests / 13,813
+assertions** in 814.60 seconds. Pint, Blade compilation, Vite, route/view
+cache generation and `git diff --check` pass.
+
+Both `buildpusher-dev-main.service` and `buildpusher-dev-main-worker.service`
+are active; internal and public `/api/health` report `{"status":"ready"}`,
+`/login` returns HTTP 200 and the current local CSS asset is served. This is
+local/runtime smoke evidence only, not the separate paid-cloud or external
+acceptance drill.
+
 ## Mobile-native UX modernization — 2026-09-20
 
 The mobile-native UX plan is complete on isolated `main`. The five cohesive

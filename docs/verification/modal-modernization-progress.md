@@ -2010,3 +2010,84 @@ page`.
 
 Continue normal product work from `main`; the mobile New app action no longer
 navigates to the Applications inventory from another page.
+
+## Follow-up Slice 23 — current-page create and edit links
+
+Status: complete; implementation is pushed and deployed to the isolated
+development runtime.
+
+### Responsibility problem
+
+Several contextual actions still sent users to a feature inventory before
+opening the existing form: the command palette's server, website and
+repository actions, provider/project/website detail-page creation actions,
+the GitHub App repository action, and edit actions reached from repository,
+deployment, gallery and feedback context. This broke the user's current
+workflow and made related creation or editing depend on an unnecessary page
+navigation.
+
+### Boundary and design decision
+
+The authenticated layout now hosts lazy provider, server, website and
+repository creation shells on pages that do not already own the inventory
+dialog. A small authenticated `CreationDialogController` returns only the
+requested form body and reuses `DashboardCreationDialogData` for its existing
+workspace-scoped options. Existing inventory and direct-create components
+remain page-owned, so their IDs, eager option loading and query behavior are
+unchanged.
+
+Cross-resource links now point to the current page with URL-backed dialog
+state. Repository and deployment pages host their linked website/repository
+edit dialogs locally; gallery and report pages host the selected private
+recipe editor locally. The modal loader reloads when a second trigger supplies
+different environment prefill values. Direct current-page dialog URLs render
+their form server-side as a no-JavaScript fallback.
+
+### Preserved contracts and safety guarantees
+
+- Imports, configuration authoring/review, destructive confirmations and
+  other multi-step protocol workflows remain full-page or explicit where a
+  modal would change ordering or safety.
+- Existing policies, organization scoping, route bindings, validation keys,
+  plan gates, form actions, flash messages, field IDs, old-input behavior and
+  persisted values remain unchanged.
+- Provider credentials and secret environment values are not added to shared
+  markup or lazy endpoint responses beyond the existing edit/create form
+  behavior.
+- The lazy endpoint accepts only same-origin cancel URLs and returns a body
+  view rather than a complete page. No dependency, schema, queue or external
+  provider behavior changed.
+- Nested “add provider/server/website” actions remain on the originating
+  page, and no-JavaScript navigation still renders the corresponding form.
+
+### Verification
+
+- Focused current-page dialog coverage: **20 tests / 134 assertions** passed
+  under PHP 8.5.10.
+- Affected gallery, report, feedback and dialog regression set: **55 tests /
+  590 assertions** passed after the final URL/filter compatibility fixes.
+- Full built-asset/browser suite: **30 passed** across light/dark 320, 390,
+  768 and 1440px layouts, dialog focus/scroll behavior, no-JavaScript
+  provider submission and feature-specific modal workflows.
+- Pint, Blade compilation, Vite production build and `git diff --check`
+- passed. The complete strict PHP suite passed with **1,652 tests / 13,813
+  assertions** in 814.60 seconds.
+- Route and view caches were regenerated in the isolated runtime. Both
+  `buildpusher-dev-main.service` and `buildpusher-dev-main-worker.service`
+  are active; internal and public `/api/health` report `{"status":"ready"}`;
+  `/login` returns HTTP 200 and the current local CSS asset is served.
+
+This is local/runtime smoke evidence only, not the separate paid-cloud or
+external acceptance drill.
+
+### Commit and push
+
+Implementation commit `62d06e7 Keep contextual CRUD actions on current pages`
+was pushed to `origin/main` and deployed to
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`.
+
+### Exact next task
+
+Continue normal product work from `main`; keep standard contextual create/edit
+actions on the current page and preserve the documented full-page workflow
+exceptions. The separate live/paid-cloud acceptance drill remains outstanding.
