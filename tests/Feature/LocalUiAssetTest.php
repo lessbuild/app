@@ -52,6 +52,9 @@ class LocalUiAssetTest extends TestCase
             ->assertSuccessful()
             ->assertSee('AL')
             ->assertSee('Send feedback')
+            ->assertSee('data-network-status', false)
+            ->assertSee('data-offline-message=', false)
+            ->assertSee('data-online-message=', false)
             ->assertDontSee('ui-avatars.com', false);
     }
 

@@ -152,6 +152,41 @@
             })();
         </script>
 
+        <script>
+            (() => {
+                let onlineMessageTimer;
+
+                const updateNetworkStatus = (online, temporary = false) => {
+                    document.querySelectorAll('[data-network-status]').forEach((status) => {
+                        window.clearTimeout(onlineMessageTimer);
+                        status.textContent = online
+                            ? status.dataset.onlineMessage
+                            : status.dataset.offlineMessage;
+                        status.toggleAttribute('hidden', online && temporary === false);
+                    });
+
+                    document.querySelectorAll('[data-mobile-shell]').forEach((shell) => {
+                        shell.toggleAttribute('data-mobile-offline', ! online);
+                    });
+
+                    if (online && temporary) {
+                        onlineMessageTimer = window.setTimeout(() => {
+                            document.querySelectorAll('[data-network-status]').forEach((status) => {
+                                status.setAttribute('hidden', '');
+                            });
+                        }, 4000);
+                    }
+                };
+
+                window.addEventListener('offline', () => updateNetworkStatus(false));
+                window.addEventListener('online', () => updateNetworkStatus(true, true));
+
+                if (navigator.onLine === false) {
+                    updateNetworkStatus(false);
+                }
+            })();
+        </script>
+
         @if ($livewire)
             @livewireScripts
         @endif

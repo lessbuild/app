@@ -1,6 +1,6 @@
 @foreach (['success', 'info', 'error'] as $level)
     @if (session()->has($level))
-        <div @class([
+        <div data-ui-feedback="flash" @class([
             'ui-alert mb-4',
             'ui-alert--success' => $level === 'success',
             'ui-alert--info' => $level === 'info',

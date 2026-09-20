@@ -4,7 +4,7 @@
     'icon' => 'information-circle',
 ])
 
-<div {{ $attributes->merge(['class' => 'ui-empty-state']) }}>
+<div data-ui-feedback="empty" {{ $attributes->merge(['class' => 'ui-empty-state']) }}>
     <div>
         <svg class="ui-empty-state__icon" aria-hidden="true">
             <use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use>

@@ -711,6 +711,25 @@ test('mobile filters use dismissible bottom sheets without changing filter URLs'
     await expect(summary).toBeFocused();
 });
 
+test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/repositories', { waitUntil: 'networkidle' });
+
+    const status = page.locator('[data-network-status]');
+
+    await expect(status).toBeHidden();
+
+    await page.evaluate(() => window.dispatchEvent(new Event('offline')));
+    await expect(status).toBeVisible();
+    await expect(status).toContainText('You appear to be offline');
+    expect(await status.evaluate((element) => getComputedStyle(element).position)).toBe('fixed');
+
+    await page.evaluate(() => window.dispatchEvent(new Event('online')));
+    await expect(status).toContainText('Connection restored');
+    await expect(status).toBeHidden({ timeout: 6000 });
+});
+
 test('compact invitation and feedback workflows use accessible URL-backed dialogs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);

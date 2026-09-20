@@ -29,7 +29,8 @@ Each verified slice is committed and pushed before the next slice starts.
 | --- | --- | --- | --- | --- |
 | 1. Shared mobile shell | Shell owns safe-area, keyboard and mobile document-flow behavior; page views remain unchanged. | Complete | 50 PHP tests / 763 assertions; 3 bounded browser journeys; Pint and Vite passed. | `85ef0fe` pushed |
 | 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | `57da0b8` pushed |
-| 3. Mobile page hierarchy | Shared page headers, dashboard actions and inventory cards own compact mobile spacing; data and routes remain page-owned. | Complete | 53 PHP tests / 785 assertions; 1 full 320px fixture case; Pint and Vite passed. | Pending push |
+| 3. Mobile page hierarchy | Shared page headers, dashboard actions and inventory cards own compact mobile spacing; data and routes remain page-owned. | Complete | 53 PHP tests / 785 assertions; 1 full 320px fixture case; Pint and Vite passed. | `56ea637` pushed |
+| 4. Mobile feedback states | Shared feedback primitives and the authenticated shell own compact alerts, empty states and connectivity recovery messaging; operation state remains server-owned. | Complete | 51 PHP tests / 774 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | Pending push |
 
 ## Preserved contracts
 
@@ -39,6 +40,8 @@ Each verified slice is committed and pushed before the next slice starts.
 - Native dialog history, Escape handling and focus restoration remain intact.
 - Existing Form Requests, policies, actions, Livewire updates and queued work
   are outside the first UI slice.
+- Feedback notices are additive and do not change queued-operation state,
+  retry behavior, persistence or authorization.
 
 ## Slice 1 — shared mobile shell
 
@@ -113,7 +116,7 @@ remain unchanged.
 
 ### Commit and push
 
-Implementation commit and push: pending.
+Implementation commit and push: `57da0b8 Make mobile dialogs and filters native`.
 
 ## Slice 3 — mobile page hierarchy
 
@@ -149,3 +152,42 @@ changed. Desktop layout remains unchanged at the existing breakpoint.
 Implement Slice 4: standardize mobile loading, empty, error and queued-operation
 feedback so long-running BuildPusher actions feel native without changing job
 semantics or optimistic-state guarantees.
+
+## Slice 4 — mobile feedback states
+
+### Responsibility problem
+
+Mobile users received feedback through several existing primitives, but the
+shell had no shared way to present connectivity loss and feedback surfaces did
+not expose a consistent semantic hook for compact mobile treatment. This made
+offline interruptions and long empty/error states harder to understand without
+changing the underlying operation state.
+
+### Boundary and design decision
+
+The shared alert, flash and empty-state components now expose feedback hooks.
+The authenticated shell owns the connection-status notice, including its
+safe-area position above the mobile quick actions and its temporary
+reconnected message. Existing server-rendered queued, loading and failure
+messages remain authoritative; the client does not invent optimistic operation
+state or retry jobs.
+
+The mobile stylesheet compacts repeated feedback surfaces and clamps long
+empty-state descriptions. The network listener is native browser behavior and
+does not add a dependency or change routes, requests, persistence or
+authorization.
+
+### Verification
+
+- Focused PHP regression: **51 tests / 774 assertions passed**.
+- Pint: passed.
+- Vite production build: passed.
+- `git diff --check`: passed.
+- Focused browser verification with PHP 8.5.10: **1 passed** for offline,
+  reconnected and mobile quick-action-safe feedback behavior.
+
+### Exact next task
+
+Implement Slice 5: harden mobile form focus, validation visibility and loading
+affordances without changing validation keys, named error bags or no-JavaScript
+submission behavior.

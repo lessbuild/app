@@ -82,6 +82,16 @@
             <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('notifications.*'), 'text-secondary' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
 
+        <div
+            data-network-status
+            hidden
+            role="status"
+            aria-live="polite"
+            class="ui-network-status ui-alert ui-alert--warning"
+            data-offline-message="{{ __('You appear to be offline. New changes cannot be sent until your connection returns.') }}"
+            data-online-message="{{ __('Connection restored. Refresh if the current page is stale.') }}"
+        ></div>
+
         <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" @click.self="palette = false; restorePaletteFocus()">
             <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
                 <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Command palette') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close command palette') }}" @click="palette = false; restorePaletteFocus()">×</x-ui.button></div>

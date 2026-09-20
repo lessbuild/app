@@ -391,6 +391,17 @@
         border-color: var(--ui-danger);
     }
 
+    .ui-network-status {
+        position: fixed;
+        right: 1rem;
+        bottom: 1rem;
+        left: 1rem;
+        z-index: 55;
+        width: min(calc(100% - 2rem), 32rem);
+        margin-inline: auto;
+        box-shadow: 0 1rem 2rem rgb(15 23 42 / 0.18);
+    }
+
     .ui-empty-state {
         display: flex;
         min-height: 12rem;
@@ -591,6 +602,41 @@
 
         [data-dashboard-stats] .ui-stat__description {
             display: none;
+        }
+
+        .ui-network-status {
+            right: 0.75rem;
+            bottom: calc(var(--mobile-quick-navigation-space) + 0.5rem);
+            left: 0.75rem;
+            width: auto;
+            margin-inline: 0;
+            padding: 0.75rem 0.875rem;
+        }
+
+        [data-ui-feedback="flash"],
+        [data-ui-feedback="alert"] {
+            padding: 0.75rem 0.875rem;
+        }
+
+        [data-ui-feedback="empty"] {
+            min-height: 9rem;
+            padding: 1.5rem 1rem;
+        }
+
+        [data-ui-feedback="empty"] .ui-empty-state__icon {
+            width: 2.25rem;
+            height: 2.25rem;
+        }
+
+        [data-ui-feedback="empty"] .ui-empty-state__title {
+            font-size: 1rem;
+        }
+
+        [data-ui-feedback="empty"] .ui-empty-state__description {
+            display: -webkit-box;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
         }
     }
 
