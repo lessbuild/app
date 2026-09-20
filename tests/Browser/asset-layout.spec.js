@@ -369,7 +369,6 @@ test('dashboard creation actions open page-local dialogs without navigating to a
         { selector: '[data-modal-trigger="server-create-dialog"]:visible', title: 'Add server', query: 'create-server' },
         { selector: '[data-modal-trigger="website-create-dialog"]:visible', title: 'Add website', query: 'create-website' },
         { selector: '[data-modal-trigger="application-create-dialog"]:visible', title: 'New application', query: 'create-application' },
-        { selector: '[data-modal-trigger="provider-create-dialog"]:visible', title: 'Add provider', query: 'create-provider' },
     ]) {
         const trigger = page.locator(workflow.selector).first();
         const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });

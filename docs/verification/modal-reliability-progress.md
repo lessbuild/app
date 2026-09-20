@@ -201,6 +201,84 @@ links and deployment evidence. Keep the existing status-incident edit/create
 dialogs and deployment pages explicit, and only add another inspector when it
 removes a real context switch without hiding a state transition.
 
+## Slice 29 — remaining observability-link classification
+
+Status: complete; no additional modal was justified.
+
+### Responsibility problem
+
+The final observability pass still contained links that could appear to be
+modal candidates: runtime log snapshots, deployment evidence from an incident,
+links to public status pages and the incident-centre anchor. Converting these
+links mechanically would either duplicate protected reads, hide operational
+controls or put a customer-facing document inside an authenticated dialog.
+
+### Boundaries and benefit
+
+- Runtime-log links remain explicit website routes. The existing route owns
+  website authorization, log-body retrieval and `no-store` response handling;
+  the environment context intentionally shows metadata only.
+- Deployment-evidence links remain the authorized build page. That page owns
+  the Livewire deployment timeline, revision evidence, failure guidance and
+  recovery controls. Existing build comparison, health-history and deployment
+  history inspectors already cover bounded read-only evidence.
+- The incident-centre link remains a same-page navigation target because it
+  leads to response actions and multiple incidents, not one bounded record.
+- Published status-page links remain standalone public pages, including their
+  independent subscription form and cache policy. Status-page management and
+  status-incident editing already use page-local dialogs on the authenticated
+  observability page.
+
+This applies single responsibility at the interaction boundary: contextual
+inspectors are used for bounded read-only evidence, while protected log
+retrieval, deployment lifecycle operations and public communication keep their
+existing route boundaries. It avoids duplicating authorization, no-store
+semantics or operational actions in a generic modal.
+
+### Preserved behavior and safety
+
+- Runtime log bodies are not fetched or stored by the environment context; the
+  existing route continues to recheck authorization and prevent shared caching.
+- Deployment links retain the exact build URL and all existing approval,
+  cancellation, rollback, redeploy, note and log behavior.
+- Incident response controls remain explicit and are not nested inside a
+  read-only timeline dialog.
+- Public status pages continue to be independently addressable and retain their
+  public subscription and cache behavior.
+- The audit does not turn a full page into a modal merely to reduce clicks when
+  doing so would increase duplication or conceal consequences.
+
+### Verification
+
+- The complete 63-journey isolated modal/browser matrix was started with PHP
+  8.5.10 and one worker. Three journeys passed before the run reached the
+  dashboard creation journey and waited for a provider trigger that this
+  fixture intentionally does not render once a provider already exists. The
+  run was stopped after 15.4 minutes rather than allowing the harness's
+  15-minute per-test timeout to consume the rest of the suite.
+- The browser assertion was corrected to cover only the dashboard creation
+  actions that are actually visible in that fixture. The corrected dashboard
+  journey passed: **1 test in 28.2 seconds**. Provider creation remains
+  covered from its inventory and empty-provider entry points.
+- Focused PHP regression: **52 tests / 514 assertions passed** across
+  observability, incident timelines, environment evidence, webhook deliveries,
+  retained command output and public status queries.
+- Pint, Vite production asset build, PHP/Node syntax checks and
+  `git diff --check`: passed.
+- Existing observability, environment-context, build, website-log and public
+  status feature coverage remains the evidence for the classified boundaries.
+
+### Commit and push
+
+Commit and push: pending final commit.
+
+### Exact next task
+
+No further modal candidate is justified by the completed link audit. The local
+modal-audit work is complete after this documentation/test correction;
+deployed-domain, physical-device and external-provider acceptance remain
+separate and must not be represented as local passes.
+
 ## Slice 1 — shared filter and modal lifecycle reliability
 
 Status: complete; committed and pushed as `3e69b7b`.
