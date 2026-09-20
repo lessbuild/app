@@ -67,6 +67,76 @@ class ServerCommandHistoryInsightsTest extends TestCase
             ->assertDontSee('<html', false);
     }
 
+    public function test_retained_output_is_lazy_loaded_in_a_scoped_inspector(): void
+    {
+        [$owner, $server] = $this->resources();
+        $output = "first line\n<script>alert('secret')</script>";
+        $execution = $this->execution($server, ServerCommandExecution::STATUS_FAILED, 'systemctl status caddy', $output);
+
+        $this->actingAs($owner)
+            ->get(route('servers.commands.index', $server))
+            ->assertSuccessful()
+            ->assertSee('View output')
+            ->assertSee('Download output')
+            ->assertSee('dialog=server-command-output-'.$execution->id, false)
+            ->assertDontSee('first line')
+            ->assertDontSee("alert('secret')", false);
+
+        $this->get(route('servers.commands.index', [
+            'server' => $server,
+            'dialog' => 'server-command-output-'.$execution->id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('selectedOutputExecution', fn ($selected): bool => $selected?->is($execution) ?? false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertDontSee('first line')
+            ->assertDontSee("alert('secret')", false);
+
+        $this->get(route('servers.commands.output', [
+            'server' => $server,
+            'execution' => $execution,
+            'fragment' => 'server-command-output',
+        ]))
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.servers.command-output-content')
+            ->assertSee('first line')
+            ->assertSee('&lt;script&gt;', false)
+            ->assertDontSee('<script>', false)
+            ->assertSee('data-command-output-content', false)
+            ->assertSee(route('servers.commands.output', [
+                'server' => $server,
+                'execution' => $execution,
+            ]));
+    }
+
+    public function test_retained_output_inspector_preserves_foreign_and_missing_output_denials(): void
+    {
+        [$owner, $server] = $this->resources();
+        $otherServer = $owner->servers()->create(['name' => 'Recovery']);
+        $execution = $this->execution($server, ServerCommandExecution::STATUS_SUCCEEDED, 'uptime', 'output-secret');
+        $foreignExecution = $this->execution($otherServer, ServerCommandExecution::STATUS_SUCCEEDED, 'hostname', 'foreign-output');
+        $withoutOutput = $this->execution($server, ServerCommandExecution::STATUS_CANCELED, 'whoami');
+        $intruder = User::factory()->create();
+
+        $this->actingAs($owner)->get(route('servers.commands.output', [
+            'server' => $server,
+            'execution' => $foreignExecution,
+            'fragment' => 'server-command-output',
+        ]))->assertNotFound();
+
+        $this->actingAs($owner)->get(route('servers.commands.output', [
+            'server' => $server,
+            'execution' => $withoutOutput,
+            'fragment' => 'server-command-output',
+        ]))->assertNotFound();
+
+        $this->actingAs($intruder)->get(route('servers.commands.output', [
+            'server' => $server,
+            'execution' => $execution,
+            'fragment' => 'server-command-output',
+        ]))->assertForbidden();
+    }
+
     public function test_metrics_apply_status_and_queued_date_filters(): void
     {
         [$owner, $server] = $this->resources();

@@ -42,6 +42,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const repositoryPage = /^\/repositories\/\d+$/.test(pathname);
         const serverPage = /^\/servers\/\d+$/.test(pathname);
         const serverCommandsPage = /^\/servers\/\d+\/commands$/.test(pathname);
+        const serverCommandOutputPage = /^\/servers\/\d+\/commands\/\d+\/output$/.test(pathname);
         const scheduledTaskRunOutputPage = /^\/automation\/task-runs\/\d+\/output$/.test(pathname);
         const websitePage = /^\/websites\/\d+$/.test(pathname);
         const websiteHealthChecksPage = /^\/websites\/\d+\/health-checks$/.test(pathname);
@@ -72,7 +73,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
         if (galleryScriptPage) {
             return route.fulfill({ contentType: 'text/html', body: fs.readFileSync(path.join(fixtures, 'gallery-script.html')) });
         }
-        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || dashboardPage || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || activityPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
+        if ([...screens, 'provider-create', 'feedback'].includes(pathname.slice(1)) || dashboardPage || galleryPage || galleryMyReportsPage || galleryReportStatusPage || repositoryImpactPreviewPage || buildComparisonPage || buildPage || providerPage || providerConnectionChecksPage || repositoryPage || serverPage || serverCommandsPage || serverCommandOutputPage || scheduledTaskRunOutputPage || websitePage || websiteHealthChecksPage || signInHistoryPage || environmentContextPage || activityPage || projectPage || configurationDialogPage || pathname === '/builds' && new URL(route.request().url()).searchParams.get('fragment') === 'deployment-history') {
             const screen = dashboardPage
                 ? 'dashboard'
                 : galleryPage
@@ -93,7 +94,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
                             ? 'provider-connection-checks'
                         : repositoryPage
                             ? 'repository-show'
-                        : serverCommandsPage
+                        : serverCommandsPage || serverCommandOutputPage
                             ? 'server-commands'
                                 : scheduledTaskRunOutputPage
                                     ? 'automation-task-run-output'
@@ -124,6 +125,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                 ? 'website-deployment-history'
                 : screen === 'server-commands' && fragment === 'server-command-history'
                     ? 'server-command-history'
+                : screen === 'server-commands' && fragment === 'server-command-output'
+                    ? 'server-command-output-content'
+                : screen === 'server-commands' && dialog?.startsWith('server-command-output-')
+                    ? 'server-command-output-dialog'
                 : screen === 'automation-task-run-output' && fragment === 'scheduled-task-output'
                     ? 'automation-task-run-output'
                 : screen === 'gallery-report-status' && fragment === 'report-status'
@@ -895,6 +900,36 @@ test('server command history opens as a read-only contextual dialog', async ({ p
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
+});
+
+test('server command output opens as a lazy retained-output inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/servers/1/commands', { waitUntil: 'networkidle' });
+
+    let trigger = page.getByRole('link', { name: 'View output', exact: true });
+    const canonicalCommandsPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
+    await page.goto(`http://buildpusher.test${canonicalCommandsPath}`, { waitUntil: 'networkidle' });
+    trigger = page.getByRole('link', { name: 'View output', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Command output', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    const triggerHref = await trigger.getAttribute('href');
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-command-output-content]')).toBeVisible();
+    await expect(dialog).toContainText('fixture command output');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^server-command-output-/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto(new URL(triggerHref, page.url()).href, { waitUntil: 'networkidle' });
+    const directDialog = page.getByRole('dialog', { name: 'Command output', exact: true });
+    await expect(directDialog).toBeVisible();
+    await expect(directDialog.locator('[data-command-output-content]')).toBeVisible();
 });
 
 test('modal history and contextual cancellation preserve the background document', async ({ page }) => {

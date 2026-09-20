@@ -1,4 +1,30 @@
 <x-layouts.app>
+    @php
+        $outputDialogId = 'server-command-output-dialog';
+        $outputDialogOpen = $selectedOutputExecution !== null;
+        $outputDialogExecutionId = $selectedOutputExecution?->id;
+        $outputDialogContentUrl = $selectedOutputExecution
+            ? route('servers.commands.output', [
+                'server' => $server,
+                'execution' => $selectedOutputExecution,
+                'fragment' => 'server-command-output',
+            ])
+            : null;
+        $outputDialogQuery = array_filter([
+            ...$filters,
+            'page' => $executions->currentPage() > 1 ? $executions->currentPage() : null,
+        ], fn ($value) => $value !== null);
+        $outputDialogHistoryUrl = $selectedOutputExecution
+            ? route('servers.commands.index', [
+                'server' => $server,
+                ...$outputDialogQuery,
+                'dialog' => "server-command-output-{$selectedOutputExecution->id}",
+            ])
+            : null;
+        $selectedOutputIsOnPage = $selectedOutputExecution
+            && $executions->contains('id', $selectedOutputExecution->id);
+    @endphp
+
     <x-layouts.partials.breadcrumbs
         :route="route('servers.show', $server)"
         :title="__('Back to :server', ['server' => $server->label])"
@@ -147,6 +173,28 @@
 
                     <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
                         @if ($execution->output !== null)
+                            @php($outputDialogUrl = route('servers.commands.index', [
+                                'server' => $server,
+                                ...$outputDialogQuery,
+                                'dialog' => "server-command-output-{$execution->id}",
+                            ]))
+                            @php($outputContentUrl = route('servers.commands.output', [
+                                'server' => $server,
+                                'execution' => $execution,
+                                'fragment' => 'server-command-output',
+                            ]))
+                            <x-ui.button
+                                :href="$outputDialogUrl"
+                                data-modal-trigger="{{ $outputDialogId }}"
+                                data-modal-content-url="{{ $outputContentUrl }}"
+                                data-modal-history-url="{{ $outputDialogUrl }}"
+                                aria-controls="{{ $outputDialogId }}"
+                                aria-expanded="{{ $outputDialogExecutionId === $execution->id ? 'true' : 'false' }}"
+                                variant="primary"
+                                class="whitespace-nowrap"
+                            >
+                                {{ __('View output') }}
+                            </x-ui.button>
                             <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="whitespace-nowrap">
                                 {{ __('Download output') }}
                             </x-ui.button>
@@ -198,4 +246,28 @@
     <div class="mt-6">
         {{ $executions->links() }}
     </div>
+
+    @if ($selectedOutputExecution && ! $selectedOutputIsOnPage)
+        <a
+            href="{{ $outputDialogHistoryUrl }}"
+            data-modal-trigger="{{ $outputDialogId }}"
+            data-modal-content-url="{{ $outputDialogContentUrl }}"
+            data-modal-history-url="{{ $outputDialogHistoryUrl }}"
+            aria-controls="{{ $outputDialogId }}"
+            aria-expanded="{{ $outputDialogOpen ? 'true' : 'false' }}"
+            class="sr-only"
+        >{{ __('Open retained output') }}</a>
+    @endif
+
+    <x-dialogs.modal
+        id="{{ $outputDialogId }}"
+        :title="__('Command output')"
+        :description="__('Inspect retained output without leaving command history.')"
+        :open="$outputDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading retained output…') }}</p>
+        </div>
+    </x-dialogs.modal>
 </x-layouts.app>

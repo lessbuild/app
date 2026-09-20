@@ -50,6 +50,7 @@ class ServerCommandsController extends Controller
         return view('scenes.servers.commands', [
             ...$viewData,
             'statuses' => ServerCommandExecution::STATUSES,
+            'selectedOutputExecution' => $this->selectedOutputExecution($request, $server),
         ]);
     }
 
@@ -195,13 +196,21 @@ class ServerCommandsController extends Controller
      * Authorize server visibility and matching execution ownership before downloading non-null command output; otherwise return 404.
      */
     public function downloadOutput(
+        Request $request,
         Server $server,
         ServerCommandExecution $execution,
         PlainTextLogDownload $download,
-    ): Response {
+    ): Response|View {
         $this->authorize('view', $server);
         $this->ensureBelongsToServer($execution, $server);
         abort_if($execution->output === null, 404);
+
+        if ($request->string('fragment')->toString() === 'server-command-output') {
+            return view('components.scenes.servers.command-output-content', [
+                'server' => $server,
+                'execution' => $execution,
+            ]);
+        }
 
         return $download->make(
             $execution->output,
@@ -217,6 +226,20 @@ class ServerCommandsController extends Controller
     private function ensureBelongsToServer(ServerCommandExecution $execution, Server $server): void
     {
         abort_unless((int) $execution->server_id === (int) $server->id, 404);
+    }
+
+    private function selectedOutputExecution(Request $request, Server $server): ?ServerCommandExecution
+    {
+        $dialog = $request->string('dialog')->toString();
+
+        if (! preg_match('/^server-command-output-(\d+)$/', $dialog, $matches)) {
+            return null;
+        }
+
+        return $server->commandExecutions()
+            ->whereKey((int) $matches[1])
+            ->whereNotNull('output')
+            ->first();
     }
 
     /** @return array{execution: ?int, status: ?string, output: ?string, date_from: ?string, date_to: ?string} */

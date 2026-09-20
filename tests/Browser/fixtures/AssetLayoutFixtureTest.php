@@ -311,7 +311,7 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/server-show.html', $this->renderPage(route('servers.show', $server))->assertOk()
             ->assertSee('data-modal-trigger="server-display-name-dialog"', false)
             ->assertSee('data-modal-trigger="server-command-history-dialog"', false)->getContent());
-        $server->commandExecutions()->create([
+        $serverCommandExecution = $server->commandExecutions()->create([
             'user_id' => $owner->id,
             'command' => 'uname -a',
             'status' => ServerCommandExecution::STATUS_SUCCEEDED,
@@ -322,6 +322,22 @@ class AssetLayoutFixtureTest extends TestCase
             'server' => $server,
             'fragment' => 'server-command-history',
         ]))->assertOk()->assertSee('data-command-execution', false)->getContent());
+        File::put($directory.'/server-commands.html', $this->renderPage(route('servers.commands.index', [
+            'server' => $server,
+        ]))->assertOk()
+            ->assertSee('data-modal-trigger="server-command-output-dialog"', false)
+            ->assertSee('View output')
+            ->assertDontSee('fixture command output', false)->getContent());
+        File::put($directory.'/server-command-output-dialog.html', $this->renderPage(route('servers.commands.index', [
+            'server' => $server,
+            'dialog' => 'server-command-output-'.$serverCommandExecution->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/server-command-output-content.html', $this->renderPage(route('servers.commands.output', [
+            'server' => $server,
+            'execution' => $serverCommandExecution,
+            'fragment' => 'server-command-output',
+        ]))->assertOk()->assertSee('data-command-output-content', false)
+            ->assertSee('fixture command output')->getContent());
         File::put($directory.'/server-show-edit-dialog.html', $this->renderPage(route('servers.show', [
             'server' => $server,
             'dialog' => 'edit-display-name',
