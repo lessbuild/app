@@ -21,6 +21,9 @@
         $dashboardHasActiveCommands = array_sum($activeCommandCounts) > 0;
         $dashboardActiveCommandsDialogOpen = $dashboardDialog === 'active-commands'
             && $dashboardHasActiveCommands;
+        $dashboardHasWebhookDeliveries = array_sum($webhookDeliveryCounts) > 0;
+        $dashboardWebhookActivityDialogOpen = $dashboardDialog === 'webhook-activity'
+            && $dashboardHasWebhookDeliveries;
         $dashboardSystemHealthDialogOpen = $dashboardDialog === 'system-health';
         $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
             || (old('_recipe_form') === 'edit' && $errors->any());
@@ -43,6 +46,11 @@
         $dashboardActiveCommandsContentUrl = route('commands.index', [
             'active' => 1,
             'fragment' => 'active-command-history',
+        ]);
+        $dashboardWebhookActivityDialogUrl = route('dashboard', ['dialog' => 'webhook-activity']);
+        $dashboardWebhookActivityContentUrl = route('activity.index', [
+            'category' => 'deployment',
+            'fragment' => 'workspace-activity',
         ]);
         $dashboardModalOpen = [
             'provider' => $dashboardProviderCreateOpen,
@@ -375,7 +383,15 @@
                         {{ trans_choice(':count delivery received in the last 24 hours|:count deliveries received in the last 24 hours', $webhookDeliveryTotal, ['count' => $webhookDeliveryTotal]) }}
                     </p>
                 </div>
-                <a href="{{ route('activity.index', ['category' => 'deployment']) }}" class="text-sm font-medium text-ternary underline">
+                <a
+                    href="{{ route('activity.index', ['category' => 'deployment']) }}"
+                    data-modal-trigger="dashboard-webhook-activity-dialog"
+                    data-modal-content-url="{{ $dashboardWebhookActivityContentUrl }}"
+                    data-modal-history-url="{{ $dashboardWebhookActivityDialogUrl }}"
+                    aria-controls="dashboard-webhook-activity-dialog"
+                    aria-expanded="{{ $dashboardWebhookActivityDialogOpen ? 'true' : 'false' }}"
+                    class="text-sm font-medium text-ternary underline"
+                >
                     {{ __('View deployment activity') }}
                 </a>
             </div>
@@ -764,6 +780,20 @@
         >
             <div data-modal-content>
                 <p class="p-5 text-sm text-secondary">{{ __('Loading active command history…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
+
+    @if ($dashboardHasWebhookDeliveries)
+        <x-dialogs.modal
+            id="dashboard-webhook-activity-dialog"
+            :title="__('Deployment activity')"
+            :description="__('Review webhook-related deployment events without leaving the dashboard.')"
+            :open="$dashboardWebhookActivityDialogOpen"
+            body-class="p-0"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading deployment activity…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif

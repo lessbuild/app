@@ -2,6 +2,7 @@
 
 use App\Models\Build;
 use App\Models\Recipe;
+use App\Models\RepositoryWebhookDelivery;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
@@ -69,10 +70,16 @@ class AssetLayoutFixtureTest extends TestCase
             'output' => 'fixture-sensitive-output',
             'status' => ServerCommandExecution::STATUS_RUNNING,
         ]);
+        $dashboardRepository->webhookDeliveries()->create([
+            'delivery_id' => 'fixture-webhook-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+            'created_at' => now(),
+        ]);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()
             ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)
             ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)
-            ->assertSee('data-modal-trigger="dashboard-active-commands-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="dashboard-active-commands-dialog"', false)
+            ->assertSee('data-modal-trigger="dashboard-webhook-activity-dialog"', false)->getContent());
         File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-active-deployments-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-deployments']))
@@ -80,6 +87,8 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/dashboard-system-health-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'system-health']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-active-commands-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-commands']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/dashboard-webhook-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'webhook-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
@@ -124,6 +133,10 @@ class AssetLayoutFixtureTest extends TestCase
         ]))->assertOk()
             ->assertSee('data-command-history-content', false)
             ->assertDontSee('fixture-sensitive-command')->getContent());
+        File::put($directory.'/deployment-activity-content.html', $this->renderPage(route('activity.index', [
+            'category' => 'deployment',
+            'fragment' => 'workspace-activity',
+        ]))->assertOk()->assertSee('data-activity-history-content', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

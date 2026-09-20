@@ -869,6 +869,8 @@ class DashboardTest extends TestCase
                 'delivery_status' => RepositoryWebhookDelivery::STATUS_QUEUED,
             ]).'#webhook-deliveries')
             ->assertSee(route('activity.index', ['category' => 'deployment']))
+            ->assertSee('data-modal-trigger="dashboard-webhook-activity-dialog"', false)
+            ->assertSee('fragment=workspace-activity')
             ->assertDontSee('owner-sensitive-delivery', false)
             ->assertDontSee('owner-sensitive-commit', false)
             ->assertDontSee('old-sensitive', false)

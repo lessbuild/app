@@ -117,6 +117,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fragment = new URL(route.request().url()).searchParams.get('fragment');
             const active = new URL(route.request().url()).searchParams.get('active');
+            const category = new URL(route.request().url()).searchParams.get('category');
             const fixtureName = screen === 'builds' && fragment === 'deployment-history' && active === '1'
                 ? 'dashboard-active-deployments'
                 : screen === 'builds' && fragment === 'deployment-history'
@@ -137,6 +138,9 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'observability-environment-context-dialog'
                 : screen === 'activity' && fragment === 'account-audit'
                     ? 'account-audit-content'
+                : screen === 'activity' && fragment === 'workspace-activity'
+                    && category === 'deployment'
+                    ? 'deployment-activity-content'
                 : screen === 'activity' && fragment === 'workspace-activity'
                     ? 'workspace-activity-content'
                 : screen === 'system-health' && fragment === 'system-health'
@@ -177,6 +181,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'dashboard-system-health-dialog'
                             : screen === 'dashboard' && dialog === 'active-commands'
                                 ? 'dashboard-active-commands-dialog'
+                            : screen === 'dashboard' && dialog === 'webhook-activity'
+                                ? 'dashboard-webhook-activity-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -710,6 +716,30 @@ test('dashboard active commands open as a bounded status inspector', async ({ pa
 
     await page.goto('http://buildpusher.test/home?dialog=active-commands', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Active server commands', exact: true })).toBeVisible();
+});
+
+test('dashboard deployment activity opens as a category-scoped inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/home', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View deployment activity', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Deployment activity', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-activity-history-content]')).toBeVisible();
+    await expect(dialog).toContainText('Workspace activity');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('webhook-activity');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/home?dialog=webhook-activity', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Deployment activity', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {
