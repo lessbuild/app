@@ -1269,6 +1269,67 @@ status/note editor into a page-local dialog, preserve the admin gate, accepted
 record immutability, resend behavior, validation keys and notification timing,
 and keep the applicant record itself visible in the queue.
 
+## Slice 25 — platform admin access-request review editor
+
+Status: complete; committed and pushed as b433bec.
+
+### Responsibility problem
+
+The platform-admin access-request queue rendered a status selector, encrypted
+review-note input and invitation controls inside every applicant card. That
+made a long review queue harder to scan on mobile and duplicated a write form
+for each row. The applicant summary and use case are useful queue context; the
+review mutation is a short, focused operation.
+
+### Boundaries and benefit
+
+- `AdminAccessRequestController::index()` remains the platform-admin
+  authorization and queue read boundary, resolving only the selected review
+  record for a deep-linked dialog.
+- The reusable access-request review dialog owns the status/note/resend form
+  presentation for the selected record.
+- `UpdateAccessRequestRequest` and `ReviewAccessRequestAction` remain the
+  validation, immutable-accepted guard, invitation issuance and notification
+  boundaries.
+- The queue card owns the trigger and keeps applicant identity, company, use
+  case and current status visible.
+
+This applies single responsibility at the page/presentation boundary without
+moving platform authorization into Blade, creating a generic CRUD action or
+preloading every row's write form.
+
+### Preserved behavior and safety
+
+- Only platform administrators can open the queue or dialog; ordinary users
+  remain forbidden before validation.
+- Accepted requests remain visibly read-only. Pending/contacted/invited/
+  declined status choices, private notes, explicit invitation resend and the
+  existing action exception behavior are unchanged.
+- The current status filter is retained in the trigger URL, direct dialog URLs
+  work without JavaScript, and validation errors reopen the selected dialog with
+  the applicant context and existing field keys.
+- Applicant content remains escaped and invitation credentials are still issued
+  and delivered only by the existing action; the dialog does not expose tokens.
+
+### Verification
+
+- Access-request regression: **14 tests / 110 assertions passed**.
+- PHP syntax checks, Pint and git diff --check: passed.
+- Direct admin page and dialog rendering, denied-user access, validation
+  reopening, accepted immutability and resend behavior are covered by feature
+  tests. No production or external email was used.
+
+### Commit and push
+
+Commit and push: b433bec Open admin access request reviews in a dialog.
+
+### Exact next task
+
+Audit backup recovery evidence and operational detail links. Keep restore,
+verification, run-backup, destination testing, overwrite confirmation and
+other remote/destructive workflows explicit; only extract a bounded read-only
+evidence inspector where it reduces page context without hiding consequences.
+
 ## Slice 13 — account sign-in-history inspector
 
 Status: complete; committed and pushed as 3ce2366.
