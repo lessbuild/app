@@ -29,24 +29,28 @@ class RepositoryWebhookTest extends TestCase
             ->post(route('repositories.webhook.store', $repository))
             ->assertForbidden();
 
+        $dialogUrl = route('repositories.show', ['repository' => $repository, 'dialog' => 'repository-webhook-settings']);
         $response = $this->actingAs($owner)
-            ->post(route('repositories.webhook.store', $repository));
+            ->from($dialogUrl)
+            ->post(route('repositories.webhook.store', ['repository' => $repository, 'dialog' => 'repository-webhook-settings']));
         $repository->refresh();
         $secret = $repository->webhook_secret;
 
         $response
-            ->assertRedirect(route('repositories.show', $repository).'#deployment-webhook')
+            ->assertRedirect($dialogUrl.'#deployment-webhook')
             ->assertSessionHas("repository:{$repository->id}:webhook_secret", $secret);
         $this->assertTrue($repository->webhook_enabled);
         $this->assertSame(64, strlen($secret));
         $this->assertNotSame($secret, DB::table('repositories')->where('id', $repository->id)->value('webhook_secret'));
         $this->assertArrayNotHasKey('webhook_secret', $repository->toArray());
 
-        $this->actingAs($owner)->get(route('repositories.show', $repository))
+        $this->actingAs($owner)->get($dialogUrl)
             ->assertSuccessful()
             ->assertSee(route('webhooks.repositories.receive', $repository))
             ->assertSee($secret)
             ->assertSee('Copy this webhook secret now')
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('data-modal-trigger="repository-webhook-settings-dialog"', false)
             ->assertSee('Rotate the webhook secret for Application repository? The current secret will stop working immediately.')
             ->assertSee('Disable webhook deployments for Application repository?');
         $this->actingAs($owner)->get(route('repositories.show', $repository))

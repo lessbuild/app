@@ -25,7 +25,14 @@ class RepositoryWebhookSettingsController extends Controller
             session()->flash("repository:{$repository->id}:webhook_secret", $secret);
         }
 
-        return redirect(route('repositories.show', $repository).'#deployment-webhook')
+        $showUrl = route('repositories.show', [
+            'repository' => $repository,
+            ...($request->query('dialog') === 'repository-webhook-settings'
+                ? ['dialog' => 'repository-webhook-settings']
+                : []),
+        ]);
+
+        return redirect($showUrl.'#deployment-webhook')
             ->with('success', __('Deployment webhook enabled.'));
     }
 

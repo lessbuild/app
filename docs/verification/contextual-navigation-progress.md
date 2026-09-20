@@ -319,3 +319,52 @@ Review remaining detail-page history links and other bounded settings
 surfaces. Keep paginated history, exports, imports, restores, destructive
 operations and protocol callbacks as explicit pages unless a smaller read-only
 summary genuinely improves the flow.
+
+## Slice 7 — repository webhook settings in context
+
+Status: complete locally; commit and push pending.
+
+### Responsibility problem
+
+Repository webhook enablement, rotation and disablement were rendered as
+credential-sensitive controls inline on an already long repository detail page.
+GitLab signing-token input and webhook lifecycle confirmations belong to one
+focused settings operation and should not compete with deployment history.
+
+### Boundary
+
+- webhook-settings-dialog.blade.php owns the repository-context form surface
+  and confirmation controls.
+- RepositoryWebhookSettingsController, RepositoryWebhookSettingsRequest and
+  the existing enable/disable actions remain the authorization, validation,
+  secret-generation and persistence boundaries.
+- The controller preserves the dialog query only for modal-originated enable
+  or rotate submissions; canonical full-page redirects remain unchanged.
+
+### Preserved behavior and safety
+
+- Workspace policy checks still run before GitLab signing-token validation.
+- Generated webhook secrets remain one-time session flashes and are never
+  stored or rendered as repository attributes.
+- Rotation and disablement confirmations, provider-specific token handling,
+  payload URL, branch filtering, replay protection and delivery history remain
+  unchanged.
+- A modal-originated successful enable/rotate returns to the repository with
+  the dialog open so the one-time secret remains immediately copyable.
+- Long delivery history and CSV export remain explicit, filterable page
+  workflows.
+
+### Verification
+
+- Repository webhook and delivery-history coverage: 18 tests / 199 assertions
+  passed.
+- Isolated Blade fixture export: 1 test / 150 assertions passed.
+- Provider/repository/recipe dialog browser journey: 1 passed, including
+  webhook URL state, focus restoration and direct dialog rendering.
+- Blade cache, Pint, JavaScript syntax check and git diff --check: passed.
+
+### Exact next task
+
+Commit and push this slice, then finish the detail-page audit. Keep full
+history/report/export flows as pages and document any remaining inline action
+with a concrete safety or execution-order reason.

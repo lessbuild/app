@@ -9,6 +9,10 @@
         ]);
         $websiteEditOpen = $websiteEditDialogOpen;
         $websiteEditUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'edit-website']);
+        $webhookDialogId = 'repository-webhook-settings-dialog';
+        $webhookDialogOpen = request()->query('dialog') === 'repository-webhook-settings';
+        $webhookDialogUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'repository-webhook-settings']);
+        $canUpdateRepository = auth()->user()?->can('update', $repository) ?? false;
     @endphp
 
     <!--
@@ -302,47 +306,23 @@
             @endif
         </div>
 
-        <div class="mt-5 flex flex-wrap gap-3">
-            <form method="POST" action="{{ route('repositories.webhook.store', $repository) }}" class="flex flex-wrap gap-3">
-                @csrf
-                @if ($repository->provider->provider === \App\Models\Provider::TYPE_GITLAB)
-                    <div>
-                        <label for="signing_token" class="sr-only">{{ __('GitLab signing token') }}</label>
-                        <input
-                            id="signing_token"
-                            name="signing_token"
-                            type="password"
-                            required
-                            autocomplete="off"
-                            placeholder="whsec_…"
-                            class="input secondary rounded-lg"
-                        >
-                        <x-forms.errors name="signing_token" />
-                    </div>
-                @endif
-                <button
-                    type="submit"
-                    class="button button--primary"
-                    @if ($repository->webhook_enabled)
-                        onclick="return confirm({{ Illuminate\Support\Js::from(__('Rotate the webhook secret for :repository? The current secret will stop working immediately.', ['repository' => $repository->name])) }})"
-                    @endif
+        @if ($canUpdateRepository)
+            <div class="mt-5">
+                <x-ui.button
+                    :href="$webhookDialogUrl"
+                    data-modal-trigger="{{ $webhookDialogId }}"
+                    aria-controls="{{ $webhookDialogId }}"
+                    aria-expanded="{{ $webhookDialogOpen ? 'true' : 'false' }}"
+                    variant="secondary"
                 >
-                    {{ $repository->webhook_enabled ? __('Rotate webhook secret') : __('Enable webhook') }}
-                </button>
-            </form>
-
-            @if ($repository->webhook_enabled)
-                <form
-                    method="POST"
-                    action="{{ route('repositories.webhook.destroy', $repository) }}"
-                    onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Disable webhook deployments for :repository?', ['repository' => $repository->name])) }})"
-                >
-                    @csrf
-                    @method('DELETE')
-                    <x-ui.button type="submit" variant="danger">{{ __('Disable webhook') }}</x-ui.button>
-                </form>
-            @endif
-        </div>
+                    {{ $repository->webhook_enabled ? __('Manage webhook') : __('Enable webhook') }}
+                </x-ui.button>
+            </div>
+            <x-scenes.repositories.webhook-settings-dialog
+                :repository="$repository"
+                :open="$webhookDialogOpen"
+            />
+        @endif
 
         @php
             $deliveryFiltersActive = array_filter($deliveryFilters, fn ($value) => $value !== null);

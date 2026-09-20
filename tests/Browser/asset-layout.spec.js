@@ -107,6 +107,8 @@ async function serveFixtures(page) {
                                     ? 'provider-show-edit-dialog'
                                 : screen === 'repository-show' && dialog === 'edit-repository'
                                     ? 'repository-show-edit-dialog'
+                                : screen === 'repository-show' && dialog === 'repository-webhook-settings'
+                                    ? 'repository-show-webhook-dialog'
                                 : screen === 'server-show' && dialog === 'edit-display-name'
                                     ? 'server-show-edit-dialog'
                                 : screen === 'website-show' && dialog === 'edit-website'
@@ -258,6 +260,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     for (const workflow of [
         { path: 'providers/1', trigger: 'Edit Provider', title: 'Edit provider', query: 'edit-provider' },
         { path: 'repositories/1', trigger: 'Edit', title: 'Edit repository', query: 'edit-repository' },
+        { path: 'repositories/1', trigger: 'Enable webhook', title: 'Webhook settings', query: 'repository-webhook-settings' },
         { path: 'servers/1', trigger: 'Edit Display Name', title: 'Edit server display name', query: 'edit-display-name' },
         { path: 'websites/1', trigger: 'Edit Website', title: 'Edit website', query: 'edit-website' },
     ]) {

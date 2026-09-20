@@ -184,6 +184,12 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/repository-show.html', $this->renderPage(route('repositories.show', $repository))->assertOk()
             ->assertSee('data-modal-trigger="repository-edit-dialog"', false)->getContent());
+        File::put($directory.'/repository-show-webhook-dialog.html', $this->renderPage(route('repositories.show', [
+            'repository' => $repository,
+            'dialog' => 'repository-webhook-settings',
+        ]))->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->getContent());
         File::put($directory.'/repository-show-edit-dialog.html', $this->renderPage(route('repositories.show', [
             'repository' => $repository,
             'dialog' => 'edit-repository',
