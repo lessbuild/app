@@ -30,8 +30,8 @@ Each verified slice is committed and pushed before the next slice starts.
 | 1. Shared mobile shell | Shell owns safe-area, keyboard and mobile document-flow behavior; page views remain unchanged. | Complete | 50 PHP tests / 763 assertions; 3 bounded browser journeys; Pint and Vite passed. | `85ef0fe` pushed |
 | 2. Mobile sheets and filters | Shared dialog and filter components own mobile sheet geometry, safe-area action space and dismissal behavior. | Complete | 45 PHP tests / 612 assertions; 2 focused browser journeys; Pint and Vite passed. | `57da0b8` pushed |
 | 3. Mobile page hierarchy | Shared page headers, dashboard actions and inventory cards own compact mobile spacing; data and routes remain page-owned. | Complete | 53 PHP tests / 785 assertions; 1 full 320px fixture case; Pint and Vite passed. | `56ea637` pushed |
-| 4. Mobile feedback states | Shared feedback primitives and the authenticated shell own compact alerts, empty states and connectivity recovery messaging; operation state remains server-owned. | Complete | 51 PHP tests / 774 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | Pending push |
-| 5. Mobile form affordances | Shared form feedback and modal loading styles own focus-safe mobile presentation; validation contracts and server operation state remain unchanged. | Complete | 30 PHP tests / 503 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | Pending push |
+| 4. Mobile feedback states | Shared feedback primitives and the authenticated shell own compact alerts, empty states and connectivity recovery messaging; operation state remains server-owned. | Complete | 51 PHP tests / 774 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | `2d6bd35` pushed |
+| 5. Mobile form affordances | Shared form feedback and modal loading styles own focus-safe mobile presentation; validation contracts and server operation state remain unchanged. | Complete | 30 PHP tests / 503 assertions; 1 focused browser journey; Pint, Vite and diff check passed. | `d38eb8c` pushed |
 
 ## Preserved contracts
 
@@ -223,8 +223,36 @@ content request and does not create a new retry or optimistic state.
 - Focused browser verification with PHP 8.5.10: **1 passed** for 16px mobile
   controls, modal-safe scroll margins and lazy-content busy-state feedback.
 
+## Final verification — 2026-09-20
+
+The five mobile-native implementation slices are complete on isolated `main`.
+The final audit also fixed a shared server-rendered dialog edge case: the
+mobile quick-action bar could cover a dialog's sticky submit row when the
+JavaScript runtime was unavailable. The shared modal now stacks above the
+quick actions, and the no-JavaScript provider fixture uses the existing
+`Add Provider` label.
+
+### Verification
+
+- Complete strict PHP suite: **1,648 tests / 13,786 assertions passed**.
+- Final focused PHP regression after the audit correction: **46 tests / 612
+  assertions passed**.
+- Complete built-asset/browser suite with PHP 8.5.10: **29 passed** in 11.3
+  minutes, including light and dark 320/390/768/1440px layouts, dialogs,
+  filters, feedback, form focus and no-JavaScript provider submission.
+- Pint: passed.
+- Required-PHP Composer manifest and platform checks: passed.
+- Vite production build: passed.
+- Route and Blade view cache generation: passed.
+- `git diff --check`: passed.
+
+The final correction is pushed as `60241b8 Keep native mobile dialogs above
+quick actions`. No routes, validation keys, named error bags, persistence,
+authorization, queued jobs or external integrations changed. No production,
+cloud or real-device acceptance is claimed.
+
 ### Exact next task
 
-Run the final mobile-native verification slice: refresh the full focused PHP and
-asset checks, audit responsive regressions, update the handoff and record
-external-device acceptance as outstanding rather than claiming it locally.
+If release evidence is required, verify the completed journeys on real iOS and
+Android devices and run the separate live/paid-provider acceptance drill. The
+local implementation and regression work require no further code slice.

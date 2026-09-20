@@ -2203,6 +2203,29 @@ diff checks. No dependency, migration or production configuration changed.
 This is local/runtime smoke evidence only, not the separate paid-cloud or
 external acceptance drill.
 
+## Mobile-native UX modernization — 2026-09-20
+
+The mobile-native UX plan is complete on isolated `main`. The five cohesive
+slices are pushed in order: `85ef0fe`, `57da0b8`, `56ea637`, `2d6bd35`,
+`d38eb8c`, followed by the final server-rendered dialog stacking correction
+`60241b8`. The shared shell now owns safe-area and keyboard behavior; dialogs
+and filters use mobile sheets; page hierarchy, feedback, connectivity states,
+form focus, validation visibility and lazy-content loading have consistent
+mobile treatment. A final edge-case fix keeps native dialogs above the fixed
+mobile quick-action bar when JavaScript is unavailable.
+
+Verification completed with the strict PHP 8.5.10 suite at **1,648 tests /
+13,786 assertions**, a final focused regression at **46 tests / 612
+assertions**, and the complete built-asset/browser suite at **29 passed**.
+Pint, required-PHP Composer validation/platform checks, Vite, route/view cache
+generation and `git diff --check` passed. No routes, validation keys, named
+error bags, persisted values, authorization, queued jobs or external provider
+behavior changed. No production, cloud or real-device acceptance is claimed.
+
+The detailed ledger is [mobile-native verification](verification/mobile-native-progress.md).
+The remaining release work is real-device verification plus the separate live
+and paid-provider acceptance drill.
+
 ## Moving to a new chat
 
 Use this same local repository so uncommitted/untracked work remains available. A handoff note supplies project state, not the complete old transcript. The new chat should explicitly read it. Do not keep two chats editing this worktree concurrently; stop/pause any old-chat long-running goal through the UI before resuming in the new chat. This handoff does not itself transfer or complete the goal.

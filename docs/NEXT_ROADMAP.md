@@ -1,6 +1,26 @@
 # Next development sequence
 
-Reviewed 2026-09-17. Work one item at a time; passing a narrow test does not establish completion of a whole workflow. The original roadmap checkmarks describe existing implementation, not demonstrated production parity.
+Reviewed 2026-09-20. Work one item at a time; passing a narrow test does not establish completion of a whole workflow. The original roadmap checkmarks describe existing implementation, not demonstrated production parity.
+
+## Mobile-native UX modernization — 2026-09-20
+
+The mobile-native UX sequence is complete locally on isolated `main`. The
+shared authenticated shell now handles safe areas, keyboard overlap,
+connectivity feedback and compact mobile flow; dialogs and filters use native
+bottom-sheet behavior; page headers, dashboard actions, inventory cards,
+feedback states and form affordances are denser and easier to operate with a
+thumb. Existing routes, modal query state, authorization, validation, queued
+operations, persistence and no-JavaScript behavior remain unchanged.
+
+The implementation is pushed through `60241b8` on `origin/main`. The strict
+PHP 8.5.10 suite passed **1,648 tests / 13,786 assertions**, the final focused
+regression passed **46 tests / 612 assertions**, and the complete built-asset
+browser suite passed **29 tests** across light/dark 320/390/768/1440px
+fixtures and the mobile workflow journeys. Pint, required-PHP Composer
+platform checks, the Vite build, route/view caches and `git diff --check`
+passed. This is local/dev evidence; real-device, production and external
+provider acceptance remain separate release gates. See the
+[mobile-native verification record](verification/mobile-native-progress.md).
 
 ## UI redesign completion — 2026-09-19
 
