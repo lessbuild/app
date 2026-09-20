@@ -622,7 +622,7 @@ state and no-JavaScript fallback semantics.
 
 ## Slice 11 — build comparison inspector
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 4a0d86e and f4269ea.
 
 ### Responsibility problem
 
@@ -671,6 +671,66 @@ guard while separating read-only inspection from deployment operations.
 - An initial focused run caught an undefined controller request parameter;
   adding the explicit `Request` dependency fixed it before commit and the
   complete focused regression then passed.
+
+### Commit and push
+
+Commits and pushes: `4a0d86e Open build comparison in a dialog` and
+`f4269ea Complete build comparison dialog trigger`.
+
+### Exact next task
+
+Audit notification destinations, observability evidence links and remaining
+read-only product pages; keep notification read-state changes and incident
+response actions explicit.
+
+## Slice 12 — build health-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The deployment page summarized application health but sent “View health
+history” to the website page, interrupting a deployment investigation on
+mobile. The existing website health-history endpoint already owns the scoped
+query, filters, authorization and export behavior, so the missing boundary was
+only a contextual read-only presentation.
+
+### Boundaries and benefit
+
+- `WebsitesController::healthChecks()` remains the single authorized history
+  read boundary and supplies the existing
+  `fragment=website-health-checks` body.
+- The Livewire deployment-status view owns the build-local trigger and
+  `wire:ignore` dialog shell; it does not duplicate health queries or monitor
+  execution.
+- The direct website history link remains the no-JavaScript fallback, while
+  the build URL receives a bookmarkable dialog state.
+- “Run health check now” remains an explicit POST action with its existing
+  queue and authorization semantics.
+
+This keeps inspection separate from a state-changing health check, reuses the
+existing website policy boundary and avoids creating a second health-history
+implementation.
+
+### Preserved behavior and safety
+
+- Website-scoped health authorization, filters, pagination, retained-result
+  limits, escaping and export behavior are unchanged.
+- Opening the dialog performs only an authorized GET fragment request; it does
+  not queue a check, change monitoring settings or mutate the deployment.
+- Filter controls remain inside the modal and the deployment page path and
+  scroll context remain stable.
+- The website detail route remains available when JavaScript is disabled.
+
+### Verification
+
+- Website health-history and deployment-comparison regression: **15 tests /
+  153 assertions passed**.
+- PHP syntax checks, Pint and Node syntax check: passed.
+- Focused browser journey: **1 test passed in 45.9 seconds** using PHP
+  8.5.10; verified lazy health-history loading, contextual URL stability,
+  direct dialog opening, Escape and focus restoration.
+- `git diff --check`: pending final commit check.
 
 ### Commit and push
 

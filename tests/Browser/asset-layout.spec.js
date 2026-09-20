@@ -136,6 +136,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'build-note-dialog'
                             : screen === 'build' && dialog?.startsWith('compare-build-')
                                 ? 'build-comparison-dialog'
+                            : screen === 'build' && dialog === 'build-website-health-checks-dialog'
+                                ? 'build-website-health-checks-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -472,6 +474,30 @@ test('build comparison opens as a read-only contextual dialog', async ({ page })
 
     await page.goto('http://buildpusher.test/builds/2?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Compare deployments', exact: true })).toBeVisible();
+});
+
+test('build health history opens as a contextual read-only dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/builds/2', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View health history', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Health check history', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
+    await expect(dialog.locator('#health-dialog-result')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('build-website-health-checks-dialog');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/builds/2?dialog=build-website-health-checks-dialog', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

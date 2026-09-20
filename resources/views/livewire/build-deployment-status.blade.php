@@ -14,6 +14,16 @@
             'baseline' => $previousBuild,
             'fragment' => 'build-comparison',
         ]);
+        $healthChecksDialogId = 'build-website-health-checks-dialog';
+        $healthChecksDialogOpen = request()->query('dialog') === $healthChecksDialogId;
+        $healthChecksDialogUrl = route('builds.show', [
+            'build' => $build,
+            'dialog' => $healthChecksDialogId,
+        ]);
+        $healthChecksContentUrl = route('websites.health-checks.index', [
+            'website' => $build->repository->website,
+            'fragment' => 'website-health-checks',
+        ]);
         $statusTone = match ($build->status) {
             \App\Models\Build::STATUS_SUCCEEDED => 'success',
             \App\Models\Build::STATUS_FAILED, \App\Models\Build::STATUS_REJECTED => 'danger',
@@ -495,7 +505,7 @@
         @endif
         <section class="ui-card mt-4 p-5" aria-labelledby="deployment-health-title">
             <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-1 text-lg font-black text-primary">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-secondary">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><x-ui.badge :tone="$website->health_status === 'healthy' ? 'success' : ($website->health_status === 'unhealthy' ? 'danger' : 'neutral')">{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</x-ui.badge></div>
-            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" variant="secondary">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
+            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" data-modal-trigger="{{ $healthChecksDialogId }}" data-modal-content-url="{{ $healthChecksContentUrl }}" data-modal-history-url="{{ $healthChecksDialogUrl }}" aria-controls="{{ $healthChecksDialogId }}" aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}" variant="secondary">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
         </section>
     @endif
 
@@ -582,6 +592,19 @@
     >
         <div data-modal-content>
             <p class="p-5 text-sm text-secondary">{{ __('Loading deployment comparison…') }}</p>
+        </div>
+    </x-dialogs.modal>
+
+    <x-dialogs.modal
+        id="{{ $healthChecksDialogId }}"
+        :title="__('Health check history')"
+        :description="__('Review retained website observations without leaving this deployment.')"
+        :open="$healthChecksDialogOpen"
+        body-class="p-0"
+        wire:ignore
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading health history…') }}</p>
         </div>
     </x-dialogs.modal>
 </div>

@@ -375,6 +375,7 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Deployment evidence')
             ->assertSee('data-modal-trigger="build-note-dialog"', false)
             ->assertSee('data-modal-trigger="build-comparison-dialog"', false)
+            ->assertSee('data-modal-trigger="build-website-health-checks-dialog"', false)
             ->getContent());
         File::put($directory.'/build-note-dialog.html', $this->renderPage(route('builds.show', [
             'build' => $build,
@@ -383,6 +384,10 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/build-comparison-dialog.html', $this->renderPage(route('builds.show', [
             'build' => $build,
             'dialog' => 'compare-build-'.$build->id.'-'.$previousBuild->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/build-website-health-checks-dialog.html', $this->renderPage(route('builds.show', [
+            'build' => $build,
+            'dialog' => 'build-website-health-checks-dialog',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/build-comparison-content.html', $this->renderPage(route('builds.compare', [
             'build' => $build,
