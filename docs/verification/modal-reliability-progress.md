@@ -201,7 +201,7 @@ deployment execution, rollback, cancellation and retry as explicit workflows.
 
 ## Slice 5 — website deployment-history timeline
 
-Status: complete; implementation verified locally and ready to commit/push.
+Status: complete; committed and pushed as 027f931.
 
 ### Responsibility problem
 
@@ -499,10 +499,67 @@ generic modal abstraction.
 
 ### Commit and push
 
-Commit and push: pending in this working slice.
+Commit and push: `027f931 Open recipe report status in a dialog`.
 
 ### Exact next task
 
 Audit notification destination/status links and the remaining route inventory;
 keep delivery tests, incident changes and other state-changing workflows as
 explicit pages or forms.
+
+## Slice 9 — provider filter and edit modal reliability
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The provider filter is rendered as the existing mobile bottom-sheet filter
+dialog, but mobile document scrolling depended on a JavaScript-only state marker
+while filter dialogs were excluded from the base CSS scroll lock. This made the
+background susceptible to scrolling during filter use. The provider edit flow
+also needed a browser regression proving that its lazy fragment lifecycle does
+not navigate or refresh the background document.
+
+### Boundaries and benefit
+
+- The existing `x-ui.filter-panel` and modal lifecycle remain the shared
+  implementation; the change adds a mobile-only CSS lock for open filter
+  dialogs rather than introducing a provider-specific filter component.
+- Desktop filters remain inline and are not affected by the mobile selector.
+- The existing lazy provider edit dialog remains responsible for form loading
+  and cancellation; browser coverage now keeps its no-document-navigation
+  guarantee alongside the filter coverage.
+
+This fixes the concrete interaction issue at the shared presentation boundary,
+keeps no-JavaScript filter fallback behavior unchanged and avoids duplicating
+provider filtering or edit workflows.
+
+### Preserved behavior and safety
+
+- Provider filter validation, query parameters, pagination, inventory results
+  and export URLs are unchanged.
+- Filter forms still work without JavaScript and close/focus behavior remains
+  native on supported mobile browsers.
+- Provider edit remains a same-page lazy dialog with its direct edit route as
+  fallback; no persistence or authorization behavior changes.
+- The background document is inert and its scroll is locked only while the
+  mobile filter dialog is open; the dialog body remains the scrollable region.
+
+### Verification
+
+- Provider inventory/filter regression: **5 tests / 40 assertions passed**.
+- Focused browser journeys: **2 tests passed in 1.0 minute** using PHP 8.5.10;
+  verified provider edit cancellation/history and mobile filter opening,
+  background scroll lock, no document navigation and focus restoration.
+- Asset build: passed.
+- Node syntax check and `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+Audit notification destination/status links and the remaining route inventory;
+choose the next bounded contextual inspector while keeping delivery, incident
+and other state-changing workflows explicit.

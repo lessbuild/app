@@ -26,6 +26,14 @@ body[data-modal-open] {
     overscroll-behavior-y: none;
 }
 
+@media (max-width: 63.999rem) {
+    html:has(dialog[data-filter-dialog][open]),
+    body:has(dialog[data-filter-dialog][open]) {
+        overflow: hidden;
+        overscroll-behavior-y: none;
+    }
+}
+
 body,
 button,
 a,

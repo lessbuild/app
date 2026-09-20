@@ -547,6 +547,34 @@ test('mobile filters remain usable without JavaScript', async ({ page }) => {
     await noScriptContext.close();
 });
 
+test('mobile provider filters lock background scrolling without a document reload', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/providers', { waitUntil: 'networkidle' });
+
+    const documentRequests = [];
+    page.on('request', (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            documentRequests.push(new URL(request.url()).pathname);
+        }
+    });
+
+    const trigger = page.getByRole('button', { name: 'Filter providers', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Filter providers', exact: true });
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAttribute('data-filter-dialog', '');
+    await expect(page.locator('html')).toHaveAttribute('data-modal-open', '');
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden');
+    expect(documentRequests).toEqual([]);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await expect(page.locator('html')).not.toHaveAttribute('data-modal-open', '');
+});
+
 test('website log retention opens in a contextual dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
