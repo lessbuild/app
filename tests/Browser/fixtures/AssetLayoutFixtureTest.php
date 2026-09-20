@@ -63,14 +63,23 @@ class AssetLayoutFixtureTest extends TestCase
             'status' => Build::STATUS_RUNNING, 'trigger_source' => Build::TRIGGER_MANUAL,
             'revision' => str_repeat('d', 40), 'started_at' => now(),
         ]);
+        $dashboardServer->commandExecutions()->create([
+            'user_id' => $owner->id,
+            'command' => 'fixture-sensitive-command',
+            'output' => 'fixture-sensitive-output',
+            'status' => ServerCommandExecution::STATUS_RUNNING,
+        ]);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()
             ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)
-            ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="dashboard-system-health-dialog"', false)
+            ->assertSee('data-modal-trigger="dashboard-active-commands-dialog"', false)->getContent());
         File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-active-deployments-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-deployments']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/dashboard-system-health-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'system-health']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/dashboard-active-commands-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-commands']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
@@ -109,6 +118,12 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/system-health-content.html', $this->renderPage(route('system-health.index', [
             'fragment' => 'system-health',
         ]))->assertOk()->assertSee('id="system-health-insights"', false)->getContent());
+        File::put($directory.'/dashboard-active-commands.html', $this->renderPage(route('commands.index', [
+            'active' => 1,
+            'fragment' => 'active-command-history',
+        ]))->assertOk()
+            ->assertSee('data-command-history-content', false)
+            ->assertDontSee('fixture-sensitive-command')->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

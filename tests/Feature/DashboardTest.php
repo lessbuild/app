@@ -798,6 +798,8 @@ class DashboardTest extends TestCase
             ]))
             ->assertSee(route('commands.index', ['active' => 1]))
             ->assertSee('Open Command Center')
+            ->assertSee('data-modal-trigger="dashboard-active-commands-dialog"', false)
+            ->assertSee('fragment=active-command-history')
             ->assertDontSee('dashboard-sensitive-command', false)
             ->assertDontSee('dashboard-sensitive-output', false)
             ->assertDontSee('foreign-dashboard-command', false)

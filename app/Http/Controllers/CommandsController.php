@@ -19,17 +19,30 @@ class CommandsController extends Controller
     public function __invoke(Request $request): View
     {
         $filters = $this->filters($request);
-
-        return view('commands.index', [
-            'executions' => $this->filteredExecutions($request, $filters)
-                ->select(['id', 'server_id', 'user_id', 'status', 'exit_code', 'created_at', 'started_at', 'finished_at'])
-                ->selectRaw('CASE WHEN output IS NULL THEN 0 ELSE 1 END AS output_available')
-                ->with('server:id,name,display_name')
-                ->latest('id')
-                ->paginate(25)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+        $fragment = $request->string('fragment')->toString();
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($fragment === 'active-command-history') {
+            $paginationQuery['fragment'] = $fragment;
+        }
+        $executions = $this->filteredExecutions($request, $filters)
+            ->select(['id', 'server_id', 'user_id', 'status', 'exit_code', 'created_at', 'started_at', 'finished_at'])
+            ->selectRaw('CASE WHEN output IS NULL THEN 0 ELSE 1 END AS output_available')
+            ->with('server:id,name,display_name')
+            ->latest('id')
+            ->paginate(25)
+            ->appends($paginationQuery);
+        $viewData = [
+            'executions' => $executions,
             'filters' => $filters,
             'metrics' => $this->metrics($request, $filters),
+        ];
+
+        if ($fragment === 'active-command-history') {
+            return view('commands._content', $viewData);
+        }
+
+        return view('commands.index', [
+            ...$viewData,
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(['id', 'name', 'display_name']),
             'statuses' => ServerCommandExecution::STATUSES,
         ]);

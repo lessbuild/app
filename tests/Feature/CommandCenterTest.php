@@ -76,6 +76,31 @@ class CommandCenterTest extends TestCase
         $this->assertStringNotContainsString('foreign-command-secret', $export);
     }
 
+    public function test_active_command_fragment_reuses_owner_scoping_without_rendering_a_full_page(): void
+    {
+        $owner = User::factory()->create();
+        $server = $this->server($owner, 'Fragment server');
+        $active = $this->execution($owner, $server, ServerCommandExecution::STATUS_RUNNING, 'fragment-command-secret');
+        $foreignServer = $this->server(User::factory()->create(), 'Foreign fragment server');
+        $foreign = $this->execution($foreignServer->user, $foreignServer, ServerCommandExecution::STATUS_RUNNING, 'foreign-fragment-command-secret');
+
+        $response = $this->actingAs($owner)->get(route('commands.index', [
+            'active' => 1,
+            'fragment' => 'active-command-history',
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('commands._content')
+            ->assertSee('data-command-history-content', false)
+            ->assertSee('Execution #'.$active->id)
+            ->assertDontSee('fragment-command-secret')
+            ->assertDontSee('foreign-fragment-command-secret')
+            ->assertDontSee('Foreign fragment server')
+            ->assertDontSee('Execution #'.$foreign->id)
+            ->assertDontSee('<html', false);
+    }
+
     public function test_command_center_prioritizes_history_and_reopens_active_context(): void
     {
         $owner = User::factory()->create();

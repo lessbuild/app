@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -141,6 +141,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'workspace-activity-content'
                 : screen === 'system-health' && fragment === 'system-health'
                     ? 'system-health-content'
+                : screen === 'commands' && fragment === 'active-command-history'
+                    ? 'dashboard-active-commands'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
@@ -173,6 +175,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'dashboard-active-deployments-dialog'
                             : screen === 'dashboard' && dialog === 'system-health'
                                 ? 'dashboard-system-health-dialog'
+                            : screen === 'dashboard' && dialog === 'active-commands'
+                                ? 'dashboard-active-commands-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -681,6 +685,31 @@ test('dashboard system health opens as a private diagnostic inspector', async ({
 
     await page.goto('http://buildpusher.test/home?dialog=system-health', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'System health', exact: true })).toBeVisible();
+});
+
+test('dashboard active commands open as a bounded status inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/home', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'Open Command Center', exact: true }).first();
+    const dialog = page.getByRole('dialog', { name: 'Active server commands', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-command-history-content]')).toBeVisible();
+    await expect(dialog).toContainText('Active command history');
+    await expect(dialog).not.toContainText('fixture-sensitive-command');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('active-commands');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/home?dialog=active-commands', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Active server commands', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

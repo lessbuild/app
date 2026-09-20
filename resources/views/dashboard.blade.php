@@ -18,6 +18,9 @@
         $dashboardHasActiveDeployments = array_sum($activeDeploymentCounts) > 0;
         $dashboardActiveDeploymentsDialogOpen = $dashboardDialog === 'active-deployments'
             && $dashboardHasActiveDeployments;
+        $dashboardHasActiveCommands = array_sum($activeCommandCounts) > 0;
+        $dashboardActiveCommandsDialogOpen = $dashboardDialog === 'active-commands'
+            && $dashboardHasActiveCommands;
         $dashboardSystemHealthDialogOpen = $dashboardDialog === 'system-health';
         $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
             || (old('_recipe_form') === 'edit' && $errors->any());
@@ -36,6 +39,11 @@
         ]);
         $dashboardSystemHealthDialogUrl = route('dashboard', ['dialog' => 'system-health']);
         $dashboardSystemHealthContentUrl = route('system-health.index', ['fragment' => 'system-health']);
+        $dashboardActiveCommandsDialogUrl = route('dashboard', ['dialog' => 'active-commands']);
+        $dashboardActiveCommandsContentUrl = route('commands.index', [
+            'active' => 1,
+            'fragment' => 'active-command-history',
+        ]);
         $dashboardModalOpen = [
             'provider' => $dashboardProviderCreateOpen,
             'server' => $dashboardServerCreateOpen,
@@ -424,7 +432,15 @@
                         {{ trans_choice(':count command is active|:count commands are active', $activeCommandTotal, ['count' => $activeCommandTotal]) }}
                     </p>
                 </div>
-                <a href="{{ route('commands.index', ['active' => 1]) }}" class="text-sm font-medium text-ternary underline">
+                <a
+                    href="{{ route('commands.index', ['active' => 1]) }}"
+                    data-modal-trigger="dashboard-active-commands-dialog"
+                    data-modal-content-url="{{ $dashboardActiveCommandsContentUrl }}"
+                    data-modal-history-url="{{ $dashboardActiveCommandsDialogUrl }}"
+                    aria-controls="dashboard-active-commands-dialog"
+                    aria-expanded="{{ $dashboardActiveCommandsDialogOpen ? 'true' : 'false' }}"
+                    class="text-sm font-medium text-ternary underline"
+                >
                     {{ __('Open Command Center') }}
                 </a>
             </div>
@@ -460,7 +476,15 @@
             </div>
 
             @if ($activeCommandTotal > $activeCommands->count())
-                <a href="{{ route('commands.index', ['active' => 1]) }}" class="mt-4 inline-block text-sm font-medium text-ternary underline">
+                <a
+                    href="{{ route('commands.index', ['active' => 1]) }}"
+                    data-modal-trigger="dashboard-active-commands-dialog"
+                    data-modal-content-url="{{ $dashboardActiveCommandsContentUrl }}"
+                    data-modal-history-url="{{ $dashboardActiveCommandsDialogUrl }}"
+                    aria-controls="dashboard-active-commands-dialog"
+                    aria-expanded="{{ $dashboardActiveCommandsDialogOpen ? 'true' : 'false' }}"
+                    class="mt-4 inline-block text-sm font-medium text-ternary underline"
+                >
                     {{ trans_choice(':count more active command is available in server history|:count more active commands are available in server history', $activeCommandTotal - $activeCommands->count(), ['count' => $activeCommandTotal - $activeCommands->count()]) }}
                 </a>
             @endif
@@ -726,6 +750,20 @@
         >
             <div data-modal-content>
                 <p class="p-5 text-sm text-secondary">{{ __('Loading active deployments…') }}</p>
+            </div>
+        </x-dialogs.modal>
+    @endif
+
+    @if ($dashboardHasActiveCommands)
+        <x-dialogs.modal
+            id="dashboard-active-commands-dialog"
+            :title="__('Active server commands')"
+            :description="__('Review active command status without leaving the dashboard.')"
+            :open="$dashboardActiveCommandsDialogOpen"
+            body-class="p-0"
+        >
+            <div data-modal-content>
+                <p class="p-5 text-sm text-secondary">{{ __('Loading active command history…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif
