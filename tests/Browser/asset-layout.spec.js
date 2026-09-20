@@ -149,6 +149,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'dashboard-active-commands'
                 : screen === 'domains' && dialog === 'add-domain'
                 ? 'domains-dialog'
+                : screen === 'organization' && dialog?.startsWith('member-role-')
+                    ? 'organization-member-role-dialog'
                 : screen === 'organization' && dialog === 'invite-member'
                     ? 'organization-dialog'
                     : screen === 'feedback' && dialog === 'compose-feedback'
@@ -1483,6 +1485,20 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(inviteDialog).toBeVisible();
                         await page.locator('#organization-invite [data-modal-close]').click();
                         await expect(inviteDialog).toBeHidden();
+
+                        const roleTrigger = page.getByRole('link', { name: 'Edit role', exact: true }).first();
+                        const roleDialog = page.getByRole('dialog', { name: 'Edit member role', exact: true });
+                        const roleUrl = new URL(await roleTrigger.getAttribute('href'), page.url());
+                        await roleTrigger.click();
+                        await expect(roleDialog).toBeVisible();
+                        await expect(roleDialog.locator('select[name="role"]')).toHaveValue('developer');
+                        expect(new URL(page.url()).searchParams.get('dialog')).toBe(roleUrl.searchParams.get('dialog'));
+                        await page.keyboard.press('Escape');
+                        await expect(roleDialog).toBeHidden();
+                        await expect(roleTrigger).toBeFocused();
+
+                        await page.goto(`http://buildpusher.test/organization?${roleUrl.searchParams.toString()}`, { waitUntil: 'networkidle' });
+                        await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
                     }
                     if (screen === 'automation') {
                         await expect(page.locator('#automation-overview')).toBeVisible();
@@ -1619,6 +1635,31 @@ test('compact invitation and feedback workflows use accessible URL-backed dialog
     await page.locator('#feedback-compose [data-modal-close]').click();
     await expect(feedbackDialog).toBeHidden();
     await expect(feedbackTrigger).toBeFocused();
+});
+
+test('organization member roles open in a page-local dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
+
+    const roleTrigger = page.getByRole('link', { name: 'Edit role', exact: true }).first();
+    const roleHref = new URL(await roleTrigger.getAttribute('href'), page.url());
+    const roleDialog = page.getByRole('dialog', { name: 'Edit member role', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await roleTrigger.click();
+    await expect(roleDialog).toBeVisible();
+    await expect(roleDialog.locator('select[name="role"]')).toHaveValue('developer');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe(roleHref.searchParams.get('dialog'));
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+
+    await page.keyboard.press('Escape');
+    await expect(roleDialog).toBeHidden();
+    await expect(roleTrigger).toBeFocused();
+
+    await page.goto(`http://buildpusher.test/organization?${roleHref.searchParams.toString()}`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
 });
 
 test('backup schedule workflow uses an accessible URL-backed dialog', async ({ page }) => {

@@ -42,6 +42,8 @@ class OrganizationManagementTest extends TestCase
     public function test_workspace_page_keeps_members_visible_and_uses_a_dialog_for_invitations(): void
     {
         $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $owner->currentOrganization->members()->attach($member, ['role' => 'developer']);
 
         $content = $this->actingAs($owner)
             ->get(route('organizations.index'))
@@ -69,8 +71,22 @@ class OrganizationManagementTest extends TestCase
         );
 
         $this->assertStringContainsString('Members', $content);
+        $this->assertStringContainsString('data-modal-trigger="organization-member-role-'.$member->id.'"', $content);
+        $this->assertStringContainsString('Edit role', $content);
         $this->assertStringContainsString('Save security policy', $content);
         $this->assertStringContainsString('Permanently delete workspace', $content);
+
+        $roleDialogContent = $this->actingAs($owner)
+            ->get(route('organizations.index', ['dialog' => 'member-role-'.$member->id]))
+            ->assertSuccessful()
+            ->getContent();
+
+        $this->assertMatchesRegularExpression(
+            '/<dialog(?=[^>]*id="organization-member-role-'.$member->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
+            $roleDialogContent,
+        );
+        $this->assertStringContainsString('name="role"', $roleDialogContent);
+        $this->assertStringContainsString('Save role', $roleDialogContent);
     }
 
     public function test_invitation_validation_reopens_the_invitation_dialog(): void
@@ -259,6 +275,9 @@ class OrganizationManagementTest extends TestCase
 
         $this->actingAs($viewer)->patch(route('organizations.members.update', $target), ['role' => 'admin'])->assertForbidden();
         $this->assertSame('developer', $organization->roleFor($target));
+        $this->actingAs($viewer)->get(route('organizations.index'))
+            ->assertSuccessful()
+            ->assertDontSee('Edit role');
     }
 
     public function test_manager_member_updates_preserve_owner_protection_and_scoped_not_found_behavior(): void
@@ -285,6 +304,12 @@ class OrganizationManagementTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertSame('admin', $organization->fresh()->roleFor($member));
+        $this->actingAs($owner)->get(route('organizations.index', ['dialog' => 'member-role-'.$owner->id]))
+            ->assertSuccessful()
+            ->assertDontSee('id="organization-member-role-'.$owner->id.'"', false);
+        $this->actingAs($owner)->get(route('organizations.index', ['dialog' => 'member-role-'.$foreign->id]))
+            ->assertSuccessful()
+            ->assertDontSee('id="organization-member-role-'.$foreign->id.'"', false);
     }
 
     public function test_manager_member_removal_updates_the_pivot_and_queues_seat_sync(): void

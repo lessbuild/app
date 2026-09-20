@@ -98,9 +98,15 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/dashboard-provisioning-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'provisioning']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)
             ->assertSee('Provisioning fixture server')->getContent());
+        $organizationMember = User::factory()->create(['name' => 'Organization fixture member', 'email' => 'member@fixture.test']);
+        $owner->currentOrganization->members()->attach($organizationMember, ['role' => 'developer']);
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/organization-member-role-dialog.html', $this->renderPage(route('organizations.index', [
+            'dialog' => 'member-role-'.$organizationMember->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('Organization fixture member')->getContent());
         File::put($directory.'/feedback.html', $this->renderPage(route('feedback.index'))->assertOk()
             ->assertSee('Send private feedback')->getContent());
         File::put($directory.'/feedback-dialog.html', $this->renderPage(route('feedback.index', ['dialog' => 'compose-feedback']))

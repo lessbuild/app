@@ -36,6 +36,14 @@
         $invitationOpen = request()->query('dialog') === 'invite-member'
             || ($errors->getBag('default')->has('email') || old('email') !== null);
         $deleteWorkspaceOpen = $errors->getBag('deleteWorkspace')->any();
+        $memberRoleDialogKey = request()->query('dialog');
+        $memberRoleDialogMember = null;
+        if ($canManage && is_string($memberRoleDialogKey) && preg_match('/\Amember-role-(\d+)\z/', $memberRoleDialogKey, $matches) === 1) {
+            $memberRoleDialogMember = $organization->members->firstWhere('id', (int) $matches[1]);
+            if ($memberRoleDialogMember?->id === $organization->owner_id) {
+                $memberRoleDialogMember = null;
+            }
+        }
     @endphp
 
     <x-ui.insights
@@ -107,17 +115,16 @@
 
                         @if ($canManage && $member->id !== $organization->owner_id)
                             <div class="flex w-full flex-wrap gap-2 sm:w-auto">
-                                <form method="POST" action="{{ route('organizations.members.update', $member) }}" class="flex min-w-56 flex-1 gap-2 sm:flex-none">
-                                    @csrf
-                                    @method('PATCH')
-                                    <label class="sr-only" for="role-{{ $member->id }}">{{ __('Role for :name', ['name' => $member->name]) }}</label>
-                                    <select id="role-{{ $member->id }}" name="role" class="input secondary min-w-0 flex-1 rounded-lg">
-                                        @foreach (\App\Models\Organization::ROLES as $role)
-                                            <option value="{{ $role }}" @selected($member->pivot->role === $role)>{{ ucfirst($role) }}</option>
-                                        @endforeach
-                                    </select>
-                                    <x-ui.button type="submit" variant="primary">{{ __('Save') }}</x-ui.button>
-                                </form>
+                                @php
+                                    $memberRoleDialogId = 'organization-member-role-'.$member->id;
+                                @endphp
+                                <x-ui.button
+                                    :href="route('organizations.index', ['dialog' => 'member-role-'.$member->id])"
+                                    data-modal-trigger="{{ $memberRoleDialogId }}"
+                                    aria-controls="{{ $memberRoleDialogId }}"
+                                    aria-expanded="{{ $memberRoleDialogMember?->id === $member->id ? 'true' : 'false' }}"
+                                    variant="secondary"
+                                >{{ __('Edit role') }}</x-ui.button>
                                 <form method="POST" action="{{ route('organizations.members.destroy', $member) }}">
                                     @csrf
                                     @method('DELETE')
@@ -267,6 +274,16 @@
 
     @if ($canManage)
         <x-scenes.organizations.invite-dialog :member-usage="$memberUsage" :open="$invitationOpen" />
+        @foreach ($organization->members as $member)
+            @if ($member->id !== $organization->owner_id)
+                <x-scenes.organizations.member-role-dialog
+                    :action="route('organizations.members.update', $member)"
+                    :id="'organization-member-role-'.$member->id"
+                    :member="$member"
+                    :open="$memberRoleDialogMember?->id === $member->id"
+                />
+            @endif
+        @endforeach
     @endif
 
     @if ($organization->owner->is(auth()->user()))
