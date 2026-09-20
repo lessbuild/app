@@ -7,7 +7,7 @@
         <div>
             <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Release operations') }}</p>
             <h3 class="mt-1 text-xl font-black text-primary">{{ __('Recent deployments') }}</h3>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review revision, status and timing without leaving this website.') }}</p>
+            <p class="mt-1 text-sm text-secondary">{{ __('Review revision, status and timing without leaving this page.') }}</p>
         </div>
         <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>
     </div>
@@ -25,7 +25,7 @@
 
     @if ($builds->isEmpty())
         <x-ui.empty-state
-            :title="array_filter($filters, fn ($value) => $value !== null) ? __('No deployments match this website.') : __('No deployments have been recorded yet.')"
+            :title="array_filter($filters, fn ($value) => $value !== null) ? __('No deployments match these filters.') : __('No deployments have been recorded yet.')"
             :description="__('Deployment history will appear here after the first deployment request.')"
         />
     @else

@@ -720,6 +720,8 @@ class DashboardTest extends TestCase
             ->assertSee(route('builds.show', $running))
             ->assertSee(route('builds.index', ['active' => 1]))
             ->assertSee('View active deployments')
+            ->assertSee('data-modal-trigger="dashboard-active-deployments-dialog"', false)
+            ->assertSee('dialog=active-deployments')
             ->assertDontSee(route('builds.show', $foreign))
             ->assertDontSee('Foreign Active Application');
     }

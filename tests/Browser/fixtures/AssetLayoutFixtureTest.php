@@ -37,9 +37,30 @@ class AssetLayoutFixtureTest extends TestCase
 
         $owner = User::factory()->create(['name' => 'Layout fixture owner']);
         $this->actingAs($owner);
+        $dashboardProvider = $owner->providers()->create([
+            'name' => 'Dashboard provider', 'provider' => 'github', 'token' => 'dashboard-token', 'description' => 'Dashboard fixture provider',
+        ]);
+        $dashboardServer = $owner->servers()->create([
+            'provider_id' => $dashboardProvider->id, 'name' => 'Dashboard server', 'type' => 'app',
+            'region' => 'nyc1', 'provisioning_status' => Server::STATUS_ACTIVE,
+        ]);
+        $dashboardWebsite = $owner->websites()->create([
+            'server_id' => $dashboardServer->id, 'name' => 'Dashboard website', 'url' => 'dashboard.test',
+            'description' => 'Dashboard fixture website', 'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
+        ]);
+        $dashboardRepository = $owner->repositories()->create([
+            'provider_id' => $dashboardProvider->id, 'website_id' => $dashboardWebsite->id,
+            'name' => 'Dashboard repository', 'url' => 'github.com/example/dashboard.git', 'branch' => 'main', 'description' => 'Dashboard fixture repository',
+        ]);
+        $dashboardRepository->builds()->create([
+            'status' => Build::STATUS_RUNNING, 'trigger_source' => Build::TRIGGER_MANUAL,
+            'revision' => str_repeat('d', 40), 'started_at' => now(),
+        ]);
         File::put($directory.'/dashboard.html', $this->renderPage(route('dashboard'))->assertOk()
             ->assertSee('data-modal-trigger="dashboard-activity-dialog"', false)->getContent());
         File::put($directory.'/dashboard-activity-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'dashboard-activity']))
+            ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/dashboard-active-deployments-dialog.html', $this->renderPage(route('dashboard', ['dialog' => 'active-deployments']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         File::put($directory.'/organization.html', $this->renderPage(route('organizations.index'))->assertOk()->getContent());
         File::put($directory.'/organization-dialog.html', $this->renderPage(route('organizations.index', ['dialog' => 'invite-member']))
@@ -71,6 +92,10 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/workspace-activity-content.html', $this->renderPage(route('activity.index', [
             'fragment' => 'workspace-activity',
         ]))->assertOk()->assertSee('data-activity-history-content', false)->getContent());
+        File::put($directory.'/dashboard-active-deployments.html', $this->renderPage(route('builds.index', [
+            'active' => 1,
+            'fragment' => 'deployment-history',
+        ]))->assertOk()->assertSee('data-build-card', false)->getContent());
         $galleryAuthor = User::factory()->create(['name' => 'Gallery fixture author']);
         $galleryRecipe = $galleryAuthor->recipes()->create([
             'name' => 'Gallery fixture recipe',

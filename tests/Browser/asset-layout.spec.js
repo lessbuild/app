@@ -116,7 +116,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                         : pathname.slice(1);
             const dialog = new URL(route.request().url()).searchParams.get('dialog');
             const fragment = new URL(route.request().url()).searchParams.get('fragment');
-            const fixtureName = screen === 'builds' && fragment === 'deployment-history'
+            const active = new URL(route.request().url()).searchParams.get('active');
+            const fixtureName = screen === 'builds' && fragment === 'deployment-history' && active === '1'
+                ? 'dashboard-active-deployments'
+                : screen === 'builds' && fragment === 'deployment-history'
                 ? 'website-deployment-history'
                 : screen === 'server-commands' && fragment === 'server-command-history'
                     ? 'server-command-history'
@@ -164,6 +167,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                 ? 'account-audit-dialog'
                             : screen === 'dashboard' && dialog === 'dashboard-activity'
                                 ? 'dashboard-activity-dialog'
+                            : screen === 'dashboard' && dialog === 'active-deployments'
+                                ? 'dashboard-active-deployments-dialog'
                             : screen === 'gallery' && dialog === 'publish-recipe'
                                 ? 'gallery-index-publish-dialog'
                             : screen === 'gallery' && dialog?.startsWith('inspect-script-')
@@ -625,6 +630,29 @@ test('dashboard activity opens as a compact workspace inspector', async ({ page 
 
     await page.goto('http://buildpusher.test/dashboard?dialog=dashboard-activity', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Workspace activity', exact: true })).toBeVisible();
+});
+
+test('dashboard active deployments open as a contextual timeline', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/home', { waitUntil: 'networkidle' });
+
+    const trigger = page.getByRole('link', { name: 'View active deployments', exact: true }).first();
+    const dialog = page.getByRole('dialog', { name: 'Active deployments', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-build-card]')).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('active-deployments');
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto('http://buildpusher.test/home?dialog=active-deployments', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('dialog', { name: 'Active deployments', exact: true })).toBeVisible();
 });
 
 test('provider connection history opens and filters inside a contextual dialog', async ({ page }) => {

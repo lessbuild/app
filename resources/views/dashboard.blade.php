@@ -15,6 +15,7 @@
         $dashboardApplicationCreateOpen = $dashboardDialog === 'create-application'
             || (old('_project_form') === '1' && $errors->any());
         $dashboardActivityDialogOpen = $dashboardDialog === 'dashboard-activity';
+        $dashboardActiveDeploymentsDialogOpen = $dashboardDialog === 'active-deployments';
         $dashboardRecipeEditOpen = $editingDashboardRecipe !== null
             || (old('_recipe_form') === 'edit' && $errors->any());
         $dashboardPreferencesDialogUrl = route('dashboard', ['dialog' => 'customize-dashboard']);
@@ -25,6 +26,11 @@
         $dashboardApplicationCreateUrl = route('dashboard', ['dialog' => 'create-application']);
         $dashboardActivityDialogUrl = route('dashboard', ['dialog' => 'dashboard-activity']);
         $dashboardActivityContentUrl = route('activity.index', ['fragment' => 'workspace-activity']);
+        $dashboardActiveDeploymentsDialogUrl = route('dashboard', ['dialog' => 'active-deployments']);
+        $dashboardActiveDeploymentsContentUrl = route('builds.index', [
+            'active' => 1,
+            'fragment' => 'deployment-history',
+        ]);
         $dashboardModalOpen = [
             'provider' => $dashboardProviderCreateOpen,
             'server' => $dashboardServerCreateOpen,
@@ -275,7 +281,15 @@
                         {{ trans_choice(':count deployment is in progress|:count deployments are in progress', $activeDeploymentTotal, ['count' => $activeDeploymentTotal]) }}
                     </p>
                 </div>
-                <a href="{{ route('builds.index', ['active' => 1]) }}" class="text-sm font-medium text-ternary underline">{{ __('View active deployments') }}</a>
+                <a
+                    href="{{ route('builds.index', ['active' => 1]) }}"
+                    data-modal-trigger="dashboard-active-deployments-dialog"
+                    data-modal-content-url="{{ $dashboardActiveDeploymentsContentUrl }}"
+                    data-modal-history-url="{{ $dashboardActiveDeploymentsDialogUrl }}"
+                    aria-controls="dashboard-active-deployments-dialog"
+                    aria-expanded="{{ $dashboardActiveDeploymentsDialogOpen ? 'true' : 'false' }}"
+                    class="text-sm font-medium text-ternary underline"
+                >{{ __('View active deployments') }}</a>
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -313,7 +327,15 @@
             </div>
 
             @if ($activeDeploymentTotal > $activeDeployments->count())
-                <a href="{{ route('builds.index', ['active' => 1]) }}" class="mt-4 inline-block text-sm font-medium text-ternary underline">
+                <a
+                    href="{{ route('builds.index', ['active' => 1]) }}"
+                    data-modal-trigger="dashboard-active-deployments-dialog"
+                    data-modal-content-url="{{ $dashboardActiveDeploymentsContentUrl }}"
+                    data-modal-history-url="{{ $dashboardActiveDeploymentsDialogUrl }}"
+                    aria-controls="dashboard-active-deployments-dialog"
+                    aria-expanded="{{ $dashboardActiveDeploymentsDialogOpen ? 'true' : 'false' }}"
+                    class="mt-4 inline-block text-sm font-medium text-ternary underline"
+                >
                     {{ trans_choice(':count more active deployment|:count more active deployments', $activeDeploymentTotal - $activeDeployments->count(), ['count' => $activeDeploymentTotal - $activeDeployments->count()]) }}
                 </a>
             @endif
@@ -676,6 +698,18 @@
     >
         <div data-modal-content>
             <p class="p-5 text-sm text-secondary">{{ __('Loading workspace activity…') }}</p>
+        </div>
+    </x-dialogs.modal>
+
+    <x-dialogs.modal
+        id="dashboard-active-deployments-dialog"
+        :title="__('Active deployments')"
+        :description="__('Review active deployment progress without leaving the dashboard.')"
+        :open="$dashboardActiveDeploymentsDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading active deployments…') }}</p>
         </div>
     </x-dialogs.modal>
 
