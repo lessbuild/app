@@ -238,6 +238,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                     ? 'repository-show-edit-dialog'
                                 : screen === 'repository-show' && dialog === 'repository-webhook-settings'
                                     ? 'repository-show-webhook-dialog'
+                                : screen === 'repository-show' && fragment === 'webhook-delivery'
+                                    ? 'repository-webhook-delivery-content'
+                                : screen === 'repository-show' && dialog?.startsWith('webhook-delivery-')
+                                    ? 'repository-show-webhook-delivery-dialog'
                                 : screen === 'server-show' && dialog === 'edit-display-name'
                                     ? 'server-show-edit-dialog'
                                 : screen === 'website-show' && dialog === 'edit-website'
@@ -468,6 +472,36 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
 
     await page.goto(`http://buildpusher.test${recipeUrl.pathname}${recipeUrl.search}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Edit recipe', exact: true })).toBeVisible();
+});
+
+test('repository webhook delivery details open as a contextual inspector', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/repositories/1', { waitUntil: 'networkidle' });
+
+    let trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true });
+    const canonicalRepositoryPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
+    await page.goto(`http://buildpusher.test${canonicalRepositoryPath}`, { waitUntil: 'networkidle' });
+    trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true });
+    const triggerHref = await trigger.getAttribute('href');
+    const dialog = page.getByRole('dialog', { name: 'Webhook delivery', exact: true });
+    const initialPath = new URL(page.url()).pathname;
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-webhook-delivery-content]')).toBeVisible();
+    await expect(dialog).toContainText('apps/app.php');
+    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^webhook-delivery-/);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    await page.goto(new URL(triggerHref, page.url()).href, { waitUntil: 'networkidle' });
+    const directDialog = page.getByRole('dialog', { name: 'Webhook delivery', exact: true });
+    await expect(directDialog).toBeVisible();
+    await expect(directDialog.locator('[data-webhook-delivery-content]')).toBeVisible();
 });
 
 test('repository deployment impact preview opens and refreshes inside a contextual dialog', async ({ page }) => {

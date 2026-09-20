@@ -391,6 +391,13 @@ class AssetLayoutFixtureTest extends TestCase
             'webhook_enabled' => true,
             'auto_deploy_include_paths' => ['apps/**'],
         ]);
+        $repositoryDelivery = $repository->webhookDeliveries()->create([
+            'delivery_id' => 'fixture-webhook-delivery',
+            'revision' => str_repeat('c', 40),
+            'commit_message' => 'Fixture webhook delivery',
+            'changed_paths' => ['apps/app.php'],
+            'status' => RepositoryWebhookDelivery::STATUS_PENDING,
+        ]);
         File::put($directory.'/repositories.html', $this->renderPage(route('repositories.index'))->assertOk()
             ->assertSee('data-modal-trigger="repository-create-dialog"', false)
             ->assertSee('data-modal-trigger="repository-impact-preview-dialog"', false)
@@ -407,7 +414,9 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('App')
             ->assertSee('Affected')->getContent());
         File::put($directory.'/repository-show.html', $this->renderPage(route('repositories.show', $repository))->assertOk()
-            ->assertSee('data-modal-trigger="repository-edit-dialog"', false)->getContent());
+            ->assertSee('data-modal-trigger="repository-edit-dialog"', false)
+            ->assertSee('data-modal-trigger="repository-webhook-delivery-dialog"', false)
+            ->assertDontSee('apps/app.php', false)->getContent());
         File::put($directory.'/repository-show-webhook-dialog.html', $this->renderPage(route('repositories.show', [
             'repository' => $repository,
             'dialog' => 'repository-webhook-settings',
@@ -418,6 +427,17 @@ class AssetLayoutFixtureTest extends TestCase
             'repository' => $repository,
             'dialog' => 'edit-repository',
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        File::put($directory.'/repository-show-webhook-delivery-dialog.html', $this->renderPage(route('repositories.show', [
+            'repository' => $repository,
+            'dialog' => 'webhook-delivery-'.$repositoryDelivery->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)
+            ->assertDontSee('apps/app.php', false)->getContent());
+        File::put($directory.'/repository-webhook-delivery-content.html', $this->renderPage(route('repositories.show', [
+            'repository' => $repository,
+            'fragment' => 'webhook-delivery',
+            'delivery_id' => $repositoryDelivery->id,
+        ]))->assertOk()->assertSee('data-webhook-delivery-content', false)
+            ->assertSee('apps/app.php')->getContent());
         File::put($directory.'/repository-edit-content.html', $this->renderPage(route('repositories.edit', [
             'repository' => $repository,
             'dialog' => 'edit-repository',

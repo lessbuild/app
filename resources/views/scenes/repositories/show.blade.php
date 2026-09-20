@@ -15,6 +15,26 @@
         $webhookDialogOpen = request()->query('dialog') === 'repository-webhook-settings';
         $webhookDialogUrl = (string) \Illuminate\Support\Uri::of($repositoryPageUrl)->withQuery(['dialog' => 'repository-webhook-settings']);
         $canUpdateRepository = auth()->user()?->can('update', $repository) ?? false;
+        $deliveryDialogId = 'repository-webhook-delivery-dialog';
+        $deliveryDialogOpen = $selectedWebhookDelivery !== null;
+        $deliveryDialogQuery = array_filter([
+            ...$deliveryFilters,
+            'webhook_page' => $webhookDeliveries->currentPage() > 1 ? $webhookDeliveries->currentPage() : null,
+        ], fn ($value) => $value !== null);
+        $deliveryDialogHistoryUrl = $selectedWebhookDelivery
+            ? route('repositories.show', [
+                'repository' => $repository,
+                ...$deliveryDialogQuery,
+                'dialog' => "webhook-delivery-{$selectedWebhookDelivery->id}",
+            ])
+            : null;
+        $deliveryDialogContentUrl = $selectedWebhookDelivery
+            ? route('repositories.show', [
+                'repository' => $repository,
+                'fragment' => 'webhook-delivery',
+                'delivery_id' => $selectedWebhookDelivery->id,
+            ])
+            : null;
     @endphp
 
     <!--
@@ -464,6 +484,27 @@
                                         <dd class="mt-1 text-primary" title="{{ $delivery->created_at }}">{{ $delivery->created_at->diffForHumans() }}</dd>
                                     </div>
                                 </dl>
+                                @php($deliveryDialogUrl = route('repositories.show', [
+                                    'repository' => $repository,
+                                    ...$deliveryDialogQuery,
+                                    'dialog' => "webhook-delivery-{$delivery->id}",
+                                ]))
+                                @php($deliveryContentUrl = route('repositories.show', [
+                                    'repository' => $repository,
+                                    'fragment' => 'webhook-delivery',
+                                    'delivery_id' => $delivery->id,
+                                ]))
+                                <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
+                                    <x-ui.button
+                                        :href="$deliveryDialogUrl"
+                                        data-modal-trigger="{{ $deliveryDialogId }}"
+                                        data-modal-content-url="{{ $deliveryContentUrl }}"
+                                        data-modal-history-url="{{ $deliveryDialogUrl }}"
+                                        aria-controls="{{ $deliveryDialogId }}"
+                                        aria-expanded="{{ $selectedWebhookDelivery?->id === $delivery->id ? 'true' : 'false' }}"
+                                        variant="primary"
+                                    >{{ __('Inspect delivery') }}</x-ui.button>
+                                </div>
                             </article>
                         @endforeach
                     </div>
@@ -473,6 +514,30 @@
             </div>
         </details>
     </section>
+
+    @if ($selectedWebhookDelivery && ! $webhookDeliveries->contains('id', $selectedWebhookDelivery->id))
+        <a
+            href="{{ $deliveryDialogHistoryUrl }}"
+            data-modal-trigger="{{ $deliveryDialogId }}"
+            data-modal-content-url="{{ $deliveryDialogContentUrl }}"
+            data-modal-history-url="{{ $deliveryDialogHistoryUrl }}"
+            aria-controls="{{ $deliveryDialogId }}"
+            aria-expanded="{{ $deliveryDialogOpen ? 'true' : 'false' }}"
+            class="sr-only"
+        >{{ __('Open webhook delivery') }}</a>
+    @endif
+
+    <x-dialogs.modal
+        id="{{ $deliveryDialogId }}"
+        :title="__('Webhook delivery')"
+        :description="__('Inspect accepted delivery evidence without leaving this repository.')"
+        :open="$deliveryDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading delivery evidence…') }}</p>
+        </div>
+    </x-dialogs.modal>
 
     <!--
      ! ------------------------------------------------------------

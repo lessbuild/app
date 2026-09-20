@@ -114,6 +114,25 @@ class RepositoriesController extends Controller
         RepositoryDeploymentInsightsQuery $deploymentInsights,
     ): View {
         $this->authorize('view', $repository);
+
+        if ($request->string('fragment')->toString() === 'webhook-delivery') {
+            $deliveryId = filter_var($request->query('delivery_id'), FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+            abort_if($deliveryId === false, 404);
+
+            $delivery = $repository->webhookDeliveries()
+                ->with('build')
+                ->whereKey($deliveryId)
+                ->first();
+            abort_if($delivery === null, 404);
+
+            return view('components.scenes.repositories.webhook-delivery-content', [
+                'repository' => $repository,
+                'delivery' => $delivery,
+            ]);
+        }
+
         $deliveryFilters = $request->filters();
         $environment = $gate->environment($repository);
         $deploymentPreflight = $preflight->assess($repository, $environment);
@@ -160,6 +179,7 @@ class RepositoriesController extends Controller
             'deliveryFilters' => $deliveryFilters,
             'deliveryMetrics' => $this->webhookDeliveryHistory->metrics($repository, $deliveryFilters),
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
+            'selectedWebhookDelivery' => $this->selectedWebhookDelivery($request, $repository),
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
             'deploymentReady' => $repository->isDeploymentReady(),
             'deploymentPreflight' => $deploymentPreflight,
@@ -167,6 +187,20 @@ class RepositoriesController extends Controller
             'deploymentPlanBlocked' => ($deploymentGuidance['plan']['status'] ?? null) === 'failed',
             'isFirstDeployment' => $isFirstDeployment,
         ]);
+    }
+
+    private function selectedWebhookDelivery(Request $request, Repository $repository): ?RepositoryWebhookDelivery
+    {
+        $dialog = $request->string('dialog')->toString();
+
+        if (! preg_match('/^webhook-delivery-(\d+)$/', $dialog, $matches)) {
+            return null;
+        }
+
+        return $repository->webhookDeliveries()
+            ->with('build')
+            ->whereKey((int) $matches[1])
+            ->first();
     }
 
     /**

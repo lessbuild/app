@@ -190,6 +190,90 @@ class RepositoryWebhookDeliveryHistoryTest extends TestCase
         );
     }
 
+    public function test_owner_can_inspect_a_scoped_delivery_without_loading_the_payload(): void
+    {
+        [$owner, $repository] = $this->repository();
+        $build = $repository->builds()->create([
+            'status' => Build::STATUS_FAILED,
+            'trigger_source' => Build::TRIGGER_WEBHOOK,
+            'revision' => str_repeat('b', 40),
+        ]);
+        $delivery = $repository->webhookDeliveries()->create([
+            'delivery_id' => 'inspectable-delivery',
+            'revision' => str_repeat('a', 40),
+            'commit_message' => '<script>alert("delivery")</script>',
+            'changed_paths' => ['apps/app.php', 'packages/shared.php'],
+            'status' => RepositoryWebhookDelivery::STATUS_SKIPPED,
+            'build_id' => $build->id,
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('repositories.show', $repository))
+            ->assertSuccessful()
+            ->assertSee('Inspect delivery')
+            ->assertSee('data-modal-trigger="repository-webhook-delivery-dialog"', false)
+            ->assertSee('inspectable-delivery')
+            ->assertDontSee('apps/app.php')
+            ->assertDontSee('packages/shared.php');
+
+        $this->get(route('repositories.show', [
+            'repository' => $repository,
+            'dialog' => 'webhook-delivery-'.$delivery->id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewHas('selectedWebhookDelivery', fn ($selected): bool => $selected?->is($delivery) ?? false)
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertDontSee('apps/app.php');
+
+        $this->get(route('repositories.show', [
+            'repository' => $repository,
+            'fragment' => 'webhook-delivery',
+            'delivery_id' => $delivery->id,
+        ]))
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.repositories.webhook-delivery-content')
+            ->assertSee('data-webhook-delivery-content', false)
+            ->assertSee('apps/app.php')
+            ->assertSee('packages/shared.php')
+            ->assertSee('&lt;script&gt;alert(&quot;delivery&quot;)&lt;/script&gt;', false)
+            ->assertDontSee('<script>', false)
+            ->assertSee(route('builds.show', $build))
+            ->assertDontSee('provider-secret')
+            ->assertDontSee('webhook-secret');
+    }
+
+    public function test_delivery_inspector_preserves_repository_scoping_and_denials(): void
+    {
+        [$owner, $repository] = $this->repository();
+        [$intruder, $foreignRepository] = $this->repository();
+        $delivery = $repository->webhookDeliveries()->create([
+            'delivery_id' => 'private-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
+        ]);
+        $foreignDelivery = $foreignRepository->webhookDeliveries()->create([
+            'delivery_id' => 'foreign-delivery',
+            'status' => RepositoryWebhookDelivery::STATUS_RECEIVED,
+        ]);
+
+        $this->actingAs($owner)->get(route('repositories.show', [
+            'repository' => $repository,
+            'fragment' => 'webhook-delivery',
+            'delivery_id' => $foreignDelivery->id,
+        ]))->assertNotFound();
+
+        $this->actingAs($intruder)->get(route('repositories.show', [
+            'repository' => $repository,
+            'fragment' => 'webhook-delivery',
+            'delivery_id' => $delivery->id,
+        ]))->assertForbidden();
+
+        $this->actingAs($owner)->get(route('repositories.show', [
+            'repository' => $repository,
+            'fragment' => 'webhook-delivery',
+            'delivery_id' => 999999,
+        ]))->assertNotFound();
+    }
+
     public function test_delivery_history_is_paginated_and_preserves_a_valid_filter(): void
     {
         [$owner, $repository] = $this->repository();
