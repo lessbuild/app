@@ -364,6 +364,8 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('data-auth-brand', false)
             ->assertSee('data-mobile-quick-action="create"', false)
             ->assertSee('New app')
+            ->assertSee('data-modal-trigger="application-create-dialog"', false)
+            ->assertSee('href="'.route('dashboard', ['dialog' => 'create-application']).'"', false)
             ->assertSee('aria-label="Footer navigation"', false)
             ->assertSee(route('activity.index'), false)
             ->assertSee('&copy; '.now()->year.' '.config('app.name'), false)

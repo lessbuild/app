@@ -207,6 +207,43 @@ test('dashboard creation actions open page-local dialogs without navigating to a
     }
 });
 
+test('mobile New app stays on the current page while opening the application dialog', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability', { waitUntil: 'networkidle' });
+
+    const initialUrl = new URL(page.url());
+    const trigger = page.locator('[data-mobile-quick-action="create"]');
+    const dialog = page.getByRole('dialog', { name: 'New application', exact: true });
+    const triggerUrl = new URL(await trigger.getAttribute('href'), page.url());
+
+    expect(triggerUrl.pathname).toBe(initialUrl.pathname);
+    expect(triggerUrl.searchParams.get('dialog')).toBe('create-application');
+
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-application');
+    await expect(dialog.locator('[data-modal-close]')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(trigger).toBeFocused();
+    expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
+    expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
+
+    await page.keyboard.press('Control+k');
+    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+    await page.locator('#command-palette-result-1').click();
+    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeHidden();
+    await expect(dialog).toBeVisible();
+    expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
+    expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-application');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+});
+
 test('provider, repository, and recipe edits open server-rendered dialogs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
@@ -384,7 +421,7 @@ for (const colorScheme of ['light', 'dark']) {
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');
                     await expect(quickAction).toHaveText('New app');
                     const quickActionUrl = new URL(await quickAction.getAttribute('href'));
-                    expect(quickActionUrl.pathname).toBe('/projects');
+                    expect(quickActionUrl.pathname).toBe(new URL(page.url()).pathname);
                     expect(quickActionUrl.searchParams.get('dialog')).toBe('create-application');
                     await expect(quickAction).toHaveCSS('min-height', '44px');
                 }

@@ -11,6 +11,7 @@ use App\Http\Livewire\ServerShow;
 use App\Http\Livewire\WebsiteProvisioningLog;
 use App\Http\Livewire\WebsiteSetup;
 use App\Models\User;
+use App\Services\ApplicationTemplateCatalog;
 use App\Services\SshServerTroubleshootingTransport;
 use App\View\Navigation\WorkspaceNavigation;
 use Illuminate\Support\Facades\DB;
@@ -57,10 +58,12 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.layouts.app', function (ViewInstance $view): void {
             $user = auth()->user();
 
-            $view->with(
-                'navigation',
-                $user instanceof User ? app(WorkspaceNavigation::class)->for($user) : [],
-            );
+            $view->with([
+                'navigation' => $user instanceof User ? app(WorkspaceNavigation::class)->for($user) : [],
+                'applicationCreationTemplates' => $user instanceof User
+                    ? app(ApplicationTemplateCatalog::class)->all()
+                    : [],
+            ]);
         });
     }
 }

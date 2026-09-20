@@ -92,6 +92,34 @@ class CreationDialogTest extends TestCase
             ->assertSessionHasErrors('name');
     }
 
+    public function test_the_application_dialog_stays_on_the_current_page_from_the_mobile_footer(): void
+    {
+        $user = User::factory()->create();
+        $currentPage = route('activity.index', ['category' => 'account']);
+        $dialogUrl = route('activity.index', ['dialog' => 'create-application']);
+
+        $this->actingAs($user)
+            ->get($currentPage)
+            ->assertOk()
+            ->assertSee('id="application-create-dialog"', false)
+            ->assertSee('data-mobile-quick-action="create"', false)
+            ->assertSee('data-modal-trigger="application-create-dialog"', false)
+            ->assertSee('href="'.e($dialogUrl).'"', false)
+            ->assertSee('href="'.route('activity.index').'"', false);
+
+        $this->actingAs($user)
+            ->get($dialogUrl)
+            ->assertOk()
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('id="application-create-dialog"', false);
+
+        $this->actingAs($user)
+            ->from($dialogUrl)
+            ->post(route('projects.store', ['dialog' => 'create-application']), [])
+            ->assertRedirect($dialogUrl)
+            ->assertSessionHasErrors('name');
+    }
+
     public function test_the_repositories_inventory_hosts_the_repository_creation_dialog(): void
     {
         $user = User::factory()->create();

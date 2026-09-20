@@ -4,6 +4,10 @@
 ])
 
 @php($resolvedTitle = $title ?: app(\App\View\PageTitle::class)->for(request()->route()))
+@php($applicationCreateDialogOpen = request()->query('dialog') === 'create-application')
+@php($applicationCreateDialogUrl = request()->url().'?dialog=create-application')
+@php($applicationCreateDialogCancelUrl = request()->url())
+@php($applicationCreateDialogHosted = ! request()->routeIs('dashboard') && ! request()->routeIs('projects.index') && ! request()->routeIs('projects.create'))
 
 <x-layouts.core :title="$resolvedTitle" :description="$description">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
@@ -72,7 +76,7 @@
 
         <nav class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
             <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('dashboard'), 'text-secondary' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
-            <a href="{{ route('projects.index', ['dialog' => 'create-application']) }}" data-mobile-quick-action="create" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('projects.index') && request()->query('dialog') === 'create-application', 'text-secondary' => ! (request()->routeIs('projects.index') && request()->query('dialog') === 'create-application')]) @if(request()->routeIs('projects.index') && request()->query('dialog') === 'create-application') aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
+            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => $applicationCreateDialogOpen, 'text-secondary' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
             <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="palette = true; paletteQuery = ''; paletteIndex = -1; $nextTick(() => $refs.paletteInput.focus())"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
             <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('notifications.*'), 'text-secondary' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
@@ -87,7 +91,7 @@
                 <nav x-ref="paletteResults" class="max-h-[55vh] overflow-y-auto p-2" aria-label="{{ __('Quick actions') }}" role="listbox">
                     @foreach ([
                         [__('Dashboard'), route('dashboard'), __('overview home')],
-                        [__('Create application'), route('projects.index', ['dialog' => 'create-application']), __('new project app')],
+                        [__('Create application'), $applicationCreateDialogUrl, __('new project app')],
                         [__('Provision server'), route('servers.index', ['dialog' => 'create-server']), __('new cloud infrastructure')],
                         [__('Import existing server'), route('servers.import.create'), __('ssh migrate')],
                         [__('Add website'), route('websites.index', ['dialog' => 'create-website']), __('domain site')],
@@ -100,7 +104,7 @@
                         [__('API and automation'), route('automation.index'), __('tokens schedules workflow')],
                         [__('Product guide'), route('docs'), __('help documentation')],
                     ] as [$label, $url, $keywords])
-                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
+                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($label === __('Create application')) data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
                             <span>{{ $label }}</span><span aria-hidden="true" class="text-secondary">↵</span>
                         </a>
                     @endforeach
@@ -113,6 +117,14 @@
                 </nav>
             </div>
         </div>
+
+        @if ($applicationCreateDialogHosted)
+            <x-scenes.projects.create-dialog
+                :templates="$applicationCreationTemplates ?? []"
+                :open="$applicationCreateDialogOpen"
+                :cancel-url="$applicationCreateDialogCancelUrl"
+            />
+        @endif
 
         <!--
          ! ------------------------------------------------------------
