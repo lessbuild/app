@@ -30,9 +30,16 @@ Current isolated verification:
 - The isolated worktree was clean and `origin/main` matched `127732a` before
   this documentation-only handoff update.
 
-This remains isolated local evidence. It does not claim production deployment,
-live cloud/provider acceptance, physical-device testing or acceptance-drill
-completion.
+The isolated dev runtime at `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
+was subsequently fast-forwarded to `438592e`, rebuilt and restarted through
+`buildpusher-dev-main.service`. The service is active; `/login` returns HTTP
+200, and the served page references the current CSS asset, which returns HTTP
+200 alongside the current Alpine asset. This is a deployment smoke check only,
+not authenticated real-device or production acceptance.
+
+This remains isolated local/dev evidence. It does not claim production
+deployment, authenticated real-user journey coverage, live cloud/provider
+acceptance, physical-device testing or acceptance-drill completion.
 
 # Latest repository-dialog slice — 2026-09-19
 

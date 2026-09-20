@@ -490,8 +490,22 @@ modal and navigation slices.
 - The working tree was clean and `origin/main` matched `127732a` before this
   documentation update.
 
+### Isolated dev deployment smoke — 2026-09-20
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `438592e`, rebuilt and restarted through
+  `buildpusher-dev-main.service`.
+- The service is active and `https://buildpusher.com/login` returns HTTP 200.
+- The served page references `app-DYQzn_CX.css`; the CSS and
+  `alpine-DFsdihXT.js` assets return HTTP 200 with their expected content
+  types.
+- This verifies the isolated dev runtime is serving the pushed build. It is
+  not authenticated journey coverage, physical-device coverage, provider
+  acceptance or production deployment.
+
 ### Scope boundary
 
-This is isolated local evidence. It does not claim production deployment,
-live cloud/provider acceptance, physical-device testing or the separate
-acceptance-drill checkout. Those remain explicitly external follow-up work.
+This is isolated local/dev evidence. It does not claim production deployment,
+authenticated real-user journey coverage, live cloud/provider acceptance,
+physical-device testing or the separate acceptance-drill checkout. Those
+remain explicitly external follow-up work.
