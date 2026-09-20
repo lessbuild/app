@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Website;
 use App\Notifications\FailureNotification;
 use App\Notifications\NotificationInbox;
+use App\Services\NotificationDestinationResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;
@@ -173,6 +174,53 @@ class FailureNotificationTest extends TestCase
             ->assertSessionHas('success', 'All notifications marked as read.');
         $this->assertNotNull($ownerNotification->fresh()->read_at);
         $this->assertNull($otherNotification->fresh()->read_at);
+    }
+
+    public function test_unavailable_destinations_show_a_neutral_inventory_fallback_and_read_stays_in_the_inbox(): void
+    {
+        [$owner, , $website] = $this->infrastructure('Owner');
+        $missingWebsiteId = (int) $website->getKey() + 9999;
+        $owner->notify(new FailureNotification(
+            'website',
+            $missingWebsiteId,
+            'Website no longer available',
+            'The website was removed while this alert was unread.',
+        ));
+        $notification = $owner->unreadNotifications()->sole();
+
+        $this->actingAs($owner)->get(route('notifications.index'))
+            ->assertSuccessful()
+            ->assertSee('The related resource is no longer available in this workspace.')
+            ->assertSee('Open related inventory')
+            ->assertSee('Mark as read')
+            ->assertDontSee('View and mark read');
+
+        $this->actingAs($owner)->post(route('notifications.read', $notification))
+            ->assertRedirect(route('notifications.index'));
+        $this->assertNotNull($notification->fresh()->read_at);
+    }
+
+    public function test_destination_visibility_is_batched_and_does_not_expose_a_foreign_resource(): void
+    {
+        [$owner] = $this->infrastructure('Owner');
+        [, , $foreignWebsite] = $this->infrastructure('Foreign');
+        $owner->notify(new FailureNotification(
+            'website',
+            (int) $foreignWebsite->getKey(),
+            'Foreign resource alert',
+            'This resource belongs to another workspace.',
+        ));
+        $notification = $owner->unreadNotifications()->sole();
+
+        $destination = app(NotificationDestinationResolver::class)->one($owner, $notification);
+
+        $this->assertNotNull($destination);
+        $this->assertFalse($destination['available']);
+        $this->assertSame(route('websites.show', $foreignWebsite), $destination['url']);
+        $this->assertSame(route('websites.index'), $destination['fallback']);
+        $this->actingAs($owner)->get(route('notifications.index'))
+            ->assertSee('The related resource is no longer available in this workspace.')
+            ->assertDontSee($destination['url']);
     }
 
     public function test_notification_inbox_filters_title_message_category_status_state_and_created_dates(): void

@@ -10,6 +10,7 @@ use App\Http\Requests\BulkNotificationRequest;
 use App\Http\Requests\NotificationIndexRequest;
 use App\Http\Requests\SaveNotificationFilterRequest;
 use App\Notifications\NotificationInbox;
+use App\Services\NotificationDestinationResolver;
 use App\Services\NotificationInboxExporter;
 use App\Services\NotificationInboxQuery;
 use Illuminate\Contracts\View\View;
@@ -23,6 +24,7 @@ class NotificationsController extends Controller
     public function __construct(
         private readonly NotificationInboxQuery $inbox,
         private readonly NotificationInboxExporter $exporter,
+        private readonly NotificationDestinationResolver $destinations,
         private readonly SaveNotificationFilterAction $saveNotificationFilter,
         private readonly RemoveNotificationFilterAction $removeNotificationFilter,
         private readonly UpdateNotificationStateAction $notificationState,
@@ -35,12 +37,14 @@ class NotificationsController extends Controller
     {
         $filters = $request->filters();
         $user = $request->user();
+        $notifications = $this->inbox->for($user, $filters)
+            ->latest('created_at')
+            ->paginate(25)
+            ->appends(array_filter($filters, fn ($value) => $value !== null));
 
         return view('notifications.index', [
-            'notifications' => $this->inbox->for($user, $filters)
-                ->latest('created_at')
-                ->paginate(25)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'notifications' => $notifications,
+            'notificationDestinations' => $this->destinations->for($user, $notifications->getCollection()),
             'filters' => $filters,
             'metrics' => $this->inbox->metrics($user, $filters),
             'categories' => NotificationInbox::CATEGORIES,
@@ -85,8 +89,11 @@ class NotificationsController extends Controller
     {
         $this->authorize('read', $notification);
         $this->notificationState->markRead($notification);
+        $destination = $this->destinations->one($request->user(), $notification);
 
-        return redirect(NotificationInbox::destination($notification->data) ?? route('notifications.index'));
+        return redirect($destination !== null && $destination['available']
+            ? $destination['url']
+            : route('notifications.index'));
     }
 
     /**

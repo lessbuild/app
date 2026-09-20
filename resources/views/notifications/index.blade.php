@@ -86,7 +86,9 @@
 
         @forelse ($notifications as $notification)
             @php
-                $destination = \App\Notifications\NotificationInbox::destination($notification->data);
+                $destinationState = $notificationDestinations[(string) $notification->getKey()] ?? null;
+                $destination = $destinationState['url'] ?? null;
+                $destinationUnavailable = $destinationState !== null && ! $destinationState['available'];
                 $notificationStatus = $notification->data['status'] ?? \App\Notifications\NotificationInbox::STATUS_FAILED;
                 $notificationTone = match ($notificationStatus) {
                     \App\Notifications\NotificationInbox::STATUS_HEALTHY => 'success',
@@ -112,9 +114,14 @@
                             </summary>
                             <div class="mt-3">
                                 <p class="whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
+                                @if ($destinationUnavailable)
+                                    <p class="mt-3 text-sm text-secondary">{{ __('The related resource is no longer available in this workspace.') }}</p>
+                                @endif
                                 <div class="mt-4 flex flex-wrap gap-2">
-                                    @if ($destination)
+                                    @if ($destinationState !== null && $destinationState['available'])
                                         <x-ui.button :href="$destination" variant="secondary">{{ __('View') }}</x-ui.button>
+                                    @elseif ($destinationUnavailable)
+                                        <x-ui.button :href="$destinationState['fallback']" variant="secondary">{{ __('Open related inventory') }}</x-ui.button>
                                     @endif
                                     <form method="POST" action="{{ route('notifications.unread', $notification->id) }}">
                                         @csrf
@@ -136,11 +143,17 @@
                             </div>
                             <p class="mt-1 whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
                             <p class="mt-2 text-xs text-secondary">{{ $notification->created_at->diffForHumans() }}</p>
+                            @if ($destinationUnavailable)
+                                <p class="mt-3 text-sm text-secondary">{{ __('The related resource is no longer available in this workspace.') }}</p>
+                            @endif
                             <div class="mt-4 flex flex-wrap gap-2">
                                 <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
                                     @csrf
-                                    <x-ui.button type="submit" variant="secondary">{{ $destination ? __('View and mark read') : __('Mark as read') }}</x-ui.button>
+                                    <x-ui.button type="submit" variant="secondary">{{ $destinationState !== null && $destinationState['available'] ? __('View and mark read') : __('Mark as read') }}</x-ui.button>
                                 </form>
+                                @if ($destinationUnavailable)
+                                    <x-ui.button :href="$destinationState['fallback']" variant="ghost">{{ __('Open related inventory') }}</x-ui.button>
+                                @endif
                                 <form method="POST" action="{{ route('notifications.destroy', $notification->id) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Delete this notification?')) }})">
                                     @csrf
                                     @method('DELETE')
