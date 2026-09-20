@@ -18,6 +18,14 @@ html {
     overscroll-behavior-x: none;
 }
 
+html:has(dialog[data-modal-sheet][open]),
+html[data-modal-open],
+body:has(dialog[data-modal-sheet][open]),
+body[data-modal-open] {
+    overflow: hidden;
+    overscroll-behavior-y: none;
+}
+
 body,
 button,
 a,

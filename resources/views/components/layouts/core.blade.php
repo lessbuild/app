@@ -193,6 +193,13 @@
 
         <script>
             (() => {
+                const syncModalScrollLock = () => {
+                    const modalOpen = Boolean(document.querySelector('dialog[data-modal-sheet][open]'));
+
+                    document.documentElement.toggleAttribute('data-modal-open', modalOpen);
+                    document.body?.toggleAttribute('data-modal-open', modalOpen);
+                };
+
                 const loadModalContent = async (dialog, trigger) => {
                     const contentUrl = trigger.dataset.modalContentUrl;
                     const content = dialog.querySelector('[data-modal-content]');
@@ -258,6 +265,8 @@
                         trigger.dataset.modalTriggerBound = 'true';
 
                         dialog.addEventListener('close', () => {
+                            syncModalScrollLock();
+
                             if (dialog.modalTrigger !== trigger) {
                                 return;
                             }
@@ -288,6 +297,8 @@
                                 dialog.showModal();
                             }
 
+                            syncModalScrollLock();
+
                             dialog.modalTrigger = trigger;
                             trigger.setAttribute('aria-expanded', 'true');
                             dialog.dataset.modalHistory = 'pushed';
@@ -315,6 +326,8 @@
                                 dialog.dataset.modalHistory = 'server';
                             }
 
+                            syncModalScrollLock();
+
                             void loadModalContent(dialog, trigger);
                         }
                     });
@@ -336,6 +349,8 @@
                 } else {
                     initialiseModals();
                 }
+
+                syncModalScrollLock();
 
                 document.addEventListener('livewire:navigated', initialiseModals);
             })();

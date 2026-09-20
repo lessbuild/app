@@ -343,6 +343,42 @@ test('mobile forms keep focused fields reachable and lazy dialog content exposes
     await expect(content).not.toHaveAttribute('aria-busy', 'true');
 });
 
+test('open dialogs lock the page and scroll their own body', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/providers', { waitUntil: 'networkidle' });
+
+    const dialog = page.locator('#provider-create-dialog');
+    const body = dialog.locator('[data-modal-body]');
+
+    await page.getByRole('link', { name: 'Add Provider', exact: true }).first().click();
+    await expect(dialog).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('data-modal-open', '');
+    await expect(page.locator('body')).toHaveAttribute('data-modal-open', '');
+
+    const pageScrollTop = await page.evaluate(() => document.scrollingElement.scrollTop);
+    await page.mouse.wheel(0, 1200);
+    await expect.poll(() => page.evaluate(() => document.scrollingElement.scrollTop)).toBe(pageScrollTop);
+
+    const bodyMetrics = await body.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+
+        return {
+            scrollTop: element.scrollTop,
+            scrollHeight: element.scrollHeight,
+            clientHeight: element.clientHeight,
+        };
+    });
+
+    expect(bodyMetrics.scrollHeight).toBeGreaterThan(bodyMetrics.clientHeight);
+    expect(bodyMetrics.scrollTop).toBeGreaterThan(0);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+    await expect(page.locator('html')).not.toHaveAttribute('data-modal-open', '');
+    await expect(page.locator('body')).not.toHaveAttribute('data-modal-open', '');
+});
+
 for (const colorScheme of ['light', 'dark']) {
     for (const width of widths) {
         test(`${colorScheme} at ${width}px: built assets preserve layouts and navigation`, async ({ page }) => {

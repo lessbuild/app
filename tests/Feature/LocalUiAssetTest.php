@@ -92,6 +92,10 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-mobile-filter-panel', $filter);
         $this->assertStringContainsString('data-mobile-filter-summary', $filter);
         $this->assertStringContainsString('data-mobile-filter-backdrop', $filter);
+
+        $appStyles = File::get(resource_path('css/app.css'));
+        $this->assertStringContainsString('html:has(dialog[data-modal-sheet][open])', $appStyles);
+        $this->assertStringContainsString('body[data-modal-open]', $appStyles);
     }
 
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
