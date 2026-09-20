@@ -75,6 +75,69 @@ Commit and push: `3e69b7b Fix modal history and filter fallbacks`.
 Implement the first bounded read-only inspector from the route audit: provider
 connection history in context, while preserving the full history page and export.
 
+## Slice 3 — provider connection-history inspector
+
+Status: complete; implementation verified locally and ready to commit/push.
+
+### Responsibility problem
+
+The provider detail page exposed only a direct navigation link for retained
+connection checks. Opening it discarded the provider context and made a common
+read-only investigation unnecessarily expensive on mobile. The existing full
+history controller already owned the correct organization authorization,
+filters, ordering, pagination and export semantics, so duplicating those reads
+in the provider page would have created a second source of truth.
+
+### Boundaries and benefit
+
+- `ProviderController::connectionChecks()` remains the single authorized read
+  boundary and now renders either the existing full-page shell or a body-only
+  `fragment=provider-connection-checks` response.
+- The shared connection-history content partial owns the repeated filter,
+  insight, result-list and pagination presentation.
+- The provider detail view owns only the trigger and modal shell.
+- Shared modal JavaScript owns fragment form refreshes and supports a separate
+  modal history URL from the full-page fallback link.
+
+This applies single responsibility without introducing a repository or a new
+provider abstraction: the existing query collaborator and authorization policy
+are reused unchanged.
+
+### Preserved behavior and safety
+
+- The direct history route, no-JavaScript fallback, result/source/date filters,
+  pagination query values, ordering and CSV export remain available.
+- Fragment requests authorize before querying and use the same normalized
+  filters and metrics as the full page.
+- Provider secrets and response bodies remain excluded from the inspector.
+- Applying filters refreshes only the dialog content; the background document
+  and scroll position remain in place.
+- Browser history opens and closes the inspector predictably, while a direct
+  full-page visit still works when JavaScript is unavailable.
+- Export continues to navigate/download from its existing route rather than
+  being reimplemented in the modal.
+
+### Verification
+
+- Provider history regression: **7 tests / 103 assertions passed**.
+- Pint on changed PHP files: passed.
+- Vite production asset build: passed.
+- Focused browser test: **1 test passed in 1.3 minutes** using PHP 8.5.10;
+  verified modal opening, fragment filter refresh, background path stability,
+  Escape and focus restoration.
+- `git diff --check`: passed.
+
+### Commit and push
+
+Commit and push: pending in this working slice.
+
+### Exact next task
+
+After this slice is committed and pushed, inspect the website detail route for
+a bounded read-only health/checks inspector. Reuse its existing query and
+authorization boundary, and keep setup, provisioning and destructive actions
+as pages or explicit workflows.
+
 ## Slice 2 — shared workspace search
 
 Status: complete; committed and pushed as `af2e8eb`.

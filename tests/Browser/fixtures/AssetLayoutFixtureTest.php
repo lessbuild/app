@@ -126,6 +126,10 @@ class AssetLayoutFixtureTest extends TestCase
         ]);
         File::put($directory.'/provider-show.html', $this->renderPage(route('providers.show', $provider))->assertOk()
             ->assertSee('data-modal-trigger="provider-edit-dialog"', false)->getContent());
+        File::put($directory.'/provider-connection-checks.html', $this->renderPage(route('providers.connection-checks.index', [
+            'provider' => $provider,
+            'fragment' => 'provider-connection-checks',
+        ]))->assertOk()->assertSee('data-modal-fragment-form', false)->getContent());
         File::put($directory.'/provider-show-edit-dialog.html', $this->renderPage(route('providers.show', [
             'provider' => $provider,
             'dialog' => 'edit-provider',

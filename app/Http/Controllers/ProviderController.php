@@ -99,18 +99,37 @@ class ProviderController extends Controller
     {
         $this->authorize('view', $provider);
         $filters = $this->connectionCheckFilters($request);
-
-        return view('scenes.providers.connection-checks', [
+        $isFragment = $request->string('fragment')->toString() === 'provider-connection-checks';
+        $paginationQuery = array_filter($filters, fn ($value) => $value !== null);
+        if ($isFragment) {
+            $paginationQuery['fragment'] = 'provider-connection-checks';
+        }
+        $connectionChecks = $this->connectionHistory->for($provider, $filters)
+            ->orderByDesc('checked_at')
+            ->orderByDesc('id')
+            ->paginate(20)
+            ->appends($paginationQuery);
+        $viewData = [
             'provider' => $provider,
-            'connectionChecks' => $this->connectionHistory->for($provider, $filters)
-                ->orderByDesc('checked_at')
-                ->orderByDesc('id')
-                ->paginate(20)
-                ->appends(array_filter($filters, fn ($value) => $value !== null)),
+            'connectionChecks' => $connectionChecks,
             'filters' => $filters,
             'metrics' => $this->connectionHistory->filteredMetrics($provider, $filters),
             'sources' => [ProviderConnectionCheck::SOURCE_MANUAL, ProviderConnectionCheck::SOURCE_AUTOMATIC],
-        ]);
+        ];
+
+        if ($isFragment) {
+            return view('components.scenes.providers.connection-checks-content', [
+                ...$viewData,
+                'filterAction' => route('providers.connection-checks.index', $provider),
+                'filterFragmentAction' => route('providers.connection-checks.index', [
+                    'provider' => $provider,
+                    'fragment' => 'provider-connection-checks',
+                ]),
+                'filterIdPrefix' => 'connection-dialog-',
+            ]);
+        }
+
+        return view('scenes.providers.connection-checks', $viewData);
     }
 
     /**

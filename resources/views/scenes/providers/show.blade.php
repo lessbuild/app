@@ -2,9 +2,15 @@
 
     @php
         $providerEditOpen = request()->query('dialog') === 'edit-provider';
+        $providerConnectionChecksOpen = request()->query('dialog') === 'provider-connection-checks';
         $providerEditUrl = route('providers.show', ['provider' => $provider, 'dialog' => 'edit-provider']);
         $providerPageUrl = request()->fullUrlWithoutQuery('dialog');
         $providerEditContentUrl = route('providers.edit', ['provider' => $provider, 'dialog' => 'edit-provider', 'fragment' => 1, 'return_to' => $providerPageUrl]);
+        $providerConnectionChecksUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'provider-connection-checks']);
+        $providerConnectionChecksContentUrl = route('providers.connection-checks.index', [
+            'provider' => $provider,
+            'fragment' => 'provider-connection-checks',
+        ]);
         $repositoryCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-repository']);
         $repositoryCreateContentUrl = route('dialogs.create', ['resource' => 'repository', 'return_to' => $providerPageUrl]);
         $serverCreateUrl = (string) \Illuminate\Support\Uri::of($providerPageUrl)->withQuery(['dialog' => 'create-server']);
@@ -135,7 +141,15 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <x-ui.button :href="route('providers.connection-checks.index', $provider)" variant="secondary">{{ __('View all connection checks') }}</x-ui.button>
+                <x-ui.button
+                    :href="route('providers.connection-checks.index', $provider)"
+                    data-modal-trigger="provider-connection-checks-dialog"
+                    data-modal-content-url="{{ $providerConnectionChecksContentUrl }}"
+                    data-modal-history-url="{{ $providerConnectionChecksUrl }}"
+                    aria-controls="provider-connection-checks-dialog"
+                    aria-expanded="{{ $providerConnectionChecksOpen ? 'true' : 'false' }}"
+                    variant="secondary"
+                >{{ __('View all connection checks') }}</x-ui.button>
                 @if ($connectionChecks->isNotEmpty())
                     <x-ui.button :href="route('providers.connection-checks.export', $provider)" variant="secondary">{{ __('Export connection history') }}</x-ui.button>
                 @endif
@@ -259,4 +273,16 @@
     </div>
 
     <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
+
+    <x-dialogs.modal
+        id="provider-connection-checks-dialog"
+        :title="__('Connection check history')"
+        :description="__('Review retained credential-check evidence without leaving this provider.')"
+        :open="$providerConnectionChecksOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-secondary">{{ __('Loading connection check history…') }}</p>
+        </div>
+    </x-dialogs.modal>
 </x-layouts.app>

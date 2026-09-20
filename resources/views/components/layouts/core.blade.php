@@ -395,6 +395,62 @@
                     }
                 };
 
+                const reloadModalFragment = (dialog, fragmentUrl, form = null) => {
+                    const trigger = dialog?.modalTrigger;
+
+                    if (! trigger || ! fragmentUrl) {
+                        return;
+                    }
+
+                    const url = new URL(fragmentUrl, window.location.href);
+
+                    if (url.origin !== window.location.origin) {
+                        return;
+                    }
+
+                    if (form) {
+                        for (const [name, value] of new FormData(form).entries()) {
+                            if (typeof value !== 'string' || value === '') {
+                                url.searchParams.delete(name);
+                            } else {
+                                url.searchParams.set(name, value);
+                            }
+                        }
+                    }
+
+                    trigger.dataset.modalContentUrl = url.href;
+                    dialog.dataset.modalContentLoaded = 'false';
+                    delete dialog.dataset.modalContentUrl;
+                    void loadModalContent(dialog, trigger);
+                };
+
+                document.addEventListener('submit', (event) => {
+                    const form = event.target instanceof HTMLFormElement
+                        ? event.target.closest('form[data-modal-fragment-form]')
+                        : null;
+                    const dialog = form?.closest('dialog[data-modal-sheet]');
+
+                    if (! form || ! dialog?.open || form.method.toUpperCase() !== 'GET') {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    reloadModalFragment(dialog, form.dataset.modalFragmentUrl, form);
+                });
+
+                document.addEventListener('click', (event) => {
+                    const target = event.target instanceof Element ? event.target : null;
+                    const link = target?.closest('a[data-modal-fragment-link]');
+                    const dialog = link?.closest('dialog[data-modal-sheet]');
+
+                    if (! link || ! dialog?.open) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    reloadModalFragment(dialog, link.dataset.modalFragmentUrl);
+                });
+
                 const cleanModalUrl = () => {
                     const url = new URL(window.location.href);
 
@@ -404,6 +460,14 @@
 
                     url.searchParams.delete('dialog');
                     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+                };
+
+                const modalTriggerUrl = (trigger) => {
+                    if (! (trigger instanceof HTMLAnchorElement)) {
+                        return new URL(window.location.href);
+                    }
+
+                    return new URL(trigger.dataset.modalHistoryUrl || trigger.href, window.location.href);
                 };
 
                 const bindModalCloseButtons = (dialog) => {
@@ -498,7 +562,7 @@
                             dialog.dataset.modalHistory = 'pushed';
 
                             if (trigger instanceof HTMLAnchorElement) {
-                                const url = new URL(trigger.href, window.location.href);
+                                const url = modalTriggerUrl(trigger);
 
                                 window.history.pushState(
                                     { ...(window.history.state ?? {}), modal: dialog.id },
@@ -512,9 +576,7 @@
 
                         if (dialog.dataset.modalInitialOpen === 'true') {
                             const currentUrl = new URL(window.location.href);
-                            const triggerUrl = trigger instanceof HTMLAnchorElement
-                                ? new URL(trigger.href, window.location.href)
-                                : currentUrl;
+                            const triggerUrl = modalTriggerUrl(trigger);
                             const isInitialTrigger = triggerUrl.pathname === currentUrl.pathname
                                 && triggerUrl.search === currentUrl.search
                                 && triggerUrl.hash === currentUrl.hash;
@@ -547,7 +609,7 @@
                                 return false;
                             }
 
-                            const triggerUrl = new URL(trigger.href, window.location.href);
+                            const triggerUrl = modalTriggerUrl(trigger);
 
                             return triggerUrl.pathname === currentUrl.pathname
                                 && triggerUrl.search === currentUrl.search

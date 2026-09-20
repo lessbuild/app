@@ -127,6 +127,50 @@ class ProviderConnectionHistoryTest extends TestCase
         $this->assertDatabaseCount('provider_connection_checks', 0);
     }
 
+    public function test_connection_history_fragment_reuses_filters_and_authorization_for_the_provider_dialog(): void
+    {
+        [$owner, $provider] = $this->provider('Dialog');
+        $provider->connectionChecks()->create([
+            'successful' => false,
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+            'provider_type' => Provider::TYPE_GITHUB,
+            'http_status' => 401,
+            'duration_ms' => 180,
+            'endpoint' => 'https://api.github.com/user',
+            'checked_at' => '2026-09-03 10:00:00',
+        ]);
+
+        $response = $this->actingAs($owner)->get(route('providers.connection-checks.index', [
+            'provider' => $provider,
+            'fragment' => 'provider-connection-checks',
+            'result' => 'failed',
+            'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+        ]));
+
+        $response
+            ->assertSuccessful()
+            ->assertViewIs('components.scenes.providers.connection-checks-content')
+            ->assertViewHas('filters', [
+                'result' => 'failed',
+                'source' => ProviderConnectionCheck::SOURCE_MANUAL,
+                'date_from' => null,
+                'date_to' => null,
+            ])
+            ->assertSee('data-modal-fragment-form', false)
+            ->assertSee('connection-dialog-result', false)
+            ->assertSee('fragment=provider-connection-checks', false)
+            ->assertSee('HTTP 401')
+            ->assertDontSee('<html', false)
+            ->assertDontSee('provider-secret');
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('providers.connection-checks.index', [
+                'provider' => $provider,
+                'fragment' => 'provider-connection-checks',
+            ]))
+            ->assertForbidden();
+    }
+
     public function test_connection_history_summarizes_the_filtered_retained_sample(): void
     {
         [$owner, $provider] = $this->provider('Insights');
