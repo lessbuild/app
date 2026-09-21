@@ -4,7 +4,7 @@
 
 The isolated dev deployment is prepared for the canonical hostname
 `deployer.buildpusher.com` and is serving source commit
-`abb06a5`, matching `origin/main`. The runtime is
+`2824038`, matching `origin/main`. The runtime is
 `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
 `APP_ENV=local`, its own SQLite database and the active
 `buildpusher-dev-main.service`; Caddy serves the new hostname through that
@@ -20,10 +20,17 @@ The public DNS A record is active at the authoritative DNS provider (host
 certificate for the new hostname, and HTTPS verification succeeds.
 
 The locked frontend build completed and the deployed login page serves
-`build/assets/app-BPiOWmT9.css`. Laravel caches were cleared before the service
-restart. The strict PHP 8.5.10 suite passed **1,683 tests / 14,151
-assertions**, required-PHP Pint passed, Vite production build passed and
-`git diff --check` passed.
+`build/assets/app-BnGnxWel.css` plus the Signal theme script
+`signal-theme-FzFaTKCz.js`. Laravel caches were cleared before the service
+restart. The source verification for this UI slice passed its focused PHP,
+Pint, Vite and browser checks; the broader historical suite remains recorded
+below and is not being re-described as a fresh full-suite run.
+
+The canonical-host smoke check after this deployment returned HTTP 200 for
+`/login`, HTTP 200 for the referenced CSS and JavaScript assets, and
+`{"status":"ready"}` from `/api/health`. Both isolated web and queue services
+are active. This is isolated development evidence only; it is not production
+or external-provider acceptance.
 
 Verification against the domain:
 

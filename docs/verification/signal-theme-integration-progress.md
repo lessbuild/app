@@ -98,6 +98,27 @@ Evidence:
 The browser evidence is for the isolated local fixture runtime only. It is not
 live deployment or cloud acceptance.
 
+## Canonical dev deployment — 2026-09-21
+
+The isolated runtime at `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
+was fast-forwarded to `2824038`, rebuilt and restarted through
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is `https://deployer.buildpusher.com`; the legacy `buildpusher.com` host
+is not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200.
+- CSS — `build/assets/app-BnGnxWel.css`, HTTP 200, containing Signal markers
+  including `--ui-page`, `.ui-panel` and `.ui-eyebrow`.
+- Theme script — `build/assets/signal-theme-FzFaTKCz.js`.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
 Next task: migrate the provider inventory page using the same actual Signal
 primitives while preserving its existing routes, filters, pagination, modal
 contracts, organization scoping and export behavior.
