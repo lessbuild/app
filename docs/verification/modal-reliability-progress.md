@@ -344,6 +344,38 @@ No further modal candidate is justified by the current link audit. Keep
 live-domain, physical-device and external-provider acceptance separate from
 isolated browser evidence.
 
+## Slice 31 — final regression and account modal contract alignment
+
+Status: complete; committed and pushed as `5564b46`.
+
+### Responsibility problem
+
+The account Profile navigation was intentionally moved into the shared native
+dialog pattern, but the static local-navigation regression still required its
+old direct `#account-profile` href. That made the full suite fail even though
+the modal opener and the underlying page fallback were both present.
+
+### Boundary and benefit
+
+The regression now treats Profile as a modal opener and continues to assert
+the remaining account section anchors. This keeps the test contract aligned
+with the actual contextual-navigation boundary without changing the rendered
+application, controller, route, policy or persisted behavior.
+
+### Verification
+
+- `LocalUiAssetTest`: **23 tests / 473 assertions passed**.
+- Current strict full PHP 8.5.10 suite: **1,683 tests / 14,151 assertions
+  passed in 982.22 seconds**, with no failures, warnings, risky tests or
+  deprecations.
+- `git diff --check`: passed before commit and push.
+
+### Exact next task
+
+The local modal audit and its regression coverage are complete. Keep deployed
+domain, physical-device and external-provider acceptance separate from this
+isolated evidence; begin only a separately authorized product slice.
+
 ## Slice 1 — shared filter and modal lifecycle reliability
 
 Status: complete; committed and pushed as `3e69b7b`.

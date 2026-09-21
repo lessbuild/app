@@ -3,7 +3,7 @@
 # Latest modal link and browser-coverage audit — 2026-09-21
 
 The contextual modal implementation and the remaining page/link audit are
-complete locally on `main` through `e8699a0`. Bounded read-only evidence now
+complete locally on `main` through `5564b46`. Bounded read-only evidence now
 uses contextual inspectors for provider/website history, deployment history,
 command output, account/security history, repository impact and webhook
 delivery details, gallery/report status, and operational incident timelines.
@@ -16,7 +16,9 @@ The final fixture/state audit added full command-center and system-health page
 fixtures, made seeded edit URLs independent of numeric ID order, and corrected
 responsive assertions for completed onboarding and collapsed organization
 disclosures. No application controllers, policies, actions, routes or
-persisted behavior changed in this coverage slice.
+persisted behavior changed in this coverage slice. The follow-up test contract
+now recognizes that account Profile is a modal opener while retaining the
+`#account-profile` no-JavaScript/page fallback section.
 
 Verification:
 
@@ -28,6 +30,9 @@ Verification:
   9.6 minutes**.
 - Full light/dark responsive matrix at 320/390/768/1440px: **8 browser tests
   passed** (one 2.3-minute run and seven 13.3-minute run).
+- Current strict full PHP 8.5.10 suite on `5564b46`: **1,683 tests / 14,151
+  assertions passed in 982.22 seconds**, with no failures, warnings, risky
+  tests or deprecations.
 - Focused creation, cancellation/history and organization preference journeys
   passed; PHP/Node syntax, Pint, Vite and `git diff --check` passed.
 
