@@ -72,7 +72,7 @@ class DashboardTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('sticky top-0 z-30 bg-gray-800 text-gray-100', false)
+            ->assertSee('sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft', false)
             ->assertSee('fixed inset-x-0 bottom-0 z-30 grid grid-cols-4', false)
             ->assertSee('pb-[calc(.25rem+env(safe-area-inset-bottom))]', false)
             ->assertSee('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', false)
@@ -263,6 +263,9 @@ class DashboardTest extends TestCase
             ->assertSee('Quick actions')
             ->assertSee('Create application')
             ->assertSee('Open observability')
+            ->assertSee('class="ui-eyebrow"', false)
+            ->assertSee('class="ui-panel', false)
+            ->assertSee('class="ui-progress', false)
             ->assertSee('aria-label="Workspace totals"', false)
             ->getContent();
 

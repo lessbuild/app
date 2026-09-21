@@ -1,14 +1,14 @@
-<section class="ui-card mb-6 p-4 sm:p-5" aria-labelledby="dashboard-quick-actions-title" data-dashboard-quick-actions>
+<section class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="dashboard-quick-actions-title" data-dashboard-quick-actions>
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Next actions') }}</p>
-            <h2 id="dashboard-quick-actions-title" class="mt-1 text-xl font-semibold text-primary">{{ __('Quick actions') }}</h2>
-            <p class="mt-1 text-sm leading-6 text-secondary">{{ __('Jump straight to the work that moves this workspace forward.') }}</p>
+            <p class="ui-eyebrow">{{ __('Next actions') }}</p>
+            <h2 id="dashboard-quick-actions-title" class="mt-1 text-xl font-extrabold tracking-tight text-ink">{{ __('Quick actions') }}</h2>
+            <p class="mt-1 text-sm leading-6 text-muted">{{ __('Jump straight to the work that moves this workspace forward.') }}</p>
         </div>
         <a
             href="{{ route('search.index') }}"
             data-workspace-search-trigger
-            class="text-sm font-semibold text-ternary underline"
+            class="ui-link text-sm"
             @click.prevent="openPalette($event.currentTarget)"
         >{{ __('Search workspace') }}</a>
     </div>
@@ -32,10 +32,10 @@
                 'ui-dashboard-quick-action--primary' => $variant === 'primary',
             ])>
                 <span class="min-w-0">
-                    <span class="block truncate text-sm font-bold text-primary">{{ $label }}</span>
-                    <span class="mt-0.5 block truncate text-xs text-secondary">{{ $description }}</span>
+                    <span class="block truncate text-sm font-bold text-ink">{{ $label }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-muted">{{ $description }}</span>
                 </span>
-                <span class="shrink-0 text-lg leading-none text-ternary" aria-hidden="true">→</span>
+                <span class="shrink-0 text-lg leading-none text-subtle" aria-hidden="true">→</span>
             </a>
         @endforeach
     </div>

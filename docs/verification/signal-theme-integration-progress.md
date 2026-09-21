@@ -3,7 +3,8 @@
 ## Slice 1 — shared theme and application shell
 
 Status: implemented and pushed on `main` through commit `859e898`; the
-follow-up compatibility and provider-control slice is currently in progress.
+follow-up compatibility/provider-control slice is pushed as `5df3f16`, and the
+dashboard slice is complete and ready to commit.
 
 The application now includes the actual Signal Starter source from:
 
@@ -54,6 +55,50 @@ Evidence for the follow-up slice:
   exposed and corrected the legacy `text-primary` and login-input color
   collisions. A fresh run is required after the final CSS build.
 
-Next task: complete the fresh browser verification, commit and push this
-follow-up slice, then migrate the dashboard to Signal's application cards,
-timeline and responsive data patterns.
+## Slice 2 — dashboard application surfaces
+
+Status: implemented and verified locally; commit and push are the next handoff
+step.
+
+Responsibility problem addressed:
+
+- The dashboard still mixed the legacy BuildPusher visual vocabulary into the
+  Signal shell, which made the highest-traffic page feel like a recolored
+  page rather than a Signal composition.
+- Operational status, provisioning, active deployments, webhooks and command
+  summaries used alert-card layouts that consumed too much mobile space and
+  made unrelated operational states look equally urgent.
+- Dashboard statistics and trend visualizations did not use Signal's actual
+  stat, chart, progress and timeline primitives.
+
+Signal implementation:
+
+- Dashboard hero, setup, overview, provider health and activity surfaces now
+  use `ui-panel`, `ui-card`, `ui-eyebrow`, `ui-link`, `text-ink`, `text-muted`
+  and Signal's surface tokens.
+- Workspace totals use the Signal stat typography with a mobile-specific
+  compact geometry that preserves the existing under-170px layout contract.
+- Deployment and health trends use Signal's `ui-chart`/`ui-chart-bar`
+  primitives; plan and setup capacity use `ui-progress`.
+- Active deployments use a Signal `ui-timeline` while retaining every existing
+  route, modal trigger, row limit and status count.
+- Existing alert variants now retain semantic colored borders on quiet Signal
+  surfaces instead of saturated full-card backgrounds.
+- Existing modal hooks, dashboard ordering, authorization-scoped data, secret
+  redaction and non-JavaScript links remain unchanged.
+
+Evidence:
+
+- `php artisan view:cache` — passed.
+- `npm run build` — passed.
+- `php artisan test tests/Feature/DashboardTest.php tests/Feature/LocalUiAssetTest.php --do-not-record-test-run-history` — 52 passed, 800 assertions.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php npx playwright test tests/Browser/asset-layout.spec.js --grep='light at 320px' --reporter=line` — 1 passed.
+
+The browser evidence is for the isolated local fixture runtime only. It is not
+live deployment or cloud acceptance.
+
+Next task: commit and push this dashboard slice, then migrate the next
+high-traffic resource page using the same actual Signal primitives while
+preserving its existing routes, filters, modal contracts and query behavior.

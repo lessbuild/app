@@ -65,12 +65,12 @@
         ];
     @endphp
 
-    <header class="ui-dashboard-hero ui-card mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
+    <header class="ui-dashboard-hero ui-panel mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
         <div class="min-w-0">
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace overview') }}</p>
-            <p class="mt-2 text-sm text-secondary">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
-            <h1 id="dashboard-title" class="mt-1 break-words text-2xl font-bold text-primary">{{ auth()->user()->currentOrganization?->name ?: __('Dashboard') }}</h1>
-            <p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
+            <p class="ui-eyebrow">{{ __('Workspace overview') }}</p>
+            <p class="mt-2 text-sm text-muted">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
+            <h1 id="dashboard-title" class="mt-1 break-words text-2xl font-extrabold tracking-tight text-ink">{{ auth()->user()->currentOrganization?->name ?: __('Dashboard') }}</h1>
+            <p class="mt-1 text-sm text-muted">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
         </div>
         <nav class="flex shrink-0 flex-wrap gap-2" aria-label="{{ __('Dashboard quick actions') }}">
             <x-ui.button
@@ -118,65 +118,65 @@
 
     <details
         id="dashboard-operational-overview"
-        class="ui-responsive-details group ui-card mb-12 overflow-hidden"
+        class="ui-responsive-details group ui-panel mb-12 overflow-hidden"
         open
         data-responsive-details
         data-responsive-details-mobile-open="false"
         aria-labelledby="operations-overview-title"
     >
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 14 days') }}</span>
-                <span id="operations-overview-title" class="mt-1 block text-xl font-semibold text-primary">{{ __('Operational overview') }}</span>
-                <span class="mt-1 block text-sm font-normal leading-6 text-secondary">{{ __('Deployment, health and plan signals for this workspace.') }}</span>
+                <span class="ui-eyebrow block">{{ __('Last 14 days') }}</span>
+                <span id="operations-overview-title" class="mt-1 block text-xl font-extrabold tracking-tight text-ink">{{ __('Operational overview') }}</span>
+                <span class="mt-1 block text-sm font-normal leading-6 text-muted">{{ __('Deployment, health and plan signals for this workspace.') }}</span>
             </span>
-            <span class="shrink-0 text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            <span class="shrink-0 text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <div class="ui-responsive-details__content border-t border-primary p-5 lg:border-0 lg:p-0">
+        <div class="ui-responsive-details__content border-t border-line p-5 lg:border-0 lg:p-0">
             <div class="mb-4 flex justify-end">
-                <a href="{{ route('observability.index') }}" class="text-sm font-bold text-ternary underline">{{ __('Open observability') }}</a>
+                <a href="{{ route('observability.index') }}" class="ui-link text-sm">{{ __('Open observability') }}</a>
             </div>
         <div class="grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
             <article class="ui-card p-5" aria-labelledby="deployment-volume-title">
-                <div class="flex items-start justify-between gap-3"><div><h3 id="deployment-volume-title" class="font-black text-primary">{{ __('Deployment volume') }}</h3><p class="mt-1 text-xs text-secondary">{{ trans_choice(':count release|:count releases', $trendSummary['deployments'], ['count' => $trendSummary['deployments']]) }}</p></div><div class="text-right"><p class="text-2xl font-black text-primary">{{ $trendSummary['success_rate'] === null ? '—' : $trendSummary['success_rate'].'%' }}</p><p class="text-xs text-secondary">{{ __('success') }}</p></div></div>
-                <div class="mt-5 flex h-28 items-end gap-1.5" role="img" aria-label="{{ __('Deployment counts for each of the last fourteen days') }}">
+                <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Activity') }}</p><h3 id="deployment-volume-title" class="mt-2 font-extrabold text-ink">{{ __('Deployment volume') }}</h3><p class="mt-1 text-xs text-muted">{{ trans_choice(':count release|:count releases', $trendSummary['deployments'], ['count' => $trendSummary['deployments']]) }}</p></div><div class="text-right"><p class="text-2xl font-extrabold text-ink">{{ $trendSummary['success_rate'] === null ? '—' : $trendSummary['success_rate'].'%' }}</p><p class="text-xs text-muted">{{ __('success') }}</p></div></div>
+                <div class="ui-chart ui-dashboard-trend mt-5" role="img" aria-label="{{ __('Deployment counts for each of the last fourteen days') }}">
                     @foreach($deploymentTrend as $day)
                         @php
                             $height = $day['total'] === 0 ? 3 : max(10, (int) round(($day['total'] / $deploymentTrendMaximum) * 100));
                         @endphp
-                        <div class="group flex h-full min-w-0 flex-1 items-end" title="{{ $day['date'] }}: {{ $day['total'] }} deployments, {{ $day['succeeded'] }} succeeded, {{ $day['failed'] }} failed">
-                            <div class="w-full rounded-t bg-ternary transition-opacity group-hover:opacity-75" style="height: {{ $height }}%"></div>
+                        <div class="ui-chart-column group" title="{{ $day['date'] }}: {{ $day['total'] }} deployments, {{ $day['succeeded'] }} succeeded, {{ $day['failed'] }} failed">
+                            <div class="ui-chart-bar" style="height: {{ $height }}%"></div>
                         </div>
                     @endforeach
                 </div>
-                <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-secondary"><span>{{ $deploymentTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
-                <p class="mt-4 border-t border-primary pt-3 text-xs text-secondary">{{ __('Median completed deployment') }}: <strong class="text-primary">{{ $trendSummary['median_duration'] ?? '—' }}</strong></p>
+                <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-subtle"><span>{{ $deploymentTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
+                <p class="mt-4 border-t border-line pt-3 text-xs text-muted">{{ __('Median completed deployment') }}: <strong class="text-ink">{{ $trendSummary['median_duration'] ?? '—' }}</strong></p>
             </article>
 
             <article class="ui-card p-5" aria-labelledby="health-reliability-title">
-                <div class="flex items-start justify-between gap-3"><div><h3 id="health-reliability-title" class="font-black text-primary">{{ __('Health reliability') }}</h3><p class="mt-1 text-xs text-secondary">{{ trans_choice(':count retained check|:count retained checks', $trendSummary['health_checks'], ['count' => $trendSummary['health_checks']]) }}</p></div><div class="text-right"><p class="text-2xl font-black text-primary">{{ $trendSummary['health_rate'] === null ? '—' : $trendSummary['health_rate'].'%' }}</p><p class="text-xs text-secondary">{{ __('passing') }}</p></div></div>
-                <div class="mt-5 flex h-28 items-end gap-1.5" role="img" aria-label="{{ __('Website health success rate for each of the last fourteen days') }}">
+                <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Reliability') }}</p><h3 id="health-reliability-title" class="mt-2 font-extrabold text-ink">{{ __('Health reliability') }}</h3><p class="mt-1 text-xs text-muted">{{ trans_choice(':count retained check|:count retained checks', $trendSummary['health_checks'], ['count' => $trendSummary['health_checks']]) }}</p></div><div class="text-right"><p class="text-2xl font-extrabold text-ink">{{ $trendSummary['health_rate'] === null ? '—' : $trendSummary['health_rate'].'%' }}</p><p class="text-xs text-muted">{{ __('passing') }}</p></div></div>
+                <div class="ui-chart ui-dashboard-trend mt-5" role="img" aria-label="{{ __('Website health success rate for each of the last fourteen days') }}">
                     @foreach($healthTrend as $day)
-                        <div class="group flex h-full min-w-0 flex-1 items-end" title="{{ $day['date'] }}: {{ $day['total'] }} checks, {{ $day['rate'] === null ? 'no data' : $day['rate'].'% passing' }}">
-                            <div @class(['w-full rounded-t transition-opacity group-hover:opacity-75', 'bg-secondary' => $day['rate'] === null, 'bg-ternary' => $day['rate'] !== null]) style="height: {{ $day['rate'] === null ? 3 : max(6, $day['rate']) }}%"></div>
+                        <div class="ui-chart-column group" title="{{ $day['date'] }}: {{ $day['total'] }} checks, {{ $day['rate'] === null ? 'no data' : $day['rate'].'% passing' }}">
+                            <div @class(['ui-chart-bar', 'bg-surface-muted' => $day['rate'] === null]) style="height: {{ $day['rate'] === null ? 3 : max(6, $day['rate']) }}%"></div>
                         </div>
                     @endforeach
                 </div>
-                <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-secondary"><span>{{ $healthTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
-                <p class="mt-4 border-t border-primary pt-3 text-xs text-secondary">{{ __('No-data days are shown as a short neutral bar and are excluded from the rate.') }}</p>
+                <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-subtle"><span>{{ $healthTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
+                <p class="mt-4 border-t border-line pt-3 text-xs text-muted">{{ __('No-data days are shown as a short neutral bar and are excluded from the rate.') }}</p>
             </article>
 
             <article class="ui-card p-5" aria-labelledby="plan-capacity-title">
-                <div class="flex items-start justify-between gap-3"><div><h3 id="plan-capacity-title" class="font-black text-primary">{{ __('Plan capacity') }}</h3><p class="mt-1 text-xs text-secondary">{{ __(':plan workspace', ['plan' => $billingPlan['name']]) }}</p></div><a href="{{ route('billing.index') }}" class="text-xs font-bold text-ternary underline">{{ __('Manage') }}</a></div>
+                <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Capacity') }}</p><h3 id="plan-capacity-title" class="mt-2 font-extrabold text-ink">{{ __('Plan capacity') }}</h3><p class="mt-1 text-xs text-muted">{{ __(':plan workspace', ['plan' => $billingPlan['name']]) }}</p></div><a href="{{ route('billing.index') }}" class="ui-link text-xs">{{ __('Manage') }}</a></div>
                 <div class="mt-5 space-y-5">
                     @foreach($billingPlan['usage'] as $resource => $usage)
                         @php
                             $percentage = $usage['limit'] === null ? 0 : min(100, (int) round(($usage['used'] / max(1, $usage['limit'])) * 100));
                         @endphp
-                        <div><div class="flex items-center justify-between gap-3 text-xs"><span class="font-bold capitalize text-primary">{{ __($resource) }}</span><span class="text-secondary">{{ $usage['used'] }} / {{ $usage['limit'] ?? __('Unlimited') }}</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-secondary"><div @class(['h-full rounded-full', 'bg-red-500' => !$usage['allowed'], 'bg-ternary' => $usage['allowed']]) style="width: {{ $usage['limit'] === null ? 100 : $percentage }}%"></div></div></div>
+                        <div><div class="flex items-center justify-between gap-3 text-xs"><span class="font-bold capitalize text-ink">{{ __($resource) }}</span><span class="text-muted">{{ $usage['used'] }} / {{ $usage['limit'] ?? __('Unlimited') }}</span></div><div class="ui-progress mt-2"><span @class(['bg-danger' => !$usage['allowed']]) style="width: {{ $usage['limit'] === null ? 100 : $percentage }}%"></span></div></div>
                     @endforeach
                 </div>
-                <p class="mt-5 border-t border-primary pt-3 text-xs leading-5 text-secondary">{{ __('Limits are checked again on the server for create, import, invitation, preview, and paid-feature actions.') }}</p>
+                <p class="mt-5 border-t border-line pt-3 text-xs leading-5 text-muted">{{ __('Limits are checked again on the server for create, import, invitation, preview, and paid-feature actions.') }}</p>
             </article>
         </div>
         </div>
@@ -185,28 +185,27 @@
     @php($healthOperational = $canManageSystemHealth ? $systemHealth['passed'] : $platformStatus['operational'])
     @if(in_array('status', $dashboardWidgets, true))
     <section @class([
-        'ui-alert mb-12 p-5',
+        'ui-alert ui-panel mb-12 p-5',
         'ui-alert--success' => $healthOperational,
         'ui-alert--danger' => ! $healthOperational,
     ]) aria-labelledby="dashboard-system-health">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <p class="text-xs font-semibold uppercase text-secondary">{{ __('Platform status') }}</p>
+                <p class="ui-eyebrow">{{ __('Platform status') }}</p>
                 <h2 id="dashboard-system-health" @class([
-                    'mt-1 text-xl font-semibold',
-                    'text-primary',
+                    'mt-2 text-xl font-extrabold tracking-tight text-ink',
                 ])>
                     {{ $healthOperational ? __('System operational') : __('System health needs attention') }}
                 </h2>
                 @if ($canManageSystemHealth)
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':passed of :total check passed|:passed of :total checks passed', $systemHealth['total'], ['passed' => $systemHealth['passed_count'], 'total' => $systemHealth['total']]) }}
                     </p>
                     @if (! $systemHealth['passed'])
-                        <p class="mt-2 text-sm">{{ __('Failing: :checks', ['checks' => implode(', ', $systemHealth['failed_checks'])]) }}</p>
+                        <p class="mt-2 text-sm text-danger">{{ __('Failing: :checks', ['checks' => implode(', ', $systemHealth['failed_checks'])]) }}</p>
                     @endif
                 @else
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="mt-1 text-sm text-muted">
                         {{ __('Public service-level status without private infrastructure diagnostics.') }}
                     </p>
                 @endif
@@ -219,23 +218,24 @@
                     data-modal-history-url="{{ $dashboardSystemHealthDialogUrl }}"
                     aria-controls="dashboard-system-health-dialog"
                     aria-expanded="{{ $dashboardSystemHealthDialogOpen ? 'true' : 'false' }}"
-                    class="text-sm font-medium text-ternary underline"
+                    class="ui-link text-sm"
                 >{{ __('View system health') }}</a>
             @else
-                <a href="{{ route('platform-status.show') }}" class="text-sm font-medium text-ternary underline">{{ __('View public status') }}</a>
+                <a href="{{ route('platform-status.show') }}" class="ui-link text-sm">{{ __('View public status') }}</a>
             @endif
         </div>
     </section>
     @endif
 
     @if(in_array('providers', $dashboardWidgets, true))
-    <section class="ui-card mb-12 p-5">
+    <section class="ui-panel mb-12 p-5">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h2 class="text-xl font-semibold text-primary">{{ __('Provider credential health') }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ __('Latest automated and manual provider connection results.') }}</p>
+                <p class="ui-eyebrow">{{ __('Integrations') }}</p>
+                <h2 class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Provider credential health') }}</h2>
+                <p class="mt-1 text-sm text-muted">{{ __('Latest automated and manual provider connection results.') }}</p>
             </div>
-            <a href="{{ route('providers.index') }}" class="text-sm font-medium text-ternary underline">{{ __('Manage providers') }}</a>
+            <a href="{{ route('providers.index') }}" class="ui-link text-sm">{{ __('Manage providers') }}</a>
         </div>
         <div class="grid gap-3 sm:grid-cols-3">
             @foreach ([
@@ -244,7 +244,7 @@
                 ['status' => \App\Models\Provider::CONNECTION_UNCHECKED, 'label' => __('Unchecked'), 'count' => $providerHealthCounts['unchecked'], 'tone' => 'neutral'],
             ] as $health)
                 <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-3 p-4">
-                    <span class="text-2xl font-bold text-primary">{{ $health['count'] }}</span>
+                    <span class="text-2xl font-extrabold tracking-tight text-ink">{{ $health['count'] }}</span>
                     <x-ui.badge :tone="$health['tone']">{{ $health['label'] }}</x-ui.badge>
                 </a>
             @endforeach
@@ -254,22 +254,23 @@
 
     @php($provisioningTotal = array_sum($provisioningCounts))
     @if ($provisioningTotal > 0)
-        <section class="ui-alert ui-alert--warning mb-12 p-5">
+        <section class="ui-alert ui-panel ui-alert--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Infrastructure provisioning') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Resource lifecycle') }}</p>
+                    <h2 class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Infrastructure provisioning') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count resource is being prepared|:count resources are being prepared', $provisioningTotal, ['count' => $provisioningTotal]) }}
                     </p>
                 </div>
-                <div class="flex flex-wrap gap-3 text-sm font-medium text-ternary">
+                <div class="flex flex-wrap gap-3 text-sm font-medium">
                     <a
                         href="{{ route('servers.index', ['provisioning' => 1]) }}"
                         data-modal-trigger="dashboard-provisioning-dialog"
                         data-modal-history-url="{{ $dashboardProvisioningDialogUrl }}"
                         aria-controls="dashboard-provisioning-dialog"
                         aria-expanded="{{ $dashboardProvisioningDialogOpen ? 'true' : 'false' }}"
-                        class="underline"
+                        class="ui-link"
                     >{{ __('View provisioning servers') }}</a>
                     <a
                         href="{{ route('websites.index', ['provisioning' => 1]) }}"
@@ -277,19 +278,19 @@
                         data-modal-history-url="{{ $dashboardProvisioningDialogUrl }}"
                         aria-controls="dashboard-provisioning-dialog"
                         aria-expanded="{{ $dashboardProvisioningDialogOpen ? 'true' : 'false' }}"
-                        class="underline"
+                        class="ui-link"
                     >{{ __('View provisioning websites') }}</a>
                 </div>
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3">
-                <div class="ui-card p-3">
-                    <span class="block text-xl font-bold text-primary">{{ $provisioningCounts['servers'] }}</span>
-                    <span class="text-xs font-semibold uppercase text-secondary">{{ __('Servers') }}</span>
+                <div class="ui-stat p-3">
+                    <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['servers'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-muted">{{ __('Servers') }}</span>
                 </div>
-                <div class="ui-card p-3">
-                    <span class="block text-xl font-bold text-primary">{{ $provisioningCounts['websites'] }}</span>
-                    <span class="text-xs font-semibold uppercase text-secondary">{{ __('Websites') }}</span>
+                <div class="ui-stat p-3">
+                    <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['websites'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-muted">{{ __('Websites') }}</span>
                 </div>
             </div>
 
@@ -301,10 +302,10 @@
                         class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
-                            <span class="block font-medium text-primary">{{ $isServer ? $resource->label : $resource->name }}</span>
-                            <span class="mt-1 block text-sm text-secondary">{{ $isServer ? __('Server') : __('Website') }}</span>
+                            <span class="block font-bold text-ink">{{ $isServer ? $resource->label : $resource->name }}</span>
+                            <span class="mt-1 block text-sm text-muted">{{ $isServer ? __('Server') : __('Website') }}</span>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block font-semibold uppercase">{{ str($resource->provisioning_status)->replace('_', ' ') }}</span>
                             <span class="mt-1 block">{{ $resource->created_at->diffForHumans() }}</span>
                         </div>
@@ -313,7 +314,7 @@
             </div>
 
             @if ($provisioningTotal > $provisioningResources->count())
-                <p class="mt-4 text-sm text-secondary">
+                <p class="mt-4 text-sm text-muted">
                     {{ trans_choice(':count more resource is provisioning|:count more resources are provisioning', $provisioningTotal - $provisioningResources->count(), ['count' => $provisioningTotal - $provisioningResources->count()]) }}
                 </p>
             @endif
@@ -322,11 +323,12 @@
 
     @php($activeDeploymentTotal = array_sum($activeDeploymentCounts))
     @if ($activeDeploymentTotal > 0)
-        <section class="ui-alert ui-alert--info mb-12 p-5">
+        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-deployment-timeline-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Active deployments') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Deployment timeline') }}</p>
+                    <h2 id="dashboard-deployment-timeline-title" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Active deployments') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count deployment is in progress|:count deployments are in progress', $activeDeploymentTotal, ['count' => $activeDeploymentTotal]) }}
                     </p>
                 </div>
@@ -337,7 +339,7 @@
                     data-modal-history-url="{{ $dashboardActiveDeploymentsDialogUrl }}"
                     aria-controls="dashboard-active-deployments-dialog"
                     aria-expanded="{{ $dashboardActiveDeploymentsDialogOpen ? 'true' : 'false' }}"
-                    class="text-sm font-medium text-ternary underline"
+                    class="ui-link text-sm"
                 >{{ __('View active deployments') }}</a>
             </div>
 
@@ -348,26 +350,26 @@
                     \App\Models\Build::STATUS_RUNNING => __('Running'),
                     \App\Models\Build::STATUS_TIMING_OUT => __('Timing out'),
                 ] as $status => $label)
-                    <div class="ui-card p-3">
-                        <span class="block text-xl font-bold text-primary">{{ $activeDeploymentCounts[$status] }}</span>
-                        <span class="text-xs font-semibold uppercase text-secondary">{{ $label }}</span>
+                    <div class="ui-stat p-3">
+                        <span class="block text-xl font-extrabold text-ink">{{ $activeDeploymentCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
                     </div>
                 @endforeach
             </div>
 
-            <div class="mt-5 grid gap-3 lg:grid-cols-2">
+            <div class="ui-timeline mt-5 space-y-3" aria-label="{{ __('Deployment timeline') }}">
                 @foreach ($activeDeployments as $build)
-                    <a href="{{ route('builds.show', $build) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4">
+                    <a href="{{ route('builds.show', $build) }}" class="ui-timeline-item ui-card ui-card--interactive flex items-center justify-between gap-4 p-4">
                         <div>
-                            <span class="block font-medium text-primary">{{ $build->repository->name }}</span>
-                            <span class="mt-1 block text-sm text-secondary">
+                            <span class="block font-bold text-ink">{{ $build->repository->name }}</span>
+                            <span class="mt-1 block text-sm text-muted">
                                 {{ $build->repository->website?->name }}
                                 @if ($build->repository->website?->server)
                                     &middot; {{ $build->repository->website->server->label }}
                                 @endif
                             </span>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block font-semibold uppercase">{{ str($build->status)->replace('_', ' ') }}</span>
                             <span class="mt-1 block">{{ $build->created_at->diffForHumans() }}</span>
                         </div>
@@ -383,7 +385,7 @@
                     data-modal-history-url="{{ $dashboardActiveDeploymentsDialogUrl }}"
                     aria-controls="dashboard-active-deployments-dialog"
                     aria-expanded="{{ $dashboardActiveDeploymentsDialogOpen ? 'true' : 'false' }}"
-                    class="mt-4 inline-block text-sm font-medium text-ternary underline"
+                    class="ui-link mt-4 inline-flex text-sm"
                 >
                     {{ trans_choice(':count more active deployment|:count more active deployments', $activeDeploymentTotal - $activeDeployments->count(), ['count' => $activeDeploymentTotal - $activeDeployments->count()]) }}
                 </a>
@@ -393,11 +395,12 @@
 
     @php($webhookDeliveryTotal = array_sum($webhookDeliveryCounts))
     @if ($webhookDeliveryTotal > 0)
-        <section class="ui-alert ui-alert--info mb-12 p-5">
+        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-webhook-deliveries-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Webhook deliveries') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Repository activity') }}</p>
+                    <h2 id="dashboard-webhook-deliveries-title" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Webhook deliveries') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count delivery received in the last 24 hours|:count deliveries received in the last 24 hours', $webhookDeliveryTotal, ['count' => $webhookDeliveryTotal]) }}
                     </p>
                 </div>
@@ -408,7 +411,7 @@
                     data-modal-history-url="{{ $dashboardWebhookActivityDialogUrl }}"
                     aria-controls="dashboard-webhook-activity-dialog"
                     aria-expanded="{{ $dashboardWebhookActivityDialogOpen ? 'true' : 'false' }}"
-                    class="text-sm font-medium text-ternary underline"
+                    class="ui-link text-sm"
                 >
                     {{ __('View deployment activity') }}
                 </a>
@@ -423,9 +426,9 @@
                     \App\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
                     \App\Models\RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),
                 ] as $status => $label)
-                    <div class="ui-card p-3">
-                        <span class="block text-xl font-bold text-primary">{{ $webhookDeliveryCounts[$status] }}</span>
-                        <span class="text-xs font-semibold uppercase text-secondary">{{ $label }}</span>
+                    <div class="ui-stat p-3">
+                        <span class="block text-xl font-extrabold text-ink">{{ $webhookDeliveryCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
                     </div>
                 @endforeach
             </div>
@@ -437,10 +440,10 @@
                         class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
-                            <span class="block font-medium text-primary">{{ $delivery->repository->name }}</span>
-                            <span class="mt-1 block text-sm text-secondary">{{ __('Delivery #:id', ['id' => $delivery->id]) }}</span>
+                            <span class="block font-bold text-ink">{{ $delivery->repository->name }}</span>
+                            <span class="mt-1 block text-sm text-muted">{{ __('Delivery #:id', ['id' => $delivery->id]) }}</span>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block font-semibold uppercase">{{ $delivery->status }}</span>
                             <span class="mt-1 block">{{ $delivery->created_at->diffForHumans() }}</span>
                         </div>
@@ -449,7 +452,7 @@
             </div>
 
             @if ($webhookDeliveryTotal > $recentWebhookDeliveries->count())
-                <p class="mt-4 text-sm text-secondary">
+                <p class="mt-4 text-sm text-muted">
                     {{ trans_choice(':count more delivery is available in repository history|:count more deliveries are available in repository history', $webhookDeliveryTotal - $recentWebhookDeliveries->count(), ['count' => $webhookDeliveryTotal - $recentWebhookDeliveries->count()]) }}
                 </p>
             @endif
@@ -458,11 +461,12 @@
 
     @php($activeCommandTotal = array_sum($activeCommandCounts))
     @if ($activeCommandTotal > 0)
-        <section class="ui-alert ui-alert--info mb-12 p-5">
+        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-active-commands-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Active server commands') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Operations') }}</p>
+                    <h2 id="dashboard-active-commands-title" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Active server commands') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count command is active|:count commands are active', $activeCommandTotal, ['count' => $activeCommandTotal]) }}
                     </p>
                 </div>
@@ -473,7 +477,7 @@
                     data-modal-history-url="{{ $dashboardActiveCommandsDialogUrl }}"
                     aria-controls="dashboard-active-commands-dialog"
                     aria-expanded="{{ $dashboardActiveCommandsDialogOpen ? 'true' : 'false' }}"
-                    class="text-sm font-medium text-ternary underline"
+                    class="ui-link text-sm"
                 >
                     {{ __('Open Command Center') }}
                 </a>
@@ -484,9 +488,9 @@
                     \App\Models\ServerCommandExecution::STATUS_QUEUED => __('Queued'),
                     \App\Models\ServerCommandExecution::STATUS_RUNNING => __('Running'),
                 ] as $status => $label)
-                    <div class="ui-card p-3">
-                        <span class="block text-xl font-bold text-primary">{{ $activeCommandCounts[$status] }}</span>
-                        <span class="text-xs font-semibold uppercase text-secondary">{{ $label }}</span>
+                    <div class="ui-stat p-3">
+                        <span class="block text-xl font-extrabold text-ink">{{ $activeCommandCounts[$status] }}</span>
+                        <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
                     </div>
                 @endforeach
             </div>
@@ -498,10 +502,10 @@
                         class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
-                            <span class="block font-medium text-primary">{{ $execution->server->label }}</span>
-                            <span class="mt-1 block text-sm text-secondary">{{ __('Command #:id', ['id' => $execution->id]) }}</span>
+                            <span class="block font-bold text-ink">{{ $execution->server->label }}</span>
+                            <span class="mt-1 block text-sm text-muted">{{ __('Command #:id', ['id' => $execution->id]) }}</span>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block font-semibold uppercase">{{ $execution->status }}</span>
                             <span class="mt-1 block">{{ $execution->created_at->diffForHumans() }}</span>
                         </div>
@@ -517,7 +521,7 @@
                     data-modal-history-url="{{ $dashboardActiveCommandsDialogUrl }}"
                     aria-controls="dashboard-active-commands-dialog"
                     aria-expanded="{{ $dashboardActiveCommandsDialogOpen ? 'true' : 'false' }}"
-                    class="mt-4 inline-block text-sm font-medium text-ternary underline"
+                    class="ui-link mt-4 inline-flex text-sm"
                 >
                     {{ trans_choice(':count more active command is available in server history|:count more active commands are available in server history', $activeCommandTotal - $activeCommands->count(), ['count' => $activeCommandTotal - $activeCommands->count()]) }}
                 </a>
@@ -526,33 +530,34 @@
     @endif
 
     @if ($communityReportCount > 0)
-        <section class="ui-alert ui-alert--danger mb-12 p-5">
+        <section class="ui-alert ui-panel ui-alert--danger mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Community recipe feedback') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Community safety') }}</p>
+                    <h2 class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Community recipe feedback') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count community report needs review|:count community reports need review', $communityReportCount, ['count' => $communityReportCount]) }}
                         &middot;
                         {{ trans_choice(':count published recipe affected|:count published recipes affected', $reportedGalleryRecipeCount, ['count' => $reportedGalleryRecipeCount]) }}
                     </p>
                 </div>
-                <a href="{{ route('gallery.reports.index') }}" class="text-sm font-medium text-ternary underline">
+                <a href="{{ route('gallery.reports.index') }}" class="ui-link text-sm">
                     {{ __('Open feedback inbox') }}
                 </a>
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <a href="{{ route('gallery.reports.index') }}" class="ui-card ui-card--interactive p-3 text-primary">
-                    <span class="block text-xl font-bold">{{ $communityReportCount }}</span>
-                    <span class="text-xs font-semibold uppercase">{{ __('All needing review') }}</span>
+                <a href="{{ route('gallery.reports.index') }}" class="ui-stat ui-card--interactive p-3">
+                    <span class="block text-xl font-extrabold text-ink">{{ $communityReportCount }}</span>
+                    <span class="text-xs font-semibold uppercase text-muted">{{ __('All needing review') }}</span>
                 </a>
-                <a href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}" class="ui-card ui-card--interactive p-3 text-primary">
-                    <span class="block text-xl font-bold">{{ $communityReportAttention['security'] }}</span>
-                    <span class="text-xs font-semibold uppercase">{{ __('Security reports') }}</span>
+                <a href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}" class="ui-stat ui-card--interactive p-3">
+                    <span class="block text-xl font-extrabold text-ink">{{ $communityReportAttention['security'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-muted">{{ __('Security reports') }}</span>
                 </a>
-                <a href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}" class="ui-card ui-card--interactive p-3 text-primary">
-                    <span class="block text-xl font-bold">{{ $communityReportAttention['stale'] }}</span>
-                    <span class="text-xs font-semibold uppercase">{{ __('Open at least 7 days') }}</span>
+                <a href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}" class="ui-stat ui-card--interactive p-3">
+                    <span class="block text-xl font-extrabold text-ink">{{ $communityReportAttention['stale'] }}</span>
+                    <span class="text-xs font-semibold uppercase text-muted">{{ __('Open at least 7 days') }}</span>
                 </a>
             </div>
 
@@ -560,10 +565,10 @@
                 @foreach ($reportedGalleryRecipes as $recipe)
                     <a href="{{ route('gallery.reports.index', ['recipe' => $recipe->id]) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4">
                         <div>
-                            <span class="block font-medium text-primary">{{ $recipe->name }}</span>
-                            <span class="mt-1 block text-sm text-secondary">{{ str($recipe->category)->headline() }}</span>
+                            <span class="block font-bold text-ink">{{ $recipe->name }}</span>
+                            <span class="mt-1 block text-sm text-muted">{{ str($recipe->category)->headline() }}</span>
                         </div>
-                        <span class="text-sm font-semibold text-ternary">
+                        <span class="ui-badge ui-badge-danger">
                             {{ trans_choice(':count report|:count reports', $recipe->reports_count, ['count' => $recipe->reports_count]) }}
                         </span>
                     </a>
@@ -571,7 +576,7 @@
             </div>
 
             @if ($reportedGalleryRecipeCount > $reportedGalleryRecipes->count())
-                <a href="{{ route('gallery.reports.index') }}" class="mt-4 inline-block text-sm font-medium text-ternary underline">
+                <a href="{{ route('gallery.reports.index') }}" class="ui-link mt-4 inline-flex text-sm">
                     {{ trans_choice(':count more reported recipe|:count more reported recipes', $reportedGalleryRecipeCount - $reportedGalleryRecipes->count(), ['count' => $reportedGalleryRecipeCount - $reportedGalleryRecipes->count()]) }}
                 </a>
             @endif
@@ -579,15 +584,16 @@
     @endif
 
     @if ($recipeUpdateCount > 0)
-        <section class="ui-alert ui-alert--warning mb-12 p-5">
+        <section class="ui-alert ui-panel ui-alert--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-semibold text-primary">{{ __('Recipe updates') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Maintenance') }}</p>
+                    <h2 class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Recipe updates') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         {{ trans_choice(':count installed recipe has a gallery update|:count installed recipes have gallery updates', $recipeUpdateCount, ['count' => $recipeUpdateCount]) }}
                     </p>
                 </div>
-                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="text-sm font-medium text-ternary underline">
+                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="ui-link text-sm">
                     {{ __('View all updates') }}
                 </a>
             </div>
@@ -599,17 +605,17 @@
                     <div class="ui-card p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <span class="block font-medium text-primary">{{ $recipe->name }}</span>
-                                <span class="mt-1 block text-sm text-secondary">
+                                <span class="block font-bold text-ink">{{ $recipe->name }}</span>
+                                <span class="mt-1 block text-sm text-muted">
                                     {{ str($recipe->category)->headline() }} &middot; {{ __('by :author', ['author' => $recipe->user->name]) }}
                                 </span>
-                                <span class="mt-1 block text-xs text-secondary">
+                                <span class="mt-1 block text-xs text-muted">
                                     {{ __('Installed as :name', ['name' => $installedRecipe->name]) }}
                                     &middot; {{ __('updated :time', ['time' => $recipe->gallery_revision_at->diffForHumans()]) }}
                                 </span>
                             </div>
                             <div class="flex gap-3 text-sm font-medium">
-                                <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="text-ternary underline">
+                                <a href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" class="ui-link text-sm">
                                     {{ __('Review changes') }}
                                 </a>
                                 @php($recipeEditDialogId = 'recipe-edit-dialog-'.$installedRecipe->id)
@@ -619,7 +625,7 @@
                                     data-modal-content-url="{{ route('recipes.edit', ['recipe' => $installedRecipe, 'dialog' => 'edit-recipe-'.$installedRecipe->id, 'fragment' => 1, 'return_to' => $dashboardUrl]) }}"
                                     aria-controls="{{ $recipeEditDialogId }}"
                                     aria-expanded="{{ $dashboardRecipeEditOpen && $editingDashboardRecipe?->id === $installedRecipe->id ? 'true' : 'false' }}"
-                                    class="text-ternary underline"
+                                    class="ui-link text-sm"
                                 >
                                     {{ __('Edit copy') }}
                                 </a>
@@ -638,27 +644,27 @@
             </div>
 
             @if ($recipeUpdateCount > $recipeUpdates->count())
-                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="mt-4 inline-block text-sm font-medium text-ternary underline">
+                <a href="{{ route('gallery.index', ['scope' => 'updates']) }}" class="ui-link mt-4 inline-flex text-sm">
                     {{ trans_choice(':count more recipe update|:count more recipe updates', $recipeUpdateCount - $recipeUpdates->count(), ['count' => $recipeUpdateCount - $recipeUpdates->count()]) }}
                 </a>
             @endif
         </section>
     @endif
 
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <section>
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-primary">{{ __('Recent websites') }}</h2>
-                <a href="{{ route('websites.index') }}" class="text-sm text-ternary">{{ __('View all') }}</a>
+                <h2 class="text-xl font-extrabold tracking-tight text-ink">{{ __('Recent websites') }}</h2>
+                <a href="{{ route('websites.index') }}" class="ui-link text-sm">{{ __('View all') }}</a>
             </div>
 
             @forelse ($recentWebsites as $website)
-                <a href="{{ route('websites.show', $website) }}" class="ui-card mb-3 flex items-center justify-between p-4">
+                <a href="{{ route('websites.show', $website) }}" class="ui-card ui-card--interactive mb-3 flex items-center justify-between p-4">
                     <div>
-                        <p class="font-medium text-primary">{{ $website->name }}</p>
-                        <p class="text-sm text-secondary">{{ $website->url }}</p>
+                        <p class="font-bold text-ink">{{ $website->name }}</p>
+                        <p class="text-sm text-muted">{{ $website->url }}</p>
                     </div>
-                    <span class="text-sm text-secondary">{{ $website->server?->label ?? __('No server') }}</span>
+                    <span class="text-sm text-muted">{{ $website->server?->label ?? __('No server') }}</span>
                 </a>
             @empty
                 <x-lists.empty
@@ -680,17 +686,17 @@
 
         <section>
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-primary">{{ __('Recent builds') }}</h2>
-                <a href="{{ route('builds.index') }}" class="text-sm text-ternary">{{ __('View all') }}</a>
+                <h2 class="text-xl font-extrabold tracking-tight text-ink">{{ __('Recent builds') }}</h2>
+                <a href="{{ route('builds.index') }}" class="ui-link text-sm">{{ __('View all') }}</a>
             </div>
 
             @forelse ($recentBuilds as $build)
-                <a href="{{ route('builds.show', $build) }}" class="ui-card mb-3 flex items-center justify-between p-4">
+                <a href="{{ route('builds.show', $build) }}" class="ui-card ui-card--interactive mb-3 flex items-center justify-between p-4">
                     <div>
-                        <p class="font-medium text-primary">{{ $build->repository->name }}</p>
-                        <p class="text-sm text-secondary">{{ $build->repository->website?->name }}</p>
+                        <p class="font-bold text-ink">{{ $build->repository->name }}</p>
+                        <p class="text-sm text-muted">{{ $build->repository->website?->name }}</p>
                     </div>
-                    <div class="text-right text-sm text-secondary">
+                    <div class="text-right text-sm text-muted">
                         <span class="block uppercase">{{ $build->status }}</span>
                         <span>{{ ($build->built_at ?? $build->created_at)->diffForHumans() }}</span>
                     </div>
@@ -706,7 +712,7 @@
 
     <section class="mt-12">
         <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-xl font-semibold text-primary">{{ __('Recent activity') }}</h2>
+            <h2 class="text-xl font-extrabold tracking-tight text-ink">{{ __('Recent activity') }}</h2>
             <a
                 href="{{ route('activity.index') }}"
                 data-modal-trigger="dashboard-activity-dialog"
@@ -714,7 +720,7 @@
                 data-modal-history-url="{{ $dashboardActivityDialogUrl }}"
                 aria-controls="dashboard-activity-dialog"
                 aria-expanded="{{ $dashboardActivityDialogOpen ? 'true' : 'false' }}"
-                class="text-sm text-ternary"
+                class="ui-link text-sm"
             >{{ __('View all') }}</a>
         </div>
 
@@ -770,7 +776,7 @@
         body-class="p-0"
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading workspace activity…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading workspace activity…') }}</p>
         </div>
     </x-dialogs.modal>
 
@@ -783,7 +789,7 @@
             body-class="p-0"
         >
             <div data-modal-content>
-                <p class="p-5 text-sm text-secondary">{{ __('Loading active deployments…') }}</p>
+                <p class="p-5 text-sm text-muted">{{ __('Loading active deployments…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif
@@ -797,7 +803,7 @@
             body-class="p-0"
         >
             <div data-modal-content>
-                <p class="p-5 text-sm text-secondary">{{ __('Loading active command history…') }}</p>
+                <p class="p-5 text-sm text-muted">{{ __('Loading active command history…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif
@@ -811,7 +817,7 @@
             body-class="p-0"
         >
             <div data-modal-content>
-                <p class="p-5 text-sm text-secondary">{{ __('Loading deployment activity…') }}</p>
+                <p class="p-5 text-sm text-muted">{{ __('Loading deployment activity…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif
@@ -839,7 +845,7 @@
             body-class="p-0"
         >
             <div data-modal-content>
-                <p class="p-5 text-sm text-secondary">{{ __('Loading system health…') }}</p>
+                <p class="p-5 text-sm text-muted">{{ __('Loading system health…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif

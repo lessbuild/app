@@ -14,7 +14,7 @@
 
 @if (in_array('setup', $dashboardWidgets, true) && $onboardingCompleted < count($onboardingSteps))
     <section
-        class="ui-card mb-12 overflow-hidden border-ternary shadow-xs"
+        class="ui-panel mb-12 overflow-hidden border-line shadow-xs"
         aria-labelledby="setup-progress-title"
         x-data="{
             activeSetupStep: @js($defaultOnboardingStep),
@@ -28,20 +28,20 @@
             },
         }"
     >
-        <div class="border-b border-primary bg-secondary p-5 sm:p-6">
+        <div class="border-b border-line bg-surface-muted p-5 sm:p-6">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace setup') }}</p>
-                    <h2 id="setup-progress-title" class="mt-1 text-2xl font-semibold text-primary">{{ __('Get to your first healthy deployment') }}</h2>
-                    <p class="mt-2 text-sm leading-6 text-secondary">{{ __('Follow the dependency order once, then manage every resource from the same workspace.') }}</p>
+                    <p class="ui-eyebrow">{{ __('Workspace setup') }}</p>
+                    <h2 id="setup-progress-title" class="mt-1 text-2xl font-extrabold tracking-tight text-ink">{{ __('Get to your first healthy deployment') }}</h2>
+                    <p class="mt-2 text-sm leading-6 text-muted">{{ __('Follow the dependency order once, then manage every resource from the same workspace.') }}</p>
                 </div>
-                <p class="text-sm font-bold text-primary">{{ __(':complete of :total complete', ['complete' => $onboardingCompleted, 'total' => count($onboardingSteps)]) }}</p>
+                <p class="text-sm font-bold text-ink">{{ __(':complete of :total complete', ['complete' => $onboardingCompleted, 'total' => count($onboardingSteps)]) }}</p>
             </div>
-            <div class="mt-4 h-2 overflow-hidden rounded-full bg-primary" role="progressbar" aria-label="{{ __('Workspace setup progress') }}" aria-valuemin="0" aria-valuemax="{{ count($onboardingSteps) }}" aria-valuenow="{{ $onboardingCompleted }}">
-                <div class="h-full rounded-full bg-ternary transition-all" style="width: {{ ($onboardingCompleted / count($onboardingSteps)) * 100 }}%"></div>
+            <div class="ui-progress mt-4" role="progressbar" aria-label="{{ __('Workspace setup progress') }}" aria-valuemin="0" aria-valuemax="{{ count($onboardingSteps) }}" aria-valuenow="{{ $onboardingCompleted }}">
+                <span style="width: {{ ($onboardingCompleted / count($onboardingSteps)) * 100 }}%"></span>
             </div>
         </div>
-        <div class="border-b border-primary p-4 lg:hidden">
+        <div class="border-b border-line p-4 lg:hidden">
             <div class="overflow-x-auto pb-1" role="tablist" aria-label="{{ __('Workspace setup steps') }}">
                 <div class="flex min-w-max gap-2">
                     @foreach ($onboardingSteps as $key => $step)
@@ -50,7 +50,7 @@
                             id="setup-tab-{{ $key }}"
                             type="button"
                             role="tab"
-                            class="dashboard-setup-tab flex min-h-[44px] items-center gap-2 rounded-lg border px-3 py-2 text-left text-xs font-bold focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ternary focus-visible:ring-offset-2"
+                            class="ui-btn ui-btn-secondary ui-btn-sm dashboard-setup-tab min-h-[44px] gap-2 text-left text-xs"
                             aria-controls="setup-panel-{{ $key }}"
                             aria-selected="{{ $key === $defaultOnboardingStep ? 'true' : 'false' }}"
                             :aria-selected="(activeSetupStep === '{{ $key }}').toString()"
@@ -61,39 +61,39 @@
                             @keydown.home.prevent="focusSetupStep(0)"
                             @keydown.end.prevent="focusSetupStep(setupSteps.length - 1)"
                         >
-                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary" aria-hidden="true">{{ $complete ? '✓' : $loop->iteration }}</span>
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[10px] font-black text-ink" aria-hidden="true">{{ $complete ? '✓' : $loop->iteration }}</span>
                             <span>{{ $step['title'] }}</span>
                         </button>
                     @endforeach
                 </div>
             </div>
         </div>
-        <ol class="grid gap-px bg-secondary md:grid-cols-2 xl:grid-cols-5">
+        <ol class="grid gap-px bg-surface-muted md:grid-cols-2 xl:grid-cols-5">
             @foreach ($onboardingSteps as $key => $step)
                 @php($complete = $onboarding[$key])
                 @php($current = $currentOnboardingStep === $key)
                 <li id="setup-panel-{{ $key }}" data-dashboard-setup-step x-show="activeSetupStep === '{{ $key }}'" @class([
-                    'dashboard-setup-step min-h-0 flex-col bg-primary p-4 sm:min-h-52 sm:p-5',
-                    'ring-2 ring-inset ring-blue-500' => $current,
+                    'dashboard-setup-step min-h-0 flex-col bg-surface p-4 sm:min-h-52 sm:p-5',
+                    'ring-2 ring-inset ring-focus' => $current,
                 ])>
                     <div class="flex items-center justify-between gap-3">
                         <span @class([
-                            'flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold',
-                            'bg-green-100 text-green-800' => $complete,
-                            'bg-secondary text-primary' => $current,
-                            'bg-secondary text-secondary' => ! $complete && ! $current,
+                            'ui-badge flex h-8 w-8 items-center justify-center rounded-full p-0 text-sm font-bold',
+                            'ui-badge-success' => $complete,
+                            'ui-badge-primary' => $current,
+                            'ui-badge-soft' => ! $complete && ! $current,
                         ])>{{ $complete ? '✓' : $loop->iteration }}</span>
                         <span @class([
                             'text-xs font-bold uppercase tracking-wide',
-                            'text-green-700' => $complete,
-                            'text-ternary' => $current,
-                            'text-secondary' => ! $complete && ! $current,
+                            'text-success' => $complete,
+                            'text-ink' => $current,
+                            'text-muted' => ! $complete && ! $current,
                         ])>{{ $complete ? __('Complete') : ($current ? __('Current step') : __('Upcoming')) }}</span>
                     </div>
-                    <h3 class="mt-3 font-semibold text-primary sm:mt-4">{{ $step['title'] }}</h3>
-                    <p class="mt-1 flex-1 text-sm leading-5 text-secondary sm:mt-2 sm:leading-6">{{ $step['description'] }}</p>
+                    <h3 class="mt-3 font-extrabold text-ink sm:mt-4">{{ $step['title'] }}</h3>
+                    <p class="mt-1 flex-1 text-sm leading-5 text-muted sm:mt-2 sm:leading-6">{{ $step['description'] }}</p>
                     @if ($complete)
-                        <a href="{{ $step['reviewUrl'] }}" class="mt-3 text-sm font-semibold text-ternary underline sm:mt-4">{{ __('Review') }}</a>
+                        <a href="{{ $step['reviewUrl'] }}" class="ui-link mt-3 inline-flex text-sm sm:mt-4">{{ __('Review') }}</a>
                     @elseif ($current)
                         @if ($step['modalId'])
                             <x-ui.button
@@ -108,7 +108,7 @@
                             <x-ui.button :href="$step['createUrl']" variant="primary" class="mt-3 w-full sm:mt-4">{{ __('Deploy repository') }}</x-ui.button>
                         @endif
                     @else
-                        <span class="mt-3 text-xs font-medium text-secondary sm:mt-4">{{ __('Available after the previous step') }}</span>
+                        <span class="mt-3 text-xs font-medium text-muted sm:mt-4">{{ __('Available after the previous step') }}</span>
                     @endif
                 </li>
             @endforeach

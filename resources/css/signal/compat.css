@@ -72,7 +72,30 @@ html {
 
 .ui-alert-info {
     border-color: color-mix(in srgb, var(--ui-info) 28%, var(--ui-line));
-    background: var(--ui-info-soft);
+    background: var(--ui-surface);
+}
+
+/* Existing feedback surfaces keep their meaning through a colored edge. The
+ * Signal theme uses quiet surfaces for operational UI, so status should not
+ * turn an entire dashboard section into a saturated panel. */
+.ui-alert.ui-alert--success {
+    border-color: color-mix(in srgb, var(--ui-success) 72%, var(--ui-line));
+    background: var(--ui-surface);
+}
+
+.ui-alert.ui-alert--info {
+    border-color: color-mix(in srgb, var(--ui-info) 72%, var(--ui-line));
+    background: var(--ui-surface);
+}
+
+.ui-alert.ui-alert--warning {
+    border-color: color-mix(in srgb, var(--ui-warning) 72%, var(--ui-line));
+    background: var(--ui-surface);
+}
+
+.ui-alert.ui-alert--danger {
+    border-color: color-mix(in srgb, var(--ui-danger) 72%, var(--ui-line));
+    background: var(--ui-surface);
 }
 
 .ui-card--muted {
@@ -101,6 +124,15 @@ html {
 .ui-modal__panel,
 .ui-filter-dialog__panel {
     border-radius: var(--radius-panel-value);
+}
+
+/* Signal's chart primitive is seven columns by default. Dashboard trends
+ * intentionally cover fourteen days, so keep the same primitive while making
+ * its column count explicit instead of introducing a second chart system. */
+.ui-dashboard-trend {
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+    height: 7rem;
+    gap: 0.35rem;
 }
 
 /* Historical BuildPusher controls use these names. Their geometry now comes
@@ -148,6 +180,22 @@ html {
 
 .border-ternary {
     border-color: var(--ui-primary);
+}
+
+@media (max-width: 639px) {
+    [data-dashboard-stats] {
+        gap: 0.5rem;
+    }
+
+    [data-dashboard-stats] .ui-stat {
+        padding: 0.65rem;
+    }
+
+    [data-dashboard-stats] .ui-stat__value {
+        margin-top: 0.2rem;
+        font-size: 1.25rem;
+        line-height: 1.1;
+    }
 }
 
 .button {
