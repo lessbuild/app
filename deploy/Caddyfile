@@ -1,4 +1,4 @@
-buildpusher.com {
+deployer.buildpusher.com {
 	root * /root/Documents/Codex/2026-08-30/clone-my-repo-work-on-it/deployer/public
 	encode zstd gzip
 	php_fastcgi unix//run/php/php8.5-fpm.sock
@@ -9,6 +9,6 @@ buildpusher.com {
 	}
 }
 
-www.buildpusher.com {
-	redir https://buildpusher.com{uri} permanent
+buildpusher.com, www.buildpusher.com {
+	redir https://deployer.buildpusher.com{uri} permanent
 }
