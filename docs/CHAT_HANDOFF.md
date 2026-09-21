@@ -1,16 +1,33 @@
 # BuildPusher chat handoff
 
-# Latest isolated dev deployment verification — 2026-09-21
+# Latest isolated dev deployment and hostname cutover — 2026-09-21
 
-The isolated `buildpusher.com` dev deployment is serving source commit
-`a92b8c242f1dae4ddc413a7b3d9ccc9c9929e9a5`, matching `origin/main`. The
-runtime is `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
+The isolated dev deployment is prepared for the canonical hostname
+`deployer.buildpusher.com` and is serving source commit
+`6802afb`, matching `origin/main`. The runtime is
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
 `APP_ENV=local`, its own SQLite database and the active
-`buildpusher-dev-main.service`; Caddy proxies the domain to that service.
+`buildpusher-dev-main.service`; Caddy proxies both the legacy
+`buildpusher.com` hostname and the new hostname to that service while DNS
+propagates.
+
+The runtime `APP_URL`, asset URL, trusted hosts and stateful domains now use
+`deployer.buildpusher.com`. The local application responds with HTTP 200 for
+the new host and `/api/health` returns `{"status":"ready"}`. The legacy
+hostname remains available during the cutover so an unresolved DNS record
+cannot create an outage.
+
+The public DNS prerequisite is an A record at the authoritative DNS provider:
+host `deployer`, value `174.138.39.41`. As of this handoff the record still
+returns NXDOMAIN, so Caddy cannot obtain the new hostname's certificate yet.
+After the record resolves, recheck HTTPS and then decide whether the legacy
+hostname should redirect to the new canonical host.
 
 The locked frontend build completed and the deployed login page serves
 `build/assets/app-BPiOWmT9.css`. Laravel caches were cleared before the service
-restart.
+restart. The strict PHP 8.5.10 suite passed **1,683 tests / 14,151
+assertions**, required-PHP Pint passed, Vite production build passed and
+`git diff --check` passed.
 
 Verification against the domain:
 
@@ -29,7 +46,8 @@ Verification against the domain:
 These checks used the existing dev account only for ordinary sign-in and did
 not submit product forms, contact providers or mutate cloud resources. This
 is isolated development evidence, not a production or external-provider
-acceptance claim.
+acceptance claim. Public DNS propagation and HTTPS issuance remain outstanding
+for the new hostname.
 
 # Latest modal link and browser-coverage audit — 2026-09-21
 
