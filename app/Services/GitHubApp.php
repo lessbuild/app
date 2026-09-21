@@ -103,11 +103,12 @@ class GitHubApp
             'closed' => 'cancelled',
             default => null,
         };
+        $previewName = config('app.name', 'Deployer').' preview';
         $payload = [
-            'name' => 'BuildPusher preview',
+            'name' => $previewName,
             'head_sha' => $revision,
             'status' => $conclusion ? 'completed' : 'in_progress',
-            'output' => ['title' => 'BuildPusher preview', 'summary' => $summary],
+            'output' => ['title' => $previewName, 'summary' => $summary],
         ];
         if ($conclusion) {
             $payload['conclusion'] = $conclusion;

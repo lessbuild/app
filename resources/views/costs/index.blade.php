@@ -52,7 +52,7 @@
             <div class="border-b border-primary p-5">
                 <h2 class="text-xl font-black text-primary">{{ __('Resource estimates') }}</h2>
                 <p class="mt-1 text-sm text-secondary">
-                    {{ __('Monthly amounts are provider-catalog estimates, not provider billing. They exclude taxes, bandwidth overages, storage, discounts, and resources created outside BuildPusher.') }}
+                    {{ __('Monthly amounts are provider-catalog estimates, not provider billing. They exclude taxes, bandwidth overages, storage, discounts, and resources created outside :app.', ['app' => config('app.name')]) }}
                 </p>
             </div>
 
@@ -149,7 +149,7 @@
                 <h2 class="font-black">{{ __('Cost basis') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-tertiary">
                     <li>• {{ __('Monthly amount: stored provider-catalog estimate.') }}</li>
-                    <li>• {{ __('CPU: measured BuildPusher telemetry, not billing usage.') }}</li>
+                    <li>• {{ __('CPU: measured :app telemetry, not billing usage.', ['app' => config('app.name')]) }}</li>
                     <li>• {{ __('Provider billing: not connected; invoice remains authoritative.') }}</li>
                 </ul>
             </section>

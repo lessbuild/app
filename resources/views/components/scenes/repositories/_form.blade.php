@@ -122,7 +122,7 @@
         @php($autoDeployExcludePaths = old('auto_deploy_exclude_paths', $repository->auto_deploy_exclude_paths ?? []))
         <h2 class="text-sm font-medium text-primary">{{ __('Automatic deployment paths') }}</h2>
         <p class="mt-1 text-sm text-secondary">
-            {{ __('Optional filters for authenticated push deployments. Use one path or glob per line, relative to the repository root. A blank include list considers every path; exclusions win. If a provider does not report changed paths, BuildPusher deploys conservatively.') }}
+            {{ __('Optional filters for authenticated push deployments. Use one path or glob per line, relative to the repository root. A blank include list considers every path; exclusions win. If a provider does not report changed paths, :app deploys conservatively.', ['app' => config('app.name')]) }}
         </p>
         <p class="mt-1 text-sm text-secondary">
             {{ __('Each repository record is one deployment target. Include shared dependency files explicitly for every target that depends on them.') }}

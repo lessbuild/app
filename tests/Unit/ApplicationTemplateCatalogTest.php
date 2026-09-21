@@ -20,7 +20,7 @@ class ApplicationTemplateCatalogTest extends TestCase
             'runtime' => 'php',
             'framework' => 'laravel',
             'php' => '8.2 - 8.5',
-            'deployment' => 'BuildPusher managed website',
+            'deployment' => 'Deployer managed website',
         ], $template->serviceTemplate?->compatibility);
         $this->assertSame(['database', 'cache'], array_column($template->serviceTemplate?->resources ?? [], 'name'));
         $this->assertSame(['generated', 'generated'], array_column($template->serviceTemplate?->resources ?? [], 'credentials'));
@@ -61,7 +61,7 @@ class ApplicationTemplateCatalogTest extends TestCase
             'runtime' => 'node',
             'framework' => 'node',
             'node' => '20 - 24',
-            'deployment' => 'BuildPusher managed website',
+            'deployment' => 'Deployer managed website',
         ], $template->serviceTemplate?->compatibility);
         $this->assertSame(['web', 'database', 'cache'], array_column($template->serviceTemplate?->readinessChecks ?? [], 'name'));
         $this->assertSame(0, $template->serviceTemplate?->resourceLimits['processes']);

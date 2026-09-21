@@ -38,8 +38,8 @@ class AccessInvitationNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject(__('Your BuildPusher invitation'))
-            ->greeting(__('You are invited to BuildPusher'))
+        return (new MailMessage)->subject(__('Your :app invitation', ['app' => config('app.name')]))
+            ->greeting(__('You are invited to :app', ['app' => config('app.name')]))
             ->line(__('Your access request has been approved. Create your account using the secure link below.'))
             ->action(__('Create account'), $this->url)
             ->line(trans_choice('This invitation expires in :count day.|This invitation expires in :count days.', $this->days, ['count' => $this->days]))

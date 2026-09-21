@@ -9,7 +9,7 @@
 <x-dialogs.modal
     id="server-display-name-dialog"
     :title="$dialogTitle"
-    :description="__('Change the label shown in BuildPusher without renaming the cloud server or its hostname.')"
+    :description="__('Change the label shown in :app without renaming the cloud server or its hostname.', ['app' => config('app.name')])"
     :open="$open"
 >
     <form action="{{ route('servers.update', $server) }}" method="POST" class="space-y-5">

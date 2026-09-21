@@ -19,12 +19,12 @@
                 <div class="border-b border-primary px-5 py-5 sm:px-8">
                     <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Infrastructure') }}</p>
                     <h1 class="mt-1 text-xl font-black text-primary">{{ __('Import an existing server') }}</h1>
-                    <p class="mt-1 text-sm text-secondary">{{ __('Connect an Ubuntu server you already control. BuildPusher will install and configure the selected runtime over SSH.') }}</p>
+                    <p class="mt-1 text-sm text-secondary">{{ __('Connect an Ubuntu server you already control. :app will install and configure the selected runtime over SSH.', ['app' => config('app.name')]) }}</p>
                 </div>
 
                 <div class="space-y-6 bg-primary px-5 py-5 sm:px-8">
                     <x-ui.alert tone="warning">
-                        {{ __('This first step is read-only. BuildPusher will verify SSH access, inspect the operating system and existing services, and show the host fingerprint and exact change categories before asking for approval.') }}
+                        {{ __('This first step is read-only. :app will verify SSH access, inspect the operating system and existing services, and show the host fingerprint and exact change categories before asking for approval.', ['app' => config('app.name')]) }}
                     </x-ui.alert>
 
                     <div>

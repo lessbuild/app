@@ -37,7 +37,7 @@
             <section class="ui-card p-5 sm:p-6" aria-labelledby="server-import-identity-heading">
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Trust boundary') }}</p>
                 <h2 id="server-import-identity-heading" class="mt-1 text-xl font-black text-primary">{{ __('SSH host identity') }}</h2>
-                <p class="mt-2 text-sm leading-6 text-secondary">{{ __('Compare this SHA-256 fingerprint with your provider console or a trusted existing SSH connection. BuildPusher will pin it and reject future connections if it changes.') }}</p>
+                <p class="mt-2 text-sm leading-6 text-secondary">{{ __('Compare this SHA-256 fingerprint with your provider console or a trusted existing SSH connection. :app will pin it and reject future connections if it changes.', ['app' => config('app.name')]) }}</p>
                 <code class="mt-4 block break-all rounded-xl bg-secondary p-4 text-sm font-bold text-primary">{{ $report['fingerprint'] }}</code>
             </section>
 
@@ -45,7 +45,7 @@
                 <h2 id="server-import-impact-heading" class="font-black">{{ __('Changes provisioning may make') }}</h2>
                 <ul class="mt-3 list-disc space-y-2 pl-5 text-sm">
                     <li>{{ __('Install and update operating-system packages for the selected server type.') }}</li>
-                    <li>{{ __('Create BuildPusher-managed users, directories, credentials, services, firewall rules, and swap.') }}</li>
+                    <li>{{ __('Create :app-managed users, directories, credentials, services, firewall rules, and swap.', ['app' => config('app.name')]) }}</li>
                     <li>{{ __('Install or reconfigure the web server, language runtimes, databases, caches, workers, or load-balancer software included by the selected type.') }}</li>
                     <li>{{ __('Restart affected services. Existing configuration can be replaced where it conflicts with the managed configuration.') }}</li>
                 </ul>

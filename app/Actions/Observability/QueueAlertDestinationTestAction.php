@@ -22,7 +22,7 @@ class QueueAlertDestinationTestAction
             'event' => 'failure',
             'category' => 'test',
             'resource_id' => 0,
-            'title' => 'BuildPusher test alert',
+            'title' => config('app.name', 'Deployer').' test alert',
             'message' => 'Your alert destination is connected.',
             'occurred_at' => now()->toIso8601String(),
         ]);

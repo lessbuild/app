@@ -49,7 +49,7 @@
         <input id="{{ $formId }}-endpoint" type="url" name="endpoint" value="{{ old('endpoint', $isEdit ? $destination->endpoint : '') }}" placeholder="{{ $selectedPreset->endpointHint }}" class="input secondary mt-1 w-full rounded-md">
         <x-forms.errors name="endpoint" />
         @if(in_array($selectedProvider, [\App\Services\BackupDestinationCatalog::DIGITALOCEAN_SPACES, \App\Services\BackupDestinationCatalog::AMAZON_S3], true))
-            <p class="mt-1 text-xs text-secondary">{{ __('Leave this blank and BuildPusher will derive the endpoint from the region. Do not paste a bucket URL or a control-plane API URL.') }}</p>
+            <p class="mt-1 text-xs text-secondary">{{ __('Leave this blank and :app will derive the endpoint from the region. Do not paste a bucket URL or a control-plane API URL.', ['app' => config('app.name')]) }}</p>
         @else
             <p class="mt-1 text-xs text-secondary">{{ __('Use the S3 endpoint supplied by your storage provider. Do not paste a bucket URL or a control-plane API URL.') }}</p>
         @endif
@@ -76,7 +76,7 @@
     </div>
     <div class="ui-card ui-card--muted p-4 text-sm text-secondary sm:col-span-2">
         <p class="font-bold text-primary">{{ __('Before you save') }}</p>
-        <p class="mt-1">{{ __('Create a Spaces access key in DigitalOcean Spaces, not a regular DigitalOcean API token. After saving, verify this destination; BuildPusher writes, reads, and deletes a temporary object without needing an active website or server. The first real backup initializes the encrypted Restic repository.') }}</p>
+        <p class="mt-1">{{ __('Create a Spaces access key in DigitalOcean Spaces, not a regular DigitalOcean API token. After saving, verify this destination; :app writes, reads, and deletes a temporary object without needing an active website or server. The first real backup initializes the encrypted Restic repository.', ['app' => config('app.name')]) }}</p>
         @if($isEdit)
             <p class="mt-1">{{ __('Leave both credential fields blank to retain the encrypted values. Changing the bucket or folder is blocked when retained snapshots already use this destination.') }}</p>
         @endif

@@ -30,7 +30,7 @@
             </div>
         </main>
 
-        <aside class="ui-auth-aside relative hidden items-center justify-center overflow-hidden lg:flex" aria-label="{{ __('BuildPusher overview') }}">
+        <aside class="ui-auth-aside relative hidden items-center justify-center overflow-hidden lg:flex" aria-label="{{ __(':app overview', ['app' => config('app.name')]) }}">
             <div
                 class="ui-auth-aside__pattern absolute inset-0 opacity-30"
                 style="background-image: radial-gradient(circle, rgb(148 163 184) 1px, transparent 1px); background-size: 24px 24px;"

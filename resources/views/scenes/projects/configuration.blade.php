@@ -152,7 +152,7 @@
         @isset($observation)
             <x-ui.card class="mt-6 p-5" aria-labelledby="environment-observation-heading">
                 <h2 id="environment-observation-heading" class="font-bold text-primary">{{ __('Observed provider state') }}</h2>
-                <p class="mt-2 text-sm text-secondary">{{ __('One-time read for :environment through :provider. This is observed remote state, separate from desired configuration and BuildPusher’s recorded local state.', ['environment' => $observation->environmentName, 'provider' => $observation->providerName]) }}</p>
+                <p class="mt-2 text-sm text-secondary">{{ __('One-time read for :environment through :provider. This is observed remote state, separate from desired configuration and :app’s recorded local state.', ['environment' => $observation->environmentName, 'provider' => $observation->providerName, 'app' => config('app.name')]) }}</p>
                 <p class="mt-3 text-sm text-secondary">{{ $observation->message }}</p>
                 <p class="mt-3 text-sm font-bold text-primary">{{ __('Provider readiness: :status', ['status' => str($observation->providerReadiness)->replace('_', ' ')->headline()]) }}</p>
                 @if($observation->providerState)<p class="mt-1 text-xs text-secondary">{{ __('Provider lifecycle: :state', ['state' => $observation->providerState]) }}</p>@endif
@@ -175,7 +175,7 @@
         @isset($comparison)
             <x-ui.card class="mt-6 p-5" aria-labelledby="environment-comparison-heading">
                 <h2 id="environment-comparison-heading" class="font-bold text-primary">{{ __('Recorded environment comparison') }}</h2>
-                <p class="mt-2 text-sm text-secondary">{{ __('This compares BuildPusher’s recorded local metadata only. It does not query provider state or prove remote drift. Desired configuration changes still require a review and apply.') }}</p>
+                <p class="mt-2 text-sm text-secondary">{{ __('This compares :app’s recorded local metadata only. It does not query provider state or prove remote drift. Desired configuration changes still require a review and apply.', ['app' => config('app.name')]) }}</p>
                 <p class="mt-3 text-sm font-bold text-primary">{{ $comparison->from->name }} <span class="font-normal text-secondary">→</span> {{ $comparison->to->name }}</p>
                 @if($comparison->isIdentical())
                     <p class="mt-4 rounded-lg border border-primary bg-secondary p-3 text-sm text-secondary">{{ __('All displayed recorded fields match. Commands, variable keys and values, and encrypted resource configuration are not compared.') }}</p>

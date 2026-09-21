@@ -26,7 +26,7 @@ class PublicPlatformStatus
                 $checks = collect($this->diagnostics->run())->keyBy('name');
                 $groups = [
                     'Website' => [
-                        'description' => 'The BuildPusher dashboard and account experience.',
+                        'description' => 'The '.config('app.name', 'Deployer').' dashboard and account experience.',
                         'checks' => ['Application key', 'Application URL', 'Database connection', 'Database migrations', 'Storage directory', 'Bootstrap cache'],
                     ],
                     'API' => [

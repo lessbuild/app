@@ -1,6 +1,6 @@
 <x-layouts.core
     :title="__('Request access')"
-    :description="__('Tell us what you plan to deploy with BuildPusher.')"
+    :description="__(':app access request', ['app' => config('app.name')])"
     :canonical="route('access-request.create')"
     :indexable="true"
     :livewire="false"
@@ -25,7 +25,7 @@
                         {{ __('Bring us your deployment workflow.') }}
                     </h1>
                     <p class="mt-5 max-w-xl text-lg leading-8 text-secondary">
-                        {{ __('BuildPusher is onboarding teams deliberately while we validate real production provisioning, recovery, and support. Tell us what you run and we will follow up personally.') }}
+                        {{ __(':app is onboarding teams deliberately while we validate real production provisioning, recovery, and support. Tell us what you run and we will follow up personally.', ['app' => config('app.name')]) }}
                     </p>
                     <ul class="mt-8 grid gap-3 text-sm text-secondary">
                         <li class="flex items-start gap-3"><span class="mt-0.5 text-ternary" aria-hidden="true">✓</span><span>{{ __('No payment or cloud credentials required') }}</span></li>
@@ -97,7 +97,7 @@
 
                             <div class="sm:col-span-2">
                                 <label for="access-use-case" class="block text-sm font-semibold text-primary">{{ __('What do you want to deploy?') }} <span aria-hidden="true">*</span></label>
-                                <textarea id="access-use-case" name="use_case" required minlength="20" maxlength="2000" rows="6" class="input secondary mt-2 rounded-lg" placeholder="{{ __('Current stack, provider, number of servers, and the problem you want BuildPusher to solve.') }}">{{ old('use_case') }}</textarea>
+                                <textarea id="access-use-case" name="use_case" required minlength="20" maxlength="2000" rows="6" class="input secondary mt-2 rounded-lg" placeholder="{{ __('Current stack, provider, number of servers, and the problem you want :app to solve.', ['app' => config('app.name')]) }}">{{ old('use_case') }}</textarea>
                                 <span class="mt-1 block text-xs text-secondary">{{ __('Please do not include passwords, tokens, or other secrets.') }}</span>
                             </div>
 
@@ -110,7 +110,7 @@
                     @endif
 
                     <p class="mt-5 text-xs leading-5 text-secondary">
-                        {{ __('By submitting, you agree that we may contact you about BuildPusher. See our') }}
+                        {{ __('By submitting, you agree that we may contact you about :app. See our', ['app' => config('app.name')]) }}
                         <a class="underline hover:text-primary" href="{{ route('privacy') }}">{{ __('privacy policy') }}</a>.
                     </p>
                 </x-ui.card>

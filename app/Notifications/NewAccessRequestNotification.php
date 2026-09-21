@@ -30,7 +30,7 @@ class NewAccessRequestNotification extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject(__('New BuildPusher access request'))
+        return (new MailMessage)->subject(__('New :app access request', ['app' => config('app.name')]))
             ->line(__('A new encrypted access request is ready for platform review.'))
             ->action(__('Review request'), route('admin.access-requests.index', ['status' => 'pending']))
             ->line(__('Applicant details are intentionally available only inside the authenticated admin area.'));

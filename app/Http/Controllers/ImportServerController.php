@@ -65,7 +65,7 @@ class ImportServerController extends Controller
         $request->session()->forget("server_import_assessment.{$assessment->id}");
 
         return redirect()->route('servers.show', $server)
-            ->with('success', __('Server imported. BuildPusher is securely connecting and applying the selected runtime.'));
+            ->with('success', __('Server imported. :app is securely connecting and applying the selected runtime.', ['app' => config('app.name')]));
     }
 
     /**

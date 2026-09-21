@@ -185,7 +185,7 @@
                                 <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
                                     <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
                                     <div class="mt-3 space-y-3">
-                                        <p class="text-xs leading-5 text-secondary">{{ __('BuildPusher writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.') }}</p>
+                                        <p class="text-xs leading-5 text-secondary">{{ __(':app writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.', ['app' => config('app.name')]) }}</p>
                                         <form method="POST" action="{{ route('backups.destinations.test', $destination) }}">
                                             @csrf
                                             <x-ui.button type="submit" variant="secondary">{{ __('Verify') }}</x-ui.button>

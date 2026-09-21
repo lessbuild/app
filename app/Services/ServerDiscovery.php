@@ -51,7 +51,7 @@ BASH);
             }
         }
         if (($facts['uid'] ?? null) !== '0') {
-            throw new RuntimeException('BuildPusher requires direct root SSH access for unattended provisioning.');
+            throw new RuntimeException(config('app.name', 'Deployer').' requires direct root SSH access for unattended provisioning.');
         }
         if (($facts['os_id'] ?? null) !== 'ubuntu') {
             throw new RuntimeException('Only Ubuntu servers are supported for safe import.');
@@ -66,7 +66,7 @@ BASH);
         $services = collect($facts)->filter(fn ($value, $key) => str_starts_with($key, 'service_') && $value === 'yes')->keys()->map(fn ($key) => str_replace('service_', '', $key))->values()->all();
         $warnings = [];
         if (($facts['buildpusher_managed'] ?? 'no') === 'yes') {
-            $warnings[] = 'This host already contains a BuildPusher management marker.';
+            $warnings[] = 'This host already contains a '.config('app.name', 'Deployer').' management marker.';
         }
         if ($services !== []) {
             $warnings[] = 'Existing services may be reconfigured or restarted during provisioning.';

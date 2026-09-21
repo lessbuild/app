@@ -164,6 +164,25 @@ The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
 the application fast-forward did not overwrite it. This deployment is isolated
 development evidence, not production or external-provider acceptance.
 
+## Slice 4 — application branding
+
+Status: implemented locally; deploy and canonical-host smoke follow the pushed
+commit.
+
+The public application name is now `Deployer`. `APP_NAME`, the Laravel fallback,
+browser/PWA metadata, OpenAPI title/server URL, visible page copy, email copy,
+GitHub preview labels and alert payload labels use the configured application
+name. Internal compatibility identifiers remain unchanged, including
+`buildpusher.yaml`, Artisan command names, cache/storage namespaces, queue
+headers, callback markers and provider resource names.
+
+Preserved contracts:
+
+- Routes, persisted values, serialized jobs, webhook signature/header names and
+  existing external resource identifiers.
+- The canonical dev hostname remains `deployer.buildpusher.com`; this rename
+  does not change DNS or production infrastructure.
+
 Next task: resolve the provider browser-fixture determinism/setup failure,
 rerun the targeted provider browser coverage, then continue with the provider
 detail page using the same actual Signal primitives.

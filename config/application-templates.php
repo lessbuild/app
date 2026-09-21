@@ -1,12 +1,14 @@
 <?php
 
+$applicationName = env('APP_NAME', 'Deployer');
+
 $laravelServiceTemplate = [
     'version' => '1.0.0',
     'compatibility' => [
         'runtime' => 'php',
         'framework' => 'laravel',
         'php' => '8.2 - 8.5',
-        'deployment' => 'BuildPusher managed website',
+        'deployment' => $applicationName.' managed website',
     ],
     'resources' => [
         [
@@ -46,7 +48,7 @@ $laravelServiceTemplate = [
     'backup_restore' => [
         'database' => 'Use the managed PostgreSQL backup workflow and restore into an isolated target before replacing application data.',
         'cache' => 'Valkey is disposable preview state and is not included in application-data restore evidence.',
-        'scope' => 'Application data recovery and BuildPusher control-plane recovery are separate workflows.',
+        'scope' => 'Application data recovery and '.$applicationName.' control-plane recovery are separate workflows.',
     ],
     'upgrade' => [
         'policy' => 'Review template changes before applying them to an installed project.',
@@ -69,7 +71,7 @@ $nodeServiceTemplate['compatibility'] = [
     'runtime' => 'node',
     'framework' => 'node',
     'node' => '20 - 24',
-    'deployment' => 'BuildPusher managed website',
+    'deployment' => $applicationName.' managed website',
 ];
 $nodeServiceTemplate['readiness_checks'] = [
     ['name' => 'web', 'kind' => 'http', 'path' => '/'],

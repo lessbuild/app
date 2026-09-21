@@ -1,6 +1,6 @@
 <x-layouts.core
     :title="__('Service status')"
-    :description="__('Current availability of BuildPusher services.')"
+    :description="__('Current availability of :app services.', ['app' => config('app.name')])"
     :canonical="route('platform-status.show')"
     :indexable="true"
     :livewire="false"
@@ -15,7 +15,7 @@
                 <div>
                     <a href="{{ url('/') }}" class="inline-flex min-h-[2.5rem] items-center text-sm font-black uppercase tracking-[.18em] text-ternary">{{ config('app.name') }}</a>
                     <h1 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('Service status') }}</h1>
-                    <p class="mt-2 text-secondary">{{ __('Live availability for BuildPusher’s public services.') }}</p>
+                    <p class="mt-2 text-secondary">{{ __('Live availability for :app’s public services.', ['app' => config('app.name')]) }}</p>
                 </div>
                 <x-ui.button :href="route('platform-status.report')" variant="secondary">{{ __('View JSON') }}</x-ui.button>
             </header>

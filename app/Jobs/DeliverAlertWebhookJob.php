@@ -74,8 +74,8 @@ class DeliverAlertWebhookJob implements ShouldQueue
                 'event_action' => ($this->payload['event'] ?? null) === 'recovery' ? 'resolve' : 'trigger',
                 'dedup_key' => (string) ($this->payload['dedup_key'] ?? (($this->payload['category'] ?? 'event').'-'.($this->payload['resource_id'] ?? 0))),
                 'payload' => [
-                    'summary' => (string) ($this->payload['title'] ?? 'BuildPusher alert'),
-                    'source' => 'BuildPusher',
+                    'summary' => (string) ($this->payload['title'] ?? config('app.name', 'Deployer').' alert'),
+                    'source' => config('app.name', 'Deployer'),
                     'severity' => 'error',
                     'custom_details' => ['message' => (string) ($this->payload['message'] ?? '')],
                 ],

@@ -54,7 +54,7 @@
                     [__('Workers and processes'), __('Queue workers, restart policies, delays, scaling, hibernation, and resume controls.')],
                     [__('Command center'), __('Run, cancel, repeat, filter, and export owner-scoped server operations.')],
                     [__('API and webhooks'), __('Automate environments, deployments, rollback, logs, and infrastructure through OpenAPI.')],
-                    [__('CLI and MCP'), __('Operate BuildPusher from scripts, terminals, or compatible AI tools.')],
+                    [__('CLI and MCP'), __('Operate :app from scripts, terminals, or compatible AI tools.', ['app' => config('app.name')])],
                     [__('Reusable recipes'), __('Build private automation or install reviewable community recipes you can edit.')],
                 ],
             ],
@@ -145,7 +145,7 @@
                 <div>
                     <p class="inline-flex rounded-full border border-ternary bg-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Your infrastructure. One control plane.') }}</p>
                     <h1 class="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:mt-6 sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
-                    <p class="mt-4 max-w-xl text-lg leading-8 text-secondary sm:mt-6">{{ __('BuildPusher brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.') }}</p>
+                    <p class="mt-4 max-w-xl text-lg leading-8 text-secondary sm:mt-6">{{ __(':app brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.', ['app' => config('app.name')]) }}</p>
                     <div class="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                         <x-ui.button :href="$primaryUrl" variant="primary" class="w-full sm:w-auto">{{ $primaryLabel }}</x-ui.button>
                         <x-ui.button href="#product" variant="secondary" class="w-full sm:w-auto">{{ __('Explore the product') }}</x-ui.button>
@@ -182,7 +182,7 @@
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('The complete platform') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('The release lifecycle, without the tool sprawl.') }}</h2></div>
-                    <p class="max-w-xl leading-7 text-secondary">{{ __('Explore every part of BuildPusher in one compact view. Choose a category to see what is included.') }}</p>
+                    <p class="max-w-xl leading-7 text-secondary">{{ __('Explore every part of :app in one compact view. Choose a category to see what is included.', ['app' => config('app.name')]) }}</p>
                 </div>
 
                 <div class="mt-8 overflow-hidden rounded-2xl border border-primary bg-secondary shadow-xl">
@@ -264,7 +264,7 @@
         </section>
 
         <section id="questions" class="scroll-mt-20 border-t border-primary bg-secondary py-16">
-            <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[.7fr_1.3fr] lg:px-8"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Good to know') }}</p><h2 class="mt-3 text-3xl font-black text-primary">{{ __('Straight answers.') }}</h2></div><div class="space-y-3">@foreach ([[__('Who is BuildPusher for?'), __('Development teams and operators who want a focused control plane while keeping applications in their own cloud accounts.')], [__('Where does my application run?'), __('On infrastructure in the provider account you connect. BuildPusher coordinates the operational workflow.')], [__('Can I recover a previous release?'), __('Yes. Recorded revisions can be redeployed with lineage and logs retained, provided the target is ready.')], [__('How are sensitive values handled?'), __('Provider tokens, environments, scripts, command text, and retained output are encrypted at rest and owner-scoped.')], [__('What does BuildPusher not replace?'), __('Your cloud provider, source host, application architecture, and independent external monitoring remain separate. Provider invoices remain authoritative for cost.')]] as [$question, $answer])<details class="group rounded-xl border border-primary bg-primary p-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary">{{ $question }}<span class="text-xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span></summary><p class="mt-3 leading-7 text-secondary">{{ $answer }}</p></details>@endforeach</div></div>
+            <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[.7fr_1.3fr] lg:px-8"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Good to know') }}</p><h2 class="mt-3 text-3xl font-black text-primary">{{ __('Straight answers.') }}</h2></div><div class="space-y-3">@foreach ([[__('Who is :app for?', ['app' => config('app.name')]), __('Development teams and operators who want a focused control plane while keeping applications in their own cloud accounts.')], [__('Where does my application run?'), __('On infrastructure in the provider account you connect. :app coordinates the operational workflow.', ['app' => config('app.name')])], [__('Can I recover a previous release?'), __('Yes. Recorded revisions can be redeployed with lineage and logs retained, provided the target is ready.')], [__('How are sensitive values handled?'), __('Provider tokens, environments, scripts, command text, and retained output are encrypted at rest and owner-scoped.')], [__('What does :app not replace?', ['app' => config('app.name')]), __('Your cloud provider, source host, application architecture, and independent external monitoring remain separate. Provider invoices remain authoritative for cost.')]] as [$question, $answer])<details class="group rounded-xl border border-primary bg-primary p-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary">{{ $question }}<span class="text-xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span></summary><p class="mt-3 leading-7 text-secondary">{{ $answer }}</p></details>@endforeach</div></div>
         </section>
 
         <section class="ui-public-cta border-t border-primary bg-primary py-14"><div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div><h2 class="text-3xl font-black tracking-tight text-primary">{{ __('Make the next deployment the clear one.') }}</h2><p class="mt-2 text-secondary">{{ __('Bring infrastructure, releases, and recovery into one workspace.') }}</p></div><a href="{{ $primaryUrl }}" class="rounded-lg bg-ternary px-6 py-3 text-center text-sm font-bold text-white shadow-lg">{{ $primaryLabel }}</a></div></section>

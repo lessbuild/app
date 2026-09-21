@@ -564,7 +564,7 @@
         <x-forms.section
             id="account-data"
             :title="__('Your data and account')"
-            :description="__('Export your information or permanently delete your BuildPusher account.')"
+            :description="__('Export your information or permanently delete your :app account.', ['app' => config('app.name')])"
             :collapsible="true"
             :open="$errors->getBag('deleteAccount')->any()"
         >
@@ -575,7 +575,7 @@
                 </div>
                 <form method="POST" action="{{ route('account.destroy') }}" class="ui-card space-y-4 border-red-200 bg-red-50 p-4">
                     @csrf @method('DELETE')
-                    <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes BuildPusher control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.') }}</p></div>
+                    <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
                     <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="input secondary w-full rounded-lg" required></label>
                     @if (auth()->user()->hasLocalPassword())
                         <label class="block"><span class="block pb-1 text-sm text-red-900">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="input secondary w-full rounded-lg" required></label>

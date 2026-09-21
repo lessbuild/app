@@ -30,9 +30,9 @@ class AccessRequestReceivedNotification extends Notification implements ShouldQu
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject(__('We received your BuildPusher access request'))
-            ->greeting(__('Thanks for your interest in BuildPusher'))
+        return (new MailMessage)->subject(__('We received your :app access request', ['app' => config('app.name')]))
+            ->greeting(__('Thanks for your interest in :app', ['app' => config('app.name')]))
             ->line(__('We received your request and will review the deployment workflow you described.'))
-            ->line(__('We will contact you at this address if BuildPusher is a fit. No payment details or cloud credentials are required during review.'));
+            ->line(__('We will contact you at this address if :app is a fit. No payment details or cloud credentials are required during review.', ['app' => config('app.name')]));
     }
 }

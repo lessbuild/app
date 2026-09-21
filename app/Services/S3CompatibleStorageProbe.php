@@ -40,7 +40,7 @@ class S3CompatibleStorageProbe
                 throw new RuntimeException('Unable to secure the temporary backup verification file.');
             }
 
-            $contents = sprintf("BuildPusher backup destination verification %s\n", Str::uuid());
+            $contents = sprintf("%s backup destination verification %s\n", config('app.name', 'Deployer'), Str::uuid());
             if (file_put_contents($temporaryPath, $contents, LOCK_EX) !== strlen($contents)) {
                 throw new RuntimeException('Unable to write the temporary backup verification file.');
             }

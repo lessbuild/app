@@ -40,7 +40,7 @@ class InstallGitHubAppAction
         ], [
             'user_id' => $actor->id,
             'name' => __('GitHub App · :account', ['account' => $account]),
-            'description' => __('Repositories installed through the BuildPusher GitHub App.'),
+            'description' => __('Repositories installed through the :app GitHub App.', ['app' => config('app.name')]),
             'token' => 'github-app-installation',
             'connection_status' => Provider::CONNECTION_HEALTHY,
             'connection_checked_at' => now(),

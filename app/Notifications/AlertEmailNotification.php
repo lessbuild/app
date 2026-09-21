@@ -37,7 +37,7 @@ class AlertEmailNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject((string) ($this->payload['title'] ?? 'BuildPusher alert'))
+            ->subject((string) ($this->payload['title'] ?? config('app.name').' alert'))
             ->line((string) ($this->payload['message'] ?? 'An event requires attention.'))
             ->line(__('Event: :event · Category: :category', [
                 'event' => $this->payload['event'] ?? 'unknown',

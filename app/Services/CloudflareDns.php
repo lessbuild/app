@@ -31,7 +31,7 @@ class CloudflareDns
             'content' => $address,
             'ttl' => 1,
             'proxied' => false,
-            'comment' => 'Managed by BuildPusher',
+            'comment' => 'Managed by '.config('app.name', 'Deployer'),
         ];
         $existing = $this->recordReference($domain->dns_record_id);
         $response = $existing && $existing[0] === $zoneId

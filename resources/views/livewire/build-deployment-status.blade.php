@@ -128,7 +128,7 @@
                 <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployment evidence') }}</p>
                 <h2 id="deployment-evidence-title" class="mt-1 text-lg font-black text-primary">{{ __('Identity and approval context') }}</h2>
             </div>
-            <span class="text-xs text-secondary">{{ __('Persisted by BuildPusher') }}</span>
+            <span class="text-xs text-secondary">{{ __('Persisted by :app', ['app' => config('app.name')]) }}</span>
         </div>
         <dl class="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
@@ -274,7 +274,7 @@
 
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
         <div class="ui-alert ui-alert--warning mt-4 p-4">
-            <p>{{ __('This deployment stopped reporting progress. BuildPusher is safely stopping its remote process before allowing another deployment.') }}</p>
+            <p>{{ __('This deployment stopped reporting progress. :app is safely stopping its remote process before allowing another deployment.', ['app' => config('app.name')]) }}</p>
             @if ($build->failure_message)
                 <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
             @endif
@@ -449,7 +449,7 @@
                     <div>
                         <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Post-deployment observation') }}</p>
                         <h2 id="deployment-observation-title" class="mt-1 text-lg font-black text-primary">{{ __('Revision-linked verification') }}</h2>
-                        <p class="mt-1 text-sm text-secondary">{{ __('BuildPusher checks this deployment’s captured health target during a bounded window. This result is separate from continuous website health monitoring.') }}</p>
+                        <p class="mt-1 text-sm text-secondary">{{ __(':app checks this deployment’s captured health target during a bounded window. This result is separate from continuous website health monitoring.', ['app' => config('app.name')]) }}</p>
                     </div>
                     <x-ui.badge :tone="match ($deploymentObservation->statusEnum()?->value) {
                         'healthy' => 'success',

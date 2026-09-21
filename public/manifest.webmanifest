@@ -1,6 +1,6 @@
 {
-  "name": "BuildPusher",
-  "short_name": "BuildPusher",
+  "name": "Deployer",
+  "short_name": "Deployer",
   "description": "Infrastructure, deployments, observability, and recovery in one control plane.",
   "start_url": "/home",
   "scope": "/",

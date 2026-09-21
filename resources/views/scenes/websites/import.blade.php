@@ -2,7 +2,7 @@
     <x-layouts.partials.breadcrumbs :route="route('websites.index')" :title="__('Back to websites')" />
     <x-layouts.partials.heading
         :title="__('Import existing application')"
-        :description="__('Adopt an application already stored under /var/www on an active server. BuildPusher verifies the directory and does not change files or proxy configuration during import.')"
+        :description="__('Adopt an application already stored under /var/www on an active server. :app verifies the directory and does not change files or proxy configuration during import.', ['app' => config('app.name')])"
     />
 
     <div class="mx-auto max-w-3xl">

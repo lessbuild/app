@@ -32,6 +32,12 @@ The canonical-host smoke check after this deployment returned HTTP 200 for
 are active. This is isolated development evidence only; it is not production
 or external-provider acceptance.
 
+The application display name is now `Deployer`. This changes configured and
+visible branding, PWA/OpenAPI metadata, notification copy and external preview
+labels while retaining internal `buildpusher` compatibility identifiers such
+as YAML filenames, command names, cache namespaces, callback markers and
+webhook header names.
+
 Verification against the domain:
 
 - Deployed Livewire/mobile runtime smoke: **1 Playwright test passed in 16.5

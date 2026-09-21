@@ -298,7 +298,7 @@
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:p-6 lg:hidden">
                 <span>
                     <span class="block text-xl font-black text-red-900">{{ __('Delete workspace') }}</span>
-                    <span class="mt-2 block text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its BuildPusher records.') }}</span>
+                    <span class="mt-2 block text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) }}</span>
                 </span>
                 <span class="shrink-0 text-xl text-red-700 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
@@ -310,7 +310,7 @@
                     </svg>
                     <div>
                         <h2 id="delete-workspace-title" class="text-xl font-black text-red-900">{{ __('Delete workspace') }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its BuildPusher records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.') }}</p>
+                        <p class="mt-2 text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) }}</p>
                     </div>
                 </div>
                 <form method="POST" action="{{ route('organizations.destroy', $organization) }}" class="mt-6 grid gap-4 sm:grid-cols-2">

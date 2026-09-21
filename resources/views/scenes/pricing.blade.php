@@ -1,4 +1,4 @@
-<x-layouts.core :title="__('Pricing')" :description="__('Simple monthly or annual pricing for BuildPusher.')" :canonical="route('pricing')" :indexable="true" :livewire="false">
+<x-layouts.core :title="__('Pricing')" :description="__('Simple monthly or annual pricing for :app.', ['app' => config('app.name')])" :canonical="route('pricing')" :indexable="true" :livewire="false">
     <main class="min-h-screen bg-secondary px-4 py-10 sm:px-6 lg:px-8" x-data="{ interval: 'yearly' }">
         <div class="mx-auto max-w-7xl">
             <nav class="flex items-center justify-between gap-4" aria-label="{{ __('Pricing navigation') }}"><a href="{{ url('/') }}" class="inline-flex min-h-[2.5rem] items-center text-xl font-black uppercase tracking-tight text-primary">{{ config('app.name') }}</a><x-ui.button :href="route('login')" variant="secondary">{{ __('Sign in') }}</x-ui.button></nav>
@@ -29,8 +29,8 @@
                     </x-ui.card>
                 @endforeach
             </div>
-            <div class="mx-auto mt-8 max-w-3xl space-y-2 text-center text-sm text-secondary"><p>{{ __('Your provider bill stays separate. BuildPusher never marks up infrastructure costs.') }}</p><p>{{ __('Unlimited plans are subject to a reasonable fair-use policy to prevent abusive or automated misuse.') }}</p></div>
-            @unless($registrationOpen)<x-ui.alert class="mx-auto mt-8 max-w-3xl text-center" tone="info"><p class="font-bold">{{ __('BuildPusher is currently onboarding customers by invitation.') }}</p><p class="mt-1 text-sm">{{ __('Request access from any plan and tell us what you operate. No payment details are collected until you accept an invitation.') }}</p></x-ui.alert>@endunless
+            <div class="mx-auto mt-8 max-w-3xl space-y-2 text-center text-sm text-secondary"><p>{{ __('Your provider bill stays separate. :app never marks up infrastructure costs.', ['app' => config('app.name')]) }}</p><p>{{ __('Unlimited plans are subject to a reasonable fair-use policy to prevent abusive or automated misuse.') }}</p></div>
+            @unless($registrationOpen)<x-ui.alert class="mx-auto mt-8 max-w-3xl text-center" tone="info"><p class="font-bold">{{ __(':app is currently onboarding customers by invitation.', ['app' => config('app.name')]) }}</p><p class="mt-1 text-sm">{{ __('Request access from any plan and tell us what you operate. No payment details are collected until you accept an invitation.') }}</p></x-ui.alert>@endunless
         </div>
     </main>
 </x-layouts.core>

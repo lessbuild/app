@@ -22,6 +22,6 @@ class AccountDeletionController extends Controller
             abort($exception->statusCode, $exception->getMessage());
         }
 
-        return redirect('/')->with('status', __('Your BuildPusher account and workspaces were deleted.'));
+        return redirect('/')->with('status', __('Your :app account and workspaces were deleted.', ['app' => config('app.name')]));
     }
 }

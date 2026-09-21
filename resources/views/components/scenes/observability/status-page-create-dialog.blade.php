@@ -16,7 +16,7 @@
         <div class="grid gap-3 sm:grid-cols-2">
             <label class="block">
                 <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span>
-                <input name="name" value="{{ old('name') }}" placeholder="BuildPusher Status" class="input secondary w-full rounded-md" required>
+                <input name="name" value="{{ old('name') }}" placeholder="{{ config('app.name') }} Status" class="input secondary w-full rounded-md" required>
                 <x-forms.errors name="name" />
             </label>
             <label class="block">

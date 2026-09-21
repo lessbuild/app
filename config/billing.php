@@ -1,5 +1,7 @@
 <?php
 
+$applicationName = env('APP_NAME', 'Deployer');
+
 return [
     'enforce_limits' => (bool) env('BILLING_ENFORCE_LIMITS', true),
     'enforce_entitlements' => (bool) env('BILLING_ENFORCE_ENTITLEMENTS', true),
@@ -63,7 +65,7 @@ return [
             'monthly_price_id' => env('STRIPE_UNLIMITED_MONTHLY_PRICE_ID', env('STRIPE_UNLIMITED_PRICE_ID')),
             'yearly_price_id' => env('STRIPE_UNLIMITED_YEARLY_PRICE_ID'),
             'description' => 'No fixed resource limits for high-scale operations.',
-            'features' => ['Unlimited servers and websites', 'Unlimited seats', 'Every BuildPusher feature', 'Priority support'],
+            'features' => ['Unlimited servers and websites', 'Unlimited seats', 'Every '.$applicationName.' feature', 'Priority support'],
             'entitlements' => ['*'],
             'limits' => ['servers' => null, 'websites' => null, 'members' => null, 'preview_deployments' => null, 'api_requests_per_minute' => 3000], 'included_seats' => null,
         ],

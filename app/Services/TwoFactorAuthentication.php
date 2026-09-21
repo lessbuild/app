@@ -45,8 +45,8 @@ class TwoFactorAuthentication
             return null;
         }
 
-        $issuer = rawurlencode((string) config('app.name', 'BuildPusher'));
-        $label = rawurlencode(config('app.name', 'BuildPusher').':'.$user->email);
+        $issuer = rawurlencode((string) config('app.name', 'Deployer'));
+        $label = rawurlencode(config('app.name', 'Deployer').':'.$user->email);
 
         return "otpauth://totp/{$label}?secret={$user->two_factor_secret}&issuer={$issuer}&algorithm=SHA1&digits=6&period=30";
     }

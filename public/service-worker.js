@@ -19,8 +19,8 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-  const payload = event.data?.json() || { title: 'BuildPusher', message: 'A workspace event needs attention.', url: '/notifications' };
-  event.waitUntil(self.registration.showNotification(payload.title || 'BuildPusher', {
+  const payload = event.data?.json() || { title: 'Deployer', message: 'A workspace event needs attention.', url: '/notifications' };
+  event.waitUntil(self.registration.showNotification(payload.title || 'Deployer', {
     body: payload.message || '', icon: '/favicon.svg', badge: '/favicon.svg',
     data: { url: payload.url || '/notifications' }, tag: payload.tag || 'buildpusher-event',
   }));

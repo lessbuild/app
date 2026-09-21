@@ -68,7 +68,7 @@ class EnterpriseOidc
         $profile = Http::acceptJson()->withToken($token)->timeout(15)->get($metadata['userinfo_endpoint'])->throw()->json();
         $email = Str::lower((string) ($profile['email'] ?? ''));
         if (! filter_var($email, FILTER_VALIDATE_EMAIL) || ! hash_equals(Str::lower($user->email), $email) || ($profile['email_verified'] ?? true) === false) {
-            throw new RuntimeException('The SSO identity does not match your verified BuildPusher email.');
+            throw new RuntimeException('The SSO identity does not match your verified '.config('app.name', 'Deployer').' email.');
         }
         $domains = $organization->allowed_email_domains ?? [];
         if ($domains !== [] && ! in_array(Str::afterLast($email, '@'), $domains, true)) {

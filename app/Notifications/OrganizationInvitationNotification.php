@@ -38,7 +38,7 @@ class OrganizationInvitationNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('You are invited to :organization on BuildPusher', ['organization' => $this->organization]))
+            ->subject(__('You are invited to :organization on :app', ['organization' => $this->organization, 'app' => config('app.name')]))
             ->line(__('You have been invited to collaborate in the :organization workspace.', ['organization' => $this->organization]))
             ->action(__('Accept invitation'), $this->url)
             ->line(__('This invitation expires in seven days.'));
