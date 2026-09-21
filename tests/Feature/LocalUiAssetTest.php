@@ -117,7 +117,7 @@ class LocalUiAssetTest extends TestCase
             'commands/index.blade.php' => ['#command-filters', '#command-insights', '#command-history'],
             'notifications/index.blade.php' => ['#notifications-insights', '#notification-list', '#notification-filters'],
             'feedback/index.blade.php' => ['#feedback-list'],
-            'scenes/users/index.blade.php' => ['#account-profile', '#account-two-factor', '#account-data'],
+            'scenes/users/index.blade.php' => ['#account-two-factor', '#account-data'],
             'scenes/organizations/index.blade.php' => ['#organization-security-policy', '#organization-delete'],
             'system-health/index.blade.php' => ['#system-health-insights', '#system-health-checks', '#system-health-help'],
         ] as $view => $anchors) {
@@ -128,6 +128,9 @@ class LocalUiAssetTest extends TestCase
                 $this->assertStringContainsString('href="'.$anchor.'"', $source, $view);
             }
         }
+
+        $account = File::get(resource_path('views/scenes/users/index.blade.php'));
+        $this->assertStringContainsString('data-modal-trigger="{{ $profileDialogId }}"', $account);
 
         $feedback = File::get(resource_path('views/feedback/index.blade.php'));
         $this->assertStringContainsString('data-modal-trigger="feedback-compose"', $feedback);
