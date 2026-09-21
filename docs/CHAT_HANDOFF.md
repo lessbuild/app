@@ -70,6 +70,11 @@ for deployment/recovery acceptance, and the separate live acceptance drill.
 The isolated runtime has GitHub App configuration for development and no secret
 values are recorded here.
 
+An explicit `APP_ENV=production` readiness run was also performed without
+changing the runtime environment. It failed closed on exactly two checks—email
+delivery and external monitoring—and passed the application key, HTTPS URL,
+database/migrations, storage/cache, debug, queue and queue-state checks.
+
 # Latest modal link and browser-coverage audit — 2026-09-21
 
 The contextual modal implementation and the remaining page/link audit are
