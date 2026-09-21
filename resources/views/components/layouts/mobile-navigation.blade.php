@@ -7,13 +7,13 @@
     x-show="menu"
     x-trap.inert.noscroll="menu"
     @resize.window="if (window.innerWidth >= 1024) menu = false"
-    class="fixed inset-0 z-[60] flex h-[100dvh] flex-col bg-primary lg:hidden"
+    class="fixed inset-0 z-[60] flex h-[100dvh] flex-col bg-page lg:hidden"
     role="dialog"
     aria-modal="true"
     aria-label="{{ __('Primary navigation') }}"
 >
-    <div class="flex shrink-0 items-center gap-3 border-b border-primary bg-primary px-4 py-3 text-primary shadow-xs">
-        <a href="{{ route('dashboard') }}" class="max-w-[35%] truncate text-sm font-bold text-primary">{{ config('app.name') }}</a>
+    <div class="flex shrink-0 items-center gap-3 border-b border-line bg-surface px-4 py-3 text-ink shadow-soft">
+        <a href="{{ route('dashboard') }}" class="max-w-[35%] truncate text-sm font-bold text-ink">{{ config('app.name') }}</a>
         <a
             href="{{ route('search.index') }}"
             data-workspace-search-trigger

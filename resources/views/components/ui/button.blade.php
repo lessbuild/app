@@ -6,7 +6,12 @@
 
 @php($variants = ['primary', 'secondary', 'ghost', 'danger', 'inverse'])
 @php($variant = in_array($variant, $variants, true) ? $variant : 'secondary')
-@php($buttonClasses = 'button button--'.$variant)
+@php($signalVariant = match ($variant) {
+    'ghost' => 'quiet',
+    'inverse' => 'secondary',
+    default => $variant,
+})
+@php($buttonClasses = 'button button--'.$variant.' ui-btn ui-btn-'.$signalVariant)
 
 @if ($href)
     <a href="{{ htmlspecialchars_decode($href, ENT_QUOTES) }}" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</a>

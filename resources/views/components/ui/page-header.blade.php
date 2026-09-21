@@ -5,7 +5,7 @@
     'icon' => null,
 ])
 
-<section {{ $attributes->merge(['class' => 'ui-page-header']) }} data-ui-page-header>
+<section {{ $attributes->merge(['class' => 'ui-page-header ui-panel']) }} data-ui-page-header>
     <div class="ui-page-header__layout">
         <div class="ui-page-header__identity">
             @if ($icon)

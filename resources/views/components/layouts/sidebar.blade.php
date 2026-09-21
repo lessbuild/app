@@ -5,11 +5,11 @@
     x-cloak
     role="navigation"
     aria-label="{{ __('Primary navigation') }}"
-    class="fixed inset-y-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto overscroll-contain border-r border-primary bg-primary pb-4 lg:flex"
+    class="fixed inset-y-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto overscroll-contain border-r border-line bg-page pb-4 lg:flex"
     @click="if ($event.target.closest('a')) menu = false"
 >
-    <div class="sticky top-0 z-10 flex h-14 w-full shrink-0 items-center justify-between border-b border-primary bg-primary px-4">
-        <a href="{{ route('dashboard') }}" class="truncate pl-2 text-lg font-bold leading-tight text-primary">
+    <div class="sticky top-0 z-10 flex h-14 w-full shrink-0 items-center justify-between border-b border-line bg-page px-4">
+        <a href="{{ route('dashboard') }}" class="truncate pl-2 text-lg font-bold leading-tight text-ink">
             {{ config('app.name') }}
         </a>
         <button

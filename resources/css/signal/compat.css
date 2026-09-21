@@ -1,0 +1,121 @@
+/*
+ * BuildPusher compatibility bridge for the Signal theme.
+ *
+ * Existing views still use the historical primary/secondary/tertiary utility
+ * names. They now resolve to Signal's semantic roles so the migration can be
+ * completed view-by-view without maintaining a second visual system.
+ */
+:root,
+html {
+    --bg-primary: var(--ui-page);
+    --text-primary: var(--ui-ink);
+    --placeholder-primary: var(--ui-subtle);
+    --border-primary: var(--ui-line);
+    --divide-primary: var(--ui-line);
+
+    --bg-secondary: var(--ui-surface-muted);
+    --text-secondary: var(--ui-muted);
+    --placeholder-secondary: var(--ui-subtle);
+    --border-secondary: var(--ui-line);
+    --divide-secondary: var(--ui-line);
+
+    --bg-tertiary: var(--ui-emphasis);
+    --text-tertiary: var(--ui-emphasis-ink);
+    --placeholder-tertiary: var(--ui-emphasis-muted);
+    --border-tertiary: var(--ui-emphasis);
+    --divide-tertiary: var(--ui-emphasis);
+
+    --bg-ternary: var(--ui-primary);
+    --text-ternary: var(--ui-on-primary);
+    --placeholder-ternary: var(--ui-on-primary);
+    --border-ternary: var(--ui-primary);
+    --divide-ternary: var(--ui-primary);
+}
+
+html.dark {
+    --bg-primary: var(--ui-page);
+    --text-primary: var(--ui-ink);
+    --placeholder-primary: var(--ui-subtle);
+    --border-primary: var(--ui-line);
+    --divide-primary: var(--ui-line);
+    --bg-secondary: var(--ui-surface-muted);
+    --text-secondary: var(--ui-muted);
+    --placeholder-secondary: var(--ui-subtle);
+    --border-secondary: var(--ui-line);
+    --divide-secondary: var(--ui-line);
+    --bg-tertiary: var(--ui-emphasis);
+    --text-tertiary: var(--ui-emphasis-ink);
+    --placeholder-tertiary: var(--ui-emphasis-muted);
+    --border-tertiary: var(--ui-emphasis);
+    --divide-tertiary: var(--ui-emphasis);
+    --bg-ternary: var(--ui-primary);
+    --text-ternary: var(--ui-on-primary);
+    --placeholder-ternary: var(--ui-on-primary);
+    --border-ternary: var(--ui-primary);
+    --divide-ternary: var(--ui-primary);
+}
+
+/* The legacy button variants use the older accent names. Keep those names
+ * pointed at Signal so raw historical buttons receive the same palette. */
+:root,
+html {
+    --ui-accent: var(--ui-primary);
+    --ui-accent-hover: var(--ui-primary-hover);
+    --ui-accent-soft: var(--ui-primary-soft);
+    --ui-accent-text: var(--ui-primary);
+    --ui-border: var(--ui-line);
+    --ui-border-strong: var(--ui-line);
+    --ui-text: var(--ui-ink);
+    --ui-text-muted: var(--ui-muted);
+    --ui-text-subtle: var(--ui-subtle);
+}
+
+.ui-alert-info {
+    border-color: color-mix(in srgb, var(--ui-info) 28%, var(--ui-line));
+    background: var(--ui-info-soft);
+}
+
+.ui-card--muted {
+    background-color: var(--ui-surface-muted);
+}
+
+.ui-card--interactive {
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.ui-card--interactive:hover,
+.ui-card--interactive:focus-within {
+    border-color: var(--ui-line);
+    box-shadow: var(--shadow-soft-value);
+    transform: translateY(-1px);
+}
+
+/* Historical BuildPusher controls use these names. Their geometry now comes
+ * directly from Signal's control tokens. */
+.button {
+    min-height: calc(1.35rem + (var(--density-control-y) * 2));
+    border-radius: var(--radius-control-value);
+    padding: 0.72rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 750;
+}
+
+.input {
+    min-height: calc(1.35rem + (var(--density-control-y) * 2));
+    border-color: var(--ui-line);
+    border-radius: var(--radius-control-value);
+    background-color: var(--ui-surface);
+    color: var(--ui-ink);
+    padding: var(--density-control-y) 0.86rem;
+    font-size: 0.87rem;
+}
+
+.input::placeholder {
+    color: var(--ui-subtle);
+}
+
+.input:focus {
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 15%, transparent);
+    outline: 0;
+}

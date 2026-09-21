@@ -1,0 +1,79 @@
+{
+  "version": 2,
+  "presets": {
+    "modern": {
+      "label": "Modern",
+      "description": "Quiet surfaces, crisp hierarchy, and balanced space.",
+      "density": "comfortable",
+      "corners": "subtle",
+      "palette": "graphite",
+      "font": "system"
+    },
+    "editorial": {
+      "label": "Editorial",
+      "description": "Warm reading surfaces with a confident serif voice.",
+      "density": "comfortable",
+      "corners": "soft",
+      "font": "editorial"
+    },
+    "compact": {
+      "label": "Compact",
+      "description": "Tighter controls and panels for focused applications.",
+      "density": "compact",
+      "corners": "subtle",
+      "font": "system"
+    },
+    "noir": {
+      "label": "Noir",
+      "description": "High-contrast graphite surfaces for focused tools.",
+      "density": "compact",
+      "corners": "subtle",
+      "font": "system",
+      "palette": "graphite"
+    },
+    "ocean": {
+      "label": "Ocean",
+      "description": "Cool teal accents with soft, spacious surfaces.",
+      "density": "comfortable",
+      "corners": "soft",
+      "font": "system",
+      "palette": "teal"
+    },
+    "forest": {
+      "label": "Forest",
+      "description": "Grounded greens for calm, confident products.",
+      "density": "comfortable",
+      "corners": "rounded",
+      "font": "system",
+      "palette": "emerald"
+    },
+    "sunset": {
+      "label": "Sunset",
+      "description": "Warm amber energy for expressive public sites.",
+      "density": "comfortable",
+      "corners": "soft",
+      "font": "editorial",
+      "palette": "amber"
+    }
+  },
+  "palettes": {
+    "violet": ["#f6f3ff", "#eee8ff", "#ded4ff", "#c5b4ff", "#a78bfa", "#8b5cf6", "#7544ed", "#6633d4", "#5429ae", "#45248d", "#2b155f"],
+    "blue": ["#eff6ff", "#dbeafe", "#bfdbfe", "#93c5fd", "#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8", "#1e40af", "#1e3a8a", "#172554"],
+    "emerald": ["#ecfdf5", "#d1fae5", "#a7f3d0", "#6ee7b7", "#34d399", "#10b981", "#059669", "#047857", "#065f46", "#064e3b", "#022c22"],
+    "rose": ["#fff1f2", "#ffe4e6", "#fecdd3", "#fda4af", "#fb7185", "#f43f5e", "#e11d48", "#be123c", "#9f1239", "#881337", "#4c0519"],
+    "neutral": ["#f4f4f5", "#e4e4e7", "#d4d4d8", "#a1a1aa", "#71717a", "#52525b", "#3f3f46", "#27272a", "#18181b", "#111113", "#09090b"],
+    "indigo": ["#eef2ff", "#e0e7ff", "#c7d2fe", "#a5b4fc", "#818cf8", "#6366f1", "#4f46e5", "#4338ca", "#3730a3", "#312e81", "#1e1b4b"],
+    "teal": ["#f0fdfa", "#ccfbf1", "#99f6e4", "#5eead4", "#2dd4bf", "#14b8a6", "#0d9488", "#0f766e", "#115e59", "#134e4a", "#042f2e"],
+    "amber": ["#fffbeb", "#fef3c7", "#fde68a", "#fcd34d", "#fbbf24", "#f59e0b", "#d97706", "#b45309", "#92400e", "#78350f", "#451a03"],
+    "graphite": ["#fafafa", "#f4f4f5", "#e4e4e7", "#d4d4d8", "#a1a1aa", "#71717a", "#52525b", "#3f3f46", "#27272a", "#18181b", "#09090b"]
+  },
+  "semantic": {
+    "emerald": {
+      "light": { "primary": "#047857", "primaryHover": "#065f46", "primarySoft": "#ecfdf5", "onPrimary": "#ffffff", "focus": "#059669" },
+      "dark": { "primary": "#34d399", "primaryHover": "#6ee7b7", "primarySoft": "color-mix(in srgb, #10b981 17%, var(--ui-surface))", "onPrimary": "#022c22", "focus": "#6ee7b7" }
+    },
+    "neutral": {
+      "dark": { "primary": "#d4d4d8", "primaryHover": "#e4e4e7", "primarySoft": "color-mix(in srgb, #a1a1aa 18%, var(--ui-surface))", "onPrimary": "#18181b", "focus": "#e4e4e7" }
+    }
+  }
+}

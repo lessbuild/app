@@ -7,13 +7,28 @@
 ])
 
 @php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
+@php($userPreferences = auth()->user()?->preferences ?? [])
+@php($defaultAppearance = in_array($userPreferences['theme'] ?? null, ['light', 'dark'], true) ? $userPreferences['theme'] : 'system')
 
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="motion-safe:scroll-smooth" style="--vh:8px;">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    class="motion-safe:scroll-smooth"
+    style="--vh:8px;"
+    data-storage-namespace="buildpusher"
+    data-default-preset="modern"
+    data-default-appearance="{{ $defaultAppearance }}"
+    data-default-palette="graphite"
+    data-default-density="comfortable"
+    data-default-corners="subtle"
+    data-default-font="system"
+    data-default-motion="system"
+    data-default-contrast="default"
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#111827">
+        <meta name="theme-color" content="#f4f7fb" data-theme-color>
         <meta name="robots" content="{{ $indexable ? 'index, follow' : 'noindex, nofollow' }}">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
         <link rel="manifest" href="/manifest.webmanifest">
@@ -36,7 +51,36 @@
                 <meta name="twitter:description" content="{{ $description }}">
             @endif
         @endif
+        <script>
+            (() => {
+                const root = document.documentElement;
+                const namespace = root.dataset.storageNamespace || 'buildpusher';
+                const appearance = (() => {
+                    try {
+                        const stored = localStorage.getItem(`${namespace}-appearance`);
+                        return ['light', 'dark', 'system'].includes(stored)
+                            ? stored
+                            : root.dataset.defaultAppearance || 'system';
+                    } catch (_) {
+                        return root.dataset.defaultAppearance || 'system';
+                    }
+                })();
+                const dark = appearance === 'dark'
+                    || (appearance === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+                root.dataset.appearance = appearance;
+                root.classList.toggle('dark', dark);
+                root.classList.toggle('light', ! dark);
+                root.dataset.preset = root.dataset.defaultPreset;
+                root.dataset.palette = root.dataset.defaultPalette;
+                root.dataset.density = root.dataset.defaultDensity;
+                root.dataset.corners = root.dataset.defaultCorners;
+                root.dataset.font = root.dataset.defaultFont;
+                root.dataset.motion = root.dataset.defaultMotion;
+                root.dataset.contrast = root.dataset.defaultContrast;
+            })();
+        </script>
         @vite('resources/css/app.css')
+        @vite('resources/js/signal-theme.js')
         @if (! $livewire)
             @vite('resources/js/alpine.js')
         @endif
@@ -44,7 +88,7 @@
             @livewireStyles
         @endif
     </head>
-    <body class="font-sans text-sm text-primary bg-primary">
+    <body class="font-sans text-sm text-ink bg-page">
         {{ $slot }}
 
         <script>

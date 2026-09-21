@@ -205,7 +205,7 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('property="og:title" content="Deploy with clarity · '.config('app.name').'"', false)
             ->assertSee('property="og:url" content="'.url('/').'"', false)
             ->assertSee('name="twitter:card" content="summary"', false)
-            ->assertSee('name="theme-color" content="#111827"', false)
+            ->assertSee('name="theme-color" content="#f4f7fb" data-theme-color', false)
             ->assertSee('rel="icon" href="/favicon.svg" type="image/svg+xml"', false)
             ->assertSee('href="#main-content"', false)
             ->assertSee('id="main-content" tabindex="-1"', false)

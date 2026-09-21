@@ -195,11 +195,12 @@
          ! Website main content
          ! ------------------------------------------------------------
          !-->
-        <main id="main-content" tabindex="-1" data-mobile-main class="min-w-0 w-full bg-secondary pl-0 lg:pl-64 min-h-screen">
-            <div class="sticky top-0 z-30 bg-gray-800 text-gray-100 border-b border-primary shadow-xs" data-mobile-header>
+        <main id="main-content" tabindex="-1" data-mobile-main class="min-w-0 w-full bg-page pl-0 lg:pl-64 min-h-screen">
+            <div class="sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft" data-mobile-header>
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
-                    <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-gray-100">{{ config('app.name') }}</a>
+                    <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-ink">{{ config('app.name') }}</a>
                     <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
+                    <button type="button" class="ui-icon-btn h-11 w-11 shrink-0" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span></button>
                     <button type="button" x-ref="navigationToggle" class="button secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
                 <div class="hidden h-14 w-full items-center justify-between border-b border-primary px-6 lg:flex">
@@ -209,6 +210,7 @@
                         </div>
                     </div>
                     <div class="relative flex items-center">
+                        <button type="button" class="ui-icon-btn mr-2" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span></button>
                         <a href="{{ route('account.index') }}" aria-label="{{ __('Account settings') }}">
                             <x-avatar :name="auth()->user()->name" class="h-8 w-8 rounded-lg text-[10px] shadow-lg" />
                         </a>

@@ -1,5 +1,5 @@
 <x-layouts.core :title="$title">
-    <div class="ui-auth-shell min-h-screen bg-secondary lg:grid lg:grid-cols-[minmax(24rem,0.82fr)_minmax(28rem,1.18fr)]">
+    <div class="ui-auth-shell min-h-screen bg-page lg:grid lg:grid-cols-[minmax(24rem,0.82fr)_minmax(28rem,1.18fr)]">
         <main id="main-content" tabindex="-1" class="ui-auth-main flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
             <div class="w-full max-w-lg">
                 <a href="{{ url('/') }}" class="ui-auth-brand inline-flex min-h-[2.5rem] items-center text-lg font-black uppercase tracking-tight text-primary">
@@ -30,7 +30,7 @@
             </div>
         </main>
 
-        <aside class="ui-auth-aside relative hidden items-center justify-center overflow-hidden bg-slate-900 lg:flex" aria-label="{{ __('BuildPusher overview') }}">
+        <aside class="ui-auth-aside relative hidden items-center justify-center overflow-hidden lg:flex" aria-label="{{ __('BuildPusher overview') }}">
             <div
                 class="ui-auth-aside__pattern absolute inset-0 opacity-30"
                 style="background-image: radial-gradient(circle, rgb(148 163 184) 1px, transparent 1px); background-size: 24px 24px;"
