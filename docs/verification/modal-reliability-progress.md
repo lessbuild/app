@@ -23,8 +23,7 @@ Status: recorded before implementation.
 
 ## Slice 26 — server command retained-output inspector
 
-Status: complete; implementation commit and ledger commit are being finalized
-and will be pushed separately.
+Status: complete; implementation and verification commits are pushed.
 
 ### Responsibility problem
 
@@ -85,8 +84,7 @@ destructive or externally stateful workflows as explicit pages/actions.
 
 ## Slice 27 — repository webhook-delivery inspector
 
-Status: complete; implementation commit and ledger commit are being finalized
-and will be pushed separately.
+Status: complete; implementation and verification commits are pushed.
 
 ### Responsibility problem
 
@@ -145,8 +143,7 @@ switching without nesting those workflows.
 
 ## Slice 28 — operational incident timeline inspector
 
-Status: complete; implementation commit and ledger commit are being finalized
-and will be pushed separately.
+Status: complete; implementation and verification commits are pushed.
 
 ### Responsibility problem
 
@@ -270,7 +267,7 @@ semantics or operational actions in a generic modal.
 
 ### Commit and push
 
-Commit and push: pending final commit.
+Commit and push: `7d7c484` (`Close modal link audit with fixture correction`).
 
 ### Exact next task
 
@@ -278,6 +275,75 @@ No further modal candidate is justified by the completed link audit. The local
 modal-audit work is complete after this documentation/test correction;
 deployed-domain, physical-device and external-provider acceptance remain
 separate and must not be represented as local passes.
+
+## Slice 30 — browser fixture and state-assumption audit
+
+Status: complete; fixture/test coverage corrections are verified.
+
+### Responsibility problem
+
+The cross-page browser checks were not faithfully representing the rendered
+application in three places. The command center and system-health pages were
+listed in the audit but had no full-page fixture files; seeded resources used
+their real IDs while the route interceptor only recognized `/1`; and the
+responsive/organization checks assumed an onboarding tab and preference form
+were visible after navigation even when their containing disclosure was
+collapsed.
+
+### Boundaries and benefit
+
+- `AssetLayoutFixtureTest` now exports full `commands.html` and
+  `system-health.html` pages in addition to their fragment fixtures.
+- The browser fixture router recognizes numeric provider, repository and
+  website edit URLs while still serving the authorized static form fixture;
+  this keeps seeded IDs independent of database sequence assumptions.
+- Responsive checks assert the actual visible setup panel and explicitly open
+  the organization notification-preferences disclosure after a fresh page
+  navigation. The recovery assertion targets the visible checkbox rather than
+  the hidden HTML form default.
+
+This is a single-responsibility test-boundary correction: fixture generation,
+route substitution and responsive interaction assertions each model the
+application boundary they verify. No application controller, policy, action,
+route or modal behavior was changed.
+
+### Preserved behavior and safety
+
+- Full-page and fragment fixture routes remain same-origin and never contact a
+  provider, remote server or production service.
+- The assertions now follow the actual page state instead of requiring a
+  provider setup step that is already complete in the fixture.
+- Modal link, history, scroll-lock, disclosure and focus behavior remain the
+  behavior under test; only false fixture assumptions were removed.
+
+### Verification
+
+- Fixture export after the additions: **1 test / 285 assertions passed**.
+- All rendered links and modal hooks across the audit screens: **1 browser test
+  passed in 2.2 minutes**.
+- Native modal opener and page-scroll-lock sweep across the audit screens:
+  **1 browser test passed in 9.6 minutes**.
+- Provider edit cancellation/history journey: **1 browser test passed** after
+  the numeric-ID route correction.
+- Primary creation journey: **1 browser test passed in 1.3 minutes**; dashboard
+  page-local creation journey: **1 browser test passed in 28.2 seconds**.
+- Organization notification-preferences journey: **1 browser test passed in
+  44.9 seconds**.
+- Corrected light 320px full layout journey: **1 browser test passed in 2.3
+  minutes**.
+- Remaining light 390/768/1440px and dark 320/390/768/1440px full layout
+  journeys: **7 browser tests passed in 13.3 minutes**.
+
+### Commit and push
+
+Commit and push: pending final commit for this cohesive fixture/test/
+documentation slice.
+
+### Exact next task
+
+Run the final syntax/diff check after the documentation update, commit and
+push. Keep live-domain, physical-device and external-provider acceptance
+separate from isolated browser evidence.
 
 ## Slice 1 — shared filter and modal lifecycle reliability
 

@@ -151,12 +151,17 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/system-health-content.html', $this->renderPage(route('system-health.index', [
             'fragment' => 'system-health',
         ]))->assertOk()->assertSee('id="system-health-insights"', false)->getContent());
+        File::put($directory.'/system-health.html', $this->renderPage(route('system-health.index'))->assertOk()
+            ->assertSee('System health')->assertSee('Diagnostic checks')->getContent());
         File::put($directory.'/dashboard-active-commands.html', $this->renderPage(route('commands.index', [
             'active' => 1,
             'fragment' => 'active-command-history',
         ]))->assertOk()
             ->assertSee('data-command-history-content', false)
             ->assertDontSee('fixture-sensitive-command')->getContent());
+        File::put($directory.'/commands.html', $this->renderPage(route('commands.index'))->assertOk()
+            ->assertSee('Command center')
+            ->assertSee('Filter command activity')->getContent());
         File::put($directory.'/deployment-activity-content.html', $this->renderPage(route('activity.index', [
             'category' => 'deployment',
             'fragment' => 'workspace-activity',

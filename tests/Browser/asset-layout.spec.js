@@ -51,11 +51,11 @@ async function serveFixtures(page, { delays = {} } = {}) {
         const activityPage = pathname === '/activity';
         const dashboardPage = pathname === '/dashboard' || pathname === '/home';
         const projectPage = /^\/projects\/\d+$/.test(pathname);
-        const modalContentFixture = pathname === '/providers/1/edit'
+        const modalContentFixture = /^\/providers\/\d+\/edit$/.test(pathname)
             ? 'provider-edit-content'
-            : pathname === '/repositories/1/edit'
+            : /^\/repositories\/\d+\/edit$/.test(pathname)
                 ? 'repository-edit-content'
-                : pathname === '/websites/1/edit'
+                : /^\/websites\/\d+\/edit$/.test(pathname)
                     ? 'website-edit-content'
                     : /^\/recipes\/\d+\/edit$/.test(pathname)
                         ? 'recipe-edit-content'
@@ -1347,9 +1347,10 @@ for (const colorScheme of ['light', 'dark']) {
                     const setupSteps = page.locator('[data-dashboard-setup-step]');
                     if (width < 1024) {
                         await expect(setupTabs).toBeVisible();
-                        await expect(setupSteps.filter({ hasText: 'Connect a provider' })).toBeVisible();
+                        const activeSetupStep = page.locator('[data-dashboard-setup-step]:visible');
+                        await expect(activeSetupStep).toHaveCount(1);
                         if (width <= 390) {
-                            expect((await setupSteps.filter({ hasText: 'Connect a provider' }).boundingBox()).height).toBeLessThan(220);
+                            expect((await activeSetupStep.boundingBox()).height).toBeLessThan(220);
                             const serverTab = page.locator('#setup-tab-server');
                             await serverTab.click();
                             await expect(page.locator('#setup-panel-server')).toBeVisible();
@@ -1629,6 +1630,10 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
 
                         await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
+                        const notificationPreferences = page.locator('#organization-notification-preferences');
+                        if (! await notificationPreferences.evaluate((details) => details.open)) {
+                            await notificationPreferences.locator('summary').click();
+                        }
                         const preferenceTrigger = page.getByRole('link', { name: 'Edit preferences', exact: true });
                         const preferenceDialog = page.getByRole('dialog', { name: 'Notification preferences', exact: true });
                         await preferenceTrigger.click();
@@ -1806,13 +1811,17 @@ test('organization notification preferences open in a page-local dialog', async 
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/organization', { waitUntil: 'networkidle' });
 
+    const notificationPreferences = page.locator('#organization-notification-preferences');
+    if (! await notificationPreferences.evaluate((details) => details.open)) {
+        await notificationPreferences.locator('summary').click();
+    }
     const trigger = page.getByRole('link', { name: 'Edit preferences', exact: true });
     const dialog = page.getByRole('dialog', { name: 'Notification preferences', exact: true });
     const initialPath = new URL(page.url()).pathname;
     await trigger.click();
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('input[name="categories[]"]')).toHaveCount(6);
-    await expect(dialog.locator('input[name="recoveries"]')).toBeVisible();
+    await expect(dialog.locator('input[type="checkbox"][name="recoveries"]')).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(initialPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('organization-notification-preferences-dialog');
 
