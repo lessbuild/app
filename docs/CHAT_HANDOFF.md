@@ -60,6 +60,10 @@ The final isolated checks remain green after the hostname cutover:
   `monitor.buildpusher.com` hostname and a valid certificate, but this does
   not substitute for BuildPusher's independent production heartbeat/status
   configuration.
+- The saved DigitalOcean provider credential passed the bounded health check
+  for provider `7`; GitHub provider `6` and GitHub App provider `8` also
+  passed. A read-only DigitalOcean inventory contained only the pre-existing
+  `Codex` droplet. No cloud resource or provider credential was changed.
 
 Production release is not claimed from this isolated runtime. The remaining
 external gates are production SMTP and delivery verification, an independently
