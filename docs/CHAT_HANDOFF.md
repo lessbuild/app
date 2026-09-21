@@ -1,5 +1,36 @@
 # BuildPusher chat handoff
 
+# Latest isolated dev deployment verification — 2026-09-21
+
+The isolated `buildpusher.com` dev deployment is serving source commit
+`a92b8c242f1dae4ddc413a7b3d9ccc9c9929e9a5`, matching `origin/main`. The
+runtime is `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
+`APP_ENV=local`, its own SQLite database and the active
+`buildpusher-dev-main.service`; Caddy proxies the domain to that service.
+
+The locked frontend build completed and the deployed login page serves
+`build/assets/app-BPiOWmT9.css`. Laravel caches were cleared before the service
+restart.
+
+Verification against the domain:
+
+- Deployed Livewire/mobile runtime smoke: **1 Playwright test passed in 16.5
+  seconds**; the real Livewire script returned JavaScript, Alpine initialized,
+  and the public mobile navigation opened, closed and handled Escape without
+  page errors.
+- Mobile route crawl: **68 pages**, with zero recorded browser errors or
+  horizontal-overflow issues before the combined runner was stopped while
+  entering its next viewport.
+- Tablet bounded route sweep at 768px: **68 pages passed**, with zero HTTP,
+  layout or browser errors.
+- Desktop bounded route sweep at 1440px: **68 pages passed**, with zero HTTP,
+  layout or browser errors.
+
+These checks used the existing dev account only for ordinary sign-in and did
+not submit product forms, contact providers or mutate cloud resources. This
+is isolated development evidence, not a production or external-provider
+acceptance claim.
+
 # Latest modal link and browser-coverage audit — 2026-09-21
 
 The contextual modal implementation and the remaining page/link audit are
