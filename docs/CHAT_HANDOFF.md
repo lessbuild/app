@@ -4,7 +4,7 @@
 
 The isolated dev deployment is prepared for the canonical hostname
 `deployer.buildpusher.com` and is serving source commit
-`2824038`, matching `origin/main`. The runtime is
+`00f1ea5`, matching `origin/main`. The runtime is
 `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
 `APP_ENV=local`, its own SQLite database and the active
 `buildpusher-dev-main.service`; Caddy serves the new hostname through that
@@ -20,7 +20,7 @@ The public DNS A record is active at the authoritative DNS provider (host
 certificate for the new hostname, and HTTPS verification succeeds.
 
 The locked frontend build completed and the deployed login page serves
-`build/assets/app-BnGnxWel.css` plus the Signal theme script
+`build/assets/app-BrOFR6HG.css` plus the Signal theme script
 `signal-theme-FzFaTKCz.js`. Laravel caches were cleared before the service
 restart. The source verification for this UI slice passed its focused PHP,
 Pint, Vite and browser checks; the broader historical suite remains recorded

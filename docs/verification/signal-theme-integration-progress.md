@@ -146,7 +146,7 @@ Evidence:
 ## Canonical dev deployment — 2026-09-21
 
 The isolated runtime at `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
-was fast-forwarded to `2824038`, rebuilt and restarted through
+was fast-forwarded to `00f1ea5`, rebuilt and restarted through
 `buildpusher-dev-main.service` and its queue worker. The canonical development
 host is `https://deployer.buildpusher.com`; the legacy `buildpusher.com` host
 is not the verification target for this application.
@@ -154,7 +154,7 @@ is not the verification target for this application.
 Served-runtime evidence:
 
 - `/login` — HTTP 200.
-- CSS — `build/assets/app-BnGnxWel.css`, HTTP 200, containing Signal markers
+- CSS — `build/assets/app-BrOFR6HG.css`, HTTP 200, containing Signal markers
   including `--ui-page`, `.ui-panel` and `.ui-eyebrow`.
 - Theme script — `build/assets/signal-theme-FzFaTKCz.js`.
 - `/api/health` — HTTP 200, `{"status":"ready"}`.
@@ -166,8 +166,7 @@ development evidence, not production or external-provider acceptance.
 
 ## Slice 4 — application branding
 
-Status: implemented locally; deploy and canonical-host smoke follow the pushed
-commit.
+Status: implemented, deployed and verified on the canonical dev host.
 
 The public application name is now `Deployer`. `APP_NAME`, the Laravel fallback,
 browser/PWA metadata, OpenAPI title/server URL, visible page copy, email copy,
@@ -182,6 +181,16 @@ Preserved contracts:
   existing external resource identifiers.
 - The canonical dev hostname remains `deployer.buildpusher.com`; this rename
   does not change DNS or production infrastructure.
+
+Evidence:
+
+- Canonical `/login` — HTTP 200 with `Deployer` in the title and rendered
+  branding.
+- Canonical PWA manifest — HTTP 200 with `Deployer` name and short name.
+- Canonical OpenAPI document — HTTP 200 with `Deployer Control Plane API` and
+  the `deployer.buildpusher.com` server URL.
+- Canonical `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Isolated web and queue services — active.
 
 Next task: resolve the provider browser-fixture determinism/setup failure,
 rerun the targeted provider browser coverage, then continue with the provider
