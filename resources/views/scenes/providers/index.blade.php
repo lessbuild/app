@@ -48,7 +48,7 @@
         <form method="GET" action="{{ route('providers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <label for="search" class="ui-label">{{ __('Search') }}</label>
                 <input
                     id="search"
                     name="search"
@@ -56,12 +56,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name or description') }}"
-                    class="input secondary mt-1 w-full rounded-lg"
+                    class="ui-input"
                 >
             </div>
             <div>
-                <label for="type" class="block text-xs font-semibold uppercase text-secondary">{{ __('Type') }}</label>
-                <select id="type" name="type" class="input secondary mt-1 w-full rounded-lg">
+                <label for="type" class="ui-label">{{ __('Type') }}</label>
+                <select id="type" name="type" class="ui-input">
                     <option value="">{{ __('All provider types') }}</option>
                     @foreach ($types as $type)
                         <option value="{{ $type }}" @selected($filters['type'] === $type)>
@@ -71,8 +71,8 @@
                 </select>
             </div>
             <div>
-                <label for="usage" class="block text-xs font-semibold uppercase text-secondary">{{ __('Usage') }}</label>
-                <select id="usage" name="usage" class="input secondary mt-1 w-full rounded-lg">
+                <label for="usage" class="ui-label">{{ __('Usage') }}</label>
+                <select id="usage" name="usage" class="ui-input">
                     <option value="">{{ __('All usage states') }}</option>
                     @foreach ($usages as $usage)
                         <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>
@@ -82,8 +82,8 @@
                 </select>
             </div>
             <div>
-                <label for="connection" class="block text-xs font-semibold uppercase text-secondary">{{ __('Connection') }}</label>
-                <select id="connection" name="connection" class="input secondary mt-1 w-full rounded-lg">
+                <label for="connection" class="ui-label">{{ __('Connection') }}</label>
+                <select id="connection" name="connection" class="ui-input">
                     <option value="">{{ __('All connection states') }}</option>
                     @foreach ($connectionStatuses as $status)
                         <option value="{{ $status }}" @selected($filters['connection'] === $status)>
@@ -123,18 +123,18 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$providers->isEmpty())
-        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Provider inventory') }}">
+        <div class="ui-panel mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Provider inventory') }}">
             @foreach($providers as $provider)
                 @php($connectionHealth = $provider->connectionHealth())
-                <article data-provider-card class="p-4 sm:p-5">
+                <article data-provider-card class="group p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <x-avatar :name="$provider->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
                             <div class="min-w-0">
-                                <a href="{{ route('providers.show', $provider) }}" class="font-semibold text-primary hover:underline">
+                                <a href="{{ route('providers.show', $provider) }}" class="ui-link break-words">
                                     {{ $provider->name }}
                                 </a>
-                                <p class="text-sm text-secondary">{{ $provider->provider }}</p>
+                                <p class="mt-0.5 text-sm text-muted">{{ str($provider->provider)->replace('_', ' ')->title() }}</p>
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -152,35 +152,35 @@
                     </div>
 
                     @if ($provider->description)
-                        <p class="mt-3 text-sm text-secondary">{{ $provider->description }}</p>
+                        <p class="mt-3 text-sm leading-6 text-muted">{{ $provider->description }}</p>
                     @endif
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Attached resources') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Attached resources') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 {{ trans_choice(':count server|:count servers', $provider->servers_count, ['count' => $provider->servers_count]) }}
-                                <span class="mt-1 block text-secondary">{{ trans_choice(':count repository|:count repositories', $provider->repositories_count, ['count' => $provider->repositories_count]) }}</span>
+                                <span class="mt-1 block text-muted">{{ trans_choice(':count repository|:count repositories', $provider->repositories_count, ['count' => $provider->repositories_count]) }}</span>
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Connection') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Connection') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 @if ($provider->connection_checked_at)
                                     {{ $provider->connection_checked_at->diffForHumans() }}
                                 @else
                                     {{ __('Not checked yet') }}
                                 @endif
                                 @unless ($provider->connection_monitoring_enabled)
-                                    <span class="mt-1 block font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</span>
+                                    <span class="mt-1 block font-medium text-warning">{{ __('Automatic monitoring paused') }}</span>
                                 @endunless
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Monitoring') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Monitoring') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
-                                <span class="mt-1 block text-secondary">
+                                <span class="mt-1 block text-muted">
                                     {{ trans_choice('Alert after :count failure|Alert after :count failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
                                     @if ($provider->connection_failure_count > 0)
                                         &middot; {{ __(':count recorded', ['count' => $provider->connection_failure_count]) }}
@@ -189,8 +189,8 @@
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Created') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $provider->created_at->diffForHumans() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Created') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $provider->created_at->diffForHumans() }}</dd>
                         </div>
                     </dl>
                 </article>

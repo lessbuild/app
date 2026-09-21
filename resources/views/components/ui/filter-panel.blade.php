@@ -20,7 +20,7 @@
         @if ($summary)
             <x-ui.badge tone="accent">{{ $summary }}</x-ui.badge>
         @endif
-        <span class="text-lg leading-none text-secondary" aria-hidden="true">+</span>
+        <span class="text-lg leading-none text-muted" aria-hidden="true">+</span>
     </span>
 </button>
 
@@ -37,9 +37,9 @@
         <div class="ui-filter-dialog__panel">
             <header class="ui-filter-dialog__header flex items-center justify-between gap-4 border-b border-line bg-surface px-4 py-3 lg:px-5">
                 <div class="min-w-0">
-                    <h2 id="{{ $titleId }}" tabindex="-1" class="font-bold text-primary">{{ $label }}</h2>
+                    <h2 id="{{ $titleId }}" tabindex="-1" class="font-bold text-ink">{{ $label }}</h2>
                     @if ($summary)
-                        <p class="mt-1 text-xs text-secondary">{{ $summary }}</p>
+                        <p class="mt-1 text-xs text-muted">{{ $summary }}</p>
                     @endif
                 </div>
                 <form method="dialog" class="lg:hidden">
@@ -53,7 +53,7 @@
                     </button>
                 </form>
             </header>
-            <div class="ui-filter-dialog__body border-t border-primary p-4 lg:border-t-0">
+            <div class="ui-filter-dialog__body border-t border-line p-4 lg:border-t-0">
                 {{ $slot }}
             </div>
         </div>

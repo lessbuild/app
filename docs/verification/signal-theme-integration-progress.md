@@ -98,6 +98,51 @@ Evidence:
 The browser evidence is for the isolated local fixture runtime only. It is not
 live deployment or cloud acceptance.
 
+## Slice 3 — provider inventory surfaces
+
+Status: implementation committed with focused coverage; the browser fixture
+follow-up remains open.
+
+Responsibility problem addressed:
+
+- The provider inventory still used legacy input, label, text and list-surface
+  classes inside the Signal shell, so the page did not visually match the
+  dashboard composition on smaller screens.
+- Insights and mobile filter headers also mixed legacy semantic utilities with
+  Signal controls.
+
+Signal implementation:
+
+- Provider filters use Signal labels and inputs while retaining the existing
+  GET keys, selected values, mobile filter dialog and no-JavaScript fallback.
+- The inventory uses a Signal panel with quiet hover states, ink/muted text
+  roles, Signal links, eyebrows and status badges.
+- Shared insights and filter dialog headers now use Signal ink, muted, line and
+  focus roles without changing their open state or URL behavior.
+- Provider type presentation remains text-based; no provider icon selector was
+  introduced.
+
+Preserved contracts:
+
+- Organization scoping, filters, metrics, pagination and CSV/export links.
+- Provider detail/modal routes, authorization, connection status and secret
+  exclusion.
+
+Evidence:
+
+- Provider inventory, capability, feedback and connection insight coverage —
+  28 tests passed, 172 assertions.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `npm run build` — passed.
+- `git diff --check` — passed.
+- The targeted Playwright provider run exposed a pre-existing fixture
+  determinism issue: the edit workflow received `/providers/2` while its
+  fixture expected `/providers/1`, and the connection-history fixture setup
+  then failed. Five remaining provider browser cases were not run after the
+  interrupted run. This must be resolved before calling the slice browser
+  complete.
+
 ## Canonical dev deployment — 2026-09-21
 
 The isolated runtime at `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime`
@@ -119,6 +164,6 @@ The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
 the application fast-forward did not overwrite it. This deployment is isolated
 development evidence, not production or external-provider acceptance.
 
-Next task: migrate the provider inventory page using the same actual Signal
-primitives while preserving its existing routes, filters, pagination, modal
-contracts, organization scoping and export behavior.
+Next task: resolve the provider browser-fixture determinism/setup failure,
+rerun the targeted provider browser coverage, then continue with the provider
+detail page using the same actual Signal primitives.
