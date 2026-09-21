@@ -48,6 +48,29 @@ is isolated development evidence, not a production or external-provider
 acceptance claim. The hostname cutover itself is complete; production and
 external-provider acceptance remain separate gates.
 
+# Latest release-readiness audit — 2026-09-21
+
+The final isolated checks remain green after the hostname cutover:
+
+- `lessbuild:diagnose --json` reports **ready**, current migrations, writable
+  storage/cache, zero pending jobs and no failed jobs.
+- Route and Blade caches rebuilt successfully.
+- PHP 8.5.10 Composer platform requirements all passed, including PHP 8.5.10
+  and the required extensions.
+- The separately hosted monitoring application now has a resolving
+  `monitor.buildpusher.com` hostname and a valid certificate, but this does
+  not substitute for BuildPusher's independent production heartbeat/status
+  configuration.
+
+Production release is not claimed from this isolated runtime. The remaining
+external gates are production SMTP and delivery verification, an independently
+hosted heartbeat and status destination configured in the BuildPusher secret
+store, approved Stripe keys/webhook/price IDs and billing verification,
+workspace SSO identity-provider acceptance, a real provider-backed SSH target
+for deployment/recovery acceptance, and the separate live acceptance drill.
+The isolated runtime has GitHub App configuration for development and no secret
+values are recorded here.
+
 # Latest modal link and browser-coverage audit — 2026-09-21
 
 The contextual modal implementation and the remaining page/link audit are
