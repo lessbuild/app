@@ -4,12 +4,11 @@
 
 The isolated dev deployment is prepared for the canonical hostname
 `deployer.buildpusher.com` and is serving source commit
-`6802afb`, matching `origin/main`. The runtime is
+`abb06a5`, matching `origin/main`. The runtime is
 `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
 `APP_ENV=local`, its own SQLite database and the active
-`buildpusher-dev-main.service`; Caddy proxies both the legacy
-`buildpusher.com` hostname and the new hostname to that service while DNS
-redirects are in place.
+`buildpusher-dev-main.service`; Caddy serves the new hostname through that
+service and permanently redirects the legacy `buildpusher.com` hostnames.
 
 The runtime `APP_URL`, asset URL, trusted hosts and stateful domains now use
 `deployer.buildpusher.com`. The local application responds with HTTP 200 for
