@@ -1,5 +1,46 @@
 # BuildPusher chat handoff
 
+# Latest modal link and browser-coverage audit — 2026-09-21
+
+The contextual modal implementation and the remaining page/link audit are
+complete locally on `main` through `e8699a0`. Bounded read-only evidence now
+uses contextual inspectors for provider/website history, deployment history,
+command output, account/security history, repository impact and webhook
+delivery details, gallery/report status, and operational incident timelines.
+Short create/edit/settings workflows remain page-local dialogs. Runtime log
+bodies, full deployment lifecycle pages, backups/restores, protocol/security
+callbacks, destructive actions and public status pages remain explicit route
+boundaries because a modal would duplicate authorization or hide consequences.
+
+The final fixture/state audit added full command-center and system-health page
+fixtures, made seeded edit URLs independent of numeric ID order, and corrected
+responsive assertions for completed onboarding and collapsed organization
+disclosures. No application controllers, policies, actions, routes or
+persisted behavior changed in this coverage slice.
+
+Verification:
+
+- Fixture export: **1 test / 285 assertions passed**.
+- Focused PHP regression for the latest inspectors: **52 tests / 514
+  assertions passed**.
+- All rendered links and modal hooks: **1 browser test passed in 2.2 minutes**.
+- Native modal opener and page-scroll-lock sweep: **1 browser test passed in
+  9.6 minutes**.
+- Full light/dark responsive matrix at 320/390/768/1440px: **8 browser tests
+  passed** (one 2.3-minute run and seven 13.3-minute run).
+- Focused creation, cancellation/history and organization preference journeys
+  passed; PHP/Node syntax, Pint, Vite and `git diff --check` passed.
+
+The route manifest still classifies downloads, machine-readable responses,
+external-service reads and stateful protocol callbacks as controlled isolated
+or external-acceptance work rather than pretending they are ordinary page
+clicks. No production, physical-device, cloud-provider or live-domain
+acceptance is claimed.
+
+The detailed record is `docs/verification/modal-reliability-progress.md`.
+The next work is a separately authorized product slice or the outstanding
+external acceptance gates; do not reopen this modal audit without new evidence.
+
 # Latest contextual-navigation verification — 2026-09-20
 
 The contextual modal/navigation implementation is complete on isolated `main`.

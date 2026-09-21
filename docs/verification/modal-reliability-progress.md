@@ -336,14 +336,13 @@ route or modal behavior was changed.
 
 ### Commit and push
 
-Commit and push: pending final commit for this cohesive fixture/test/
-documentation slice.
+Commit and push: `e8699a0` (`Complete modal browser coverage audit`).
 
 ### Exact next task
 
-Run the final syntax/diff check after the documentation update, commit and
-push. Keep live-domain, physical-device and external-provider acceptance
-separate from isolated browser evidence.
+No further modal candidate is justified by the current link audit. Keep
+live-domain, physical-device and external-provider acceptance separate from
+isolated browser evidence.
 
 ## Slice 1 — shared filter and modal lifecycle reliability
 
