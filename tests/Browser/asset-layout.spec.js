@@ -25,6 +25,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/build/manifest.json'), 'utf8'));
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
+    const signalTheme = `/build/${manifest['resources/js/signal-theme.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         if (delays[pathname]) {
@@ -264,8 +265,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     html = html.replace(`value="${result}"`, `value="${result}" selected`);
                 }
             }
-            const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html) ? '' : `<script type="module" src="${alpine}"></script>`;
-            html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}">${script}</head>`);
+            const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html)
+                ? ''
+                : `<script type="module" src="${alpine}"></script>`;
+            html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}"><script type="module" src="${signalTheme}"></script>${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
         }
         const file = /^\/livewire(?:-[^/]+)?\/livewire/.test(pathname)
@@ -1315,13 +1318,13 @@ for (const colorScheme of ['light', 'dark']) {
             for (const screen of screens) {
                 await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
                 if (!['landing', 'pricing'].includes(screen)) expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
-                await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
+                await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(23, 25, 28)' : 'rgb(244, 247, 251)');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), screen).toBe(true);
                 const primaryText = page.locator('.text-primary').first();
-                await expect(primaryText).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(243, 244, 246)' : 'rgb(55, 65, 81)');
+                await expect(primaryText).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(244, 244, 245)' : 'rgb(16, 24, 40)');
                 if (screen === 'login') {
                     await expect(page.locator('#email')).toHaveCSS('border-top-width', '1px');
-                    await expect(page.locator('#email')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
+                    await expect(page.locator('#email')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(34, 36, 40)' : 'rgb(255, 255, 255)');
                 }
                 if (screen.startsWith('configuration')) {
                     const action = screen === 'configuration-review'
@@ -1382,7 +1385,7 @@ for (const colorScheme of ['light', 'dark']) {
                     }
                     const override = colorScheme === 'dark' ? 'light' : 'dark';
                     await page.evaluate((theme) => document.documentElement.classList.add(theme), override);
-                    await expect(page.locator('body')).toHaveCSS('background-color', override === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(255, 255, 255)');
+                    await expect(page.locator('body')).toHaveCSS('background-color', override === 'dark' ? 'rgb(23, 25, 28)' : 'rgb(244, 247, 251)');
                     await page.evaluate((theme) => document.documentElement.classList.remove(theme), override);
                     const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
                     const menu = page.locator('#primary-navigation');
@@ -1547,7 +1550,7 @@ for (const colorScheme of ['light', 'dark']) {
                 }
                 if (screen === 'projects') {
                     const brand = page.locator('[data-auth-brand]');
-                    await expect(brand).toHaveCSS('color', 'rgb(243, 244, 246)');
+                    await expect(brand).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(244, 244, 245)' : 'rgb(16, 24, 40)');
 
                     const card = page.locator('[data-project-card]').first();
                     const badge = card.locator('[data-project-environment-count]');

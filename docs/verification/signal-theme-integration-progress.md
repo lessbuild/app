@@ -2,7 +2,8 @@
 
 ## Slice 1 — shared theme and application shell
 
-Status: implemented locally; commit and push pending verification handoff.
+Status: implemented and pushed on `main` through commit `859e898`; the
+follow-up compatibility and provider-control slice is currently in progress.
 
 The application now includes the actual Signal Starter source from:
 
@@ -37,7 +38,22 @@ Evidence:
 - `php artisan view:cache` — passed.
 - `php artisan test tests/Feature/LocalUiAssetTest.php --do-not-record-test-run-history` — 23 passed, 475 assertions.
 
-Next task: migrate the first representative page family (dashboard and
-provider inventory/create-edit dialogs) to Signal's actual application-shell
-component vocabulary, then run desktop/mobile browser coverage before pushing
-that slice.
+Follow-up work in progress:
+
+- Legacy semantic utility names now resolve to Signal page, surface and ink
+  roles instead of colliding with Signal's accent utilities.
+- Native modal and filter headers use Signal panel/control primitives.
+- Provider choices use Signal's text-based `ui-choice` and `ui-check`
+  components; provider tokens remain text-free from the rendered page.
+
+Evidence for the follow-up slice:
+
+- Provider capability, inventory filter/insight, submission feedback and
+  connection insight coverage — 28 tests passed, 172 assertions.
+- The browser asset runner was started with PHP 8.5.10; its previous run
+  exposed and corrected the legacy `text-primary` and login-input color
+  collisions. A fresh run is required after the final CSS build.
+
+Next task: complete the fresh browser verification, commit and push this
+follow-up slice, then migrate the dashboard to Signal's application cards,
+timeline and responsive data patterns.

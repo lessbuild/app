@@ -90,8 +90,66 @@ html {
     transform: translateY(-1px);
 }
 
+.ui-card,
+.ui-panel,
+.ui-modal__panel,
+.ui-filter-dialog__panel {
+    border-radius: var(--radius-card-value);
+}
+
+.ui-panel,
+.ui-modal__panel,
+.ui-filter-dialog__panel {
+    border-radius: var(--radius-panel-value);
+}
+
 /* Historical BuildPusher controls use these names. Their geometry now comes
  * directly from Signal's control tokens. */
+.text-primary {
+    color: var(--ui-ink);
+}
+
+.text-secondary {
+    color: var(--ui-muted);
+}
+
+.text-tertiary {
+    color: var(--ui-emphasis-ink);
+}
+
+.text-ternary {
+    color: var(--ui-on-primary);
+}
+
+.bg-primary {
+    background-color: var(--ui-page);
+}
+
+.bg-secondary {
+    background-color: var(--ui-surface-muted);
+}
+
+.bg-tertiary {
+    background-color: var(--ui-emphasis);
+}
+
+.bg-ternary {
+    background-color: var(--ui-primary);
+}
+
+.border-primary,
+.border-secondary {
+    border-color: var(--ui-line);
+}
+
+.border-tertiary {
+    border-color: var(--ui-emphasis);
+}
+
+.border-ternary {
+    border-color: var(--ui-primary);
+}
+
 .button {
     min-height: calc(1.35rem + (var(--density-control-y) * 2));
     border-radius: var(--radius-control-value);
@@ -118,4 +176,14 @@ html {
     border-color: var(--ui-primary);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 15%, transparent);
     outline: 0;
+}
+
+.input.primary {
+    background-color: var(--ui-surface);
+    color: var(--ui-ink);
+}
+
+.input.secondary {
+    background-color: var(--ui-surface-muted);
+    color: var(--ui-ink);
 }

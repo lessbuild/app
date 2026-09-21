@@ -35,7 +35,7 @@
 >
     <div class="ui-filter-dialog__viewport">
         <div class="ui-filter-dialog__panel">
-            <header class="ui-filter-dialog__header flex items-center justify-between gap-4 border-b border-primary px-4 py-3 lg:px-5">
+            <header class="ui-filter-dialog__header flex items-center justify-between gap-4 border-b border-line bg-surface px-4 py-3 lg:px-5">
                 <div class="min-w-0">
                     <h2 id="{{ $titleId }}" tabindex="-1" class="font-bold text-primary">{{ $label }}</h2>
                     @if ($summary)
@@ -46,7 +46,7 @@
                     <button
                         type="submit"
                         data-filter-dialog-close
-                        class="button button--ghost min-h-10 min-w-10 px-2 text-xl leading-none"
+                        class="button button--ghost ui-icon-btn ui-btn ui-btn-quiet min-h-10 min-w-10 px-2 text-xl leading-none"
                         aria-label="{{ __('Close filters') }}"
                     >
                         <span aria-hidden="true">×</span>
