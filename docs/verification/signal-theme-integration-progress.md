@@ -4,7 +4,7 @@
 
 Status: implemented and pushed on `main` through commit `859e898`; the
 follow-up compatibility/provider-control slice is pushed as `5df3f16`, and the
-dashboard slice is complete and ready to commit.
+dashboard slice is complete and pushed as `26129ee`.
 
 The application now includes the actual Signal Starter source from:
 
@@ -57,8 +57,7 @@ Evidence for the follow-up slice:
 
 ## Slice 2 — dashboard application surfaces
 
-Status: implemented and verified locally; commit and push are the next handoff
-step.
+Status: implemented, verified locally, committed and pushed as `26129ee`.
 
 Responsibility problem addressed:
 
@@ -99,6 +98,6 @@ Evidence:
 The browser evidence is for the isolated local fixture runtime only. It is not
 live deployment or cloud acceptance.
 
-Next task: commit and push this dashboard slice, then migrate the next
-high-traffic resource page using the same actual Signal primitives while
-preserving its existing routes, filters, modal contracts and query behavior.
+Next task: migrate the provider inventory page using the same actual Signal
+primitives while preserving its existing routes, filters, pagination, modal
+contracts, organization scoping and export behavior.
