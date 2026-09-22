@@ -157,6 +157,22 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_observability_surfaces_use_signal_card_radius_tokens(): void
+    {
+        foreach ([
+            resource_path('views/observability/index.blade.php'),
+            resource_path('views/observability/environment-context.blade.php'),
+            resource_path('views/observability/_operational-incident-card.blade.php'),
+            resource_path('views/observability/_operational-incidents.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringContainsString('rounded-card', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-lg', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-xl', $source, $viewPath);
+        }
+    }
+
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
     {
         $errors = File::get(resource_path('views/components/forms/errors.blade.php'));

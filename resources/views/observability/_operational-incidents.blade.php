@@ -38,7 +38,7 @@
                     icon="warning"
                 />
             @else
-                <p class="rounded-lg border border-line bg-surface-muted p-4 text-sm text-muted">{{ __('No active operational incidents.') }}</p>
+                <p class="rounded-card border border-line bg-surface-muted p-4 text-sm text-muted">{{ __('No active operational incidents.') }}</p>
             @endif
         @endforelse
     </div>

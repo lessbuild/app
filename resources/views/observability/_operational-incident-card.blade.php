@@ -51,7 +51,7 @@
     </div>
 
     @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)
-        <details class="mt-4 rounded-lg border border-line bg-surface-muted p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
+        <details class="mt-4 rounded-card border border-line bg-surface-muted p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
             <summary class="cursor-pointer text-xs font-bold text-ink">{{ __('Response actions') }}</summary>
             <div class="mt-3">
             <div class="mt-5 grid gap-4 border-t border-line pt-4 lg:grid-cols-3">

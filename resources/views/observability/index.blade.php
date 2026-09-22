@@ -135,9 +135,9 @@
                         <span class="shrink-0 text-xs text-muted">{{ $metric?->recorded_at?->diffForHumans() ?? __('Awaiting sample') }}</span>
                     </div>
                     <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->cpu_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">CPU</dt></div>
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->memory_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">RAM</dt></div>
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->disk_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">Disk</dt></div>
+                        <div class="rounded-card border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->cpu_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">CPU</dt></div>
+                        <div class="rounded-card border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->memory_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">RAM</dt></div>
+                        <div class="rounded-card border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->disk_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">Disk</dt></div>
                     </dl>
                     <div class="mt-3 flex h-10 items-end gap-0.5" aria-label="{{ __('Recent CPU samples') }}">
                         @foreach ($server->metrics->reverse() as $sample)
@@ -169,7 +169,7 @@
                         <p class="mt-1 text-xs text-muted">{{ __('Trigger a notification after a sustained threshold breach.') }}</p>
                     </div>
                     @foreach ($metricRules as $rule)
-                        <div class="flex items-center gap-3 rounded-xl border border-line bg-surface p-3" data-observability-rule>
+                        <div class="flex items-center gap-3 rounded-card border border-line bg-surface p-3" data-observability-rule>
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-ink">{{ $rule->name }}</p>
                                 <p class="text-xs text-muted">{{ $rule->server?->label ?? __('All servers') }} · {{ str($rule->metric)->replace('_', ' ')->headline() }} {{ $rule->operator === 'gte' ? '≥' : '≤' }} {{ $rule->threshold }}</p>
@@ -205,7 +205,7 @@
                 <h3 class="ui-eyebrow">{{ __('Deployments') }}</h3>
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedBuilds as $signal)
-                    <a href="{{ route('builds.show', $signal) }}" class="flex items-center gap-3 rounded-lg border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
+                    <a href="{{ route('builds.show', $signal) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
                             <span class="ui-status-dot" style="--ui-status-dot: {{ $signal->status === \App\Models\Build::STATUS_SUCCEEDED ? 'var(--ui-success)' : 'var(--ui-danger)' }}" aria-hidden="true"></span>
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->repository->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ str($signal->status)->headline() }} · {{ $signal->finished_at?->diffForHumans() }}</span>
@@ -219,7 +219,7 @@
                 <h3 class="ui-eyebrow">{{ __('Failed health checks') }}</h3>
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedHealthChecks as $signal)
-                        <a href="{{ route('websites.show', $signal->website) }}" class="flex items-center gap-3 rounded-lg border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
+                        <a href="{{ route('websites.show', $signal->website) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
                             <span class="ui-status-dot" style="--ui-status-dot: var(--ui-danger)" aria-hidden="true"></span>
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->website->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ $signal->status_code ?: __('Transport') }} · {{ $signal->checked_at?->diffForHumans() }}</span>
@@ -235,7 +235,7 @@
 
     @if ($environmentProjects->isNotEmpty())
         <section class="ui-panel mt-6 p-5 sm:p-6" aria-labelledby="environment-evidence-heading">
-            <details id="environment-evidence" class="rounded-xl" aria-labelledby="environment-evidence-heading">
+            <details id="environment-evidence" class="rounded-card" aria-labelledby="environment-evidence-heading">
                 <summary class="flex cursor-pointer list-none items-start gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <div>
                         <p class="ui-eyebrow">{{ __('Investigation') }}</p>
@@ -279,7 +279,7 @@
                 </summary>
                 <div class="mt-4 space-y-3">
                 @forelse ($destinations as $destination)
-                    <article class="rounded-xl border border-line bg-surface p-4" data-observability-destination>
+                    <article class="rounded-card border border-line bg-surface p-4" data-observability-destination>
                         <div class="flex flex-wrap items-center gap-3">
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-ink">{{ $destination->name }}</p>
@@ -330,7 +330,7 @@
                 </summary>
                 <div class="mt-4 space-y-3">
                 @forelse ($statusPages as $page)
-                    <article class="rounded-xl border border-line bg-surface p-4" data-observability-status-page>
+                    <article class="rounded-card border border-line bg-surface p-4" data-observability-status-page>
                         <div class="flex items-start gap-3">
                             <div class="min-w-0 flex-1">
                                 <a href="{{ route('status.show', $page->slug) }}" target="_blank" rel="noopener noreferrer" class="ui-link">{{ $page->name }}</a>
@@ -389,7 +389,7 @@
                     $incidentDialogOpen = request()->query('dialog') === $incidentDialogKey || $incidentDialogHasErrors;
                     $incidentDialogUrl = route('observability.index', ['dialog' => $incidentDialogKey]);
                 @endphp
-                <article class="rounded-xl border border-line bg-surface p-4" data-observability-status-incident>
+                <article class="rounded-card border border-line bg-surface p-4" data-observability-status-incident>
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
                             <h3 class="font-bold text-ink">{{ $incident->title }}</h3>
@@ -401,7 +401,7 @@
                             <div class="mt-3 grid gap-2 sm:grid-cols-3">
                                 @foreach ([[__('Root cause'), $incident->root_cause], [__('Remediation'), $incident->remediation], [__('Follow-up'), $incident->follow_up]] as [$label, $value])
                                     @if ($value)
-                                        <div class="rounded-lg border border-line bg-surface-muted p-3"><p class="text-xs font-bold uppercase text-muted">{{ $label }}</p><p class="mt-1 text-sm text-ink">{{ $value }}</p></div>
+                                        <div class="rounded-card border border-line bg-surface-muted p-3"><p class="text-xs font-bold uppercase text-muted">{{ $label }}</p><p class="mt-1 text-sm text-ink">{{ $value }}</p></div>
                                     @endif
                                 @endforeach
                             </div>

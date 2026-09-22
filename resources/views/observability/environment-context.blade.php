@@ -110,17 +110,17 @@
         </div>
 
         <div class="mt-5 grid gap-3 sm:grid-cols-3">
-            <div class="rounded-lg border border-line bg-surface-muted p-4">
+            <div class="rounded-card border border-line bg-surface-muted p-4">
                 <p class="ui-eyebrow">{{ __('Website') }}</p>
                 <p class="mt-1 font-bold text-ink">{{ $website?->name ?? __('Not attached') }}</p>
                 <p class="mt-1 text-xs text-muted">{{ $website ? str((string) $website->health_status)->headline() : __('No website evidence available') }}</p>
             </div>
-            <div class="rounded-lg border border-line bg-surface-muted p-4">
+            <div class="rounded-card border border-line bg-surface-muted p-4">
                 <p class="ui-eyebrow">{{ __('Server') }}</p>
                 <p class="mt-1 font-bold text-ink">{{ $server?->label ?? __('Not attached') }}</p>
                 <p class="mt-1 text-xs text-muted">{{ $server ? str((string) $server->provisioning_status)->headline() : __('No server evidence available') }}</p>
             </div>
-            <div class="rounded-lg border border-line bg-surface-muted p-4">
+            <div class="rounded-card border border-line bg-surface-muted p-4">
                 <p class="ui-eyebrow">{{ __('Evidence window') }}</p>
                 <p class="mt-1 font-bold text-ink">{{ $context->window }}</p>
                 <p class="mt-1 text-xs text-muted">{{ __('Since :time', ['time' => $context->since->utc()->format('M j Y H:i').' UTC']) }}</p>
@@ -191,7 +191,7 @@
                     <h3 class="font-bold text-ink">{{ __('Saved investigations for this environment') }}</h3>
                     <div class="mt-3 grid gap-2 sm:grid-cols-2">
                         @foreach($savedInvestigations as $saved)
-                            <div class="flex items-center gap-3 rounded-xl border border-line bg-surface p-3">
+                            <div class="flex items-center gap-3 rounded-card border border-line bg-surface p-3">
                                 <a href="{{ route('observability.investigations.show', $saved) }}" class="min-w-0 flex-1">
                                     <span class="block truncate font-bold text-ink">{{ $saved->name }}</span>
                                     <span class="mt-0.5 block text-xs text-muted">{{ __('By :name · expires :time', ['name' => $saved->creator?->name ?? __('former member'), 'time' => $saved->expires_at?->diffForHumans()]) }}</span>
@@ -242,7 +242,7 @@
                             default => 'neutral',
                         };
                     @endphp
-                    <a href="{{ route('builds.show', $build) }}" class="flex items-center gap-3 rounded-xl border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-deployment>
+                    <a href="{{ route('builds.show', $build) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-deployment>
                         <span class="ui-status-dot ui-status-dot-lg" style="--ui-status-dot: {{ $buildColor }}" aria-hidden="true"></span>
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-bold text-ink">{{ $build->repository?->name ?? __('Deployment') }}</span>
@@ -268,7 +268,7 @@
                         </div>
                     @endif
                 @empty
-                    <p class="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{{ __('No deployment metadata was recorded in this window.') }}</p>
+                    <p class="rounded-card border border-dashed border-line p-4 text-sm text-muted">{{ __('No deployment metadata was recorded in this window.') }}</p>
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Open a deployment for its exact revision, plan-driven timeline, bounded log and failure guidance.') }}</p>
@@ -295,7 +295,7 @@
             </div>
             <div class="ui-inventory-list mt-4 space-y-2">
                 @forelse($context->healthChecks as $check)
-                    <div class="flex items-center gap-3 rounded-xl border border-line bg-surface-muted p-3" data-observability-context-health>
+                    <div class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3" data-observability-context-health>
                         <span class="ui-status-dot ui-status-dot-lg" style="--ui-status-dot: {{ $check->successful ? 'var(--ui-success)' : 'var(--ui-danger)' }}" aria-hidden="true"></span>
                         <span class="min-w-0 flex-1">
                             <span class="block font-bold text-ink">{{ $check->successful ? __('Healthy response') : __('Failed response') }}</span>
@@ -304,7 +304,7 @@
                         <span class="shrink-0 text-xs text-muted">{{ $check->checked_at?->diffForHumans() }}</span>
                     </div>
                 @empty
-                    <p class="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{{ $website ? __('No health observations were recorded in this window.') : __('Attach a website to collect health evidence.') }}</p>
+                    <p class="rounded-card border border-dashed border-line p-4 text-sm text-muted">{{ $website ? __('No health observations were recorded in this window.') : __('Attach a website to collect health evidence.') }}</p>
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Health history is retained separately and does not represent an SLA calculation.') }}</p>
@@ -322,7 +322,7 @@
                 @if($website)
                     @foreach(\App\Models\WebsiteLogSnapshot::TYPES as $type)
                         @php($snapshot = $context->runtimeLogs->firstWhere('type', $type))
-                    <a href="{{ route('websites.runtime-logs.show', [$website, $type]) }}" class="flex items-center gap-3 rounded-xl border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-log>
+                    <a href="{{ route('websites.runtime-logs.show', [$website, $type]) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-log>
                             <span class="min-w-0 flex-1">
                                 <span class="block font-bold text-ink">{{ str($type)->headline() }} {{ __('log') }}</span>
                                 <span class="mt-0.5 block text-xs text-muted">{{ str((string) ($snapshot?->status ?? 'idle'))->headline() }} · {{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }}</span>
@@ -331,7 +331,7 @@
                         </a>
                     @endforeach
                 @else
-                    <p class="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{{ __('Attach a website to inspect runtime logs.') }}</p>
+                    <p class="rounded-card border border-dashed border-line p-4 text-sm text-muted">{{ __('Attach a website to inspect runtime logs.') }}</p>
                 @endif
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('The context never loads log bodies. The existing website route rechecks authorization and applies no-store response headers.') }}</p>
@@ -348,7 +348,7 @@
             <div class="mt-4 space-y-2">
                 @forelse($context->incidents as $incident)
                     @php($incidentBuild = $incident->category === 'deployment' ? $context->builds->firstWhere('id', (int) $incident->resource_id) : null)
-                    <div class="rounded-xl border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-incident>
+                    <div class="rounded-card border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-incident>
                         <a href="{{ route('observability.index') }}#operational-incidents" class="block">
                             <div class="flex flex-wrap items-center gap-2">
                                 <x-ui.badge tone="{{ $incident->status === \App\Models\OperationalIncident::STATUS_RESOLVED ? 'success' : ($incident->severity === 'critical' ? 'danger' : 'warning') }}">{{ str((string) $incident->status)->headline() }}</x-ui.badge>
@@ -365,7 +365,7 @@
                         @endif
                     </div>
                 @empty
-                    <p class="rounded-xl border border-dashed border-line p-4 text-sm text-muted">{{ __('No explicitly related incidents were recorded in this window.') }}</p>
+                    <p class="rounded-card border border-dashed border-line p-4 text-sm text-muted">{{ __('No explicitly related incidents were recorded in this window.') }}</p>
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Only concrete category/resource relationships are shown. Incident titles and status are context; the incident centre contains the authorized response timeline.') }}</p>
