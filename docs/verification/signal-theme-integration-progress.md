@@ -650,3 +650,75 @@ development evidence, not production or external-provider acceptance.
 Next task: modernize website runtime-log controls and attached-repository
 surfaces, preserving bounded log fetching, Alpine tab behavior, refresh routes,
 retention dialogs and repository modal creation.
+
+## Slice 12 — website runtime logs and attached repositories
+
+Status: implemented, verified locally, committed and pushed as `92c2194`.
+
+Responsibility problem addressed:
+
+- The website runtime-log disclosure still mixed legacy cards, controls, text
+  roles and borders with the Signal website detail surfaces.
+- Runtime search, level and live-refresh controls were visually inconsistent
+  and the icon-only/utility treatment made the operational area harder to scan
+  on a narrow viewport.
+- Attached repositories used the older inventory treatment instead of the same
+  compact, link-forward panel hierarchy used by the rest of the website page.
+
+Signal implementation:
+
+- Converted the runtime disclosure and retention divider to Signal panels and
+  line borders, with muted supporting copy and compact action buttons.
+- Reused the shared button, input, choice and check primitives for log tabs,
+  search, level, live refresh and refresh actions; added accessible labels and
+  selected-state semantics without changing Alpine behavior.
+- Updated the retention dialog to use the shared input/help treatment and
+  clarified that the setting applies to future snapshots.
+- Reworked the attached-repository panel with Signal eyebrow, ink/muted text,
+  line dividers, compact modal action and mobile-safe repository links.
+- Added a mobile browser journey covering both runtime controls and attached
+  repository navigation.
+
+Preserved contracts:
+
+- Runtime-log snapshot routes, POST refresh behavior, bounded output, live
+  polling, application/access tabs, filtering, retention values and dialog
+  query parameters.
+- Existing repository modal creation URL/content loading, repository detail
+  links, pagination, status badges, authorization and empty-state behavior.
+- Existing copy, form names, no-JavaScript fallback, secret-safe log handling
+  and the open-state rule for pending/failed snapshots.
+
+Evidence:
+
+- `WebsiteHealthHistoryTest`, `ObservabilityTest` and `CreationDialogTest` —
+  53 tests passed, 454 assertions.
+- Website health, detail, runtime/repository and deployment/retention browser
+  journeys — 5 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `92c2194` and its configuration, route and view caches were rebuilt before
+restarting `buildpusher-dev-main.service` and its queue worker. The canonical
+development host is https://deployer.buildpusher.com; the legacy buildpusher.com
+host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inventory the repository detail page’s deployment, timeline,
+webhook and configuration surfaces, then modernize the smallest cohesive slice
+without changing deployment idempotency or webhook behavior.
