@@ -169,6 +169,60 @@ Deployment:
 Next task: continue the source-level audit of remaining high-traffic detail
 surfaces, starting with websites, repositories and server operations.
 
+## Slice 109 — Signal card radius in deployment details — 2026-09-22
+
+Responsibility problem:
+
+- Repository deployment evidence, server memory/command evidence and webhook
+  delivery details still used raw `rounded-lg`/`rounded-xl` utilities on
+  nested cards and output blocks.
+
+Boundary and implementation:
+
+- Reused Signal's `rounded-card` token for repository first-deployment and
+  webhook evidence, server memory history, and command history output.
+- Added a source-level regression check for the audited deployment-detail
+  render paths.
+- Kept resource-level `ui-card`, `ui-panel`, dialog and responsive shell
+  primitives otherwise unchanged.
+
+Preserved contracts and safety:
+
+- Repository deployment data, webhook inspection, server metrics, command
+  history, output escaping, authorization, queue behavior and deletion
+  semantics are unchanged.
+- No controllers, persistence, queues, credentials, dependencies or
+  external infrastructure changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused UI, repository webhook/deployment and server command tests — 87
+  tests passed, 3,086 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px browser smoke check rendered the repositories and servers
+  inventory pages with no horizontal overflow or page errors; served CSS was
+  `build/assets/app-D4LlAziF.css`. Screenshot:
+  `/tmp/deployer-deployment-details-signal-390.png`.
+- Implementation commit `ada67f4` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `ada67f4`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit the remaining website, project and server detail surfaces,
+then review shared controls and public pages for any source-level Signal
+deviations that are still concrete and behavior-safe to change.
+
 ## Slice 105 — Signal source controls in shared chrome — 2026-09-22
 
 Responsibility problem:
