@@ -11,7 +11,7 @@
     'inverse' => 'secondary',
     default => $variant,
 })
-@php($buttonClasses = 'button button--'.$variant.' ui-btn ui-btn-'.$signalVariant)
+@php($buttonClasses = 'ui-btn ui-btn-'.$signalVariant)
 
 @if ($href)
     <a href="{{ htmlspecialchars_decode($href, ENT_QUOTES) }}" {{ $attributes->merge(['class' => $buttonClasses]) }}>{{ $slot }}</a>

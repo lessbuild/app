@@ -203,8 +203,8 @@
         flex: 0 0 auto;
     }
 
-    .ui-page-header__actions > .button,
-    .ui-page-header__actions > form > .button {
+    .ui-page-header__actions > .ui-btn,
+    .ui-page-header__actions > form > .ui-btn {
         min-height: 2.75rem;
     }
 
@@ -440,7 +440,7 @@
     }
 
     .ui-focus-ring:focus-visible,
-    .button:focus-visible,
+    .ui-btn:focus-visible,
     .input:focus-visible,
     a:focus-visible,
     button:focus-visible,
@@ -528,9 +528,9 @@
             width: 100%;
         }
 
-        .ui-page-header__actions > .button,
+        .ui-page-header__actions > .ui-btn,
         .ui-page-header__actions > form,
-        .ui-page-header__actions > form > .button {
+        .ui-page-header__actions > form > .ui-btn {
             width: 100%;
             min-width: 0;
         }
@@ -551,7 +551,7 @@
             width: 100%;
         }
 
-        [data-dashboard-hero] > nav > .button {
+        [data-dashboard-hero] > nav > .ui-btn {
             width: 100%;
             min-width: 0;
         }

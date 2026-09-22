@@ -46,7 +46,7 @@
                     <button
                         type="submit"
                         data-filter-dialog-close
-                        class="button button--ghost ui-icon-btn ui-btn ui-btn-quiet min-h-10 min-w-10 px-2 text-xl leading-none"
+                        class="ui-icon-btn ui-btn ui-btn-quiet min-h-10 min-w-10 px-2 text-xl leading-none"
                         aria-label="{{ __('Close filters') }}"
                     >
                         <span aria-hidden="true">×</span>

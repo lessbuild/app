@@ -24,7 +24,7 @@
         </span>
         <span class="shrink-0 text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
     </summary>
-    <div class="ui-responsive-details__content ui-insights__content border-t border-primary p-3 sm:p-4 lg:border-0">
+    <div class="ui-responsive-details__content ui-insights__content border-t border-line p-3 sm:p-4 lg:border-0">
         {{ $slot }}
     </div>
 </details>

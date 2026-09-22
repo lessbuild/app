@@ -1,5 +1,5 @@
 <x-ui.empty-state
-    class="bg-primary"
+    class="bg-page"
     :title="$title ?? null"
     :description="$description ?? null"
 >

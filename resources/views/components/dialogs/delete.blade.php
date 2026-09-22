@@ -20,9 +20,9 @@
                     <use xlink:href="/assets/images/icons.svg#information-circle"></use>
                 </svg>
             </span>
-            <p class="text-sm text-secondary">{{ __('This action cannot be undone.') }}</p>
+            <p class="text-sm text-muted">{{ __('This action cannot be undone.') }}</p>
         </div>
-        <div class="flex flex-wrap justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+        <div class="flex flex-wrap justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
             <x-ui.button type="button" variant="secondary" data-modal-close>{{ __('Cancel') }}</x-ui.button>
             <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
         </div>

@@ -766,6 +766,34 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-console', $scriptPreview);
     }
 
+    public function test_shared_controls_emit_signal_only_rendering_hooks(): void
+    {
+        foreach ([
+            resource_path('views/components/ui/button.blade.php'),
+            resource_path('views/components/dialogs/modal.blade.php'),
+            resource_path('views/components/ui/filter-panel.blade.php'),
+            resource_path('views/components/dialogs/delete.blade.php'),
+            resource_path('views/components/ui/insights.blade.php'),
+            resource_path('views/components/lists/empty.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('button--', $source, $viewPath);
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+        }
+
+        $button = File::get(resource_path('views/components/ui/button.blade.php'));
+        $this->assertStringContainsString("'ui-btn ui-btn-'.\$signalVariant", $button);
+
+        $uiStyles = File::get(resource_path('css/components/ui.css'));
+        $this->assertStringContainsString('.ui-page-header__actions > .ui-btn', $uiStyles);
+        $this->assertStringContainsString('[data-dashboard-hero] > nav > .ui-btn', $uiStyles);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([
