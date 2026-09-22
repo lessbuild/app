@@ -1,5 +1,68 @@
 # Signal theme integration progress
 
+## Slice 119 — load Signal navigation independently of Alpine — 2026-09-22
+
+Responsibility problem:
+
+- The Signal public drawer controller was imported by Deployer's Alpine feature
+  entrypoint. The supplied Signal starter initializes navigation from its
+  shared UI runtime instead; coupling it to Alpine makes a shared theme
+  component depend on which app runtime a layout happens to load.
+- The current public pages all explicitly use the non-Livewire layout, so this
+  was a boundary-hardening improvement, not a claim of a currently broken
+  route.
+
+Boundary and implementation:
+
+- Made `resources/js/signal-drawer.js` a standalone Vite entry and load it from
+  the shared core layout. It initializes after DOM readiness, without Alpine or
+  Livewire dependencies; the app-specific Alpine bundle no longer owns public
+  Signal navigation.
+- Compared the Deployer shell to the supplied Signal source: public-header
+  drawer markup uses the source's `data-mobile-drawer` contract; the app shell
+  uses its `app-sidebar-link`, mobile drawer and `ui-bottom-nav` contracts; UI
+  buttons map to Signal variants; and the shared modal uses native
+  `<dialog class="ui-dialog">` with Deployer's operation-specific sheet
+  behavior layered on that primitive.
+- `theme.css`, `components.css`, `presets.css`, `themes.json` and theme
+  initialization remain byte-identical to the supplied Signal snapshot where
+  directly compared. The source has no Git metadata, so a newer upstream
+  release/commit cannot be verified from this checkout.
+- Added live browser coverage that checks the standalone drawer asset is
+  emitted once, served successfully and works from both the landing page and
+  another public page using the shared header.
+
+Preserved contracts and safety:
+
+- Drawer focus containment/restoration, Escape and backdrop handling, body
+  scroll lock, responsive breakpoint, route destinations and no-JavaScript
+  fallback are unchanged. App-specific sidebar state and modal interactions
+  remain untouched.
+- No routes, responses, authorization, persistence, jobs, dependencies,
+  external resources or production environment changed.
+- The user's untracked `docs/controller-modernization-luna-max-plan.md` remains
+  untouched and was not staged.
+
+Evidence:
+
+- `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/phpunit
+  tests/Feature/LocalUiAssetTest.php --testdox` — 66 tests passed,
+  2,903 assertions.
+- Pint, JS syntax checks, Vite production build and `git diff --check` passed.
+- `BROWSER_LIVE_ORIGIN=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/live-runtime.spec.js --reporter=line` — 2 passed (1 minute).
+- The live Signal stylesheet URL returned bytes identical to the runtime build:
+  SHA-256 `aa225375200ee516f9b13f0985d382bfa8c244f6a8d672c6ed47c1b17f48fce7`.
+  `/api/health` returned `{"status":"ready"}`.
+- Implementation commit `c331dfd` is pushed to `origin/main`. The isolated
+  Deployer dev runtime is fast-forwarded to it and rebuilt. Its pre-existing
+  `deploy/Caddyfile` change remains untouched.
+
+Next task: continue auditing shared dialog/component behavior against the
+available Signal source, changing only verified mismatches. An authoritative
+Signal repository/version reference is still needed to establish whether this
+snapshot is the latest upstream release.
+
 ## Slice 118 — use Signal's public drawer behavior — 2026-09-22
 
 Responsibility problem:
