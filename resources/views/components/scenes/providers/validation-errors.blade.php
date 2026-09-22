@@ -1,10 +1,12 @@
 @if ($errors->any())
-    <div id="provider-errors" data-form-error-summary role="alert" tabindex="-1" autofocus class="mb-6 rounded-lg border border-red-300 bg-red-50 p-4 text-red-800">
-        <p class="font-semibold">{{ __('Provider could not be saved.') }}</p>
-        <ul class="mt-2 list-disc space-y-1 pl-5">
-            @foreach ($errors->all() as $message)
-                <li>{{ $message }}</li>
-            @endforeach
-        </ul>
+    <div id="provider-errors" data-form-error-summary role="alert" tabindex="-1" autofocus class="ui-alert ui-alert--danger mb-5 border-l-4">
+        <div class="min-w-0">
+            <p class="font-semibold text-ink">{{ __('Provider could not be saved.') }}</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
+                @foreach ($errors->all() as $message)
+                    <li>{{ $message }}</li>
+                @endforeach
+            </ul>
+        </div>
     </div>
 @endif

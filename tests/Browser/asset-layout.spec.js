@@ -1711,8 +1711,13 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
 
     const tokenBounds = await page.locator('#token').boundingBox();
     expect(tokenBounds.y).toBeLessThan(700);
+    await expect(page.locator('#token')).toHaveClass(/\bui-input\b/);
+    await expect(page.locator('#name')).toHaveClass(/\bui-input\b/);
+    await expect(page.locator('#description')).toHaveClass(/\bui-input\b/);
+    await expect(page.locator('label.ui-choice')).toHaveCount(7);
 
     const monitoring = page.locator('#provider-monitoring-settings');
+    await expect(monitoring).toHaveClass(/\bui-card\b/);
     const content = monitoring.locator('.ui-responsive-details__content');
     await expect(content).toBeHidden();
     await monitoring.locator('summary').click();
