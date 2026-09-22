@@ -218,6 +218,51 @@ class ObservabilityTest extends TestCase
         );
     }
 
+    public function test_observability_inventory_uses_compact_signal_panels_and_controls(): void
+    {
+        [$owner, $server] = $this->infrastructure();
+        $owner->currentOrganization->alertDestinations()->create([
+            'created_by' => $owner->id,
+            'name' => 'Operations',
+            'type' => 'webhook',
+            'endpoint' => 'https://alerts.example.com/operations',
+            'signing_secret' => 'secret',
+            'events' => ['failure'],
+            'is_active' => true,
+        ]);
+        $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id,
+            'name' => 'Operations status',
+            'slug' => 'operations-status',
+            'is_published' => true,
+        ]);
+        $owner->currentOrganization->metricAlertRules()->create([
+            'created_by' => $owner->id,
+            'server_id' => $server->id,
+            'name' => 'High CPU',
+            'metric' => 'cpu_percent',
+            'operator' => 'gte',
+            'threshold' => 85,
+            'consecutive_breaches' => 3,
+            'cooldown_minutes' => 15,
+            'is_enabled' => true,
+        ]);
+
+        $content = $this->actingAs($owner)
+            ->get(route('observability.index'))
+            ->assertSuccessful()
+            ->assertSee('data-observability-server', false)
+            ->assertSee('data-observability-destination', false)
+            ->assertSee('data-observability-status-page', false)
+            ->assertSee('data-observability-rule', false)
+            ->assertSee('class="ui-input"', false)
+            ->getContent();
+
+        $this->assertStringContainsString('class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"', $content);
+        $this->assertStringContainsString('class="ui-eyebrow"', $content);
+        $this->assertStringNotContainsString('class="input secondary w-full rounded-md"', $content);
+    }
+
     public function test_metric_alert_rule_operations_use_workspace_policy_and_scoped_server_validation(): void
     {
         [$owner, $server] = $this->infrastructure();

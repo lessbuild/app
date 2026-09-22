@@ -18,15 +18,15 @@
     ]);
 @endphp
 
-<article class="rounded-xl border border-primary bg-secondary p-4">
+<article class="ui-panel bg-surface p-4" data-observability-incident>
     <div class="flex flex-wrap items-start gap-3">
         <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
                 <x-ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-ui.badge>
-                <span class="text-xs text-secondary">{{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}</span>
+                <span class="text-xs text-muted">{{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}</span>
             </div>
-            <h3 class="mt-2 font-black text-primary">{{ $incident->title }}</h3>
-            <p class="mt-2 text-xs text-secondary">{{ __('Detected :time · Owner: :owner', ['time' => $incident->detected_at->diffForHumans(), 'owner' => $incident->assignee?->name ?? __('Unassigned')]) }}</p>
+            <h3 class="mt-2 font-black text-ink">{{ $incident->title }}</h3>
+            <p class="mt-2 text-xs text-muted">{{ __('Detected :time · Owner: :owner', ['time' => $incident->detected_at->diffForHumans(), 'owner' => $incident->assignee?->name ?? __('Unassigned')]) }}</p>
         </div>
         @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)
             <form method="POST" action="{{ route('observability.operational-incidents.acknowledge', $incident) }}" class="shrink-0">
@@ -36,7 +36,7 @@
         @endif
     </div>
 
-    <div class="mt-4 flex flex-wrap gap-2">
+    <div class="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
         <x-ui.button
             :href="$timelineDialogUrl"
             data-modal-trigger="{{ $timelineDialogId }}"
@@ -51,16 +51,16 @@
     </div>
 
     @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)
-        <details class="mt-4 rounded-lg border border-primary bg-primary p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
-            <summary class="cursor-pointer text-xs font-bold text-ternary">{{ __('Response actions') }}</summary>
+        <details class="mt-4 rounded-lg border border-line bg-surface-muted p-3" @if ($openDetails || ($errors->any() && ! $noteDialogHasErrors)) open @endif>
+            <summary class="cursor-pointer text-xs font-bold text-ink">{{ __('Response actions') }}</summary>
             <div class="mt-3">
-            <div class="mt-5 grid gap-4 border-t border-primary pt-4 lg:grid-cols-3">
+            <div class="mt-5 grid gap-4 border-t border-line pt-4 lg:grid-cols-3">
                 <form method="POST" action="{{ route('observability.operational-incidents.assign', $incident) }}" class="flex items-end gap-2">
                     @csrf
                     @method('PATCH')
                     <label class="min-w-0 flex-1">
                         <span class="sr-only">{{ __('Assignee') }}</span>
-                        <select name="assigned_to" class="input secondary w-full rounded-md">
+                        <select name="assigned_to" class="ui-input">
                             <option value="">{{ __('Unassigned') }}</option>
                             @foreach ($incidentResponders as $responder)
                                 <option value="{{ $responder->id }}" @selected($incident->assigned_to === $responder->id)>{{ $responder->name }}</option>
@@ -85,7 +85,7 @@
                     @csrf
                     <label class="min-w-0 flex-1">
                         <span class="sr-only">{{ __('Resolution and evidence') }}</span>
-                        <input name="resolution" maxlength="5000" required class="input secondary w-full rounded-md" placeholder="{{ __('Resolution and evidence') }}">
+                        <input name="resolution" maxlength="5000" required class="ui-input" placeholder="{{ __('Resolution and evidence') }}">
                     </label>
                     <x-ui.button type="submit" variant="primary">{{ __('Resolve') }}</x-ui.button>
                 </form>

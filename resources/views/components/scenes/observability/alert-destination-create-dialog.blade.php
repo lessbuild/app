@@ -9,15 +9,15 @@
     <form method="POST" action="{{ route('observability.destinations.store') }}" class="grid gap-4 sm:grid-cols-2">
         @csrf
         <input type="hidden" name="_alert_destination_form" value="1">
-        <h3 class="sm:col-span-2 font-bold text-primary">{{ __('Add alert destination') }}</h3>
+        <h3 class="sm:col-span-2 font-bold text-ink">{{ __('Add alert destination') }}</h3>
         <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span>
-            <input name="name" value="{{ old('name') }}" placeholder="Engineering alerts" class="input secondary w-full rounded-md" required>
+            <span class="ui-label">{{ __('Name') }}</span>
+            <input name="name" value="{{ old('name') }}" placeholder="Engineering alerts" class="ui-input" required>
             <x-forms.errors name="name" />
         </label>
         <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Type') }}</span>
-            <select name="type" class="input secondary w-full rounded-md">
+            <span class="ui-label">{{ __('Type') }}</span>
+            <select name="type" class="ui-input">
                 @foreach (['email' => 'Email', 'discord' => 'Discord', 'teams' => 'Microsoft Teams', 'pagerduty' => 'PagerDuty', 'slack' => 'Slack', 'webhook' => __('Signed webhook')] as $value => $label)
                     <option value="{{ $value }}" @selected(old('type') === $value)>{{ $label }}</option>
                 @endforeach
@@ -25,19 +25,19 @@
             <x-forms.errors name="type" />
         </label>
         <label class="block sm:col-span-2">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Endpoint') }}</span>
-            <input name="endpoint" value="{{ old('endpoint') }}" placeholder="{{ __('Email, webhook URL, or PagerDuty routing key') }}" autocomplete="off" class="input secondary w-full rounded-md" required>
+            <span class="ui-label">{{ __('Endpoint') }}</span>
+            <input name="endpoint" value="{{ old('endpoint') }}" placeholder="{{ __('Email, webhook URL, or PagerDuty routing key') }}" autocomplete="off" class="ui-input" required>
             <x-forms.errors name="endpoint" />
         </label>
         <fieldset class="flex flex-wrap gap-4 sm:col-span-2">
             <legend class="sr-only">{{ __('Events') }}</legend>
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="events[]" value="failure" @checked(in_array('failure', (array) old('events', ['failure', 'recovery']), true))>
-                <span class="text-sm text-secondary">{{ __('Failures') }}</span>
+                <input type="checkbox" name="events[]" value="failure" class="ui-check" @checked(in_array('failure', (array) old('events', ['failure', 'recovery']), true))>
+                <span class="text-sm text-muted">{{ __('Failures') }}</span>
             </label>
             <label class="flex items-center gap-2">
-                <input type="checkbox" name="events[]" value="recovery" @checked(in_array('recovery', (array) old('events', ['failure', 'recovery']), true))>
-                <span class="text-sm text-secondary">{{ __('Recoveries') }}</span>
+                <input type="checkbox" name="events[]" value="recovery" class="ui-check" @checked(in_array('recovery', (array) old('events', ['failure', 'recovery']), true))>
+                <span class="text-sm text-muted">{{ __('Recoveries') }}</span>
             </label>
             <x-forms.errors name="events" />
         </fieldset>

@@ -15,8 +15,8 @@
         @csrf
         <input type="hidden" name="_operational_incident_form" value="note">
         <input type="hidden" name="_operational_incident_id" value="{{ $incident->id }}">
-        <label for="{{ $dialogId }}-message" class="block text-xs font-semibold uppercase text-secondary">{{ __('Investigation note') }}</label>
-        <textarea id="{{ $dialogId }}-message" name="message" rows="5" maxlength="5000" required class="input secondary w-full rounded-md" placeholder="{{ __('Investigation note') }}">{{ old('message') }}</textarea>
+        <label for="{{ $dialogId }}-message" class="ui-label">{{ __('Investigation note') }}</label>
+        <textarea id="{{ $dialogId }}-message" name="message" rows="5" maxlength="5000" required class="ui-input" placeholder="{{ __('Investigation note') }}">{{ old('message') }}</textarea>
         <x-forms.errors name="message" />
         <x-ui.button type="submit" variant="primary">{{ __('Add note') }}</x-ui.button>
     </form>
