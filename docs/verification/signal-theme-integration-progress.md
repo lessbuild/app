@@ -2134,6 +2134,48 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 67 — organization and account preference surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Workspace invitation, member-role, notification-preference and dashboard
+  preference dialogs still mixed the previous palette and form primitives into
+  otherwise modern page-local workflows. Social-provider and two-factor
+  disclosure affordances had the same inconsistent visual treatment.
+
+Boundary and implementation:
+
+- Kept authorization, request handling, modal URLs and state transitions in
+  their existing Livewire/actions boundaries while moving labels, fields,
+  checkboxes, supporting copy and disclosure links to the shared Signal
+  primitives.
+- This applies the single-responsibility UI convention: shared visual
+  controls own presentation, while the existing organization/account
+  operations retain business rules and persistence.
+
+Preserved contracts and safety:
+
+- Invitation, member-role, notification-preference, dashboard-preference,
+  social-auth and two-factor field names, error bags, authorization, old-input
+  behavior and URL-backed dialog behavior are unchanged.
+- No controller, action, policy, persistence, queue, session, secret-handling
+  or external integration behavior changed.
+
+Evidence:
+
+- Organization, account, dashboard and local UI coverage — 135 tests passed,
+  1,797 assertions.
+- Targeted organization/account browser workflows — 5 tests passed in 32.3s.
+- 'npm run build' — passed; generated CSS includes app-AmfN_8iw.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: implementation commit '4a7db1c' is on 'origin/main'.
+
+Next task: deploy this organization/account modernization to the isolated
+canonical Deployer runtime and verify the served bundle.
+
 ## Slice 66 — shared Signal control layer — 2026-09-22
 
 Status: implemented and verified locally; code committed and pushed as
