@@ -143,6 +143,20 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('id="close"', File::get(public_path('assets/images/icons.svg')));
     }
 
+    public function test_configuration_surfaces_use_signal_card_radius_tokens(): void
+    {
+        foreach ([
+            resource_path('views/scenes/projects/configuration.blade.php'),
+            resource_path('views/scenes/projects/configuration-dialog.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringContainsString('rounded-card', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-lg', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-xl', $source, $viewPath);
+        }
+    }
+
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
     {
         $errors = File::get(resource_path('views/components/forms/errors.blade.php'));

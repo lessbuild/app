@@ -81,7 +81,7 @@
             @if (collect($plan['changes'])->contains(fn ($change) => $change['kind'] === 'environment' && $change['action'] === 'remove'))
                 <x-ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-ui.alert>
             @endif
-            <div class="mt-4 divide-y divide-line rounded-lg border border-line" aria-label="{{ __('Reviewed configuration changes') }}">
+            <div class="mt-4 divide-y divide-line rounded-card border border-line" aria-label="{{ __('Reviewed configuration changes') }}">
                 @foreach ($plan['changes'] as $change)
                     <article data-configuration-change class="p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -147,11 +147,11 @@
             <div class="mt-4 grid gap-4 lg:grid-cols-2">
                 <section>
                     <h3 class="font-semibold text-ink">{{ __('Starter YAML') }}</h3>
-                    <pre class="mt-2 max-h-64 overflow-auto rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['document'] }}</code></pre>
+                    <pre class="mt-2 max-h-64 overflow-auto rounded-card border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['document'] }}</code></pre>
                 </section>
                 <section>
                     <h3 class="font-semibold text-ink">{{ __('Starter bindings JSON') }}</h3>
-                    <pre class="mt-2 max-h-64 overflow-auto rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['bindings'] }}</code></pre>
+                    <pre class="mt-2 max-h-64 overflow-auto rounded-card border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['bindings'] }}</code></pre>
                 </section>
             </div>
             <div class="mt-4 grid gap-4 text-sm lg:grid-cols-3">

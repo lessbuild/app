@@ -77,7 +77,7 @@
             @if(collect($plan['changes'])->contains(fn ($change) => $change['kind'] === 'environment' && $change['action'] === 'remove'))
                 <x-ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-ui.alert>
             @endif
-            <div class="mt-4 divide-y divide-line rounded-lg border border-line" aria-label="{{ __('Reviewed configuration changes') }}">
+            <div class="mt-4 divide-y divide-line rounded-card border border-line" aria-label="{{ __('Reviewed configuration changes') }}">
                 @foreach($plan['changes'] as $change)
                     <article data-configuration-change class="p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
@@ -120,7 +120,7 @@
             @if($environmentOverview->isNotEmpty())
                 <div class="mt-4 space-y-3" aria-label="{{ __('Recorded environment dependencies') }}">
                     @foreach($environmentOverview as $environment)
-                        <article data-configuration-environment class="rounded-xl border border-line bg-surface-muted p-4">
+                        <article data-configuration-environment class="rounded-card border border-line bg-surface-muted p-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
                                     <h3 class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ $environment->name }} @if($environment->isProtected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif</h3>
@@ -157,7 +157,7 @@
                 <p class="mt-3 text-sm font-bold text-ink">{{ __('Provider readiness: :status', ['status' => str($observation->providerReadiness)->replace('_', ' ')->headline()]) }}</p>
                 @if($observation->providerState)<p class="mt-1 text-xs text-muted">{{ __('Provider lifecycle: :state', ['state' => $observation->providerState]) }}</p>@endif
                 @if($observation->status === \App\Data\ApplicationEnvironmentObservation::STATUS_OBSERVED)
-                    <div class="mt-4 divide-y divide-line rounded-lg border border-line" aria-label="{{ __('Observed provider server fields') }}">
+                    <div class="mt-4 divide-y divide-line rounded-card border border-line" aria-label="{{ __('Observed provider server fields') }}">
                         @foreach($observation->fields as $field)
                             <article data-configuration-observation-field class="p-4">
                                 <div class="flex flex-wrap items-start justify-between gap-3">
@@ -178,9 +178,9 @@
                 <p class="mt-2 text-sm text-muted">{{ __('This compares :app’s recorded local metadata only. It does not query provider state or prove remote drift. Desired configuration changes still require a review and apply.', ['app' => config('app.name')]) }}</p>
                 <p class="mt-3 text-sm font-bold text-ink">{{ $comparison->from->name }} <span class="font-normal text-muted">→</span> {{ $comparison->to->name }}</p>
                 @if($comparison->isIdentical())
-                    <p class="mt-4 rounded-lg border border-line bg-surface-muted p-3 text-sm text-muted">{{ __('All displayed recorded fields match. Commands, variable keys and values, and encrypted resource configuration are not compared.') }}</p>
+                    <p class="mt-4 rounded-card border border-line bg-surface-muted p-3 text-sm text-muted">{{ __('All displayed recorded fields match. Commands, variable keys and values, and encrypted resource configuration are not compared.') }}</p>
                 @else
-                    <div class="mt-4 divide-y divide-line rounded-lg border border-line" aria-label="{{ __('Safe recorded environment differences') }}">
+                    <div class="mt-4 divide-y divide-line rounded-card border border-line" aria-label="{{ __('Safe recorded environment differences') }}">
                         @foreach($comparison->differences as $difference)
                             <article data-configuration-comparison-field class="p-4">
                                 <h3 class="font-semibold text-ink">{{ $difference['field'] }}</h3>
@@ -198,11 +198,11 @@
             <div class="mt-4 grid gap-5 lg:grid-cols-2">
                 <section>
                     <h2 class="font-bold text-ink">{{ __('Starter YAML') }}</h2>
-                    <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['document'] }}</code></pre>
+                <pre class="mt-2 overflow-x-auto rounded-card border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['document'] }}</code></pre>
                 </section>
                 <section>
                     <h2 class="font-bold text-ink">{{ __('Starter bindings JSON') }}</h2>
-                    <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['bindings'] }}</code></pre>
+                <pre class="mt-2 overflow-x-auto rounded-card border border-line bg-surface-muted p-3 text-xs text-ink" tabindex="0"><code>{{ $authoringGuide['bindings'] }}</code></pre>
                 </section>
             </div>
             <ul class="mt-4 space-y-2 text-sm text-muted">
