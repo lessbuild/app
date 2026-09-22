@@ -46,6 +46,9 @@ class ProviderConnectionHistoryTest extends TestCase
         $page
             ->assertSuccessful()
             ->assertSee('Recent connection checks')
+            ->assertSee('Provider sections')
+            ->assertSee('provider-connection-evidence', false)
+            ->assertSee('provider-resources', false)
             ->assertSee('Manual')
             ->assertSee('Automatic')
             ->assertSee('HTTP 200')

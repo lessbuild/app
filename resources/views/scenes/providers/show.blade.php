@@ -86,6 +86,12 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Provider sections')">
+        <a href="#provider-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#provider-connection-evidence" class="ui-local-nav__link">{{ __('Checks') }}</a>
+        <a href="#provider-resources" class="ui-local-nav__link">{{ __('Resources') }}</a>
+    </x-ui.local-nav>
+
     @if (session('provider_connection'))
         @php($connection = session('provider_connection'))
         <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6 border-l-4">
@@ -93,7 +99,12 @@
         </x-ui.alert>
     @endif
 
-    <section class="ui-panel mt-6 p-5 sm:p-6" aria-labelledby="provider-connection-overview-heading">
+    <section
+        id="provider-overview"
+        data-provider-section="overview"
+        class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6"
+        aria-labelledby="provider-connection-overview-heading"
+    >
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="ui-eyebrow">{{ __('Credential health') }}</p>
@@ -178,7 +189,12 @@
         </dl>
     </x-ui.insights>
 
-    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="connection-history-heading">
+    <section
+        id="provider-connection-evidence"
+        data-provider-section="connection-checks"
+        class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"
+        aria-labelledby="connection-history-heading"
+    >
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="ui-eyebrow">{{ __('Connection timeline') }}</p>
@@ -243,7 +259,12 @@
      ! List attached servers or repos for this token
      ! ------------------------------------------------------------
      !-->
-    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="provider-resources-heading">
+    <section
+        id="provider-resources"
+        data-provider-section="resources"
+        class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"
+        aria-labelledby="provider-resources-heading"
+    >
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="ui-eyebrow">{{ __('Workspace resources') }}</p>

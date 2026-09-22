@@ -36,6 +36,11 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Provider sections')">
+        <a href="#providers-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#provider-inventory" class="ui-local-nav__link">{{ __('Inventory') }}</a>
+    </x-ui.local-nav>
+
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
 
     <x-ui.filter-panel
@@ -104,7 +109,7 @@
 
     <x-ui.insights
         id="providers-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :summary="trans_choice(':count matching provider|:count matching providers', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -122,6 +127,7 @@
      ! List Providers
      ! ------------------------------------------------------------
      !-->
+    <div id="provider-inventory" data-provider-section="inventory" class="scroll-mt-24">
     @if(!$providers->isEmpty())
         <div class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Provider inventory') }}">
             @foreach($providers as $provider)
@@ -221,6 +227,7 @@
             </x-lists.empty>
         </div>
     @endif
+    </div>
 
     <x-scenes.providers.create-dialog :open="$providerCreateOpen" />
 </x-layouts.app>

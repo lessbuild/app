@@ -43,6 +43,8 @@ class ProviderInventoryInsightsTest extends TestCase
             ->assertSee('Healthy connections')
             ->assertSee('Failed connections')
             ->assertSee('Unchecked connections')
+            ->assertSee('Provider sections')
+            ->assertSee('provider-inventory', false)
             ->assertDontSee('Foreign failed provider')
             ->assertDontSee('provider-token-secret');
     }

@@ -965,6 +965,9 @@ test('provider detail actions and attached resources stay scannable on mobile', 
     await expect(page.getByRole('heading', { name: 'GitHub', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Test connection', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete Provider', exact: true })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Provider sections', exact: true })).toBeVisible();
+    await expect(page.locator('#provider-overview')).toBeVisible();
+    await expect(page.locator('#provider-connection-evidence')).toBeVisible();
 
     const resources = page.locator('section[aria-labelledby="provider-resources-heading"]');
     await expect(resources).toBeVisible();
@@ -1204,6 +1207,10 @@ test('mobile provider filters lock background scrolling without a document reloa
     await page.emulateMedia({ colorScheme: 'light' });
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/providers', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('navigation', { name: 'Provider sections', exact: true })).toBeVisible();
+    await expect(page.locator('#providers-insights')).toBeVisible();
+    await expect(page.locator('#provider-inventory')).toBeVisible();
 
     const documentRequests = [];
     page.on('request', (request) => {
