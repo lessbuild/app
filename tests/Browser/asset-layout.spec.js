@@ -2377,3 +2377,17 @@ test('notification saved-filter composer uses an accessible URL-backed dialog', 
     await page.locator('#notification-save-filter-dialog [data-modal-close]').click();
     await expect(savedFilterDialog).toBeHidden();
 });
+
+test('notification inbox keeps actions and alerts scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/notifications', { waitUntil: 'networkidle' });
+
+    await expect(page.locator('#notifications-insights .ui-stat')).toHaveCount(6);
+    await expect(page.locator('#notification-list')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('[data-notification-card]')).toHaveCount(2);
+    await expect(page.locator('#notification-bulk-form')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#notification-filters .ui-input')).toHaveCount(6);
+    await expect(page.locator('#notification-saved-filters')).toBeVisible();
+});

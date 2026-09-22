@@ -59,22 +59,21 @@
     </x-ui.insights>
 
     <div
-        id="notification-list"
-        class="ui-inventory-list scroll-mt-24 space-y-3"
+        class="space-y-4"
         x-data="{
             selected: [],
             pageIds: {{ Illuminate\Support\Js::from($notifications->pluck('id')->values()) }},
         }"
     >
         @if ($notifications->isNotEmpty())
-            <form id="notification-bulk-form" method="POST" action="{{ route('notifications.bulk') }}" class="sticky top-3 z-10 mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-primary bg-primary p-3 shadow-xs">
+            <form id="notification-bulk-form" method="POST" action="{{ route('notifications.bulk') }}" class="ui-panel sticky top-3 z-10 flex flex-wrap items-center gap-2 border-l-4 p-3" style="border-left-color: var(--ui-primary)">
                 @csrf
                 @method('PATCH')
                 <x-ui.button type="button" variant="secondary" x-on:click="selected = selected.length === pageIds.length ? [] : [...pageIds]">
                     <span x-show="selected.length !== pageIds.length">{{ __('Select page') }}</span>
                     <span x-show="selected.length === pageIds.length" style="display: none">{{ __('Clear selection') }}</span>
                 </x-ui.button>
-                <span class="mr-auto text-xs font-semibold text-secondary" aria-live="polite"><span x-text="selected.length">0</span> {{ __('selected') }}</span>
+                <span class="mr-auto text-xs font-semibold text-muted" aria-live="polite"><span x-text="selected.length">0</span> {{ __('selected') }}</span>
                 <x-ui.button type="submit" name="action" value="read" variant="secondary" x-bind:disabled="selected.length === 0">{{ __('Mark read') }}</x-ui.button>
                 <x-ui.button type="submit" name="action" value="unread" variant="secondary" x-bind:disabled="selected.length === 0">{{ __('Mark unread') }}</x-ui.button>
                 <x-ui.button type="submit" name="action" value="delete" variant="danger" x-bind:disabled="selected.length === 0" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete the selected notifications? This cannot be undone.')) }})">{{ __('Delete selected') }}</x-ui.button>
@@ -84,6 +83,7 @@
             <x-forms.errors name="action" />
         @endif
 
+        <div id="notification-list" class="ui-panel ui-inventory-list scroll-mt-24 overflow-hidden">
         @forelse ($notifications as $notification)
             @php
                 $destinationState = $notificationDestinations[(string) $notification->getKey()] ?? null;
@@ -97,25 +97,25 @@
                 };
             @endphp
             <article @class([
-                'ui-card p-5',
+                'group border-b border-line p-4 transition-colors last:border-b-0 hover:bg-surface-muted sm:p-5',
                 'border-l-4 border-l-red-400' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
                 'border-l-4 border-l-green-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
                 'border-l-4 border-l-blue-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
-            ])>
+            ]) data-notification-card>
                 <div class="flex items-start gap-3">
-                    <input type="checkbox" name="notifications[]" value="{{ $notification->id }}" form="notification-bulk-form" x-model="selected" class="mt-1 h-4 w-4 shrink-0 rounded border-primary text-blue-600 focus:ring-blue-500" aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}">
+                    <input type="checkbox" name="notifications[]" value="{{ $notification->id }}" form="notification-bulk-form" x-model="selected" class="ui-check mt-1 shrink-0" aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}">
                     @if ($notification->read_at !== null)
                         <details id="notification-{{ $notification->id }}" class="group min-w-0 flex-1">
-                            <summary class="flex cursor-pointer list-none flex-wrap items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
-                                <span class="min-w-0 flex-1 font-semibold text-primary">{{ $notification->data['title'] ?? __('Notification') }}</span>
+                            <summary class="flex cursor-pointer list-none flex-wrap items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                                <span class="min-w-0 flex-1 font-semibold text-ink">{{ $notification->data['title'] ?? __('Notification') }}</span>
                                 <x-ui.badge>{{ __('Read') }}</x-ui.badge>
-                                <span class="text-xs text-secondary">{{ $notification->created_at->diffForHumans() }}</span>
-                                <span class="text-secondary transition-transform group-open:rotate-180" aria-hidden="true">⌄</span>
+                                <span class="text-xs text-muted">{{ $notification->created_at->diffForHumans() }}</span>
+                                <span class="text-muted transition-transform group-open:rotate-180" aria-hidden="true">⌄</span>
                             </summary>
                             <div class="mt-3">
-                                <p class="whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
+                                <p class="whitespace-pre-wrap break-words text-sm text-muted">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
                                 @if ($destinationUnavailable)
-                                    <p class="mt-3 text-sm text-secondary">{{ __('The related resource is no longer available in this workspace.') }}</p>
+                                    <p class="mt-3 text-sm text-muted">{{ __('The related resource is no longer available in this workspace.') }}</p>
                                 @endif
                                 <div class="mt-4 flex flex-wrap gap-2">
                                     @if ($destinationState !== null && $destinationState['available'])
@@ -138,13 +138,13 @@
                     @else
                         <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="font-semibold text-primary">{{ $notification->data['title'] ?? __('Notification') }}</h2>
+                                <h2 class="font-semibold text-ink">{{ $notification->data['title'] ?? __('Notification') }}</h2>
                                 <x-ui.badge :tone="$notificationTone">{{ __('Unread') }}</x-ui.badge>
                             </div>
-                            <p class="mt-1 whitespace-pre-wrap break-words text-sm text-secondary">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
-                            <p class="mt-2 text-xs text-secondary">{{ $notification->created_at->diffForHumans() }}</p>
+                            <p class="mt-1 whitespace-pre-wrap break-words text-sm text-muted">{{ $notification->data['message'] ?? __('Review this notification.') }}</p>
+                            <p class="mt-2 text-xs text-muted">{{ $notification->created_at->diffForHumans() }}</p>
                             @if ($destinationUnavailable)
-                                <p class="mt-3 text-sm text-secondary">{{ __('The related resource is no longer available in this workspace.') }}</p>
+                                <p class="mt-3 text-sm text-muted">{{ __('The related resource is no longer available in this workspace.') }}</p>
                             @endif
                             <div class="mt-4 flex flex-wrap gap-2">
                                 <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
@@ -171,48 +171,49 @@
                 icon="bell"
             />
         @endforelse
+        </div>
     </div>
 
     <div class="mt-6">{{ $notifications->links() }}</div>
 
-    <section class="ui-card mb-6 mt-8 p-4" aria-labelledby="notification-tools">
+    <section class="ui-panel mb-6 mt-8 p-4" aria-labelledby="notification-tools">
         <h2 id="notification-tools" class="sr-only">{{ __('Notification tools') }}</h2>
         <details id="notification-filters" @if ($filtersAreActive) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <span>{{ __('Filter notifications') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($filtersAreActive)
                         <x-ui.badge tone="accent">{{ trans_choice(':count active|:count active', $activeFilterCount, ['count' => $activeFilterCount]) }}</x-ui.badge>
                     @endif
-                    <span class="text-secondary" aria-hidden="true">⌄</span>
+                    <span class="text-muted" aria-hidden="true">⌄</span>
                 </span>
             </summary>
             <form method="GET" action="{{ route('notifications.index') }}" class="mt-4">
                 <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</span>
-                        <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Notification title or message') }}" class="input secondary w-full rounded-md">
-                    </label>
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</span>
-                        <select id="category" name="category" class="input secondary w-full rounded-md"><option value="">{{ __('All categories') }}</option>@foreach ($categories as $category)<option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>@endforeach</select>
-                    </label>
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</span>
-                        <select id="status" name="status" class="input secondary w-full rounded-md"><option value="">{{ __('All statuses') }}</option><option value="failed" @selected($filters['status'] === 'failed')>{{ __('Failed') }}</option><option value="healthy" @selected($filters['status'] === 'healthy')>{{ __('Recovered') }}</option><option value="info" @selected($filters['status'] === 'info')>{{ __('Information') }}</option></select>
-                    </label>
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('State') }}</span>
-                        <select id="state" name="state" class="input secondary w-full rounded-md"><option value="">{{ __('Read and unread') }}</option><option value="unread" @selected($filters['state'] === 'unread')>{{ __('Unread') }}</option><option value="read" @selected($filters['state'] === 'read')>{{ __('Read') }}</option></select>
-                    </label>
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Created from') }}</span>
-                        <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary w-full rounded-md">
-                    </label>
-                    <label class="block">
-                        <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Created through') }}</span>
-                        <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary w-full rounded-md">
-                    </label>
+                    <div>
+                        <label for="search" class="ui-label">{{ __('Search') }}</label>
+                        <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Notification title or message') }}" class="ui-input">
+                    </div>
+                    <div>
+                        <label for="category" class="ui-label">{{ __('Category') }}</label>
+                        <select id="category" name="category" class="ui-input"><option value="">{{ __('All categories') }}</option>@foreach ($categories as $category)<option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>@endforeach</select>
+                    </div>
+                    <div>
+                        <label for="status" class="ui-label">{{ __('Status') }}</label>
+                        <select id="status" name="status" class="ui-input"><option value="">{{ __('All statuses') }}</option><option value="failed" @selected($filters['status'] === 'failed')>{{ __('Failed') }}</option><option value="healthy" @selected($filters['status'] === 'healthy')>{{ __('Recovered') }}</option><option value="info" @selected($filters['status'] === 'info')>{{ __('Information') }}</option></select>
+                    </div>
+                    <div>
+                        <label for="state" class="ui-label">{{ __('State') }}</label>
+                        <select id="state" name="state" class="ui-input"><option value="">{{ __('Read and unread') }}</option><option value="unread" @selected($filters['state'] === 'unread')>{{ __('Unread') }}</option><option value="read" @selected($filters['state'] === 'read')>{{ __('Read') }}</option></select>
+                    </div>
+                    <div>
+                        <label for="date_from" class="ui-label">{{ __('Created from') }}</label>
+                        <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
+                    </div>
+                    <div>
+                        <label for="date_to" class="ui-label">{{ __('Created through') }}</label>
+                        <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
+                    </div>
                 </div>
                 <div class="mt-4 flex flex-wrap gap-3">
                     <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
@@ -225,19 +226,19 @@
         </details>
     </section>
 
-    <section class="ui-card mb-6 p-4" aria-labelledby="saved-notification-filters">
+    <section class="ui-panel mb-6 p-4" aria-labelledby="saved-notification-filters">
         <details id="notification-saved-filters" @if ($errors->has('name')) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <span>{{ __('Saved filters') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($savedFilters)
                         <x-ui.badge>{{ count($savedFilters) }}</x-ui.badge>
                     @endif
-                    <span class="text-secondary" aria-hidden="true">⌄</span>
+                    <span class="text-muted" aria-hidden="true">⌄</span>
                 </span>
             </summary>
             <div class="mt-3 flex flex-wrap items-start justify-between gap-4">
-                <p class="text-sm text-secondary">{{ __('Reuse a notification view without rebuilding every filter.') }}</p>
+                <p class="text-sm text-muted">{{ __('Reuse a notification view without rebuilding every filter.') }}</p>
                 <x-ui.button
                     href="{{ $savedFilterDialogUrl }}"
                     data-modal-trigger="notification-save-filter-dialog"
@@ -249,12 +250,12 @@
             @if ($savedFilters)
                 <div class="mt-4 flex flex-wrap gap-2">
                     @foreach ($savedFilters as $saved)
-                        <div class="flex items-center rounded-lg border border-primary bg-secondary">
-                            <a href="{{ route('notifications.index', $saved['filters']) }}" class="px-3 py-2 text-sm font-bold text-primary">{{ $saved['name'] }}</a>
+                        <div class="ui-chip overflow-hidden p-0">
+                            <a href="{{ route('notifications.index', $saved['filters']) }}" class="px-3 py-2 text-sm font-bold text-ink hover:text-primary">{{ $saved['name'] }}</a>
                             <form method="POST" action="{{ route('notifications.saved-filters.destroy', $saved['id']) }}">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="rounded-r-lg px-3 py-2 text-secondary hover:bg-primary" aria-label="{{ __('Remove saved filter :name', ['name' => $saved['name']]) }}">×</button>
+                                <button type="submit" class="px-3 py-2 text-muted hover:bg-surface hover:text-ink" aria-label="{{ __('Remove saved filter :name', ['name' => $saved['name']]) }}">×</button>
                             </form>
                         </div>
                     @endforeach

@@ -8,6 +8,8 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
+use App\Notifications\FailureNotification;
+use App\Notifications\NotificationInbox;
 use App\Services\ApplicationConfigurationReconciler;
 use App\Services\ApplicationConfigurationReviews;
 use App\Services\IncidentNotifier;
@@ -118,6 +120,21 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Send private feedback')->getContent());
         File::put($directory.'/feedback-dialog.html', $this->renderPage(route('feedback.index', ['dialog' => 'compose-feedback']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        $owner->notify(new FailureNotification(
+            'website',
+            $dashboardWebsite->id,
+            'Fixture deployment failed',
+            'The fixture deployment needs attention.',
+            NotificationInbox::STATUS_FAILED,
+        ));
+        $owner->notify(new FailureNotification(
+            'website',
+            $dashboardWebsite->id,
+            'Fixture deployment recovered',
+            'The fixture deployment is healthy again.',
+            NotificationInbox::STATUS_HEALTHY,
+        ));
+        $owner->notifications()->where('data->title', 'Fixture deployment recovered')->firstOrFail()->markAsRead();
         File::put($directory.'/notifications.html', $this->renderPage(route('notifications.index'))->assertOk()
             ->assertSee('Save current')->getContent());
         File::put($directory.'/notifications-dialog.html', $this->renderPage(route('notifications.index', ['dialog' => 'save-filter']))
