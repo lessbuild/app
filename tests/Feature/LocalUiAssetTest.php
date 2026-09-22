@@ -678,8 +678,9 @@ class LocalUiAssetTest extends TestCase
         $alpineEntry = File::get(resource_path('js/alpine.js'));
         $drawerScript = File::get(resource_path('js/signal-drawer.js'));
         $this->assertStringContainsString(':livewire="false"', $homepage);
-        $this->assertStringContainsString("import { initSignalPublicDrawers } from './signal-drawer'", $alpineEntry);
-        $this->assertStringContainsString('initSignalPublicDrawers()', $alpineEntry);
+        $this->assertStringContainsString("@vite('resources/js/signal-drawer.js')", $coreLayout);
+        $this->assertStringNotContainsString('signal-drawer', $alpineEntry);
+        $this->assertStringContainsString("document.addEventListener('DOMContentLoaded', initSignalPublicDrawers", $drawerScript);
         $this->assertStringContainsString("event.key === 'Escape'", $drawerScript);
         $this->assertStringContainsString("event.key !== 'Tab'", $drawerScript);
         $this->assertStringContainsString('@if ($livewire)', $coreLayout);

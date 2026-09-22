@@ -31,6 +31,16 @@ test('served Livewire runtime and mobile public navigation work', async ({ page 
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await page.keyboard.press('Escape');
     await expect(navigation).toBeHidden();
+
+    await page.goto(new URL('/docs', origin).href, { waitUntil: 'networkidle' });
+    const drawerEntry = page.locator('script[src*="signal-drawer"]');
+    await expect(drawerEntry).toHaveCount(1);
+    const drawerScriptUrl = new URL(await drawerEntry.getAttribute('src'), origin);
+    expect((await page.request.get(drawerScriptUrl.href)).status()).toBe(200);
+    await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
+    await expect(page.locator('#navbarCollapse')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#navbarCollapse')).toBeHidden();
     expect(errors).toEqual([]);
 });
 

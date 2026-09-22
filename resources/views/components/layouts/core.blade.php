@@ -110,6 +110,7 @@
         @vite('resources/css/app.css')
         @vite('resources/js/signal-theme-init.js')
         @vite('resources/js/signal-theme.js')
+        @vite('resources/js/signal-drawer.js')
         @if (! $livewire)
             @vite('resources/js/alpine.js')
         @endif

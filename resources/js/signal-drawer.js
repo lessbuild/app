@@ -95,3 +95,9 @@ export function initSignalPublicDrawers() {
         });
     });
 }
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSignalPublicDrawers, { once: true });
+} else {
+    initSignalPublicDrawers();
+}
