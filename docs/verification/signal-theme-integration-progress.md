@@ -2225,6 +2225,51 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next remaining high-impact UI surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 62 — server detail controls — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as '83cf1ea'.
+
+Responsibility problem addressed:
+
+- The current server detail console still used compatibility palette names for
+  active log tabs and terminal prompts, its destructive dialog opener used the
+  legacy danger-button class, and the display-name dialog used the old input
+  and panel utilities.
+
+Signal implementation:
+
+- Migrated server log tabs to `ui-link`/emphasis-muted states and terminal
+  prompts to the Signal primary token.
+- Replaced the delete trigger with `ui-btn ui-btn-danger`.
+- Migrated the display-name dialog to `ui-label`, `ui-input`, `ui-panel`,
+  `text-ink` and `text-muted`.
+- Added source guards for the live server detail and edit-dialog views.
+
+Preserved contracts:
+
+- Server detail routes, log query values, download links, Livewire actions,
+  dialog identifiers, display-name validation and ownership behavior are
+  unchanged.
+- No provisioning, diagnostics, retry, deletion, persistence, queue or remote
+  integration behavior changed. The unused registered `ServerSetup` view was
+  intentionally left outside this slice.
+
+Evidence:
+
+- Server UI, display-name, diagnostics, log download, deletion and retry
+  coverage — 68 tests passed, 994 assertions.
+- Focused server fixture browser coverage — 3 tests passed in 39.6 seconds.
+- 'npm run build' — passed with assets/app-RGIS-97y.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '83cf1ea' is on 'origin/main'.
+
+Next task: deploy the server-detail control modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Slice 61 — public legal pages — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as '0bfe0d2'.
