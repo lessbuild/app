@@ -519,3 +519,66 @@ development evidence, not production or external-provider acceptance.
 Next task: inventory the next high-value UI family after providers—websites,
 repositories and their deployment/timeline surfaces—before choosing the next
 cohesive modernization slice.
+
+## Slice 10 — website inventory surfaces
+
+Status: implemented, verified locally, committed and pushed as `021d3d9`.
+
+Responsibility problem addressed:
+
+- Website inventory filters and cards still mixed legacy inputs, labels,
+  checkbox wrappers, dividers and text roles with the Signal insights shell.
+- The dense mobile inventory did not give its two boolean filters the same
+  choice-card treatment as provider selection.
+
+Signal implementation:
+
+- Standardized search/select controls and labels on `ui-input` and `ui-label`.
+- Rendered attention/provisioning filters as accessible native checkboxes inside
+  Signal choice cards, preserving their GET names and checked state.
+- Moved the inventory to the Signal panel/divider/link/text roles and kept the
+  existing status badges, server links and provisioning/health copy.
+- Added a mobile fixture journey covering the filter controls and website card
+  hierarchy, and extended the bottom-sheet filter contract to websites.
+
+Preserved contracts:
+
+- Filter keys, omitted/null handling, selected/checked rendering, organization
+  scoping, pagination, export links, modal creation triggers and inventory
+  routes.
+- Existing attribute ordering needed by server-rendered compatibility tests.
+
+Evidence:
+
+- `InfrastructureListFilterTest` — 8 tests passed, 68 assertions.
+- `WebsiteInventoryExportTest` — 3 tests passed, 44 assertions.
+- `CreationDialogTest` — 20 tests passed, 134 assertions.
+- Website filter bottom-sheet plus inventory browser journeys — 2 passed in the
+  isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `021d3d9` and its caches were rebuilt before restarting
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: modernize the website detail page’s operations and health sections,
+preserving Livewire setup/provisioning logs, health history filters and runtime
+log behavior.
