@@ -1033,6 +1033,7 @@ class LocalUiAssetTest extends TestCase
             resource_path('views/components/ui/filter-panel.blade.php'),
             resource_path('views/components/dialogs/delete.blade.php'),
             resource_path('views/components/ui/insights.blade.php'),
+            resource_path('views/components/ui/empty-state.blade.php'),
             resource_path('views/components/lists/empty.blade.php'),
         ] as $viewPath) {
             $source = File::get($viewPath);
@@ -1040,13 +1041,19 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('button--', $source, $viewPath);
             $this->assertStringNotContainsString('text-primary', $source, $viewPath);
             $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
-            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertDoesNotMatchRegularExpression('/(?:^|[\s\'\"])bg-primary(?:[\s\'\"]|$)/', $source, $viewPath);
             $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
             $this->assertStringNotContainsString('border-primary', $source, $viewPath);
         }
 
         $button = File::get(resource_path('views/components/ui/button.blade.php'));
         $this->assertStringContainsString("'ui-btn ui-btn-'.\$signalVariant", $button);
+
+        $emptyState = File::get(resource_path('views/components/ui/empty-state.blade.php'));
+        $this->assertStringContainsString('ui-card', $emptyState);
+        $this->assertStringContainsString('bg-primary-soft', $emptyState);
+        $this->assertStringContainsString('text-[var(--ui-primary)]', $emptyState);
+        $this->assertStringContainsString('rounded-2xl', $emptyState);
 
         $uiStyles = File::get(resource_path('css/components/ui.css'));
         $this->assertStringContainsString('.ui-page-header__actions > .ui-btn', $uiStyles);
