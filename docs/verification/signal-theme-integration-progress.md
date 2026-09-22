@@ -2209,6 +2209,56 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect gallery and feedback surfaces for the next cohesive Signal
 modernization boundary.
 
+## Slice 35 — gallery inventory and safety surface
+
+Status: implemented and verified locally; code committed and pushed as
+'4783a98'.
+
+Responsibility problem addressed:
+
+- The gallery landing page already delegated publishing, inspection, favorite,
+  report and filtering behavior to existing operations and dialogs, but its
+  safety guidance, filters and recipe cards still used older utility language
+  and offered no compact way to move between safety, insights and results on a
+  phone.
+
+Signal implementation:
+
+- Added gallery local navigation for safety guidance, insights and recipe
+  inventory with stable anchors.
+- Kept the root-execution warning prominent while giving it a quiet colored
+  edge instead of a filled alert treatment.
+- Updated gallery search/category/collection/sort controls and recipe result
+  metadata to the shared Signal labels, inputs, ink/muted hierarchy and
+  interactive card treatment.
+
+Preserved contracts:
+
+- Published-recipe scoping, search wildcard handling, sorting, pagination,
+  metrics, favorites, report links, publish dialog URLs and lazy script
+  inspection are unchanged.
+- Gallery cards still omit script contents; scripts remain available only
+  through the existing authorized inspection/detail paths.
+- No gallery query, action, policy, controller, route, persisted value or
+  notification behavior was modified.
+
+Evidence:
+
+- Gallery, favorite, rating, report, report-history and report-notification
+  coverage — 63 tests passed, 670 assertions.
+- Focused gallery browser journey — 1 Playwright test passed, including local
+  navigation, safety/inventory anchors, publish modal and script inspection.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '4783a98' is on 'origin/main'.
+
+Next task: deploy the gallery inventory modernization, then modernize the
+gallery recipe detail and feedback-history surfaces as separate cohesive
+steps.
+
 ## Provider compatibility correction — 2026-09-22
 
 Status: implemented and verified; code committed and pushed as '536e5a3'.
