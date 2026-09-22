@@ -2134,6 +2134,62 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 79 — gallery moderation badges — 2026-09-22
+
+Responsibility problem:
+
+- Gallery report reasons supplied fixed red, orange, yellow, purple and blue
+  utility classes directly from the moderation view, overriding the shared
+  badge component and creating a second status vocabulary.
+
+Boundary and implementation:
+
+- Kept report filtering, ownership, moderation actions, notifications,
+  rollback and export behavior in their existing query/action/controller
+  boundaries.
+- Mapped report reasons to the existing `x-ui.badge` tone contract and removed
+  the view-level legacy palette overrides.
+- Updated the affected presentation assertion and added a local UI guard for
+  the shared badge contract.
+
+Preserved contracts and safety:
+
+- Reason values, report ordering, unresolved/resolved state, bulk actions,
+  anonymous feedback, notification timing, route parameters and CSV output are
+  unchanged.
+- No authorization, persistence, queue, API or moderation workflow behavior
+  changed.
+
+Evidence:
+
+- Gallery feedback, report, history, notification and local UI coverage — 111
+  tests passed, 1,834 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `c7df03a` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `c7df03a`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returned
+`{"status":"ready"}` after one transient restart 502 and the normal
+readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Slice 78 — deployment timeline status markers — 2026-09-22
 
 Responsibility problem:
