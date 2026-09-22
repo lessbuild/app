@@ -1,5 +1,60 @@
 # Signal theme integration progress
 
+## Slice 111 — Signal choice, command and detail primitives — 2026-09-22
+
+Responsibility problem:
+
+- Remaining checkbox choices, workspace-search results, billing controls,
+  environment metadata, load-balancer node details and two-factor code blocks
+  still bypassed the corresponding Signal component or semantic radius token.
+
+Boundary and implementation:
+
+- Replaced the two bespoke checkbox wrappers with Signal's exact `ui-choice`
+  component.
+- Used Signal's `ui-command-item` and `rounded-card` composition for live
+  workspace-search results.
+- Applied `rounded-control` to billing interval and environment metadata
+  controls, and `rounded-card` to load-balancer and security detail surfaces.
+- Added source-level assertions for each migrated surface.
+
+Preserved contracts and safety:
+
+- Search roles, keyboard navigation, query behavior, dialog rendering,
+  billing links, environment details, node actions and two-factor secrets are
+  unchanged.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused UI, observability, project-environment, global-search,
+  load-balancer and two-factor tests — 131 tests passed, 3,402 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Live 390px browser smoke against `https://deployer.buildpusher.com`:
+  billing, load balancers, observability and projects returned HTTP 200 with
+  no horizontal overflow; the workspace palette rendered 24 result items with
+  the Signal command-row classes; no page errors were reported.
+- Implementation commit `6f0e453` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `6f0e453`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: compare the shared authenticated/public navbar, sidebar, component
+wrappers and modal primitives line-by-line with the latest Signal source, then
+migrate any remaining divergence as cohesive shell/component slices.
+
 ## Slice 110 — Signal card radius in evidence content — 2026-09-22
 
 Responsibility problem:
