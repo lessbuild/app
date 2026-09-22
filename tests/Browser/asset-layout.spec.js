@@ -130,6 +130,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                     ? 'server-command-output-content'
                 : screen === 'server-commands' && dialog?.startsWith('server-command-output-')
                     ? 'server-command-output-dialog'
+                : screen === 'provider-connection-checks' && !fragment
+                    ? 'provider-connection-checks-page'
                 : screen === 'automation-task-run-output' && fragment === 'scheduled-task-output'
                     ? 'automation-task-run-output'
                 : screen === 'gallery-report-status' && fragment === 'report-status'
@@ -896,6 +898,19 @@ test('provider connection history opens and filters inside a contextual dialog',
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
+});
+
+test('standalone provider connection history keeps the shared Signal evidence surface', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/providers/1/connection-checks', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('heading', { name: 'Connection check history', exact: true })).toBeVisible();
+    await expect(page.getByText('Retained evidence', { exact: true })).toBeVisible();
+    await expect(page.locator('#provider-connection-checks-insights')).toBeVisible();
+    await expect(page.locator('select[name="result"]')).toHaveValue('');
+    expect(new URL(page.url()).pathname).toBe('/providers/1/connection-checks');
 });
 
 test('website health history opens and filters inside a contextual dialog', async ({ page }) => {

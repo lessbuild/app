@@ -290,6 +290,12 @@ class AssetLayoutFixtureTest extends TestCase
             'provider' => $provider,
             'fragment' => 'provider-connection-checks',
         ]))->assertOk()->assertSee('data-modal-fragment-form', false)->getContent());
+        File::put($directory.'/provider-connection-checks-page.html', $this->renderPage(route('providers.connection-checks.index', [
+            'provider' => $provider,
+        ]))->assertOk()
+            ->assertSee('<h1', false)
+            ->assertSee('Connection check history')
+            ->assertSee('Retained evidence')->getContent());
         File::put($directory.'/provider-show-edit-dialog.html', $this->renderPage(route('providers.show', [
             'provider' => $provider,
             'dialog' => 'edit-provider',
