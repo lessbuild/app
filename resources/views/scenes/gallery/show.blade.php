@@ -57,11 +57,18 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Recipe sections')">
+        <a href="#recipe-details-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#gallery-rating" class="ui-local-nav__link">{{ __('Rating') }}</a>
+        <a href="#gallery-feedback" class="ui-local-nav__link">{{ __('Feedback') }}</a>
+        <a href="#gallery-script" class="ui-local-nav__link">{{ __('Script') }}</a>
+    </x-ui.local-nav>
+
     @if (session('status'))
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <x-ui.insights id="recipe-details-insights" class="mt-6" :summary="__('Recipe details')">
+    <x-ui.insights id="recipe-details-insights" class="mt-6 scroll-mt-24" :summary="__('Recipe details')">
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-ui.stat class="ui-card" :label="__('Category')" :value="str($recipe->category)->title()" />
             <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
@@ -90,16 +97,16 @@
         </div>
     @endif
 
-    <x-ui.card class="mt-6 p-5 sm:p-6" aria-labelledby="gallery-rating-heading">
-        <h2 id="gallery-rating-heading" class="text-lg font-bold text-primary">{{ __('Rate this recipe') }}</h2>
+    <section id="gallery-rating" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-rating-heading">
+        <h2 id="gallery-rating-heading" class="text-lg font-bold text-ink">{{ __('Rate this recipe') }}</h2>
         @if ($canRate)
-            <p class="mt-1 text-sm text-secondary">{{ __('Ratings are limited to people who installed the recipe. You can change or remove yours at any time.') }}</p>
+            <p class="mt-1 text-sm text-muted">{{ __('Ratings are limited to people who installed the recipe. You can change or remove yours at any time.') }}</p>
             <div class="mt-4 flex flex-wrap items-end gap-3">
                 <form method="POST" action="{{ route('gallery.rating.store', $recipe) }}" class="flex flex-wrap items-end gap-3">
                     @csrf
                     <div>
-                        <label for="rating" class="block text-xs font-semibold uppercase text-secondary">{{ __('Your rating') }}</label>
-                        <select id="rating" name="rating" class="input secondary mt-2 rounded-lg" required>
+                        <label for="rating" class="ui-label">{{ __('Your rating') }}</label>
+                        <select id="rating" name="rating" class="ui-input" required>
                             <option value="">{{ __('Choose a score') }}</option>
                             @foreach ([5, 4, 3, 2, 1] as $score)
                                 <option value="{{ $score }}" @selected((int) old('rating', $currentRating?->rating) === $score)>
@@ -120,22 +127,22 @@
                 @endif
             </div>
         @elseif ((int) $recipe->user_id === (int) auth()->id())
-            <p class="mt-1 text-sm text-secondary">{{ __('Contributors cannot rate their own recipes.') }}</p>
+            <p class="mt-1 text-sm text-muted">{{ __('Contributors cannot rate their own recipes.') }}</p>
         @else
-            <p class="mt-1 text-sm text-secondary">{{ __('Add this recipe to your account before rating it.') }}</p>
+            <p class="mt-1 text-sm text-muted">{{ __('Add this recipe to your account before rating it.') }}</p>
         @endif
-    </x-ui.card>
+    </section>
 
-    <x-ui.card class="mt-6 p-5 sm:p-6" aria-labelledby="gallery-report-heading">
+    <section id="gallery-feedback" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-report-heading">
         @if ((int) $recipe->user_id === (int) auth()->id())
             @php
                 $reportTotal = $reportCounts->sum();
             @endphp
-            <h2 id="gallery-report-heading" class="text-lg font-bold text-primary">{{ __('Community reports') }}</h2>
-            <p class="mt-1 text-sm text-secondary">
+            <h2 id="gallery-report-heading" class="text-lg font-bold text-ink">{{ __('Community reports') }}</h2>
+            <p class="mt-1 text-sm text-muted">
                 {{ __('Reporter identities are private. Use this anonymous feedback to investigate and improve your published recipe.') }}
             </p>
-            <a href="{{ route('gallery.reports.index') }}" class="mt-2 inline-block text-sm font-medium text-ternary underline">{{ __('Open all community feedback') }}</a>
+            <a href="{{ route('gallery.reports.index') }}" class="ui-link mt-2 inline-block text-sm">{{ __('Open all community feedback') }}</a>
 
             @if ($recentReports->isNotEmpty())
                 @if ($reportTotal > 0)
@@ -153,15 +160,15 @@
                 @endif
                 <div class="mt-4 space-y-3">
                     @foreach ($recentReports as $report)
-                        <article class="ui-card bg-secondary p-4">
+                        <article class="ui-card ui-card--muted p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="text-sm font-semibold text-primary">{{ str($report->reason)->headline() }}</span>
+                                    <span class="text-sm font-semibold text-ink">{{ str($report->reason)->headline() }}</span>
                                     <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
                                 </div>
-                                <span class="text-xs text-secondary">{{ $report->created_at->diffForHumans() }}</span>
+                                <span class="text-xs text-muted">{{ $report->created_at->diffForHumans() }}</span>
                             </div>
-                            <p class="mt-2 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+                            <p class="mt-2 whitespace-pre-line text-sm text-muted">{{ $report->details ?: __('No additional details were provided.') }}</p>
                             @if ($report->resolved_at && $report->resolution_note)
                                 <div class="ui-alert ui-alert--success mt-3 p-3">
                                     <p class="text-xs font-semibold uppercase">{{ __('Resolution note') }}</p>
@@ -203,11 +210,11 @@
                     @endforeach
                 </div>
             @else
-                <p class="mt-4 text-sm text-secondary">{{ __('No community reports have been submitted for this recipe.') }}</p>
+                <p class="mt-4 text-sm text-muted">{{ __('No community reports have been submitted for this recipe.') }}</p>
             @endif
         @else
-            <h2 id="gallery-report-heading" class="text-lg font-bold text-primary">{{ __('Report a recipe issue') }}</h2>
-            <p class="mt-1 text-sm text-secondary">
+            <h2 id="gallery-report-heading" class="text-lg font-bold text-ink">{{ __('Report a recipe issue') }}</h2>
+            <p class="mt-1 text-sm text-muted">
                 {{ __('Tell the contributor about unsafe, broken, outdated, or misleading content. Your identity is not shown to them.') }}
             </p>
             @if ($currentReport)
@@ -255,17 +262,17 @@
                 </form>
             @endif
         @endif
-    </x-ui.card>
+    </section>
 
-    <x-ui.card class="mt-6 p-5 sm:p-6" aria-labelledby="gallery-script-heading">
+    <section id="gallery-script" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-script-heading">
         <x-ui.alert tone="warning" class="p-3">
             {{ __('This community script runs as root. Read every command and verify package sources, downloads, and destructive operations before using it.') }}
         </x-ui.alert>
-        <h2 id="gallery-script-heading" class="mt-5 text-lg font-bold text-primary">{{ __('Bash script') }}</h2>
+        <h2 id="gallery-script-heading" class="mt-5 text-lg font-bold text-ink">{{ __('Bash script') }}</h2>
         <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
-    </x-ui.card>
+    </section>
 
-    <p class="mt-4 text-xs text-secondary">
+    <p class="mt-4 text-xs text-muted">
         {{ __('Published :date. Adding this recipe creates a private snapshot you can review and edit independently.', ['date' => $recipe->published_at->diffForHumans()]) }}
     </p>
 

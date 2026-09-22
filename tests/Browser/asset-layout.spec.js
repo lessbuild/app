@@ -1294,6 +1294,13 @@ test('gallery publishing and script inspection use accessible dialogs', async ({
     await page.goto(`http://buildpusher.test${inspectUrl.pathname}${inspectUrl.search}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true })).toBeVisible();
     await expect(page.getByRole('dialog', { name: 'Inspect Gallery fixture recipe', exact: true })).toContainText('echo gallery-fixture');
+
+    await page.goto('http://buildpusher.test/gallery/1', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('navigation', { name: 'Recipe sections', exact: true })).toBeVisible();
+    await expect(page.locator('#recipe-details-insights')).toBeVisible();
+    await expect(page.locator('#gallery-rating')).toBeVisible();
+    await expect(page.locator('#gallery-feedback')).toBeVisible();
+    await expect(page.locator('#gallery-script')).toBeVisible();
 });
 
 test('mobile forms keep focused fields reachable and lazy dialog content exposes busy state', async ({ page }) => {

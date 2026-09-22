@@ -137,6 +137,10 @@ class RecipeGalleryTest extends TestCase
 
         $this->actingAs($visitor)->get(route('gallery.show', $published))
             ->assertSuccessful()
+            ->assertSee('Recipe sections')
+            ->assertSee('gallery-rating', false)
+            ->assertSee('gallery-feedback', false)
+            ->assertSee('gallery-script', false)
             ->assertSee('echo gallery-script')
             ->assertSee('Add to My Recipes')
             ->assertSee('runs as root');
