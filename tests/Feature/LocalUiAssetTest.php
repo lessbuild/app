@@ -36,6 +36,8 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('Illustrative workspace preview')
             ->assertSee('data-landing-hero', false)
             ->assertSee('ui-landing-preview', false)
+            ->assertSee('bg-surface-muted', false)
+            ->assertSee('text-on-primary', false)
             ->assertSee('Health verification')
             ->assertDontSee('i.imgur.com', false)
             ->assertDontSee('gopayee.test', false);

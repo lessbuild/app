@@ -93,19 +93,19 @@
         ];
     @endphp
 
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">{{ __('Skip to main content') }}</a>
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-on-primary focus:shadow-xl">{{ __('Skip to main content') }}</a>
 
-    <header class="ui-public-header sticky top-0 z-40 border-b border-primary bg-primary" x-data="{ navigationOpen: false }" @keydown.escape.window="navigationOpen = false">
+    <header class="ui-public-header sticky top-0 z-40 border-b border-line bg-surface" x-data="{ navigationOpen: false }" @keydown.escape.window="navigationOpen = false">
         <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-            <a href="/" class="text-lg font-black uppercase tracking-tight text-primary sm:text-xl">{{ config('app.name') }}</a>
+            <a href="/" class="text-lg font-black uppercase tracking-tight text-ink sm:text-xl">{{ config('app.name') }}</a>
             <nav class="ml-auto hidden lg:block" aria-label="{{ __('Homepage navigation') }}">
-                <ul class="flex items-center gap-7 text-sm font-semibold text-secondary">
-                    <li><a href="#features" class="transition hover:text-primary">{{ __('Capabilities') }}</a></li>
-                    <li><a href="#product" class="transition hover:text-primary">{{ __('Product') }}</a></li>
-                    <li><a href="#how-it-works" class="transition hover:text-primary">{{ __('How it works') }}</a></li>
-                    <li><a href="{{ route('pricing') }}" class="transition hover:text-primary">{{ __('Pricing') }}</a></li>
-                    <li><a href="{{ route('platform-status.show') }}" class="transition hover:text-primary">{{ __('Status') }}</a></li>
-                    <li><a href="#questions" class="transition hover:text-primary">{{ __('Questions') }}</a></li>
+                <ul class="flex items-center gap-7 text-sm font-semibold text-muted">
+                    <li><a href="#features" class="transition hover:text-ink">{{ __('Capabilities') }}</a></li>
+                    <li><a href="#product" class="transition hover:text-ink">{{ __('Product') }}</a></li>
+                    <li><a href="#how-it-works" class="transition hover:text-ink">{{ __('How it works') }}</a></li>
+                    <li><a href="{{ route('pricing') }}" class="transition hover:text-ink">{{ __('Pricing') }}</a></li>
+                    <li><a href="{{ route('platform-status.show') }}" class="transition hover:text-ink">{{ __('Status') }}</a></li>
+                    <li><a href="#questions" class="transition hover:text-ink">{{ __('Questions') }}</a></li>
                 </ul>
             </nav>
             <div class="ml-auto flex items-center gap-2 lg:ml-5">
@@ -115,24 +115,24 @@
                 @else
                     <x-ui.button :href="route('access-request.create')" variant="primary" class="hidden sm:inline-flex">{{ __('Request access') }}</x-ui.button>
                 @endif
-                <button id="navbarToggler" type="button" class="button primary lg:hidden" aria-controls="navbarCollapse" :aria-expanded="navigationOpen.toString()" aria-label="{{ __('Toggle navigation') }}" @click="navigationOpen = ! navigationOpen">
+                <button id="navbarToggler" type="button" class="ui-btn ui-btn-primary lg:hidden" aria-controls="navbarCollapse" :aria-expanded="navigationOpen.toString()" aria-label="{{ __('Toggle navigation') }}" @click="navigationOpen = ! navigationOpen">
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
                 </button>
             </div>
         </div>
-        <nav id="navbarCollapse" x-cloak x-show="navigationOpen" class="absolute inset-x-3 top-full rounded-xl border border-primary bg-primary p-3 shadow-xl lg:hidden" aria-label="{{ __('Mobile homepage navigation') }}" @click="if ($event.target.closest('a')) navigationOpen = false">
-            <ul class="grid gap-1 text-sm font-semibold text-secondary">
-                <li><a href="#features" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('Capabilities') }}</a></li>
-                <li><a href="#product" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('Product') }}</a></li>
-                <li><a href="#how-it-works" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('How it works') }}</a></li>
-                <li><a href="{{ route('pricing') }}" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('Pricing') }}</a></li>
-                <li><a href="{{ route('platform-status.show') }}" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('Status') }}</a></li>
-                <li><a href="#questions" class="block rounded-lg px-3 py-3 hover:bg-secondary hover:text-primary">{{ __('Questions') }}</a></li>
+        <nav id="navbarCollapse" x-cloak x-show="navigationOpen" class="absolute inset-x-3 top-full rounded-xl border border-line bg-surface p-3 shadow-xl lg:hidden" aria-label="{{ __('Mobile homepage navigation') }}" @click="if ($event.target.closest('a')) navigationOpen = false">
+            <ul class="grid gap-1 text-sm font-semibold text-muted">
+                <li><a href="#features" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Capabilities') }}</a></li>
+                <li><a href="#product" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Product') }}</a></li>
+                <li><a href="#how-it-works" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('How it works') }}</a></li>
+                <li><a href="{{ route('pricing') }}" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Pricing') }}</a></li>
+                <li><a href="{{ route('platform-status.show') }}" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Status') }}</a></li>
+                <li><a href="#questions" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Questions') }}</a></li>
             </ul>
         </nav>
         <noscript>
-            <nav class="border-t border-primary px-4 py-3 lg:hidden" aria-label="{{ __('Homepage navigation without JavaScript') }}">
-                <ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-secondary">
+            <nav class="border-t border-line px-4 py-3 lg:hidden" aria-label="{{ __('Homepage navigation without JavaScript') }}">
+                <ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-muted">
                     <li><a href="#features" class="block py-2">{{ __('Capabilities') }}</a></li><li><a href="#product" class="block py-2">{{ __('Product') }}</a></li><li><a href="#how-it-works" class="block py-2">{{ __('How it works') }}</a></li><li><a href="#questions" class="block py-2">{{ __('Questions') }}</a></li>
                 </ul>
             </nav>
@@ -140,64 +140,64 @@
     </header>
 
     <main id="main-content" tabindex="-1">
-        <section data-landing-hero class="ui-landing-hero overflow-hidden bg-primary">
+        <section data-landing-hero class="ui-landing-hero overflow-hidden bg-page">
             <div class="ui-landing-hero__layout mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:gap-12 sm:px-6 sm:py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:px-8">
                 <div>
-                    <p class="inline-flex rounded-full border border-ternary bg-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Your infrastructure. One control plane.') }}</p>
-                    <h1 class="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-primary sm:mt-6 sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
-                    <p class="mt-4 max-w-xl text-lg leading-8 text-secondary sm:mt-6">{{ __(':app brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.', ['app' => config('app.name')]) }}</p>
+                    <p class="inline-flex rounded-full border border-primary bg-primary-soft px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">{{ __('Your infrastructure. One control plane.') }}</p>
+                    <h1 class="mt-4 max-w-2xl text-4xl font-black leading-[1.05] tracking-tight text-ink sm:mt-6 sm:text-5xl lg:text-6xl">{{ __('Deploy with clarity. Recover with confidence.') }}</h1>
+                    <p class="mt-4 max-w-xl text-lg leading-8 text-muted sm:mt-6">{{ __(':app brings provisioning, Git deployments, monitoring, commands, and operational history into one focused workspace.', ['app' => config('app.name')]) }}</p>
                     <div class="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row">
                         <x-ui.button :href="$primaryUrl" variant="primary" class="w-full sm:w-auto">{{ $primaryLabel }}</x-ui.button>
                         <x-ui.button href="#product" variant="secondary" class="w-full sm:w-auto">{{ __('Explore the product') }}</x-ui.button>
                     </div>
-                    <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-secondary sm:mt-8">
+                    <div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium text-muted sm:mt-8">
                         @foreach ([__('Encrypted secrets'), __('Tracked releases'), __('Owner-scoped access')] as $promise)
-                            <span class="flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-ternary text-xs text-white">✓</span>{{ $promise }}</span>
+                            <span class="flex items-center gap-2"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-on-primary">✓</span>{{ $promise }}</span>
                         @endforeach
                     </div>
                 </div>
-                <div data-illustrative-preview class="ui-landing-preview overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" aria-label="{{ __('Illustrative workspace preview') }}">
-                    <div class="flex items-center justify-between border-b border-primary px-5 py-4"><div class="flex gap-1.5" aria-hidden="true"><span class="h-2.5 w-2.5 rounded-full bg-ternary"></span><span class="h-2.5 w-2.5 rounded-full bg-secondary"></span><span class="h-2.5 w-2.5 rounded-full bg-tertiary"></span></div><span class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Illustrative workspace') }}</span></div>
-                    <div class="grid gap-4 bg-secondary p-4 sm:grid-cols-[1.35fr_.65fr] sm:p-5">
-                        <div class="rounded-xl border border-primary bg-primary p-5">
-                            <div class="flex items-center justify-between gap-3"><p class="font-bold text-primary">storefront</p><span class="rounded-full bg-ternary px-2.5 py-1 text-[0.6875rem] font-bold uppercase text-white">{{ __('Deploying') }}</span></div>
-                            <p class="mt-1 font-mono text-xs text-secondary">main · a71c8ef</p><div class="mt-5 h-2 overflow-hidden rounded-full bg-secondary"><div class="h-full w-4/5 rounded-full bg-ternary"></div></div>
-                            <div class="mt-5 space-y-3 text-sm">@foreach ([[__('Revision fetched'), __('Complete')], [__('Dependencies installed'), __('Complete')], [__('Health verification'), __('Running')]] as [$event, $state])<div class="flex items-center gap-3"><span class="h-2 w-2 rounded-full bg-ternary"></span><span class="text-primary">{{ $event }}</span><span class="ml-auto text-xs font-semibold text-secondary">{{ $state }}</span></div>@endforeach</div>
+                <div data-illustrative-preview class="ui-landing-preview overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl" aria-label="{{ __('Illustrative workspace preview') }}">
+                    <div class="flex items-center justify-between border-b border-line px-5 py-4"><div class="flex gap-1.5" aria-hidden="true"><span class="h-2.5 w-2.5 rounded-full bg-primary"></span><span class="h-2.5 w-2.5 rounded-full bg-surface-muted"></span><span class="h-2.5 w-2.5 rounded-full bg-emphasis"></span></div><span class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Illustrative workspace') }}</span></div>
+                    <div class="grid gap-4 bg-surface-muted p-4 sm:grid-cols-[1.35fr_.65fr] sm:p-5">
+                        <div class="rounded-xl border border-line bg-surface p-5">
+                            <div class="flex items-center justify-between gap-3"><p class="font-bold text-ink">storefront</p><span class="rounded-full bg-primary px-2.5 py-1 text-[0.6875rem] font-bold uppercase text-on-primary">{{ __('Deploying') }}</span></div>
+                            <p class="mt-1 font-mono text-xs text-muted">main · a71c8ef</p><div class="mt-5 h-2 overflow-hidden rounded-full bg-surface-muted"><div class="h-full w-4/5 rounded-full bg-primary"></div></div>
+                            <div class="mt-5 space-y-3 text-sm">@foreach ([[__('Revision fetched'), __('Complete')], [__('Dependencies installed'), __('Complete')], [__('Health verification'), __('Running')]] as [$event, $state])<div class="flex items-center gap-3"><span class="h-2 w-2 rounded-full bg-primary"></span><span class="text-ink">{{ $event }}</span><span class="ml-auto text-xs font-semibold text-muted">{{ $state }}</span></div>@endforeach</div>
                         </div>
-                        <div class="grid grid-cols-3 gap-3 sm:grid-cols-1">@foreach ([['3', __('Servers')], ['8', __('Websites')], ['0', __('Incidents')]] as [$value, $label])<div class="rounded-xl border border-primary bg-primary p-4"><p class="text-2xl font-black text-primary">{{ $value }}</p><p class="mt-1 text-xs text-secondary">{{ $label }}</p></div>@endforeach</div>
+                        <div class="grid grid-cols-3 gap-3 sm:grid-cols-1">@foreach ([['3', __('Servers')], ['8', __('Websites')], ['0', __('Incidents')]] as [$value, $label])<div class="rounded-xl border border-line bg-surface p-4"><p class="text-2xl font-black text-ink">{{ $value }}</p><p class="mt-1 text-xs text-muted">{{ $label }}</p></div>@endforeach</div>
                     </div>
-                    <div class="flex items-center gap-3 border-t border-primary px-5 py-4 text-xs text-secondary"><span class="h-2 w-2 rounded-full bg-ternary"></span><span>{{ __('Example data · not live telemetry') }}</span><span class="ml-auto font-mono">{{ __('Demo') }}</span></div>
+                    <div class="flex items-center gap-3 border-t border-line px-5 py-4 text-xs text-muted"><span class="h-2 w-2 rounded-full bg-primary"></span><span>{{ __('Example data · not live telemetry') }}</span><span class="ml-auto font-mono">{{ __('Demo') }}</span></div>
                 </div>
             </div>
         </section>
 
-        <section class="ui-provider-strip border-y border-primary bg-secondary" aria-labelledby="providers-heading">
+        <section class="ui-provider-strip border-y border-line bg-surface-muted" aria-labelledby="providers-heading">
             <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                <h2 id="providers-heading" class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Works with the providers you already use') }}</h2>
-                <ul class="grid grid-cols-2 gap-2 sm:flex" aria-label="{{ __('Supported providers') }}">@foreach ([['digital-ocean', 'DigitalOcean'], ['github', 'GitHub'], ['gitlab', 'GitLab'], ['bitbucket', 'Bitbucket']] as [$icon, $name])<li class="flex items-center gap-2 rounded-lg border border-primary bg-primary px-3 py-2 text-sm font-bold text-primary"><svg class="h-4 w-4 fill-current" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use></svg>{{ $name }}</li>@endforeach</ul>
+                <h2 id="providers-heading" class="text-xs font-bold uppercase tracking-widest text-muted">{{ __('Works with the providers you already use') }}</h2>
+                <ul class="grid grid-cols-2 gap-2 sm:flex" aria-label="{{ __('Supported providers') }}">@foreach ([['digital-ocean', 'DigitalOcean'], ['github', 'GitHub'], ['gitlab', 'GitLab'], ['bitbucket', 'Bitbucket']] as [$icon, $name])<li class="flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-sm font-bold text-ink"><svg class="h-4 w-4 fill-current" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use></svg>{{ $name }}</li>@endforeach</ul>
             </div>
         </section>
 
-        <section id="features" class="scroll-mt-20 bg-primary py-14" x-data="{ activeFeature: 'ship' }">
+        <section id="features" class="scroll-mt-20 bg-page py-14" x-data="{ activeFeature: 'ship' }">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                    <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('The complete platform') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('The release lifecycle, without the tool sprawl.') }}</h2></div>
-                    <p class="max-w-xl leading-7 text-secondary">{{ __('Explore every part of :app in one compact view. Choose a category to see what is included.', ['app' => config('app.name')]) }}</p>
+                    <div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('The complete platform') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">{{ __('The release lifecycle, without the tool sprawl.') }}</h2></div>
+                    <p class="max-w-xl leading-7 text-muted">{{ __('Explore every part of :app in one compact view. Choose a category to see what is included.', ['app' => config('app.name')]) }}</p>
                 </div>
 
-                <div class="mt-8 overflow-hidden rounded-2xl border border-primary bg-secondary shadow-xl">
-                    <div class="overflow-x-auto border-b border-primary bg-primary p-2 lg:hidden" aria-label="{{ __('Feature categories') }}">
+                <div class="mt-8 overflow-hidden rounded-2xl border border-line bg-surface-muted shadow-xl">
+                    <div class="overflow-x-auto border-b border-line bg-surface p-2 lg:hidden" aria-label="{{ __('Feature categories') }}">
                         <div class="flex w-max gap-2">
                             @foreach ($featureGroups as $key => $group)
-                                <button type="button" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition" :class="activeFeature === '{{ $key }}' ? 'bg-ternary text-white shadow-sm' : 'text-secondary hover:bg-secondary hover:text-primary'" :aria-pressed="(activeFeature === '{{ $key }}').toString()" @click="activeFeature = '{{ $key }}'">{{ $group['label'] }}</button>
+                                <button type="button" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition" :class="activeFeature === '{{ $key }}' ? 'bg-primary text-on-primary shadow-sm' : 'text-muted hover:bg-surface-muted hover:text-ink'" :aria-pressed="(activeFeature === '{{ $key }}').toString()" @click="activeFeature = '{{ $key }}'">{{ $group['label'] }}</button>
                             @endforeach
                         </div>
                     </div>
 
                     <div class="grid lg:grid-cols-[15rem_1fr]">
-                        <div class="hidden border-r border-primary bg-primary p-3 lg:block" aria-label="{{ __('Feature categories') }}">
+                        <div class="hidden border-r border-line bg-surface p-3 lg:block" aria-label="{{ __('Feature categories') }}">
                             @foreach ($featureGroups as $key => $group)
-                                <button type="button" class="mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold transition last:mb-0" :class="activeFeature === '{{ $key }}' ? 'bg-ternary text-white shadow-sm' : 'text-secondary hover:bg-secondary hover:text-primary'" :aria-pressed="(activeFeature === '{{ $key }}').toString()" @click="activeFeature = '{{ $key }}'">
+                                <button type="button" class="mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-bold transition last:mb-0" :class="activeFeature === '{{ $key }}' ? 'bg-primary text-on-primary shadow-sm' : 'text-muted hover:bg-surface-muted hover:text-ink'" :aria-pressed="(activeFeature === '{{ $key }}').toString()" @click="activeFeature = '{{ $key }}'">
                                     <svg class="h-5 w-5 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $group['icon'] }}"></use></svg>
                                     <span>{{ $group['label'] }}</span><span class="ml-auto text-xs opacity-70">{{ count($group['features']) }}</span>
                                 </button>
@@ -208,20 +208,20 @@
                             @foreach ($featureGroups as $key => $group)
                                 <article x-show="activeFeature === '{{ $key }}'" @if (! $loop->first) x-cloak @endif>
                                     <div class="flex items-start gap-4">
-                                        <div class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ternary text-white sm:flex lg:hidden"><svg class="h-6 w-6 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $group['icon'] }}"></use></svg></div>
-                                        <div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ $group['label'] }}</p><h3 class="mt-2 text-2xl font-black text-primary">{{ $group['title'] }}</h3><p class="mt-2 max-w-3xl text-sm leading-6 text-secondary sm:text-base">{{ $group['description'] }}</p></div>
+                                        <div class="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-on-primary sm:flex lg:hidden"><svg class="h-6 w-6 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $group['icon'] }}"></use></svg></div>
+                                        <div><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ $group['label'] }}</p><h3 class="mt-2 text-2xl font-black text-ink">{{ $group['title'] }}</h3><p class="mt-2 max-w-3xl text-sm leading-6 text-muted sm:text-base">{{ $group['description'] }}</p></div>
                                     </div>
                                     <ul class="mt-6 grid gap-x-7 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
                                         @foreach ($group['features'] as [$title, $description])
-                                            <li class="flex gap-3"><span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ternary text-[0.6875rem] font-black text-white">✓</span><div><h4 class="text-sm font-bold text-primary">{{ $title }}</h4><p class="mt-1 text-xs leading-5 text-secondary">{{ $description }}</p></div></li>
+                                            <li class="flex gap-3"><span class="mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-[0.6875rem] font-black text-on-primary">✓</span><div><h4 class="text-sm font-bold text-ink">{{ $title }}</h4><p class="mt-1 text-xs leading-5 text-muted">{{ $description }}</p></div></li>
                                         @endforeach
                                     </ul>
                                 </article>
                             @endforeach
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-primary bg-primary px-5 py-3 text-xs font-semibold text-secondary">
-                        <span><strong class="text-primary">36</strong> {{ __('capabilities') }}</span><span><strong class="text-primary">6</strong> {{ __('focused groups') }}</span><span class="sm:ml-auto">{{ __('Illustrative previews · no live workspace data.') }}</span>
+                    <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line bg-surface px-5 py-3 text-xs font-semibold text-muted">
+                        <span><strong class="text-ink">36</strong> {{ __('capabilities') }}</span><span><strong class="text-ink">6</strong> {{ __('focused groups') }}</span><span class="sm:ml-auto">{{ __('Illustrative previews · no live workspace data.') }}</span>
                     </div>
                 </div>
             </div>
@@ -229,7 +229,7 @@
 
         <section
             id="product"
-            class="scroll-mt-20 border-y border-primary bg-secondary py-16"
+            class="scroll-mt-20 border-y border-line bg-surface-muted py-16"
             x-data="{
                 activeArea: 'overview',
                 areas: {{ Illuminate\Support\Js::from(array_keys($tourAreas)) }},
@@ -243,32 +243,32 @@
             }"
         >
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Inside the product') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary sm:text-4xl">{{ __('One workspace, every operational stage.') }}</h2></div><p class="max-w-lg leading-7 text-secondary">{{ __('Explore representative workflows with illustrative data. Use them to see where each operation lives.') }}</p></div>
-                <div class="mt-8 overflow-x-auto pb-2" role="tablist" aria-label="{{ __('Product areas') }}"><div class="flex w-max gap-2 rounded-xl border border-primary bg-primary p-2">@foreach ($tourAreas as $key => $area)<button id="area-tab-{{ $key }}" type="button" role="tab" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ternary focus-visible:ring-offset-2" :class="activeArea === '{{ $key }}' ? 'bg-ternary text-white shadow-sm' : 'text-secondary hover:bg-secondary hover:text-primary'" :aria-selected="(activeArea === '{{ $key }}').toString()" :tabindex="activeArea === '{{ $key }}' ? '0' : '-1'" aria-controls="area-panel-{{ $key }}" @click="activeArea = '{{ $key }}'" @keydown.right.prevent="moveArea(1)" @keydown.left.prevent="moveArea(-1)" @keydown.home.prevent="focusArea(0)" @keydown.end.prevent="focusArea(areas.length - 1)">{{ $area['label'] }}</button>@endforeach</div></div>
-                <div class="mt-5 rounded-2xl border border-primary bg-primary p-5 shadow-xl sm:p-7">
+                <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div class="max-w-2xl"><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('Inside the product') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">{{ __('One workspace, every operational stage.') }}</h2></div><p class="max-w-lg leading-7 text-muted">{{ __('Explore representative workflows with illustrative data. Use them to see where each operation lives.') }}</p></div>
+                <div class="mt-8 overflow-x-auto pb-2" role="tablist" aria-label="{{ __('Product areas') }}"><div class="flex w-max gap-2 rounded-xl border border-line bg-surface p-2">@foreach ($tourAreas as $key => $area)<button id="area-tab-{{ $key }}" type="button" role="tab" class="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-bold transition focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" :class="activeArea === '{{ $key }}' ? 'bg-primary text-on-primary shadow-sm' : 'text-muted hover:bg-surface-muted hover:text-ink'" :aria-selected="(activeArea === '{{ $key }}').toString()" :tabindex="activeArea === '{{ $key }}' ? '0' : '-1'" aria-controls="area-panel-{{ $key }}" @click="activeArea = '{{ $key }}'" @keydown.right.prevent="moveArea(1)" @keydown.left.prevent="moveArea(-1)" @keydown.home.prevent="focusArea(0)" @keydown.end.prevent="focusArea(areas.length - 1)">{{ $area['label'] }}</button>@endforeach</div></div>
+                <div class="mt-5 rounded-2xl border border-line bg-surface p-5 shadow-xl sm:p-7">
                     @foreach ($tourAreas as $key => $area)
                         <article id="area-panel-{{ $key }}" role="tabpanel" aria-labelledby="area-tab-{{ $key }}" x-show="activeArea === '{{ $key }}'" @if (! $loop->first) x-cloak @endif class="grid items-center gap-8 lg:grid-cols-[.65fr_1.35fr]">
-                            <div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ $area['label'] }}</p><h3 class="mt-3 text-2xl font-black text-primary sm:text-3xl">{{ $area['title'] }}</h3><p class="mt-4 leading-7 text-secondary">{{ $area['description'] }}</p></div>
-                            <div class="overflow-hidden rounded-xl border border-primary bg-secondary" aria-hidden="true"><div class="flex items-center justify-between border-b border-primary bg-primary px-4 py-3"><span class="text-xs font-bold text-secondary">{{ $area['window'] }}</span><span class="rounded-full bg-ternary px-2 py-1 text-[0.625rem] font-bold uppercase text-white">{{ __('Example') }}</span></div><div class="grid grid-cols-3 gap-2 p-4">@foreach ($area['metrics'] as [$value, $label])<div class="rounded-lg border border-primary bg-primary p-3"><p class="truncate text-base font-black text-primary sm:text-xl">{{ $value }}</p><p class="mt-1 truncate text-[0.625rem] uppercase text-secondary">{{ $label }}</p></div>@endforeach</div><div class="mx-4 mb-4 overflow-hidden rounded-lg border border-primary bg-primary">@foreach ($area['events'] as [$event, $state])<div class="flex items-center gap-3 border-b border-primary px-3 py-3 text-sm last:border-0"><span class="h-2 w-2 shrink-0 rounded-full bg-ternary"></span><span class="min-w-0 truncate text-primary">{{ $event }}</span><span class="ml-auto shrink-0 text-xs font-semibold text-secondary">{{ $state }}</span></div>@endforeach</div></div>
+                            <div><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ $area['label'] }}</p><h3 class="mt-3 text-2xl font-black text-ink sm:text-3xl">{{ $area['title'] }}</h3><p class="mt-4 leading-7 text-muted">{{ $area['description'] }}</p></div>
+                            <div class="overflow-hidden rounded-xl border border-line bg-surface-muted" aria-hidden="true"><div class="flex items-center justify-between border-b border-line bg-surface px-4 py-3"><span class="text-xs font-bold text-muted">{{ $area['window'] }}</span><span class="rounded-full bg-primary px-2 py-1 text-[0.625rem] font-bold uppercase text-on-primary">{{ __('Example') }}</span></div><div class="grid grid-cols-3 gap-2 p-4">@foreach ($area['metrics'] as [$value, $label])<div class="rounded-lg border border-line bg-surface p-3"><p class="truncate text-base font-black text-ink sm:text-xl">{{ $value }}</p><p class="mt-1 truncate text-[0.625rem] uppercase text-muted">{{ $label }}</p></div>@endforeach</div><div class="mx-4 mb-4 overflow-hidden rounded-lg border border-line bg-surface">@foreach ($area['events'] as [$event, $state])<div class="flex items-center gap-3 border-b border-line px-3 py-3 text-sm last:border-0"><span class="h-2 w-2 shrink-0 rounded-full bg-primary"></span><span class="min-w-0 truncate text-ink">{{ $event }}</span><span class="ml-auto shrink-0 text-xs font-semibold text-muted">{{ $state }}</span></div>@endforeach</div></div>
                         </article>
                     @endforeach
                 </div>
             </div>
         </section>
 
-        <section id="how-it-works" class="scroll-mt-20 bg-primary py-16">
+        <section id="how-it-works" class="scroll-mt-20 bg-page py-16">
             <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
-                <div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Three everyday workflows') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-primary">{{ __('Connect. Provision. Deploy.') }}</h2><ol class="mt-7 space-y-3">@foreach ([[__('Launch with confidence'), __('Connect providers, provision infrastructure, run preflight, and verify the first release.')], [__('Recover without guesswork'), __('Correlate the incident, inspect retained evidence, and roll back to an exact release.')], [__('Scale with control'), __('Set capacity, schedules, health thresholds, cost budgets, and high-availability routing.')]] as [$title, $description])<li class="flex gap-4 rounded-xl border border-primary bg-secondary p-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ternary text-xs font-black text-white">{{ $loop->iteration }}</span><div><h3 class="font-bold text-primary">{{ $title }}</h3><p class="mt-1 text-sm text-secondary">{{ $description }}</p></div></li>@endforeach</ol></div>
-                <div class="rounded-2xl bg-tertiary p-7 text-tertiary sm:p-8"><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Guardrails included') }}</p><h2 class="mt-3 text-3xl font-black text-white">{{ __('Designed for the difficult day.') }}</h2><p class="mt-4 leading-7 text-tertiary">{{ __('Failures keep their logs, revision context, and recovery actions. Sensitive values stay encrypted and operations stay owner-scoped.') }}</p><ul class="mt-7 grid gap-3 sm:grid-cols-2">@foreach ([__('Encrypted credentials'), __('Signed callbacks'), __('Bounded history'), __('Verified backups'), __('Health thresholds'), __('Exact-revision recovery')] as $guardrail)<li class="flex items-center gap-2 text-sm font-semibold text-white"><span class="text-ternary">✓</span>{{ $guardrail }}</li>@endforeach</ul></div>
+                <div><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('Three everyday workflows') }}</p><h2 class="mt-3 text-3xl font-black tracking-tight text-ink">{{ __('Connect. Provision. Deploy.') }}</h2><ol class="mt-7 space-y-3">@foreach ([[__('Launch with confidence'), __('Connect providers, provision infrastructure, run preflight, and verify the first release.')], [__('Recover without guesswork'), __('Correlate the incident, inspect retained evidence, and roll back to an exact release.')], [__('Scale with control'), __('Set capacity, schedules, health thresholds, cost budgets, and high-availability routing.')]] as [$title, $description])<li class="flex gap-4 rounded-xl border border-line bg-surface-muted p-4"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-on-primary">{{ $loop->iteration }}</span><div><h3 class="font-bold text-ink">{{ $title }}</h3><p class="mt-1 text-sm text-muted">{{ $description }}</p></div></li>@endforeach</ol></div>
+                <div class="rounded-2xl bg-emphasis p-7 text-emphasis-ink sm:p-8"><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('Guardrails included') }}</p><h2 class="mt-3 text-3xl font-black text-emphasis-ink">{{ __('Designed for the difficult day.') }}</h2><p class="mt-4 leading-7 text-emphasis-muted">{{ __('Failures keep their logs, revision context, and recovery actions. Sensitive values stay encrypted and operations stay owner-scoped.') }}</p><ul class="mt-7 grid gap-3 sm:grid-cols-2">@foreach ([__('Encrypted credentials'), __('Signed callbacks'), __('Bounded history'), __('Verified backups'), __('Health thresholds'), __('Exact-revision recovery')] as $guardrail)<li class="flex items-center gap-2 text-sm font-semibold text-emphasis-ink"><span class="text-primary">✓</span>{{ $guardrail }}</li>@endforeach</ul></div>
             </div>
         </section>
 
-        <section id="questions" class="scroll-mt-20 border-t border-primary bg-secondary py-16">
-            <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[.7fr_1.3fr] lg:px-8"><div><p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Good to know') }}</p><h2 class="mt-3 text-3xl font-black text-primary">{{ __('Straight answers.') }}</h2></div><div class="space-y-3">@foreach ([[__('Who is :app for?', ['app' => config('app.name')]), __('Development teams and operators who want a focused control plane while keeping applications in their own cloud accounts.')], [__('Where does my application run?'), __('On infrastructure in the provider account you connect. :app coordinates the operational workflow.', ['app' => config('app.name')])], [__('Can I recover a previous release?'), __('Yes. Recorded revisions can be redeployed with lineage and logs retained, provided the target is ready.')], [__('How are sensitive values handled?'), __('Provider tokens, environments, scripts, command text, and retained output are encrypted at rest and owner-scoped.')], [__('What does :app not replace?', ['app' => config('app.name')]), __('Your cloud provider, source host, application architecture, and independent external monitoring remain separate. Provider invoices remain authoritative for cost.')]] as [$question, $answer])<details class="group rounded-xl border border-primary bg-primary p-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-primary">{{ $question }}<span class="text-xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span></summary><p class="mt-3 leading-7 text-secondary">{{ $answer }}</p></details>@endforeach</div></div>
+        <section id="questions" class="scroll-mt-20 border-t border-line bg-surface-muted py-16">
+            <div class="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[.7fr_1.3fr] lg:px-8"><div><p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('Good to know') }}</p><h2 class="mt-3 text-3xl font-black text-ink">{{ __('Straight answers.') }}</h2></div><div class="space-y-3">@foreach ([[__('Who is :app for?', ['app' => config('app.name')]), __('Development teams and operators who want a focused control plane while keeping applications in their own cloud accounts.')], [__('Where does my application run?'), __('On infrastructure in the provider account you connect. :app coordinates the operational workflow.', ['app' => config('app.name')])], [__('Can I recover a previous release?'), __('Yes. Recorded revisions can be redeployed with lineage and logs retained, provided the target is ready.')], [__('How are sensitive values handled?'), __('Provider tokens, environments, scripts, command text, and retained output are encrypted at rest and owner-scoped.')], [__('What does :app not replace?', ['app' => config('app.name')]), __('Your cloud provider, source host, application architecture, and independent external monitoring remain separate. Provider invoices remain authoritative for cost.')]] as [$question, $answer])<details class="group rounded-xl border border-line bg-surface p-5"><summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-bold text-ink">{{ $question }}<span class="text-xl text-primary transition group-open:rotate-45" aria-hidden="true">+</span></summary><p class="mt-3 leading-7 text-muted">{{ $answer }}</p></details>@endforeach</div></div>
         </section>
 
-        <section class="ui-public-cta border-t border-primary bg-primary py-14"><div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div><h2 class="text-3xl font-black tracking-tight text-primary">{{ __('Make the next deployment the clear one.') }}</h2><p class="mt-2 text-secondary">{{ __('Bring infrastructure, releases, and recovery into one workspace.') }}</p></div><a href="{{ $primaryUrl }}" class="rounded-lg bg-ternary px-6 py-3 text-center text-sm font-bold text-white shadow-lg">{{ $primaryLabel }}</a></div></section>
+        <section class="ui-public-cta border-t border-line bg-surface py-14"><div class="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"><div><h2 class="text-3xl font-black tracking-tight text-ink">{{ __('Make the next deployment the clear one.') }}</h2><p class="mt-2 text-muted">{{ __('Bring infrastructure, releases, and recovery into one workspace.') }}</p></div><a href="{{ $primaryUrl }}" class="ui-btn ui-btn-primary" >{{ $primaryLabel }}</a></div></section>
     </main>
 
-    <footer class="border-t border-primary bg-secondary px-4 py-8"><div class="mx-auto flex max-w-7xl flex-col gap-5 sm:px-2 md:flex-row md:items-center md:justify-between lg:px-4"><div><p class="font-black uppercase tracking-tight text-primary">{{ config('app.name') }}</p><p class="mt-1 text-sm text-secondary">{{ __('Your infrastructure. One focused control plane.') }}</p></div><nav aria-label="{{ __('Footer navigation') }}" class="flex flex-wrap gap-5 text-sm font-medium text-secondary"><a href="#features">{{ __('Capabilities') }}</a><a href="#product">{{ __('Product') }}</a><a href="#how-it-works">{{ __('How it works') }}</a><a href="{{ route('platform-status.show') }}">{{ __('Status') }}</a><a href="{{ route('privacy') }}">{{ __('Privacy') }}</a><a href="{{ route('terms') }}">{{ __('Terms') }}</a><a href="{{ route('login') }}">{{ __('Sign in') }}</a></nav></div></footer>
+    <footer class="border-t border-line bg-surface-muted px-4 py-8"><div class="mx-auto flex max-w-7xl flex-col gap-5 sm:px-2 md:flex-row md:items-center md:justify-between lg:px-4"><div><p class="font-black uppercase tracking-tight text-ink">{{ config('app.name') }}</p><p class="mt-1 text-sm text-muted">{{ __('Your infrastructure. One focused control plane.') }}</p></div><nav aria-label="{{ __('Footer navigation') }}" class="flex flex-wrap gap-5 text-sm font-medium text-muted"><a href="#features" class="hover:text-ink">{{ __('Capabilities') }}</a><a href="#product" class="hover:text-ink">{{ __('Product') }}</a><a href="#how-it-works" class="hover:text-ink">{{ __('How it works') }}</a><a href="{{ route('platform-status.show') }}" class="hover:text-ink">{{ __('Status') }}</a><a href="{{ route('privacy') }}" class="hover:text-ink">{{ __('Privacy') }}</a><a href="{{ route('terms') }}" class="hover:text-ink">{{ __('Terms') }}</a><a href="{{ route('login') }}" class="hover:text-ink">{{ __('Sign in') }}</a></nav></div></footer>
 </x-layouts.core>
