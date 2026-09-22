@@ -5417,3 +5417,64 @@ acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 75 — repository deployment status accents — 2026-09-22
+
+Responsibility problem:
+
+- Repository detail was already organized around the deployment timeline,
+  preflight, webhook and insight sections, but launch checks, webhook-pending
+  feedback and outcome metrics still used fixed green, amber and red utility
+  colors. Those status accents could not follow the selected Signal palette or
+  appearance.
+
+Boundary and implementation:
+
+- Kept repository deployment, webhook, preflight and metrics data in their
+  existing controller/action/query boundaries.
+- Replaced fixed status text colors with the existing semantic Signal success,
+  warning and danger variables at the Blade presentation boundary.
+- Added a source-level UI regression guard so repository views cannot reintroduce
+  the retired status utility colors.
+
+Preserved contracts and safety:
+
+- First-deployment readiness, launch blocking, webhook-pending messaging,
+  deployment metrics, timeline content, delivery history, modal links and all
+  authorization/replay behavior are unchanged.
+- No deployment, queue, webhook, persistence, API or provider behavior changed.
+
+Evidence:
+
+- Repository, webhook, deployment-hook and local UI coverage — 82 tests passed,
+  1,511 assertions.
+- Responsive asset fixture — 1 test passed, 313 assertions.
+- Focused repository browser journeys — 2 passed in 46.4 seconds.
+- `npm run build` — passed; generated CSS remains `assets/app-BlRRbOeT.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Push status: implementation commit `fb6d763` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `fb6d763`. The application assets, view cache and route cache were rebuilt;
+the served bundle is `assets/app-BlRRbOeT.css`. Both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The served manifest references `assets/app-BlRRbOeT.css`.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
