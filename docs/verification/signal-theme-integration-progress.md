@@ -1094,3 +1094,29 @@ Push status: `832fb02` is on `origin/main`.
 Next task: deploy the server-command slice to the isolated Deployer runtime,
 then inspect the remaining operational inventories for the next cohesive
 Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `7cfdf81` and its application, configuration, route and view caches were
+rebuilt before restarting `buildpusher-dev-main.service` and its queue worker.
+The canonical development host is https://deployer.buildpusher.com; the
+legacy buildpusher.com host is not the verification target for this
+application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/manifest.json` — HTTP 200 with the current Deployer asset manifest.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is
+isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect remaining operational inventory pages and select the next
+cohesive Signal modernization slice, preserving each page's existing
+authorization, filters, exports and modal contracts.
