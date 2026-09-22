@@ -2134,6 +2134,48 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 38 — billing overview — 2026-09-22
+
+Responsibility problem addressed:
+
+- Billing already kept plan selection, Stripe actions, ownership checks and
+  entitlement limits in the application layer, but its page had no local
+  navigation and mixed older filled utility styles into the current Signal
+  theme. The long plan comparison was harder to scan on mobile.
+
+Signal implementation:
+
+- Added `Billing sections` navigation for insights, current plan and plan
+  options with stable scroll anchors.
+- Updated plan status, billing interval controls, plan cards and supporting
+  copy to the shared Signal ink/muted, surface and border language.
+- Kept the current-plan card, Stripe action row and disabled checkout states
+  visually grouped without extracting speculative billing components.
+
+Preserved contracts:
+
+- Checkout, portal, cancel and resume forms, methods, routes, CSRF behavior
+  and owner authorization are unchanged.
+- Plan names, prices, interval query values, API limits, entitlement copy,
+  trial/grace-period messages and Stripe-not-ready behavior are unchanged.
+- No billing request, persisted subscription value or external Stripe call
+  was changed.
+
+Evidence:
+
+- Billing, plan-limit, API-plan-access and page-insights coverage — 21 tests
+  passed, 120 assertions.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'f8a4789' is on 'origin/main'.
+
+Next task: deploy the billing modernization to the isolated canonical
+development runtime, then inspect organization/account surfaces for a separate
+cohesive Signal slice.
+
 ## Slice 36 — gallery recipe detail — 2026-09-22
 
 Responsibility problem addressed:
