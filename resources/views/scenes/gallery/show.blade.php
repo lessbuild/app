@@ -156,7 +156,7 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="mt-4 text-sm text-green-700">{{ __('All recent community reports have been resolved.') }}</p>
+                    <p class="mt-4 text-sm text-success">{{ __('All recent community reports have been resolved.') }}</p>
                 @endif
                 <div class="mt-4 space-y-3">
                     @foreach ($recentReports as $report)

@@ -72,7 +72,7 @@
                 @if ($subscription?->onTrial())
                     <p class="mt-2 text-sm text-muted">{{ __('Trial ends :date.', ['date' => $subscription->trial_ends_at->toFormattedDateString()]) }}</p>
                 @elseif ($subscription?->onGracePeriod())
-                    <p class="mt-2 text-sm font-semibold text-amber-700">{{ __('Cancels :date.', ['date' => $subscription->ends_at->toFormattedDateString()]) }}</p>
+                    <p class="mt-2 text-sm font-semibold text-warning">{{ __('Cancels :date.', ['date' => $subscription->ends_at->toFormattedDateString()]) }}</p>
                 @endif
             </div>
             @if ($canManageBilling && $billingUser->stripe_id)

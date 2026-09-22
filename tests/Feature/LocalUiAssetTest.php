@@ -269,6 +269,17 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_billing_and_gallery_status_copy_use_signal_tokens(): void
+    {
+        $billing = File::get(resource_path('views/scenes/billing/index.blade.php'));
+        $gallery = File::get(resource_path('views/scenes/gallery/show.blade.php'));
+
+        $this->assertStringContainsString('text-warning', $billing);
+        $this->assertStringContainsString('text-success', $gallery);
+        $this->assertStringNotContainsString('text-amber-700', $billing);
+        $this->assertStringNotContainsString('text-green-700', $gallery);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
