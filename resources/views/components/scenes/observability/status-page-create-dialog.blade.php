@@ -33,7 +33,7 @@
         <fieldset class="grid gap-2 sm:grid-cols-2">
             <legend class="ui-label">{{ __('Components') }}</legend>
             @foreach ($websites as $website)
-                <label class="flex items-center gap-2 rounded-lg border border-line bg-surface p-3">
+                <label class="ui-choice">
                     <input type="checkbox" name="website_ids[]" value="{{ $website->id }}" class="ui-check" @checked(in_array((string) $website->id, array_map('strval', (array) old('website_ids', [])), true))>
                     <span class="min-w-0 truncate text-sm text-ink">{{ $website->name }}</span>
                 </label>

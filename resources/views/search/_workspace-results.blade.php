@@ -32,7 +32,7 @@
                             href="{{ $result['url'] }}"
                             data-palette-item
                             role="option"
-                            class="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm text-ink hover:bg-surface-muted focus:bg-surface-muted focus:outline-hidden"
+                            class="ui-command-item flex items-center justify-between gap-3 rounded-card px-3 py-2.5 text-sm text-ink hover:bg-surface-muted hover:text-ink focus:bg-surface-muted focus:outline-hidden"
                         >
                             <span class="min-w-0">
                                 <span class="block truncate font-semibold">{{ $result['title'] }}</span>
@@ -49,7 +49,7 @@
                             href="{{ $group['more_url'] }}"
                             data-palette-item
                             role="option"
-                            class="ui-link block rounded-xl px-3 py-2 text-xs focus:bg-surface-muted focus:outline-hidden"
+                            class="ui-command-item ui-link block rounded-card px-3 py-2 text-xs focus:bg-surface-muted focus:outline-hidden"
                         >{{ __('View more :label', ['label' => strtolower($group['label'])]) }} →</a>
                     @endif
                 </div>

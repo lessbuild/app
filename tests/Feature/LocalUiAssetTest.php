@@ -205,6 +205,39 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_remaining_controls_and_detail_surfaces_use_signal_primitives(): void
+    {
+        $choices = [
+            resource_path('views/components/scenes/observability/status-page-create-dialog.blade.php'),
+            resource_path('views/components/scenes/projects/deployment-controls-dialog.blade.php'),
+        ];
+
+        foreach ($choices as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringContainsString('ui-choice', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-lg', $source, $viewPath);
+            $this->assertStringNotContainsString('rounded-xl', $source, $viewPath);
+        }
+
+        $search = File::get(resource_path('views/search/_workspace-results.blade.php'));
+        $billing = File::get(resource_path('views/scenes/billing/index.blade.php'));
+        $projects = File::get(resource_path('views/scenes/projects/show.blade.php'));
+        $loadBalancers = File::get(resource_path('views/load-balancers/index.blade.php'));
+        $users = File::get(resource_path('views/scenes/users/index.blade.php'));
+
+        $this->assertStringContainsString('ui-command-item', $search);
+        $this->assertStringContainsString('rounded-card', $search);
+        $this->assertStringContainsString('rounded-control', $billing);
+        $this->assertStringContainsString('rounded-control', $projects);
+        $this->assertStringContainsString('rounded-card', $loadBalancers);
+        $this->assertStringContainsString('rounded-card', $users);
+
+        foreach ([$search, $billing, $projects, $loadBalancers, $users] as $source) {
+            $this->assertStringNotContainsString('rounded-lg', $source);
+        }
+    }
+
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
     {
         $errors = File::get(resource_path('views/components/forms/errors.blade.php'));

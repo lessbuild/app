@@ -145,7 +145,7 @@
                 <div class="flex flex-wrap items-center gap-4 border-b border-line px-5 py-4">
                     <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-muted font-extrabold text-ink">{{ strtoupper(substr($environment->name, 0, 1)) }}</div>
                     <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 id="environment-{{ $environment->id }}-heading" class="text-lg font-extrabold text-ink">{{ $environment->name }}</h2>@if($environment->is_protected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif @if($environment->hibernated_at)<x-ui.badge tone="neutral">{{ __('Hibernated') }}</x-ui.badge>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-muted">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
-                    <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 font-bold text-muted">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-ui.button></div>
+                    <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 font-bold text-muted">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-ui.button></div>
                 </div>
 
                 @if(!$repository?->builds()->where('status', \App\Models\Build::STATUS_SUCCEEDED)->exists())
@@ -225,7 +225,7 @@
                         <div class="mt-4 flex flex-wrap gap-2 text-xs">
                             <x-ui.badge :tone="$environment->is_protected ? 'accent' : 'neutral'">{{ $environment->is_protected ? __('Protected') : __('Unprotected') }}</x-ui.badge>
                             <x-ui.badge :tone="$environment->requires_deployment_approval ? 'accent' : 'neutral'">{{ $environment->requires_deployment_approval ? __('Approval required') : __('Auto deploy') }}</x-ui.badge>
-                            <span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span>
+                            <span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span>
                         </div>
                     </section>
                     @can('update', $environment)

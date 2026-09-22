@@ -84,7 +84,7 @@
             </select>
             <x-forms.errors name="rolling_pause_seconds" />
         </label>
-        <label class="flex items-start gap-3 rounded-xl border border-line bg-surface-muted p-3">
+        <label class="ui-choice">
             <input type="hidden" name="automatic_rollback" value="0">
             <input class="ui-check mt-1" type="checkbox" name="automatic_rollback" value="1" @checked((bool) old('automatic_rollback', $environment->automatic_rollback))>
             <span><span class="block text-sm font-bold text-ink">{{ __('Automatic rollback') }}</span><span class="text-xs leading-5 text-muted">{{ __('If an activated release fails, immediately switch back to the most recent retained successful release.') }}</span></span>

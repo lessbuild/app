@@ -111,7 +111,7 @@
     @endunless
 
     <div class="mt-8 flex justify-center">
-        <div class="inline-flex rounded-xl border border-line bg-surface-muted p-1" role="group" aria-label="{{ __('Billing interval') }}">
+        <div class="inline-flex rounded-control border border-line bg-surface-muted p-1" role="group" aria-label="{{ __('Billing interval') }}">
             <x-ui.button :href="route('billing.index', ['interval' => 'monthly'])" :variant="$selectedInterval === 'monthly' ? 'primary' : 'secondary'" :aria-current="$selectedInterval === 'monthly' ? 'page' : null" class="ui-btn-sm">{{ __('Monthly') }}</x-ui.button>
             <x-ui.button :href="route('billing.index', ['interval' => 'yearly'])" :variant="$selectedInterval === 'yearly' ? 'primary' : 'secondary'" :aria-current="$selectedInterval === 'yearly' ? 'page' : null" class="ui-btn-sm">{{ __('Yearly · 2 months free') }}</x-ui.button>
         </div>
