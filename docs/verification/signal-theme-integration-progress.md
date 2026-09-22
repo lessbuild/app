@@ -6307,3 +6307,62 @@ Deployment:
 
 Next task: inspect the remaining legacy theme imports and shared runtime
 components for another source-faithful Signal boundary.
+
+## Slice 89 — Signal-only theme entrypoint — 2026-09-22
+
+Responsibility problem:
+
+- The application had adopted Signal variables and components, but the main
+  stylesheet still imported the former gray/blue theme. That left two theme
+  systems active and allowed legacy utility generation to influence the final
+  bundle.
+- The remaining compatibility `.button` and `.input` primitives depended on
+  the old theme's compile-time utilities, and two operational charts still
+  used the retired `surface-ternary` alias.
+
+Boundary and implementation:
+
+- Removed the legacy theme import from the CSS entrypoint so
+  `resources/css/signal/theme.css` is the canonical theme source.
+- Kept compatibility selectors and behavior while expressing their variant
+  colors directly through Signal semantic tokens.
+- Replaced the two chart-bar aliases with the Signal `bg-primary` utility and
+  added a source-level regression guard for the canonical entrypoint.
+
+Preserved contracts and safety:
+
+- Existing `.button`/`.input` selectors, variants, focus behavior, chart data,
+  status meaning, responsive layout and persisted appearance settings remain
+  unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The legacy stylesheet remains available as an unreferenced compatibility
+  artifact for future cleanup; it is no longer part of the rendered bundle.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,260 assertions.
+- `npm run build` — passed; generated and served bundle is
+  `assets/app-BvUmnkq4.css`.
+- Served CSS contains Signal tokens and no legacy theme import.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Implementation commit `f756c70` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `f756c70`; assets, config, route and Blade caches were rebuilt and both
+  application and queue services are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change was
+  preserved. This is isolated development evidence, not production or external
+  provider acceptance.
+
+Next task: inspect remaining app-specific compatibility components for another
+source-faithful Signal boundary, without removing behavior-backed selectors
+speculatively.
