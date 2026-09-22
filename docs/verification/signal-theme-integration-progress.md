@@ -2134,6 +2134,45 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Theme-state bugfix — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'d93cb9b'.
+
+Responsibility problem addressed:
+
+- The responsive browser contract exercises explicit light/dark overrides by
+  adding the opposite theme class. The theme controller allowed both classes
+  to remain on the root, so dark-mode pages stayed dark when light was added.
+- This was a presentation-state defect, not a page-specific build regression.
+
+Implementation:
+
+- Added a small MutationObserver to the Signal theme controller that keeps
+  `dark` and `light` mutually exclusive for direct classList changes.
+- The observer remembers and restores the original theme when a temporary
+  override class is removed, while leaving the existing appearance preference,
+  local-storage behavior and theme toggle unchanged.
+
+Preserved contracts:
+
+- Normal server bootstrap, theme toggles, system-preference changes, palette
+  tokens, dark utility classes and page behavior are unchanged.
+- No application routes, persisted values, authorization rules or business
+  operations were modified.
+
+Evidence:
+
+- Full responsive asset-layout matrix — 8 tests passed across light/dark at
+  320px, 390px, 768px and 1440px.
+- 'npm run build' — passed; generated CSS and JavaScript bundles are ignored
+  by Git as usual.
+- 'git diff --check' — passed.
+
+Push status: 'd93cb9b' is on 'origin/main'.
+
+Next task: commit and verify the build/deployment-detail Signal slice.
+
 ## Slice 31 — repository detail and source settings
 
 Status: implemented and verified locally; code committed and pushed as
