@@ -123,7 +123,7 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$providers->isEmpty())
-        <div class="ui-panel mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Provider inventory') }}">
+        <div class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Provider inventory') }}">
             @foreach($providers as $provider)
                 @php($connectionHealth = $provider->connectionHealth())
                 <article data-provider-card class="group p-4 transition-colors hover:bg-surface-muted sm:p-5">

@@ -22,37 +22,37 @@
         <div class="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4" role="radiogroup" aria-label="{{ __('Provider') }}">
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="digitalocean" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'digitalocean')>
-                <span class="text-sm font-semibold text-primary">{{ __('DigitalOcean') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('DigitalOcean') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="github" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'github')>
-                <span class="text-sm font-semibold text-primary">{{ __('GitHub') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('GitHub') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="gitlab" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'gitlab')>
-                <span class="text-sm font-semibold text-primary">{{ __('GitLab') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('GitLab') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="bitbucket" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'bitbucket')>
-                <span class="text-sm font-semibold text-primary">{{ __('Bitbucket') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('Bitbucket') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="hetzner" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'hetzner')>
-                <span class="text-sm font-semibold text-primary">{{ __('Hetzner Cloud') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('Hetzner Cloud') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="vultr" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'vultr')>
-                <span class="text-sm font-semibold text-primary">{{ __('Vultr') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('Vultr') }}</span>
             </label>
 
             <label class="ui-choice group relative min-h-16 cursor-pointer items-center has-[:checked]:border-ternary has-[:checked]:bg-tertiary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30 focus-within:ring-2 focus-within:ring-ternary">
                 <input type="radio" name="provider" value="cloudflare" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'cloudflare')>
-                <span class="text-sm font-semibold text-primary">{{ __('Cloudflare DNS') }}</span>
+                <span class="text-sm font-semibold text-ink">{{ __('Cloudflare DNS') }}</span>
             </label>
         </div>
         <x-forms.errors name="provider" />

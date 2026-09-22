@@ -1732,6 +1732,7 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await expect(page.locator('#name')).toHaveClass(/\bui-input\b/);
     await expect(page.locator('#description')).toHaveClass(/\bui-input\b/);
     await expect(page.locator('label.ui-choice')).toHaveCount(7);
+    await expect(page.locator('#provider-create-dialog .input.secondary')).toHaveCount(0);
 
     const monitoring = page.locator('#provider-monitoring-settings');
     await expect(monitoring).toHaveClass(/\bui-card\b/);

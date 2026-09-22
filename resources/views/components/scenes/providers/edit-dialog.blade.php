@@ -25,7 +25,7 @@
                 :field-prefix="$fieldPrefix"
             />
         @else
-            <p class="p-5 text-sm text-secondary">{{ __('Loading provider form…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading provider form…') }}</p>
         @endif
     </div>
 </x-dialogs.modal>
