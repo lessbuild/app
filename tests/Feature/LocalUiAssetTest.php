@@ -704,6 +704,19 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-build-comparison-field', $comparison);
     }
 
+    public function test_repository_status_accents_use_signal_semantic_tokens(): void
+    {
+        $source = File::get(resource_path('views/scenes/repositories/show.blade.php'));
+
+        foreach (['text-green-600', 'text-green-700', 'text-amber-600', 'text-amber-700', 'text-red-600'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+
+        $this->assertStringContainsString('var(--ui-success)', $source);
+        $this->assertStringContainsString('var(--ui-warning)', $source);
+        $this->assertStringContainsString('var(--ui-danger)', $source);
+    }
+
     public function test_shared_pagination_uses_signal_controls(): void
     {
         $pagination = File::get(resource_path('views/vendor/pagination/simple-tailwind.blade.php'));

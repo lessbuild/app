@@ -202,12 +202,15 @@
             <ul class="mt-5 grid gap-3 md:grid-cols-2">
                 @foreach ($deploymentPreflight['checks'] as $check)
                     <li class="flex gap-3 rounded-xl border border-line bg-surface-muted p-4">
-                        <span aria-hidden="true" @class([
-                            'font-black',
-                            'text-green-600' => $check['status'] === 'passed',
-                            'text-amber-600' => $check['status'] === 'warning',
-                            'text-red-600' => $check['status'] === 'failed',
-                        ])>{{ $check['status'] === 'passed' ? '✓' : '!' }}</span>
+                        <span
+                            aria-hidden="true"
+                            class="font-black"
+                            style="color: {{ match ($check['status']) {
+                                'passed' => 'var(--ui-success)',
+                                'warning' => 'var(--ui-warning)',
+                                default => 'var(--ui-danger)',
+                            } }}"
+                        >{{ $check['status'] === 'passed' ? '✓' : '!' }}</span>
                         <span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="mt-1 block text-xs text-muted">{{ $check['detail'] }}</span></span>
                     </li>
                 @endforeach
@@ -243,11 +246,11 @@
                         @foreach ($deploymentGuidance['steps'] as $step)
                             <li class="rounded-xl border border-line bg-surface-muted p-4">
                                 <div class="flex gap-3">
-                                    <span aria-hidden="true" @class([
-                                        'font-black',
-                                        'text-amber-600' => $step['status'] === 'warning',
-                                        'text-red-600' => $step['status'] === 'failed',
-                                    ])>{{ $step['status'] === 'failed' ? '!' : '○' }}</span>
+                                    <span
+                                        aria-hidden="true"
+                                        class="font-black"
+                                        style="color: {{ $step['status'] === 'failed' ? 'var(--ui-danger)' : 'var(--ui-warning)' }}"
+                                    >{{ $step['status'] === 'failed' ? '!' : '○' }}</span>
                                     <div>
                                         <strong class="block text-ink">{{ $step['title'] }}</strong>
                                         <span class="mt-1 block text-xs text-muted">{{ $step['detail'] }}</span>
@@ -259,7 +262,7 @@
                     </ul>
                 </section>
             @else
-                <p class="mt-5 border-t border-line pt-5 text-sm font-semibold text-green-700">{{ __('All first-deployment checks are confirmed. You can launch this revision.') }}</p>
+                <p class="mt-5 border-t border-line pt-5 text-sm font-semibold" style="color: var(--ui-success)">{{ __('All first-deployment checks are confirmed. You can launch this revision.') }}</p>
             @endif
         </section>
     @endif
@@ -334,7 +337,7 @@
                 </p>
             @endif
             @if ($repository->webhook_pending)
-                <p class="mt-2 font-medium text-amber-700">{{ __('A newer push is waiting for the active deployment to finish.') }}</p>
+                <p class="mt-2 font-medium" style="color: var(--ui-warning)">{{ __('A newer push is waiting for the active deployment to finish.') }}</p>
             @elseif ($repository->webhook_last_received_at)
                 <p class="mt-2">{{ __('Last accepted delivery: :time', ['time' => $repository->webhook_last_received_at->diffForHumans()]) }}</p>
             @endif
@@ -583,13 +586,13 @@
         </div>
         @if ($repository->build_commands)
             <div class="flex items-start gap-3 text-muted">
-                <span class="mt-0.5 text-green-600" aria-hidden="true">✓</span>
+                <span class="mt-0.5" style="color: var(--ui-success)" aria-hidden="true">✓</span>
                 <span>{{ __('Build hook configured') }}</span>
             </div>
         @endif
         @if ($repository->post_deployment_commands)
             <div class="flex items-start gap-3 text-muted">
-                <span class="mt-0.5 text-green-600" aria-hidden="true">✓</span>
+                <span class="mt-0.5" style="color: var(--ui-success)" aria-hidden="true">✓</span>
                 <span>{{ __('Post-deployment hook configured') }}</span>
             </div>
         @endif
@@ -652,11 +655,11 @@
             </a>
             <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_SUCCEEDED]) }}" class="ui-card ui-card--interactive p-4">
                 <dt class="ui-stat__label">{{ __('Succeeded') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-green-600">{{ $deploymentMetrics['succeeded'] }}</dd>
+                <dd class="mt-1 text-2xl font-bold" style="color: var(--ui-success)">{{ $deploymentMetrics['succeeded'] }}</dd>
             </a>
             <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Models\Build::STATUS_FAILED]) }}" class="ui-card ui-card--interactive p-4">
                 <dt class="ui-stat__label">{{ __('Failed') }}</dt>
-                <dd class="mt-1 text-2xl font-bold text-red-600">{{ $deploymentMetrics['failed'] }}</dd>
+                <dd class="mt-1 text-2xl font-bold" style="color: var(--ui-danger)">{{ $deploymentMetrics['failed'] }}</dd>
             </a>
             <div class="ui-card p-4">
                 <dt class="ui-stat__label">{{ __('Completed-run success rate') }}</dt>
