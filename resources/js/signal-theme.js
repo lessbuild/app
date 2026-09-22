@@ -27,6 +27,39 @@
 const signalThemeRoot = document.documentElement;
 const signalThemeNamespace = signalThemeRoot.dataset.storageNamespace || 'buildpusher';
 
+/* Keep explicit theme overrides predictable even when a caller adds the
+ * opposite class directly. The normal controller toggles the classes
+ * exclusively, but this also protects browser integrations and progressive
+ * enhancement code that uses classList.add(). */
+const signalThemeClassObserver = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    const previous = new Set((mutation.oldValue || '').split(/\s+/).filter(Boolean));
+    const hasDark = signalThemeRoot.classList.contains('dark');
+    const hasLight = signalThemeRoot.classList.contains('light');
+
+    if (hasDark && hasLight) {
+      const addedTheme = ! previous.has('dark') ? 'dark' : 'light';
+      const existingTheme = addedTheme === 'dark' ? 'light' : 'dark';
+
+      signalThemeRoot.dataset.signalThemeRestore = existingTheme;
+      signalThemeRoot.classList.remove(existingTheme);
+
+      return;
+    }
+
+    if (! hasDark && ! hasLight && signalThemeRoot.dataset.signalThemeRestore) {
+      signalThemeRoot.classList.add(signalThemeRoot.dataset.signalThemeRestore);
+      delete signalThemeRoot.dataset.signalThemeRestore;
+    }
+  });
+});
+
+signalThemeClassObserver.observe(signalThemeRoot, {
+  attributeFilter: ['class'],
+  attributeOldValue: true,
+  attributes: true,
+});
+
 const syncSignalThemeControls = () => {
   const dark = signalThemeRoot.classList.contains('dark');
 
