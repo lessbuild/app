@@ -2134,6 +2134,51 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 59 — application workspace and creation surfaces — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as 'c9d896f'.
+
+Responsibility problem addressed:
+
+- The primary Applications inventory and its page-local creation, preview
+  settings and promotion dialogs still used compatibility palette utilities,
+  legacy form controls and low-contrast template cards. This made the main
+  workspace entry point inconsistent with the modern modal shell.
+
+Signal implementation:
+
+- Migrated application cards, identity avatars, metadata, form labels,
+  inputs, template choices, runtime badges and dialog footers to Signal
+  primitives.
+- Reused `ui-choice`, `ui-check`, `ui-input`, `ui-label`, `ui-avatar` and
+  `ui-badge` rather than creating a project-specific styling layer.
+- Added source guards covering the inventory and all affected dialogs.
+
+Preserved contracts:
+
+- Application creation, preview settings, promotion and validation field
+  names, dialog query parameters, old-input behavior, redirects, tenancy,
+  entitlements, queued preview behavior and promotion lineage are unchanged.
+- No controller, request, policy, action, persistence, transaction, queue or
+  remote integration behavior changed.
+
+Evidence:
+
+- Application UI, creation, environment, dialog, promotion, preview cleanup,
+  entitlement and runtime coverage — 119 tests passed, 1,419 assertions.
+- 'npm run build' — passed with assets/app-DDJasBdN.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- Focused application creation browser coverage — 2 tests passed in 49.0
+  seconds.
+- 'git diff --check' — passed.
+
+Push status: 'c9d896f' is on 'origin/main'.
+
+Next task: deploy this application-workspace modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
