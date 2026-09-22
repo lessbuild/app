@@ -42,11 +42,11 @@
         </x-ui.alert>
     @endif
 
-    <section class="ui-card mb-6 p-4 sm:p-5" aria-labelledby="server-command-filters-heading">
+    <section class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="server-command-filters-heading">
         <div class="mb-4">
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Find an operation') }}</p>
-            <h2 id="server-command-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter command history') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Narrow the list by outcome, output retention and queue date.') }}</p>
+            <p class="ui-eyebrow">{{ __('Find an operation') }}</p>
+            <h2 id="server-command-filters-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Filter command history') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Narrow the list by outcome, output retention and queue date.') }}</p>
         </div>
         <form method="GET" action="{{ route('servers.commands.index', $server) }}">
             @error('command')
@@ -54,8 +54,8 @@
             @enderror
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div>
-                    <label for="status" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</label>
-                    <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="status" class="ui-label">{{ __('Status') }}</label>
+                    <select id="status" name="status" class="ui-input">
                         <option value="">{{ __('All statuses') }}</option>
                         @foreach ($statuses as $option)
                             <option value="{{ $option }}" @selected($filters['status'] === $option)>
@@ -65,20 +65,20 @@
                     </select>
                 </div>
                 <div>
-                    <label for="output" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Output') }}</label>
-                    <select id="output" name="output" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="output" class="ui-label">{{ __('Output') }}</label>
+                    <select id="output" name="output" class="ui-input">
                         <option value="">{{ __('Any output state') }}</option>
                         <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                         <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
                     </select>
                 </div>
                 <div>
-                    <label for="date_from" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued from') }}</label>
-                    <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="date_from" class="ui-label">{{ __('Queued from') }}</label>
+                    <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
                 </div>
                 <div>
-                    <label for="date_to" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued through') }}</label>
-                    <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="date_to" class="ui-label">{{ __('Queued through') }}</label>
+                    <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
                 </div>
             </div>
             <div class="mt-5 flex flex-wrap gap-2">
@@ -100,7 +100,7 @@
                 @endif
             </div>
             @if ($metrics['active'] > 0)
-                <p id="server-command-refresh-help" class="mt-3 text-xs text-secondary">
+                <p id="server-command-refresh-help" class="mt-3 text-xs text-muted">
                     {{ __('Queued or running commands may change. Refresh to load their latest state.') }}
                 </p>
             @endif
@@ -122,8 +122,8 @@
         </dl>
     </x-ui.insights>
 
-    <x-ui.card class="overflow-hidden">
-        <div class="divide-y divide-primary" aria-label="{{ __('Server command history') }}">
+    <div class="ui-panel ui-inventory-list overflow-hidden">
+        <div class="divide-y divide-line" aria-label="{{ __('Server command history') }}">
             @forelse ($executions as $execution)
                 @php($statusTone = match ($execution->status) {
                     \App\Models\ServerCommandExecution::STATUS_SUCCEEDED => 'success',
@@ -131,12 +131,12 @@
                     \App\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
                     default => 'accent',
                 })
-                <article data-command-execution class="p-4 sm:p-5">
+                <article data-command-execution class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
-                            <code class="mt-2 block break-all rounded-lg bg-secondary px-3 py-2 text-xs text-primary">{{ $execution->command }}</code>
-                            <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary">
+                            <p class="ui-eyebrow text-[0.65rem]">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
+                            <code class="mt-2 block break-all rounded-lg border border-line bg-surface-muted px-3 py-2 font-mono text-xs text-ink">{{ $execution->command }}</code>
+                            <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                                 @if ($execution->exit_code !== null)
                                     <span>{{ __('Exit code: :code', ['code' => $execution->exit_code]) }}</span>
                                 @endif
@@ -150,24 +150,24 @@
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $execution->created_at->diffForHumans() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Queued') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $execution->created_at->diffForHumans() }}</dd>
                         </div>
                         @if ($execution->started_at)
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Started') }}</dt>
-                                <dd class="mt-1 text-primary">{{ $execution->started_at->diffForHumans() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Started') }}</dt>
+                                <dd class="mt-1 text-ink">{{ $execution->started_at->diffForHumans() }}</dd>
                             </div>
                         @endif
                         @if ($execution->finished_at)
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
-                                <dd class="mt-1 text-primary">{{ $execution->finished_at->diffForHumans() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Finished') }}</dt>
+                                <dd class="mt-1 text-ink">{{ $execution->finished_at->diffForHumans() }}</dd>
                             </div>
                         @endif
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
                         </div>
                     </dl>
 
@@ -191,18 +191,18 @@
                                 aria-controls="{{ $outputDialogId }}"
                                 aria-expanded="{{ $outputDialogExecutionId === $execution->id ? 'true' : 'false' }}"
                                 variant="primary"
-                                class="whitespace-nowrap"
+                                class="ui-btn-sm whitespace-nowrap"
                             >
                                 {{ __('View output') }}
                             </x-ui.button>
-                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="whitespace-nowrap">
+                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm whitespace-nowrap">
                                 {{ __('Download output') }}
                             </x-ui.button>
                         @endif
                         @if ($execution->status === \App\Models\ServerCommandExecution::STATUS_QUEUED)
                             <form method="POST" action="{{ route('servers.commands.cancel', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
+                                <x-ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
                                     {{ __('Cancel') }}
                                 </x-ui.button>
                             </form>
@@ -211,7 +211,7 @@
                             && in_array($execution->status, \App\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
                             <form method="POST" action="{{ route('servers.commands.rerun', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="primary" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
+                                <x-ui.button type="submit" variant="primary" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
                                     {{ __('Run again') }}
                                 </x-ui.button>
                             </form>
@@ -220,7 +220,7 @@
                             <form method="POST" action="{{ route('servers.commands.destroy', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-ui.button type="submit" variant="danger" class="whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
+                                <x-ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
                                     {{ __('Delete') }}
                                 </x-ui.button>
                             </form>
@@ -241,7 +241,7 @@
                 </div>
             @endforelse
         </div>
-    </x-ui.card>
+    </div>
 
     <div class="mt-6">
         {{ $executions->links() }}
@@ -267,7 +267,7 @@
         body-class="p-0"
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading retained output…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading retained output…') }}</p>
         </div>
     </x-dialogs.modal>
 </x-layouts.app>

@@ -5,9 +5,9 @@
 <div class="space-y-5 p-4 sm:p-5">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Server operations') }}</p>
-            <h3 class="mt-1 text-xl font-black text-primary">{{ __('Recent command history') }}</h3>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review execution state and retained output without leaving this server.') }}</p>
+            <p class="ui-eyebrow">{{ __('Server operations') }}</p>
+            <h3 class="mt-1 text-xl font-black text-ink">{{ __('Recent command history') }}</h3>
+            <p class="mt-1 text-sm text-muted">{{ __('Review execution state and retained output without leaving this server.') }}</p>
         </div>
         <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>
     </div>
@@ -31,15 +31,15 @@
                     \App\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
                     default => 'accent',
                 })
-                <article data-command-execution class="rounded-xl border border-primary bg-primary p-4">
+                <article data-command-execution class="ui-card p-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
-                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
-                            <code class="mt-2 block max-h-24 overflow-auto break-all rounded-lg bg-secondary px-3 py-2 text-xs text-primary">{{ $execution->command }}</code>
+                            <p class="ui-eyebrow text-[0.65rem]">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
+                            <code class="mt-2 block max-h-24 overflow-auto break-all rounded-lg border border-line bg-surface-muted px-3 py-2 font-mono text-xs text-ink">{{ $execution->command }}</code>
                         </div>
                         <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
                     </div>
-                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-secondary">
+                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                         <span>{{ __('Queued :time', ['time' => $execution->created_at->diffForHumans()]) }}</span>
                         @if ($execution->finished_at)
                             <span>{{ __('Finished :time', ['time' => $execution->finished_at->diffForHumans()]) }}</span>
@@ -48,7 +48,7 @@
                     </div>
                     @if ($execution->output !== null)
                         <div class="mt-3">
-                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary">{{ __('Download output') }}</x-ui.button>
+                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm">{{ __('Download output') }}</x-ui.button>
                         </div>
                     @endif
                 </article>

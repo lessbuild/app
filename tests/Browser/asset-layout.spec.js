@@ -1043,9 +1043,9 @@ test('server command history opens as a read-only contextual dialog', async ({ p
     const initialPath = new URL(page.url()).pathname;
     await trigger.click();
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator('[data-command-execution]')).toBeVisible();
+    await expect(dialog.locator('[data-command-execution]').first()).toBeVisible();
     await expect(dialog.getByText('uname -a', { exact: true })).toBeVisible();
-    await expect(dialog.getByRole('link', { name: 'Download output', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('link', { name: 'Download output', exact: true }).first()).toBeVisible();
     await expect(dialog).not.toContainText('fixture command output');
     expect(new URL(page.url()).pathname).toBe(initialPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('server-command-history');
@@ -1061,10 +1061,13 @@ test('server command output opens as a lazy retained-output inspector', async ({
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/servers/1/commands', { waitUntil: 'networkidle' });
 
-    let trigger = page.getByRole('link', { name: 'View output', exact: true });
+    let trigger = page.getByRole('link', { name: 'View output', exact: true }).first();
     const canonicalCommandsPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
     await page.goto(`http://buildpusher.test${canonicalCommandsPath}`, { waitUntil: 'networkidle' });
-    trigger = page.getByRole('link', { name: 'View output', exact: true });
+    trigger = page.getByRole('link', { name: 'View output', exact: true }).first();
+    await expect(page.locator('section[aria-labelledby="server-command-filters-heading"] .ui-input')).toHaveCount(4);
+    await expect(page.locator('#server-commands-insights .ui-stat')).toHaveCount(6);
+    await expect(page.locator('[aria-label="Server command history"]').locator('..')).toHaveClass(/\bui-panel\b/);
     const dialog = page.getByRole('dialog', { name: 'Command output', exact: true });
     const initialPath = new URL(page.url()).pathname;
     const triggerHref = await trigger.getAttribute('href');
