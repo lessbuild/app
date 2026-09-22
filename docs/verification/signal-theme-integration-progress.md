@@ -269,3 +269,64 @@ development evidence, not production or external-provider acceptance.
 Next task: modernize the standalone provider connection-history page shell,
 reuse the shared Signal fragment without changing filter/pagination/export
 semantics, then continue through the remaining provider-management surfaces.
+
+## Slice 6 — standalone provider connection history
+
+Status: implemented, verified locally, committed and pushed as `b1894a5`.
+
+Responsibility problem addressed:
+
+- The standalone connection-history route still used a generic page heading and
+  loose spacing even though its shared history content had moved into the
+  Signal surface used by the provider detail dialog.
+- Browser fixtures only represented the modal fragment, so the standalone
+  page shell did not have direct responsive coverage.
+
+Signal implementation:
+
+- Added the Provider operations eyebrow and activity icon to the standalone
+  page header and tightened the page-to-content spacing.
+- Added a distinct full-page fixture alongside the fragment fixture so the
+  browser suite verifies both delivery modes without conflating their markup.
+- Added a mobile browser assertion for the full page, shared retained-evidence
+  insights, default filter state and canonical route.
+
+Preserved contracts:
+
+- Existing provider authorization, organization scoping, filter names,
+  pagination, result/source/date semantics and CSV export behavior.
+- The fragment route remains available for the contextual provider dialog;
+  only the standalone shell and its fixture coverage changed.
+
+Evidence:
+
+- `ProviderConnectionHistoryTest` — 7 tests passed, 103 assertions.
+- Standalone provider connection-history browser check — 1 passed in the
+  isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `b1894a5`, rebuilt and restarted through
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/manifest.webmanifest` — `Deployer` name and short name.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the remaining provider create/edit and connection-management
+surfaces for the next cohesive Signal modernization slice, preserving the
+existing modal and no-JavaScript workflows.
