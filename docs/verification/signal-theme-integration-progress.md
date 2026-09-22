@@ -6366,3 +6366,54 @@ Deployment:
 Next task: inspect remaining app-specific compatibility components for another
 source-faithful Signal boundary, without removing behavior-backed selectors
 speculatively.
+
+## Slice 90 — Canonical Signal public landing structure — 2026-09-22
+
+Responsibility problem:
+
+- The public landing page used Signal tokens in places, but its hero, provider
+  strip, feature panels, product tour, guardrail callout, FAQ and footer still
+  relied on BuildPusher-specific landing selectors and geometry. That made the
+  public surface look like a separate theme rather than the actual Signal
+  starter composition.
+
+Boundary and implementation:
+
+- Replaced the landing-only wrappers with the canonical Signal structure:
+  `surface-grid`, `max-w-content`, `ui-panel`, `rounded-card`,
+  `rounded-panel`, `shadow-panel`, `ui-emphasis` and semantic Signal tokens.
+- Removed the unused landing-specific CSS selectors while retaining the
+  existing Alpine feature/product interactions and all truthful product copy.
+- Rebuilt the footer around Signal's site-footer hierarchy and retained the
+  existing status, documentation, legal and workspace destinations.
+
+Preserved contracts and safety:
+
+- Existing routes, registration/access-request behavior, CTA destinations,
+  footer links, provider labels, accessibility landmarks, tab semantics and
+  illustrative content remain intact.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,261 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-x5pgDi3t.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Implementation commit `5057270` is pushed to `origin/main`.
+
+Deployment:
+
+- The landing update is ready to fast-forward into
+  `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` and verify on
+  the isolated development host.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: deploy this pushed landing slice to the isolated runtime, verify
+the served asset and public browser journeys, then inspect the next remaining
+app-specific compatibility surface.
