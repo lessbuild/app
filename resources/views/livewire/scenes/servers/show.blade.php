@@ -332,7 +332,7 @@
                 @forelse ($websites as $website)
                     <li>
                         <a href="{{ route('websites.show', $website) }}" class="flex items-center gap-4 py-3 transition hover:bg-surface-muted">
-                            <x-avatar :name="$website->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
+                            <x-avatar :name="$website->name" class="ui-avatar-sm shrink-0 text-xs" />
                             <span class="min-w-0 flex-1">
                                 <span class="ui-link block truncate text-sm">{{ $website->name }}</span>
                                 <span class="block truncate text-sm text-muted">{{ $website->url }}</span>

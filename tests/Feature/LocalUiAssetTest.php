@@ -241,17 +241,21 @@ class LocalUiAssetTest extends TestCase
     public function test_inventory_avatars_and_checkboxes_use_signal_primitives(): void
     {
         foreach ([
-            resource_path('views/scenes/websites/index.blade.php'),
-            resource_path('views/scenes/builds/index.blade.php'),
-            resource_path('views/scenes/repositories/index.blade.php'),
-            resource_path('views/scenes/providers/index.blade.php'),
-            resource_path('views/scenes/servers/index.blade.php'),
-            resource_path('views/scenes/providers/show.blade.php'),
-        ] as $viewPath) {
+            resource_path('views/scenes/websites/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/websites/show.blade.php') => 'ui-avatar-sm',
+            resource_path('views/scenes/builds/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/repositories/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/providers/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/providers/show.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/servers/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/livewire/scenes/servers/show.blade.php') => 'ui-avatar-sm',
+            resource_path('views/scenes/projects/index.blade.php') => 'ui-avatar-md',
+            resource_path('views/scenes/projects/show.blade.php') => 'ui-avatar-md',
+        ] as $viewPath => $avatarSize) {
             $source = File::get($viewPath);
 
-            $this->assertStringContainsString('ui-avatar-md', $source, $viewPath);
-            $this->assertDoesNotMatchRegularExpression('/<x-avatar\b[^>]*rounded-md/', $source, $viewPath);
+            $this->assertStringContainsString($avatarSize, $source, $viewPath);
+            $this->assertDoesNotMatchRegularExpression('/<x-avatar\b[^>]*rounded-(?:md|full|lg|xl)/', $source, $viewPath);
         }
 
         $reports = File::get(resource_path('views/scenes/gallery/reports.blade.php'));

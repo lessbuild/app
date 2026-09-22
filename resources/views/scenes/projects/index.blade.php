@@ -72,7 +72,7 @@
                 <div class="flex min-w-0 flex-wrap items-start justify-between gap-4">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
-                            <span class="ui-avatar h-10 w-10 shrink-0 text-sm" aria-hidden="true">{{ strtoupper(substr($project->name, 0, 1)) }}</span>
+                            <span class="ui-avatar ui-avatar-md shrink-0 text-sm" aria-hidden="true">{{ strtoupper(substr($project->name, 0, 1)) }}</span>
                             <h2 class="min-w-0 break-words text-xl font-extrabold text-ink">{{ $project->name }}</h2>
                         </div>
                         <p class="mt-4 line-clamp-2 text-sm leading-6 text-muted">{{ $project->description ?: __('No description') }}</p>

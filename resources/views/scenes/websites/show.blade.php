@@ -450,7 +450,7 @@
                 @forelse($repositories as $repository)
                     <li>
                         <a href="{{ route('repositories.show', $repository) }}" class="ui-link flex min-w-0 items-center gap-4 py-3 hover:bg-surface-muted">
-                            <x-avatar :name="$repository->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
+                            <x-avatar :name="$repository->name" class="ui-avatar-sm shrink-0 text-xs" />
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-sm font-semibold text-ink">{{ $repository->name }}</span>
                                 <span class="block truncate text-sm text-muted">{{ $repository->url }}</span>
