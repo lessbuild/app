@@ -1,5 +1,73 @@
 # Signal theme integration progress
 
+## Slice 116 — Signal control radius on disclosure focus — 2026-09-22
+
+Responsibility problem:
+
+- Native disclosure summaries on notification and observability pages used a
+  fixed `rounded-md` focus shape. That bypassed the user's active Signal corner
+  setting and differed from the source theme's semantic control radius.
+
+Boundary and implementation:
+
+- Replaced the fixed radius with Signal's `rounded-control` token on notification
+  filters and rows, alert/status/incident disclosures, and environment evidence
+  filters and saved views.
+- Preserved native `<details>/<summary>` behavior, focus-visible ring classes,
+  initial open states and all disclosure content.
+- Added regression assertions that the target focusable summaries use the
+  Signal control token and no longer use `rounded-md`.
+
+SOLID and Laravel benefit:
+
+- The shared Signal theme remains responsible for the selected control radius;
+  page templates no longer hard-code a visual decision that belongs to the
+  theme setting.
+- The native disclosure remains the behavior boundary, so no JavaScript or new
+  abstraction was added.
+
+Preserved contracts and safety:
+
+- Notification filters, saved filters, observability management forms,
+  environment context and incident history keep their current behavior and
+  accessibility hooks.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `php vendor/bin/phpunit tests/Feature/LocalUiAssetTest.php
+  tests/Feature/NotificationInboxInsightsTest.php tests/Feature/ObservabilityTest.php
+  tests/Feature/ObservabilityEnvironmentContextTest.php
+  tests/Feature/OperationalIncidentTest.php tests/Feature/IncidentNotificationTest.php`
+  — 113 tests passed, 3,328 assertions.
+- `npm run build` — passed; the compiled stylesheet remains
+  `assets/app-CbO4z2yl.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Authenticated 390px browser check on notifications, observability and
+  environment context confirmed the computed disclosure focus radius matches
+  Signal's active `--radius-control-value` (`.2rem`, 3.2px). Space opens and
+  closes the notification and observability disclosures. All three pages had
+  no horizontal overflow or browser errors.
+- Implementation commit `6e16539` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `6e16539`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}` and `build/assets/app-CbO4z2yl.css` returns HTTP 200.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue the concrete page-level Signal audit; retain the verified
+public/auth shell, modal primitives, avatar sizing and deployment timeline.
+
 ## Slice 115 — Signal avatar sizes across detail pages — 2026-09-22
 
 Responsibility problem:
