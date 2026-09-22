@@ -33,6 +33,8 @@ class RecipeGalleryTest extends TestCase
             ->assertSeeInOrder([$popular->name, $recent->name])
             ->assertSee($firstAuthor->name)
             ->assertSee($secondAuthor->name)
+            ->assertSee('Gallery sections')
+            ->assertSee('gallery-inventory', false)
             ->assertDontSee('Node runtime')
             ->assertDontSee('Private firewall draft')
             ->assertDontSee('private-gallery-secret');

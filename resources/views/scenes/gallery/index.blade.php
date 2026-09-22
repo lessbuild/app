@@ -29,6 +29,12 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Gallery sections')">
+        <a href="#gallery-safety" class="ui-local-nav__link">{{ __('Safety') }}</a>
+        <a href="#gallery-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#gallery-inventory" class="ui-local-nav__link">{{ __('Recipes') }}</a>
+    </x-ui.local-nav>
+
     <x-scenes.gallery.publish-dialog
         :cancel-url="$galleryIndexUrl"
         :open="$publishRecipeDialogOpen"
@@ -38,7 +44,7 @@
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
 
-    <x-ui.alert class="mt-6" tone="warning">
+    <x-ui.alert id="gallery-safety" class="ui-panel mt-6 scroll-mt-24 border-l-4 p-4" tone="warning">
         <p class="font-semibold">{{ __('Review community scripts before using them') }}</p>
         <p class="mt-1">{{ __('Recipes run as root during provisioning. Inspect the full script and adapt it to your environment before assigning it to a server.') }}</p>
     </x-ui.alert>
@@ -57,12 +63,12 @@
         <form method="GET" action="{{ route('gallery.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="search" class="ui-label">{{ __('Search') }}</label>
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="ui-input mt-2">
             </div>
             <div>
-                <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
-                <select id="category" name="category" class="input secondary mt-2 w-full rounded-lg">
+                <label for="category" class="ui-label">{{ __('Category') }}</label>
+                <select id="category" name="category" class="ui-input mt-2">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ str($category)->title() }}</option>
@@ -70,8 +76,8 @@
                 </select>
             </div>
             <div>
-                <label for="scope" class="block text-xs font-semibold uppercase text-secondary">{{ __('Collection') }}</label>
-                <select id="scope" name="scope" class="input secondary mt-2 w-full rounded-lg">
+                <label for="scope" class="ui-label">{{ __('Collection') }}</label>
+                <select id="scope" name="scope" class="ui-input mt-2">
                     <option value="all" @selected($filters['scope'] === 'all')>{{ __('All recipes') }}</option>
                     <option value="favorites" @selected($filters['scope'] === 'favorites')>{{ __('Saved by me') }}</option>
                     <option value="reported" @selected($filters['scope'] === 'reported')>{{ __('Reported by me') }}</option>
@@ -83,8 +89,8 @@
                 </select>
             </div>
             <div>
-                <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-2 w-full rounded-lg">
+                <label for="sort" class="ui-label">{{ __('Sort') }}</label>
+                <select id="sort" name="sort" class="ui-input mt-2">
                     <option value="recent" @selected($filters['sort'] === 'recent')>{{ __('Recently published') }}</option>
                     <option value="popular" @selected($filters['sort'] === 'popular')>{{ __('Most installed') }}</option>
                     <option value="top_rated" @selected($filters['sort'] === 'top_rated')>{{ __('Top rated') }}</option>
@@ -102,7 +108,7 @@
 
     <x-ui.insights
         id="gallery-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="false"
         :summary="trans_choice(':count published recipe|:count published recipes', $metrics['published'], ['count' => $metrics['published']])"
     >
@@ -114,6 +120,7 @@
         </dl>
     </x-ui.insights>
 
+    <div id="gallery-inventory" data-gallery-section="inventory" class="scroll-mt-24">
     @if ($recipes->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">
             <x-lists.empty
@@ -133,7 +140,7 @@
                     $inspectDialogOpen = (int) $inspectRecipe?->id === (int) $recipe->id;
                     $inspectDialogUrl = route('gallery.index', [...$galleryQuery, 'dialog' => 'inspect-script-'.$recipe->id]);
                 @endphp
-                <x-ui.card class="p-5 sm:p-6">
+                <x-ui.card class="ui-card--interactive p-5 sm:p-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <x-ui.badge tone="accent">{{ str($recipe->category)->title() }}</x-ui.badge>
@@ -152,11 +159,11 @@
                             @elseif ($installedRecipe)
                                 <x-ui.badge tone="success">{{ __('Installed') }}</x-ui.badge>
                             @endif
-                            <h2 class="mt-3 text-lg font-bold text-primary">
-                                <a href="{{ route('gallery.show', $recipe) }}" class="text-ternary">{{ $recipe->name }}</a>
+                            <h2 class="mt-3 text-lg font-bold text-ink">
+                                <a href="{{ route('gallery.show', $recipe) }}" class="ui-link">{{ $recipe->name }}</a>
                             </h2>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block">{{ trans_choice(':count install|:count installs', $recipe->install_count, ['count' => $recipe->install_count]) }}</span>
                             <span class="mt-1 block">
                                 {{ $recipe->ratings_count
@@ -165,8 +172,8 @@
                             </span>
                         </div>
                     </div>
-                    <p class="mt-2 text-sm text-secondary">{{ $recipe->description }}</p>
-                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-secondary">
+                    <p class="mt-2 text-sm text-muted">{{ $recipe->description }}</p>
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-muted">
                         <span>{{ __('By :author', ['author' => $recipe->user->name]) }}</span>
                         <div class="flex items-center gap-2">
                             @if ($favorite)
@@ -204,4 +211,5 @@
         </div>
         <div class="mt-6">{{ $recipes->links() }}</div>
     @endif
+    </div>
 </x-layouts.app>

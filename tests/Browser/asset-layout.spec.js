@@ -1265,6 +1265,10 @@ test('gallery publishing and script inspection use accessible dialogs', async ({
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/gallery', { waitUntil: 'networkidle' });
 
+    await expect(page.getByRole('navigation', { name: 'Gallery sections', exact: true })).toBeVisible();
+    await expect(page.locator('#gallery-safety')).toBeVisible();
+    await expect(page.locator('#gallery-inventory')).toBeVisible();
+
     const publishTrigger = page.getByRole('link', { name: 'Publish a Recipe', exact: true });
     const publishDialog = page.getByRole('dialog', { name: 'Publish a recipe', exact: true });
     await publishTrigger.click();
