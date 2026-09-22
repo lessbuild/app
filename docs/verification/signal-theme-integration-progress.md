@@ -2134,6 +2134,55 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 45 — public documentation surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'3e233e7'.
+
+Responsibility problem addressed:
+
+- The public product guide and API reference were complete and route-stable,
+  but their page, navigation, content-card and code-sample presentation still
+  depended on the compatibility palette. The two pages therefore looked like
+  older product surfaces even though the authenticated application had moved
+  to Signal primitives.
+
+Signal implementation:
+
+- Migrated the guide and API reference to page, ink, muted, line, eyebrow,
+  link and card primitives.
+- Reused interactive Signal cards for local section and endpoint navigation.
+- Reused the theme-aware library code surface for authentication and request
+  examples instead of a fixed dark code block.
+- Added the guide and API reference to the fixture-backed responsive matrix so
+  their mobile overflow and built-asset behavior are checked with the rest of
+  the public and authenticated surfaces.
+
+Preserved contracts:
+
+- Public routes, page titles/descriptions, canonical metadata, guide section
+  anchors, API operation anchors, endpoint count, OpenAPI download URL,
+  examples, content, authentication guidance and internal compatibility names
+  such as buildpusher.yaml and BUILDPUSHER_TOKEN are unchanged.
+- No controller, route, API, authorization, persistence or integration
+  behavior was modified.
+
+Evidence:
+
+- Public documentation feature checks — 23 tests passed, 486 assertions.
+- Fixture-backed responsive/navigation coverage — 2 tests passed for light/dark
+  at 390px, including /docs and /api-docs.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '3e233e7' is on 'origin/main'.
+
+Next task: deploy the public documentation modernization to the isolated
+canonical Deployer runtime, then inspect the next product surface for a
+separate cohesive Signal modernization boundary.
+
 ## Slice 43 — public landing surface — 2026-09-22
 
 Status: implemented and verified locally; code committed and pushed as
