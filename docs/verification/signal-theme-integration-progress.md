@@ -2134,6 +2134,52 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 68 — platform administration and access surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Access-request review, admin analytics, GitHub App setup and the public
+  access-request form still mixed legacy palette classes, legacy button/input
+  rendering and bespoke colored panels into high-trust workflows.
+
+Boundary and implementation:
+
+- Reused `x-ui.button`, `ui-input`, `ui-label`, `ui-help`, `ui-panel`,
+  `ui-alert`, `ui-chart-bar` and `ui-progress` for presentation while leaving
+  request handling, authorization, upload storage and analytics queries in
+  their existing HTTP/application boundaries.
+- This applies single responsibility to the UI layer: shared Signal
+  primitives own visual consistency; controllers, policies and services retain
+  the workflow and security rules.
+
+Preserved contracts and safety:
+
+- Access-request fields, validation, normalization, encryption, honeypot,
+  status filtering, export behavior, review-dialog URLs and invitation
+  semantics are unchanged.
+- Admin analytics authorization and data calculations are unchanged.
+- GitHub App upload method, file constraints, private storage and secret
+  non-disclosure are unchanged.
+- No controller, policy, persistence, queue, external integration or public
+  response contract changed.
+
+Evidence:
+
+- Access-request, admin analytics, GitHub App setup and local UI coverage
+  passed; the 61-test `LocalUiAssetTest` passed with 1,174 assertions.
+- `npm run build` — passed; generated CSS includes app-B9YRaVew.css.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- The standalone accessibility browser command was attempted but could not
+  connect to its separately managed local server at 127.0.0.1:8014; this is a
+  test-environment limitation, not an application assertion failure.
+
+Push status: implementation commit 'a37552a' is on 'origin/main'.
+
+Next task: deploy the platform administration/access modernization to the
+isolated canonical Deployer runtime and verify public/admin presentation.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
