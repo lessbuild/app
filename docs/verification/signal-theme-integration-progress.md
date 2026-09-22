@@ -2134,6 +2134,69 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 76 — workspace deletion danger surface — 2026-09-22
+
+Responsibility problem:
+
+- The owner-only workspace deletion section still presented its warning as a
+  filled red utility card, unlike the restrained Signal surfaces used by the
+  rest of the administration area.
+
+Boundary and implementation:
+
+- Kept deletion authorization, confirmation, password and two-factor checks,
+  validation and destructive operation handling in their existing controller
+  and action boundaries.
+- Added the shared `ui-panel--danger` presentation primitive and migrated the
+  organization deletion surface to a border-led danger panel with semantic
+  theme tokens, standard focus treatment and shared field labels.
+- Added a source-level guard against the retired red fill, border, text and
+  focus utility classes.
+
+Preserved contracts and safety:
+
+- Owner-only visibility, active-operation safeguards, provider-resource
+  retention, confirmation requirements, named validation behavior, flash
+  messages, redirects and deletion semantics are unchanged.
+- No authorization, persistence, queue, API, route or security behavior
+  changed.
+
+Evidence:
+
+- Organization, tenancy and local UI coverage — 71 tests passed, 1,306
+  assertions.
+- Responsive asset fixture — 1 test passed, 313 assertions.
+- Broad rendered-modal/native-sheet and scroll-lock browser audit — 1 passed
+  in 4.5 minutes.
+- `npm run build` — passed; generated CSS is `assets/app-CTqF5laV.css`.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `7235493` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `7235493`. The application assets, view cache and route cache were rebuilt;
+the served bundle is `assets/app-CTqF5laV.css`. Both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The served manifest references `assets/app-CTqF5laV.css`, and the downloaded
+  CSS contains `ui-panel--danger` and the semantic danger border rule.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Slice 71 — billing and pricing controls — 2026-09-22
 
 Responsibility problem:
