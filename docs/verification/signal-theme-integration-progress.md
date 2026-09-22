@@ -1199,3 +1199,50 @@ acceptance.
 Next task: inspect the remaining operations pages and select the next cohesive
 Signal modernization boundary, preserving authorization, filters, exports,
 modal contracts and any secret-safe disclosure behavior.
+
+## Slice 19 — system-health diagnostic surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+`ee607b0`.
+
+Responsibility problem addressed:
+
+- The system-health page already received sanitized diagnostic data from
+  `OperationalDiagnostics`, but its summary, check cards and operator guidance
+  still used legacy panel, heading and text roles.
+- The page had no mobile browser assertion protecting the compact diagnostic
+  snapshot as the operational surface continues to evolve.
+
+Signal implementation:
+
+- Aligned the current-status summary with the shared eyebrow, ink and muted
+  hierarchy and retained the existing success/danger alert semantics.
+- Replaced the diagnostic check and failure-guidance wrappers with the shared
+  border-on-ink panel treatment without changing the diagnostic payload,
+  headings or safe disclosure wording.
+- Added a mobile browser assertion covering the summary, four insight stats,
+  check panels and operator guidance panel.
+
+Preserved contracts:
+
+- Verified-account and owner/admin authorization, no-store fragment behavior,
+  private report downloads, escaped diagnostic text and application-key
+  redaction.
+- Existing routes, response formats, status wording, check ordering and
+  operational guidance remain unchanged.
+
+Evidence:
+
+- `SystemHealthPageTest` — 7 tests passed, 69 assertions.
+- `LocalUiAssetTest` — 23 tests passed, 470 assertions.
+- Dashboard system-health dialog and mobile diagnostic snapshot journeys — 2
+  passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `ee607b0` is on `origin/main`.
+
+Next task: deploy the system-health slice to the isolated Deployer runtime,
+then inspect notifications and remaining operations inventories for the next
+cohesive Signal modernization boundary.
