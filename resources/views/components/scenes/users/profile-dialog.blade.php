@@ -17,9 +17,9 @@
         @endif
 
         <label class="block">
-            <span class="text-secondary text-sm pb-1 block">{{ __('Name') }}</span>
+            <span class="ui-label">{{ __('Name') }}</span>
             <input
-                class="input secondary w-full rounded-lg"
+                class="ui-input"
                 name="name"
                 type="text"
                 autocomplete="name"
@@ -30,9 +30,9 @@
         <x-forms.errors name="name" bag="profile" />
 
         <label class="block">
-            <span class="text-secondary text-sm pb-1 block">{{ __('Email') }}</span>
+            <span class="ui-label">{{ __('Email') }}</span>
             <input
-                class="input secondary w-full rounded-lg"
+                class="ui-input"
                 name="email"
                 type="email"
                 autocomplete="email"
@@ -44,15 +44,15 @@
 
         @if (auth()->user()->hasLocalPassword())
             <label class="block">
-                <span class="text-secondary text-sm pb-1 block">{{ __('Current password') }}</span>
+                <span class="ui-label">{{ __('Current password') }}</span>
                 <input
-                    class="input secondary w-full rounded-lg"
+                    class="ui-input"
                     name="current_password"
                     type="password"
                     autocomplete="current-password"
                 >
             </label>
-            <p class="text-sm text-secondary">
+            <p class="text-sm text-muted">
                 {{ __('Required only when changing your email address. Other browser sessions will be logged out after the change.') }}
             </p>
             <x-forms.errors name="current_password" bag="profile" />
