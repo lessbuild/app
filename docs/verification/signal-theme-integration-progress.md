@@ -2134,6 +2134,59 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 85 — shared auth and stat accents — 2026-09-22
+
+Responsibility problem:
+
+- The shared desktop auth overview and reusable stat panel still used a fixed
+  blue utility accent instead of the active Signal primary token.
+
+Boundary and implementation:
+
+- Kept authentication layout structure, responsive behavior, branding content
+  and stat component data unchanged.
+- Replaced only the fixed blue accent with `text-[var(--ui-primary)]` in the
+  shared templates and added a source-level guard.
+
+Preserved contracts and safety:
+
+- Login redirects, password confirmation/reset privacy, session revocation,
+  social authentication, two-factor flows, card structure and accessibility
+  are unchanged.
+- No authentication, authorization, persistence, queue, API or navigation
+  behavior changed.
+
+Evidence:
+
+- Authentication, session, password, social, two-factor and local UI coverage
+  — 116 tests passed, 1,610 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- `npm run build` — passed; generated CSS is `assets/app-Cy9HcXdQ.css`.
+- Push status: implementation commit `89d6ca7` is on `origin/main`.
+
+Next task: modernize the remaining billing and gallery product accents.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `89d6ca7`. Application assets, Blade and route caches were rebuilt; the
+served bundle is `assets/app-Cy9HcXdQ.css`, both application and queue services
+are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The downloaded CSS contains the Signal primary token used by the shared
+  auth/stat accents.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: modernize the remaining billing and gallery product accents.
+
 ## Slice 82 — project readiness and rotation states — 2026-09-22
 
 Responsibility problem:
