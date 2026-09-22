@@ -12,7 +12,7 @@
     <form method="POST" action="{{ $action }}" class="space-y-4">
         @csrf
         <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Filter name') }}</span>
+            <span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Filter name') }}</span>
             <input name="name" value="{{ old('name') }}" maxlength="40" required class="input secondary w-full rounded-lg" placeholder="{{ __('Website incidents') }}">
             <x-forms.errors name="name" />
         </label>

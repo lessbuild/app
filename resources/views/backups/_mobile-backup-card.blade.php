@@ -1,5 +1,5 @@
 <details id="backup-mobile-{{ $backup->id }}" class="ui-panel group" @if ($errors->has('confirmation')) open @endif>
-    <summary class="flex cursor-pointer list-none items-start justify-between gap-3 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+    <summary class="flex cursor-pointer list-none items-start justify-between gap-3 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
         <span class="min-w-0 flex-1">
             <span class="flex flex-wrap items-center gap-2">
                 <span class="truncate font-bold text-ink">{{ $backup->website->name }}</span>

@@ -30,7 +30,7 @@
                 :cancel-url="$cancelUrl"
             />
         @else
-            <p class="p-5 text-sm text-secondary">{{ __('Loading backup destination form…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading backup destination form…') }}</p>
         @endif
     </div>
 </x-dialogs.modal>

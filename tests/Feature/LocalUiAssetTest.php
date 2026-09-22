@@ -280,6 +280,32 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('text-green-700', $gallery);
     }
 
+    public function test_remaining_legacy_signal_aliases_are_removed_from_shared_surfaces(): void
+    {
+        foreach ([
+            resource_path('views/load-balancers/index.blade.php'),
+            resource_path('views/components/forms/section.blade.php'),
+            resource_path('views/components/ui/insights.blade.php'),
+            resource_path('views/scenes/index.blade.php'),
+            resource_path('views/livewire/build-deployment-status.blade.php'),
+            resource_path('views/backups/_mobile-backup-card.blade.php'),
+            resource_path('views/notifications/index.blade.php'),
+            resource_path('views/vendor/pagination/simple-tailwind.blade.php'),
+            resource_path('views/components/scenes/backups/destination-edit-dialog.blade.php'),
+            resource_path('views/components/scenes/notifications/save-filter-dialog.blade.php'),
+            resource_path('views/scenes/projects/configuration-dialog.blade.php'),
+            resource_path('views/scenes/repositories/github-app.blade.php'),
+            resource_path('views/databases/index.blade.php'),
+            resource_path('views/feedback/index.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            foreach (['text-primary', 'text-secondary', 'focus-visible:ring-primary', 'focus-visible:ring-blue-500'] as $legacyClass) {
+                $this->assertStringNotContainsString($legacyClass, $source, $viewPath);
+            }
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

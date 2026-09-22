@@ -134,7 +134,7 @@
                         <p class="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted">{{ $item->description }}</p>
                         @if ($item->reproduction_steps)
                             <details class="mt-3">
-                                <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Reproduction steps') }}</summary>
+                                <summary class="ui-link cursor-pointer text-sm">{{ __('Reproduction steps') }}</summary>
                                 <p class="mt-2 whitespace-pre-wrap rounded-lg bg-surface-muted p-3 text-sm text-ink">{{ $item->reproduction_steps }}</p>
                             </details>
                         @endif

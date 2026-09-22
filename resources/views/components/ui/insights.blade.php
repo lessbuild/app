@@ -15,7 +15,7 @@
     data-responsive-details
     data-responsive-details-mobile-expanded="{{ $mobileOpen ? 'true' : 'false' }}"
 >
-    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
         <span class="min-w-0">
             <span class="ui-eyebrow block">{{ __('Insights') }}</span>
             @if ($summary)

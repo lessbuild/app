@@ -6,14 +6,14 @@
                 {!! __('pagination.previous') !!}
             </span>
         @else
-            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="ui-btn ui-btn-secondary ui-btn-sm focus-visible:ring-2 focus-visible:ring-primary">
+            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="ui-btn ui-btn-secondary ui-btn-sm focus-visible:ring-2 focus-visible:ring-focus">
                 {!! __('pagination.previous') !!}
             </a>
         @endif
 
         {{-- Next Page Link --}}
         @if ($paginator->hasMorePages())
-            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="ui-btn ui-btn-secondary ui-btn-sm focus-visible:ring-2 focus-visible:ring-primary">
+            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="ui-btn ui-btn-secondary ui-btn-sm focus-visible:ring-2 focus-visible:ring-focus">
                 {!! __('pagination.next') !!}
             </a>
         @else

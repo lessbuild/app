@@ -130,7 +130,7 @@
                     <details id="database-management-{{ $resource->id }}" class="ui-card group mt-5 overflow-hidden" @if ($databaseManagementOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-ink [&::-webkit-details-marker]:hidden">
                             <span>
-                                <span class="block text-xs font-bold uppercase tracking-widest text-primary">{{ __('Operations') }}</span>
+                                <span class="ui-eyebrow text-[0.65rem]">{{ __('Operations') }}</span>
                                 <span class="mt-1 block">{{ __('Credentials and cloning') }}</span>
                                 <span class="mt-1 block text-sm font-normal text-muted">
                                     {{ trans_choice(':count active credential|:count active credentials', $resource->databaseUsers->count(), ['count' => $resource->databaseUsers->count()]) }}

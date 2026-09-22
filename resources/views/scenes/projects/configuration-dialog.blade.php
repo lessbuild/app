@@ -8,7 +8,7 @@
 <div data-configuration-dialog class="space-y-5 p-5 sm:p-6">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-primary">{{ __('Application workflow') }}</p>
+            <p class="ui-eyebrow text-[0.65rem]">{{ __('Application workflow') }}</p>
             <h2 class="mt-1 text-xl font-black text-ink">
                 @if ($application)
                     {{ __('Application receipt') }} #{{ $application->id }}

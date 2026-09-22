@@ -106,7 +106,7 @@
                     <input type="checkbox" name="notifications[]" value="{{ $notification->id }}" form="notification-bulk-form" x-model="selected" class="ui-check mt-1 shrink-0" aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}">
                     @if ($notification->read_at !== null)
                         <details id="notification-{{ $notification->id }}" class="group min-w-0 flex-1">
-                            <summary class="flex cursor-pointer list-none flex-wrap items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            <summary class="flex cursor-pointer list-none flex-wrap items-center gap-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                                 <span class="min-w-0 flex-1 font-semibold text-ink">{{ $notification->data['title'] ?? __('Notification') }}</span>
                                 <x-ui.badge>{{ __('Read') }}</x-ui.badge>
                                 <span class="text-xs text-muted">{{ $notification->created_at->diffForHumans() }}</span>
@@ -179,7 +179,7 @@
     <section class="ui-panel mb-6 mt-8 p-4" aria-labelledby="notification-tools">
         <h2 id="notification-tools" class="sr-only">{{ __('Notification tools') }}</h2>
         <details id="notification-filters" @if ($filtersAreActive) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Filter notifications') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($filtersAreActive)
@@ -228,7 +228,7 @@
 
     <section class="ui-panel mb-6 p-4" aria-labelledby="saved-notification-filters">
         <details id="notification-saved-filters" @if ($errors->has('name')) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Saved filters') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($savedFilters)
@@ -251,7 +251,7 @@
                 <div class="mt-4 flex flex-wrap gap-2">
                     @foreach ($savedFilters as $saved)
                         <div class="ui-chip overflow-hidden p-0">
-                            <a href="{{ route('notifications.index', $saved['filters']) }}" class="px-3 py-2 text-sm font-bold text-ink hover:text-primary">{{ $saved['name'] }}</a>
+                            <a href="{{ route('notifications.index', $saved['filters']) }}" class="px-3 py-2 text-sm font-bold text-ink hover:text-ink">{{ $saved['name'] }}</a>
                             <form method="POST" action="{{ route('notifications.saved-filters.destroy', $saved['id']) }}">
                                 @csrf
                                 @method('DELETE')

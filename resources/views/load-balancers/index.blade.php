@@ -114,7 +114,7 @@
                     ]);
                 @endphp
                 <details id="load-balancer-nodes-{{ $balancer->id }}" class="group mt-5" @if ($nodeManagementOpen) open @endif>
-                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg bg-surface-muted p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg bg-surface-muted p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                         <span class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Application nodes') }}</span>
                         <span class="flex items-center gap-2 text-xs font-bold text-muted"><span>{{ $balancer->nodes->count() }}</span><span class="text-xl font-normal transition-transform group-open:rotate-45" aria-hidden="true">+</span></span>
                     </summary>

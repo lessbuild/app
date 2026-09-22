@@ -27,8 +27,8 @@
         @forelse($repositories as $repository)
             <x-ui.card tone="interactive" class="flex items-center gap-4 p-4">
                 <div class="min-w-0 flex-1">
-                    <h2 class="truncate font-bold text-primary">{{ $repository['full_name'] }}</h2>
-                    <p class="mt-1 text-xs text-secondary">{{ $repository['private'] ? __('Private') : __('Public') }} · {{ $repository['default_branch'] }}</p>
+                    <h2 class="truncate font-bold text-ink">{{ $repository['full_name'] }}</h2>
+                    <p class="mt-1 text-xs text-muted">{{ $repository['private'] ? __('Private') : __('Public') }} · {{ $repository['default_branch'] }}</p>
                 </div>
                 <x-ui.button :href="$repositoryCreateUrl" data-modal-trigger="repository-create-dialog" data-modal-content-url="{{ $repositoryCreateContentUrl }}" aria-controls="repository-create-dialog" aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}" variant="primary">{{ __('Connect') }}</x-ui.button>
             </x-ui.card>

@@ -122,7 +122,7 @@
         data-build-section="evidence"
         aria-labelledby="deployment-evidence-title"
     >
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="ui-eyebrow block">{{ __('Deployment evidence') }}</span>
                 <span class="mt-1 block text-lg font-extrabold">{{ __('Identity and approval context') }}</span>
@@ -199,7 +199,7 @@
         data-build-section="timeline"
         aria-labelledby="deployment-timeline-title"
     >
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="ui-eyebrow block">{{ __('Deployment timeline') }}</span>
                 <span id="deployment-timeline-title" class="mt-1 block text-lg font-extrabold">{{ __('Deployment timeline') }}</span>
