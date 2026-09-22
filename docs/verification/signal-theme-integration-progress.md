@@ -2134,6 +2134,56 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 34 — recipe inventory and assignment surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+'308e799'.
+
+Responsibility problem addressed:
+
+- Recipe inventory, assignment detail and the shared create/edit form already
+  used the existing recipe actions, encrypted persistence and modal workflow,
+  but their presentation still mixed the older utility vocabulary with Signal
+  surfaces and required long mobile scrolling.
+
+Signal implementation:
+
+- Added local navigation and stable anchors for recipe insights/inventory and
+  recipe overview/assignments.
+- Converted recipe inventory and assignment lists to quiet Signal panels with
+  ink/muted metadata, responsive hover states and consistent dividers.
+- Updated search/usage controls and the shared recipe create/edit form to the
+  common labels, inputs and surface tokens.
+- Kept the provisioning-plan snapshot explanation visible as the detail-page
+  overview and retained the existing collapsed insights behavior.
+
+Preserved contracts:
+
+- Recipe filtering, pagination, duplicate/delete actions, publishing/category
+  fields, modal URLs, validation errors, encrypted scripts, gallery source
+  state and immutable server recipe snapshots are unchanged.
+- Scripts remain absent from inventory/detail summaries and are still shown
+  only through their existing authorized edit/inspection paths.
+- No recipe action, controller, policy, job, route, persisted value or queue
+  payload was modified.
+
+Evidence:
+
+- Recipe inventory, usage, management, gallery, duplication and activity
+  coverage — 34 tests passed, 307 assertions.
+- Focused recipe modal/browser journey — 1 Playwright test passed, including
+  inventory anchors and shared Signal form controls.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '308e799' is on 'origin/main'.
+
+Next task: deploy the recipe-surface modernization to the isolated canonical
+development runtime, then inspect gallery and feedback surfaces for the next
+cohesive Signal slice.
+
 ## Provider compatibility correction — 2026-09-22
 
 Status: implemented and verified; code committed and pushed as '536e5a3'.
