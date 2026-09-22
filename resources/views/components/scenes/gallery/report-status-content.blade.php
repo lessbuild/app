@@ -1,9 +1,9 @@
 <div data-report-status-content class="space-y-5 p-4 sm:p-5">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recipe report') }}</p>
-            <h3 class="mt-1 text-xl font-black text-primary">{{ $report->recipe->name }}</h3>
-            <p class="mt-1 text-sm text-secondary">{{ str($report->recipe->category)->headline() }}</p>
+            <p class="ui-eyebrow">{{ __('Recipe report') }}</p>
+            <h3 class="mt-1 text-xl font-black text-ink">{{ $report->recipe->name }}</h3>
+            <p class="mt-1 text-sm text-muted">{{ str($report->recipe->category)->headline() }}</p>
         </div>
         <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">
             {{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}
@@ -17,12 +17,12 @@
     </dl>
 
     <div>
-        <h4 class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Your report details') }}</h4>
-        <p class="mt-2 whitespace-pre-line text-sm text-primary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+        <h4 class="ui-eyebrow">{{ __('Your report details') }}</h4>
+        <p class="mt-2 whitespace-pre-line text-sm text-ink">{{ $report->details ?: __('No additional details were provided.') }}</p>
     </div>
 
     @if ($report->resolved_at && $report->resolution_note)
-        <div class="rounded-xl border border-green-300 bg-green-50 p-4 text-green-900">
+        <div class="ui-alert ui-alert--success p-4">
             <h4 class="text-sm font-bold">{{ __('Contributor resolution note') }}</h4>
             <p class="mt-2 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
         </div>

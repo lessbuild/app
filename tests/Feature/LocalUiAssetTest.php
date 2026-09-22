@@ -731,6 +731,41 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-card bg-surface-muted', $form);
     }
 
+    public function test_gallery_inventory_comparison_and_feedback_surfaces_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/gallery/index.blade.php'),
+            resource_path('views/scenes/gallery/show.blade.php'),
+            resource_path('views/scenes/gallery/compare.blade.php'),
+            resource_path('views/scenes/gallery/my-reports.blade.php'),
+            resource_path('views/scenes/gallery/reports.blade.php'),
+            resource_path('views/scenes/gallery/partials/script-modal-content.blade.php'),
+            resource_path('views/components/scenes/gallery/inspect-dialog.blade.php'),
+            resource_path('views/components/scenes/gallery/publish-dialog.blade.php'),
+            resource_path('views/components/scenes/gallery/report-dialog.blade.php'),
+            resource_path('views/components/scenes/gallery/report-resolution-dialog.blade.php'),
+            resource_path('views/components/scenes/gallery/report-status-content.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('divide-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $reportDialog = File::get(resource_path('views/components/scenes/gallery/report-dialog.blade.php'));
+        $this->assertStringContainsString('ui-label', $reportDialog);
+        $this->assertStringContainsString('ui-input', $reportDialog);
+
+        $scriptPreview = File::get(resource_path('views/scenes/gallery/partials/script-modal-content.blade.php'));
+        $this->assertStringContainsString('ui-console', $scriptPreview);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([

@@ -269,7 +269,7 @@
             {{ __('This community script runs as root. Read every command and verify package sources, downloads, and destructive operations before using it.') }}
         </x-ui.alert>
         <h2 id="gallery-script-heading" class="mt-5 text-lg font-bold text-ink">{{ __('Bash script') }}</h2>
-        <pre class="mt-3 overflow-x-auto rounded-lg bg-gray-950 p-4 text-sm text-gray-100"><code>{{ $recipe->script }}</code></pre>
+        <pre class="ui-console mt-3 overflow-x-auto p-4 text-sm leading-6"><code>{{ $recipe->script }}</code></pre>
     </section>
 
     <p class="mt-4 text-xs text-muted">

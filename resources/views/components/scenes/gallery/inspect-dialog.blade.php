@@ -17,7 +17,7 @@
         @if ($open)
             @include('scenes.gallery.partials.script-modal-content', ['recipe' => $inspectRecipe ?? $recipe])
         @else
-            <p class="text-sm text-secondary">{{ __('Loading script preview…') }}</p>
+            <p class="text-sm text-muted">{{ __('Loading script preview…') }}</p>
         @endif
     </div>
 </x-dialogs.modal>

@@ -39,7 +39,7 @@
         @csrf
         @method('PATCH')
         <input type="hidden" name="_gallery_resolution_report_id" value="{{ $report->id }}">
-        <label for="{{ $dialogId }}-resolution-note" class="block text-xs font-semibold uppercase text-secondary">
+        <label for="{{ $dialogId }}-resolution-note" class="ui-label">
             {{ $resolved ? __('Resolution note') : __('Resolution note (optional)') }}
         </label>
         <textarea
@@ -47,11 +47,11 @@
             name="resolution_note"
             rows="4"
             maxlength="1000"
-            class="input secondary w-full rounded-lg"
+            class="ui-input w-full"
             placeholder="{{ __('Briefly explain what was addressed.') }}"
         >{{ $noteValue }}</textarea>
         @if ($resolved)
-            <p class="text-xs text-secondary">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
+            <p class="text-xs text-muted">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
         @endif
         <x-forms.errors name="resolution_note" />
         <x-ui.button type="submit" variant="primary">{{ $submitLabel }}</x-ui.button>

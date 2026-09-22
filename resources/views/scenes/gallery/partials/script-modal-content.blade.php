@@ -3,7 +3,7 @@
 </x-ui.alert>
 
 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-secondary">
+    <p class="text-sm text-muted">
         {{ __('Published by :author. No commands are executed from this preview.', ['author' => $recipe->user->name ?? __('the contributor')]) }}
     </p>
     <x-ui.button href="{{ route('gallery.show', $recipe) }}" variant="secondary">
@@ -11,4 +11,4 @@
     </x-ui.button>
 </div>
 
-<pre class="mt-4 max-h-[min(60vh,36rem)] overflow-auto rounded-lg bg-gray-950 p-4 text-sm leading-6 text-gray-100"><code>{{ $recipe->script }}</code></pre>
+<pre class="ui-console mt-4 max-h-[min(60vh,36rem)] overflow-auto p-4 text-sm leading-6"><code>{{ $recipe->script }}</code></pre>

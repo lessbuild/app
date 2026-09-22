@@ -148,7 +148,7 @@
                 <x-ui.card @class([
                     'p-5',
                     'border-blue-400 ring-1 ring-blue-200' => $unreadUpdate,
-                    'border-primary' => ! $unreadUpdate,
+                    'border-line' => ! $unreadUpdate,
                 ])>
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
