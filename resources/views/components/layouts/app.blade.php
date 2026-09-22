@@ -252,7 +252,9 @@
                         <h2 id="command-palette-title" class="mt-2 text-xl font-extrabold text-ink">{{ __('Search workspace') }}</h2>
                         <p class="mt-2 text-sm leading-6 text-muted">{{ __('Search pages, resources and workspace actions without leaving the keyboard.') }}</p>
                     </div>
-                    <button type="button" class="ui-icon-btn" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</button>
+                    <button type="button" class="ui-icon-btn" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">
+                        <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#close"></use></svg>
+                    </button>
                 </div>
                 <form method="GET" action="{{ route('search.index') }}" class="mt-6">
                     <label for="command-palette-query" class="sr-only">{{ __('Search commands and workspace resources') }}</label>

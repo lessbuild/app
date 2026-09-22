@@ -34,7 +34,9 @@
                     autofocus
                     aria-label="{{ __('Close :title', ['title' => $title]) }}"
                 >
-                    <span aria-hidden="true">×</span>
+                    <svg class="h-5 w-5 stroke-2" aria-hidden="true">
+                        <use xlink:href="/assets/images/icons.svg#close"></use>
+                    </svg>
                 </button>
             </form>
         </header>

@@ -52,7 +52,9 @@
     <div class="relative ml-auto flex h-full w-[min(21rem,88vw)] flex-col overflow-y-auto border-l border-line bg-surface px-5 py-5 shadow-2xl">
         <div class="flex items-center justify-between">
             <span id="{{ $mobileNavigationId }}-title" class="text-sm font-extrabold text-ink">{{ __('Explore :app', ['app' => config('app.name')]) }}</span>
-            <button type="button" class="ui-icon-btn" aria-label="{{ __('Close navigation') }}" @click="navigationOpen = false">×</button>
+            <button type="button" class="ui-icon-btn" aria-label="{{ __('Close navigation') }}" @click="navigationOpen = false">
+                <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#close"></use></svg>
+            </button>
         </div>
         <nav class="mt-8 flex flex-col gap-1" aria-label="{{ __($mobileNavigationLabel) }}" @click="if ($event.target.closest('a')) navigationOpen = false">
             @foreach ($publicLinks as $link)

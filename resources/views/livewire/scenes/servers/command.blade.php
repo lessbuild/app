@@ -19,7 +19,7 @@
                             <p class="mt-2 text-sm text-muted">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
                         </div>
                         <button type="button" wire:click="close" data-livewire-dialog-close class="ui-icon-btn text-xl leading-none" aria-label="{{ __('Close command dialog') }}">
-                            <span aria-hidden="true">×</span>
+                            <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#close"></use></svg>
                         </button>
                     </header>
 

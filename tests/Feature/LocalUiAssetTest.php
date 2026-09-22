@@ -120,6 +120,29 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('[data-filter-dialog-body]', $componentStyles);
     }
 
+    public function test_shared_signal_controls_use_the_source_icon_and_radius_primitives(): void
+    {
+        foreach ([
+            resource_path('views/components/dialogs/modal.blade.php'),
+            resource_path('views/components/ui/filter-panel.blade.php'),
+            resource_path('views/components/layouts/public-header.blade.php'),
+            resource_path('views/components/layouts/mobile-navigation.blade.php'),
+            resource_path('views/components/layouts/app.blade.php'),
+            resource_path('views/livewire/scenes/servers/command.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringContainsString('/assets/images/icons.svg#close', $source, $viewPath);
+            $this->assertStringNotContainsString('aria-hidden="true">×</span>', $source, $viewPath);
+        }
+
+        $emptyState = File::get(resource_path('views/components/ui/empty-state.blade.php'));
+
+        $this->assertStringContainsString('rounded-card bg-primary-soft', $emptyState);
+        $this->assertStringNotContainsString('rounded-2xl', $emptyState);
+        $this->assertStringContainsString('id="close"', File::get(public_path('assets/images/icons.svg')));
+    }
+
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
     {
         $errors = File::get(resource_path('views/components/forms/errors.blade.php'));
@@ -1161,7 +1184,8 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-card', $emptyState);
         $this->assertStringContainsString('bg-primary-soft', $emptyState);
         $this->assertStringContainsString('text-[var(--ui-primary)]', $emptyState);
-        $this->assertStringContainsString('rounded-2xl', $emptyState);
+        $this->assertStringContainsString('rounded-card', $emptyState);
+        $this->assertStringNotContainsString('rounded-2xl', $emptyState);
 
         $uiStyles = File::get(resource_path('css/components/ui.css'));
         $this->assertStringContainsString('.ui-page-header__actions > .ui-btn', $uiStyles);
