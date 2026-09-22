@@ -855,15 +855,22 @@ class LocalUiAssetTest extends TestCase
 
     public function test_shared_pagination_uses_signal_controls(): void
     {
-        $pagination = File::get(resource_path('views/vendor/pagination/simple-tailwind.blade.php'));
+        foreach ([
+            resource_path('views/vendor/pagination/simple-tailwind.blade.php'),
+            resource_path('views/vendor/pagination/tailwind.blade.php'),
+        ] as $paginationPath) {
+            $pagination = File::get($paginationPath);
 
-        $this->assertStringContainsString('ui-btn ui-btn-secondary ui-btn-sm', $pagination);
-        $this->assertStringContainsString('aria-disabled="true"', $pagination);
-        $this->assertStringNotContainsString('text-secondary', $pagination);
-        $this->assertStringNotContainsString('bg-primary', $pagination);
-        $this->assertStringNotContainsString('border-primary', $pagination);
-        $this->assertStringNotContainsString('focus:ring-3', $pagination);
-        $this->assertStringNotContainsString('ring-gray-300', $pagination);
+            $this->assertStringContainsString('ui-btn ui-btn-secondary ui-btn-sm', $pagination, $paginationPath);
+            $this->assertStringContainsString('aria-disabled="true"', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('text-secondary', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('bg-primary', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('border-primary', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('focus:ring-3', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('ring-gray-300', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('text-gray-', $pagination, $paginationPath);
+            $this->assertStringNotContainsString('bg-white', $pagination, $paginationPath);
+        }
     }
 
     public function test_application_inventory_and_dialogs_use_signal_primitives(): void
