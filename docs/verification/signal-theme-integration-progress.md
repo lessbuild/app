@@ -1120,3 +1120,56 @@ acceptance.
 Next task: inspect remaining operational inventory pages and select the next
 cohesive Signal modernization slice, preserving each page's existing
 authorization, filters, exports and modal contracts.
+
+## Slice 18 — activity and audit surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+`2257aaf`.
+
+Responsibility problem addressed:
+
+- The shared activity feed still carried legacy panel, divider, label and text
+  roles even though it is reused by the full audit page, dashboard activity
+  dialog and account-audit dialog.
+- The full activity filter controls were also inconsistent with the Signal
+  filter sheets used by the other operational inventories.
+
+Signal implementation:
+
+- Replaced activity search/category/date controls with shared Signal labels
+  and inputs without changing their request keys or normalization.
+- Modernized the shared event feed with a panel/divider inventory, responsive
+  event articles, readable category eyebrows, ink/muted roles and accessible
+  activity-feed/event hooks.
+- Aligned workspace-activity and account-audit fragments with the same
+  heading hierarchy while preserving their read-only modal boundaries.
+- Added a full activity fixture and mobile browser coverage for filters,
+  seven insights and event history.
+- Updated the existing UI contract assertion to recognize both native buttons
+  and the established typed `x-ui.button` modal trigger component; it still
+  requires an explicit `type="button"` and delete trigger.
+
+Preserved contracts:
+
+- Owner scoping, category/search/date filtering and normalization, pagination,
+  CSV export entitlement behavior, event links, deleted-subject readability,
+  escaped event text and secret-free command activity.
+- Dashboard and account dialog URLs, lazy fragment loading, focus behavior,
+  modal content boundaries and current navigation semantics.
+
+Evidence:
+
+- `ActivityInsightsTest` and `ActivityFeedTest` — 16 tests passed, 106
+  assertions.
+- `LocalUiAssetTest` — 23 tests passed, 470 assertions.
+- Account-audit dialog, dashboard activity dialog and full activity mobile
+  inventory journeys — 3 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `2257aaf` is on `origin/main`.
+
+Next task: deploy the activity slice to the isolated Deployer runtime, then
+inspect the remaining operations pages for the next cohesive modernization
+boundary.
