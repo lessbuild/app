@@ -35,7 +35,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
                             <p class="ui-eyebrow text-[0.65rem]">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
-                            <code class="mt-2 block max-h-24 overflow-auto break-all rounded-lg border border-line bg-surface-muted px-3 py-2 font-mono text-xs text-ink">{{ $execution->command }}</code>
+                            <code class="mt-2 block max-h-24 overflow-auto break-all rounded-card border border-line bg-surface-muted px-3 py-2 font-mono text-xs text-ink">{{ $execution->command }}</code>
                         </div>
                         <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
                     </div>

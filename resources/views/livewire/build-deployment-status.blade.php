@@ -93,8 +93,8 @@
                 <h2 id="recovery-guidance-title" class="mt-2 text-lg font-extrabold text-ink">{{ $failureGuidance['title'] }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ $failureGuidance['summary'] }}</p>
                 <dl class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-lg border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
-                    <div class="rounded-lg border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
+                    <div class="rounded-card border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
+                    <div class="rounded-card border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
                 </dl>
                 <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="$repositoryEditUrl" data-modal-trigger="repository-edit-dialog" data-modal-content-url="{{ $repositoryEditContentUrl }}" aria-controls="repository-edit-dialog" aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
             </section>
@@ -328,7 +328,7 @@
     @if ($build->risk_assessment)
         <section class="ui-panel mt-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Deployment preflight') }}</p><h2 class="mt-2 font-extrabold text-ink">{{ __('Risk: :level', ['level' => str($build->risk_assessment['level'] ?? 'unknown')->headline()]) }}</h2></div><x-ui.badge tone="accent">{{ $build->risk_assessment['score'] ?? 0 }}/100</x-ui.badge></div>
-            <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-lg border border-line bg-surface-muted p-3 text-sm"><span class="font-extrabold {{ match ($check['status']) { 'passed' => 'text-success', 'warning' => 'text-warning', default => 'text-danger' } }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="text-xs text-muted">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
+            <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-card border border-line bg-surface-muted p-3 text-sm"><span class="font-extrabold {{ match ($check['status']) { 'passed' => 'text-success', 'warning' => 'text-warning', default => 'text-danger' } }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="text-xs text-muted">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
         </section>
     @endif
 
@@ -398,7 +398,7 @@
         </div>
 
         @if ($build->operator_note)
-            <div class="mt-4 rounded-lg border border-line bg-surface-muted p-3">
+            <div class="mt-4 rounded-card border border-line bg-surface-muted p-3">
                 <p class="whitespace-pre-wrap text-sm text-ink">{{ $build->operator_note }}</p>
             </div>
         @else

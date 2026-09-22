@@ -62,7 +62,7 @@
                 <h2 class="ui-eyebrow text-[0.65rem]">{{ $comparison['label'] }}</h2>
                 <dl class="mt-3 grid gap-4 sm:grid-cols-2">
                     @foreach ([['label' => __('Baseline Build #:id', ['id' => $baseline->id]), 'build' => $baseline, 'value' => $comparison['baseline']], ['label' => __('Current Build #:id', ['id' => $build->id]), 'build' => $build, 'value' => $comparison['current']]] as $side)
-                        <div @class(['min-w-0 rounded-lg bg-surface-muted p-3' => $comparison['long'] ?? false])>
+                        <div @class(['min-w-0 rounded-card bg-surface-muted p-3' => $comparison['long'] ?? false])>
                             <dt class="text-xs font-semibold text-muted">
                                 <a href="{{ route('builds.show', $side['build']) }}" class="ui-link">{{ $side['label'] }}</a>
                             </dt>

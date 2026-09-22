@@ -50,11 +50,11 @@
             <section data-gallery-comparison-field class="p-4 sm:p-5">
                 <h2 class="text-xs font-bold uppercase tracking-wide text-muted">{{ $comparisonRow['label'] }}</h2>
                 <dl class="mt-3 grid gap-4 sm:grid-cols-2">
-                    <div @class(['rounded-lg bg-surface-muted p-3' => $comparisonRow['long'] ?? false])>
+                    <div @class(['rounded-card bg-surface-muted p-3' => $comparisonRow['long'] ?? false])>
                         <dt class="text-xs font-semibold text-muted">{{ __('My private copy') }}</dt>
                         <dd @class(['mt-2 text-ink', 'whitespace-pre-wrap break-words' => $comparisonRow['long'] ?? false])>{{ $comparisonRow['copy'] }}</dd>
                     </div>
-                    <div @class(['rounded-lg bg-surface-muted p-3' => $comparisonRow['long'] ?? false])>
+                    <div @class(['rounded-card bg-surface-muted p-3' => $comparisonRow['long'] ?? false])>
                         <dt class="text-xs font-semibold text-muted">{{ __('Current gallery version') }}</dt>
                         <dd @class(['mt-2 text-ink', 'whitespace-pre-wrap break-words' => $comparisonRow['long'] ?? false])>{{ $comparisonRow['gallery'] }}</dd>
                     </div>
