@@ -100,8 +100,8 @@ live deployment or cloud acceptance.
 
 ## Slice 3 — provider inventory surfaces
 
-Status: implementation committed with focused coverage; the browser fixture
-follow-up remains open.
+Status: implemented, verified locally, committed and pushed as `839db3b`; the
+fixture/browser follow-up is committed and pushed as `eb2cc17`.
 
 Responsibility problem addressed:
 
@@ -136,12 +136,16 @@ Evidence:
 - `php vendor/bin/pint --test` — passed.
 - `npm run build` — passed.
 - `git diff --check` — passed.
-- The targeted Playwright provider run exposed a pre-existing fixture
-  determinism issue: the edit workflow received `/providers/2` while its
-  fixture expected `/providers/1`, and the connection-history fixture setup
-  then failed. Five remaining provider browser cases were not run after the
-  interrupted run. This must be resolved before calling the slice browser
-  complete.
+- `AssetLayoutFixtureTest` — 1 test passed, 289 assertions; its detail-page
+  data now uses deterministic first records without changing application
+  routes.
+- Targeted Playwright provider/mobile-filter coverage — 7 tests passed in the
+  isolated fixture runtime.
+- The webhook workflow assertion now matches the existing enabled-state label
+  (`Manage webhook`) and accepts the dialog's two intentional POST forms.
+
+The browser evidence is for the isolated local fixture runtime only. It is not
+live deployment or cloud acceptance.
 
 ## Canonical dev deployment — 2026-09-21
 
@@ -192,6 +196,6 @@ Evidence:
 - Canonical `/api/health` — HTTP 200, `{"status":"ready"}`.
 - Isolated web and queue services — active.
 
-Next task: resolve the provider browser-fixture determinism/setup failure,
-rerun the targeted provider browser coverage, then continue with the provider
-detail page using the same actual Signal primitives.
+Next task: modernize the provider detail page with the same actual Signal
+primitives, preserving connection checks, modal history, authorization and
+secret-safe rendering.
