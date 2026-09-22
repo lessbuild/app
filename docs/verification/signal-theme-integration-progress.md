@@ -6544,6 +6544,55 @@ Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
 
+## Slice 101 — Signal console surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Retained deployment, website and server command output still hard-coded the
+  old slate platform palette instead of using Signal's semantic console
+  surface. This left the most technical, high-density screens visually
+  inconsistent with the actual theme.
+
+Boundary and implementation:
+
+- Replaced the remaining raw `bg-slate-950`/`text-slate-100` output blocks with
+  the existing Signal `ui-console` and `ui-console-output` primitives.
+- Kept output sizing, wrapping, keyboard focus and polling behavior intact.
+- Added source-level coverage for all four retained output surfaces so the old
+  platform palette cannot return unnoticed.
+
+Preserved contracts and safety:
+
+- Deployment logs, website provisioning logs and server command output retain
+  their existing data, bounds, polling, rerun controls and accessibility
+  behavior.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 56 tests passed, 2,756 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-DKDFwubI.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Implementation commit `2bf4188` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `2bf4188`; assets, config, route and Blade caches were rebuilt and both
+  services are active. `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: characterize the remaining Livewire server-command modal and align
+its visual composition with Signal's actual dialog panel while preserving its
+server-side open/close and polling semantics.
+
 ## Slice 97 — Signal utility normalization and native dialog visibility — 2026-09-22
 
 Responsibility problem:
