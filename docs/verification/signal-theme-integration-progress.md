@@ -6611,6 +6611,56 @@ Next task: audit remaining hard-coded radius, color and shadow utilities in
 high-traffic inventory/detail surfaces, migrating only declarations that
 override a Signal semantic primitive.
 
+## Slice 98 — Signal skip-link primitive across public surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Public landing, documentation, API, access-request and status pages each
+  carried bespoke Tailwind skip-link styling instead of the actual Signal
+  `.ui-skip-link` component. That created a second accessibility visual
+  authority and made focus treatment diverge from the application shell.
+
+Boundary and implementation:
+
+- Replaced the six page-local skip-link class strings with the shared Signal
+  `ui-skip-link` primitive.
+- Added a source-level guard against reintroducing the retired
+  `focus:not-sr-only` implementation and verified the shared primitive is
+  present across public/authenticated view families.
+
+Preserved contracts and safety:
+
+- Existing `#main-content` targets, link text, keyboard focus order, public
+  routes, SEO metadata and responsive layout are unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 55 tests passed, 2,080 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-BwEhBmZR.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Commit `1bdd5f1` is pushed to `origin/main`.
+- Isolated runtime smoke verification after deployment: health returned
+  `{"status":"ready"}`, application and queue services were active, and
+  the runtime served `app-BwEhBmZR.css`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `1bdd5f1`; assets, config, route and Blade caches were rebuilt and both
+  services were restarted. The first immediate probe returned a transient
+  502 during restart; the readiness probe returned 200 after startup.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: inspect high-traffic resource/detail markup for hard-coded radius,
+shadow and platform-color utilities that override Signal semantic components.
+
 ## Slice 96 — native Signal dialogs and filters — 2026-09-22
 
 Responsibility problem:
