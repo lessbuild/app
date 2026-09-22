@@ -396,3 +396,68 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect provider connection controls and resource attachment
 surfaces, then modernize the next cohesive provider-management workflow.
+
+## Slice 8 — provider detail actions and resource attachments
+
+Status: implemented, verified locally, committed and pushed as `6689a64`.
+
+Responsibility problem addressed:
+
+- The provider detail page still mixed a raw destructive button with shared
+  action primitives, and attached-resource cards had no compact count or
+  mobile-specific hierarchy.
+- Connection feedback and empty resource states did not consistently use the
+  quiet colored-edge treatment used elsewhere in the Signal shell.
+
+Signal implementation:
+
+- Added a Provider integration eyebrow and an accessible connection-action
+  label to make the page header easier to scan.
+- Replaced the raw delete trigger with the shared danger button component.
+- Added resource-count badges, shrink-safe headings and compact mobile action
+  buttons to attached repository/server panels.
+- Hid secondary creation timestamps on narrow screens while preserving them
+  at larger widths, and applied the colored-edge alert treatment to feedback
+  and empty states.
+- Added a focused mobile browser journey for provider actions and attachments.
+
+Preserved contracts:
+
+- Provider authorization, delete dialog behavior, connection-test POST route,
+  modal URLs, pagination, resource links and organization-scoped queries.
+- Resource data, counts and timestamps remain unchanged; only responsive
+  presentation changed.
+
+Evidence:
+
+- `ProviderConnectionTest` plus `CreationDialogTest` — 30 tests passed, 276
+  assertions.
+- Provider detail mobile browser journey — 1 passed in the isolated fixture
+  runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `6689a64`, rebuilt and restarted through
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: audit the remaining provider inventory/detail links and modal
+loading paths for stale legacy labels or background-refresh behavior, then
+modernize the next verified workflow.
