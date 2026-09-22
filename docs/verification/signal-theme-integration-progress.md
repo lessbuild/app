@@ -1,5 +1,67 @@
 # Signal theme integration progress
 
+## Slice 106 — Signal notification and error surfaces — 2026-09-22
+
+Responsibility problem:
+
+- The notification inbox still used a bespoke one-row list with legacy
+  red/green/blue utility borders instead of Signal's notification card
+  composition.
+- The 500 error view had an independent inline slate/blue stylesheet, so it
+  could render a visibly different product shell from every other page.
+
+Boundary and implementation:
+
+- Reused Signal's `ui-notification`, `data-read`, `ui-panel`, spacing and
+  semantic feedback primitives for the notification list.
+- Kept notification-specific status meaning in data attributes and applied
+  the unread failed/healthy/information edge colors through Signal tokens.
+- Replaced the standalone error document with the shared `x-layouts.core`
+  layout, `ui-panel`, `ui-alert-danger`, `ui-eyebrow` and Signal button
+  primitives.
+- Updated behavior assertions to verify semantic status attributes rather
+  than implementation-specific legacy utility classes.
+
+Preserved contracts and safety:
+
+- Notification filters, pagination, bulk actions, read/unread transitions,
+  destination fallback, delete actions, status values and authorization are
+  unchanged.
+- The error reference, copy and recovery destinations remain available; the
+  retry link now explicitly targets the current URL instead of an empty href.
+- No controllers, persistence, queues, credentials, dependencies or
+  external infrastructure changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused notification, health-monitoring, account-activity and UI tests —
+  97 tests passed, 3,321 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px browser check found 25 rendered `ui-notification` articles,
+  semantic read/status attributes, no legacy status-border classes, no
+  horizontal overflow and no page errors. Screenshot:
+  `/tmp/deployer-notifications-signal-390.png`.
+- Implementation commit `457bec2` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `457bec2`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The served stylesheet is `build/assets/app-D4LlAziF.css`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue the source-level audit of high-traffic detail and
+inventory surfaces, using Signal's exact table, empty-state, timeline and
+dialog compositions where a concrete divergence remains.
+
 ## Slice 105 — Signal source controls in shared chrome — 2026-09-22
 
 Responsibility problem:
