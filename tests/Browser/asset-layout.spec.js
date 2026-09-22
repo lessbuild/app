@@ -470,7 +470,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     for (const workflow of [
         { path: 'providers/1', trigger: 'Edit Provider', title: 'Edit provider', query: 'edit-provider' },
         { path: 'repositories/1', trigger: 'Edit', title: 'Edit repository', query: 'edit-repository' },
-        { path: 'repositories/1', trigger: 'Enable webhook', title: 'Webhook settings', query: 'repository-webhook-settings' },
+        { path: 'repositories/1', trigger: 'Manage webhook', title: 'Webhook settings', query: 'repository-webhook-settings' },
         { path: 'servers/1', trigger: 'Edit Display Name', title: 'Edit server display name', query: 'edit-display-name' },
         { path: 'websites/1', trigger: 'Edit Website', title: 'Edit website', query: 'edit-website' },
     ]) {
@@ -480,7 +480,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
         await trigger.click();
         const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
         await expect(dialog).toBeVisible();
-        await expect(dialog.locator('form[method="POST"]')).toBeVisible();
+        await expect(dialog.locator('form[method="POST"]').first()).toBeVisible();
         expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
         expect(new URL(page.url()).pathname).toBe(initialPath);
         await expect(dialog.locator('[data-modal-close]')).toBeFocused();

@@ -47,10 +47,10 @@ class AssetLayoutFixtureTest extends TestCase
                 ['name' => 'Queue worker', 'passed' => true, 'detail' => 'Ready'],
             ]);
         $dashboardProvider = $owner->providers()->create([
-            'name' => 'Dashboard provider', 'provider' => 'github', 'token' => 'dashboard-token', 'description' => 'Dashboard fixture provider',
+            'name' => 'GitHub', 'provider' => 'github', 'token' => 'dashboard-token', 'description' => 'Test',
         ]);
         $dashboardServer = $owner->servers()->create([
-            'provider_id' => $dashboardProvider->id, 'name' => 'Dashboard server', 'type' => 'app',
+            'provider_id' => $dashboardProvider->id, 'name' => 'Server', 'type' => 'app',
             'region' => 'nyc1', 'provisioning_status' => Server::STATUS_ACTIVE,
         ]);
         $owner->servers()->create([
@@ -58,12 +58,12 @@ class AssetLayoutFixtureTest extends TestCase
             'region' => 'nyc1', 'provisioning_status' => Server::STATUS_PROVISIONING,
         ]);
         $dashboardWebsite = $owner->websites()->create([
-            'server_id' => $dashboardServer->id, 'name' => 'Dashboard website', 'url' => 'dashboard.test',
-            'description' => 'Dashboard fixture website', 'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
+            'server_id' => $dashboardServer->id, 'name' => 'App', 'url' => 'app.test',
+            'description' => 'Test', 'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
         ]);
         $dashboardRepository = $owner->repositories()->create([
             'provider_id' => $dashboardProvider->id, 'website_id' => $dashboardWebsite->id,
-            'name' => 'Dashboard repository', 'url' => 'github.com/example/dashboard.git', 'branch' => 'main', 'description' => 'Dashboard fixture repository',
+            'name' => 'App', 'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
         ]);
         $dashboardRepository->builds()->create([
             'status' => Build::STATUS_RUNNING, 'trigger_source' => Build::TRIGGER_MANUAL,
@@ -280,9 +280,10 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('A deliberately long layout fixture application name')->getContent());
         File::put($directory.'/projects-dialog.html', $this->renderPage(route('projects.index', ['dialog' => 'create-application']))
             ->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
-        $provider = $owner->providers()->create([
-            'name' => 'GitHub', 'provider' => 'github', 'token' => 'fixture-token', 'description' => 'Test',
-        ]);
+        // Keep detail-page fixtures on the deterministic first provider. The
+        // browser suite intentionally starts these pages at /1 and asserts
+        // that contextual dialogs preserve that canonical path.
+        $provider = $dashboardProvider;
         File::put($directory.'/provider-show.html', $this->renderPage(route('providers.show', $provider))->assertOk()
             ->assertSee('data-modal-trigger="provider-edit-dialog"', false)->getContent());
         File::put($directory.'/provider-connection-checks.html', $this->renderPage(route('providers.connection-checks.index', [
@@ -299,17 +300,8 @@ class AssetLayoutFixtureTest extends TestCase
             'fragment' => 1,
             'return_to' => route('providers.show', $provider),
         ]))->assertOk()->assertSee('<form', false)->getContent());
-        $server = $owner->servers()->create([
-            'provider_id' => $provider->id,
-            'name' => 'Server',
-            'type' => 'app',
-            'region' => 'nyc1',
-            'provisioning_status' => Server::STATUS_ACTIVE,
-        ]);
-        $website = $owner->websites()->create([
-            'server_id' => $server->id, 'name' => 'App', 'url' => 'app.test', 'description' => 'Test',
-            'environment' => '', 'provisioning_status' => Website::STATUS_ACTIVE,
-        ]);
+        $server = $dashboardServer;
+        $website = $dashboardWebsite;
         File::put($directory.'/servers.html', $this->renderPage(route('servers.index'))->assertOk()
             ->assertSee('data-modal-trigger="server-create-dialog"', false)->getContent());
         File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))
@@ -389,16 +381,13 @@ class AssetLayoutFixtureTest extends TestCase
             'repository_password' => 'fixture-repository-password',
             'path_prefix' => 'fixture',
         ]);
-        $repository = $owner->repositories()->create([
-            'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'App',
-            'url' => 'github.com/example/app.git', 'branch' => 'main', 'description' => 'Test',
-        ]);
+        $repository = $dashboardRepository;
         $repository->update([
             'webhook_enabled' => true,
             'auto_deploy_include_paths' => ['apps/**'],
         ]);
         $repositoryDelivery = $repository->webhookDeliveries()->create([
-            'delivery_id' => 'fixture-webhook-delivery',
+            'delivery_id' => 'fixture-webhook-delivery-detail',
             'revision' => str_repeat('c', 40),
             'commit_message' => 'Fixture webhook delivery',
             'changed_paths' => ['apps/app.php'],
@@ -490,6 +479,14 @@ class AssetLayoutFixtureTest extends TestCase
             ->assertSee('Create a review')
             ->assertDontSee('<html', false)
             ->getContent());
+        // The dashboard fixtures above intentionally contain an active build,
+        // but configuration review must be rendered after that workflow has
+        // settled. Complete the database record after exporting those pages
+        // so both fixture journeys remain representative and deterministic.
+        $dashboardRepository->builds()->where('status', Build::STATUS_RUNNING)->update([
+            'status' => Build::STATUS_SUCCEEDED,
+            'finished_at' => now(),
+        ]);
         $review = app(ApplicationConfigurationReviews::class)->create($project, $owner,
             "version: 2\nenvironments:\n  staging:\n    type: staging\n    placement: site\n    runtime:\n      type: php\n      build_command: fixture-private-command\n    deploy:\n      repository: app\n",
             ['placements' => ['site' => $website->id], 'repositories' => ['app' => $repository->id]],
@@ -519,7 +516,9 @@ class AssetLayoutFixtureTest extends TestCase
             'trigger_source' => Build::TRIGGER_MANUAL,
             'started_at' => now()->subMinutes(2),
             'finished_at' => now(),
+            'created_at' => now()->subMinutes(2),
         ]);
+        $this->assertNotNull($build->previousInRepository(), 'The build fixture must have a previous deployment.');
         File::put($directory.'/website-deployment-history.html', $this->renderPage(route('builds.index', [
             'website_id' => $website->id,
             'fragment' => 'deployment-history',
