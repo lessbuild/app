@@ -1,15 +1,45 @@
 <x-layouts.app>
+    @php
+        $domains = $websites->flatMap(fn ($website) => $website->domains);
+        $attentionDomainCount = $domains->filter(fn ($domain) => $domain->dns_status !== 'active' || $domain->ssl_status !== 'active')->count();
+        $domainDialog = request()->query('dialog');
+        $addDomainOpen = $domainDialog === 'add-domain'
+            || ($domainDialog === null && $errors->hasAny(['hostname', 'type', 'redirect_url']));
+        $temporaryDomainOpen = $domainDialog === 'temporary-domain';
+    @endphp
+
     <x-layouts.partials.heading
         eyebrow="{{ __('Delivery targets') }}"
         icon="link"
         :title="__('Domains & TLS')"
         :description="__('Manage aliases, redirects, Cloudflare DNS, temporary domains, and certificate health.')"
-    />
+    >
+        @if ($canManage)
+            <x-slot:buttons>
+                <div data-domain-actions class="flex flex-wrap gap-2">
+                    <x-ui.button
+                        :href="route('domains.index', ['dialog' => 'add-domain'])"
+                        data-modal-trigger="domain-add-dialog"
+                        aria-controls="domain-add-dialog"
+                        aria-expanded="{{ $addDomainOpen ? 'true' : 'false' }}"
+                        variant="primary"
+                    >{{ __('Add domain') }}</x-ui.button>
+                    <x-ui.button
+                        :href="route('domains.index', ['dialog' => 'temporary-domain'])"
+                        data-modal-trigger="temporary-domain-dialog"
+                        aria-controls="temporary-domain-dialog"
+                        aria-expanded="{{ $temporaryDomainOpen ? 'true' : 'false' }}"
+                        variant="secondary"
+                    >{{ __('Issue temporary domain') }}</x-ui.button>
+                </div>
+            </x-slot:buttons>
+        @endif
+    </x-layouts.partials.heading>
 
-    @php
-        $domains = $websites->flatMap(fn ($website) => $website->domains);
-        $attentionDomainCount = $domains->filter(fn ($domain) => $domain->dns_status !== 'active' || $domain->ssl_status !== 'active')->count();
-    @endphp
+    <x-ui.local-nav :label="__('Domain sections')">
+        <a href="#domain-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#domain-inventory" class="ui-local-nav__link">{{ __('Inventory') }}</a>
+    </x-ui.local-nav>
 
     <x-ui.insights
         id="domain-insights"
@@ -41,34 +71,6 @@
     </x-ui.insights>
 
     @if ($canManage)
-        @php
-            $domainDialog = request()->query('dialog');
-            $addDomainOpen = $domainDialog === 'add-domain'
-                || ($domainDialog === null && $errors->hasAny(['hostname', 'type', 'redirect_url']));
-            $temporaryDomainOpen = $domainDialog === 'temporary-domain';
-        @endphp
-
-        <div class="mt-6 flex flex-wrap gap-3">
-            <x-ui.button
-                :href="route('domains.index', ['dialog' => 'add-domain'])"
-                data-modal-trigger="domain-add-dialog"
-                aria-controls="domain-add-dialog"
-                aria-expanded="{{ $addDomainOpen ? 'true' : 'false' }}"
-                variant="primary"
-            >
-                {{ __('Add domain') }}
-            </x-ui.button>
-            <x-ui.button
-                :href="route('domains.index', ['dialog' => 'temporary-domain'])"
-                data-modal-trigger="temporary-domain-dialog"
-                aria-controls="temporary-domain-dialog"
-                aria-expanded="{{ $temporaryDomainOpen ? 'true' : 'false' }}"
-                variant="secondary"
-            >
-                {{ __('Issue temporary domain') }}
-            </x-ui.button>
-        </div>
-
         <x-scenes.domains.add-dialog
             :websites="$websites"
             :dns-providers="$dnsProviders"
@@ -82,25 +84,25 @@
         />
     @endif
 
-    <div id="domain-inventory" class="mt-6 space-y-5">
+    <div id="domain-inventory" class="ui-inventory-list mt-6 space-y-5 scroll-mt-24">
             @forelse ($websites as $website)
-                <section class="ui-card overflow-hidden">
-                    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-primary p-5">
+                <section class="ui-panel overflow-hidden" data-domain-website>
+                    <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
                         <div class="min-w-0">
-                            <h2 class="font-black text-primary">{{ $website->name }}</h2>
-                            <a href="https://{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="break-all text-sm text-ternary">
+                            <h2 class="font-black text-ink">{{ $website->name }}</h2>
+                            <a href="https://{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="ui-link break-all text-sm">
                                 {{ $website->url }}
                             </a>
                         </div>
                         <x-ui.badge>{{ $website->domains->count() }} {{ __('domains') }}</x-ui.badge>
                     </header>
 
-                    <div class="divide-y divide-primary">
+                    <div class="divide-y divide-line">
                         @foreach ($website->domains->sortBy(fn ($domain) => $domain->type === 'primary' ? 0 : 1) as $domain)
-                            <article class="flex flex-wrap items-center gap-4 p-4">
+                            <article class="flex flex-wrap items-center gap-4 p-4 transition-colors hover:bg-surface-muted sm:p-5">
                                 <div class="min-w-0 flex-1">
-                                    <p class="break-all font-bold text-primary">{{ $domain->hostname }}</p>
-                                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-secondary">
+                                    <p class="break-all font-bold text-ink">{{ $domain->hostname }}</p>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
                                         <x-ui.badge>{{ ucfirst($domain->type) }}</x-ui.badge>
                                         @if ($domain->is_temporary)
                                             <x-ui.badge tone="warning">{{ __('Temporary') }}</x-ui.badge>
@@ -112,7 +114,7 @@
                                         @endif
                                     </div>
                                     @if ($domain->redirect_url)
-                                        <p class="mt-2 break-all text-xs text-secondary">→ {{ $domain->redirect_url }}</p>
+                                        <p class="mt-2 break-all text-xs text-muted">→ {{ $domain->redirect_url }}</p>
                                     @endif
                                 </div>
 

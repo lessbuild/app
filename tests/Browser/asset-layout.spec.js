@@ -2004,6 +2004,24 @@ test('organization member roles open in a page-local dialog', async ({ page }) =
     await expect(page.getByRole('dialog', { name: 'Edit member role', exact: true })).toBeVisible();
 });
 
+test('domain actions stay in the page header above the overview on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/domains', { waitUntil: 'networkidle' });
+
+    const actions = page.locator('[data-domain-actions]');
+    const insights = page.locator('#domain-insights');
+    await expect(actions).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Add domain', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Issue temporary domain', exact: true })).toBeVisible();
+    await expect(page.locator('#domain-inventory')).toHaveClass(/\bui-inventory-list\b/);
+
+    const actionBottom = await actions.evaluate((element) => element.getBoundingClientRect().bottom);
+    const insightTop = await insights.evaluate((element) => element.getBoundingClientRect().top);
+    expect(actionBottom).toBeLessThanOrEqual(insightTop);
+});
+
 test('organization notification preferences open in a page-local dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: 'light' });
