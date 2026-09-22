@@ -2173,6 +2173,56 @@ Push status: 'd93cb9b' is on 'origin/main'.
 
 Next task: commit and verify the build/deployment-detail Signal slice.
 
+## Slice 32 — build and deployment detail
+
+Status: implemented and verified locally; code committed and pushed as
+'e143621'.
+
+Responsibility problem addressed:
+
+- The Livewire deployment-status component already owned lifecycle rendering
+  and polling, but its summary, evidence, timeline and logs had no compact
+  build-local navigation. Several approval, recovery and failure states still
+  used filled alert blocks that competed with the deployment evidence on small
+  screens.
+
+Signal implementation:
+
+- Added a compact build-local navigation for summary, evidence, timeline and
+  logs with stable scroll anchors and test hooks.
+- Converted build feedback states to quiet border-led panels while preserving
+  their status-specific border colors, roles and copy.
+- Kept the existing Deployment timeline as the single lifecycle surface; no
+  execution-checkpoint section was introduced.
+
+Preserved contracts:
+
+- Livewire polling, deployment status transitions, approval/rejection,
+  cancellation, rollback, observation, bounded log rendering/downloads,
+  dialogs and recovery actions are unchanged.
+- Existing authorization, route/response behavior, timeline ordering, mobile
+  disclosure behavior and no-op/terminal handling remain unchanged.
+- No controller, job, action, persistence, queue payload or serialized value
+  was modified.
+
+Evidence:
+
+- Deployment lifecycle, approvals, cancellation, promotion, redeployment,
+  observation, controls, comparison, notes, health checks and logs — 70 tests
+  passed, 561 assertions.
+- Full responsive asset-layout matrix — 8 tests passed across light/dark at
+  320px, 390px, 768px and 1440px, including build summary/timeline anchors.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'e143621' is on 'origin/main'.
+
+Next task: deploy the build/deployment-detail modernization and theme-state
+fix to the isolated canonical development runtime, then inspect the next
+product surface for a separate cohesive Signal slice.
+
 ## Slice 31 — repository detail and source settings
 
 Status: implemented and verified locally; code committed and pushed as
