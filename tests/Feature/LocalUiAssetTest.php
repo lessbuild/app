@@ -686,6 +686,23 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-badge ui-badge-soft', $createForm);
     }
 
+    public function test_provider_forms_use_text_choices_and_signal_selection_states(): void
+    {
+        $providerForm = File::get(resource_path('views/components/scenes/providers/_form.blade.php'));
+
+        $this->assertStringContainsString('role="radiogroup"', $providerForm);
+        $this->assertStringContainsString('ui-choice relative', $providerForm);
+        $this->assertStringContainsString('focus-within:ring-focus', $providerForm);
+        $this->assertStringContainsString('ui-input', $providerForm);
+        $this->assertStringContainsString('ui-check', $providerForm);
+        $this->assertStringNotContainsString('border-ternary', $providerForm);
+        $this->assertStringNotContainsString('bg-tertiary', $providerForm);
+        $this->assertStringNotContainsString('ring-ternary', $providerForm);
+        $this->assertStringNotContainsString('text-primary', $providerForm);
+        $this->assertStringNotContainsString('text-secondary', $providerForm);
+        $this->assertStringNotContainsString('input secondary', $providerForm);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([
