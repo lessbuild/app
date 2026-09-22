@@ -2134,6 +2134,36 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to 'fa6f4de'. The platform administration/access bundle was rebuilt,
+application/configuration/route/view caches were rebuilt, and
+buildpusher-dev-main.service plus its queue worker were restarted. The
+canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- /login — HTTP 200 with title Sign in to your account · Deployer.
+- /request-access — the runtime's enabled-registration configuration redirects
+  to /register; this preserves the configured public registration behavior.
+- /build/manifest.json — HTTP 200 with assets/app-B9YRaVew.css and
+  assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+- Served runtime smoke, accessibility and navigation suite — 7 tests passed
+  in 35.2s.
+- Isolated runtime mobile visual audit — 1 test passed in 1.1 minutes.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: sync the source checkout and inspect the next cohesive Signal
+modernization boundary.
+
 ## Slice 68 — platform administration and access surfaces — 2026-09-22
 
 Responsibility problem:
