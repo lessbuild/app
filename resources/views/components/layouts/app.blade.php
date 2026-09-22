@@ -99,12 +99,25 @@
                 this.workspaceSearchLoading = false;
                 this.workspaceSearchSequence += 1;
                 this.workspaceSearchRequest?.abort();
-                this.$nextTick(() => this.$refs.paletteInput.focus());
+                this.$nextTick(() => {
+                    const dialog = this.$refs.commandPalette;
+
+                    if (dialog && ! dialog.open) {
+                        dialog.showModal();
+                    }
+
+                    this.$refs.paletteInput.focus();
+                });
             },
             closePalette() {
                 this.palette = false;
                 this.workspaceSearchRequest?.abort();
                 this.workspaceSearchSequence += 1;
+
+                if (this.$refs.commandPalette?.open) {
+                    this.$refs.commandPalette.close();
+                }
+
                 this.restorePaletteFocus();
             },
             queueWorkspaceSearch() {
@@ -231,14 +244,21 @@
             data-online-message="{{ __('Connection restored. Refresh if the current page is stale.') }}"
         ></div>
 
-        <div id="command-palette" x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" data-workspace-search-dialog @click.self="closePalette()">
-            <div class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
-                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-ink">{{ __('Search workspace') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</x-ui.button></div>
-                <form method="GET" action="{{ route('search.index') }}" class="border-b border-line p-3">
+        <dialog id="command-palette" x-ref="commandPalette" class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" data-workspace-search-dialog @cancel.prevent="closePalette()" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
+            <div class="p-5 sm:p-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="ui-eyebrow">{{ __('Quick navigation') }}</p>
+                        <h2 id="command-palette-title" class="mt-2 text-xl font-extrabold text-ink">{{ __('Search workspace') }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Search pages, resources and workspace actions without leaving the keyboard.') }}</p>
+                    </div>
+                    <button type="button" class="ui-icon-btn" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</button>
+                </div>
+                <form method="GET" action="{{ route('search.index') }}" class="mt-6">
                     <label for="command-palette-query" class="sr-only">{{ __('Search commands and workspace resources') }}</label>
-                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="ui-input w-full rounded-xl text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
+                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="ui-input text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
                 </form>
-                <nav x-ref="paletteResults" class="max-h-[55vh] overflow-y-auto p-2" aria-label="{{ __('Quick actions') }}" role="listbox">
+                <nav x-ref="paletteResults" class="mt-4 grid max-h-[min(28rem,55vh)] gap-1 overflow-y-auto" aria-label="{{ __('Quick actions') }}" role="listbox">
                     @foreach ([
                         [__('Dashboard'), route('dashboard'), __('overview home')],
                         [__('Create application'), $applicationCreateDialogUrl, __('new project app')],
@@ -263,25 +283,23 @@
                                 default => null,
                             };
                         @endphp
-                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-ink hover:bg-surface-muted focus:bg-surface-muted focus:outline-hidden">
+                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="closePalette()" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="ui-command-item flex items-center justify-between gap-3 rounded-card px-3 py-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink focus:bg-surface-muted focus:text-ink focus:outline-hidden">
                             <span>{{ $label }}</span><span aria-hidden="true" class="text-muted">↵</span>
                         </a>
                     @endforeach
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-4 py-3 text-sm text-muted">{{ __('Searching workspace…') }}</div>
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-4 py-3 text-sm text-muted">
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-3 py-3 text-sm text-muted">{{ __('Searching workspace…') }}</div>
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-3 py-3 text-sm text-muted">
                         <p>{{ __('Workspace search could not be loaded.') }}</p>
                         <button type="button" class="ui-link" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
                     </div>
                     <div x-show="workspaceSearchResults !== ''" x-html="workspaceSearchResults"></div>
-                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-muted">
+                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-3 py-3 text-sm text-muted">
                         {{ __('No matching quick actions. Press Enter to search all workspace resources.') }}
                     </p>
-                    <div class="border-t border-line px-4 py-3 text-xs text-muted">
-                        {{ __('Press Enter to search all workspace resources for your exact query.') }}
-                    </div>
+                    <p class="mt-3 border-t border-line pt-3 text-[11px] text-subtle">{{ __('Press Enter to search all workspace resources for your exact query.') }}</p>
                 </nav>
             </div>
-        </div>
+        </dialog>
 
         @if ($applicationCreateDialogHosted)
             <x-scenes.projects.create-dialog
