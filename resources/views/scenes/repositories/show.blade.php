@@ -201,7 +201,7 @@
 
             <ul class="mt-5 grid gap-3 md:grid-cols-2">
                 @foreach ($deploymentPreflight['checks'] as $check)
-                    <li class="flex gap-3 rounded-xl border border-line bg-surface-muted p-4">
+                    <li class="flex gap-3 rounded-card border border-line bg-surface-muted p-4">
                         <span
                             aria-hidden="true"
                             class="font-extrabold"
@@ -244,7 +244,7 @@
                     </div>
                     <ul class="mt-4 grid gap-3 md:grid-cols-2">
                         @foreach ($deploymentGuidance['steps'] as $step)
-                            <li class="rounded-xl border border-line bg-surface-muted p-4">
+                            <li class="rounded-card border border-line bg-surface-muted p-4">
                                 <div class="flex gap-3">
                                     <span
                                         aria-hidden="true"
@@ -437,7 +437,7 @@
 
             <div id="webhook-deliveries" class="mt-4">
                 @if ($webhookDeliveries->isEmpty())
-                    <p class="rounded-lg border border-line border-l-4 p-4 text-sm text-muted">
+                    <p class="rounded-card border border-line border-l-4 p-4 text-sm text-muted">
                         {{ array_filter($deliveryFilters, fn ($value) => $value !== null) ? __('No webhook deliveries match these filters.') : __('No webhook deliveries have been accepted yet.') }}
                     </p>
                 @else

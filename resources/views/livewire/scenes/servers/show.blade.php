@@ -218,7 +218,7 @@
                 @endforeach
             </dl>
             @if ($metricHistory->isNotEmpty())
-                <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-line bg-surface-muted p-3" aria-label="{{ __('Memory utilization history') }}">
+                <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-card border border-line bg-surface-muted p-3" aria-label="{{ __('Memory utilization history') }}">
                     @foreach ($metricHistory as $metric)
                         <span class="min-w-px rounded-t bg-primary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>
                     @endforeach

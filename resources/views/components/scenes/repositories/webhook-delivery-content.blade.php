@@ -60,7 +60,7 @@
     </dl>
 
     @if ($delivery->commit_message)
-        <section class="rounded-xl border border-line bg-surface-muted p-4" aria-labelledby="webhook-delivery-commit-heading">
+        <section class="rounded-card border border-line bg-surface-muted p-4" aria-labelledby="webhook-delivery-commit-heading">
             <h4 id="webhook-delivery-commit-heading" class="ui-eyebrow">{{ __('Commit message') }}</h4>
             <p class="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{{ $delivery->commit_message }}</p>
         </section>
@@ -69,13 +69,13 @@
     @if (is_array($delivery->changed_paths) && $delivery->changed_paths !== [])
         <section aria-labelledby="webhook-delivery-paths-heading">
             <h4 id="webhook-delivery-paths-heading" class="ui-eyebrow">{{ __('Changed paths') }}</h4>
-            <ul class="mt-2 max-h-48 space-y-1 overflow-auto rounded-xl border border-line bg-surface-muted p-3 font-mono text-xs text-ink">
+            <ul class="mt-2 max-h-48 space-y-1 overflow-auto rounded-card border border-line bg-surface-muted p-3 font-mono text-xs text-ink">
                 @foreach ($delivery->changed_paths as $path)
                     <li class="break-all">{{ $path }}</li>
                 @endforeach
             </ul>
         </section>
     @else
-        <p class="rounded-xl border border-line border-l-4 p-4 text-sm text-muted">{{ __('Changed paths were not retained for this delivery.') }}</p>
+        <p class="rounded-card border border-line border-l-4 p-4 text-sm text-muted">{{ __('Changed paths were not retained for this delivery.') }}</p>
     @endif
 </div>
