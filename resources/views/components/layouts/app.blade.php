@@ -45,7 +45,7 @@
     </a>
     <div
         data-mobile-shell
-        class="flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
+        class="app-shell flex flex-wrap overflow-x-hidden pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0"
         x-data="{
             menu: false,
             palette: false,
@@ -181,7 +181,7 @@
          !-->
         <button
             type="button"
-            class="fixed inset-0 z-40 bg-black/40 lg:hidden"
+            class="app-shell__backdrop fixed inset-0 z-40 lg:hidden"
             style="display: none"
             x-show="menu"
             aria-label="{{ __('Close navigation') }}"
@@ -195,21 +195,21 @@
          ! Website main content
          ! ------------------------------------------------------------
          !-->
-        <main id="main-content" tabindex="-1" data-mobile-main class="min-w-0 w-full bg-page pl-0 lg:pl-64 min-h-screen">
-            <div class="sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft" data-mobile-header>
-                <div class="flex h-16 items-center justify-between px-4 lg:hidden">
-                    <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-ink">{{ config('app.name') }}</a>
+        <main id="main-content" tabindex="-1" data-mobile-main class="app-main min-w-0 w-full pl-0 lg:pl-64 min-h-screen">
+            <div class="app-topbar sticky top-0 z-30 text-ink" data-mobile-header>
+                <div class="app-topbar__mobile flex h-16 items-center justify-between px-4 lg:hidden">
+                    <a href="{{ route('dashboard') }}" data-auth-brand class="app-topbar__brand">{{ config('app.name') }}</a>
                     <button type="button" x-ref="mobilePaletteToggle" class="ui-btn ui-btn-secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-line px-1.5 py-0.5 text-[10px] text-muted">Ctrl K</kbd></button>
                     <button type="button" class="ui-icon-btn h-11 w-11 shrink-0" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span></button>
                     <button type="button" x-ref="navigationToggle" class="ui-btn ui-btn-secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
-                <div class="hidden h-14 w-full items-center justify-between border-b border-line px-6 lg:flex">
+                <div class="app-topbar__desktop hidden h-14 w-full items-center justify-between px-6 lg:flex">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:block">
                             <button type="button" x-ref="paletteToggle" class="ui-btn ui-btn-secondary" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-md border border-line px-1.5 py-0.5 text-[10px] text-muted">⌘K</kbd></button>
                         </div>
                     </div>
-                    <div class="relative flex items-center">
+                    <div class="app-topbar__actions relative flex items-center">
                         <button type="button" class="ui-icon-btn mr-2" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span></button>
                         <a href="{{ route('account.index') }}" aria-label="{{ __('Account settings') }}">
                             <x-avatar :name="auth()->user()->name" class="h-8 w-8 rounded-lg text-[10px] shadow-lg" />
@@ -223,7 +223,7 @@
                 </div>
             </div>
 
-            <div data-mobile-content class="mb-0 p-4 sm:mb-20 sm:p-6">
+            <div data-mobile-content class="app-main__content mb-0 p-4 sm:mb-20 sm:p-6">
                 <x-alerts.flash />
                 {{ $slot }}
             </div>
@@ -414,14 +414,14 @@
          ! Footer and links
          ! ------------------------------------------------------------
          !-->
-        <div data-mobile-footer class="hidden w-full items-center justify-between border-t border-line bg-surface px-6 py-6 text-sm text-ink sm:px-8 lg:flex">
+        <div data-mobile-footer class="app-footer hidden w-full items-center justify-between px-6 py-6 text-sm sm:px-8 lg:flex">
             <p class="mb-2 lg:mb-0">
                 &copy; {{ now()->year }} {{ config('app.name') }}
             </p>
             <nav class="flex" aria-label="{{ __('Footer navigation') }}">
-                <a href="{{ route('dashboard') }}" class="mr-6 text-muted transition-colors hover:text-ink">{{ __('Dashboard') }}</a>
-                <a href="{{ route('activity.index') }}" class="mr-6 text-muted transition-colors hover:text-ink">{{ __('Activity') }}</a>
-                <a href="{{ route('account.index') }}" class="text-muted transition-colors hover:text-ink">{{ __('Account') }}</a>
+                <a href="{{ route('dashboard') }}" class="app-footer__link mr-6">{{ __('Dashboard') }}</a>
+                <a href="{{ route('activity.index') }}" class="app-footer__link mr-6">{{ __('Activity') }}</a>
+                <a href="{{ route('account.index') }}" class="app-footer__link">{{ __('Account') }}</a>
             </nav>
         </div>
     </div>

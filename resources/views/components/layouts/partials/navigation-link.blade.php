@@ -12,13 +12,8 @@
 <a href="{{ $href }}"
     @if ($active) aria-current="page" @endif
     @class([
-        'group flex min-w-0 items-center gap-3 rounded-lg text-sm transition-colors focus-visible:relative focus-visible:z-10',
-        'min-h-10 px-3 py-2.5' => ! $mobile,
-        'min-h-[46px] border px-3 py-2 text-xs font-semibold shadow-xs' => $mobile,
-        'bg-surface-muted font-semibold text-ink' => $active && ! $mobile,
-        'border-line bg-[var(--ui-primary-soft)] text-[var(--ui-primary)]' => $active && $mobile,
-        'text-muted hover:bg-surface-muted hover:text-ink' => ! $active && ! $mobile,
-        'border-line bg-surface text-ink hover:bg-surface-muted' => ! $active && $mobile,
+        'app-sidebar-link group min-w-0 focus-visible:relative focus-visible:z-10' => ! $mobile,
+        'app-mobile-nav-link group min-w-0 focus-visible:relative focus-visible:z-10' => $mobile,
     ])
 >
     <svg @class([

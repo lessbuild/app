@@ -72,7 +72,7 @@ class DashboardTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft', false)
+            ->assertSee('class="app-topbar sticky top-0 z-30 text-ink', false)
             ->assertSee('class="ui-bottom-nav lg:hidden"', false)
             ->assertSee('class="ui-bottom-nav-link"', false)
             ->assertSee('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', false)
@@ -88,7 +88,7 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-quick-navigation', false)
             ->assertSee('data-mobile-footer', false)
-            ->assertSee('class="hidden w-full items-center justify-between border-t border-line', false)
+            ->assertSee('class="app-footer hidden w-full items-center justify-between', false)
             ->assertSee('data-mobile-keyboard-open', false)
             ->assertSee('visualViewport', false);
     }
@@ -150,7 +150,7 @@ class DashboardTest extends TestCase
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
         $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*bg-surface-muted[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
+            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*app-sidebar-link[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
             $response->getContent(),
         );
     }

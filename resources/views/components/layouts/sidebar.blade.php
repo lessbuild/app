@@ -5,12 +5,13 @@
     x-cloak
     role="navigation"
     aria-label="{{ __('Primary navigation') }}"
-    class="fixed inset-y-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto overscroll-contain border-r border-line bg-page pb-4 lg:flex"
+    class="app-sidebar fixed inset-y-0 left-0 z-50 hidden h-screen w-64 flex-col overflow-y-auto overscroll-contain pb-4 lg:flex"
     @click="if ($event.target.closest('a')) menu = false"
 >
-    <div class="sticky top-0 z-10 flex h-14 w-full shrink-0 items-center justify-between border-b border-line bg-page px-4">
-        <a href="{{ route('dashboard') }}" class="truncate pl-2 text-lg font-bold leading-tight text-ink">
-            {{ config('app.name') }}
+    <div class="app-sidebar__header sticky top-0 z-10 flex h-14 w-full shrink-0 items-center justify-between px-4">
+        <a href="{{ route('dashboard') }}" class="app-sidebar__brand min-w-0" aria-label="{{ config('app.name') }}">
+            <span class="app-sidebar__brand-mark" aria-hidden="true">{{ str(config('app.name'))->substr(0, 1) }}</span>
+            <span class="truncate">{{ config('app.name') }}</span>
         </a>
         <button
             type="button"
@@ -28,20 +29,20 @@
     <a
         href="{{ route('search.index') }}"
         data-workspace-search-trigger
-        class="mx-3 my-4 flex min-h-11 items-center justify-between gap-3 rounded-lg border border-line bg-surface-muted px-3 text-sm text-muted hover:text-ink"
+        class="app-sidebar__search mx-3 my-4 flex min-h-11 items-center justify-between gap-3 px-3 text-sm"
         @click.prevent="openPalette($event.currentTarget)"
     >
         <span>{{ __('Search or jump to…') }}</span>
-        <kbd class="rounded border border-line px-1.5 py-0.5 text-[10px]">⌘K</kbd>
+        <kbd class="ui-kbd">⌘K</kbd>
     </a>
 
-    <div class="space-y-5 px-3 pb-4">
+    <div class="app-sidebar__groups space-y-5 px-3 pb-4">
         @foreach ($navigation['groups'] ?? [] as $group)
             <section aria-labelledby="desktop-navigation-{{ $loop->index }}">
-                <h2 id="desktop-navigation-{{ $loop->index }}" class="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-muted">
+                <h2 id="desktop-navigation-{{ $loop->index }}" class="app-sidebar__label mb-1 px-3">
                     {{ $group['label'] }}
                 </h2>
-                <nav class="space-y-1" aria-label="{{ $group['label'] }}">
+                <nav class="app-sidebar__nav space-y-1" aria-label="{{ $group['label'] }}">
                     @foreach ($group['items'] as $item)
                         <x-layouts.partials.navigation-link :item="$item" />
                     @endforeach
@@ -50,23 +51,23 @@
         @endforeach
     </div>
 
-    <div class="mt-auto space-y-5 px-3">
+    <div class="app-sidebar__footer mt-auto space-y-5 px-3">
         <section aria-labelledby="desktop-navigation-help">
-            <h2 id="desktop-navigation-help" class="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-muted">
+            <h2 id="desktop-navigation-help" class="app-sidebar__label mb-1 px-3">
                 {{ __('Help') }}
             </h2>
-            <nav class="space-y-1" aria-label="{{ __('Help') }}">
+            <nav class="app-sidebar__nav space-y-1" aria-label="{{ __('Help') }}">
                 @foreach ($navigation['support'] ?? [] as $item)
                     <x-layouts.partials.navigation-link :item="$item" />
                 @endforeach
             </nav>
         </section>
 
-        <section class="border-t border-line pt-4" aria-labelledby="desktop-navigation-workspace">
-            <h2 id="desktop-navigation-workspace" class="mb-1 px-3 text-[10px] font-bold uppercase tracking-widest text-muted">
+        <section class="app-sidebar__workspace border-t pt-4" aria-labelledby="desktop-navigation-workspace">
+            <h2 id="desktop-navigation-workspace" class="app-sidebar__label mb-1 px-3">
                 {{ __('Workspace') }}
             </h2>
-            <nav class="space-y-1" aria-label="{{ __('Workspace') }}">
+            <nav class="app-sidebar__nav space-y-1" aria-label="{{ __('Workspace') }}">
                 @foreach ($navigation['profile'] ?? [] as $item)
                     <x-layouts.partials.navigation-link :item="$item" />
                 @endforeach

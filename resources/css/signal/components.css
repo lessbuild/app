@@ -193,10 +193,43 @@
 
   .surface-grid { background-image: linear-gradient(to right, color-mix(in srgb, var(--ui-line) 50%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--ui-line) 50%, transparent) 1px, transparent 1px); background-size: 3.2rem 3.2rem; }
   .dot-grid { background-image: radial-gradient(color-mix(in srgb, var(--ui-primary) 32%, transparent) 1px, transparent 1px); background-size: 1rem 1rem; }
-  .app-sidebar-link { display: flex; align-items: center; gap: 0.7rem; border-radius: 0.78rem; padding: 0.68rem 0.75rem; color: var(--ui-muted); font-size: 0.82rem; font-weight: 650; transition: background-color 160ms ease, color 160ms ease; }
+  .app-shell { background: var(--ui-page); }
+  .app-shell__backdrop { background: color-mix(in srgb, var(--ui-emphasis) 52%, transparent); backdrop-filter: blur(2px); }
+  .app-main { background: var(--ui-page); }
+  .app-sidebar { width: var(--sidebar-width); border-right: 1px solid var(--ui-line); background: var(--ui-surface); box-shadow: 8px 0 28px rgb(16 24 40 / 0.035); }
+  .app-sidebar__header { border-bottom: 1px solid var(--ui-line); background: color-mix(in srgb, var(--ui-surface) 94%, var(--ui-primary-soft)); }
+  .app-sidebar__brand, .app-mobile-navigation__brand { display: inline-flex; min-width: 0; align-items: center; gap: 0.58rem; color: var(--ui-ink); font-size: 0.92rem; font-weight: 850; letter-spacing: -0.02em; text-decoration: none; }
+  .app-sidebar__brand-mark { display: inline-grid; width: 1.9rem; height: 1.9rem; flex: 0 0 auto; place-items: center; border-radius: var(--radius-control-value); background: linear-gradient(135deg, var(--ui-primary), var(--ui-primary-hover)); color: var(--ui-on-primary); font-size: 0.82rem; font-weight: 900; box-shadow: 0 6px 14px color-mix(in srgb, var(--ui-primary) 28%, transparent); }
+  .app-sidebar__search { border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface-muted); color: var(--ui-muted); text-decoration: none; transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease; }
+  .app-sidebar__search:hover, .app-sidebar__search:focus-visible { border-color: color-mix(in srgb, var(--ui-primary) 48%, var(--ui-line)); background: var(--ui-primary-soft); color: var(--ui-ink); }
+  .app-sidebar__search:active { transform: translateY(1px); }
+  .app-sidebar__label { color: var(--ui-subtle); font-size: 0.63rem; font-weight: 850; letter-spacing: 0.14em; text-transform: uppercase; }
+  .app-sidebar__workspace { border-color: var(--ui-line); }
+  .app-sidebar-link { position: relative; display: flex; align-items: center; gap: 0.7rem; border-radius: 0.78rem; padding: 0.68rem 0.75rem; color: var(--ui-muted); font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
   .app-sidebar-link:hover { background: var(--ui-surface-muted); color: var(--ui-ink); }
+  .app-sidebar-link:active { transform: translateY(1px); }
   .app-sidebar-link[aria-current="page"] { background: var(--ui-ink); color: var(--ui-surface); box-shadow: 0 4px 12px rgb(16 24 40 / 0.12); }
   .dark .app-sidebar-link[aria-current="page"] { background: var(--ui-surface-raised); color: var(--ui-ink); }
+  .app-mobile-nav-link { display: flex; min-height: 3.25rem; align-items: center; gap: 0.65rem; border: 1px solid var(--ui-line); border-radius: 0.78rem; background: var(--ui-surface); color: var(--ui-muted); padding: 0.72rem 0.8rem; font-size: 0.78rem; font-weight: 750; text-decoration: none; box-shadow: 0 1px 2px rgb(16 24 40 / 0.035); transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+  .app-mobile-nav-link:hover, .app-mobile-nav-link:focus-visible { border-color: color-mix(in srgb, var(--ui-primary) 48%, var(--ui-line)); background: var(--ui-primary-soft); color: var(--ui-ink); }
+  .app-mobile-nav-link:active { transform: translateY(1px); }
+  .app-mobile-nav-link[aria-current="page"] { border-color: var(--ui-primary); background: var(--ui-primary-soft); color: var(--ui-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 10%, transparent); }
+  .app-topbar { border-bottom: 1px solid var(--ui-line); background: color-mix(in srgb, var(--ui-surface) 92%, transparent); box-shadow: var(--shadow-soft-value); backdrop-filter: blur(16px); }
+  .app-topbar__mobile, .app-topbar__desktop { border-color: var(--ui-line); }
+  .app-topbar__mobile { background: color-mix(in srgb, var(--ui-surface) 96%, var(--ui-primary-soft)); }
+  .app-topbar__desktop { border-bottom: 1px solid var(--ui-line); }
+  .app-topbar__brand { color: var(--ui-ink); font-size: 1.02rem; font-weight: 900; letter-spacing: -0.025em; text-decoration: none; }
+  .app-topbar__brand:hover { color: var(--ui-primary); }
+  .app-topbar__actions { gap: 0.35rem; }
+  .app-footer { border-top: 1px solid var(--ui-line); background: var(--ui-surface); color: var(--ui-muted); }
+  .app-footer__link { color: var(--ui-muted); text-decoration: none; transition: color 160ms ease; }
+  .app-footer__link:hover { color: var(--ui-primary); }
+  .app-mobile-navigation { background: var(--ui-page); color: var(--ui-ink); }
+  .app-mobile-navigation__header { border-bottom: 1px solid var(--ui-line); background: color-mix(in srgb, var(--ui-surface) 96%, var(--ui-primary-soft)); box-shadow: var(--shadow-soft-value); }
+  .app-mobile-navigation__search { border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface-muted); color: var(--ui-muted); text-decoration: none; transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease; }
+  .app-mobile-navigation__search:hover, .app-mobile-navigation__search:focus-visible { border-color: color-mix(in srgb, var(--ui-primary) 48%, var(--ui-line)); background: var(--ui-primary-soft); color: var(--ui-ink); }
+  .app-mobile-navigation__workspace { border: 1px solid var(--ui-line); border-radius: var(--radius-panel-value); background: var(--ui-surface); color: var(--ui-ink); box-shadow: var(--shadow-soft-value); text-decoration: none; }
+  .app-mobile-navigation__nav { border-color: var(--ui-line); }
 }
 
 @media (max-width: 639px) {

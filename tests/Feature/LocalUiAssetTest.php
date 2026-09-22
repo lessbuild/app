@@ -446,6 +446,11 @@ class LocalUiAssetTest extends TestCase
             ->assertSuccessful()
             ->assertSee('class="motion-safe:scroll-smooth"', false)
             ->assertSee('data-mobile-shell', false)
+            ->assertSee('class="app-sidebar fixed', false)
+            ->assertSee('class="app-topbar sticky', false)
+            ->assertSee('class="app-mobile-navigation fixed', false)
+            ->assertSee('app-sidebar-link', false)
+            ->assertSee('app-mobile-nav-link', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-header', false)
@@ -521,6 +526,11 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-skip-link', $appShell);
         $this->assertStringContainsString('ui-bottom-nav', $appShell);
         $this->assertStringContainsString('ui-bottom-nav-link', $appShell);
+        $this->assertStringContainsString('app-topbar', $appShell);
+        $this->assertStringContainsString('app-footer', $appShell);
+        $signalComponents = File::get(resource_path('css/signal/components.css'));
+        $this->assertStringContainsString('app-sidebar-link', $signalComponents);
+        $this->assertStringContainsString('app-mobile-nav-link', $signalComponents);
         $this->assertStringContainsString('ui-btn ui-btn-primary', $coreLayout);
         $this->assertStringContainsString('ui-btn ui-btn-secondary', $coreLayout);
         $this->assertStringNotContainsString('button--primary', $coreLayout);
