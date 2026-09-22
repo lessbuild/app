@@ -2264,6 +2264,57 @@ Next task: deploy the repository-surface modernization to the isolated
 canonical Deployer runtime, then inspect the next product surface for a
 separate cohesive Signal modernization boundary.
 
+## Slice 47 — managed database operation surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'36f0b1a'.
+
+Responsibility problem addressed:
+
+- Managed database operations already kept authorization, entitlement checks,
+  validation, queueing and destructive clone safety in controllers, requests
+  and actions. The inventory, credential dialog and clone controls still used
+  compatibility palette classes and fixed code/password surfaces, making a
+  high-consequence workflow harder to scan across themes and mobile widths.
+
+Signal implementation:
+
+- Migrated database inventory metadata, management disclosures, credential
+  forms, clone history and matched operational surfaces to semantic Signal
+  roles and shared cards.
+- Converted credential/clone fields to `ui-input` and `ui-label`.
+- Reused the theme-aware library code surface for the one-time generated
+  password display.
+- Added managed database inventory and credential-dialog fixtures to the
+  responsive browser matrix.
+
+Preserved contracts:
+
+- Database resource ordering, snapshot values, one-time password flash,
+  credential dialog query parameters, validation errors, privilege/expiry
+  fields, clone confirmation, production-target rejection, entitlement and
+  role behavior, queue timing and secret hiding are unchanged.
+- No controller, request, policy, action, persistence, transaction, queue or
+  remote database behavior was modified.
+
+Evidence:
+
+- Database operations, page-insight and platform-expansion checks — 16 tests
+  passed, 125 assertions.
+- Browser fixture export including databases — 1 test passed, 308 assertions.
+- Fixture-backed responsive/navigation coverage — 2 tests passed for light/dark
+  at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '36f0b1a' is on 'origin/main'.
+
+Next task: deploy the managed-database modernization to the isolated canonical
+Deployer runtime, then inspect the next product surface for a separate
+cohesive Signal modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
