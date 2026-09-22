@@ -1805,3 +1805,57 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect automation and runtime-control surfaces for the next
 cohesive Signal modernization boundary.
+
+## Slice 27 — automation and runtime controls
+
+Status: implemented and verified locally; code committed and pushed as
+'5f7069b'.
+
+Responsibility problem addressed:
+
+- Automation already keeps token management, workflow application, runtime
+  transitions, schedules and task execution in their existing controllers,
+  requests, actions and jobs, but the page and its reusable dialogs still
+  mixed legacy card, text and input classes.
+- The resulting hierarchy made API access, application workflows and task-run
+  evidence harder to scan on a phone, while status alerts competed visually
+  with the actual controls.
+
+Signal implementation:
+
+- Replaced the automation overview cards, token list, quick-start panel,
+  application accordions and environment controls with quiet Signal panels,
+  muted metadata and shared input/label/check-control styles.
+- Added explicit responsive section and item hooks for overview summaries,
+  tokens, quick start, applications, environments, schedules, tasks and
+  task runs without changing the existing route or dialog identifiers.
+- Changed success, token-copy and validation feedback to a restrained
+  border-accent treatment; the one-time token remains in a dark code block
+  and is not exposed through any new markup or logging path.
+- Updated schedule, task, token and task-output dialog fragments to the same
+  compact control and evidence language.
+
+Preserved contracts:
+
+- Technical compatibility identifiers such as 'buildpusher.yaml',
+  'BUILDPUSHER_TOKEN' and existing API URLs remain unchanged.
+- Existing modal query keys, validation error reopening, named form fields,
+  token expiry and ability defaults, queue dispatch, runtime state changes,
+  schedule/task deletion, task-output authorization and raw-output responses
+  remain unchanged.
+
+Evidence:
+
+- Automation, shared insight and local asset coverage — 63 tests passed,
+  732 assertions.
+- Focused automation browser journeys — 5 Playwright tests passed: context
+  evidence, token dialog, schedule/task dialogs and scheduled-task output.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '5f7069b' is on 'origin/main'.
+
+Next task: deploy the automation modernization, then inspect the next
+runtime-control surface for a separate cohesive Signal slice.
