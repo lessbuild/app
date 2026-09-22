@@ -5285,3 +5285,68 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 73 — automation output and quick-start surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Automation already used the shared Signal panel and input primitives, but its
+  token reveal, CLI quick-start code, scheduled-run links and retained output
+  still exposed legacy gray-palette controls. The remaining visual inconsistency
+  was especially noticeable in the compact mobile workflow.
+
+Boundary and implementation:
+
+- Kept the automation controller, requests, token actions, scheduled-task
+  actions, modal loading behavior and output route unchanged.
+- Reused the existing `ui-console`, `ui-console-output` and `ui-chip`
+  primitives for code/output and scheduled-run navigation.
+- Updated the automation details focus state to use the shared Signal focus
+  token and added focused regression assertions for the presentation boundary.
+
+Preserved contracts and safety:
+
+- Token generation/revocation, copy-once token behavior, CLI examples,
+  schedule/task composers, output authorization, raw-output links, modal query
+  state and read-only output semantics are unchanged.
+- No API, persistence, queue, authorization, provider or deployment behavior
+  changed.
+
+Evidence:
+
+- `tests/Feature/AutomationTest.php` — 39 tests passed, 227 assertions.
+- `tests/Browser/fixtures/AssetLayoutFixtureTest.php` with an isolated fixture
+  directory — 1 test passed, 313 assertions.
+- Focused scheduled-task output browser check — 1 test passed on rerun after a
+  transient fixture-load failure; the generated fixture contained the expected
+  output markers.
+- `npm run build` — passed; generated CSS is `assets/app-x49JGtjd.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Push status: implementation commit `ae9766e` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `ae9766e`. The application assets, view cache and route cache were rebuilt;
+the generated CSS is `assets/app-x49JGtjd.css`. Both the application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}`.
+
+Served-runtime evidence:
+
+- `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 3 tests passed across mobile, tablet and
+  desktop in 34.1 seconds.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
