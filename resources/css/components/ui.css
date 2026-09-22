@@ -9,6 +9,16 @@
         background: var(--ui-surface);
     }
 
+    .ui-panel--success {
+        border-color: color-mix(in srgb, var(--ui-success) 46%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-panel--warning {
+        border-color: color-mix(in srgb, var(--ui-warning) 46%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
     .ui-alert-info {
         border-color: color-mix(in srgb, var(--ui-info) 28%, var(--ui-line));
         background: var(--ui-surface);

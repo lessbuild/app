@@ -188,9 +188,9 @@
     @php($healthOperational = $canManageSystemHealth ? $systemHealth['passed'] : $platformStatus['operational'])
     @if(in_array('status', $dashboardWidgets, true))
     <section @class([
-        'ui-alert ui-panel mb-12 p-5',
-        'ui-alert--success' => $healthOperational,
-        'ui-alert--danger' => ! $healthOperational,
+        'ui-panel mb-12 p-5',
+        'ui-panel--success' => $healthOperational,
+        'ui-panel--danger' => ! $healthOperational,
     ]) aria-labelledby="dashboard-system-health">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -257,7 +257,7 @@
 
     @php($provisioningTotal = array_sum($provisioningCounts))
     @if ($provisioningTotal > 0)
-        <section class="ui-alert ui-panel ui-alert--warning mb-12 p-5">
+        <section class="ui-panel ui-panel--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Resource lifecycle') }}</p>
@@ -533,7 +533,7 @@
     @endif
 
     @if ($communityReportCount > 0)
-        <section class="ui-alert ui-panel ui-alert--danger mb-12 p-5">
+        <section class="ui-panel ui-panel--danger mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Community safety') }}</p>
@@ -587,7 +587,7 @@
     @endif
 
     @if ($recipeUpdateCount > 0)
-        <section class="ui-alert ui-panel ui-alert--warning mb-12 p-5">
+        <section class="ui-panel ui-panel--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Maintenance') }}</p>

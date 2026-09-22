@@ -1,9 +1,9 @@
 @php($attentionTotal = array_sum($attentionCounts))
 
 <section @class([
-    'ui-alert ui-panel mb-12 p-5',
-    'ui-alert--danger' => $attentionTotal > 0,
-    'ui-alert--success' => $attentionTotal === 0,
+    'ui-panel mb-12 p-5',
+    'ui-panel--danger' => $attentionTotal > 0,
+    'ui-panel--success' => $attentionTotal === 0,
 ]) aria-labelledby="dashboard-attention-title">
     <div class="flex items-start justify-between gap-4">
         <div>

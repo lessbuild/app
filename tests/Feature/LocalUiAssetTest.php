@@ -717,6 +717,18 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString("dialog.addEventListener('cancel'", $coreLayout);
     }
 
+    public function test_dashboard_status_sections_do_not_use_feedback_alert_as_a_layout_container(): void
+    {
+        $dashboard = File::get(resource_path('views/dashboard.blade.php'));
+        $attention = File::get(resource_path('views/dashboard/_attention.blade.php'));
+
+        foreach ([$dashboard, $attention] as $source) {
+            $this->assertStringNotContainsString('ui-alert ui-panel', $source);
+            $this->assertStringNotContainsString('ui-panel ui-alert', $source);
+            $this->assertStringContainsString('ui-panel--', $source);
+        }
+    }
+
     public function test_authenticated_layout_has_live_accessible_shell_navigation(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);
