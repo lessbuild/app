@@ -3,12 +3,12 @@
     'fieldPrefix' => '',
 ])
 
-<div class="space-y-6 bg-primary px-4 py-5 sm:p-6">
+<div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
     <div>
-        <label for="{{ $fieldPrefix }}name" class="block text-sm font-medium text-primary">{{ __('Name') }}</label>
+        <label for="{{ $fieldPrefix }}name" class="ui-label">{{ __('Name') }}</label>
         <input
             id="{{ $fieldPrefix }}name"
-            class="input secondary mt-2 rounded-lg"
+            class="ui-input mt-2"
             name="name"
             type="text"
             value="{{ old('name', $recipe?->name ?? '') }}"
@@ -19,10 +19,10 @@
     </div>
 
     <div>
-        <label for="{{ $fieldPrefix }}description" class="block text-sm font-medium text-primary">{{ __('Description') }}</label>
+        <label for="{{ $fieldPrefix }}description" class="ui-label">{{ __('Description') }}</label>
         <textarea
             id="{{ $fieldPrefix }}description"
-            class="input secondary mt-2 rounded-lg"
+            class="ui-input mt-2"
             name="description"
             rows="3"
             placeholder="Describe what this recipe changes on a server."
@@ -31,13 +31,13 @@
     </div>
 
     <div>
-        <label for="{{ $fieldPrefix }}script" class="block text-sm font-medium text-primary">{{ __('Bash script') }}</label>
-        <p class="mb-2 mt-1 text-xs text-secondary">
+        <label for="{{ $fieldPrefix }}script" class="ui-label">{{ __('Bash script') }}</label>
+        <p class="mb-2 mt-1 text-xs text-muted">
             {{ __('This runs as root during provisioning. The recipe stops provisioning if any command fails.') }}
         </p>
         <textarea
             id="{{ $fieldPrefix }}script"
-            class="input secondary rounded-lg font-mono"
+            class="ui-input font-mono"
             name="script"
             rows="14"
             spellcheck="false"
@@ -47,7 +47,7 @@
         <x-forms.errors name="script" />
     </div>
 
-    <div class="ui-card bg-secondary p-4">
+    <div class="ui-card bg-surface-muted p-4">
         <div class="flex items-start gap-3">
             <input type="hidden" name="is_published" value="0">
             <input
@@ -59,15 +59,15 @@
                 @checked(old('is_published', $recipe?->is_published ?? false))
             >
             <div>
-                <label for="{{ $fieldPrefix }}is_published" class="block text-sm font-medium text-primary">{{ __('Publish to the community gallery') }}</label>
-                <p class="mt-1 text-xs text-secondary">
+                <label for="{{ $fieldPrefix }}is_published" class="block text-sm font-semibold text-ink">{{ __('Publish to the community gallery') }}</label>
+                <p class="mt-1 text-xs text-muted">
                     {{ __('Everyone with an account can inspect and copy this script. Never publish passwords, tokens, private keys, or customer data.') }}
                 </p>
             </div>
         </div>
         <div class="mt-4">
-            <label for="{{ $fieldPrefix }}category" class="block text-sm font-medium text-primary">{{ __('Gallery category') }}</label>
-            <select id="{{ $fieldPrefix }}category" name="category" class="input secondary mt-2 w-full rounded-lg sm:max-w-xs">
+            <label for="{{ $fieldPrefix }}category" class="ui-label">{{ __('Gallery category') }}</label>
+            <select id="{{ $fieldPrefix }}category" name="category" class="ui-input mt-2 w-full sm:max-w-xs">
                 <option value="">{{ __('Select a category') }}</option>
                 @foreach (\App\Models\Recipe::CATEGORIES as $category)
                     <option value="{{ $category }}" @selected(old('category', $recipe?->category ?? '') === $category)>

@@ -495,6 +495,9 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     }
 
     await page.goto('http://buildpusher.test/recipes', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('navigation', { name: 'Recipe sections', exact: true })).toBeVisible();
+    await expect(page.locator('#recipe-insights')).toBeVisible();
+    await expect(page.locator('#recipe-inventory')).toBeVisible();
     const recipeTrigger = page.getByRole('link', { name: 'Edit', exact: true }).first();
     const recipeUrl = new URL(await recipeTrigger.getAttribute('href'), 'http://buildpusher.test');
     const recipeInitialPath = new URL(page.url()).pathname;
@@ -502,6 +505,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     const recipeDialog = page.getByRole('dialog', { name: 'Edit recipe', exact: true });
     await expect(recipeDialog).toBeVisible();
     await expect(recipeDialog.locator('form[method="POST"]')).toBeVisible();
+    await expect(recipeDialog.locator('.ui-input').first()).toBeVisible();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^edit-recipe-\d+$/);
     expect(new URL(page.url()).pathname).toBe(recipeInitialPath);
     await expect(recipeDialog.locator('[data-modal-close]')).toBeFocused();

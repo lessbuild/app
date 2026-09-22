@@ -28,6 +28,11 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Recipe sections')">
+        <a href="#recipe-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#recipe-inventory" class="ui-local-nav__link">{{ __('Inventory') }}</a>
+    </x-ui.local-nav>
+
     @if (session('status'))
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
@@ -45,12 +50,12 @@
         <form method="GET" action="{{ route('recipes.index') }}">
             <div class="grid gap-4 md:grid-cols-2">
                 <div>
-                    <label for="search" class="block text-xs font-semibold uppercase tracking-wide text-secondary">{{ __('Search') }}</label>
-                    <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="input secondary mt-2 w-full rounded-lg">
+                    <label for="search" class="ui-label">{{ __('Search') }}</label>
+                    <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Name or description') }}" class="ui-input mt-2">
                 </div>
                 <div>
-                    <label for="usage" class="block text-xs font-semibold uppercase tracking-wide text-secondary">{{ __('Usage') }}</label>
-                    <select id="usage" name="usage" class="input secondary mt-2 w-full rounded-lg">
+                    <label for="usage" class="ui-label">{{ __('Usage') }}</label>
+                    <select id="usage" name="usage" class="ui-input mt-2">
                         <option value="">{{ __('All usage states') }}</option>
                         @foreach ($usages as $usage)
                             <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>{{ str($usage)->replace('_', ' ')->title() }}</option>
@@ -69,7 +74,7 @@
 
     <x-ui.insights
         id="recipe-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="false"
         :summary="trans_choice(':count matching recipe|:count matching recipes', $metrics['total'], ['count' => $metrics['total']])"
     >
@@ -83,6 +88,7 @@
         </dl>
     </x-ui.insights>
 
+    <div id="recipe-inventory" data-recipe-section="inventory" class="scroll-mt-24">
     @if ($recipes->isEmpty())
         <div class="mx-auto max-w-3xl">
             <x-lists.empty
@@ -105,13 +111,13 @@
             </x-lists.empty>
         </div>
     @else
-        <div class="ui-card mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Recipe inventory') }}">
+        <div class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Recipe inventory') }}">
             @foreach ($recipes as $recipe)
-                <article data-recipe-card class="p-4 sm:p-5">
+                <article data-recipe-card class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="min-w-0">
-                            <a class="font-bold text-primary hover:underline" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
-                            <p class="mt-1 max-w-3xl text-sm text-secondary">{{ $recipe->description ?: __('No description') }}</p>
+                            <a class="font-bold text-ink hover:underline" href="{{ route('recipes.show', $recipe) }}">{{ $recipe->name }}</a>
+                            <p class="mt-1 max-w-3xl text-sm text-muted">{{ $recipe->description ?: __('No description') }}</p>
                             <div class="mt-2 flex flex-wrap gap-1.5">
                                 @if ($recipe->is_published)
                                     <x-ui.badge tone="accent"><a href="{{ route('gallery.show', $recipe) }}">{{ __('Published') }}</a></x-ui.badge>
@@ -129,12 +135,12 @@
                         </div>
                         <dl class="flex shrink-0 gap-6 text-sm">
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Used by') }}</dt>
-                                <dd class="mt-1 text-primary">{{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Used by') }}</dt>
+                                <dd class="mt-1 text-ink">{{ trans_choice(':count server|:count servers', $recipe->servers_count, ['count' => $recipe->servers_count]) }}</dd>
                             </div>
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Updated') }}</dt>
-                                <dd class="mt-1 text-primary">{{ $recipe->updated_at->diffForHumans() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Updated') }}</dt>
+                                <dd class="mt-1 text-ink">{{ $recipe->updated_at->diffForHumans() }}</dd>
                             </div>
                         </dl>
                     </div>
@@ -177,6 +183,7 @@
             <div class="p-4">{{ $recipes->links() }}</div>
         </div>
     @endif
+    </div>
     <x-scenes.recipes.create-dialog :open="$recipeCreateOpen" />
 
 </x-layouts.app>

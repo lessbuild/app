@@ -33,16 +33,21 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.card class="mt-6 p-4 text-sm text-secondary">
-        <p class="font-semibold text-primary">{{ __('Provisioning plan snapshots') }}</p>
+    <x-ui.local-nav class="mt-6" :label="__('Recipe sections')">
+        <a href="#recipe-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#recipe-assignments" class="ui-local-nav__link">{{ __('Assignments') }}</a>
+    </x-ui.local-nav>
+
+    <section id="recipe-overview" data-recipe-section="overview" class="ui-panel mt-6 scroll-mt-24 p-4 text-sm sm:p-5">
+        <p class="font-semibold text-ink">{{ __('Provisioning plan snapshots') }}</p>
         <p class="mt-1">
             {{ __('This is the current assignment map. Each server keeps the encrypted recipe plan captured when its provisioning was created, so later recipe edits or deletion do not rewrite an existing server plan.') }}
         </p>
-    </x-ui.card>
+    </section>
 
     <x-ui.insights
         id="recipe-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :summary="trans_choice(':count assigned server|:count assigned servers', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -53,10 +58,11 @@
         </dl>
     </x-ui.insights>
 
-    <section class="mt-8" aria-labelledby="server-assignments-heading">
+    <section id="recipe-assignments" data-recipe-section="assignments" class="mt-8 scroll-mt-24" aria-labelledby="server-assignments-heading">
         <div>
-            <h2 id="server-assignments-heading" class="text-2xl font-bold text-primary">{{ __('Server assignments') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Order shows this recipe’s position within each server’s selected plan.') }}</p>
+            <p class="ui-eyebrow">{{ __('Provisioning coverage') }}</p>
+            <h2 id="server-assignments-heading" class="mt-2 text-2xl font-extrabold tracking-tight text-ink">{{ __('Server assignments') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Order shows this recipe’s position within each server’s selected plan.') }}</p>
         </div>
 
         @if ($servers->isEmpty())
@@ -67,15 +73,15 @@
                 />
             </div>
         @else
-            <x-ui.card class="mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Servers assigned to this recipe') }}">
+            <div class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Servers assigned to this recipe') }}">
                 @foreach ($servers as $server)
-                    <article data-recipe-server-assignment class="p-4 sm:p-5">
+                    <article data-recipe-server-assignment class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                         <div class="flex flex-wrap items-start justify-between gap-4">
                             <div>
-                                <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Order #:order', ['order' => $server->pivot->position + 1]) }}</p>
-                                <a href="{{ route('servers.show', $server) }}" class="mt-1 block font-semibold text-primary hover:underline">{{ $server->label }}</a>
+                                <p class="ui-eyebrow text-[0.65rem]">{{ __('Order #:order', ['order' => $server->pivot->position + 1]) }}</p>
+                                <a href="{{ route('servers.show', $server) }}" class="mt-1 block font-semibold text-ink hover:underline">{{ $server->label }}</a>
                                 @if ($server->display_name)
-                                    <p class="mt-1 text-xs text-secondary">{{ $server->name }}</p>
+                                    <p class="mt-1 text-xs text-muted">{{ $server->name }}</p>
                                 @endif
                             </div>
                             <x-ui.badge :tone="$server->provisioning_status === \App\Models\Server::STATUS_ACTIVE ? 'success' : ($server->provisioning_status === \App\Models\Server::STATUS_FAILED ? 'danger' : 'info')">
@@ -84,16 +90,16 @@
                         </div>
                         <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Type') }}</dt>
-                                <dd class="mt-1 text-primary">{{ str($server->type->value)->replace('-', ' ')->title() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Type') }}</dt>
+                                <dd class="mt-1 text-ink">{{ str($server->type->value)->replace('-', ' ')->title() }}</dd>
                             </div>
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Address') }}</dt>
-                                <dd class="mt-1 font-mono text-xs text-primary">{{ $server->public_ip ?? __('Not assigned') }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Address') }}</dt>
+                                <dd class="mt-1 font-mono text-xs text-ink">{{ $server->public_ip ?? __('Not assigned') }}</dd>
                             </div>
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
-                                <dd class="mt-1 text-primary">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Status') }}</dt>
+                                <dd class="mt-1 text-ink">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
                             </div>
                         </dl>
                         <div class="mt-4 flex justify-start sm:justify-end">
@@ -101,7 +107,7 @@
                         </div>
                     </article>
                 @endforeach
-            </x-ui.card>
+            </div>
             <div class="py-4">{{ $servers->links() }}</div>
         @endif
     </section>

@@ -46,6 +46,8 @@ class RecipeUsageDetailTest extends TestCase
                 'failed' => 1,
             ])
             ->assertSee('Provisioning plan snapshots')
+            ->assertSee('Recipe sections')
+            ->assertSee('recipe-assignments', false)
             ->assertSee('Server assignments')
             ->assertSeeInOrder(['Queued server', 'Failed server', 'Customer-facing server'])
             ->assertSee('#1')
