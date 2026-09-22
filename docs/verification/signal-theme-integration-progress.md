@@ -2134,6 +2134,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 50 — authenticated shell controls and navigation — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'963d947'.
+
+Responsibility problem addressed:
+
+- The shared authenticated shell still exposed compatibility-era buttons,
+  borders, text roles and mobile navigation surfaces on every signed-in page.
+  That made the global navigation visually inconsistent with the modernized
+  page surfaces and weakened the shared accessibility contract.
+
+Signal implementation:
+
+- Migrated the desktop sidebar, mobile navigation drawer, mobile quick actions,
+  workspace palette, footer and navigation links to semantic Signal buttons,
+  cards, inputs, links, badges, surfaces and text roles.
+- Kept the existing Alpine palette/search state, modal triggers and history
+  URLs, mobile quick actions, focus restoration, escape handling, active-route
+  markers, unread badges and workspace navigation groups unchanged.
+- Added focused source assertions preventing the retired shell control palette
+  from returning.
+
+Preserved contracts:
+
+- No routes, permissions, authentication behavior, search endpoints, modal
+  URLs, form actions, browser storage namespaces or queued behavior changed.
+- The shell continues to preserve the mobile drawer focus trap, command-palette
+  keyboard navigation, escape-to-close behavior, skip link, responsive footer
+  and navigation-group merge semantics.
+
+Evidence:
+
+- Shell, dashboard, creation-dialog and workspace-search coverage — 82 tests
+  passed, 1,066 assertions.
+- Fixture-backed full page responsive coverage — 2 tests passed for light/dark
+  at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '963d947' is on 'origin/main'.
+
+Next task: deploy the authenticated-shell modernization to the isolated
+canonical Deployer runtime, then inspect the next product surface for a
+separate cohesive Signal modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
