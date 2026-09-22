@@ -2134,6 +2134,53 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 36 — gallery recipe detail — 2026-09-22
+
+Responsibility problem addressed:
+
+- The published recipe detail page placed overview, rating, anonymous
+  community feedback and the root-running script in a long unindexed column.
+  It also retained older text and input classes after the gallery inventory
+  moved to Signal surfaces, which made the detail workflow harder to scan on
+  mobile.
+
+Signal implementation:
+
+- Added compact `Recipe sections` navigation for overview, rating, feedback
+  and script content with stable scroll anchors.
+- Converted the rating, feedback and script regions to semantic Signal
+  panels, including the shared input and label styles for the rating control.
+- Preserved quiet status surfaces, muted report cards and the existing script
+  safety warning without introducing a new component or changing workflow
+  logic.
+
+Preserved contracts:
+
+- Gallery publication, installation, update, favorite, rating and report
+  routes and methods are unchanged.
+- Contributor-only report resolution, anonymous reporter handling, dialog
+  URLs, validation reopening, script disclosure and root-execution warning
+  remain unchanged.
+- No script contents, report details, credentials or authorization decisions
+  were exposed by the presentation changes.
+
+Evidence:
+
+- Gallery, favorites, ratings, reports, report history and report
+  notification coverage — 63 tests passed, 674 assertions.
+- Focused gallery browser journey — 1 Playwright test passed, including
+  gallery publishing/script dialogs and recipe-detail section anchors.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'ef54e6d' is on 'origin/main'.
+
+Next task: deploy the gallery recipe-detail modernization to the isolated
+canonical development runtime, then inspect gallery feedback surfaces for a
+separate cohesive Signal slice.
+
 ## Slice 34 — recipe inventory and assignment surfaces
 
 Status: implemented and verified locally; code committed and pushed as
