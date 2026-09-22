@@ -6544,6 +6544,67 @@ Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
 
+## Slice 96 — native Signal dialogs and filters — 2026-09-22
+
+Responsibility problem:
+
+- Shared application dialogs and mobile filters still used the retired
+  `ui-modal` viewport/panel component and duplicate filter panel primitives.
+  That left the application behaviorally modern but visually dependent on a
+  second modal system instead of Signal's actual native dialog component.
+
+Boundary and implementation:
+
+- Replaced the shared modal component's legacy wrapper with Signal's native
+  `<dialog class="ui-dialog">` structure and kept only the data hooks required
+  for content loading, history, focus restoration and cancellation.
+- Rebuilt the filter panel around the same `ui-dialog` primitive, preserving
+  the desktop inline form and the mobile native bottom-sheet enhancement.
+- Moved scroll, safe-area and sticky-action behavior to data-hook extensions
+  in the app component layer rather than styling a second modal class.
+- Removed the obsolete `ui-modal` and `ui-filter-dialog__*` visual rules and
+  updated browser/asset coverage to assert the Signal structure.
+
+Preserved contracts and safety:
+
+- Existing dialog IDs, deep-link query parameters, close buttons, focus
+  restoration, lazy fragment loading and modal scroll locking remain intact.
+- Desktop filters remain inline, mobile filters remain native dialogs, and
+  server-rendered GET filters remain usable without JavaScript.
+- Form contents, routes, validation, response formats, persistence, queue
+  behavior and authorization were not changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,293 assertions.
+- Focused browser coverage for provider modal and mobile filters — 2 passed.
+- `npm run build` — passed; generated bundle is `assets/app-DDFkUbPA.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Served CSS contains `.ui-dialog[data-modal-sheet]` and
+  `.ui-dialog::backdrop`, with no retired modal/filter selectors.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `2fc1f7b` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `2fc1f7b`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: reshape the authenticated dashboard's top-level composition to the
+actual Signal application page hierarchy, then verify its product-specific
+operational sections remain discoverable and compact.
+
 ## Slice 95 — Signal-only theme source — 2026-09-22
 
 Responsibility problem:
