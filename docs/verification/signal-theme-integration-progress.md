@@ -2166,6 +2166,56 @@ Evidence:
 
 Next task: modernize the remaining billing and gallery product accents.
 
+## Slice 86 — billing and gallery status copy — 2026-09-22
+
+Responsibility problem:
+
+- Billing’s grace-period cancellation message and the gallery’s resolved-report
+  empty state still used fixed amber and green utility text classes.
+
+Boundary and implementation:
+
+- Kept billing entitlement, subscription, Stripe readiness and cancellation
+  behavior unchanged.
+- Kept gallery publication, report aggregation and moderation behavior
+  unchanged.
+- Replaced only the fixed status text accents with the existing Signal
+  `text-warning` and `text-success` tokens and added a local UI guard.
+
+Preserved contracts and safety:
+
+- Billing permission ordering, plan/interval validation, Stripe gating,
+  gallery ownership, publication state, report counts and links are unchanged.
+- No persistence, payment, queue, API, authorization or moderation behavior
+  changed.
+
+Evidence:
+
+- Billing, recipe gallery/report and local UI coverage — 91 tests passed, 1,563
+  assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `6ef7fd9` is on `origin/main`.
+
+Next task: modernize the remaining vendor pagination template.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `6ef7fd9`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: modernize the remaining vendor pagination template.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
