@@ -2206,6 +2206,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect gallery feedback surfaces for a separate cohesive Signal
 modernization boundary.
 
+## Slice 37 — gallery feedback surfaces — 2026-09-22
+
+Responsibility problem addressed:
+
+- The contributor inbox, reporter history and private report-status page
+  shared the same feedback workflow but presented it as a long legacy-styled
+  stack. Mobile users had no local wayfinding between metrics, filters and
+  report content, and the filter controls used older input classes.
+
+Signal implementation:
+
+- Added compact local navigation to the feedback inbox, report history and
+  full report-status page.
+- Added stable scroll anchors for insights, filter regions, inbox/history
+  collections and report details, with the existing mobile filter dialog
+  behavior preserved.
+- Migrated feedback filters, metadata, links and status details to shared
+  Signal labels, inputs, ink/muted hierarchy and semantic panels.
+
+Preserved contracts:
+
+- Owner scoping, anonymous reporter handling, private report details,
+  unpublished-recipe history and report-status authorization are unchanged.
+- Filter normalization, pagination, CSV export links, bulk resolve/reopen
+  forms, named error bags, notification review and per-report resolution
+  dialogs are unchanged.
+- No business operation, route, request method, response status or report
+  content exposure was changed.
+
+Evidence:
+
+- Feedback inbox and reporter history coverage — 33 tests passed, 378
+  assertions, including privacy, atomic bulk operations, export safety and
+  notification behavior.
+- Focused browser journeys — report status dialog and contributor resolution
+  flows passed; the mobile filter dialog remains closed until explicitly
+  opened.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '6584836' is on 'origin/main'.
+
+Next task: deploy the gallery feedback modernization to the isolated canonical
+development runtime, then inspect the next product surface for a separate
+cohesive Signal slice.
+
 ## Slice 34 — recipe inventory and assignment surfaces
 
 Status: implemented and verified locally; code committed and pushed as
