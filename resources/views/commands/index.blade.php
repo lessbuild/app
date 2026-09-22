@@ -23,15 +23,15 @@
         :summary="$commandFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $commandFilterCount, ['count' => $commandFilterCount]) : null"
     >
         <div class="mb-4">
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Find an operation') }}</p>
-            <h2 id="command-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter command activity') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review bounded command metadata across your servers without exposing command text or retained output.') }}</p>
+            <p class="ui-eyebrow">{{ __('Find an operation') }}</p>
+            <h2 id="command-filters-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Filter command activity') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Review bounded command metadata across your servers without exposing command text or retained output.') }}</p>
         </div>
         <form method="GET" action="{{ route('commands.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <div>
-                <label for="server_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Server') }}</label>
-                <select id="server_id" name="server_id" class="input secondary mt-1 w-full rounded-lg">
+                <label for="server_id" class="ui-label">{{ __('Server') }}</label>
+                <select id="server_id" name="server_id" class="ui-input">
                     <option value="">{{ __('All servers') }}</option>
                     @foreach ($servers as $server)
                         <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>{{ $server->label }}</option>
@@ -39,8 +39,8 @@
                 </select>
             </div>
             <div>
-                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
+                <label for="status" class="ui-label">{{ __('Status') }}</label>
+                <select id="status" name="status" class="ui-input">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ str($status)->title() }}</option>
@@ -48,26 +48,26 @@
                 </select>
             </div>
             <div>
-                <label for="output" class="block text-xs font-semibold uppercase text-secondary">{{ __('Output') }}</label>
-                <select id="output" name="output" class="input secondary mt-1 w-full rounded-lg">
+                <label for="output" class="ui-label">{{ __('Output') }}</label>
+                <select id="output" name="output" class="ui-input">
                     <option value="">{{ __('Any output state') }}</option>
                     <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                     <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
-                    <input type="checkbox" name="active" value="1" @checked($filters['active']) class="rounded border-primary bg-primary text-ternary">
+                <label class="ui-choice min-h-11 w-full items-center">
+                    <input type="checkbox" name="active" value="1" @checked($filters['active']) class="ui-check">
                     {{ __('Active commands only') }}
                 </label>
             </div>
             <div>
-                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="date_from" class="ui-label">{{ __('Queued from') }}</label>
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
             </div>
             <div>
-                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Queued through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="date_to" class="ui-label">{{ __('Queued through') }}</label>
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
@@ -87,7 +87,7 @@
             @endif
         </div>
         @if ($metrics['active'] > 0)
-            <p id="command-refresh-help" class="mt-3 text-xs text-secondary">
+            <p id="command-refresh-help" class="mt-3 text-xs text-muted">
                 {{ __('Queued or running commands may change. Refresh to load their latest state.') }}
             </p>
         @endif
@@ -115,14 +115,14 @@
         </dl>
     </x-ui.insights>
 
-    <x-ui.card id="command-history" class="ui-inventory-list mt-6 scroll-mt-24 overflow-hidden">
-        <div class="divide-y divide-primary" aria-label="{{ __('Command activity across all servers') }}">
+    <div id="command-history" class="ui-panel ui-inventory-list mt-6 scroll-mt-24 overflow-hidden">
+        <div class="divide-y divide-line" aria-label="{{ __('Command activity across all servers') }}">
             @forelse ($executions as $execution)
-                <article data-command-execution class="p-4 sm:p-5">
+                <article data-command-execution class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
-                            <h2 class="mt-1 text-base font-semibold text-primary">{{ $execution->server->label }}</h2>
+                            <p class="ui-eyebrow text-[0.65rem]">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
+                            <h2 class="mt-1 text-base font-semibold text-ink">{{ $execution->server->label }}</h2>
                         </div>
                         <div class="flex flex-wrap gap-2">
                             <x-ui.badge tone="{{ in_array($execution->status, ['succeeded', 'completed'], true) ? 'success' : (in_array($execution->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ $execution->status }}</x-ui.badge>
@@ -132,29 +132,29 @@
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Queued') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $execution->created_at->diffForHumans() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Queued') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $execution->created_at->diffForHumans() }}</dd>
                         </div>
                         @if ($execution->started_at)
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Started') }}</dt>
-                                <dd class="mt-1 text-primary">{{ $execution->started_at->diffForHumans() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Started') }}</dt>
+                                <dd class="mt-1 text-ink">{{ $execution->started_at->diffForHumans() }}</dd>
                             </div>
                         @endif
                         @if ($execution->finished_at)
                             <div>
-                                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
-                                <dd class="mt-1 text-primary">{{ $execution->finished_at->diffForHumans() }}</dd>
+                                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Finished') }}</dt>
+                                <dd class="mt-1 text-ink">{{ $execution->finished_at->diffForHumans() }}</dd>
                             </div>
                         @endif
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
                         </div>
                     </dl>
 
                     <div class="mt-4 flex justify-start sm:justify-end">
-                        <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary">
+                        <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary" class="ui-btn-sm">
                             {{ __('Open server history') }}
                         </x-ui.button>
                     </div>
@@ -168,7 +168,7 @@
                 </div>
             @endforelse
         </div>
-    </x-ui.card>
+    </div>
 
     <div class="mt-6">{{ $executions->links() }}</div>
 </x-layouts.app>

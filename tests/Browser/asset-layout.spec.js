@@ -1803,10 +1803,14 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
-    for (const screen of ['repositories', 'providers', 'websites', 'builds']) {
+    for (const screen of ['repositories', 'providers', 'websites', 'builds', 'commands']) {
         await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
 
-        const filterId = screen === 'builds' ? 'deployment-filters' : `${screen}-filters`;
+        const filterId = screen === 'builds'
+            ? 'deployment-filters'
+            : screen === 'commands'
+                ? 'command-filters'
+                : `${screen}-filters`;
         const filter = page.locator(`#${filterId}`);
         const trigger = page.locator(`[data-filter-dialog-trigger][aria-controls="${filterId}"]`);
         const initialPath = new URL(page.url()).pathname;
@@ -1868,6 +1872,27 @@ test('deployment history keeps Signal filters, insights and cards scannable on m
     await expect(inventory).toBeVisible();
     await expect(inventory).toHaveClass(/\bui-panel\b/);
     await expect(inventory.locator('[data-build-card]').first()).toBeVisible();
+});
+
+test('command center keeps Signal filters, insights and execution cards scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/commands', { waitUntil: 'networkidle' });
+
+    const filters = page.locator('#command-filters');
+    await expect(filters.locator('.ui-input')).toHaveCount(5);
+    await expect(filters.locator('label.ui-choice')).toHaveCount(1);
+    await expect(filters.locator('.input.secondary')).toHaveCount(0);
+
+    const insights = page.locator('#command-insights');
+    await expect(insights).toBeVisible();
+    await expect(insights.locator('.ui-stat')).toHaveCount(6);
+
+    const inventory = page.locator('#command-history');
+    await expect(inventory).toBeVisible();
+    await expect(inventory).toHaveClass(/\bui-panel\b/);
+    await expect(inventory.locator('[data-command-execution]').first()).toBeVisible();
 });
 
 test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {

@@ -5,11 +5,11 @@
 <section data-command-history-content aria-labelledby="active-command-history-heading">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Server operations') }}</p>
-            <h2 id="active-command-history-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Active command history') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review bounded command status without exposing command text or retained output.') }}</p>
+            <p class="ui-eyebrow">{{ __('Server operations') }}</p>
+            <h2 id="active-command-history-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Active command history') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Review bounded command status without exposing command text or retained output.') }}</p>
         </div>
-        <span class="text-xs text-secondary">{{ trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']]) }}</span>
+        <span class="text-xs text-muted">{{ trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']]) }}</span>
     </div>
 
     <x-ui.insights
@@ -26,11 +26,11 @@
 
     <div class="mt-5 space-y-3">
         @forelse ($executions as $execution)
-            <article data-command-execution class="rounded-xl border border-primary bg-primary p-4">
+            <article data-command-execution class="ui-card p-4">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
-                        <h3 class="mt-1 font-semibold text-primary">{{ $execution->server->label }}</h3>
+                        <p class="ui-eyebrow text-[0.65rem]">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
+                        <h3 class="mt-1 font-semibold text-ink">{{ $execution->server->label }}</h3>
                     </div>
                     <div class="flex flex-wrap gap-2">
                         <x-ui.badge tone="accent">{{ $execution->status }}</x-ui.badge>
@@ -39,16 +39,16 @@
                 </div>
                 <dl class="mt-3 grid gap-3 text-xs sm:grid-cols-3">
                     <div>
-                        <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Queued') }}</dt>
-                        <dd class="mt-1 text-primary">{{ $execution->created_at->diffForHumans() }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('Queued') }}</dt>
+                        <dd class="mt-1 text-ink">{{ $execution->created_at->diffForHumans() }}</dd>
                     </div>
                     <div>
-                        <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Started') }}</dt>
-                        <dd class="mt-1 text-primary">{{ $execution->started_at?->diffForHumans() ?? __('Not started') }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('Started') }}</dt>
+                        <dd class="mt-1 text-ink">{{ $execution->started_at?->diffForHumans() ?? __('Not started') }}</dd>
                     </div>
                     <div>
-                        <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
-                        <dd class="mt-1 text-primary">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('Duration') }}</dt>
+                        <dd class="mt-1 text-ink">{{ $execution->durationLabel() ?? __('Not recorded') }}</dd>
                     </div>
                 </dl>
                 <div class="mt-3">
