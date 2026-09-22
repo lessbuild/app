@@ -1646,3 +1646,57 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect observability alert, incident and environment-context
 surfaces for the next cohesive modernization boundary.
+
+## Slice 25 — observability response surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+'e7f760c'.
+
+Responsibility problem addressed:
+
+- Observability already kept incident grouping, encrypted evidence, alert
+  delivery, status-page workflows and bounded environment reads behind their
+  existing policies, controllers and services, but the main surface mixed
+  legacy cards, controls and text roles with the Signal shell.
+- Dense server telemetry, incident response, alert destination and status
+  update rows were consequently harder to scan on a phone than the newer
+  inventory surfaces.
+
+Signal implementation:
+
+- Replaced the main observability cards with Signal panels, ink/muted text
+  hierarchy, compact response metrics and semantic section hooks.
+- Converted operational incident, server, destination, status-page, status
+  update and correlated-signal rows to quiet panels and consistent dividers.
+- Updated observability dialogs to shared labels, inputs, checkboxes and
+  theme-aware focus styles; kept the status-page slug example aligned with
+  the Deployer public name.
+- Added stable data hooks and a populated presentation contract test without
+  changing any form fields or operation boundaries.
+
+Preserved contracts:
+
+- Existing routes, query parameters, modal history URLs, form names, error
+  reopening, validation ordering, status values, encrypted endpoint handling,
+  incident response actions, tenant scoping, exports and lazy evidence
+  fragments.
+- Existing responsive disclosure behavior, active-versus-resolved incident
+  visibility and bounded telemetry/evidence reads.
+
+Evidence:
+
+- Observability, operational incident, environment context and shared insight
+  coverage — 40 tests passed, 405 assertions.
+- LocalUiAsset coverage — 23 tests passed, 470 assertions.
+- Focused observability browser journeys — 4 Playwright tests passed:
+  incident timeline, investigation note, metric-rule dialog and management
+  dialogs.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'e7f760c' is on 'origin/main'.
+
+Next task: deploy observability response surfaces, then modernize the bounded
+environment evidence context and its saved-filter controls as a separate slice.
