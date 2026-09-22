@@ -17,13 +17,13 @@
         @csrf
 
         <div>
-            <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
-            <input id="email" class="input secondary mt-2 rounded-lg" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus>
+            <label for="email" class="ui-label">{{ __('Email') }}</label>
+            <input id="email" class="ui-input" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus>
         </div>
         <x-forms.errors name="email" />
 
-        <div class="flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-between">
-            <a href="{{ route('login') }}" class="text-sm text-secondary underline hover:text-primary">
+        <div class="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <a href="{{ route('login') }}" class="ui-link text-sm">
                 {{ __('Back to sign in') }}
             </a>
             <x-ui.button type="submit" variant="primary">{{ __('Send reset link') }}</x-ui.button>

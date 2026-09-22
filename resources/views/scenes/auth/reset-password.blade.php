@@ -12,23 +12,23 @@
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
         <div>
-            <label for="email" class="block text-sm font-semibold text-primary">{{ __('Email') }}</label>
-            <input id="email" class="input secondary mt-2 rounded-lg" type="email" name="email" value="{{ old('email', $request->email) }}" autocomplete="email" required autofocus>
+            <label for="email" class="ui-label">{{ __('Email') }}</label>
+            <input id="email" class="ui-input" type="email" name="email" value="{{ old('email', $request->email) }}" autocomplete="email" required autofocus>
             <x-forms.errors name="email" />
         </div>
 
         <div>
-            <label for="password" class="block text-sm font-semibold text-primary">{{ __('New password') }}</label>
-            <input id="password" class="input secondary mt-2 rounded-lg" type="password" name="password" autocomplete="new-password" required>
+            <label for="password" class="ui-label">{{ __('New password') }}</label>
+            <input id="password" class="ui-input" type="password" name="password" autocomplete="new-password" required>
             <x-forms.errors name="password" />
         </div>
 
         <div>
-            <label for="password_confirmation" class="block text-sm font-semibold text-primary">{{ __('Confirm new password') }}</label>
-            <input id="password_confirmation" class="input secondary mt-2 rounded-lg" type="password" name="password_confirmation" autocomplete="new-password" required>
+            <label for="password_confirmation" class="ui-label">{{ __('Confirm new password') }}</label>
+            <input id="password_confirmation" class="ui-input" type="password" name="password_confirmation" autocomplete="new-password" required>
         </div>
 
-        <div class="flex justify-end border-t border-primary pt-5">
+        <div class="flex justify-end border-t border-line pt-5">
             <x-ui.button type="submit" variant="primary">{{ __('Reset password') }}</x-ui.button>
         </div>
     </form>

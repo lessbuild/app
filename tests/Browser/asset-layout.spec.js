@@ -1492,7 +1492,7 @@ for (const colorScheme of ['light', 'dark']) {
                 if (!['landing', 'pricing'].includes(screen)) expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
                 await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(23, 25, 28)' : 'rgb(244, 247, 251)');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), screen).toBe(true);
-                const primaryText = page.locator('.text-primary').first();
+                const primaryText = page.locator('.text-ink').first();
                 await expect(primaryText).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(244, 244, 245)' : 'rgb(16, 24, 40)');
                 if (screen === 'login') {
                     await expect(page.locator('#email')).toHaveCSS('border-top-width', '1px');

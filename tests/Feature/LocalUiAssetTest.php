@@ -184,7 +184,10 @@ class LocalUiAssetTest extends TestCase
             ->assertSuccessful()
             ->assertSee('<title>Sign in to your account · '.config('app.name').'</title>', false)
             ->assertSee('Sign in to manage your websites and servers.')
-            ->assertSee('<div class="mt-2 leading-6 text-secondary">', false);
+            ->assertSee('<div class="mt-2 leading-6 text-muted">', false)
+            ->assertSee('data-auth-brand', false)
+            ->assertSee('class="ui-label"', false)
+            ->assertSee('class="ui-input"', false);
 
         $this->get(route('register'))
             ->assertSuccessful()

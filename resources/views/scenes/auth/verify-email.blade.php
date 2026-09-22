@@ -13,8 +13,8 @@
         </x-ui.alert>
     @endif
 
-    <div class="mt-6 flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-end">
-        <a href="{{ route('account.index') }}" class="text-sm text-secondary underline hover:text-primary">
+    <div class="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-end">
+        <a href="{{ route('account.index') }}" class="ui-link text-sm">
             {{ __('Correct my email') }}
         </a>
         <form method="POST" action="{{ route('verification.send') }}">

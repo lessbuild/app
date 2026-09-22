@@ -11,13 +11,13 @@
         @csrf
 
         <div>
-            <label for="password" class="block text-sm font-semibold text-primary">{{ __('Password') }}</label>
-            <input id="password" class="input primary mt-2 rounded-lg" type="password" name="password" autocomplete="current-password" required autofocus>
+            <label for="password" class="ui-label">{{ __('Password') }}</label>
+            <input id="password" class="ui-input" type="password" name="password" autocomplete="current-password" required autofocus>
             <x-forms.errors name="password" />
         </div>
 
-        <div class="flex flex-col gap-3 border-t border-primary pt-5 sm:flex-row sm:items-center sm:justify-end">
-            <a href="{{ route('account.index') }}" class="text-sm text-secondary underline hover:text-primary">
+        <div class="flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <a href="{{ route('account.index') }}" class="ui-link text-sm">
                 {{ __('Cancel') }}
             </a>
             <x-ui.button type="submit" variant="primary">{{ __('Confirm password') }}</x-ui.button>

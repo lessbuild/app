@@ -36,8 +36,8 @@
     </div>
 
     <div class="my-7 flex items-center gap-3" role="presentation">
-        <div class="h-px flex-1 bg-tertiary"></div>
-        <p class="text-xs font-bold uppercase tracking-wider text-secondary">{{ __("or sign {$action} with email") }}</p>
-        <div class="h-px flex-1 bg-tertiary"></div>
+        <div class="h-px flex-1 bg-line"></div>
+        <p class="text-xs font-bold uppercase tracking-wider text-muted">{{ __("or sign {$action} with email") }}</p>
+        <div class="h-px flex-1 bg-line"></div>
     </div>
 @endif

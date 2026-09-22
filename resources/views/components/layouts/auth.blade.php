@@ -2,14 +2,14 @@
     <div class="ui-auth-shell min-h-screen bg-page lg:grid lg:grid-cols-[minmax(24rem,0.82fr)_minmax(28rem,1.18fr)]">
         <main id="main-content" tabindex="-1" class="ui-auth-main flex min-h-screen items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
             <div class="w-full max-w-lg">
-                <a href="{{ url('/') }}" class="ui-auth-brand inline-flex min-h-[2.5rem] items-center text-lg font-black uppercase tracking-tight text-primary">
+                <a href="{{ url('/') }}" data-auth-brand class="ui-auth-brand inline-flex min-h-[2.5rem] items-center text-lg font-black uppercase tracking-tight text-ink">
                     {{ config('app.name') }}
                 </a>
 
                 <x-ui.card class="ui-auth-panel mt-6 p-6 sm:p-8">
                     <header>
-                        <h1 class="text-2xl font-black tracking-tight text-primary">{{ $title }}</h1>
-                        <div class="mt-2 leading-6 text-secondary">{{ $description }}</div>
+                        <h1 class="text-2xl font-black tracking-tight text-ink">{{ $title }}</h1>
+                        <div class="mt-2 leading-6 text-muted">{{ $description }}</div>
                     </header>
 
                     @if ($errors->any())

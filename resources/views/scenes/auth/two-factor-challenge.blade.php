@@ -5,8 +5,8 @@
     <form method="POST" action="{{ route('two-factor.login') }}" class="space-y-5">
         @csrf
         <div>
-            <label for="code" class="block text-sm font-semibold text-primary">{{ __('Authentication or recovery code') }}</label>
-            <input id="code" name="code" class="input primary mt-2 w-full rounded-lg font-mono" inputmode="text" autocomplete="one-time-code" autofocus required>
+            <label for="code" class="ui-label">{{ __('Authentication or recovery code') }}</label>
+            <input id="code" name="code" class="ui-input w-full font-mono" inputmode="text" autocomplete="one-time-code" autofocus required>
         </div>
         <x-forms.errors name="code" />
         <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Verify and sign in') }}</x-ui.button>
