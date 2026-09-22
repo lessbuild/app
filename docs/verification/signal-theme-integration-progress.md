@@ -1725,3 +1725,58 @@ development evidence, not production or external-provider acceptance.
 
 Next task: modernize the bounded environment evidence context and its
 saved-filter controls as the next cohesive observability slice.
+
+## Slice 26 — environment evidence context
+
+Status: implemented and verified locally; code committed and pushed as
+'00f30f3'.
+
+Responsibility problem addressed:
+
+- Environment evidence already used a dedicated bounded context reader and
+  rechecked authorization on linked health and runtime-log routes, but its
+  filters, saved investigations and evidence panels still used legacy controls
+  and card hierarchy.
+- On a phone, the deployment, health, log and incident evidence therefore
+  looked like one long undifferentiated surface even though each section had a
+  distinct investigation purpose.
+
+Signal implementation:
+
+- Added compact local navigation for filters, deployments, health, logs and
+  incidents.
+- Converted the context summary, filter disclosure, saved investigations and
+  four evidence sections to Signal panels, labels, inputs, muted metadata and
+  stable section/card hooks.
+- Updated the lazy incident timeline content and investigation dialog to the
+  shared Signal controls and timeline primitive.
+- Kept filters collapsed by default on mobile; the browser contract verifies
+  that the controls expand intentionally rather than increasing initial page
+  height.
+
+Preserved contracts:
+
+- Shareable URLs, window/service/deployment/severity values, omitted versus
+  active filters, saved-view expiry and deletion rules, modal history/content
+  URLs, tenant authorization, bounded query limits and sensitive-body
+  exclusion.
+- Existing deployment, health, runtime-log and incident links, including
+  route-level authorization rechecks and no-store behavior.
+
+Evidence:
+
+- Environment context, observability, operational incident and shared insight
+  coverage — 41 tests passed, 416 assertions.
+- Focused environment-context browser journeys — 2 Playwright tests passed:
+  health history stays in context and the mobile section/local-navigation
+  workflow expands its collapsed filters correctly.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '00f30f3' is on 'origin/main'.
+
+Next task: deploy the environment evidence context, then inspect automation
+and runtime-control surfaces for the next cohesive Signal modernization
+boundary.
