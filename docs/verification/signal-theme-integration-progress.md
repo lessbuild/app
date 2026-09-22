@@ -2134,6 +2134,58 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 80 — shared shell danger indicators — 2026-09-22
+
+Responsibility problem:
+
+- The shared delete-dialog icon and authenticated mobile alert indicator still
+  used fixed red utility classes, bypassing the Signal danger token and shared
+  status-dot primitive.
+
+Boundary and implementation:
+
+- Kept delete-dialog form actions, confirmation behavior, modal structure and
+  navigation alert semantics unchanged.
+- Replaced the destructive icon with a neutral Signal surface carrying the
+  semantic danger token, and rendered unread alerts with the shared
+  `ui-status-dot` primitive.
+- Added a local UI guard covering both shared templates.
+
+Preserved contracts and safety:
+
+- Delete routes, confirmation messages, accessibility labels, unread counts,
+  mobile navigation placement and notification links are unchanged.
+- No authorization, persistence, queue, API or modal behavior changed.
+
+Evidence:
+
+- Failure notification, notification bulk/inbox insights and local UI coverage
+  — 72 tests passed, 1,374 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `7f1fbea` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `7f1fbea`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Slice 79 — gallery moderation badges — 2026-09-22
 
 Responsibility problem:
