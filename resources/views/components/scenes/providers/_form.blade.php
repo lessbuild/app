@@ -119,7 +119,7 @@
     </div>
 
     <details id="{{ $fieldPrefix }}provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="block font-bold text-ink">{{ __('Connection monitoring') }}</span>
                 <span class="ui-help block font-normal">{{ $monitoringAllowed ? __('Optional automatic credential health checks.') : __('Manual connection tests are available on your current plan.') }}</span>

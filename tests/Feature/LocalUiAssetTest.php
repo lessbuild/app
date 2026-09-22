@@ -235,6 +235,14 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_provider_monitoring_disclosure_uses_signal_focus(): void
+    {
+        $source = File::get(resource_path('views/components/scenes/providers/_form.blade.php'));
+
+        $this->assertStringContainsString('focus-visible:ring-2 focus-visible:ring-focus', $source);
+        $this->assertStringNotContainsString('focus-visible:ring-blue-500', $source);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
