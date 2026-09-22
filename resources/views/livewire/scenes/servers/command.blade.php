@@ -1,7 +1,7 @@
 <div @if ($shouldPoll) wire:poll.2s @endif>
     @if ($open)
         <div class="relative z-10" role="dialog" aria-modal="true" aria-labelledby="server-command-dialog-title">
-            <button type="button" wire:click="close" class="fixed inset-0 bg-slate-950/70" aria-label="{{ __('Close command dialog') }}"></button>
+            <button type="button" wire:click="close" class="fixed inset-0 bg-emphasis/70" aria-label="{{ __('Close command dialog') }}"></button>
             <div class="fixed inset-0 z-10 overflow-y-auto">
                 <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center">
                     <div class="ui-card relative w-full max-w-2xl overflow-hidden text-left shadow-xl">
@@ -9,11 +9,11 @@
                             <div class="px-5 py-5 sm:px-6">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
-                                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Remote operations') }}</p>
-                                        <h2 id="server-command-dialog-title" class="mt-1 text-xl font-black text-primary">{{ __('Run command on :server', ['server' => $model->name]) }}</h2>
-                                        <p class="mt-1 text-sm text-secondary">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
+                                        <p class="ui-eyebrow">{{ __('Remote operations') }}</p>
+                                        <h2 id="server-command-dialog-title" class="mt-1 text-xl font-black text-ink">{{ __('Run command on :server', ['server' => $model->name]) }}</h2>
+                                        <p class="mt-1 text-sm text-muted">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
                                     </div>
-                                    <button type="button" wire:click="close" class="rounded-lg p-2 text-xl leading-none text-secondary hover:bg-secondary hover:text-primary" aria-label="{{ __('Close command dialog') }}">
+                                    <button type="button" wire:click="close" class="ui-icon-btn text-xl leading-none" aria-label="{{ __('Close command dialog') }}">
                                         <span aria-hidden="true">×</span>
                                     </button>
                                 </div>
@@ -23,7 +23,7 @@
                                     id="server-command-input"
                                     wire:model.defer="command"
                                     type="text"
-                                    class="input secondary mt-5 w-full rounded-lg font-mono"
+                                    class="ui-input mt-5 font-mono"
                                     placeholder="{{ __('Example: uptime') }}"
                                     autocomplete="off"
                                     autofocus
@@ -37,8 +37,8 @@
 
                                 <div class="mt-6 flex flex-wrap items-end justify-between gap-3">
                                     <div>
-                                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Recent commands') }}</p>
-                                        <p class="mt-1 text-sm text-secondary">{{ __('Output is retained only for the configured history window.') }}</p>
+                                        <p class="ui-eyebrow">{{ __('Recent commands') }}</p>
+                                        <p class="mt-1 text-sm text-muted">{{ __('Output is retained only for the configured history window.') }}</p>
                                     </div>
                                     <x-ui.button :href="route('servers.commands.index', $model)" variant="ghost" class="px-0">
                                         {{ __('View full history') }}
@@ -53,21 +53,21 @@
                                             \App\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
                                             default => 'accent',
                                         })
-                                        <article class="rounded-xl border border-primary bg-secondary p-4" wire:key="server-command-{{ $execution->id }}">
+                                        <article class="ui-card ui-card--muted p-4" wire:key="server-command-{{ $execution->id }}">
                                             <div class="flex flex-wrap items-start justify-between gap-3">
-                                                <code class="min-w-0 flex-1 break-all text-xs text-primary">{{ $execution->command }}</code>
+                                                <code class="min-w-0 flex-1 break-all text-xs text-ink">{{ $execution->command }}</code>
                                                 <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
                                             </div>
                                             @if ($execution->rerun_from_execution_id)
-                                                <p class="mt-2 text-xs text-secondary">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
+                                                <p class="mt-2 text-xs text-muted">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
                                             @endif
                                             @if ($execution->output !== null)
-                                                <pre class="mt-3 max-h-56 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950 p-3 text-xs leading-5 text-slate-100">{{ $execution->output }}</pre>
+                                                <pre class="ui-console-output mt-3 max-h-56 whitespace-pre-wrap rounded-lg bg-emphasis p-3">{{ $execution->output }}</pre>
                                             @elseif (in_array($execution->status, \App\Models\ServerCommandExecution::ACTIVE_STATUSES, true))
-                                                <p class="mt-2 text-xs text-secondary">{{ __('Waiting for command output…') }}</p>
+                                                <p class="mt-2 text-xs text-muted">{{ __('Waiting for command output…') }}</p>
                                             @endif
                                             <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                                <p class="text-xs text-secondary">
+                                                <p class="text-xs text-muted">
                                                     {{ $execution->created_at->diffForHumans() }}
                                                     @if ($execution->exit_code !== null)
                                                         · {{ __('exit :code', ['code' => $execution->exit_code]) }}
@@ -112,7 +112,7 @@
                                     @endforelse
                                 </div>
                             </div>
-                            <div class="flex flex-wrap-reverse justify-end gap-2 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+                            <div class="flex flex-wrap-reverse justify-end gap-2 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
                                 <x-ui.button type="button" variant="ghost" wire:click="close">{{ __('Close') }}</x-ui.button>
                                 <x-ui.button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="run">
                                     <span wire:loading.remove wire:target="run">{{ __('Run command') }}</span>

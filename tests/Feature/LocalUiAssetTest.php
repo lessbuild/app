@@ -466,6 +466,29 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString("@vite('resources/js/alpine.js')", $coreLayout);
     }
 
+    public function test_server_safety_and_operation_surfaces_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/servers/import.blade.php'),
+            resource_path('views/scenes/servers/import-review.blade.php'),
+            resource_path('views/livewire/scenes/servers/command.blade.php'),
+            resource_path('views/livewire/scenes/servers/show.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-slate-', $source, $viewPath);
+            $this->assertStringNotContainsString('text-slate-', $source, $viewPath);
+        }
+
+        $this->assertStringContainsString('ui-console', File::get(resource_path('views/livewire/scenes/servers/show.blade.php')));
+        $this->assertStringContainsString('ui-input', File::get(resource_path('views/livewire/scenes/servers/command.blade.php')));
+        $this->assertStringContainsString('ui-check', File::get(resource_path('views/scenes/servers/import-review.blade.php')));
+    }
+
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();

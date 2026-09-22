@@ -403,22 +403,22 @@
          ! Server logs
          ! ------------------------------------------------------------
          !-->
-        <section class="self-start overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-5 text-sm text-slate-100" aria-labelledby="server-log-heading" data-server-log-console>
+        <section class="ui-console self-start p-5 text-sm" aria-labelledby="server-log-heading" data-server-log-console>
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-slate-400">{{ __('Server logs') }}</p>
-                    <h2 id="server-log-heading" class="mt-1 text-lg font-bold text-white">{{ __('Log output') }}</h2>
+                    <p class="text-xs font-bold uppercase tracking-widest text-emphasis-muted">{{ __('Server logs') }}</p>
+                    <h2 id="server-log-heading" class="mt-1 text-lg font-bold text-emphasis-ink">{{ __('Log output') }}</h2>
                 </div>
                 <nav class="flex flex-wrap gap-3" aria-label="{{ __('Server log types') }}">
-                    <a href="?log=apt" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'apt', 'text-slate-300' => $log !== 'apt'])>{{ __('Apt') }}</a>
-                    <a href="?log=caddy" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'caddy', 'text-slate-300' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
-                    <a href="?log=mysql" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'mysql', 'text-slate-300' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
-                    <a href="?log=php" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'php', 'text-slate-300' => $log !== 'php'])>{{ __('PHP') }}</a>
-                    <a href="?log=provisioning" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'provisioning', 'text-slate-300' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
+                    <a href="?log=apt" @class(['text-xs font-medium', 'text-primary' => $log === 'apt', 'text-emphasis-muted' => $log !== 'apt'])>{{ __('Apt') }}</a>
+                    <a href="?log=caddy" @class(['text-xs font-medium', 'text-primary' => $log === 'caddy', 'text-emphasis-muted' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
+                    <a href="?log=mysql" @class(['text-xs font-medium', 'text-primary' => $log === 'mysql', 'text-emphasis-muted' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
+                    <a href="?log=php" @class(['text-xs font-medium', 'text-primary' => $log === 'php', 'text-emphasis-muted' => $log !== 'php'])>{{ __('PHP') }}</a>
+                    <a href="?log=provisioning" @class(['text-xs font-medium', 'text-primary' => $log === 'provisioning', 'text-emphasis-muted' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
                 </nav>
             </div>
-            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 pt-4">
-                <div class="text-xs text-slate-400">
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                <div class="text-xs text-emphasis-muted">
                     @if ($logSnapshot?->refreshed_at)
                         {{ __('Updated :time', ['time' => $logSnapshot->refreshed_at->diffForHumans()]) }}
                     @else
@@ -427,11 +427,11 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     @if ($logSnapshot?->log !== null)
-                        <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="text-xs font-medium text-cyan-300 hover:underline">{{ __('Download log') }}</a>
+                        <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="ui-link text-xs">{{ __('Download log') }}</a>
                     @endif
                     <button
                         type="button"
-                        class="button button--primary"
+                        class="ui-btn ui-btn-primary"
                         wire:click="refreshLogs"
                         wire:loading.attr="disabled"
                         wire:target="refreshLogs"
@@ -443,28 +443,28 @@
             </div>
             <div class="mt-4 max-h-96 overflow-y-auto font-mono leading-5">
                 @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE && $log !== 'provisioning')
-                    <p class="text-slate-400">{{ __('Select Provisioning to view logs while setup is running.') }}</p>
+                    <p class="text-emphasis-muted">{{ __('Select Provisioning to view logs while setup is running.') }}</p>
                 @else
                     @if ($errors->has('logs'))
                         <x-ui.alert tone="danger" class="mb-2">{{ $errors->first('logs') }}</x-ui.alert>
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_QUEUED)
-                        <p class="mb-2 text-slate-400">{{ __('Log refresh queued.') }}</p>
+                        <p class="mb-2 text-emphasis-muted">{{ __('Log refresh queued.') }}</p>
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_REFRESHING)
-                        <p class="mb-2 text-slate-400">{{ __('Refreshing this log snapshot…') }}</p>
+                        <p class="mb-2 text-emphasis-muted">{{ __('Refreshing this log snapshot…') }}</p>
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED)
                         <p class="mb-2 text-red-300">{{ $logSnapshot->error ?: __('Unable to retrieve logs.') }}</p>
                     @endif
                     @forelse ($logs as $line)
                         @if ($line === '') @continue @endif
                         <div class="w-full">
-                            <span class="text-cyan-300">{{ $server->name }}:~$</span>
-                            <span class="text-slate-100">{{ $line }}</span>
+                            <span class="text-primary">{{ $server->name }}:~$</span>
+                            <span class="text-emphasis-ink">{{ $line }}</span>
                         </div>
                     @empty
                         @unless (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
                             <div class="flex">
-                                <span class="text-cyan-300">{{ $server->name }}:~$</span>
-                                <span class="flex-1 pl-2 text-slate-400">
+                                <span class="text-primary">{{ $server->name }}:~$</span>
+                                <span class="flex-1 pl-2 text-emphasis-muted">
                                     @if ($log === 'provisioning' && $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
                                         {{ $server->provisioning_status === \App\Models\Server::STATUS_FAILED ? __('No provisioning output was received.') : __('Waiting for provisioning output…') }}
                                     @else

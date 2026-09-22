@@ -1124,6 +1124,7 @@ test('server detail keeps runtime evidence scannable on mobile', async ({ page }
     await expect(page.locator('#server-operations')).toHaveClass(/\bui-panel\b/);
     await page.locator('#server-operations summary').click();
     await expect(page.locator('[data-server-log-console]')).toBeVisible();
+    await expect(page.locator('[data-server-log-console]')).toHaveClass(/\bui-console\b/);
     await expect(page.getByText('Setup Information', { exact: true })).toHaveCount(0);
 });
 
