@@ -2134,6 +2134,50 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 58 — shared pagination controls — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as '32cf397'.
+
+Responsibility problem addressed:
+
+- The shared simple pagination partial was the last common navigation control
+  still using legacy palette utilities and Tailwind defaults. Because it is
+  rendered by deployments, providers, websites, repositories, commands,
+  notifications, reports and admin lists, the inconsistency multiplied across
+  the application.
+
+Signal implementation:
+
+- Replaced previous/next controls with Signal secondary buttons and explicit
+  disabled states, including responsive wrapping and visible focus treatment.
+- Added a shared UI source guard for the pagination partial.
+
+Preserved contracts:
+
+- Previous/next labels, `rel` attributes, paginator URLs, query strings,
+  first/last-page behavior and the Laravel pagination extension point are
+  unchanged.
+- No query, authorization, response, pagination count or controller behavior
+  changed.
+
+Evidence:
+
+- Shared UI plus build, infrastructure, provider, recipe, command and
+  notification pagination/filter coverage — 79 tests passed, 1,111
+  assertions.
+- 'npm run build' — passed with assets/app-DTq_6yQP.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- Focused mobile deployment-history browser coverage — 1 test passed in 27.1
+  seconds.
+- 'git diff --check' — passed.
+
+Push status: '32cf397' is on 'origin/main'.
+
+Next task: deploy this shared pagination modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
