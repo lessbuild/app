@@ -1884,3 +1884,61 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next runtime-control surface for a separate cohesive
 Signal modernization boundary.
+
+## Slice 28 — application runtime controls
+
+Status: implemented and verified locally; code committed and pushed as
+'fa6766a'.
+
+Responsibility problem addressed:
+
+- The application detail page is the shared runtime-control surface for
+  environment topology, deployment safeguards, capacity, encrypted variables,
+  workers, attached resources, previews and configuration-as-code dialogs.
+- Its existing operations were already delegated to environment policies,
+  requests, actions and modal components, but the page still used legacy
+  cards, bright alert blocks and inconsistent form controls. On mobile this
+  created a long scroll before a user could reach the relevant environment
+  control.
+
+Signal implementation:
+
+- Added compact local navigation for environments, adding an environment and
+  preview environments.
+- Converted environment summaries, readiness guidance, promotion guidance,
+  runtime controls, encrypted-variable rows, process/resource lists and
+  preview cards to quiet Signal panels with bordered status accents.
+- Added stable presentation hooks for environment, runtime, variable,
+  process, resource, preview and add-environment sections.
+- Updated all application-detail runtime dialog forms to shared Signal
+  labels, inputs, help text, checkboxes and muted separators.
+- Kept the action locator scoped in the browser contract where local
+  navigation intentionally repeats an action label.
+
+Preserved contracts:
+
+- Existing environment routes, policy checks, scoped resources, dialog query
+  keys, modal content URLs, validation reopen behavior and flash/error
+  semantics remain unchanged.
+- Encrypted values, process commands and preview secret values remain absent
+  from the rendered overview; only masked/version metadata is shown.
+- Deployment readiness, promotion, runtime capacity, settings, deployment
+  controls, preview cleanup/retry and configuration-as-code operations were
+  not moved or reinterpreted.
+
+Evidence:
+
+- Project/environment, runtime, environment-operation and configuration
+  overview coverage — 21 tests passed, 185 assertions.
+- Application-detail browser journeys — 2 Playwright tests passed: all
+  seven application dialogs and configuration-as-code in context, including
+  mobile focus restoration and URL-backed reopening.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'fa6766a' is on 'origin/main'.
+
+Next task: deploy the application runtime-control modernization, then inspect
+server and website detail surfaces for the next cohesive Signal slice.
