@@ -2194,6 +2194,47 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next remaining high-impact UI surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 61 — public legal pages — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as '0bfe0d2'.
+
+Responsibility problem addressed:
+
+- The public Terms of Service and Privacy Policy pages still used the retired
+  primary/secondary/ternary palette utilities and generic underlined links,
+  leaving the public trust surfaces visually inconsistent with the landing and
+  access-request pages.
+
+Signal implementation:
+
+- Migrated legal headings and body copy to `text-ink` and `text-muted`.
+- Reused `ui-link` for the brand, contact, cross-policy and service-status
+  links, and `border-line` for the footer rule.
+- Added source and rendered-response guards for both public routes.
+
+Preserved contracts:
+
+- Legal copy, effective-date interpolation, contact address, canonical and
+  indexable metadata, homepage links, route destinations and public access are
+  unchanged.
+- No controller, request, policy, action, persistence, transaction, queue or
+  remote integration behavior changed.
+
+Evidence:
+
+- Public UI, legal-link, account lifecycle and metadata coverage — 39 tests
+  passed, 770 assertions.
+- 'npm run build' — passed with assets/app-CyTw6njh.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '0bfe0d2' is on 'origin/main'.
+
+Next task: deploy the public legal-page modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Slice 60 — authenticated navigation shell — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as 'da4f7bd'.
