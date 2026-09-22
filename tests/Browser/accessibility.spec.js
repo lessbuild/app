@@ -64,7 +64,7 @@ for (const viewport of viewports) {
         await expect(page.locator('[data-palette-item]').first()).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(palette).toBeHidden();
-        if (viewport.width >= 640) await expect(page.getByRole('button', { name: /Search and navigate/ })).toBeFocused();
+        if (viewport.width >= 640) await expect(page.getByRole('button', { name: /Jump to/ })).toBeFocused();
 
         await page.keyboard.press('Tab');
         expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
