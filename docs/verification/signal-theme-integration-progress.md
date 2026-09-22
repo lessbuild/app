@@ -2134,6 +2134,51 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 54 — workspace search and command-palette results — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'6de28d8'.
+
+Responsibility problem addressed:
+
+- Full workspace search and the command palette fragment rendered the same
+  resource groups through two incompatible visual vocabularies. Legacy inputs,
+  saturated result states and old text roles made the shared navigation/search
+  workflow feel disconnected from the modernized inventory pages.
+
+Signal implementation:
+
+- Migrated full search inputs, group navigation, result cards and “view more”
+  actions to Signal inputs, filter chips, cards, links and semantic text roles.
+- Migrated the debounced palette fragment’s empty state, group headings,
+  keyboard options and result metadata to the same theme-aware roles.
+- Added source guards so either render path cannot silently reintroduce the old
+  compatibility palette.
+
+Preserved contracts:
+
+- Query normalization, account scoping, result groups, result limits,
+  pagination URLs, fragment response behavior, `data-palette-item` roles and
+  keyboard navigation are unchanged.
+- No controller, query service, policy, route, authorization or persistence
+  behavior changed.
+
+Evidence:
+
+- Search, dashboard, insight, local UI and fragment coverage — 67 tests passed,
+  1,040 assertions.
+- Debounced workspace-search journey plus the full light/dark responsive
+  fixture matrix — 3 tests passed.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '6de28d8' is on 'origin/main'.
+
+Next task: deploy the workspace-search modernization to the isolated canonical
+Deployer runtime, then inspect the next cohesive product surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
