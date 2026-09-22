@@ -62,6 +62,59 @@ Next task: continue the source-level audit of high-traffic detail and
 inventory surfaces, using Signal's exact table, empty-state, timeline and
 dialog compositions where a concrete divergence remains.
 
+## Slice 107 — Signal radius tokens in configuration views — 2026-09-22
+
+Responsibility problem:
+
+- The full-page and in-place Configuration as Code views still used raw
+  `rounded-lg` and `rounded-xl` utilities for review collections, environment
+  records and code examples, bypassing Signal's semantic corner system.
+
+Boundary and implementation:
+
+- Replaced only the configuration view and modal fragment's raw radius
+  utilities with Signal's `rounded-card` token.
+- Kept the existing panel, muted-surface, divider, code-block, dialog and
+  responsive layout compositions intact.
+- Added a source-level regression check covering both render paths.
+
+Preserved contracts and safety:
+
+- Review, apply, observe, compare, receipt, pagination and modal URLs are
+  unchanged.
+- YAML/JSON contents, secret masking, validation behavior, authorization and
+  configuration workflow timing are unchanged.
+- No controllers, persistence, queues, credentials, dependencies or
+  external infrastructure changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused UI and configuration document/observation tests — 72 tests passed,
+  2,871 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px browser check opened the configuration workflow in place,
+  found a native open modal, no horizontal overflow and no page errors.
+  Screenshot: `/tmp/deployer-configuration-signal-390.png`.
+- Implementation commit `fead261` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `fead261`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The served stylesheet is `build/assets/app-D4LlAziF.css`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit the observability and operational detail cards for the same
+concrete use of Signal's semantic cards, panels, stats and disclosure shapes.
+
 ## Slice 105 — Signal source controls in shared chrome — 2026-09-22
 
 Responsibility problem:
