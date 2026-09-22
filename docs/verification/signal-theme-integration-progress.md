@@ -6428,3 +6428,64 @@ Deployment:
 Next task: inspect the next remaining app-specific compatibility surface for
 another source-faithful Signal boundary, without removing behavior-backed
 selectors speculatively.
+
+## Slice 91 — Signal application page headers — 2026-09-22
+
+Responsibility problem:
+
+- All resource pages shared a BuildPusher-specific gradient/bordered page
+  header. Signal's actual application pages use a quiet content header with an
+  eyebrow, compact heading, muted description and adjacent actions. The old
+  header made every authenticated screen look like a separate design system.
+
+Boundary and implementation:
+
+- Migrated `x-ui.page-header`, used by 51 resource and account screens, to
+  Signal's application-page hierarchy and typography.
+- Reused Signal `ui-eyebrow`, `text-3xl font-extrabold tracking-tight
+  text-ink`, `text-muted`, `bg-primary-soft`, `rounded-card` and responsive
+  action geometry.
+- Kept the existing `data-ui-page-header`, action, title and local-navigation
+  hooks, including the two-column mobile action grid required by the existing
+  workflows.
+- Removed the former page-header gradient, border and bespoke title sizing;
+  aligned local navigation and dashboard hero colors with Signal tokens.
+
+Preserved contracts and safety:
+
+- Existing page titles, descriptions, icons, action destinations, route
+  behavior, local-navigation anchors and mobile action layout remain intact.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,264 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-Bn1S_nQR.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- The broad `light at 390px` asset-layout fixture was intentionally stopped
+  after 5.7 minutes while waiting for its existing dashboard fixture
+  `[data-auth-brand]` marker; it is not counted as a passing result and does
+  not establish a regression from this component slice.
+- Implementation commit `654b7d1` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `654b7d1`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: inspect the remaining shared local-navigation and inventory
+surfaces for another source-faithful Signal boundary, without removing
+behavior-backed selectors speculatively.
