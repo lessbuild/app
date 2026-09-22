@@ -582,3 +582,71 @@ development evidence, not production or external-provider acceptance.
 Next task: modernize the website detail page’s operations and health sections,
 preserving Livewire setup/provisioning logs, health history filters and runtime
 log behavior.
+
+## Slice 11 — website operations and health evidence
+
+Status: implemented, verified locally, committed and pushed as `0699d72`.
+
+Responsibility problem addressed:
+
+- The website detail page mixed legacy text/control utilities and a raw delete
+  trigger into the page identity, provisioning timeline and health evidence
+  path.
+- The standalone and modal health-history views did not share the same Signal
+  filter, evidence-card and status presentation as provider history.
+
+Signal implementation:
+
+- Added a Delivery target eyebrow and shared danger button for the website
+  detail action cluster.
+- Converted website notices to quiet colored-edge alerts and standardized the
+  overview and provisioning timeline on Signal ink/muted/line roles.
+- Composed health evidence as a Signal panel with retained-check insights and
+  responsive health-check cards.
+- Standardized the full-page/modal health-history filters on Signal inputs and
+  labels while retaining the fragment enhancement path.
+- Added mobile browser coverage for the page panels and the health modal’s
+  four filter controls.
+
+Preserved contracts:
+
+- Provisioning/placement alerts, Livewire setup and provisioning-log mounts,
+  health check and export routes, modal history URLs, filter names, pagination,
+  retained-sample limits, escaping and authorization.
+- Destructive workflow, password notice, retry behavior and open-state rules.
+
+Evidence:
+
+- `WebsiteHealthHistoryTest` — 11 tests passed, 113 assertions.
+- `WebsiteHealthInsightsTest` — 3 tests passed, 19 assertions.
+- `WebsiteProvisioningRetryTest` — 4 tests passed, 25 assertions.
+- `CreationDialogTest` — 20 tests passed, 134 assertions.
+- Website health modal and detail-panel browser journeys — 2 passed in the
+  isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `0699d72` and its caches were rebuilt before restarting
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: modernize website runtime-log controls and attached-repository
+surfaces, preserving bounded log fetching, Alpine tab behavior, refresh routes,
+retention dialogs and repository modal creation.
