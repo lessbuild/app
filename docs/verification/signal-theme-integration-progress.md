@@ -6651,6 +6651,63 @@ Next task: audit remaining bespoke visual primitives and raw utility clusters
 against the Signal source, prioritizing shared cards, form controls and
 responsive navigation where visual drift affects many pages.
 
+## Slice 103 — Use Signal's exact theme bootstrap — 2026-09-22
+
+Responsibility problem:
+
+- Signal's theme bootstrap had been copied into a combined application script.
+  Although the behavior was similar, the runtime did not consume the original
+  Signal bootstrap as its own build entry, making it possible for the app's
+  additional theme controls to drift from the source initialization contract.
+
+Boundary and implementation:
+
+- Added `resources/js/signal-theme-init.js` as a byte-for-byte copy of Signal's
+  `src/scripts/theme-init.js`.
+- Registered it as an independent Vite entry and loaded it before the
+  Deployer-specific theme-toggle enhancements.
+- Updated fixture delivery and source coverage so local browser tests exercise
+  both generated entries exactly as the runtime does.
+
+Preserved contracts and safety:
+
+- Theme query parameters, local preferences, safe token overrides, system
+  appearance detection and existing dark/light controls remain compatible.
+- No routes, persisted application records, authorization, queue behavior,
+  provider integration or billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `resources/js/signal-theme-init.js` and Signal's source bootstrap have the
+  same SHA-256: `7737f5fd7bd97f2326741a0bbf48b3eb3a5bcb8f9b42e5c945481e95ced22fa1`.
+- `tests/Feature/LocalUiAssetTest.php` — 57 tests passed, 2,772 assertions.
+- `npm run build` — passed; generated entries include
+  `assets/signal-theme-init-C2YeqwAw.js` and
+  `assets/signal-theme-CfPGChdv.js`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `a57b9bf` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `a57b9bf`; assets, config, route and Blade caches were rebuilt and both
+  services are active. `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}` and the served manifest contains both Signal entries.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: normalize the remaining high-visibility page-level surface and
+control clusters to Signal's semantic primitives, starting with observability,
+configuration and public navigation.
+
 ## Slice 97 — Signal utility normalization and native dialog visibility — 2026-09-22
 
 Responsibility problem:
