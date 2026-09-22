@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -1803,11 +1803,12 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
-    for (const screen of ['repositories', 'providers', 'websites']) {
+    for (const screen of ['repositories', 'providers', 'websites', 'builds']) {
         await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
 
-        const filter = page.locator(`#${screen}-filters`);
-        const trigger = page.locator(`[data-filter-dialog-trigger][aria-controls="${screen}-filters"]`);
+        const filterId = screen === 'builds' ? 'deployment-filters' : `${screen}-filters`;
+        const filter = page.locator(`#${filterId}`);
+        const trigger = page.locator(`[data-filter-dialog-trigger][aria-controls="${filterId}"]`);
         const initialPath = new URL(page.url()).pathname;
 
         await expect(filter).toHaveAttribute('data-filter-dialog', '');
@@ -1846,6 +1847,27 @@ test('website inventory keeps Signal filters and mobile resource cards scannable
     await expect(inventory).toHaveClass(/\bui-panel\b/);
     await expect(inventory.locator('[data-website-card]')).toHaveCount(1);
     await expect(inventory.getByRole('link', { name: 'App', exact: true })).toBeVisible();
+});
+
+test('deployment history keeps Signal filters, insights and cards scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/builds', { waitUntil: 'networkidle' });
+
+    const filters = page.locator('#deployment-filters');
+    await expect(filters.locator('.ui-input')).toHaveCount(9);
+    await expect(filters.locator('label.ui-choice')).toHaveCount(2);
+    await expect(filters.locator('.input.secondary')).toHaveCount(0);
+
+    const insights = page.locator('#builds-insights');
+    await expect(insights).toBeVisible();
+    await expect(insights.locator('.ui-stat')).toHaveCount(6);
+
+    const inventory = page.locator('#deployment-history');
+    await expect(inventory).toBeVisible();
+    await expect(inventory).toHaveClass(/\bui-panel\b/);
+    await expect(inventory.locator('[data-build-card]').first()).toBeVisible();
 });
 
 test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {

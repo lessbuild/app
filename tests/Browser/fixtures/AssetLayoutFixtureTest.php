@@ -525,6 +525,11 @@ class AssetLayoutFixtureTest extends TestCase
             'created_at' => now()->subMinutes(2),
         ]);
         $this->assertNotNull($build->previousInRepository(), 'The build fixture must have a previous deployment.');
+        File::put($directory.'/builds.html', $this->renderPage(route('builds.index'))->assertOk()
+            ->assertSee('Filter deployments')
+            ->assertSee('id="builds-insights"', false)
+            ->assertSee('id="deployment-history"', false)
+            ->getContent());
         File::put($directory.'/website-deployment-history.html', $this->renderPage(route('builds.index', [
             'website_id' => $website->id,
             'fragment' => 'deployment-history',
