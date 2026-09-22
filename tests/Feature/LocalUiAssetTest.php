@@ -192,7 +192,13 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('text-secondary', $source);
             $this->assertStringNotContainsString('bg-secondary', $source);
             $this->assertStringNotContainsString('border-primary', $source);
+            $this->assertStringNotContainsString('text-primary', $source);
+            $this->assertStringNotContainsString('text-ternary', $source);
+            $this->assertStringNotContainsString('button--', $source);
+            $this->assertStringNotContainsString('input secondary', $source);
         }
+
+        $this->assertStringContainsString('x-ui.badge', $apiDocumentation);
     }
 
     public function test_auth_pages_have_page_specific_browser_titles_and_valid_description_structure(): void

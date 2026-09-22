@@ -50,7 +50,7 @@ Accept: application/json</code></pre>
                 <nav class="grid gap-2 border-t border-line p-4 sm:grid-cols-2" aria-label="{{ __('API operations') }}">
                     @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
                         <a href="#api-operation-{{ $anchor }}" class="ui-card ui-card--interactive block px-4 py-3">
-                            <span class="font-mono text-xs font-bold text-primary">{{ $method }}</span>
+                            <x-ui.badge tone="accent" class="font-mono">{{ $method }}</x-ui.badge>
                             <code class="mt-1 block break-all text-sm text-ink">{{ $path }}</code>
                         </a>
                     @endforeach
