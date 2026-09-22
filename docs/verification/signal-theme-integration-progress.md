@@ -6244,3 +6244,66 @@ acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 77 — canonical Signal command dialog and responsive accessibility — 2026-09-22
+
+Responsibility problem:
+
+- The authenticated workspace search still used a custom fixed Alpine overlay,
+  while Signal's actual starter uses a native dialog with a top-layer backdrop,
+  canonical spacing, command-item treatment and browser-managed modal semantics.
+- The compact tablet header hid the visible command label without providing an
+  accessible name, so keyboard users could open the control but could not
+  identify it reliably.
+
+Boundary and implementation:
+
+- Replaced the custom command overlay with the Signal native `dialog` pattern,
+  retaining BuildPusher's existing Alpine search, debouncing, abort handling,
+  result filtering, modal handoff and focus restoration.
+- Applied Signal's canonical command layout hierarchy, typography, spacing,
+  item states and semantic theme tokens.
+- Added an explicit accessible label to the compact `Jump to` control and
+  aligned the browser expectation with the rendered Signal shell.
+
+Preserved contracts and safety:
+
+- Workspace search URLs, fragment requests, quick actions, create-dialog
+  handoff, keyboard navigation, Escape behavior, return focus and no-write
+  semantics are unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The existing user-authored untracked controller plan remains untracked and
+  was not included in any commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 53 tests passed, 1,250 assertions.
+- `tests/Browser/accessibility.spec.js` against
+  `https://deployer.buildpusher.com` — 3 tests passed across mobile, tablet
+  and desktop.
+- Focused fixture-backed workspace search and modal handoff checks with
+  `/root/.local/share/buildpusher/php-8.5.10/bin/php` — 2 tests passed in
+  32.6 seconds.
+- `tests/Browser/navigation.spec.js` against the isolated development host —
+  3 tests passed across mobile, tablet and desktop.
+- `tests/Browser/live-runtime.spec.js` against the isolated development host —
+  1 test passed in 28.1 seconds.
+- `npm run build` — passed; served bundle is `assets/app-Bj6FD89o.css`.
+- `php artisan view:cache` — passed on the isolated runtime.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Implementation commits `7161cd7`, `bb878f9` and `cf93473` are pushed to
+  `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `cf93473`; Blade caches were rebuilt and both application and queue
+  services are active.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change was
+  preserved. This is isolated development evidence, not production or external
+  provider acceptance.
+
+Next task: inspect the remaining legacy theme imports and shared runtime
+components for another source-faithful Signal boundary.
