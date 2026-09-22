@@ -441,9 +441,9 @@ class RecipeFeedbackInboxTest extends TestCase
             ->assertSuccessful()
             ->assertViewHas('filters', fn (array $filters): bool => $filters['sort'] === 'priority')
             ->assertSeeInOrder(['Second report', 'Third report', 'First report'])
-            ->assertSee('bg-red-100 text-red-700', false)
-            ->assertSee('bg-orange-100 text-orange-700', false)
-            ->assertSee('bg-blue-100 text-blue-700', false)
+            ->assertSee('ui-badge-danger', false)
+            ->assertSee('ui-badge-warning', false)
+            ->assertSee('ui-badge-primary', false)
             ->assertSee(route('gallery.reports.export', ['status' => 'unresolved', 'sort' => 'priority']));
 
         $rows = $this->csvRows($this->actingAs($author)->get(route('gallery.reports.export', [

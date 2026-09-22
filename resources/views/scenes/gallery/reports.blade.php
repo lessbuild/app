@@ -185,15 +185,16 @@
                                         class="ui-check rounded-md border-line"
                                     >
                                 @endif
+                                @php
+                                    $reportReasonTone = match ($report->reason) {
+                                        'security' => 'danger',
+                                        'misleading', 'broken' => 'warning',
+                                        'outdated' => 'neutral',
+                                        default => 'accent',
+                                    };
+                                @endphp
                                 <x-ui.badge
-                                    :tone="$report->reason === 'security' ? 'danger' : ($report->reason === 'misleading' ? 'warning' : 'accent')"
-                                    @class([
-                                        'bg-red-100 text-red-700' => $report->reason === 'security',
-                                        'bg-orange-100 text-orange-700' => $report->reason === 'broken',
-                                        'bg-yellow-100 text-yellow-800' => $report->reason === 'misleading',
-                                        'bg-purple-100 text-purple-700' => $report->reason === 'outdated',
-                                        'bg-blue-100 text-blue-700' => $report->reason === 'other',
-                                    ])
+                                    :tone="$reportReasonTone"
                                 >{{ str($report->reason)->headline() }}</x-ui.badge>
                                 <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
                             </div>

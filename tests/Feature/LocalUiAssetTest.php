@@ -182,6 +182,17 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_gallery_report_reasons_use_shared_signal_badges(): void
+    {
+        $source = File::get(resource_path('views/scenes/gallery/reports.blade.php'));
+
+        $this->assertStringContainsString(':tone="$reportReasonTone"', $source);
+
+        foreach (['bg-red-100', 'text-red-700', 'bg-orange-100', 'text-orange-700', 'bg-yellow-100', 'text-yellow-800', 'bg-purple-100', 'text-purple-700', 'bg-blue-100', 'text-blue-700'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
