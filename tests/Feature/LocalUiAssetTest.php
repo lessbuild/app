@@ -547,6 +547,26 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-palette-item', File::get(resource_path('views/search/_workspace-results.blade.php')));
     }
 
+    public function test_public_status_and_access_request_pages_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/status/platform.blade.php'),
+            resource_path('views/status/show.blade.php'),
+            resource_path('views/access-request.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $this->assertStringContainsString('ui-input', File::get(resource_path('views/status/show.blade.php')));
+        $this->assertStringContainsString('ui-eyebrow', File::get(resource_path('views/access-request.blade.php')));
+    }
+
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();
