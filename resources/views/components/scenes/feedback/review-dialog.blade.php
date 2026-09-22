@@ -16,20 +16,20 @@
         @csrf
         @method('PATCH')
         <input type="hidden" name="_feedback_review_id" value="{{ $feedback->id }}">
-        <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Status') }}</span>
-            <select name="status" class="input secondary w-full rounded-lg">
+        <div>
+            <label class="ui-label" for="feedback-review-status-{{ $feedback->id }}">{{ __('Status') }}</label>
+            <select id="feedback-review-status-{{ $feedback->id }}" name="status" class="ui-input">
                 @foreach (\App\Models\ProductFeedback::STATUSES as $value)
                     <option value="{{ $value }}" @selected(($formOld ? old('status', $feedback->status) : $feedback->status) === $value)>{{ str($value)->headline() }}</option>
                 @endforeach
             </select>
             <x-forms.errors name="status" />
-        </label>
-        <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Workspace response') }}</span>
-            <textarea name="review_response" rows="4" maxlength="10000" class="input secondary w-full rounded-lg" placeholder="{{ __('Decision, workaround, or planned resolution') }}">{{ $formOld ? old('review_response', $feedback->review_response) : $feedback->review_response }}</textarea>
+        </div>
+        <div>
+            <label class="ui-label" for="feedback-review-response-{{ $feedback->id }}">{{ __('Workspace response') }}</label>
+            <textarea id="feedback-review-response-{{ $feedback->id }}" name="review_response" rows="4" maxlength="10000" class="ui-input" placeholder="{{ __('Decision, workaround, or planned resolution') }}">{{ $formOld ? old('review_response', $feedback->review_response) : $feedback->review_response }}</textarea>
             <x-forms.errors name="review_response" />
-        </label>
+        </div>
         <x-ui.button type="submit" variant="primary">{{ __('Save review') }}</x-ui.button>
     </form>
 </x-dialogs.modal>

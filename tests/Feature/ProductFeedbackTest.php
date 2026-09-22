@@ -48,6 +48,26 @@ class ProductFeedbackTest extends TestCase
         $response->assertSee('The title field is required.');
     }
 
+    public function test_feedback_inventory_uses_compact_signal_panels_and_controls(): void
+    {
+        $owner = User::factory()->create();
+        $owner->currentOrganization->productFeedback()->create([
+            'user_id' => $owner->id,
+            'category' => 'idea',
+            'severity' => 'normal',
+            'status' => 'open',
+            'title' => 'Compact feedback card',
+            'description' => 'The feedback list should remain easy to scan.',
+        ]);
+
+        $this->actingAs($owner)->get(route('feedback.index'))
+            ->assertSuccessful()
+            ->assertSee('data-feedback-card', false)
+            ->assertSee('class="ui-input"', false)
+            ->assertSee('class="ui-panel p-5 sm:p-6"', false)
+            ->assertSee('text-ink', false);
+    }
+
     public function test_member_submits_encrypted_private_feedback_and_sees_only_their_own(): void
     {
         $owner = User::factory()->create();

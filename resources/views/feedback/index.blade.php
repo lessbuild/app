@@ -73,12 +73,12 @@
 
         <section id="feedback-list" class="scroll-mt-24" aria-labelledby="feedback-list-heading">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 id="feedback-list-heading" class="text-lg font-black text-primary">{{ __('Workspace feedback') }}</h2>
+                <h2 id="feedback-list-heading" class="text-lg font-black text-ink">{{ __('Workspace feedback') }}</h2>
                 <form method="GET" class="flex flex-wrap gap-2">
                     <label class="sr-only" for="feedback-status">{{ __('Status') }}</label>
-                    <select id="feedback-status" name="status" class="input secondary rounded-lg"><option value="">{{ __('Every status') }}</option>@foreach (\App\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($status === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
+                    <select id="feedback-status" name="status" class="ui-input"><option value="">{{ __('Every status') }}</option>@foreach (\App\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($status === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
                     <label class="sr-only" for="feedback-filter-category">{{ __('Type') }}</label>
-                    <select id="feedback-filter-category" name="category" class="input secondary rounded-lg"><option value="">{{ __('Every type') }}</option>@foreach (\App\Models\ProductFeedback::CATEGORIES as $value)<option value="{{ $value }}" @selected($category === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
+                    <select id="feedback-filter-category" name="category" class="ui-input"><option value="">{{ __('Every type') }}</option>@foreach (\App\Models\ProductFeedback::CATEGORIES as $value)<option value="{{ $value }}" @selected($category === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
                     <x-ui.button type="submit" variant="secondary">{{ __('Filter') }}</x-ui.button>
                     @if ($status || $category)
                         <x-ui.button href="{{ route('feedback.index') }}" variant="ghost">{{ __('Clear') }}</x-ui.button>
@@ -100,7 +100,7 @@
                             'page' => $feedback->currentPage() > 1 ? $feedback->currentPage() : null,
                         ], static fn ($value): bool => filled($value)));
                     @endphp
-                    <x-ui.card class="p-5 sm:p-6">
+                    <article class="ui-panel p-5 sm:p-6" data-feedback-card>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap gap-2">
@@ -108,8 +108,8 @@
                                     <x-ui.badge :tone="$item->severity === 'critical' ? 'danger' : ($item->severity === 'high' ? 'warning' : 'neutral')">{{ str($item->severity)->headline() }}</x-ui.badge>
                                     <x-ui.badge :tone="$item->status === 'resolved' ? 'success' : ($item->status === 'in_progress' ? 'accent' : 'neutral')">{{ str($item->status)->headline() }}</x-ui.badge>
                                 </div>
-                                <h3 class="mt-3 text-lg font-black text-primary">{{ $item->title }}</h3>
-                                <p class="mt-1 text-xs text-secondary">{{ __('Submitted by :name :time', ['name' => $item->submitter->name, 'time' => $item->created_at->diffForHumans()]) }}@if ($item->page) <span aria-hidden="true">·</span> <code>{{ $item->page }}</code>@endif</p>
+                                <h3 class="mt-3 text-lg font-black text-ink">{{ $item->title }}</h3>
+                                <p class="mt-1 text-xs text-muted">{{ __('Submitted by :name :time', ['name' => $item->submitter->name, 'time' => $item->created_at->diffForHumans()]) }}@if ($item->page) <span aria-hidden="true">·</span> <code>{{ $item->page }}</code>@endif</p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-2">
                                 @if ($canReview)
@@ -131,17 +131,17 @@
                             </div>
                         </div>
 
-                        <p class="mt-4 whitespace-pre-wrap text-sm leading-6 text-secondary">{{ $item->description }}</p>
+                        <p class="mt-4 whitespace-pre-wrap text-sm leading-6 text-muted">{{ $item->description }}</p>
                         @if ($item->reproduction_steps)
                             <details class="mt-3">
-                                <summary class="cursor-pointer text-sm font-bold text-ternary">{{ __('Reproduction steps') }}</summary>
-                                <p class="mt-2 whitespace-pre-wrap rounded-lg bg-secondary p-3 text-sm text-primary">{{ $item->reproduction_steps }}</p>
+                                <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Reproduction steps') }}</summary>
+                                <p class="mt-2 whitespace-pre-wrap rounded-lg bg-surface-muted p-3 text-sm text-ink">{{ $item->reproduction_steps }}</p>
                             </details>
                         @endif
                         @if ($item->review_response)
-                            <div class="ui-card mt-4 bg-secondary p-4">
-                                <p class="text-xs font-bold uppercase text-secondary">{{ __('Workspace response') }}</p>
-                                <p class="mt-2 whitespace-pre-wrap text-sm text-primary">{{ $item->review_response }}</p>
+                            <div class="ui-panel mt-4 bg-surface-muted p-4">
+                                <p class="ui-eyebrow text-[0.65rem]">{{ __('Workspace response') }}</p>
+                                <p class="mt-2 whitespace-pre-wrap text-sm text-ink">{{ $item->review_response }}</p>
                             </div>
                         @endif
                         @if ($canReview)
@@ -151,7 +151,7 @@
                                 :open="$feedbackReviewDialogOpen"
                             />
                         @endif
-                    </x-ui.card>
+                    </article>
                 @empty
                     <x-ui.empty-state
                         :title="__('No matching feedback')"
