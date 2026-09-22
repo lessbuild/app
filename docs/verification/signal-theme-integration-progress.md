@@ -2201,6 +2201,52 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect organization/account surfaces for a separate cohesive
 Signal modernization boundary.
 
+## Slice 39 — sign-in history — 2026-09-22
+
+Responsibility problem addressed:
+
+- Full sign-in history and its account-local read-only fragment already shared
+  one owner-scoped query and redacted metadata component, but the standalone
+  page lacked section wayfinding and the reusable filters/cards still used
+  older utility styles. Empty histories also had no stable history anchor for
+  mobile navigation.
+
+Signal implementation:
+
+- Added `Sign-in history sections` navigation for insights, filters and
+  history on the full page.
+- Migrated the shared filter form, metrics, metadata and history cards to
+  Signal panels, labels, inputs and ink/muted hierarchy.
+- Added stable prefixed anchors that work in both the full page and the
+  account modal fragment, including empty and populated history states.
+
+Preserved contracts:
+
+- Owner scoping, derived device/IP metadata, raw-user-agent redaction,
+  filter normalization, pagination, CSV export and password-protected clear
+  history behavior are unchanged.
+- The account-local contextual dialog continues to use the same fragment
+  endpoint, query keys, modal history URL and focused empty state.
+- No sign-in records, retention behavior, authorization decision or response
+  format changed.
+
+Evidence:
+
+- Sign-in history, account management and security coverage — 37 tests passed,
+  293 assertions.
+- Focused account browser journey — 1 Playwright test passed, covering the
+  full page, empty history anchor, contextual dialog and return path.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'eb29b05' is on 'origin/main'.
+
+Next task: deploy sign-in history modernization to the isolated canonical
+development runtime, then inspect the next organization/account surface for a
+separate cohesive Signal slice.
+
 ## Slice 36 — gallery recipe detail — 2026-09-22
 
 Responsibility problem addressed:
