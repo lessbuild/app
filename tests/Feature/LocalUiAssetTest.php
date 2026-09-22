@@ -209,6 +209,19 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('bg-red-500', $applicationLayout);
     }
 
+    public function test_deployment_preflight_checks_use_signal_status_tokens(): void
+    {
+        $source = File::get(resource_path('views/livewire/build-deployment-status.blade.php'));
+
+        foreach (['text-success', 'text-warning', 'text-danger'] as $token) {
+            $this->assertStringContainsString($token, $source);
+        }
+
+        foreach (['text-green-600', 'text-amber-600', 'text-red-600'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
