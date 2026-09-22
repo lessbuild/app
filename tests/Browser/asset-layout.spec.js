@@ -900,6 +900,23 @@ test('provider connection history opens and filters inside a contextual dialog',
     await expect(trigger).toBeFocused();
 });
 
+test('provider detail actions and attached resources stay scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/providers/1', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('heading', { name: 'GitHub', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Test connection', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete Provider', exact: true })).toBeVisible();
+
+    const resources = page.locator('section[aria-labelledby="provider-resources-heading"]');
+    await expect(resources).toBeVisible();
+    await expect(resources.locator('[data-provider-resource-count="repositories"]')).toHaveText('1');
+    await expect(resources.getByRole('link', { name: 'Add Repository', exact: true })).toBeVisible();
+    await expect(resources.getByRole('link', { name: /App/ }).first()).toBeVisible();
+});
+
 test('standalone provider connection history keeps the shared Signal evidence surface', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

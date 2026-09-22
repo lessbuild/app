@@ -36,6 +36,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Provider integration') }}"
         icon="cloud"
         :title="$provider->name"
         :description="$provider->description"
@@ -47,7 +48,7 @@
                 </x-ui.button>
             @endif
 
-            <form method="POST" action="{{ route('providers.connection.test', $provider) }}">
+            <form method="POST" action="{{ route('providers.connection.test', $provider) }}" aria-label="{{ __('Provider connection actions') }}">
                 @csrf
                 <x-ui.button type="submit" variant="secondary">
                     {{ __('Test connection') }}
@@ -75,19 +76,19 @@
                 :description="__('Are you sure you want to delete this provider?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
+            <x-ui.button type="button" variant="danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Provider') }}
-            </button>
+            </x-ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @if (session('provider_connection'))
         @php($connection = session('provider_connection'))
-        <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6">
+        <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6 border-l-4">
             {{ $connection['message'] }}
         </x-ui.alert>
     @endif
@@ -159,7 +160,7 @@
     </section>
 
     @if ($errors->has('provider'))
-        <x-ui.alert tone="danger" class="ui-panel my-4">
+        <x-ui.alert tone="danger" class="ui-panel my-4 border-l-4">
             {{ $errors->first('provider') }}
         </x-ui.alert>
     @endif
@@ -251,36 +252,40 @@
             </div>
         </div>
 
-        <div class="mt-5 grid gap-5 lg:grid-cols-2">
+        <div class="mt-5 grid gap-4 lg:grid-cols-2">
 
         @if($provider->isSourceControl())
             <div class="ui-card p-4 sm:p-5">
-                <div class="flex items-center justify-between gap-3">
-                    <h3 class="font-extrabold text-ink">{{ __('Repositories') }}</h3>
-                <x-ui.button
-                    :href="$repositoryCreateUrl"
-                    data-modal-trigger="repository-create-dialog"
-                    data-modal-content-url="{{ $repositoryCreateContentUrl }}"
-                    aria-controls="repository-create-dialog"
-                    aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
-                    variant="ghost"
-                >{{ __('Add Repository') }}</x-ui.button>
+                <div class="flex min-w-0 items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        <h3 class="truncate font-extrabold text-ink">{{ __('Repositories') }}</h3>
+                        <x-ui.badge data-provider-resource-count="repositories">{{ $repositories->total() }}</x-ui.badge>
+                    </div>
+                    <x-ui.button
+                        :href="$repositoryCreateUrl"
+                        data-modal-trigger="repository-create-dialog"
+                        data-modal-content-url="{{ $repositoryCreateContentUrl }}"
+                        aria-controls="repository-create-dialog"
+                        aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
+                        variant="ghost"
+                        class="ui-btn-sm shrink-0"
+                    >{{ __('Add Repository') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($repositories as $repository)
                         <li>
-                            <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex items-center gap-3 p-3">
+                            <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
                                 <x-avatar :name="$repository->name" class="ui-avatar ui-avatar-md rounded-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $repository->name }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">{{ $repository->url }}</span>
                                 </span>
-                                <span class="shrink-0 text-xs font-semibold text-muted">{{ $repository->created_at->diffForHumans() }}</span>
+                                <span class="hidden shrink-0 text-xs font-semibold text-muted sm:block">{{ $repository->created_at->diffForHumans() }}</span>
                             </a>
                         </li>
                     @empty
                         <li class="pt-3">
-                            <x-ui.alert tone="info" role="status">{{ __('No Repositories using this provider') }}</x-ui.alert>
+                            <x-ui.alert tone="info" role="status" class="border-l-4">{{ __('No Repositories using this provider') }}</x-ui.alert>
                         </li>
                     @endforelse
                 </ul>
@@ -292,8 +297,11 @@
 
         @if(str($provider->provider)->contains(['digitalocean']))
             <div class="ui-card p-4 sm:p-5">
-                <div class="flex items-center justify-between gap-3">
-                    <h3 class="font-extrabold text-ink">{{ __('Servers') }}</h3>
+                <div class="flex min-w-0 items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2">
+                        <h3 class="truncate font-extrabold text-ink">{{ __('Servers') }}</h3>
+                        <x-ui.badge data-provider-resource-count="servers">{{ $servers->total() }}</x-ui.badge>
+                    </div>
                     <x-ui.button
                         :href="$serverCreateUrl"
                         data-modal-trigger="server-create-dialog"
@@ -301,23 +309,24 @@
                         aria-controls="server-create-dialog"
                         aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
                         variant="ghost"
+                        class="ui-btn-sm shrink-0"
                     >{{ __('Add Server') }}</x-ui.button>
                 </div>
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($servers as $server)
                         <li>
-                            <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex items-center gap-3 p-3">
+                            <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
                                 <x-avatar :name="$server->label" class="ui-avatar ui-avatar-md rounded-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $server->label }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">#{{ $server->identifier }}</span>
                                 </span>
-                                <span class="shrink-0 text-xs font-semibold text-muted">{{ $server->created_at->diffForHumans() }}</span>
+                                <span class="hidden shrink-0 text-xs font-semibold text-muted sm:block">{{ $server->created_at->diffForHumans() }}</span>
                             </a>
                         </li>
                     @empty
                         <li class="pt-3">
-                            <x-ui.alert tone="info" role="status">{{ __('No Servers using this provider') }}</x-ui.alert>
+                            <x-ui.alert tone="info" role="status" class="border-l-4">{{ __('No Servers using this provider') }}</x-ui.alert>
                         </li>
                     @endforelse
                 </ul>
