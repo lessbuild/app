@@ -37,7 +37,7 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('data-landing-hero', false)
             ->assertSee('ui-landing-preview', false)
             ->assertSee('bg-surface-muted', false)
-            ->assertSee('text-on-primary', false)
+            ->assertSee('text-emphasis-ink', false)
             ->assertSee('Health verification')
             ->assertDontSee('i.imgur.com', false)
             ->assertDontSee('gopayee.test', false);
@@ -318,6 +318,14 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('[x-cloak]', $styles);
         $this->assertStringContainsString('#main-content .border:is(', $styles);
         $this->assertStringContainsString('background-color: var(--bg-primary)', $styles);
+        $this->assertStringContainsString('ui-eyebrow', $homepage);
+        $this->assertStringContainsString('bg-emphasis', $homepage);
+        $this->assertStringNotContainsString('text-primary', $homepage);
+        $this->assertStringNotContainsString('text-secondary', $homepage);
+        $this->assertStringNotContainsString('text-ternary', $homepage);
+        $this->assertDoesNotMatchRegularExpression('/(?:^|[\s\'\"])bg-primary(?:[\s\'\"]|$)/', $homepage);
+        $this->assertStringNotContainsString('bg-secondary', $homepage);
+        $this->assertStringNotContainsString('border-primary', $homepage);
     }
 
     public function test_private_pages_are_not_indexable_and_do_not_emit_public_share_metadata(): void
