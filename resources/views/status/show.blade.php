@@ -5,7 +5,7 @@
     :indexable="true"
     :livewire="false"
 >
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-emphasis focus:px-4 focus:py-3 focus:font-semibold focus:text-emphasis-ink focus:shadow-xl">
+    <a href="#main-content" class="ui-skip-link">
         {{ __('Skip to main content') }}
     </a>
     <x-layouts.public-header navigation-label="Status navigation" />

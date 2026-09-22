@@ -621,10 +621,17 @@ class LocalUiAssetTest extends TestCase
 
     public function test_view_sources_use_signal_weight_and_responsive_form_radius_utilities(): void
     {
+        $skipLinkViews = 0;
+
         foreach (File::allFiles(resource_path('views')) as $file) {
             $source = File::get($file->getPathname());
 
             $this->assertStringNotContainsString('font-black', $source, $file->getRelativePathname());
+            $this->assertStringNotContainsString('focus:not-sr-only', $source, $file->getRelativePathname());
+
+            if (str_contains($source, 'class="ui-skip-link"')) {
+                $skipLinkViews++;
+            }
 
             foreach (explode("\n", $source) as $lineNumber => $line) {
                 if (! str_contains($line, 'ui-input')) {
@@ -638,6 +645,8 @@ class LocalUiAssetTest extends TestCase
                 );
             }
         }
+
+        $this->assertGreaterThanOrEqual(7, $skipLinkViews);
     }
 
     public function test_signal_is_the_canonical_theme_entrypoint(): void
