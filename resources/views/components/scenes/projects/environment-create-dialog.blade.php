@@ -13,13 +13,13 @@
         @csrf
         <input type="hidden" name="_environment_form" value="add">
         <label>
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span>
-            <input name="name" value="{{ old('name') }}" placeholder="Staging" class="input secondary w-full rounded-lg" required>
+            <span class="ui-label">{{ __('Name') }}</span>
+            <input name="name" value="{{ old('name') }}" placeholder="Staging" class="ui-input" required>
             <x-forms.errors name="name" />
         </label>
         <label>
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Type') }}</span>
-            <select name="type" class="input secondary w-full rounded-lg">
+            <span class="ui-label">{{ __('Type') }}</span>
+            <select name="type" class="ui-input">
                 @foreach (\App\Models\Environment::TYPES as $type)
                     <option value="{{ $type }}" @selected(old('type', 'staging') === $type)>{{ ucfirst($type) }}</option>
                 @endforeach
@@ -27,8 +27,8 @@
             <x-forms.errors name="type" />
         </label>
         <label class="sm:col-span-2">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Branch') }}</span>
-            <input name="branch" value="{{ old('branch') }}" placeholder="develop" class="input secondary w-full rounded-lg" required>
+            <span class="ui-label">{{ __('Branch') }}</span>
+            <input name="branch" value="{{ old('branch') }}" placeholder="develop" class="ui-input" required>
             <x-forms.errors name="branch" />
         </label>
         <input type="hidden" name="is_protected" value="0">

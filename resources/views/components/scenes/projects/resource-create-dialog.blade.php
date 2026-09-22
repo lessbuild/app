@@ -16,13 +16,13 @@
         <input type="hidden" name="_environment_id" value="{{ $environment->id }}">
         <input type="hidden" name="_environment_panel" value="resources">
         <label>
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Name') }}</span>
-            <input name="name" value="{{ old('name') }}" placeholder="primary-database" class="input secondary w-full rounded-lg" required>
+            <span class="ui-label">{{ __('Name') }}</span>
+            <input name="name" value="{{ old('name') }}" placeholder="primary-database" class="ui-input" required>
             <x-forms.errors name="name" />
         </label>
         <label>
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Type') }}</span>
-            <select name="type" class="input secondary w-full rounded-lg">
+            <span class="ui-label">{{ __('Type') }}</span>
+            <select name="type" class="ui-input">
                 @foreach (\App\Models\EnvironmentResource::TYPES as $type)
                     <option value="{{ $type }}" @selected(old('type', 'mysql') === $type)>{{ str($type)->replace('_', ' ')->title() }}</option>
                 @endforeach
@@ -31,14 +31,14 @@
         </label>
         <label class="flex items-center gap-2 sm:col-span-2">
             <input type="hidden" name="is_managed" value="0">
-            <input type="checkbox" name="is_managed" value="1" @checked(old('is_managed') === '1')>
-            <span class="text-sm text-secondary">{{ __('Manage on attached server') }}</span>
+            <input class="ui-check" type="checkbox" name="is_managed" value="1" @checked(old('is_managed') === '1')>
+            <span class="text-sm text-ink">{{ __('Manage on attached server') }}</span>
         </label>
         <label class="sm:col-span-2">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Connection variables') }}</span>
-            <textarea name="variables" rows="4" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="input secondary w-full rounded-lg font-mono">{{ old('variables') }}</textarea>
+            <span class="ui-label">{{ __('Connection variables') }}</span>
+            <textarea name="variables" rows="4" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="ui-input font-mono">{{ old('variables') }}</textarea>
             <x-forms.errors name="variables" />
-            <span class="mt-1 block text-xs text-secondary">{{ __('Values are encrypted and are not rendered after saving.') }}</span>
+            <span class="ui-help">{{ __('Values are encrypted and are not rendered after saving.') }}</span>
         </label>
         <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-ui.button>
     </form>

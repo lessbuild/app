@@ -69,9 +69,14 @@
                 :description="__('Pull-request preview environments.')"
             />
         </dl>
+        <x-ui.local-nav class="mt-5" :label="__('Application sections')">
+            <a href="#project-environments" class="ui-local-nav__link">{{ __('Environments') }}</a>
+            <a href="#add-environment" class="ui-local-nav__link">{{ __('Add environment') }}</a>
+            <a href="#preview-environments" class="ui-local-nav__link">{{ __('Previews') }}</a>
+        </x-ui.local-nav>
     </x-ui.insights>
 
-    <div class="mt-5 space-y-4">
+    <div id="project-environments" class="mt-5 scroll-mt-24 space-y-4" data-project-environments>
         @foreach($project->environments as $environment)
             @php
                 $environmentRepositories = $environment->website?->repositories ?? collect();
@@ -136,11 +141,11 @@
                     'return_to' => $projectPageUrl,
                 ]);
             @endphp
-            <section class="ui-card overflow-hidden shadow-xs" aria-labelledby="environment-{{ $environment->id }}-heading">
-                <div class="flex flex-wrap items-center gap-4 border-b border-primary px-5 py-4">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary font-black text-ternary">{{ strtoupper(substr($environment->name, 0, 1)) }}</div>
-                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 id="environment-{{ $environment->id }}-heading" class="text-lg font-black text-primary">{{ $environment->name }}</h2>@if($environment->is_protected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif @if($environment->hibernated_at)<x-ui.badge tone="neutral">{{ __('Hibernated') }}</x-ui.badge>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-secondary">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
-                    <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-lg bg-secondary px-3 py-2 font-bold text-secondary">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-ui.button></div>
+            <section class="ui-panel overflow-hidden" aria-labelledby="environment-{{ $environment->id }}-heading" data-project-environment>
+                <div class="flex flex-wrap items-center gap-4 border-b border-line px-5 py-4">
+                    <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-muted font-black text-ink">{{ strtoupper(substr($environment->name, 0, 1)) }}</div>
+                    <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 id="environment-{{ $environment->id }}-heading" class="text-lg font-black text-ink">{{ $environment->name }}</h2>@if($environment->is_protected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif @if($environment->hibernated_at)<x-ui.badge tone="neutral">{{ __('Hibernated') }}</x-ui.badge>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-muted">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
+                    <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-lg border border-line bg-surface-muted px-3 py-2 font-bold text-muted">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-ui.button></div>
                 </div>
 
                 @if(!$repository?->builds()->where('status', \App\Models\Build::STATUS_SUCCEEDED)->exists())
@@ -153,21 +158,21 @@
                         ];
                         $readyCount = collect($readiness)->where('ready', true)->count();
                     @endphp
-                    <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4" aria-label="{{ __('First deployment readiness') }}">
-                        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-primary">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-secondary">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="text-xs font-bold text-ternary underline">{{ __('Open setup guide') }}</a></div>
-                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-secondary"><span aria-hidden="true" class="font-black text-ternary">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" @if(isset($check['modal'])) data-modal-trigger="{{ $check['modal'] }}" data-modal-content-url="{{ $check['content_url'] }}" aria-controls="{{ $check['modal'] }}" aria-expanded="{{ ($check['modal'] === 'repository-create-dialog' ? $repositoryCreateOpen : $websiteCreateOpen) ? 'true' : 'false' }}" @endif class="font-bold text-ternary underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
+                    <aside class="ui-panel rounded-none border-x-0 border-t-0 border-l-4 border-line bg-surface-muted px-5 py-4" style="border-left-color: var(--ui-primary)" aria-label="{{ __('First deployment readiness') }}">
+                        <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="font-bold text-ink">{{ __('First deployment readiness') }}</p><p class="mt-1 text-xs text-muted">{{ __(':ready of :total checks passed. Deployment stays disabled until every dependency is active.', ['ready' => $readyCount, 'total' => count($readiness)]) }}</p></div><a href="{{ route('docs') }}#first-deploy" class="ui-link text-xs underline">{{ __('Open setup guide') }}</a></div>
+                        <ul class="mt-3 grid gap-2 sm:grid-cols-2">@foreach($readiness as $check)<li class="flex items-center gap-2 text-xs text-muted"><span aria-hidden="true" class="font-black {{ $check['ready'] ? 'text-green-600' : 'text-muted' }}">{{ $check['ready'] ? '✓' : '○' }}</span>@if($check['ready'])<span>{{ $check['label'] }}</span>@else<a href="{{ $check['url'] }}" @if(isset($check['modal'])) data-modal-trigger="{{ $check['modal'] }}" data-modal-content-url="{{ $check['content_url'] }}" aria-controls="{{ $check['modal'] }}" aria-expanded="{{ ($check['modal'] === 'repository-create-dialog' ? $repositoryCreateOpen : $websiteCreateOpen) ? 'true' : 'false' }}" @endif class="ui-link underline">{{ $check['label'] }}</a>@endif</li>@endforeach</ul>
                     </aside>
                 @endif
 
-                <div class="flex flex-wrap items-center gap-3 border-b border-primary bg-secondary px-5 py-3">
+                <div class="flex flex-wrap items-center gap-3 border-b border-line bg-surface-muted px-5 py-3">
                     <div class="min-w-0 flex-1">
                         @if($repository)
-                            <p class="truncate text-sm font-bold text-primary">{{ $repository->name }} <span class="font-mono font-normal text-secondary">· {{ $repository->branch }}</span></p>
-                            <p class="mt-0.5 text-xs text-secondary">@if($repository->latestBuild){{ __('Latest deployment: :status', ['status' => str($repository->latestBuild->status)->replace('_', ' ')]) }}@else{{ __('Ready for the first deployment') }}@endif</p>
+                            <p class="truncate text-sm font-bold text-ink">{{ $repository->name }} <span class="font-mono font-normal text-muted">· {{ $repository->branch }}</span></p>
+                            <p class="mt-0.5 text-xs text-muted">@if($repository->latestBuild){{ __('Latest deployment: :status', ['status' => str($repository->latestBuild->status)->replace('_', ' ')]) }}@else{{ __('Ready for the first deployment') }}@endif</p>
                         @elseif($environment->website)
-                            <p class="text-sm font-bold text-primary">{{ __('Connect source control') }}</p><p class="mt-0.5 text-xs text-secondary">{{ __('Attach a repository to complete this environment.') }}</p>
+                            <p class="text-sm font-bold text-ink">{{ __('Connect source control') }}</p><p class="mt-0.5 text-xs text-muted">{{ __('Attach a repository to complete this environment.') }}</p>
                         @else
-                            <p class="text-sm font-bold text-primary">{{ __('Attach infrastructure') }}</p><p class="mt-0.5 text-xs text-secondary">{{ __('Select a ready server and website before connecting source control.') }}</p>
+                            <p class="text-sm font-bold text-ink">{{ __('Attach infrastructure') }}</p><p class="mt-0.5 text-xs text-muted">{{ __('Select a ready server and website before connecting source control.') }}</p>
                         @endif
                     </div>
                     @if($repository)
@@ -196,8 +201,8 @@
                             'build_id' => $successfulBuild->id,
                         ]);
                     @endphp
-                    <aside class="ui-alert ui-alert--info rounded-none border-x-0 border-t-0 px-5 py-4">
-                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-secondary">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><x-ui.button href="{{ $promotionDialogUrl }}" data-modal-trigger="{{ $promotionDialogId }}" aria-controls="{{ $promotionDialogId }}" aria-expanded="{{ $promotionDialogOpen ? 'true' : 'false' }}" variant="primary">{{ __('Promote') }}</x-ui.button></div>
+                    <aside class="ui-panel rounded-none border-x-0 border-t-0 border-l-4 border-line bg-surface-muted px-5 py-4" style="border-left-color: var(--ui-accent)" data-project-promotion>
+                        <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-muted">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><x-ui.button href="{{ $promotionDialogUrl }}" data-modal-trigger="{{ $promotionDialogId }}" aria-controls="{{ $promotionDialogId }}" aria-expanded="{{ $promotionDialogOpen ? 'true' : 'false' }}" variant="primary">{{ __('Promote') }}</x-ui.button></div>
                     </aside>
                     <x-scenes.projects.promotion-dialog
                         :build="$successfulBuild"
@@ -206,12 +211,12 @@
                     />
                 @endif
 
-                <div class="grid gap-px bg-secondary lg:grid-cols-3">
-                    <section id="environment-{{ $environment->id }}-settings" class="bg-primary p-5" aria-labelledby="environment-{{ $environment->id }}-settings-heading">
+                <div class="grid gap-px bg-surface-muted lg:grid-cols-3" data-project-runtime-controls>
+                    <section id="environment-{{ $environment->id }}-settings" class="bg-surface p-5" aria-labelledby="environment-{{ $environment->id }}-settings-heading" data-project-settings>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h3 id="environment-{{ $environment->id }}-settings-heading" class="font-bold text-primary">{{ __('Environment settings') }}</h3>
-                                <p class="mt-1 text-xs text-secondary">{{ ucfirst($environment->runtime_type ?: 'php') }} · {{ $environment->branch }} · {{ $environment->website?->name ?? __('No website') }}</p>
+                                <h3 id="environment-{{ $environment->id }}-settings-heading" class="font-bold text-ink">{{ __('Environment settings') }}</h3>
+                                <p class="mt-1 text-xs text-muted">{{ ucfirst($environment->runtime_type ?: 'php') }} · {{ $environment->branch }} · {{ $environment->website?->name ?? __('No website') }}</p>
                             </div>
                             @can('update', $environment)
                                 <x-ui.button :href="$environmentSettingsDialogUrl" data-modal-trigger="{{ $environmentSettingsDialogId }}" aria-controls="{{ $environmentSettingsDialogId }}" aria-expanded="{{ $environmentSettingsDialogOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit settings') }}</x-ui.button>
@@ -220,7 +225,7 @@
                         <div class="mt-4 flex flex-wrap gap-2 text-xs">
                             <x-ui.badge :tone="$environment->is_protected ? 'accent' : 'neutral'">{{ $environment->is_protected ? __('Protected') : __('Unprotected') }}</x-ui.badge>
                             <x-ui.badge :tone="$environment->requires_deployment_approval ? 'accent' : 'neutral'">{{ $environment->requires_deployment_approval ? __('Approval required') : __('Auto deploy') }}</x-ui.badge>
-                            <span class="rounded-lg bg-secondary px-3 py-2 text-secondary">{{ $environment->server?->label ?? __('No server') }}</span>
+                            <span class="rounded-lg border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span>
                         </div>
                     </section>
                     @can('update', $environment)
@@ -233,10 +238,10 @@
                         />
                     @endcan
 
-                    <section id="environment-{{ $environment->id }}-deployment-controls" class="bg-primary p-5" aria-labelledby="environment-{{ $environment->id }}-deployment-controls-heading">
+                    <section id="environment-{{ $environment->id }}-deployment-controls" class="bg-surface p-5" aria-labelledby="environment-{{ $environment->id }}-deployment-controls-heading" data-project-deployment-controls>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h3 id="environment-{{ $environment->id }}-deployment-controls-heading" class="font-bold text-primary">{{ __('Deployment controls') }}</h3>
+                                <h3 id="environment-{{ $environment->id }}-deployment-controls-heading" class="font-bold text-ink">{{ __('Deployment controls') }}</h3>
                                 <div class="mt-2 flex flex-wrap gap-2 text-xs"><x-ui.badge :tone="$environment->deployment_locked_at ? 'danger' : 'success'">{{ $environment->deployment_locked_at ? __('Locked') : __('Unlocked') }}</x-ui.badge>@if($environment->deployment_window_days)<x-ui.badge tone="neutral">{{ __('Maintenance window active') }}</x-ui.badge>@endif<x-ui.badge tone="neutral">{{ str($environment->deployment_strategy ?: 'blue_green')->replace('_', ' ')->title() }}</x-ui.badge></div>
                             </div>
                             @can('update', $environment)
@@ -251,40 +256,40 @@
                         />
                     @endcan
 
-                    <details id="environment-{{ $environment->id }}-runtime-capacity" class="group bg-primary p-5">
-                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Runtime capacity') }}</span><span class="text-secondary group-open:rotate-45">+</span></summary>
-                        <p class="mt-3 text-sm text-secondary">{{ __('Pre-provision worker capacity and pause idle environments. Runtime changes are applied from Automation.') }}</p>
+                    <details id="environment-{{ $environment->id }}-runtime-capacity" class="group bg-surface p-5" data-project-runtime>
+                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-ink"><span>{{ __('Runtime capacity') }}</span><span class="text-muted group-open:rotate-45">+</span></summary>
+                        <p class="mt-3 text-sm text-muted">{{ __('Pre-provision worker capacity and pause idle environments. Runtime changes are applied from Automation.') }}</p>
                         <div class="mt-4 grid grid-cols-2 gap-3">
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Minimum') }}</span><input value="{{ $environment->minimum_replicas }}" class="input secondary rounded-lg" disabled></label>
-                            <label><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Maximum') }}</span><input value="{{ $environment->maximum_replicas }}" class="input secondary rounded-lg" disabled></label>
-                            <label class="col-span-2"><span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Idle hibernation') }}</span><input value="{{ $environment->hibernate_after_minutes ? __('After :minutes minutes', ['minutes' => $environment->hibernate_after_minutes]) : __('Never') }}" class="input secondary rounded-lg" disabled></label>
+                            <label><span class="ui-label">{{ __('Minimum') }}</span><input value="{{ $environment->minimum_replicas }}" class="ui-input" disabled></label>
+                            <label><span class="ui-label">{{ __('Maximum') }}</span><input value="{{ $environment->maximum_replicas }}" class="ui-input" disabled></label>
+                            <label class="col-span-2"><span class="ui-label">{{ __('Idle hibernation') }}</span><input value="{{ $environment->hibernate_after_minutes ? __('After :minutes minutes', ['minutes' => $environment->hibernate_after_minutes]) : __('Never') }}" class="ui-input" disabled></label>
                         </div>
-                        @if($featureAccess['scaling'] || $featureAccess['hibernation'])<x-ui.button :href="route('automation.index')" variant="secondary" class="mt-4">{{ __('Open automation') }}</x-ui.button>@else<p class="mt-4 text-sm text-secondary"><a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a> {{ __('to unlock runtime controls.') }}</p>@endif
+                        @if($featureAccess['scaling'] || $featureAccess['hibernation'])<x-ui.button :href="route('automation.index')" variant="secondary" class="mt-4">{{ __('Open automation') }}</x-ui.button>@else<p class="mt-4 text-sm text-muted"><a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a> {{ __('to unlock runtime controls.') }}</p>@endif
                     </details>
 
-                    <section id="environment-{{ $environment->id }}-variables" class="bg-primary p-5" aria-labelledby="environment-{{ $environment->id }}-variables-heading">
+                    <section id="environment-{{ $environment->id }}-variables" class="bg-surface p-5" aria-labelledby="environment-{{ $environment->id }}-variables-heading" data-project-variables>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h3 id="environment-{{ $environment->id }}-variables-heading" class="font-bold text-primary">{{ __('Encrypted variables') }} <span class="text-secondary">({{ $environment->variables->count() }})</span></h3>
-                                <p class="mt-1 text-xs text-secondary">{{ __('Versioned values are encrypted and never shown on this page.') }}</p>
+                                <h3 id="environment-{{ $environment->id }}-variables-heading" class="font-bold text-ink">{{ __('Encrypted variables') }} <span class="text-muted">({{ $environment->variables->count() }})</span></h3>
+                                <p class="mt-1 text-xs text-muted">{{ __('Versioned values are encrypted and never shown on this page.') }}</p>
                             </div>
                             @can('update', $environment)
                                 <x-ui.button :href="$variableDialogUrl" data-modal-trigger="{{ $variableDialogId }}" aria-controls="{{ $variableDialogId }}" aria-expanded="{{ $variableDialogOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Add variable') }}</x-ui.button>
                             @endcan
                         </div>
-                        <div class="mt-4 space-y-2">@forelse($environment->variables as $variable)<div class="flex items-center gap-2 rounded-lg border border-primary bg-secondary px-3 py-2"><div class="min-w-0 flex-1"><code class="block truncate text-xs text-primary">{{ $variable->key }}</code><span class="text-[11px] text-secondary">{{ str($variable->scope)->replace('_', ' ')->headline() }} · v{{ $variable->current_version }}@if($variable->rotation_due_at) · <span class="{{ $variable->rotation_due_at->isPast() ? 'text-red-600' : '' }}">{{ __('rotate :date', ['date' => $variable->rotation_due_at->toDateString()]) }}</span>@endif</span></div><span class="text-xs text-secondary">{{ $variable->is_secret ? '••••••••' : __('Encrypted') }}</span>@can('update', $environment)<form method="POST" action="{{ route('environments.variables.destroy', [$environment, $variable]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Delete') }}</button></form>@endcan</div>@empty<p class="text-sm text-secondary">{{ __('No variables yet.') }}</p>@endforelse</div>
+                        <div class="mt-4 space-y-2">@forelse($environment->variables as $variable)<div class="ui-panel flex items-center gap-2 bg-surface-muted px-3 py-2" data-project-variable><div class="min-w-0 flex-1"><code class="block truncate text-xs text-ink">{{ $variable->key }}</code><span class="text-[11px] text-muted">{{ str($variable->scope)->replace('_', ' ')->headline() }} · v{{ $variable->current_version }}@if($variable->rotation_due_at) · <span class="{{ $variable->rotation_due_at->isPast() ? 'text-red-600' : '' }}">{{ __('rotate :date', ['date' => $variable->rotation_due_at->toDateString()]) }}</span>@endif</span></div><span class="text-xs text-muted">{{ $variable->is_secret ? '••••••••' : __('Encrypted') }}</span>@can('update', $environment)<form method="POST" action="{{ route('environments.variables.destroy', [$environment, $variable]) }}">@csrf @method('DELETE')<button type="submit" class="ui-link text-xs">{{ __('Delete') }}</button></form>@endcan</div>@empty<p class="text-sm text-muted">{{ __('No variables yet.') }}</p>@endforelse</div>
                         @can('update', $environment)
                             <x-scenes.projects.variable-create-dialog :environment="$environment" :open="$variableDialogOpen" />
                         @endcan
                     </section>
                 </div>
 
-                <div class="grid gap-5 border-t border-primary p-5 lg:grid-cols-2">
-                    <section id="environment-{{ $environment->id }}-processes" class="ui-card ui-card--muted p-4" aria-labelledby="environment-{{ $environment->id }}-processes-heading">
+                <div class="grid gap-5 border-t border-line p-5 lg:grid-cols-2">
+                    <section id="environment-{{ $environment->id }}-processes" class="ui-panel bg-surface-muted p-4" aria-labelledby="environment-{{ $environment->id }}-processes-heading" data-project-processes>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
-                                <h3 id="environment-{{ $environment->id }}-processes-heading" class="font-bold text-primary">{{ __('Workers and scheduler') }} <span class="text-secondary">({{ $environment->processes->count() }})</span></h3>
-                                <p class="mt-1 text-xs text-secondary">{{ __('Encrypted commands are applied on the next deployment.') }}</p>
+                                <h3 id="environment-{{ $environment->id }}-processes-heading" class="font-bold text-ink">{{ __('Workers and scheduler') }} <span class="text-muted">({{ $environment->processes->count() }})</span></h3>
+                                <p class="mt-1 text-xs text-muted">{{ __('Encrypted commands are applied on the next deployment.') }}</p>
                             </div>
                             @can('update', $environment)
                                 @if($featureAccess['workers'])
@@ -292,24 +297,24 @@
                                 @endif
                             @endcan
                         </div>
-                        <div class="mt-3 space-y-2">@foreach($environment->processes as $process)<div class="flex items-center gap-3 rounded-lg border border-primary bg-primary p-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $process->name }} <span class="font-normal text-secondary">· {{ $process->type }} · ×{{ $process->replicas }}</span></p><p class="mt-1 text-xs text-secondary">{{ __('Command encrypted · applied on next deployment') }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.processes.destroy', [$environment, $process]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Delete') }}</button></form>@endcan</div>@endforeach</div>
+                        <div class="mt-3 space-y-2">@foreach($environment->processes as $process)<div class="ui-panel flex items-center gap-3 bg-surface p-3" data-project-process><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ $process->name }} <span class="font-normal text-muted">· {{ $process->type }} · ×{{ $process->replicas }}</span></p><p class="mt-1 text-xs text-muted">{{ __('Command encrypted · applied on next deployment') }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.processes.destroy', [$environment, $process]) }}">@csrf @method('DELETE')<button type="submit" class="ui-link text-xs">{{ __('Delete') }}</button></form>@endcan</div>@endforeach</div>
                         @can('update', $environment)
                             @if($featureAccess['workers'])
                                 <x-scenes.projects.process-create-dialog :environment="$environment" :open="$processDialogOpen" />
                             @else
-                                <p class="mt-4 text-sm text-secondary">{{ __('Available on Starter and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
+                                <p class="mt-4 text-sm text-muted">{{ __('Available on Starter and higher.') }} <a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a></p>
                             @endif
                         @endcan
                     </section>
 
-                    <details id="environment-{{ $environment->id }}-resources" class="ui-card ui-card--muted group p-4" @if($resourcesOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-primary"><span>{{ __('Attached resources') }} <span class="text-secondary">({{ $environment->resources->count() }})</span></span><span class="text-secondary group-open:rotate-45">+</span></summary>
-                        <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<div class="flex items-center gap-3 rounded-lg border border-primary bg-primary p-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">{{ $resource->name }}</p><p class="text-xs text-secondary">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<button type="submit" class="text-xs font-bold text-secondary">{{ __('Detach') }}</button></form>@endcan</div>@endforeach</div>
+                    <details id="environment-{{ $environment->id }}-resources" class="ui-panel group bg-surface-muted p-4" @if($resourcesOpen) open @endif data-project-resources>
+                        <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-ink"><span>{{ __('Attached resources') }} <span class="text-muted">({{ $environment->resources->count() }})</span></span><span class="text-muted group-open:rotate-45">+</span></summary>
+                        <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<div class="ui-panel flex items-center gap-3 bg-surface p-3" data-project-resource><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ $resource->name }}</p><p class="text-xs text-muted">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<button type="submit" class="ui-link text-xs">{{ __('Detach') }}</button></form>@endcan</div>@endforeach</div>
                         @can('update', $environment)
                             @if($featureAccess['resources'])
                                 <x-ui.button :href="$resourceDialogUrl" data-modal-trigger="{{ $resourceDialogId }}" aria-controls="{{ $resourceDialogId }}" aria-expanded="{{ $resourceDialogOpen ? 'true' : 'false' }}" variant="secondary" class="mt-4">{{ __('Attach resource') }}</x-ui.button>
                             @else
-                                <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
+                                <p class="mt-4 text-sm text-muted">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a></p>
                             @endif
                         @endcan
                     </details>
@@ -329,9 +334,9 @@
 
     <div class="mt-5 grid gap-5 xl:grid-cols-2">
         @if($canDeploy)
-            <section id="add-environment" class="ui-card p-5" aria-labelledby="add-environment-heading">
+            <section id="add-environment" class="ui-panel scroll-mt-24 p-5" aria-labelledby="add-environment-heading" data-project-add-environment>
                 <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div><h2 id="add-environment-heading" class="font-black text-primary">{{ __('Add environment') }}</h2><p class="mt-2 text-sm text-secondary">{{ __('Create a separate runtime for a branch, then attach infrastructure and source control.') }}</p></div>
+                    <div><p class="ui-eyebrow">{{ __('Runtime topology') }}</p><h2 id="add-environment-heading" class="mt-1 font-black text-ink">{{ __('Add environment') }}</h2><p class="mt-2 text-sm text-muted">{{ __('Create a separate runtime for a branch, then attach infrastructure and source control.') }}</p></div>
                     <x-ui.button :href="$addEnvironmentDialogUrl" data-modal-trigger="{{ $addEnvironmentDialogId }}" aria-controls="{{ $addEnvironmentDialogId }}" aria-expanded="{{ $addEnvironmentOpen ? 'true' : 'false' }}" variant="primary">{{ __('Add environment') }}</x-ui.button>
                 </div>
                 <x-scenes.projects.environment-create-dialog :project="$project" :open="$addEnvironmentOpen" />
@@ -340,22 +345,22 @@
 
         @php($previewPanelOpen = $project->previews->isNotEmpty() || old('_project_form') === 'previews')
 
-        <details id="preview-environments" class="ui-card p-5" @if($previewPanelOpen) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-black text-primary"><span>{{ __('Preview environments') }} <span class="text-secondary">({{ $project->previews->count() }})</span></span><x-ui.badge :tone="$project->preview_enabled ? 'success' : 'neutral'">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</x-ui.badge></summary>
+        <details id="preview-environments" class="ui-panel scroll-mt-24 p-5" @if($previewPanelOpen) open @endif data-project-previews>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 font-black text-ink"><span>{{ __('Preview environments') }} <span class="text-muted">({{ $project->previews->count() }})</span></span><x-ui.badge :tone="$project->preview_enabled ? 'success' : 'neutral'">{{ $project->preview_enabled ? __('Enabled') : __('Disabled') }}</x-ui.badge></summary>
             @if($canManage && $featureAccess['previews'])
                 <x-ui.button :href="$previewSettingsDialogUrl" data-modal-trigger="{{ $previewSettingsDialogId }}" aria-controls="{{ $previewSettingsDialogId }}" aria-expanded="{{ $previewSettingsDialogOpen ? 'true' : 'false' }}" variant="secondary" class="mt-4">{{ __('Configure previews') }}</x-ui.button>
             @elseif($canManage)
-                <p class="mt-4 text-sm text-secondary">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="font-bold text-ternary">{{ __('View plans') }}</a></p>
+                <p class="mt-4 text-sm text-muted">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a></p>
             @endif
             <div class="mt-4 space-y-2">
                 @forelse($project->previews->sortByDesc('last_activity_at') as $preview)
                     @php($sourceSecrets = $preview->sourceEnvironment?->variables->where('is_secret', true)->whereIn('scope', ['runtime', 'all'])->whereNotIn('key', \App\Models\PreviewSecretApproval::PROTECTED_KEYS) ?? collect())
                     @php($previewCleanup = $preview->stackCleanups->sortByDesc('id')->first())
-                    <article class="ui-card ui-card--muted p-3">
-                        <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-primary">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-secondary">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><x-ui.badge tone="neutral">{{ ucfirst($preview->status) }}</x-ui.badge></div>
-                        @if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-sm font-medium text-ternary">{{ $preview->url }}</a>@endif
+                    <article class="ui-panel bg-surface-muted p-3" data-project-preview>
+                        <div class="flex items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-ink">#{{ $preview->pull_request_number }} · {{ $preview->title ?: $preview->source_branch }}</p><p class="truncate font-mono text-xs text-muted">{{ $preview->source_branch }} · {{ substr($preview->revision, 0, 12) }}</p></div><x-ui.badge tone="neutral">{{ ucfirst($preview->status) }}</x-ui.badge></div>
+                        @if($preview->url)<a href="https://{{ $preview->url }}" target="_blank" rel="noopener noreferrer" class="ui-link mt-2 block truncate text-sm">{{ $preview->url }}</a>@endif
                         @if($previewCleanup)
-                            <div class="mt-2 border-t border-primary pt-2 text-xs text-secondary">
+                            <div class="mt-2 border-t border-line pt-2 text-xs text-muted">
                                 <p>{{ __('Stack cleanup: :status', ['status' => ucfirst($previewCleanup->status)]) }}</p>
                                 @if($previewCleanup->error)<p class="mt-1">{{ $previewCleanup->error }}</p>@endif
                                 @can('retryCleanup', $preview)
@@ -366,14 +371,14 @@
                             </div>
                         @endif
                         @if($canManage && $preview->status !== 'closed' && $sourceSecrets->isNotEmpty())
-                            <form method="POST" action="{{ route('projects.previews.secrets.approve', [$project, $preview]) }}" class="mt-3 border-t border-primary pt-3">
+                            <form method="POST" action="{{ route('projects.previews.secrets.approve', [$project, $preview]) }}" class="mt-3 border-t border-line pt-3">
                                 @csrf
                                 <input type="hidden" name="revision" value="{{ $preview->revision }}">
-                                <p class="text-xs leading-5 text-secondary">{{ __('Previews receive no source secrets by default. Approve only the runtime keys this exact revision may use; rotated values require approval again.') }}</p>
+                                <p class="text-xs leading-5 text-muted">{{ __('Previews receive no source secrets by default. Approve only the runtime keys this exact revision may use; rotated values require approval again.') }}</p>
                                 <fieldset class="mt-2 grid gap-2 sm:grid-cols-2">
                                     <legend class="sr-only">{{ __('Preview secret keys') }}</legend>
                                     @foreach($sourceSecrets as $secret)
-                                        <label class="flex items-center gap-2 text-sm text-primary"><input type="checkbox" name="secret_keys[]" value="{{ $secret->key }}"><span>{{ $secret->key }} <span class="text-xs text-secondary">(v{{ $secret->current_version }})</span></span></label>
+                                        <label class="flex items-center gap-2 text-sm text-ink"><input class="ui-check" type="checkbox" name="secret_keys[]" value="{{ $secret->key }}"><span>{{ $secret->key }} <span class="text-xs text-muted">(v{{ $secret->current_version }})</span></span></label>
                                     @endforeach
                                 </fieldset>
                                 <x-ui.button type="submit" variant="secondary" class="mt-3">{{ __('Approve selected preview secrets') }}</x-ui.button>
@@ -381,7 +386,7 @@
                         @endif
                     </article>
                 @empty
-                    <p class="text-sm text-secondary">{{ __('No pull-request previews yet.') }}</p>
+                    <p class="text-sm text-muted">{{ __('No pull-request previews yet.') }}</p>
                 @endforelse
             </div>
         </details>
@@ -400,7 +405,7 @@
             data-modal-content-url="{{ $configurationDialogContentUrl }}"
         >
             <div data-modal-content>
-                <p class="p-5 text-sm text-secondary">{{ __('Loading configuration workflow…') }}</p>
+                <p class="p-5 text-sm text-muted">{{ __('Loading configuration workflow…') }}</p>
             </div>
         </x-dialogs.modal>
     @endif

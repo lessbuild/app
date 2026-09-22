@@ -2254,6 +2254,13 @@ test('application detail composers use compact accessible dialogs', async ({ pag
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/project-detail', { waitUntil: 'networkidle' });
 
+    await expect(page.locator('[data-project-environments]')).toBeVisible();
+    await expect(page.locator('[data-project-environment]').first()).toBeVisible();
+    await expect(page.locator('[data-project-runtime-controls]').first()).toBeVisible();
+    await expect(page.locator('[data-project-add-environment]')).toBeVisible();
+    await expect(page.locator('[data-project-previews]')).toBeVisible();
+    await expect(page.locator('.ui-local-nav__link', { hasText: 'Environments' })).toBeVisible();
+
     const workflows = [
         ['Add environment', 'Add environment', '#add-environment-dialog'],
         ['Edit settings', 'Environment settings', '[id^="environment-settings-dialog-"]'],
@@ -2272,7 +2279,9 @@ test('application detail composers use compact accessible dialogs', async ({ pag
             await page.locator('#preview-environments summary').click();
         }
 
-        const trigger = page.getByRole('link', { name: triggerName, exact: true });
+        const trigger = triggerName === 'Add environment'
+            ? page.locator('#add-environment').getByRole('link', { name: triggerName, exact: true })
+            : page.getByRole('link', { name: triggerName, exact: true });
         const dialog = page.getByRole('dialog', { name: dialogName, exact: true });
         await trigger.click();
         await expect(dialog).toBeVisible();

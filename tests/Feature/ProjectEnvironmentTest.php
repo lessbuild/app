@@ -73,6 +73,28 @@ class ProjectEnvironmentTest extends TestCase
             ->assertDontSee('super-secret-value');
     }
 
+    public function test_application_detail_uses_compact_runtime_panels_and_local_navigation(): void
+    {
+        [$owner, $developer, $project] = $this->workspaceProject();
+
+        $this->actingAs($developer)
+            ->get(route('projects.show', $project))
+            ->assertOk()
+            ->assertSee('data-project-environments', false)
+            ->assertSee('data-project-environment', false)
+            ->assertSee('data-project-runtime-controls', false)
+            ->assertSee('data-project-runtime', false)
+            ->assertSee('data-project-variables', false)
+            ->assertSee('data-project-processes', false)
+            ->assertSee('data-project-resources', false)
+            ->assertSee('data-project-add-environment', false)
+            ->assertSee('data-project-previews', false)
+            ->assertSee('class="ui-local-nav__link"', false)
+            ->assertSee('class="ui-input', false)
+            ->assertSee('class="ui-panel', false)
+            ->assertSee('Application sections');
+    }
+
     public function test_environment_settings_validation_reopens_only_the_submitted_dialog(): void
     {
         [$owner, $developer, $project] = $this->workspaceProject();
