@@ -28,9 +28,9 @@
                         {{ __(':app is onboarding teams deliberately while we validate real production provisioning, recovery, and support. Tell us what you run and we will follow up personally.', ['app' => config('app.name')]) }}
                     </p>
                     <ul class="mt-8 grid gap-3 text-sm text-muted">
-                        <li class="flex items-start gap-3"><span class="mt-0.5 text-primary" aria-hidden="true">✓</span><span>{{ __('No payment or cloud credentials required') }}</span></li>
-                        <li class="flex items-start gap-3"><span class="mt-0.5 text-primary" aria-hidden="true">✓</span><span>{{ __('Your request is private and encrypted at rest') }}</span></li>
-                        <li class="flex items-start gap-3"><span class="mt-0.5 text-primary" aria-hidden="true">✓</span><span>{{ __('Existing customers can continue to sign in') }}</span></li>
+                        <li class="flex items-start gap-3"><span class="mt-0.5 text-ink" aria-hidden="true">✓</span><span>{{ __('No payment or cloud credentials required') }}</span></li>
+                        <li class="flex items-start gap-3"><span class="mt-0.5 text-ink" aria-hidden="true">✓</span><span>{{ __('Your request is private and encrypted at rest') }}</span></li>
+                        <li class="flex items-start gap-3"><span class="mt-0.5 text-ink" aria-hidden="true">✓</span><span>{{ __('Existing customers can continue to sign in') }}</span></li>
                     </ul>
                 </section>
 

@@ -842,6 +842,30 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-eyebrow', File::get(resource_path('views/access-request.blade.php')));
     }
 
+    public function test_platform_admin_surfaces_use_signal_controls_without_legacy_palette_classes(): void
+    {
+        foreach ([
+            resource_path('views/admin/access-requests.blade.php'),
+            resource_path('views/admin/analytics.blade.php'),
+            resource_path('views/admin/github-app-setup.blade.php'),
+            resource_path('views/components/scenes/admin/access-request-review-dialog.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            foreach (['text-primary', 'text-secondary', 'text-ternary', 'bg-primary', 'bg-secondary', 'bg-ternary', 'border-primary', 'button--', 'input secondary'] as $legacyClass) {
+                $this->assertStringNotContainsString($legacyClass, $source, $viewPath);
+            }
+        }
+
+        $analytics = File::get(resource_path('views/admin/analytics.blade.php'));
+        $this->assertStringContainsString('ui-chart-bar', $analytics);
+        $this->assertStringContainsString('ui-progress', $analytics);
+
+        $setup = File::get(resource_path('views/admin/github-app-setup.blade.php'));
+        $this->assertStringContainsString('ui-input', $setup);
+        $this->assertStringContainsString('ui-alert--warning', $setup);
+    }
+
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();

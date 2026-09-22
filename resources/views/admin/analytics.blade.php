@@ -41,39 +41,39 @@
 
     <div class="mt-6 grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="signup-trend-title">
-            <h2 id="signup-trend-title" class="font-black text-primary">{{ __('New users · 30 days') }}</h2>
+            <h2 id="signup-trend-title" class="font-black text-ink">{{ __('New users · 30 days') }}</h2>
             <div class="mt-5 flex h-32 items-end gap-1" role="img" aria-label="{{ __('Daily new user registrations') }}">
                 @foreach ($trend as $day)
                     <div class="flex h-full min-w-0 flex-1 items-end" title="{{ $day['date'] }}: {{ $day['signups'] }}">
-                        <div class="w-full rounded-t bg-ternary" style="height: {{ $day['signups'] === 0 ? 2 : max(8, ($day['signups'] / $signupMax) * 100) }}%"></div>
+                        <div class="ui-chart-bar" style="height: {{ $day['signups'] === 0 ? 2 : max(8, ($day['signups'] / $signupMax) * 100) }}%"></div>
                     </div>
                 @endforeach
             </div>
-            <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-secondary"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
+            <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-muted"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
         </x-ui.card>
 
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="deployment-trend-title">
             <div class="flex items-start justify-between gap-3">
-                <h2 id="deployment-trend-title" class="font-black text-primary">{{ __('Deployments · 30 days') }}</h2>
-                <strong class="text-primary">{{ number_format($totals['deployments_30d']) }}</strong>
+                <h2 id="deployment-trend-title" class="font-black text-ink">{{ __('Deployments · 30 days') }}</h2>
+                <strong class="text-ink">{{ number_format($totals['deployments_30d']) }}</strong>
             </div>
             <div class="mt-5 flex h-32 items-end gap-1" role="img" aria-label="{{ __('Daily platform deployments') }}">
                 @foreach ($trend as $day)
                     <div class="flex h-full min-w-0 flex-1 items-end" title="{{ $day['date'] }}: {{ $day['deployments'] }}">
-                        <div class="w-full rounded-t bg-ternary" style="height: {{ $day['deployments'] === 0 ? 2 : max(8, ($day['deployments'] / $deploymentMax) * 100) }}%"></div>
+                        <div class="ui-chart-bar" style="height: {{ $day['deployments'] === 0 ? 2 : max(8, ($day['deployments'] / $deploymentMax) * 100) }}%"></div>
                     </div>
                 @endforeach
             </div>
-            <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-secondary"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
+            <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-muted"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
         </x-ui.card>
 
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="plans-title">
-            <h2 id="plans-title" class="font-black text-primary">{{ __('Plan distribution') }}</h2>
+            <h2 id="plans-title" class="font-black text-ink">{{ __('Plan distribution') }}</h2>
             <div class="mt-5 space-y-3">
                 @foreach ($plans as $plan => $count)
                     <div>
-                        <div class="flex justify-between text-xs"><span class="font-bold capitalize text-primary">{{ $plan }}</span><span class="text-secondary">{{ $count }}</span></div>
-                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-secondary"><div class="h-full rounded-full bg-ternary" style="width: {{ ($count / $planMax) * 100 }}%"></div></div>
+                        <div class="flex justify-between text-xs"><span class="font-bold capitalize text-ink">{{ $plan }}</span><span class="text-muted">{{ $count }}</span></div>
+                        <div class="ui-progress mt-1.5"><span style="width: {{ ($count / $planMax) * 100 }}%"></span></div>
                     </div>
                 @endforeach
             </div>
