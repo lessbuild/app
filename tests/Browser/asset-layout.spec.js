@@ -1879,9 +1879,9 @@ test('provider creation keeps credentials primary and monitoring collapsible on 
     await page.goto('http://buildpusher.test/provider-create', { waitUntil: 'networkidle' });
 
     const providerDialog = page.locator('#provider-create-dialog');
-    const providerPanel = providerDialog.locator('[data-modal-panel]');
     await expect(providerDialog).toHaveAttribute('data-modal-sheet', '');
-    await expect(providerPanel).toHaveCSS('border-top-left-radius', '16px');
+    await expect(providerDialog).toHaveClass(/\bui-dialog\b/);
+    await expect(providerDialog).toHaveCSS('border-top-left-radius', '8px');
     await expect(providerDialog.locator('[data-modal-body]')).toHaveCSS('overscroll-behavior', 'contain');
 
     const tokenBounds = await page.locator('#token').boundingBox();
@@ -1922,11 +1922,12 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
         await expect(filter).not.toHaveAttribute('open', '');
         await trigger.click();
         await expect(filter).toHaveAttribute('open', '');
-        await expect(filter.locator('.ui-filter-dialog__panel')).toBeVisible();
+        await expect(filter).toHaveClass(/\bui-dialog\b/);
+        await expect(filter.locator('[data-filter-panel]')).toBeVisible();
         await expect(page.locator('html')).toHaveAttribute('data-modal-open', '');
         await expect(page.locator('body')).toHaveAttribute('data-modal-open', '');
         await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
-        await expect(filter.locator('.ui-filter-dialog__body')).toHaveCSS('overscroll-behavior', 'contain');
+        await expect(filter.locator('[data-filter-dialog-body]')).toHaveCSS('overscroll-behavior', 'contain');
         expect(new URL(page.url()).pathname).toBe(initialPath);
         const pageScrollTop = await page.evaluate(() => document.scrollingElement.scrollTop);
         await page.mouse.wheel(0, 1200);

@@ -98,14 +98,24 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-modal-panel', $modal);
         $this->assertStringContainsString('data-modal-header', $modal);
         $this->assertStringContainsString('data-modal-body', $modal);
+        $this->assertStringContainsString("['ui-dialog']", $modal);
+        $this->assertStringNotContainsString('ui-modal', $modal);
         $this->assertStringContainsString('data-filter-dialog', $filter);
         $this->assertStringContainsString('data-filter-dialog-trigger', $filter);
         $this->assertStringContainsString('data-filter-dialog-close', $filter);
+        $this->assertStringContainsString("['ui-dialog', 'ui-filter-dialog']", $filter);
+        $this->assertStringContainsString('data-filter-panel', $filter);
+        $this->assertStringContainsString('data-filter-dialog-body', $filter);
 
         $appStyles = File::get(resource_path('css/app.css'));
         $this->assertStringContainsString('html:has(dialog[data-modal-sheet][open]:not([data-filter-dialog]))', $appStyles);
         $this->assertStringContainsString('html:not([data-modal-js-ready]) dialog.ui-filter-dialog', $appStyles);
         $this->assertStringContainsString('body[data-modal-open]', $appStyles);
+        $this->assertStringNotContainsString('ui-modal', $appStyles);
+
+        $componentStyles = File::get(resource_path('css/components/ui.css'));
+        $this->assertStringContainsString('.ui-dialog[data-modal-sheet]', $componentStyles);
+        $this->assertStringContainsString('[data-filter-dialog-body]', $componentStyles);
     }
 
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void

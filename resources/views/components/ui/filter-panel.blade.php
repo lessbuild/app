@@ -31,31 +31,29 @@
     data-filter-initial-open="{{ $open ? 'true' : 'false' }}"
     aria-labelledby="{{ $titleId }}"
     @if ($open) open @endif
-    {{ $dialogAttributes->class(['ui-filter-dialog']) }}
+    {{ $dialogAttributes->class(['ui-dialog', 'ui-filter-dialog']) }}
 >
-    <div class="ui-filter-dialog__viewport">
-        <div class="ui-filter-dialog__panel">
-            <header class="ui-filter-dialog__header flex items-center justify-between gap-4 border-b border-line bg-surface px-4 py-3 lg:px-5">
-                <div class="min-w-0">
-                    <h2 id="{{ $titleId }}" tabindex="-1" class="font-bold text-ink">{{ $label }}</h2>
-                    @if ($summary)
-                        <p class="mt-1 text-xs text-muted">{{ $summary }}</p>
-                    @endif
-                </div>
-                <form method="dialog" class="lg:hidden">
-                    <button
-                        type="submit"
-                        data-filter-dialog-close
-                        class="ui-icon-btn ui-btn ui-btn-quiet min-h-10 min-w-10 px-2 text-xl leading-none"
-                        aria-label="{{ __('Close filters') }}"
-                    >
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </form>
-            </header>
-            <div class="ui-filter-dialog__body border-t border-line p-4 lg:border-t-0">
-                {{ $slot }}
+    <div data-filter-panel>
+        <header class="flex items-center justify-between gap-4 border-b border-line p-4 lg:px-5">
+            <div class="min-w-0">
+                <h2 id="{{ $titleId }}" tabindex="-1" class="font-extrabold text-ink">{{ $label }}</h2>
+                @if ($summary)
+                    <p class="mt-1 text-xs text-muted">{{ $summary }}</p>
+                @endif
             </div>
+            <form method="dialog" class="lg:hidden">
+                <button
+                    type="submit"
+                    data-filter-dialog-close
+                    class="ui-icon-btn"
+                    aria-label="{{ __('Close filters') }}"
+                >
+                    <span aria-hidden="true">×</span>
+                </button>
+            </form>
+        </header>
+        <div data-filter-dialog-body class="border-t border-line p-4 lg:border-t-0">
+            {{ $slot }}
         </div>
     </div>
 </dialog>
