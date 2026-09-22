@@ -2134,6 +2134,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 82 — project readiness and rotation states — 2026-09-22
+
+Responsibility problem:
+
+- The project canvas still used fixed green and red utility classes for
+  readiness checks and overdue secret-rotation dates, leaving a high-traffic
+  setup surface outside the Signal status vocabulary.
+
+Boundary and implementation:
+
+- Kept readiness computation, modal links, environment variable rendering and
+  authorization in their existing application and environment boundaries.
+- Replaced the fixed accents with the shared `text-success` and `text-danger`
+  tokens and added a source-level UI guard.
+
+Preserved contracts and safety:
+
+- Readiness counts, setup URLs, modal behavior, encrypted variable handling,
+  rotation dates and delete/update permissions are unchanged.
+- No persistence, queue, deployment, API or security behavior changed.
+
+Evidence:
+
+- Environment runtime, project environment, shared tenancy and local UI
+  coverage — 69 tests passed, 1,355 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `7f6dade` is on `origin/main`.
+
+Next task: modernize the shared provider form focus state.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `7f6dade`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: modernize the shared provider form focus state.
+
 ## Slice 81 — deployment preflight status tokens — 2026-09-22
 
 Responsibility problem:
