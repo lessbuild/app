@@ -57,6 +57,11 @@ Evidence:
   **5 passed** (4.1m).
 - Commit `80a8e5b3d47679a8f5b0a21c62e04c47b4c24c29` was pushed to
   `origin/main` (`9f66f05` → `80a8e5b`).
+- Read-only check of `https://deployer.buildpusher.com/`: health returned
+  `{"status":"ready"}`; the page served the Signal theme/drawer scripts and
+  CSS containing the `ui-input`, `ui-dialog`, and `app-sidebar-link` rules.
+  Its landing HTML still has the pre-slice CTA markup, confirming the pushed
+  commit has not been deployed there.
 
 Next task: compare future Signal upstream revisions against the recorded source
 SHA before adoption, and verify the deployed site's served asset hashes after a
