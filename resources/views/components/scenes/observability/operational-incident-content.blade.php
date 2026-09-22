@@ -8,7 +8,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Operational incident') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ $incident->title }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ $incident->title }}</h3>
             <p class="mt-1 text-sm text-muted">
                 {{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}
             </p>

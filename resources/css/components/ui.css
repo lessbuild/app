@@ -53,7 +53,7 @@
     /* Signal's native dialog is the only modal primitive. These data hooks
        add application behavior without creating a second visual component. */
     .ui-dialog[data-modal-sheet] {
-        display: flex;
+        display: none;
         max-height: min(40rem, calc(100dvh - 2rem));
         flex-direction: column;
         overflow: hidden;

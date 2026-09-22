@@ -2,7 +2,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Recipe report') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ $report->recipe->name }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ $report->recipe->name }}</h3>
             <p class="mt-1 text-sm text-muted">{{ str($report->recipe->category)->headline() }}</p>
         </div>
         <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">

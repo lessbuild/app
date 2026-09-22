@@ -16,7 +16,7 @@
             <div class="mt-10 grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-12">
                 <section class="py-4 lg:py-8" aria-labelledby="access-request-heading">
                     <p class="ui-eyebrow">{{ __('Private access') }}</p>
-                    <h1 id="access-request-heading" class="mt-3 max-w-xl text-4xl font-black tracking-tight text-ink sm:text-5xl">
+                    <h1 id="access-request-heading" class="mt-3 max-w-xl text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">
                         {{ __('Bring us your deployment workflow.') }}
                     </h1>
                     <p class="mt-5 max-w-xl text-lg leading-8 text-muted">
@@ -32,12 +32,12 @@
                 <x-ui.card class="p-6 shadow-sm sm:p-8">
                     @if (session('access_requested'))
                         <x-ui.alert tone="success" role="status">
-                            <h2 class="font-black">{{ __('Request received') }}</h2>
+                            <h2 class="font-extrabold">{{ __('Request received') }}</h2>
                             <p class="mt-1 text-sm">{{ session('access_requested') }}</p>
                         </x-ui.alert>
                     @else
                         <header>
-                            <h2 class="text-2xl font-black tracking-tight text-ink">{{ __('Request access') }}</h2>
+                            <h2 class="text-2xl font-extrabold tracking-tight text-ink">{{ __('Request access') }}</h2>
                             <p class="mt-2 text-sm leading-6 text-muted">{{ __('All fields marked required help us assess fit and prepare useful onboarding.') }}</p>
                         </header>
 

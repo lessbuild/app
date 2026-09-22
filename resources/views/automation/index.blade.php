@@ -82,7 +82,7 @@
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="ui-eyebrow">{{ __('Automation overview') }}</p>
-                <h2 id="automation-overview-title" class="mt-1 text-xl font-black text-ink">{{ __('Automate routine release work') }}</h2>
+                <h2 id="automation-overview-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Automate routine release work') }}</h2>
                 <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ __('Start with API access or open an application workflow to manage deploys, capacity, runtime state and scheduled tasks.') }}</p>
             </div>
             <x-ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-ui.badge>
@@ -91,22 +91,22 @@
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="#automation-tokens" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="tokens">
                 <p class="ui-eyebrow">{{ __('API access') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $tokens->count() }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $tokens->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count token|:count tokens', $tokens->count(), ['count' => $tokens->count()]) }}</p>
             </a>
             <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="applications">
                 <p class="ui-eyebrow">{{ __('Applications') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $projects->count() }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $projects->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count workflow|:count workflows', $projects->count(), ['count' => $projects->count()]) }}</p>
             </a>
             <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="environments">
                 <p class="ui-eyebrow">{{ __('Environments') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $environmentCount }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $environmentCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('Available for runtime controls') }}</p>
             </a>
             <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="operations">
                 <p class="ui-eyebrow">{{ __('Scheduled operations') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $scheduledOperationCount }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $scheduledOperationCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('Deploys, scaling and tasks') }}</p>
             </a>
         </div>
@@ -123,7 +123,7 @@
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
                     <span class="flex flex-wrap items-center gap-2">
-                        <span class="font-black text-ink">{{ __('Personal access tokens') }}</span>
+                        <span class="font-extrabold text-ink">{{ __('Personal access tokens') }}</span>
                         <x-ui.badge>{{ $tokens->count() }}</x-ui.badge>
                     </span>
                     <span class="mt-1 block text-sm text-muted">{{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}</span>
@@ -135,7 +135,7 @@
             <div class="flex items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Control plane API') }}</p>
-                    <h2 class="mt-2 text-xl font-black text-ink">{{ __('Personal access tokens') }}</h2>
+                    <h2 class="mt-2 text-xl font-extrabold text-ink">{{ __('Personal access tokens') }}</h2>
                     <p class="mt-2 text-sm text-muted">
                         {{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}
                         <a href="{{ route('api-docs') }}" class="ui-link">{{ __('API reference') }}</a>
@@ -188,7 +188,7 @@
         <details id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
-                    <span class="block font-black text-ink">{{ __('CLI-friendly API') }}</span>
+                    <span class="block font-extrabold text-ink">{{ __('CLI-friendly API') }}</span>
                     <span class="mt-1 block text-sm font-normal text-muted">{{ __('A copy-ready starting point for curl and CI.') }}</span>
                 </span>
                 <span class="shrink-0 text-xl text-muted transition-transform group-open:rotate-45" aria-hidden="true">+</span>
@@ -196,7 +196,7 @@
 
             <div class="ui-responsive-details__content p-6 lg:block">
                 <p class="ui-eyebrow">{{ __('Quick start') }}</p>
-                <h2 class="mt-2 text-xl font-black text-ink">{{ __('CLI-friendly API') }}</h2>
+                <h2 class="mt-2 text-xl font-extrabold text-ink">{{ __('CLI-friendly API') }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
                 <pre class="ui-console mt-5 overflow-x-auto p-4 text-xs leading-6"><code class="ui-console-output">export BUILDPUSHER_TOKEN="bp_…"
 curl -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
@@ -211,7 +211,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
     <section id="automation-workflows" class="mt-8 scroll-mt-24" aria-labelledby="automation-workflows-title">
         <div class="mb-4">
             <p class="ui-eyebrow">{{ __('Release controls') }}</p>
-            <h2 id="automation-workflows-title" class="mt-1 text-2xl font-black text-ink">{{ __('Application workflows') }}</h2>
+            <h2 id="automation-workflows-title" class="mt-1 text-2xl font-extrabold text-ink">{{ __('Application workflows') }}</h2>
             <p class="mt-1 text-muted">{{ __('Open an application to configure it. This keeps a large workspace compact.') }}</p>
         </div>
 
@@ -220,7 +220,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                 <details id="automation-project-{{ $project->id }}" class="ui-panel group overflow-hidden" data-automation-project>
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
                         <div>
-                            <p class="font-black text-ink">{{ $project->name }}</p>
+                            <p class="font-extrabold text-ink">{{ $project->name }}</p>
                             <p class="mt-1 text-sm text-muted">
                                 {{ trans_choice(':count environment|:count environments', $project->environments->count(), ['count' => $project->environments->count()]) }}
                                 · {{ $project->environments->sum(fn ($environment) => $environment->deploymentSchedules->count()) }} {{ __('deploy schedules') }}
@@ -247,7 +247,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                 <article class="ui-panel bg-surface-muted p-4" data-automation-environment>
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
-                                            <h3 class="truncate font-black text-ink">{{ $environment->name }}</h3>
+                                            <h3 class="truncate font-extrabold text-ink">{{ $environment->name }}</h3>
                                             <p class="text-xs text-muted">{{ $environment->branch }}</p>
                                         </div>
                                         <x-ui.badge tone="{{ $environment->hibernated_at ? 'warning' : 'success' }}">{{ $environment->hibernated_at ? __('Hibernated') : __('Running') }}</x-ui.badge>

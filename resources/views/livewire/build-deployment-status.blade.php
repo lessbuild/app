@@ -102,7 +102,7 @@
         @if ($rollbackCandidate)
             @can('rollback', $rollbackCandidate)
                 <section class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
-                    <h2 class="font-black text-ink">{{ __('Restore the last known-good release') }}</h2>
+                    <h2 class="font-extrabold text-ink">{{ __('Restore the last known-good release') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
                     <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
                         @csrf
@@ -328,7 +328,7 @@
     @if ($build->risk_assessment)
         <section class="ui-panel mt-4 p-4">
             <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Deployment preflight') }}</p><h2 class="mt-2 font-extrabold text-ink">{{ __('Risk: :level', ['level' => str($build->risk_assessment['level'] ?? 'unknown')->headline()]) }}</h2></div><x-ui.badge tone="accent">{{ $build->risk_assessment['score'] ?? 0 }}/100</x-ui.badge></div>
-            <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-lg border border-line bg-surface-muted p-3 text-sm"><span class="font-black {{ match ($check['status']) { 'passed' => 'text-success', 'warning' => 'text-warning', default => 'text-danger' } }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="text-xs text-muted">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
+            <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-lg border border-line bg-surface-muted p-3 text-sm"><span class="font-extrabold {{ match ($check['status']) { 'passed' => 'text-success', 'warning' => 'text-warning', default => 'text-danger' } }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="text-xs text-muted">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
         </section>
     @endif
 

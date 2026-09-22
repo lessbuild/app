@@ -115,6 +115,8 @@ class LocalUiAssetTest extends TestCase
 
         $componentStyles = File::get(resource_path('css/components/ui.css'));
         $this->assertStringContainsString('.ui-dialog[data-modal-sheet]', $componentStyles);
+        $this->assertStringContainsString('display: none;', $componentStyles);
+        $this->assertStringContainsString('.ui-dialog[data-modal-sheet][open]', $componentStyles);
         $this->assertStringContainsString('[data-filter-dialog-body]', $componentStyles);
     }
 
@@ -615,6 +617,27 @@ class LocalUiAssetTest extends TestCase
             '/<(?:img|script|link)\b[^>]*(?:src|href)=["\']https?:\/\//i',
             $views,
         );
+    }
+
+    public function test_view_sources_use_signal_weight_and_responsive_form_radius_utilities(): void
+    {
+        foreach (File::allFiles(resource_path('views')) as $file) {
+            $source = File::get($file->getPathname());
+
+            $this->assertStringNotContainsString('font-black', $source, $file->getRelativePathname());
+
+            foreach (explode("\n", $source) as $lineNumber => $line) {
+                if (! str_contains($line, 'ui-input')) {
+                    continue;
+                }
+
+                $this->assertStringNotContainsString(
+                    'rounded-lg',
+                    $line,
+                    $file->getRelativePathname().':'.($lineNumber + 1),
+                );
+            }
+        }
     }
 
     public function test_signal_is_the_canonical_theme_entrypoint(): void

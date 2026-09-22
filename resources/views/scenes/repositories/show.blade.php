@@ -204,7 +204,7 @@
                     <li class="flex gap-3 rounded-xl border border-line bg-surface-muted p-4">
                         <span
                             aria-hidden="true"
-                            class="font-black"
+                            class="font-extrabold"
                             style="color: {{ match ($check['status']) {
                                 'passed' => 'var(--ui-success)',
                                 'warning' => 'var(--ui-warning)',
@@ -248,7 +248,7 @@
                                 <div class="flex gap-3">
                                     <span
                                         aria-hidden="true"
-                                        class="font-black"
+                                        class="font-extrabold"
                                         style="color: {{ $step['status'] === 'failed' ? 'var(--ui-danger)' : 'var(--ui-warning)' }}"
                                     >{{ $step['status'] === 'failed' ? '!' : '○' }}</span>
                                     <div>

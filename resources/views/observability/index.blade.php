@@ -73,7 +73,7 @@
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="ui-eyebrow">{{ __('Response overview') }}</p>
-                <h2 id="observability-overview-title" class="mt-1 text-xl font-black text-ink">{{ __('Start with what needs attention') }}</h2>
+                <h2 id="observability-overview-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Start with what needs attention') }}</h2>
                 <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ __('Review active response work and recent signals first, then open the supporting telemetry and communication controls.') }}</p>
             </div>
             <x-ui.badge tone="accent">{{ __('Workspace scope') }}</x-ui.badge>
@@ -82,22 +82,22 @@
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="#operational-incidents" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Active response') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $activeOperationalIncidentCount }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $activeOperationalIncidentCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count incident|:count incidents', $activeOperationalIncidentCount, ['count' => $activeOperationalIncidentCount]) }}</p>
             </a>
             <a href="#correlated-signals" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Recent health signals') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $recentHealthFailureCount }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $recentHealthFailureCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count failed check|:count failed checks', $recentHealthFailureCount, ['count' => $recentHealthFailureCount]) }}</p>
             </a>
             <a href="#server-telemetry" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Infrastructure') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $servers->count() }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $servers->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count monitored server|:count monitored servers', $servers->count(), ['count' => $servers->count()]) }}</p>
             </a>
             <a href="#status-pages" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Communication') }}</p>
-                <p class="mt-2 text-2xl font-black text-ink">{{ $statusPages->count() }}</p>
+                <p class="mt-2 text-2xl font-extrabold text-ink">{{ $statusPages->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count status page|:count status pages', $statusPages->count(), ['count' => $statusPages->count()]) }}</p>
             </a>
         </div>
@@ -118,7 +118,7 @@
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <p class="ui-eyebrow">{{ __('Infrastructure') }}</p>
-                <h2 id="server-telemetry-title" class="mt-1 text-xl font-black text-ink">{{ __('Server telemetry') }}</h2>
+                <h2 id="server-telemetry-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Server telemetry') }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ __('CPU, memory, disk, load, network and process history with threshold alerts.') }}</p>
             </div>
             <x-ui.badge>{{ __('30-day retention · 5-minute samples') }}</x-ui.badge>
@@ -131,13 +131,13 @@
                 @endphp
                 <article class="ui-panel bg-surface-muted p-4" data-observability-server>
                     <div class="flex items-center justify-between gap-3">
-                        <h3 class="truncate font-black text-ink">{{ $server->label }}</h3>
+                        <h3 class="truncate font-extrabold text-ink">{{ $server->label }}</h3>
                         <span class="shrink-0 text-xs text-muted">{{ $metric?->recorded_at?->diffForHumans() ?? __('Awaiting sample') }}</span>
                     </div>
                     <dl class="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-black text-ink">{{ $metric?->cpu_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">CPU</dt></div>
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-black text-ink">{{ $metric?->memory_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">RAM</dt></div>
-                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-black text-ink">{{ $metric?->disk_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">Disk</dt></div>
+                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->cpu_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">CPU</dt></div>
+                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->memory_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">RAM</dt></div>
+                        <div class="rounded-lg border border-line bg-surface p-2"><dd class="text-lg font-extrabold text-ink">{{ $metric?->disk_percent ?? '—' }}@if ($metric)%@endif</dd><dt class="text-[10px] uppercase text-muted">Disk</dt></div>
                     </dl>
                     <div class="mt-3 flex h-10 items-end gap-0.5" aria-label="{{ __('Recent CPU samples') }}">
                         @foreach ($server->metrics->reverse() as $sample)
@@ -194,7 +194,7 @@
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:p-6 [&::-webkit-details-marker]:hidden">
             <span>
             <span class="ui-eyebrow block">{{ __('Incident command centre') }}</span>
-                <span id="correlated-signals-title" class="mt-1 block text-xl font-black text-ink">{{ __('Recent deployment and health signals') }}</span>
+                <span id="correlated-signals-title" class="mt-1 block text-xl font-extrabold text-ink">{{ __('Recent deployment and health signals') }}</span>
                 <span class="mt-1 block text-sm font-normal leading-6 text-muted">{{ __('Use timestamps and resource links to correlate an incident before recording the review below.') }}</span>
             </span>
             <span class="shrink-0 text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
@@ -239,7 +239,7 @@
                 <summary class="flex cursor-pointer list-none items-start gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <div>
                         <p class="ui-eyebrow">{{ __('Investigation') }}</p>
-                        <h2 id="environment-evidence-heading" class="mt-1 text-xl font-black text-ink">{{ __('Environment evidence') }}</h2>
+                        <h2 id="environment-evidence-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Environment evidence') }}</h2>
                         <p class="mt-1 max-w-3xl text-sm text-muted">{{ __('Connect deployments, health observations, runtime-log metadata and related incidents for a selected environment.') }}</p>
                     </div>
                     <span class="flex shrink-0 items-center gap-2">
@@ -252,7 +252,7 @@
                         @foreach ($project->environments as $environment)
                             <a href="{{ route('observability.environments.context', $environment) }}" class="ui-panel block bg-surface-muted p-4 transition hover:border-[var(--ui-primary)]">
                                 <p class="ui-eyebrow">{{ $project->name }}</p>
-                                <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-black text-ink">{{ $environment->name }}</h3><x-ui.badge>{{ str((string) $environment->type)->headline() }}</x-ui.badge></div>
+                                <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-extrabold text-ink">{{ $environment->name }}</h3><x-ui.badge>{{ str((string) $environment->type)->headline() }}</x-ui.badge></div>
                                 <p class="mt-2 text-xs text-muted">{{ $environment->branch }} · {{ str((string) $environment->status)->headline() }}</p>
                             </a>
                         @endforeach
@@ -265,7 +265,7 @@
     <div class="mt-8 grid gap-6 xl:grid-cols-2">
         <section id="alert-destination-panel" class="ui-panel scroll-mt-24 p-5 sm:p-6">
             <p class="ui-eyebrow">{{ __('Integrations') }}</p>
-            <h2 class="mt-1 text-xl font-black text-ink">{{ __('Alert destinations') }}</h2>
+            <h2 class="mt-1 text-xl font-extrabold text-ink">{{ __('Alert destinations') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Send signed failure and recovery events to Slack or your HTTPS webhook.') }}</p>
             <details id="alert-destinations" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
@@ -316,7 +316,7 @@
 
         <section id="status-page-panel" class="ui-panel scroll-mt-24 p-5 sm:p-6">
             <p class="ui-eyebrow">{{ __('Customer communication') }}</p>
-            <h2 class="mt-1 text-xl font-black text-ink">{{ __('Public status pages') }}</h2>
+            <h2 class="mt-1 text-xl font-extrabold text-ink">{{ __('Public status pages') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Publish live component health and rolling 30-day uptime without exposing infrastructure details.') }}</p>
             <details id="status-pages" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
@@ -365,7 +365,7 @@
 
     <section id="status-incident-timeline" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="status-incident-timeline-title">
         <p class="ui-eyebrow">{{ __('Communication timeline') }}</p>
-        <h2 id="status-incident-timeline-title" class="mt-1 text-xl font-black text-ink">{{ __('Incidents and planned maintenance') }}</h2>
+        <h2 id="status-incident-timeline-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Incidents and planned maintenance') }}</h2>
         <p class="mt-1 text-sm text-muted">{{ __('Publish updates to a status page and notify its confirmed subscribers.') }}</p>
 
         <details id="status-incident-history" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any() || $incidents->contains(fn ($incident) => ! in_array($incident->status, ['resolved', 'completed'], true))) open @endif>

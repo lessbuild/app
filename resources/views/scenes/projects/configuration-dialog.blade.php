@@ -9,7 +9,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow text-[0.65rem]">{{ __('Application workflow') }}</p>
-            <h2 class="mt-1 text-xl font-black text-ink">
+            <h2 class="mt-1 text-xl font-extrabold text-ink">
                 @if ($application)
                     {{ __('Application receipt') }} #{{ $application->id }}
                 @elseif ($review)

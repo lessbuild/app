@@ -73,7 +73,7 @@
 
         <section id="feedback-list" class="scroll-mt-24" aria-labelledby="feedback-list-heading">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 id="feedback-list-heading" class="text-lg font-black text-ink">{{ __('Workspace feedback') }}</h2>
+                <h2 id="feedback-list-heading" class="text-lg font-extrabold text-ink">{{ __('Workspace feedback') }}</h2>
                 <form method="GET" class="flex flex-wrap gap-2">
                     <label class="sr-only" for="feedback-status">{{ __('Status') }}</label>
                     <select id="feedback-status" name="status" class="ui-input"><option value="">{{ __('Every status') }}</option>@foreach (\App\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($status === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
@@ -108,7 +108,7 @@
                                     <x-ui.badge :tone="$item->severity === 'critical' ? 'danger' : ($item->severity === 'high' ? 'warning' : 'neutral')">{{ str($item->severity)->headline() }}</x-ui.badge>
                                     <x-ui.badge :tone="$item->status === 'resolved' ? 'success' : ($item->status === 'in_progress' ? 'accent' : 'neutral')">{{ str($item->status)->headline() }}</x-ui.badge>
                                 </div>
-                                <h3 class="mt-3 text-lg font-black text-ink">{{ $item->title }}</h3>
+                                <h3 class="mt-3 text-lg font-extrabold text-ink">{{ $item->title }}</h3>
                                 <p class="mt-1 text-xs text-muted">{{ __('Submitted by :name :time', ['name' => $item->submitter->name, 'time' => $item->created_at->diffForHumans()]) }}@if ($item->page) <span aria-hidden="true">·</span> <code>{{ $item->page }}</code>@endif</p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-2">

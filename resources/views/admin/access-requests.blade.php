@@ -39,7 +39,7 @@
             <x-ui.card class="p-5 sm:p-6">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
-                        <h2 class="font-black text-ink">{{ $lead->name }}</h2>
+                        <h2 class="font-extrabold text-ink">{{ $lead->name }}</h2>
                         <p class="mt-1 text-sm text-muted"><a class="ui-link" href="mailto:{{ $lead->email }}">{{ $lead->email }}</a>@if ($lead->company) <span aria-hidden="true">·</span> {{ $lead->company }}@endif</p>
                     </div>
                     <x-ui.badge :tone="match ($lead->status) { 'accepted' => 'success', 'invited' => 'accent', 'rejected' => 'danger', default => 'neutral' }">

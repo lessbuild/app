@@ -300,7 +300,7 @@
         <details id="organization-delete" class="ui-responsive-details group ui-panel ui-panel--danger mt-8" open data-responsive-details data-responsive-details-mobile-open="{{ $deleteWorkspaceOpen ? 'true' : 'false' }}">
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:p-6 lg:hidden">
                 <span>
-                    <span class="block text-xl font-black text-ink">{{ __('Delete workspace') }}</span>
+                    <span class="block text-xl font-extrabold text-ink">{{ __('Delete workspace') }}</span>
                     <span class="mt-2 block text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) }}</span>
                 </span>
                 <span class="shrink-0 text-xl transition-transform group-open:rotate-45" style="color: var(--ui-danger)" aria-hidden="true">+</span>
@@ -312,7 +312,7 @@
                         <use xlink:href="/assets/images/icons.svg#exclamation"></use>
                     </svg>
                     <div>
-                        <h2 id="delete-workspace-title" class="text-xl font-black text-ink">{{ __('Delete workspace') }}</h2>
+                        <h2 id="delete-workspace-title" class="text-xl font-extrabold text-ink">{{ __('Delete workspace') }}</h2>
                         <p class="mt-2 text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) }}</p>
                     </div>
                 </div>

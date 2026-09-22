@@ -41,7 +41,7 @@
 
     <div class="mt-6 grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="signup-trend-title">
-            <h2 id="signup-trend-title" class="font-black text-ink">{{ __('New users · 30 days') }}</h2>
+            <h2 id="signup-trend-title" class="font-extrabold text-ink">{{ __('New users · 30 days') }}</h2>
             <div class="mt-5 flex h-32 items-end gap-1" role="img" aria-label="{{ __('Daily new user registrations') }}">
                 @foreach ($trend as $day)
                     <div class="flex h-full min-w-0 flex-1 items-end" title="{{ $day['date'] }}: {{ $day['signups'] }}">
@@ -54,7 +54,7 @@
 
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="deployment-trend-title">
             <div class="flex items-start justify-between gap-3">
-                <h2 id="deployment-trend-title" class="font-black text-ink">{{ __('Deployments · 30 days') }}</h2>
+                <h2 id="deployment-trend-title" class="font-extrabold text-ink">{{ __('Deployments · 30 days') }}</h2>
                 <strong class="text-ink">{{ number_format($totals['deployments_30d']) }}</strong>
             </div>
             <div class="mt-5 flex h-32 items-end gap-1" role="img" aria-label="{{ __('Daily platform deployments') }}">
@@ -68,7 +68,7 @@
         </x-ui.card>
 
         <x-ui.card class="p-5 sm:p-6" aria-labelledby="plans-title">
-            <h2 id="plans-title" class="font-black text-ink">{{ __('Plan distribution') }}</h2>
+            <h2 id="plans-title" class="font-extrabold text-ink">{{ __('Plan distribution') }}</h2>
             <div class="mt-5 space-y-3">
                 @foreach ($plans as $plan => $count)
                     <div>

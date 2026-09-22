@@ -12,7 +12,7 @@
         <div>
             <p class="ui-eyebrow">{{ __('Private response') }}</p>
             <div class="mt-1 flex flex-wrap items-center gap-3">
-                <h2 class="text-xl font-black text-ink">{{ __('Operational incidents') }}</h2>
+                <h2 class="text-xl font-extrabold text-ink">{{ __('Operational incidents') }}</h2>
                 @if ($activeOperationalIncidents->isNotEmpty())
                     <x-ui.badge tone="danger">{{ trans_choice(':count active|:count active', $activeOperationalIncidents->count(), ['count' => $activeOperationalIncidents->count()]) }}</x-ui.badge>
                 @endif

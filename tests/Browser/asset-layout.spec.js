@@ -1600,7 +1600,7 @@ for (const colorScheme of ['light', 'dark']) {
                     // is /home. Compare with the rendered canonical dashboard
                     // link so this fixture still tests same-page modal state.
                     const expectedCurrentPath = screen === 'dashboard'
-                        ? new URL(await page.locator('[data-auth-brand]').getAttribute('href'), page.url()).pathname
+                        ? new URL(await page.locator('[data-auth-brand]').first().getAttribute('href'), page.url()).pathname
                         : new URL(page.url()).pathname;
                     expect(quickActionUrl.pathname).toBe(expectedCurrentPath);
                     expect(quickActionUrl.searchParams.get('dialog')).toBe('create-application');
@@ -1736,7 +1736,7 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(savedFilterDialog).toBeHidden();
                 }
                 if (screen === 'projects') {
-                    const brand = page.locator('[data-auth-brand]');
+                    const brand = page.locator('[data-auth-brand]').first();
                     await expect(brand).toHaveCSS('color', colorScheme === 'dark' ? 'rgb(244, 244, 245)' : 'rgb(16, 24, 40)');
 
                     const card = page.locator('[data-project-card]').first();

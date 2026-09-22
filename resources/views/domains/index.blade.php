@@ -89,7 +89,7 @@
                 <section class="ui-panel overflow-hidden" data-domain-website>
                     <header class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
                         <div class="min-w-0">
-                            <h2 class="font-black text-ink">{{ $website->name }}</h2>
+                            <h2 class="font-extrabold text-ink">{{ $website->name }}</h2>
                             <a href="https://{{ $website->url }}" target="_blank" rel="noopener noreferrer" class="ui-link break-all text-sm">
                                 {{ $website->url }}
                             </a>

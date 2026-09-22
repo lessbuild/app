@@ -50,7 +50,7 @@
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <section class="ui-card overflow-hidden">
             <div class="border-b border-line p-5">
-                <h2 class="text-xl font-black text-ink">{{ __('Resource estimates') }}</h2>
+                <h2 class="text-xl font-extrabold text-ink">{{ __('Resource estimates') }}</h2>
                 <p class="mt-1 text-sm text-muted">
                     {{ __('Monthly amounts are provider-catalog estimates, not provider billing. They exclude taxes, bandwidth overages, storage, discounts, and resources created outside :app.', ['app' => config('app.name')]) }}
                 </p>
@@ -85,7 +85,7 @@
                         </div>
 
                         <div class="text-right">
-                            <p class="font-black text-ink">
+                            <p class="font-extrabold text-ink">
                                 {{ $row->monthly === null ? '—' : '$'.number_format($row->monthly, 2).'/mo' }}
                             </p>
                             @if($row->monthly !== null)
@@ -113,7 +113,7 @@
         <aside class="space-y-5">
             <section class="ui-card p-5">
                 <div class="flex items-start justify-between gap-3">
-                    <h2 class="font-black text-ink">{{ __('Monthly budget') }}</h2>
+                    <h2 class="font-extrabold text-ink">{{ __('Monthly budget') }}</h2>
                     @if($canManage)
                         <x-ui.button
                             :href="$budgetDialogUrl"
@@ -128,7 +128,7 @@
                     @endif
                 </div>
                 @if($budget)
-                    <p class="mt-2 text-2xl font-black text-ink">{{ '$'.number_format($budget, 2) }}</p>
+                    <p class="mt-2 text-2xl font-extrabold text-ink">{{ '$'.number_format($budget, 2) }}</p>
                     <p class="mt-1 text-sm {{ $estimated > $budget ? 'text-danger' : 'text-muted' }}">
                         {{ $estimated > $budget ? __('Estimate exceeds budget by $:amount.', ['amount' => number_format($estimated - $budget, 2)]) : __('$:amount estimated headroom.', ['amount' => number_format($budget - $estimated, 2)]) }}
                     </p>
@@ -146,7 +146,7 @@
             @endif
 
             <section class="ui-card border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-primary)">
-                <h2 class="font-black">{{ __('Cost basis') }}</h2>
+                <h2 class="font-extrabold">{{ __('Cost basis') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-muted">
                     <li>• {{ __('Monthly amount: stored provider-catalog estimate.') }}</li>
                     <li>• {{ __('CPU: measured :app telemetry, not billing usage.', ['app' => config('app.name')]) }}</li>
@@ -155,7 +155,7 @@
             </section>
 
             <section class="ui-card p-5">
-                <h2 class="font-black text-ink">{{ __('Preview lifetime') }}</h2>
+                <h2 class="font-extrabold text-ink">{{ __('Preview lifetime') }}</h2>
                 <p class="mt-2 text-sm text-muted">
                     @if($previewUsage->limit === null)
                         {{ trans_choice(':count active preview environment; no configured plan quota.|:count active preview environments; no configured plan quota.', $previewUsage->used, ['count' => $previewUsage->used]) }}
@@ -187,7 +187,7 @@
             </section>
 
             <section class="ui-card p-5">
-                <h2 class="font-black text-ink">{{ __('Optimization signals') }}</h2>
+                <h2 class="font-extrabold text-ink">{{ __('Optimization signals') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-muted">
                     <li>• {{ __('Servers without websites are flagged.') }}</li>
                     <li>• {{ __('Sustained CPU below 10% is flagged for review.') }}</li>

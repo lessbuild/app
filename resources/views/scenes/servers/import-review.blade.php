@@ -12,7 +12,7 @@
         <div class="space-y-6">
             <section class="ui-card p-5 sm:p-6" aria-labelledby="server-import-discovery-heading">
                 <p class="ui-eyebrow">{{ __('Read-only discovery') }}</p>
-                <h2 id="server-import-discovery-heading" class="mt-2 text-xl font-black text-ink">{{ $report['hostname'] ?? __('Unknown host') }}</h2>
+                <h2 id="server-import-discovery-heading" class="mt-2 text-xl font-extrabold text-ink">{{ $report['hostname'] ?? __('Unknown host') }}</h2>
                 <dl class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ([
                         [__('Operating system'), ($report['os_id'] ?? '—').' '.($report['os_version'] ?? '')],
@@ -36,13 +36,13 @@
 
             <section class="ui-card p-5 sm:p-6" aria-labelledby="server-import-identity-heading">
                 <p class="ui-eyebrow">{{ __('Trust boundary') }}</p>
-                <h2 id="server-import-identity-heading" class="mt-1 text-xl font-black text-ink">{{ __('SSH host identity') }}</h2>
+                <h2 id="server-import-identity-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('SSH host identity') }}</h2>
                 <p class="mt-2 text-sm leading-6 text-muted">{{ __('Compare this SHA-256 fingerprint with your provider console or a trusted existing SSH connection. :app will pin it and reject future connections if it changes.', ['app' => config('app.name')]) }}</p>
                 <code class="library-code mt-4 block break-all">{{ $report['fingerprint'] }}</code>
             </section>
 
             <section class="ui-alert ui-alert--warning" aria-labelledby="server-import-impact-heading">
-                <h2 id="server-import-impact-heading" class="font-black">{{ __('Changes provisioning may make') }}</h2>
+                <h2 id="server-import-impact-heading" class="font-extrabold">{{ __('Changes provisioning may make') }}</h2>
                 <ul class="mt-3 list-disc space-y-2 pl-5 text-sm">
                     <li>{{ __('Install and update operating-system packages for the selected server type.') }}</li>
                     <li>{{ __('Create :app-managed users, directories, credentials, services, firewall rules, and swap.', ['app' => config('app.name')]) }}</li>
@@ -57,7 +57,7 @@
 
         <section class="ui-card h-fit p-5 sm:p-6" aria-labelledby="server-import-approve-heading">
             <p class="ui-eyebrow">{{ __('Explicit approval') }}</p>
-            <h2 id="server-import-approve-heading" class="mt-1 text-xl font-black text-ink">{{ __('Approve takeover') }}</h2>
+            <h2 id="server-import-approve-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Approve takeover') }}</h2>
             <p class="mt-2 text-sm leading-6 text-muted">{{ __('This inspection expires :time. If anything changed after inspection, go back and inspect again.', ['time' => $assessment->expires_at->diffForHumans()]) }}</p>
 
             @if ($errors->any())

@@ -4,7 +4,7 @@
 ])
 
 <div class="flex h-full flex-col gap-7 px-4 py-5">
-    <a href="{{ route('dashboard') }}" class="flex items-center gap-3 px-2 text-base font-extrabold tracking-tight text-ink" aria-label="{{ config('app.name') }} home">
+    <a href="{{ route('dashboard') }}" data-auth-brand class="flex items-center gap-3 px-2 text-base font-extrabold tracking-tight text-ink" aria-label="{{ config('app.name') }} home">
         <span class="grid h-9 w-9 place-items-center rounded-xl bg-ink text-surface shadow-soft">
             <img src="{{ asset('favicon.svg') }}" alt="" class="h-5 w-5 rounded-md">
         </span>

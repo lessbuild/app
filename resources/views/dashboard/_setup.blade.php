@@ -61,7 +61,7 @@
                             @keydown.home.prevent="focusSetupStep(0)"
                             @keydown.end.prevent="focusSetupStep(setupSteps.length - 1)"
                         >
-                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[10px] font-black text-ink" aria-hidden="true">{{ $complete ? '✓' : $loop->iteration }}</span>
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[10px] font-extrabold text-ink" aria-hidden="true">{{ $complete ? '✓' : $loop->iteration }}</span>
                             <span>{{ $step['title'] }}</span>
                         </button>
                     @endforeach

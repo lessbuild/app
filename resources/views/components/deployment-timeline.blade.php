@@ -2,7 +2,7 @@
     @foreach ($entries as $entry)
         <li class="relative pl-9">
             <span @class([
-                'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface-muted text-xs font-black',
+                'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface-muted text-xs font-extrabold',
             ]) style="color: {{ match ($entry->status) { 'completed' => 'var(--ui-success)', 'active' => 'var(--ui-info)', 'failed' => 'var(--ui-danger)', 'canceled' => 'var(--ui-warning)', default => 'var(--ui-muted)' } }}" aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
             <div class="ui-card ui-card--muted border-line p-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">

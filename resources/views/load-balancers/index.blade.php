@@ -84,7 +84,7 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <p class="ui-eyebrow">{{ $balancer->environment->project->name }} / {{ $balancer->environment->name }}</p>
-                        <h2 class="mt-1 break-all text-lg font-black text-ink">{{ $balancer->hostname }}</h2>
+                        <h2 class="mt-1 break-all text-lg font-extrabold text-ink">{{ $balancer->hostname }}</h2>
                         <p class="mt-1 text-sm text-muted">{{ $balancer->server->label }}</p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-2">

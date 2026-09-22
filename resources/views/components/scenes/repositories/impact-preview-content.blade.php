@@ -27,7 +27,7 @@
                     name="changed_paths"
                     rows="8"
                     maxlength="{{ \App\Http\Requests\RepositoryImpactPreviewRequest::MAX_INPUT_BYTES }}"
-                    class="ui-input mt-2 min-h-[12rem] w-full rounded-lg font-mono"
+                    class="ui-input mt-2 min-h-[12rem] w-full font-mono"
                     placeholder="apps/storefront/resources/views/home.blade.php&#10;packages/shared/src/Client.php"
                     @disabled($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN))
                 >{{ old('changed_paths', $changedPathsInput) }}</textarea>

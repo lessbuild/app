@@ -18,7 +18,7 @@
             <x-ui.card class="mt-8 overflow-hidden">
                 <div class="border-b border-line px-5 py-5 sm:px-8">
                     <p class="ui-eyebrow">{{ __('Infrastructure') }}</p>
-                    <h1 class="mt-1 text-xl font-black text-ink">{{ __('Import an existing server') }}</h1>
+                    <h1 class="mt-1 text-xl font-extrabold text-ink">{{ __('Import an existing server') }}</h1>
                     <p class="mt-1 text-sm text-muted">{{ __('Connect an Ubuntu server you already control. :app will install and configure the selected runtime over SSH.', ['app' => config('app.name')]) }}</p>
                 </div>
 

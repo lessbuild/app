@@ -6,7 +6,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow text-[0.65rem]">{{ __('Release operations') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ __('Recent deployments') }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ __('Recent deployments') }}</h3>
             <p class="mt-1 text-sm text-muted">{{ __('Review revision, status and timing without leaving this page.') }}</p>
         </div>
         <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>

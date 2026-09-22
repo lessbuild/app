@@ -15,7 +15,7 @@
     <div>
         <div class="items-start mb-6">
             <div class="mt-4 flex items-center justify-between">
-                <h2 class="text-xl font-black text-ink">
+                <h2 class="text-xl font-extrabold text-ink">
                     {{ $heading ?? __('Setup Information') }}
                 </h2>
                 @if ($provisioningStatus)

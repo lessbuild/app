@@ -98,7 +98,7 @@
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="ui-eyebrow">{{ $environment->project->name }}</p>
-                <h2 id="environment-context-heading" class="mt-1 text-2xl font-black text-ink">{{ $environment->name }}</h2>
+                <h2 id="environment-context-heading" class="mt-1 text-2xl font-extrabold text-ink">{{ $environment->name }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ $environment->branch }} · {{ ucfirst((string) ($environment->runtime_type ?: 'php')) }} · {{ str((string) $environment->type)->headline() }}</p>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -224,7 +224,7 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Deployment evidence') }}</p>
-                    <h2 id="context-deployments-heading" class="mt-1 text-xl font-black text-ink">{{ __('Recent environment deployments') }}</h2>
+                    <h2 id="context-deployments-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Recent environment deployments') }}</h2>
                 </div>
                 <span class="text-xs text-muted">{{ trans_choice(':count result|:count results', $context->builds->count(), ['count' => $context->builds->count()]) }}</span>
             </div>
@@ -278,7 +278,7 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Health evidence') }}</p>
-                    <h2 id="context-health-heading" class="mt-1 text-xl font-black text-ink">{{ __('Website observations') }}</h2>
+                    <h2 id="context-health-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Website observations') }}</h2>
                 </div>
                 @if($website)
                     <x-ui.button
@@ -314,7 +314,7 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Runtime evidence') }}</p>
-                    <h2 id="context-logs-heading" class="mt-1 text-xl font-black text-ink">{{ __('Log snapshots') }}</h2>
+                    <h2 id="context-logs-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Log snapshots') }}</h2>
                 </div>
                 <span class="text-xs text-muted">{{ __('Metadata only') }}</span>
             </div>
@@ -341,7 +341,7 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Response evidence') }}</p>
-                    <h2 id="context-incidents-heading" class="mt-1 text-xl font-black text-ink">{{ __('Related operational incidents') }}</h2>
+                    <h2 id="context-incidents-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Related operational incidents') }}</h2>
                 </div>
                 <a href="{{ route('observability.index') }}#operational-incidents" class="ui-link text-xs">{{ __('Open incident centre') }}</a>
             </div>

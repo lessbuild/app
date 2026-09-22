@@ -15,14 +15,14 @@
             <header class="flex flex-col gap-5 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <p class="ui-eyebrow mt-6">API v1</p>
-                    <h1 class="mt-2 text-4xl font-black tracking-tight">{{ __('Control plane API') }}</h1>
+                    <h1 class="mt-2 text-4xl font-extrabold tracking-tight">{{ __('Control plane API') }}</h1>
                     <p class="mt-3 max-w-2xl leading-7 text-muted">{{ __('Automate projects, deployments, runtime state, scaling, and workflow configuration with scoped Bearer tokens.') }}</p>
                 </div>
                 <x-ui.button href="/openapi.json" variant="primary" download>{{ __('Download OpenAPI specification') }}</x-ui.button>
             </header>
 
             <x-ui.card class="mt-8 p-6 sm:p-7">
-                <h2 class="text-xl font-black">{{ __('Authentication') }}</h2>
+                <h2 class="text-xl font-extrabold">{{ __('Authentication') }}</h2>
                 <pre class="library-code mt-4"><code>Authorization: Bearer YOUR_TOKEN
 Accept: application/json</code></pre>
                 <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. Tokens are shown once and can be rotated or revoked.') }}</p>
@@ -60,7 +60,7 @@ Accept: application/json</code></pre>
             <x-ui.card class="mt-6 overflow-hidden">
                 <div class="border-b border-line p-5 sm:p-6">
                     <p class="ui-eyebrow">{{ __('Available operations') }}</p>
-                    <h2 class="mt-1 text-xl font-black">{{ __('Endpoints') }}</h2>
+                    <h2 class="mt-1 text-xl font-extrabold">{{ __('Endpoints') }}</h2>
                 </div>
                 @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
                     <article id="api-operation-{{ $anchor }}" class="scroll-mt-6 grid gap-3 border-b border-line p-5 last:border-0 sm:grid-cols-[5rem_1fr_8rem] sm:items-center">
@@ -75,7 +75,7 @@ Accept: application/json</code></pre>
             </x-ui.card>
 
             <x-ui.card class="mt-6 p-6 sm:p-7">
-                <h2 class="text-xl font-black">{{ __('Request example') }}</h2>
+                <h2 class="text-xl font-extrabold">{{ __('Request example') }}</h2>
                 <pre class="library-code mt-4"><code>curl -X POST \
   -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   -H "Accept: application/json" \

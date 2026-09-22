@@ -1,7 +1,7 @@
 <x-layouts.core :title="__('Privacy Policy')" :description="__('How :app collects, uses, protects, and deletes account and infrastructure data.', ['app' => config('app.name')])" :canonical="route('privacy')" :indexable="true" :livewire="false">
     <x-layouts.public-header navigation-label="Privacy navigation" />
     <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-        <h1 class="mt-5 text-4xl font-black tracking-tight text-ink">{{ __('Privacy Policy') }}</h1>
+        <h1 class="mt-5 text-4xl font-extrabold tracking-tight text-ink">{{ __('Privacy Policy') }}</h1>
         <p class="mt-2 text-sm text-muted">{{ __('Effective :date', ['date' => config('legal.effective_date')]) }}</p>
         <div class="mt-10 space-y-8 leading-7 text-muted">
             <section><h2 class="text-xl font-bold text-ink">{{ __('Information we process') }}</h2><p class="mt-2">{{ __(':app processes account details, workspace membership, sign-in and security records, infrastructure metadata, deployment history, logs you request us to retain, and encrypted credentials required to perform actions you authorize. Payment information is handled by the configured payment processor when billing is enabled; :app does not store full card numbers.', ['app' => config('app.name')]) }}</p></section>

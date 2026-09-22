@@ -7,7 +7,7 @@
 
     <div class="mt-6 max-w-3xl space-y-6">
         <x-ui.card class="p-5 sm:p-6">
-            <h2 class="font-black text-ink">{{ __('Configuration checklist') }}</h2>
+            <h2 class="font-extrabold text-ink">{{ __('Configuration checklist') }}</h2>
             <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-3">
                 @foreach ([
                     [__('App ID'), $appIdConfigured],
@@ -23,7 +23,7 @@
         </x-ui.card>
 
         <x-ui.card class="p-5 sm:p-6">
-            <h2 class="font-black text-ink">{{ __('Upload the GitHub App key') }}</h2>
+            <h2 class="font-extrabold text-ink">{{ __('Upload the GitHub App key') }}</h2>
             <ol class="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted">
                 <li>{{ __('Open your GitHub App settings and generate a new private key.') }}</li>
                 <li>{{ __('Return here and choose the downloaded .pem file. The file is validated and stored outside the public directory.') }}</li>

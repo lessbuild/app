@@ -207,7 +207,7 @@
         <section class="border-t border-line p-5" aria-labelledby="server-metrics-heading" data-server-metrics>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 id="server-metrics-heading" class="text-xl font-black text-ink">{{ __('Server metrics') }}</h2>
+                    <h2 id="server-metrics-heading" class="text-xl font-extrabold text-ink">{{ __('Server metrics') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
                 </div>
                 <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
@@ -260,7 +260,7 @@
         <section class="border-t border-line p-5" aria-labelledby="server-diagnostics-heading" data-server-diagnostics>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 id="server-diagnostics-heading" class="mt-1 text-xl font-black text-ink">{{ __('Server diagnostics') }}</h2>
+                <h2 id="server-diagnostics-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Server diagnostics') }}</h2>
                 <p class="mt-1 max-w-2xl text-sm text-muted">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
             </div>
             @can('diagnose', $server)

@@ -2,7 +2,7 @@
     <x-layouts.public-header navigation-label="Pricing navigation" />
     <main class="min-h-screen bg-page px-4 py-10 sm:px-6 lg:px-8" x-data="{ interval: 'yearly' }">
         <div class="mx-auto max-w-7xl">
-            <header class="mx-auto max-w-3xl py-12 text-center"><p class="ui-eyebrow">{{ __('Simple pricing') }}</p><h1 class="mt-4 text-4xl font-black tracking-tight text-ink sm:text-6xl">{{ __('From first push to serious scale.') }}</h1><p class="mt-5 text-lg text-muted">{{ __('Deploy to your own cloud with previews, rollbacks, monitoring and backups in one calm control plane.') }}</p>
+            <header class="mx-auto max-w-3xl py-12 text-center"><p class="ui-eyebrow">{{ __('Simple pricing') }}</p><h1 class="mt-4 text-4xl font-extrabold tracking-tight text-ink sm:text-6xl">{{ __('From first push to serious scale.') }}</h1><p class="mt-5 text-lg text-muted">{{ __('Deploy to your own cloud with previews, rollbacks, monitoring and backups in one calm control plane.') }}</p>
                 <div class="mt-7 inline-flex rounded-xl border border-line bg-surface p-1 shadow-sm"><button type="button" @click="interval='monthly'" :class="interval==='monthly' ? 'ui-btn-primary' : 'ui-btn-quiet'" :aria-pressed="(interval === 'monthly').toString()" class="ui-btn ui-btn-sm">{{ __('Monthly') }}</button><button type="button" @click="interval='yearly'" :class="interval==='yearly' ? 'ui-btn-primary' : 'ui-btn-quiet'" :aria-pressed="(interval === 'yearly').toString()" class="ui-btn ui-btn-sm">{{ __('Yearly · save 2 months') }}</button></div>
             </header>
             <div id="pricing-plans" class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -13,8 +13,8 @@
                     @endphp
                     <x-ui.card data-pricing-plan @class(['relative flex flex-col p-7 shadow-xs', 'border-2 ring-2' => $key === 'pro']) @style(['border-color: var(--ui-primary); --tw-ring-color: var(--ui-primary)' => $key === 'pro'])>
                         @if($key === 'pro')<x-ui.badge class="absolute -top-3 left-6" tone="accent">{{ __('Most popular') }}</x-ui.badge>@endif
-                        <h2 class="text-xl font-black text-ink">{{ $plan['name'] }}</h2><p class="mt-2 min-h-12 text-muted">{{ $plan['description'] }}</p>
-                        <p class="mt-7 text-ink"><span class="text-4xl font-black" x-text="interval === 'yearly' ? '${{ $plan['yearly_price'] }}' : '${{ $plan['price'] }}'">${{ $plan['yearly_price'] }}</span><span class="text-muted" x-text="{{ $plan['price'] ? "interval === 'yearly' ? '/year' : '/month'" : "' forever'" }}">{{ $plan['price'] ? __('/year') : __(' forever') }}</span></p>
+                        <h2 class="text-xl font-extrabold text-ink">{{ $plan['name'] }}</h2><p class="mt-2 min-h-12 text-muted">{{ $plan['description'] }}</p>
+                        <p class="mt-7 text-ink"><span class="text-4xl font-extrabold" x-text="interval === 'yearly' ? '${{ $plan['yearly_price'] }}' : '${{ $plan['price'] }}'">${{ $plan['yearly_price'] }}</span><span class="text-muted" x-text="{{ $plan['price'] ? "interval === 'yearly' ? '/year' : '/month'" : "' forever'" }}">{{ $plan['price'] ? __('/year') : __(' forever') }}</span></p>
                         @if($plan['price'])<p x-show="interval==='yearly'" class="mt-1 text-xs font-semibold text-ink">{{ __('Equivalent to $:price/month', ['price' => number_format($plan['yearly_price'] / 12, 2)]) }}</p>@endif
                         <ul class="my-7 flex-1 space-y-3 text-muted">@foreach($visibleFeatures as $feature)<li class="flex gap-3"><span class="font-bold text-ink" aria-hidden="true">✓</span>{{ $feature }}</li>@endforeach</ul>
                         <details class="ui-responsive-details mt-3 border-t border-line pt-3" open data-responsive-details data-responsive-details-mobile-open="false">

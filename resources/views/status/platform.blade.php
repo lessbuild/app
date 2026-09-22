@@ -14,7 +14,7 @@
         <div class="mx-auto max-w-4xl">
             <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 class="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">{{ __('Service status') }}</h1>
+                    <h1 class="mt-3 text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{{ __('Service status') }}</h1>
                     <p class="mt-2 text-muted">{{ __('Live availability for :app’s public services.', ['app' => config('app.name')]) }}</p>
                 </div>
                 <x-ui.button :href="route('platform-status.report')" variant="secondary">{{ __('View JSON') }}</x-ui.button>
@@ -23,7 +23,7 @@
             <x-ui.alert class="mt-10" :tone="$snapshot['operational'] ? 'success' : 'warning'" role="status" aria-live="polite">
                 <div class="flex items-center gap-3">
                     <span class="h-3 w-3 shrink-0 rounded-full {{ $snapshot['operational'] ? 'bg-success' : 'bg-warning' }}" aria-hidden="true"></span>
-                    <h2 class="text-xl font-black">{{ $snapshot['operational'] ? __('All systems operational') : __('Some systems are degraded') }}</h2>
+                    <h2 class="text-xl font-extrabold">{{ $snapshot['operational'] ? __('All systems operational') : __('Some systems are degraded') }}</h2>
                 </div>
             </x-ui.alert>
 

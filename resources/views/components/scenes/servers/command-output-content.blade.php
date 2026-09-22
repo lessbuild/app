@@ -2,7 +2,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Retained command output') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ __('Execution #:id', ['id' => $execution->id]) }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ __('Execution #:id', ['id' => $execution->id]) }}</h3>
             <p class="mt-1 text-sm text-muted">{{ __('Output is loaded only when requested and remains available as a separate download.') }}</p>
         </div>
         <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm">

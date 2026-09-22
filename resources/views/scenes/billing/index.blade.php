@@ -64,7 +64,7 @@
             <div>
                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Current workspace plan') }}</p>
                 <div class="mt-2 flex flex-wrap items-center gap-3">
-                    <h2 class="text-3xl font-black text-ink">{{ $plans[$currentPlan]['name'] }}</h2>
+                    <h2 class="text-3xl font-extrabold text-ink">{{ $plans[$currentPlan]['name'] }}</h2>
                     @if ($currentPlan !== 'free')
                         <x-ui.badge tone="accent">{{ ucfirst($currentInterval) }}</x-ui.badge>
                     @endif
@@ -127,9 +127,9 @@
                 @if ($key === 'pro')
                     <x-ui.badge tone="accent" class="absolute -top-3 left-5">{{ __('Most popular') }}</x-ui.badge>
                 @endif
-                <h2 class="text-xl font-black text-ink">{{ $plan['name'] }}</h2>
+                <h2 class="text-xl font-extrabold text-ink">{{ $plan['name'] }}</h2>
                 <p class="mt-2 min-h-12 text-sm text-muted">{{ $plan['description'] }}</p>
-                <p class="mt-5 text-ink"><span class="text-4xl font-black">${{ $shownPrice }}</span><span class="text-muted">{{ $shownPrice ? ($selectedInterval === 'yearly' ? __('/year') : __('/month')) : __(' forever') }}</span></p>
+                <p class="mt-5 text-ink"><span class="text-4xl font-extrabold">${{ $shownPrice }}</span><span class="text-muted">{{ $shownPrice ? ($selectedInterval === 'yearly' ? __('/year') : __('/month')) : __(' forever') }}</span></p>
                 @if ($selectedInterval === 'yearly' && $shownPrice)
                     <p class="mt-1 text-xs font-semibold text-ink">{{ __('Equivalent to $:price/month', ['price' => number_format($shownPrice / 12, 2)]) }}</p>
                 @endif

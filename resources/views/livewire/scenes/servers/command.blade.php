@@ -10,7 +10,7 @@
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <p class="ui-eyebrow">{{ __('Remote operations') }}</p>
-                                        <h2 id="server-command-dialog-title" class="mt-1 text-xl font-black text-ink">{{ __('Run command on :server', ['server' => $model->name]) }}</h2>
+                                        <h2 id="server-command-dialog-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Run command on :server', ['server' => $model->name]) }}</h2>
                                         <p class="mt-1 text-sm text-muted">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
                                     </div>
                                     <button type="button" wire:click="close" class="ui-icon-btn text-xl leading-none" aria-label="{{ __('Close command dialog') }}">

@@ -25,7 +25,7 @@
                 <x-ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-ui.badge>
                 <span class="text-xs text-muted">{{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}</span>
             </div>
-            <h3 class="mt-2 font-black text-ink">{{ $incident->title }}</h3>
+            <h3 class="mt-2 font-extrabold text-ink">{{ $incident->title }}</h3>
             <p class="mt-2 text-xs text-muted">{{ __('Detected :time · Owner: :owner', ['time' => $incident->detected_at->diffForHumans(), 'owner' => $incident->assignee?->name ?? __('Unassigned')]) }}</p>
         </div>
         @if ($canOperate && $incident->status !== \App\Models\OperationalIncident::STATUS_RESOLVED)

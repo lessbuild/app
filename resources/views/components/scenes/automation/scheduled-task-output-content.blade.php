@@ -11,7 +11,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Scheduled task') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ $task->name }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ $task->name }}</h3>
             <p class="mt-1 text-sm text-muted">{{ $task->environment->project->name }} · {{ $task->environment->name }}</p>
         </div>
         <x-ui.badge :tone="$statusTone">{{ $run->status }}</x-ui.badge>

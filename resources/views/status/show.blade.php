@@ -13,7 +13,7 @@
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-10 sm:px-6 sm:py-16">
         <div class="mx-auto max-w-3xl">
             <header class="text-center">
-                <h1 class="mt-3 text-4xl font-black tracking-tight text-ink">{{ $page->name }}</h1>
+                <h1 class="mt-3 text-4xl font-extrabold tracking-tight text-ink">{{ $page->name }}</h1>
                 @if ($page->description)
                     <p class="mx-auto mt-3 max-w-xl text-muted">{{ $page->description }}</p>
                 @endif
@@ -24,7 +24,7 @@
             <x-ui.alert class="mt-10" :tone="$operational ? 'success' : 'warning'" role="status" aria-live="polite">
                 <div class="flex items-center gap-3">
                     <span class="h-3 w-3 shrink-0 rounded-full {{ $operational ? 'bg-success' : 'bg-warning' }}" aria-hidden="true"></span>
-                    <h2 class="text-xl font-black">{{ $operational ? __('All systems operational') : __('Some systems are degraded') }}</h2>
+                    <h2 class="text-xl font-extrabold">{{ $operational ? __('All systems operational') : __('Some systems are degraded') }}</h2>
                 </div>
             </x-ui.alert>
 
@@ -49,7 +49,7 @@
                     <div class="flex items-end justify-between gap-3">
                         <div>
                             <p class="ui-eyebrow">{{ __('Recent updates') }}</p>
-                            <h2 id="incident-history-heading" class="mt-1 text-xl font-black text-ink">{{ __('Incident and maintenance history') }}</h2>
+                            <h2 id="incident-history-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Incident and maintenance history') }}</h2>
                         </div>
                         <x-ui.badge tone="neutral">{{ $incidents->count() }}</x-ui.badge>
                     </div>
@@ -59,7 +59,7 @@
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
                                         <p class="ui-eyebrow">{{ str($incident->kind)->headline() }} · {{ str($incident->severity)->headline() }}</p>
-                                        <h3 class="mt-1 font-black text-ink">{{ $incident->title }}</h3>
+                                        <h3 class="mt-1 font-extrabold text-ink">{{ $incident->title }}</h3>
                                     </div>
                                     <x-ui.badge tone="neutral">{{ str($incident->status)->headline() }}</x-ui.badge>
                                 </div>
@@ -72,7 +72,7 @@
             @endif
 
             <x-ui.card class="mt-8 p-5 sm:p-6">
-                <h2 class="font-black text-ink">{{ __('Get status updates') }}</h2>
+                <h2 class="font-extrabold text-ink">{{ __('Get status updates') }}</h2>
                 <p class="mt-1 text-sm text-muted">{{ __('Receive incident and planned-maintenance updates by email. Confirmation is required.') }}</p>
                 @if (session('status_subscription'))
                     <x-ui.alert class="mt-4" tone="success" role="status">{{ session('status_subscription') }}</x-ui.alert>

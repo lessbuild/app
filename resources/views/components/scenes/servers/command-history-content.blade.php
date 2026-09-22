@@ -6,7 +6,7 @@
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Server operations') }}</p>
-            <h3 class="mt-1 text-xl font-black text-ink">{{ __('Recent command history') }}</h3>
+            <h3 class="mt-1 text-xl font-extrabold text-ink">{{ __('Recent command history') }}</h3>
             <p class="mt-1 text-sm text-muted">{{ __('Review execution state and retained output without leaving this server.') }}</p>
         </div>
         <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>

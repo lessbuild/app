@@ -96,7 +96,7 @@
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="ui-eyebrow">{{ __('Protection status') }}</p>
-                <h2 id="backup-readiness-title" class="mt-1 text-xl font-black text-ink">{{ $readiness['title'] }}</h2>
+                <h2 id="backup-readiness-title" class="mt-1 text-xl font-extrabold text-ink">{{ $readiness['title'] }}</h2>
                 <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ $readiness['description'] }}</p>
             </div>
             <x-ui.badge :tone="$readiness['tone']">{{ $readiness['label'] }}</x-ui.badge>
@@ -131,7 +131,7 @@
         <section id="backup-destinations" class="ui-panel scroll-mt-24 p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-black text-ink">{{ __('Destinations') }}</h2>
+                    <h2 class="text-xl font-extrabold text-ink">{{ __('Destinations') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
@@ -234,7 +234,7 @@
             @endphp
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-black text-ink">{{ __('Schedules') }}</h2>
+                    <h2 class="text-xl font-extrabold text-ink">{{ __('Schedules') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Automate retention without managing cron jobs.') }}</p>
                 </div>
                 <x-ui.badge>{{ $scheduleCount }}</x-ui.badge>
@@ -277,7 +277,7 @@
     <section id="backup-history" class="ui-panel mt-6 scroll-mt-24 overflow-hidden">
         <div class="flex flex-wrap items-start justify-between gap-4 p-6">
             <div>
-                <h2 class="text-xl font-black text-ink">{{ __('Backup history and restore') }}</h2>
+                <h2 class="text-xl font-extrabold text-ink">{{ __('Backup history and restore') }}</h2>
                 <p class="mt-1 max-w-4xl text-sm leading-6 text-muted">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
             </div>
             @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())

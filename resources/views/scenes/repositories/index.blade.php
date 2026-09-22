@@ -67,12 +67,12 @@
                         maxlength="100"
                         value="{{ $filters['search'] }}"
                         placeholder="{{ __('Name, URL, or description') }}"
-                        class="ui-input mt-1 w-full rounded-lg"
+                        class="ui-input mt-1 w-full"
                     >
                 </div>
                 <div>
                     <label for="provider_id" class="ui-label">{{ __('Provider') }}</label>
-                    <select id="provider_id" name="provider_id" class="ui-input mt-1 w-full rounded-lg">
+                    <select id="provider_id" name="provider_id" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All providers') }}</option>
                         @foreach ($providers as $provider)
                             <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
@@ -83,7 +83,7 @@
                 </div>
                 <div>
                     <label for="website_id" class="ui-label">{{ __('Website') }}</label>
-                    <select id="website_id" name="website_id" class="ui-input mt-1 w-full rounded-lg">
+                    <select id="website_id" name="website_id" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All websites') }}</option>
                         @foreach ($websites as $website)
                             <option value="{{ $website->id }}" @selected((int) $filters['website_id'] === $website->id)>
@@ -94,7 +94,7 @@
                 </div>
                 <div>
                     <label for="status" class="ui-label">{{ __('Latest deployment') }}</label>
-                    <select id="status" name="status" class="ui-input mt-1 w-full rounded-lg">
+                    <select id="status" name="status" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All deployment states') }}</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" @selected($filters['status'] === $status)>
