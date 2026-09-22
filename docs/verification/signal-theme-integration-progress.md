@@ -1349,3 +1349,57 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect backup inventory, destination and schedule surfaces for the
 next cohesive Signal modernization slice.
+
+## Slice 21 — backup recovery surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+'ff757e9'.
+
+Responsibility problem addressed:
+
+- Backup actions, destination verification, restore requests and recovery
+  evidence were already separated in actions and services, but the page
+  presentation still mixed legacy cards, colored surfaces and dense setup
+  controls.
+- The recovery workflow lacked a compact mobile overview tying readiness,
+  destinations, schedules and history together.
+
+Signal implementation:
+
+- Added compact local navigation for overview, destinations, schedules and
+  history.
+- Converted readiness, destination, schedule and history containers to quiet
+  Signal panels with ink/muted hierarchy and border-only status emphasis.
+- Modernized destination and schedule rows, run-backup controls and the
+  responsive recovery card without changing their actions or disclosures.
+- Replaced destination and schedule modal form controls with shared labels,
+  inputs and helper text while retaining provider guidance, Spaces endpoint
+  instructions and secret-safe fields.
+- Added a completed fixture snapshot and a mobile browser assertion covering
+  recovery evidence, destination inventory and verification/restore controls.
+
+Preserved contracts:
+
+- Encrypted destination credentials, provider preset behavior, endpoint
+  derivation, temporary-object HTTPS verification, sanitized failures and
+  no-server verification semantics.
+- Restore confirmation, isolated verification boundaries, retained snapshot
+  safeguards, schedule timing/retention values, modal URLs, validation keys,
+  error reopening and existing response/flash behavior.
+
+Evidence:
+
+- Backup recovery, destination, verification and managed-backup coverage — 27
+  tests passed, 231 assertions.
+- Backup schedule/destination dialog and populated mobile recovery journeys — 2
+  passed in the isolated fixture runtime.
+- npm run build — passed.
+- php artisan view:cache — passed.
+- php vendor/bin/pint --test — passed.
+- git diff --check — passed.
+
+Push status: 'ff757e9' is on 'origin/main'.
+
+Next task: deploy the backup recovery slice and rebuilt assets to the isolated
+Deployer runtime, then inspect servers or domains for the next smallest
+cohesive inventory modernization boundary.
