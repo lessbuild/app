@@ -28,10 +28,10 @@
 
     @unless ($featureAvailable)
         <div class="ui-alert ui-alert--info mt-6" role="status">
-            <strong class="text-primary">{{ __('Business feature') }}</strong>
+            <strong class="text-ink">{{ __('Business feature') }}</strong>
             <span class="mx-1">·</span>
             {{ __('Upgrade to create and operate high-availability routes.') }}
-            <a href="{{ route('pricing') }}" class="ml-1 font-bold text-ternary underline">{{ __('Compare plans') }}</a>
+            <a href="{{ route('pricing') }}" class="ui-link ml-1 font-bold underline">{{ __('Compare plans') }}</a>
         </div>
     @endunless
 
@@ -83,9 +83,9 @@
             <section class="ui-card p-5">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <p class="text-xs font-bold uppercase tracking-wider text-ternary">{{ $balancer->environment->project->name }} / {{ $balancer->environment->name }}</p>
-                        <h2 class="mt-1 break-all text-lg font-black text-primary">{{ $balancer->hostname }}</h2>
-                        <p class="mt-1 text-sm text-secondary">{{ $balancer->server->label }}</p>
+                        <p class="ui-eyebrow">{{ $balancer->environment->project->name }} / {{ $balancer->environment->name }}</p>
+                        <h2 class="mt-1 break-all text-lg font-black text-ink">{{ $balancer->hostname }}</h2>
+                        <p class="mt-1 text-sm text-muted">{{ $balancer->server->label }}</p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-2">
                         <x-ui.badge tone="{{ in_array($balancer->status, ['active', 'healthy', 'ready'], true) ? 'success' : (in_array($balancer->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ ucfirst($balancer->status) }}</x-ui.badge>
@@ -114,21 +114,21 @@
                     ]);
                 @endphp
                 <details id="load-balancer-nodes-{{ $balancer->id }}" class="group mt-5" @if ($nodeManagementOpen) open @endif>
-                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg bg-secondary p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
-                        <span class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Application nodes') }}</span>
-                        <span class="flex items-center gap-2 text-xs font-bold text-secondary"><span>{{ $balancer->nodes->count() }}</span><span class="text-xl font-normal transition-transform group-open:rotate-45" aria-hidden="true">+</span></span>
+                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg bg-surface-muted p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
+                        <span class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Application nodes') }}</span>
+                        <span class="flex items-center gap-2 text-xs font-bold text-muted"><span>{{ $balancer->nodes->count() }}</span><span class="text-xl font-normal transition-transform group-open:rotate-45" aria-hidden="true">+</span></span>
                     </summary>
 
                     <div class="space-y-2 lg:block">
-                        <div class="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-secondary lg:hidden">
+                        <div class="flex items-center justify-between gap-3 text-xs font-bold uppercase tracking-wide text-muted lg:hidden">
                             <span>{{ __('Application nodes') }}</span>
                             <span>{{ $balancer->nodes->count() }}</span>
                         </div>
                         @foreach ($balancer->nodes as $node)
-                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-secondary p-3">
+                            <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-muted p-3">
                                 <div class="min-w-0">
-                                    <p class="truncate font-bold text-primary">{{ $node->server->label }}</p>
-                                    <p class="text-xs text-secondary">{{ $node->server->public_ip }}:{{ $node->upstream_port }} · {{ __('Weight :weight', ['weight' => $node->weight]) }} · {{ ucfirst($node->health_status) }}</p>
+                                    <p class="truncate font-bold text-ink">{{ $node->server->label }}</p>
+                                    <p class="text-xs text-muted">{{ $node->server->public_ip }}:{{ $node->upstream_port }} · {{ __('Weight :weight', ['weight' => $node->weight]) }} · {{ ucfirst($node->health_status) }}</p>
                                 </div>
                                 @if ($canManage)
                                     <form method="POST" action="{{ route('load-balancers.nodes.destroy', $node) }}">
@@ -141,7 +141,7 @@
                         @endforeach
 
                         @if ($canManage)
-                            <div class="mt-5 border-t border-primary pt-5">
+                            <div class="mt-5 border-t border-line pt-5">
                                 <x-ui.button
                                     href="{{ $nodeDialogUrl }}"
                                     data-modal-trigger="{{ $nodeDialogId }}"

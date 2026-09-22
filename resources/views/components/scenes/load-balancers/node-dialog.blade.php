@@ -20,8 +20,8 @@
         @csrf
         <input type="hidden" name="_load_balancer_id" value="{{ $balancer->id }}">
         <label class="block sm:col-span-3" for="node-server-{{ $balancer->id }}">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Application node') }}</span>
-            <select id="node-server-{{ $balancer->id }}" name="server_id" class="input secondary w-full rounded-md" required>
+            <span class="ui-label">{{ __('Application node') }}</span>
+            <select id="node-server-{{ $balancer->id }}" name="server_id" class="ui-input" required>
                 <option value="">{{ __('Application node') }}</option>
                 @foreach ($servers->where('id', '!=', $balancer->server_id) as $server)
                     <option value="{{ $server->id }}" @selected((string) old('server_id') === (string) $server->id && $nodeFormActive)>{{ $server->label }}</option>
@@ -32,15 +32,15 @@
             @endif
         </label>
         <label class="block" for="node-port-{{ $balancer->id }}">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Port') }}</span>
-            <input id="node-port-{{ $balancer->id }}" name="upstream_port" type="number" min="1" max="65535" value="{{ $nodeFormActive ? old('upstream_port', 80) : 80 }}" class="input secondary w-full rounded-md">
+            <span class="ui-label">{{ __('Port') }}</span>
+            <input id="node-port-{{ $balancer->id }}" name="upstream_port" type="number" min="1" max="65535" value="{{ $nodeFormActive ? old('upstream_port', 80) : 80 }}" class="ui-input">
             @if ($nodeFormActive)
                 <x-forms.errors name="upstream_port" />
             @endif
         </label>
         <label class="block" for="node-weight-{{ $balancer->id }}">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Weight') }}</span>
-            <input id="node-weight-{{ $balancer->id }}" name="weight" type="number" min="1" max="10" value="{{ $nodeFormActive ? old('weight', 1) : 1 }}" class="input secondary w-full rounded-md">
+            <span class="ui-label">{{ __('Weight') }}</span>
+            <input id="node-weight-{{ $balancer->id }}" name="weight" type="number" min="1" max="10" value="{{ $nodeFormActive ? old('weight', 1) : 1 }}" class="ui-input">
             @if ($nodeFormActive)
                 <x-forms.errors name="weight" />
             @endif

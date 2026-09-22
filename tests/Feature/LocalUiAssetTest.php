@@ -508,6 +508,26 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-console', File::get(resource_path('views/livewire/website-provisioning-log.blade.php')));
     }
 
+    public function test_high_availability_inventory_and_dialogs_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/load-balancers/index.blade.php'),
+            resource_path('views/components/scenes/load-balancers/create-dialog.blade.php'),
+            resource_path('views/components/scenes/load-balancers/node-dialog.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $this->assertStringContainsString('ui-input', File::get(resource_path('views/components/scenes/load-balancers/create-dialog.blade.php')));
+        $this->assertStringContainsString('ui-card', File::get(resource_path('views/load-balancers/index.blade.php')));
+    }
+
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();
