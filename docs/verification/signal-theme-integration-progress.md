@@ -2134,6 +2134,36 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to '76b7b42', deploying the application workspace and creation-surface
+modernization. The asset bundle was rebuilt, configuration/routes/views were
+cached, and buildpusher-dev-main.service plus its queue worker were restarted.
+The canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- /login — HTTP 200 with title Sign in to your account · Deployer.
+- /build/manifest.json — HTTP 200 with assets/app-DDJasBdN.css and
+  assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+- Served Livewire/mobile navigation check — 1 test passed in 9.1 seconds.
+- Application creation and current-page dialog checks — 2 tests passed in
+  42.1 seconds.
+- Isolated runtime mobile product-page audit — 1 test passed in 1.6 minutes
+  with no horizontal-overflow or page/runtime failures.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next remaining high-impact UI surface for a separate
+cohesive Signal modernization boundary.
+
 ## Slice 59 — application workspace and creation surfaces — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as 'c9d896f'.
