@@ -2365,6 +2365,53 @@ Next task: deploy cost-visibility modernization to the isolated canonical
 Deployer runtime, then inspect the next product surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 49 — public pricing surface — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'982cc17'.
+
+Responsibility problem addressed:
+
+- Pricing was already a public, metadata-aware Blade surface with Alpine-owned
+  monthly/yearly presentation and responsive plan disclosures, but its page,
+  toggle, plan cards and feature copy still used compatibility palette classes.
+  The page therefore looked disconnected from the modern landing and auth
+  surfaces.
+
+Signal implementation:
+
+- Migrated page, navigation, typography, plan cards and feature states to
+  semantic Signal roles and shared card/button primitives.
+- Added `aria-pressed` state to the existing monthly/yearly toggle and quiet
+  hover treatment without changing its Alpine state or pricing calculations.
+- Kept the existing responsive details behavior and highlighted-plan treatment
+  while moving the page to the page/surface palette.
+
+Preserved contracts:
+
+- Pricing plan keys, prices, annual display, feature/limit copy, registration
+  and access-request URLs, billing links, invitation messaging, canonical
+  metadata and public route behavior are unchanged.
+- No billing, entitlement, registration or authentication behavior was
+  modified.
+
+Evidence:
+
+- Billing, access-request and local UI checks — 47 tests passed, 629
+  assertions.
+- Fixture-backed responsive/navigation coverage — 2 tests passed for light/dark
+  at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '982cc17' is on 'origin/main'.
+
+Next task: deploy the pricing modernization to the isolated canonical Deployer
+runtime, then inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
