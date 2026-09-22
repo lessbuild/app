@@ -2460,6 +2460,77 @@ acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 76 — canonical Signal application, auth, and public chrome — 2026-09-22
+
+Responsibility problem:
+
+- The application had Signal tokens and primitives, but its authenticated
+  navigation still rendered through the older fixed/grid shell. Auth and public
+  pages also had separate legacy shells, so the visible site did not actually
+  use the supplied Signal Starter layout consistently.
+
+Boundary and implementation:
+
+- Replaced the authenticated shell hierarchy with the Signal Starter
+  `app.njk`/`app-sidebar.njk` structure: flex sidebar, sticky header, content
+  width, mobile drawer, quick-navigation bar, and Signal logo asset.
+- Replaced the split auth shell with the Signal `centered.njk` structure while
+  preserving the existing form slots, errors, social links, titles, and brand
+  hook.
+- Added one reusable `public-header` component based on Signal's
+  `site-header.njk` and used it for the landing, pricing, docs, API, access,
+  status, privacy, and terms pages.
+- Removed the unused legacy public/auth shell CSS and aligned browser selectors
+  with the canonical Signal drawer IDs and labels.
+
+Preserved contracts and safety:
+
+- Navigation destinations, active states, merged groups, quick actions, search
+  palette behavior, logout, auth validation, registration/access branching,
+  landing anchors, no-JavaScript fallbacks, public routes and page metadata are
+  unchanged.
+- The public drawer uses the existing Alpine bundle's supported behavior and
+  reactive accessibility state; it does not rely on an unbundled focus plugin.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 53 tests passed, 1,248 assertions.
+- Focused public/auth render checks — 2 tests passed, 131 assertions.
+- `npm run build` — passed; generated CSS is `assets/app-CBus2CGP.css`.
+- `php artisan view:cache` — passed with the testing configuration.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `tests/Browser/navigation.spec.js` against `https://deployer.buildpusher.com`
+  — 3 tests passed across mobile, tablet, and desktop.
+- `tests/Browser/live-runtime.spec.js` against
+  `https://deployer.buildpusher.com` — 1 test passed in 46 seconds, including
+  served Livewire/Alpine assets and the public mobile drawer.
+- `/login`, `/`, `/pricing`, `/docs`, and `/api/health` returned HTTP 200 on
+  the isolated development host; health returned `{"status":"ready"}`.
+- Implementation commits `6b74896`, `20794cd`, `1339853`, and `68f3c86` are
+  pushed to `origin/main`.
+- The broad asset-layout fixture could not be counted as passing: its first run
+  used system PHP 8.3, which is below the locked PHPUnit requirement; the
+  pinned-PHP rerun hung in its first viewport for over ten minutes and was
+  stopped. The focused PHP and served-runtime checks above remain valid.
+- The known baseline Dashboard assertion failure for `System operational`
+  remains separate from this presentation-only slice.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `68f3c86`; assets and Blade view cache were rebuilt and
+  `buildpusher-dev-main.service` plus its queue worker are active.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change was
+  preserved. This is isolated development evidence, not production or external
+  provider acceptance.
+
+Next task: inspect the remaining shared Signal runtime surfaces, beginning with
+the global command dialog and any legacy theme import that still affects pages
+outside the converted shells.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
