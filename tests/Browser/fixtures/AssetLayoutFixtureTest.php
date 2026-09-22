@@ -291,6 +291,16 @@ class AssetLayoutFixtureTest extends TestCase
             'resource_id' => $databaseResource->id,
         ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
         config(['billing.enforce_entitlements' => $databaseEntitlementEnforcement]);
+        $costEntitlementEnforcement = config('billing.enforce_entitlements');
+        config(['billing.enforce_entitlements' => false]);
+        File::put($directory.'/costs.html', $this->renderPage(route('costs.index'))->assertOk()
+            ->assertSee('Cost visibility')
+            ->assertSee('data-modal-trigger="cost-budget-dialog"', false)
+            ->getContent());
+        File::put($directory.'/costs-budget-dialog.html', $this->renderPage(route('costs.index', [
+            'dialog' => 'edit-budget',
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        config(['billing.enforce_entitlements' => $costEntitlementEnforcement]);
         $scheduledTask = $environment->scheduledTasks()->create([
             'created_by' => $owner->id,
             'name' => 'Warm cache',
