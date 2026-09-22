@@ -2164,6 +2164,56 @@ Evidence:
 
 Next task: modernize the shared provider form focus state.
 
+## Slice 83 — provider form focus state — 2026-09-22
+
+Responsibility problem:
+
+- The shared provider form’s collapsible monitoring summary still used a fixed
+  blue focus ring, so provider create and edit flows did not follow the
+  application-wide Signal focus token.
+
+Boundary and implementation:
+
+- Kept provider field validation, monitoring entitlement defaults, credential
+  handling, connection tests and disclosure behavior unchanged.
+- Replaced only the summary’s fixed blue focus utility with
+  `focus-visible:ring-focus` and added a source-level guard.
+
+Preserved contracts and safety:
+
+- Provider creation/edit routes, CSRF protection, validation ordering,
+  credential redaction, health monitoring, rate limits and manual connection
+  probes are unchanged.
+- No provider adapter, persistence, queue, API or authorization behavior
+  changed.
+
+Evidence:
+
+- Provider connection, health monitoring, monitoring interval, submission
+  feedback and local UI coverage — 76 tests passed, 1,459 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `bf3de6a` is on `origin/main`.
+
+Next task: modernize gallery unread state and server log failure feedback.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `bf3de6a`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: modernize gallery unread state and server log failure feedback.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
