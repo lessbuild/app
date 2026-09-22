@@ -1503,3 +1503,51 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the server inventory, filtering and provisioning status
 surfaces for the next cohesive Signal modernization boundary.
+
+## Slice 23 — server inventory and provisioning form
+
+Status: implemented and verified locally; code committed and pushed as
+'74fccba'.
+
+Responsibility problem addressed:
+
+- Server inventory data, filters and export semantics were already isolated in
+  query/export collaborators, but the page still used legacy labels, inputs,
+  dividers and row text hierarchy.
+- The create-server modal used the same legacy controls and a saturated
+  recipe selector, making infrastructure setup unnecessarily dense on mobile.
+
+Signal implementation:
+
+- Replaced server search/status controls with shared labels, inputs and a
+  semantic provisioning-only choice.
+- Converted the inventory to a quiet panel with border dividers, hoverable
+  rows, ink/muted details and eyebrow metadata.
+- Modernized the shared server provisioning form, recipe choices and modal
+  footer while preserving the provider catalog hooks and field prefixes.
+- Added a mobile browser assertion for capacity stats, filter-sheet controls
+  and provisioning rows.
+
+Preserved contracts:
+
+- Organization-scoped query filters, status values, provisioning flag,
+  pagination/export parameters and secret exclusion.
+- Provider catalog loading, plan-limit warnings, provider-create dialog
+  linking, server form names/defaults, validation reopening and creation
+  routes/status behavior.
+
+Evidence:
+
+- Server inventory, export, infrastructure-filter, creation-dialog and
+  LocalUiAsset coverage — 57 tests passed, 733 assertions.
+- Mobile server inventory journey — 1 focused browser test passed in the
+  isolated fixture runtime.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '74fccba' is on 'origin/main'.
+
+Next task: deploy the server inventory modernization and rebuilt assets to the
+isolated Deployer runtime, then inspect the remaining operational pages.
