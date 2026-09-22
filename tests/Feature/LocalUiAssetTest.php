@@ -178,6 +178,21 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('href="#api-operation-deploy"', false)
             ->assertSee('id="api-operation-deploy"', false)
             ->assertSee('id="api-path-deploy"', false);
+
+        $documentation = File::get(resource_path('views/docs.blade.php'));
+        $apiDocumentation = File::get(resource_path('views/api-docs.blade.php'));
+
+        $this->assertStringContainsString('ui-eyebrow', $documentation);
+        $this->assertStringContainsString('ui-card ui-card--muted', $documentation);
+        $this->assertStringContainsString('ui-eyebrow', $apiDocumentation);
+        $this->assertStringContainsString('library-code', $apiDocumentation);
+        $this->assertStringContainsString('ui-card ui-card--interactive', $apiDocumentation);
+
+        foreach ([$documentation, $apiDocumentation] as $source) {
+            $this->assertStringNotContainsString('text-secondary', $source);
+            $this->assertStringNotContainsString('bg-secondary', $source);
+            $this->assertStringNotContainsString('border-primary', $source);
+        }
     }
 
     public function test_auth_pages_have_page_specific_browser_titles_and_valid_description_structure(): void

@@ -37,7 +37,7 @@ class AssetLayoutFixtureTest extends TestCase
         url()->forceRootUrl('http://buildpusher.test');
         File::ensureDirectoryExists($directory);
 
-        foreach (['landing' => '/', 'login' => '/login', 'pricing' => '/pricing'] as $name => $url) {
+        foreach (['landing' => '/', 'login' => '/login', 'pricing' => '/pricing', 'docs' => '/docs', 'api-docs' => '/api-docs'] as $name => $url) {
             File::put($directory.'/'.$name.'.html', $this->renderPage($url)->assertOk()->getContent());
         }
 

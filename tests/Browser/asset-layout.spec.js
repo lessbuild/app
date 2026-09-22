@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'activity', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
+const screens = ['landing', 'login', 'pricing', 'docs', 'api-docs', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'activity', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -1489,7 +1489,7 @@ for (const colorScheme of ['light', 'dark']) {
 
             for (const screen of screens) {
                 await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
-                if (!['landing', 'pricing'].includes(screen)) expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
+                if (!['landing', 'pricing', 'docs', 'api-docs'].includes(screen)) expect(await page.evaluate(() => typeof window.Livewire)).toBe('object');
                 await expect(page.locator('body')).toHaveCSS('background-color', colorScheme === 'dark' ? 'rgb(23, 25, 28)' : 'rgb(244, 247, 251)');
                 expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), screen).toBe(true);
                 const primaryText = page.locator('.text-ink').first();
