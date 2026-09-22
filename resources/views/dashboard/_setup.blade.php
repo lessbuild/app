@@ -14,7 +14,7 @@
 
 @if (in_array('setup', $dashboardWidgets, true) && $onboardingCompleted < count($onboardingSteps))
     <section
-        class="ui-panel mb-12 overflow-hidden border-line shadow-xs"
+        class="ui-panel mb-12 overflow-hidden border-line"
         aria-labelledby="setup-progress-title"
         x-data="{
             activeSetupStep: @js($defaultOnboardingStep),

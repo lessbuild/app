@@ -14,7 +14,7 @@
         @method('PATCH')
         <label>
             <span class="ui-label">{{ __('Budget in USD') }}</span>
-            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ old('monthly_infrastructure_budget', $budget) }}" class="ui-input mt-1 w-full rounded-md" autofocus>
+            <input id="monthly-infrastructure-budget" type="number" min="1" max="1000000" step="0.01" name="monthly_infrastructure_budget" value="{{ old('monthly_infrastructure_budget', $budget) }}" class="ui-input mt-1" autofocus>
             <x-forms.errors name="monthly_infrastructure_budget" />
         </label>
         <x-ui.button type="submit" variant="primary">{{ __('Save budget') }}</x-ui.button>

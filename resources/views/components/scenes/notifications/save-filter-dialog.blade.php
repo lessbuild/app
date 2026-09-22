@@ -13,7 +13,7 @@
         @csrf
         <label class="block">
             <span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Filter name') }}</span>
-            <input name="name" value="{{ old('name') }}" maxlength="40" required class="input secondary w-full rounded-lg" placeholder="{{ __('Website incidents') }}">
+            <input name="name" value="{{ old('name') }}" maxlength="40" required class="ui-input" placeholder="{{ __('Website incidents') }}">
             <x-forms.errors name="name" />
         </label>
         <x-ui.button type="submit" variant="primary">{{ __('Save current filter') }}</x-ui.button>

@@ -29,7 +29,7 @@
                     </ul>
                 </section>
 
-                <x-ui.card class="p-6 shadow-sm sm:p-8">
+                <x-ui.card class="p-6 sm:p-8">
                     @if (session('access_requested'))
                         <x-ui.alert tone="success" role="status">
                             <h2 class="font-extrabold">{{ __('Request received') }}</h2>

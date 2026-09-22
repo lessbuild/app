@@ -628,6 +628,9 @@ class LocalUiAssetTest extends TestCase
 
             $this->assertStringNotContainsString('font-black', $source, $file->getRelativePathname());
             $this->assertStringNotContainsString('focus:not-sr-only', $source, $file->getRelativePathname());
+            $this->assertStringNotContainsString('shadow-xs', $source, $file->getRelativePathname());
+            $this->assertStringNotContainsString('shadow-sm', $source, $file->getRelativePathname());
+            $this->assertStringNotContainsString('input secondary', $source, $file->getRelativePathname());
 
             if (str_contains($source, 'class="ui-skip-link"')) {
                 $skipLinkViews++;
