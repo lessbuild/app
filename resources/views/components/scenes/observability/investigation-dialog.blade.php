@@ -18,13 +18,13 @@
         <input type="hidden" name="deployment" value="{{ $context->deployment }}">
         <input type="hidden" name="severity" value="{{ $context->severity }}">
         <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Investigation name') }}</span>
-            <input name="name" maxlength="60" required class="input secondary w-full rounded-md" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}" autofocus>
+            <span class="ui-label">{{ __('Investigation name') }}</span>
+            <input name="name" maxlength="60" required class="ui-input" placeholder="{{ __('Name this view') }}" value="{{ old('name') }}" autofocus>
             <x-forms.errors name="name" />
         </label>
         <label class="block">
-            <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('Keep for') }}</span>
-            <select name="expires_in_days" class="input secondary w-full rounded-md">
+            <span class="ui-label">{{ __('Keep for') }}</span>
+            <select name="expires_in_days" class="ui-input">
                 @foreach (\App\Models\ObservabilityInvestigationView::EXPIRY_DAYS as $days)
                     <option value="{{ $days }}" @selected((int) old('expires_in_days', \App\Models\ObservabilityInvestigationView::DEFAULT_EXPIRY_DAYS) === $days)>{{ trans_choice(':days day|:days days', $days, ['days' => $days]) }}</option>
                 @endforeach

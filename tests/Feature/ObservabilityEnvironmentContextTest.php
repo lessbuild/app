@@ -147,7 +147,7 @@ class ObservabilityEnvironmentContextTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/<details id="save-investigation-view"[^>]*\bopen\b[^>]*>/', $response->getContent());
 
         $this->assertStringContainsString(
-            '<a href="'.route('builds.show', $recentBuild).'" class="text-xs font-bold text-ternary underline" data-testid="incident-deployment-evidence-link">Open deployment evidence</a>',
+            '<a href="'.route('builds.show', $recentBuild).'" class="ui-link text-xs" data-testid="incident-deployment-evidence-link">Open deployment evidence</a>',
             $response->getContent(),
         );
 
@@ -188,6 +188,27 @@ class ObservabilityEnvironmentContextTest extends TestCase
                 'website' => $website,
                 'fragment' => 'website-health-checks',
             ]), false);
+    }
+
+    public function test_environment_context_uses_compact_signal_sections_and_filter_controls(): void
+    {
+        [$owner, $environment] = $this->environment();
+
+        $content = $this->actingAs($owner)
+            ->get(route('observability.environments.context', $environment))
+            ->assertSuccessful()
+            ->assertSee('Environment evidence sections')
+            ->assertSee('data-observability-context-card', false)
+            ->assertSee('data-observability-context-section', false)
+            ->assertSee('id="context-deployments"', false)
+            ->assertSee('id="context-health"', false)
+            ->assertSee('id="context-logs"', false)
+            ->assertSee('id="context-incidents"', false)
+            ->assertSee('class="ui-input"', false)
+            ->getContent();
+
+        $this->assertStringContainsString('class="ui-panel mt-8 p-5 sm:p-6"', $content);
+        $this->assertStringContainsString('class="ui-eyebrow"', $content);
     }
 
     public function test_context_read_is_tenant_authorized_before_window_validation(): void

@@ -722,6 +722,24 @@ test('environment evidence health history opens without leaving the investigatio
     await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
 });
 
+test('environment evidence uses compact mobile sections and local navigation', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/observability/environments/1/context', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('navigation', { name: 'Environment evidence sections', exact: true })).toBeVisible();
+    await expect(page.locator('[data-observability-context-card]')).toBeVisible();
+    await expect(page.locator('#context-deployments')).toBeVisible();
+    await expect(page.locator('#context-health')).toBeVisible();
+    await expect(page.locator('#context-logs')).toBeVisible();
+    await expect(page.locator('#context-incidents')).toBeVisible();
+    await expect(page.locator('#environment-context-filters')).toBeVisible();
+    await expect(page.locator('#environment-context-filters .ui-input').first()).toBeHidden();
+    await page.locator('#environment-context-filters summary').click();
+    await expect(page.locator('#environment-context-filters .ui-input').first()).toBeVisible();
+});
+
 test('account audit opens as a compact read-only security inspector', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
