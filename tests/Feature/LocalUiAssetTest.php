@@ -587,6 +587,27 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-console', File::get(resource_path('views/livewire/website-provisioning-log.blade.php')));
     }
 
+    public function test_deployment_and_provisioning_evidence_uses_semantic_signal_statuses(): void
+    {
+        foreach ([
+            resource_path('views/livewire/repository-deployment-timeline.blade.php'),
+            resource_path('views/livewire/website-provisioning-log.blade.php'),
+            resource_path('views/livewire/setup.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            foreach (['text-primary', 'text-secondary', 'text-ternary', 'bg-primary', 'bg-secondary', 'border-primary', 'bg-green-', 'bg-red-', 'bg-amber-', 'bg-blue-', 'text-green-', 'input secondary'] as $legacyClass) {
+                $this->assertStringNotContainsString($legacyClass, $source, $viewPath);
+            }
+        }
+
+        $setup = File::get(resource_path('views/livewire/setup.blade.php'));
+        $this->assertStringContainsString('x-ui.badge', $setup);
+        $this->assertStringContainsString('bg-success-soft', $setup);
+        $this->assertStringContainsString('bg-surface-muted', $setup);
+        $this->assertStringContainsString('Setup Information', $setup);
+    }
+
     public function test_high_availability_inventory_and_dialogs_use_signal_primitives(): void
     {
         foreach ([

@@ -26,7 +26,7 @@
         @forelse ($lines as $line)
             @if ($line === '') @continue @endif
             <div class="w-full">
-                <span class="text-primary">{{ $website->deployment_slug }}:~$</span>
+                <span class="text-emphasis-ink">{{ $website->deployment_slug }}:~$</span>
                 <span class="text-emphasis-ink">{{ $line }}</span>
             </div>
         @empty

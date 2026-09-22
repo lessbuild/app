@@ -3,23 +3,23 @@
     $provisioningFailed = $provisioningStatus === 'failed';
     $provisioningCanceled = $provisioningStatus === 'canceled';
     $provisioningFinished = in_array($provisioningStatus, ['active', 'failed', 'canceled'], true);
+    $statusTone = match ($provisioningStatus) {
+        'active' => 'success',
+        'failed' => 'danger',
+        'canceled' => 'warning',
+        default => 'accent',
+    };
 @endphp
 
 <div @if (! $provisioningFinished && ($poll ?? true)) wire:poll.5s @endif>
     <div>
         <div class="items-start mb-6">
             <div class="mt-4 flex items-center justify-between">
-                <h2 class="text-2xl font-bold text-primary uppercase underline">
+                <h2 class="text-xl font-black text-ink">
                     {{ $heading ?? __('Setup Information') }}
                 </h2>
                 @if ($provisioningStatus)
-                    <span @class([
-                        'rounded-full px-3 py-1 text-xs font-semibold uppercase',
-                        'bg-green-100 text-green-700' => $provisioningStatus === 'active',
-                        'bg-red-100 text-red-700' => $provisioningFailed,
-                        'bg-amber-100 text-amber-700' => $provisioningCanceled,
-                        'bg-blue-100 text-blue-700' => ! $provisioningFinished,
-                    ])>{{ str($provisioningStatus)->replace('_', ' ') }}</span>
+                    <x-ui.badge :tone="$statusTone">{{ str($provisioningStatus)->replace('_', ' ') }}</x-ui.badge>
                 @endif
             </div>
 
@@ -37,7 +37,7 @@
                 </x-ui.alert>
             @endif
 
-            <div class="flex justify-between mt-2 text-sm font-semibold text-secondary">
+            <div class="mt-2 flex justify-between text-sm font-semibold text-muted">
                 <span>{{ __('Events') }}</span>
                 <span>{{ __('Status') }}</span>
             </div>
@@ -46,23 +46,23 @@
 
                 <div class="flex items-center mt-4">
                     <div @class([
-                            'flex shrink-0 justify-center items-center w-5 h-5 rounded-md border',
-                            'bg-green-200 text-green-600 border-green-700' => $model->setup_stage >= ($key + 1),
-                            'bg-red-100 text-red-600 border-red-300' => $provisioningFailed && $model->setup_stage < ($key + 1),
-                            'bg-amber-100 text-amber-600 border-amber-300' => $provisioningCanceled && $model->setup_stage < ($key + 1),
-                            'bg-primary text-primary border-primary' => ! $provisioningFailed && ! $provisioningCanceled && $model->setup_stage < ($key + 1),
+                        'flex shrink-0 justify-center items-center w-5 h-5 rounded-md border',
+                        'bg-success-soft text-success border-line' => $model->setup_stage >= ($key + 1),
+                        'bg-danger-soft text-danger border-line' => $provisioningFailed && $model->setup_stage < ($key + 1),
+                        'bg-warning-soft text-warning border-line' => $provisioningCanceled && $model->setup_stage < ($key + 1),
+                        'bg-surface-muted text-muted border-line' => ! $provisioningFailed && ! $provisioningCanceled && $model->setup_stage < ($key + 1),
                     ])>
                         <svg @class([
-							'w-3 h-3 text-secondary stroke-2',
+							'w-3 h-3 text-muted stroke-2',
 							'animate-spin' => ! $provisioningFinished && $model->setup_stage < ($key + 1)
 						])>
                             <use xlink:href="/assets/images/icons.svg#{{ $model->setup_stage >= ($key + 1) ? 'check' : ($provisioningFinished ? 'information-circle' : 'refresh') }}"></use>
                         </svg>
                     </div>
-                    <div class="flex justify-between ml-3 w-full text-sm font-semibold tracking-wider text-secondary">
+                    <div class="ml-3 flex w-full justify-between text-sm font-semibold tracking-wider text-muted">
                         <div class="flex flex-col">
                             <span @class([
-                               'text-green-500' => $model->setup_stage >= ($key + 1),
+                               'text-success' => $model->setup_stage >= ($key + 1),
                             ])>
                                 {{ $process::$title }}
                             </span>
@@ -70,7 +70,7 @@
                                 {{ $process::$description }}
                             </span>
                         </div>
-                        <span class="text-secondary">
+                        <span class="text-muted">
                             {{ $model->setup_stage >= ($key + 1) ? __('Completed') : ($provisioningFinished ? __('Not completed') : __('Pending')) }}
                         </span>
                     </div>
