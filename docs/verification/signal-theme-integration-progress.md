@@ -3745,3 +3745,28 @@ Push status: 'b1bc354' is on 'origin/main'.
 
 Next task: deploy the server safety/operation modernization to the isolated
 canonical Deployer runtime, then inspect the next cohesive product surface.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to '6c73385'. The server-safety asset bundle was rebuilt,
+application/configuration/route/view caches were rebuilt, and
+buildpusher-dev-main.service plus its queue worker were restarted. The
+canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- /login — HTTP 200 with title Sign in to your account · Deployer.
+- /build/manifest.json — HTTP 200 with the current Deployer asset manifest,
+  including assets/app-TPaIhn1J.css and assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
