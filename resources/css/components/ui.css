@@ -1,4 +1,19 @@
 @layer components {
+    .ui-notification[data-read="false"][data-notification-status="failed"] {
+        border-left-width: 0.25rem;
+        border-left-color: var(--ui-danger);
+    }
+
+    .ui-notification[data-read="false"][data-notification-status="healthy"] {
+        border-left-width: 0.25rem;
+        border-left-color: var(--ui-success);
+    }
+
+    .ui-notification[data-read="false"][data-notification-status="info"] {
+        border-left-width: 0.25rem;
+        border-left-color: var(--ui-info);
+    }
+
     .ui-card--unread {
         border-color: color-mix(in srgb, var(--ui-primary) 45%, var(--ui-line));
         box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-primary) 20%, transparent), var(--shadow-soft-value);

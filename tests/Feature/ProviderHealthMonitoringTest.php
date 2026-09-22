@@ -140,7 +140,7 @@ class ProviderHealthMonitoringTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Provider &quot;Production GitHub&quot; connection failed', false)
             ->assertSee('Provider &quot;Production GitHub&quot; connection recovered', false)
-            ->assertSee('border-l-green-500', false);
+            ->assertSee('data-notification-status="healthy"', false);
         $this->actingAs($owner)->get(route('activity.index', ['category' => 'provider']))
             ->assertSuccessful()
             ->assertSee('Provider &quot;Production GitHub&quot; connection failed.', false)

@@ -111,7 +111,7 @@ class AccountSecurityActivityTest extends TestCase
             ->assertViewHas('notifications', fn ($notifications): bool => $notifications->count() === 1
                 && $notifications->sole()->id === $ownerNotification->id)
             ->assertSee('Owner reviewed account security.')
-            ->assertSee('border-l-blue-500', false)
+            ->assertSee('data-notification-status="info"', false)
             ->assertDontSee('Foreign account security event.');
         $notificationExport = $this->get(route('notifications.export', ['category' => 'account']))
             ->assertSuccessful()

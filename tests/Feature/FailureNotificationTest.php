@@ -143,7 +143,7 @@ class FailureNotificationTest extends TestCase
             ->assertSuccessful()
             ->assertSee('Server &quot;Recovery server&quot; recovered', false)
             ->assertSee('Website &quot;Recovery website&quot; recovered', false)
-            ->assertSee('border-l-green-500', false)
+            ->assertSee('data-notification-status="healthy"', false)
             ->assertDontSee('Server setup failed')
             ->assertDontSee('Website setup failed');
     }

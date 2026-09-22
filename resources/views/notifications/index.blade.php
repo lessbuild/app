@@ -83,7 +83,8 @@
             <x-forms.errors name="action" />
         @endif
 
-        <div id="notification-list" class="ui-panel ui-inventory-list scroll-mt-24 overflow-hidden">
+        <div id="notification-list" class="ui-panel ui-inventory-list scroll-mt-24 overflow-hidden p-4 sm:p-6">
+        <div class="space-y-3">
         @forelse ($notifications as $notification)
             @php
                 $destinationState = $notificationDestinations[(string) $notification->getKey()] ?? null;
@@ -96,12 +97,15 @@
                     default => 'danger',
                 };
             @endphp
-            <article @class([
-                'group border-b border-line p-4 transition-colors last:border-b-0 hover:bg-surface-muted sm:p-5',
-                'border-l-4 border-l-red-400' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_FAILED,
-                'border-l-4 border-l-green-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_HEALTHY,
-                'border-l-4 border-l-blue-500' => $notification->read_at === null && $notificationStatus === \App\Notifications\NotificationInbox::STATUS_INFO,
-            ]) data-notification-card>
+            <article
+                @class([
+                    'ui-notification group',
+                    'opacity-60' => $notification->read_at !== null,
+                ])
+                data-notification-card
+                data-read="{{ $notification->read_at === null ? 'false' : 'true' }}"
+                data-notification-status="{{ $notificationStatus }}"
+            >
                 <div class="flex items-start gap-3">
                     <input type="checkbox" name="notifications[]" value="{{ $notification->id }}" form="notification-bulk-form" x-model="selected" class="ui-check mt-1 shrink-0" aria-label="{{ __('Select notification: :title', ['title' => $notification->data['title'] ?? __('Notification')]) }}">
                     @if ($notification->read_at !== null)
@@ -171,6 +175,7 @@
                 icon="bell"
             />
         @endforelse
+        </div>
         </div>
     </div>
 

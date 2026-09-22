@@ -180,10 +180,21 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-modal-trigger="feedback-compose"', $feedback);
 
         $notifications = File::get(resource_path('views/notifications/index.blade.php'));
-        $this->assertStringContainsString('border-l-4 border-l-red-400', $notifications);
+        $this->assertStringContainsString('ui-notification', $notifications);
+        $this->assertStringContainsString('data-notification-status', $notifications);
+        $this->assertStringNotContainsString('border-l-red-400', $notifications);
+        $this->assertStringNotContainsString('border-l-green-500', $notifications);
+        $this->assertStringNotContainsString('border-l-blue-500', $notifications);
         $this->assertStringNotContainsString('bg-red-50', $notifications);
         $this->assertStringNotContainsString('bg-green-50', $notifications);
         $this->assertStringNotContainsString('bg-blue-50', $notifications);
+
+        $errorPage = File::get(resource_path('views/errors/500.blade.php'));
+        $this->assertStringContainsString('x-layouts.core', $errorPage);
+        $this->assertStringContainsString('ui-panel', $errorPage);
+        $this->assertStringContainsString('ui-alert-danger', $errorPage);
+        $this->assertStringNotContainsString('#0f172a', $errorPage);
+        $this->assertStringNotContainsString('#2563eb', $errorPage);
     }
 
     public function test_workspace_deletion_uses_a_border_led_signal_danger_panel(): void
