@@ -2214,6 +2214,56 @@ Next task: deploy the public documentation modernization to the isolated
 canonical Deployer runtime, then inspect the next product surface for a
 separate cohesive Signal modernization boundary.
 
+## Slice 46 — repository inventory and push-impact surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'e6f0eee'.
+
+Responsibility problem addressed:
+
+- The repository inventory and its contextual read-only push-impact preview
+  already had bounded query and modal responsibilities, but their filters,
+  list metadata, matched-path details and impact states still used the
+  compatibility palette. The dense source-control workflow was consequently
+  less consistent with the rest of the Deployer interface, especially on
+  small screens.
+
+Signal implementation:
+
+- Migrated repository filters to `ui-label` and `ui-input`, inventory links to
+  `ui-link`, and list separators/content to semantic ink, muted and line
+  roles.
+- Reused shared Signal cards for matched-path detail surfaces.
+- Replaced hard-coded impact color classes with the existing badge tone
+  component, preserving affected, unaffected and unknown meanings.
+- Preserved the existing contextual preview dialog and its fragment refresh
+  path; no repository query or modal orchestration was duplicated.
+
+Preserved contracts:
+
+- Filter names/defaults, query parameters, pagination, CSV export URL,
+  repository/website/build links, tenant scoping, secret exclusion, impact
+  statuses, conservative unknown behavior, validation ordering, read-only
+  semantics and no-side-effect guarantees are unchanged.
+- No controller, request, policy, action, persistence, queue, webhook or
+  deployment behavior was modified.
+
+Evidence:
+
+- Repository-focused feature suite — 76 tests passed, 638 assertions.
+- Fixture-backed responsive/navigation coverage — 2 tests passed for light/dark
+  at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'e6f0eee' is on 'origin/main'.
+
+Next task: deploy the repository-surface modernization to the isolated
+canonical Deployer runtime, then inspect the next product surface for a
+separate cohesive Signal modernization boundary.
+
 ## Slice 43 — public landing surface — 2026-09-22
 
 Status: implemented and verified locally; code committed and pushed as
