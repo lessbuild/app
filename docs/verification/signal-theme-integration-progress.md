@@ -2254,6 +2254,53 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next remaining high-impact UI surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 63 — provider selection controls — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as 'ac438b2'.
+
+Responsibility problem addressed:
+
+- Provider creation and editing already exposed text labels, but its selected
+  states still depended on the compatibility ternary palette utilities and
+  global browser assertions counted choices from unrelated page-local dialogs.
+
+Signal implementation:
+
+- Reused `ui-choice`'s native `:has(input:checked)` state and Signal focus
+  token for DigitalOcean, GitHub, GitLab, Bitbucket, Hetzner, Vultr and
+  Cloudflare choices.
+- Removed the legacy ternary border/background/ring utilities without changing
+  the provider values or no-JavaScript radio behavior.
+- Scoped the browser choice-count assertion to the provider dialog so shared
+  application-dialog choices cannot create a false failure.
+- Added source guards for the provider form’s Signal primitives.
+
+Preserved contracts:
+
+- Provider text labels, radio names/values, selected state, token fields,
+  monitoring defaults, validation feedback, encrypted credential handling and
+  provider creation/edit behavior are unchanged.
+- No provider authorization, connection testing, monitoring, query, export,
+  persistence, queue or remote integration behavior changed.
+
+Evidence:
+
+- Provider UI, dialog, capability, connection history/insights, inventory,
+  feedback, monitoring and entitlement coverage — 105 tests passed, 1,338
+  assertions.
+- Focused provider browser coverage — 5 tests passed in 39.9 seconds,
+  including no-JavaScript submission and mobile monitoring disclosure.
+- 'npm run build' — passed with assets/app-ByPUAeyQ.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'ac438b2' is on 'origin/main'.
+
+Next task: deploy the provider-selection modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Slice 62 — server detail controls — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as '83cf1ea'.
