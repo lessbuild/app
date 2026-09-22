@@ -2134,6 +2134,47 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 53 — high-availability route surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'2b25c9f'.
+
+Responsibility problem addressed:
+
+- High-availability route inventory cards and their create-route/add-node
+  dialogs still used compatibility palette utilities, making node capacity,
+  health state and modal forms inconsistent with the rest of the infrastructure
+  UI.
+
+Signal implementation:
+
+- Migrated route cards, business-plan messaging, collapsible node lists and
+  node metadata to semantic Signal surfaces, links, text roles and focus rings.
+- Migrated create-route and add-node dialog labels, selects and inputs to
+  `ui-label` and `ui-input` while preserving the existing modal components.
+
+Preserved contracts:
+
+- Plan gating, organization authorization, environment/server scoping, node
+  exclusion, capacity fields, validation errors, modal query state, apply and
+  remove actions are unchanged.
+- No controller, action, policy, persistence, queue, provider or remote-call
+  behavior changed.
+
+Evidence:
+
+- High-availability operations, removal-job, insight, filter and local UI
+  coverage — 45 tests passed, 753 assertions.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '2b25c9f' is on 'origin/main'.
+
+Next task: deploy the high-availability modernization to the isolated
+canonical Deployer runtime, then inspect the next cohesive product surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
