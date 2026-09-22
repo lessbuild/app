@@ -2134,6 +2134,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 52 — website import and provisioning evidence — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'0fef25e'.
+
+Responsibility problem addressed:
+
+- Website adoption and provisioning evidence still used compatibility input
+  utilities and hard-coded slate/cyan terminal colors even though the website
+  detail page had already moved to Signal panels. This made a sensitive import
+  workflow and its live output inconsistent across themes and breakpoints.
+
+Signal implementation:
+
+- Migrated the website import form fields, directory-prefix control, labels and
+  action footer to Signal inputs, labels, muted surfaces and line borders.
+- Reused the semantic `ui-console` primitive for Livewire provisioning output,
+  including theme-aware status text, command prefixes and retained-log links.
+- Added fixture coverage ensuring the website operations section exposes the
+  console after opening it on mobile.
+
+Preserved contracts:
+
+- Import field names, defaults, validation, plan gating, server selection,
+  health-monitoring default, redirect behavior and flash/error handling are
+  unchanged.
+- Livewire polling, provisioning status copy, output rendering, download URL
+  and empty/waiting states are unchanged.
+- No controller, action, policy, persistence, queue, remote-call or
+  authorization behavior changed.
+
+Evidence:
+
+- Website import, provisioning-log/retry, operational-download, health-history
+  and local UI coverage — 53 tests passed, 803 assertions.
+- Website detail fixture plus the full light/dark responsive fixture matrix —
+  3 tests passed.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '0fef25e' is on 'origin/main'.
+
+Next task: deploy the website import/provisioning modernization to the
+isolated canonical Deployer runtime, then inspect the next cohesive product
+surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
