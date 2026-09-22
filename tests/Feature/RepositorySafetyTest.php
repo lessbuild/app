@@ -105,6 +105,8 @@ class RepositorySafetyTest extends TestCase
 
         $this->actingAs($user)->get(route('repositories.create'))
             ->assertSuccessful()
+            ->assertSee('ui-input', false)
+            ->assertSee('ui-panel bg-surface-muted', false)
             ->assertSee('Active Website')
             ->assertDontSee($inactiveWebsite->name);
 
@@ -115,6 +117,8 @@ class RepositorySafetyTest extends TestCase
 
         $this->actingAs($user)->get(route('repositories.edit', $repository))
             ->assertSuccessful()
+            ->assertSee('ui-input', false)
+            ->assertSee('ui-panel bg-surface-muted', false)
             ->assertSeeInOrder(['value="'.$activeWebsite->id.'"', 'selected'], false)
             ->assertDontSee($inactiveWebsite->name);
     }

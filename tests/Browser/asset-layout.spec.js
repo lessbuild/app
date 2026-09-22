@@ -483,7 +483,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
         const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
         await expect(dialog).toBeVisible();
         await expect(dialog.locator('form[method="POST"]').first()).toBeVisible();
-        if (workflow.path === 'websites/1') {
+        if (workflow.query === 'edit-website' || workflow.query === 'edit-repository') {
             await expect(dialog.locator('.ui-input').first()).toBeVisible();
             await expect(dialog.locator('.ui-panel').first()).toBeVisible();
         }
@@ -549,12 +549,15 @@ test('repository deployment and webhook surfaces stay scannable on mobile', asyn
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/repositories/1', { waitUntil: 'networkidle' });
 
+    await expect(page.getByRole('navigation', { name: 'Repository sections', exact: true })).toBeVisible();
+    await expect(page.locator('#repository-overview')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#repository-latest-deployment')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#deployment-webhook')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#deployment-webhook .ui-input')).toHaveCount(4);
     await expect(page.locator('#repository-setup')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#repository-deployment-insights')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#repository-deployment-history')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#repository-information')).toHaveClass(/\bui-panel\b/);
     await expect(page.getByRole('link', { name: 'Export CSV', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'View all deployments', exact: true }).last()).toBeVisible();
 });

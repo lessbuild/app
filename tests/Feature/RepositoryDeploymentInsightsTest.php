@@ -101,6 +101,9 @@ class RepositoryDeploymentInsightsTest extends TestCase
 
         $completed
             ->assertSuccessful()
+            ->assertSee('Repository sections')
+            ->assertSee('data-repository-overview', false)
+            ->assertSee('data-repository-automation', false)
             ->assertSee('Latest deployment')
             ->assertSee('Build #'.$latest->id)
             ->assertSee('View latest deployment')

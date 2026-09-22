@@ -20,8 +20,7 @@
 @php($websiteCreateContentUrl ??= route('dialogs.create', ['resource' => 'website', 'return_to' => $dialogReturnUrl]))
 
 @if ($providers->isEmpty())
-    <div class="m-5">
-        <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+    <aside class="ui-panel m-5 flex flex-wrap items-center justify-between gap-3 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">
             <p>{{ __('You must add a source control provider before you can add a repository') }}</p>
             <x-ui.button
                 :href="$providerCreateUrl"
@@ -31,13 +30,11 @@
                 aria-expanded="false"
                 variant="secondary"
             >{{ __('Add source provider') }}</x-ui.button>
-        </x-ui.alert>
-    </div>
+    </aside>
 @endif
 
 @if ($websites->isEmpty())
-    <div class="m-5">
-        <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+    <aside class="ui-panel m-5 flex flex-wrap items-center justify-between gap-3 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">
             <p>{{ __('You need an active website before you can add a repository') }}</p>
             <x-ui.button
                 :href="$websiteCreateUrl"
@@ -47,8 +44,7 @@
                 aria-expanded="false"
                 variant="secondary"
             >{{ __('Create Website') }}</x-ui.button>
-        </x-ui.alert>
-    </div>
+    </aside>
 @endif
 
 <form action="{{ route('repositories.store', ['dialog' => 'create-repository']) }}" method="POST">
@@ -60,7 +56,7 @@
         :field-prefix="$fieldPrefix"
     />
 
-    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-6">
+    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
         <x-ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
         <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || $websites->isEmpty()">
             {{ __('Create Repository') }}

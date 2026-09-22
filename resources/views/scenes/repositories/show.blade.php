@@ -99,17 +99,25 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Repository sections')">
+        <a href="#repository-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#deployment-webhook" class="ui-local-nav__link">{{ __('Automation') }}</a>
+        <a href="#repository-setup" class="ui-local-nav__link">{{ __('Timeline') }}</a>
+        <a href="#repository-deployment-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#repository-deployment-history" class="ui-local-nav__link">{{ __('History') }}</a>
+    </x-ui.local-nav>
+
     @if (! $deploymentReady)
-        <x-ui.alert tone="warning" class="my-4 border-l-4">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
-        </x-ui.alert>
+        </aside>
     @endif
 
     @error('plan')
-        <x-ui.alert tone="danger" class="my-4 border-l-4">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             {{ $message }}
-            <a href="{{ route('billing.index') }}" class="font-bold underline">{{ __('View plans') }}</a>
-        </x-ui.alert>
+            <a href="{{ route('billing.index') }}" class="ui-link font-bold">{{ __('View plans') }}</a>
+        </aside>
     @enderror
 
     @php
@@ -256,7 +264,7 @@
         </section>
     @endif
 
-    <section class="ui-panel my-6 p-5 sm:p-6" aria-labelledby="repository-layout-title">
+    <section id="repository-overview" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-overview aria-labelledby="repository-layout-title">
         <p class="ui-eyebrow">{{ __('Source target') }}</p>
         <h2 id="repository-layout-title" class="mt-2 text-xl font-extrabold text-ink">{{ __('Deployment layout') }}</h2>
         <p class="mt-1 text-sm text-muted">
@@ -272,7 +280,7 @@
     @php
         $oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret");
     @endphp
-    <section id="deployment-webhook" class="ui-panel my-6 p-5 sm:p-6">
+    <section id="deployment-webhook" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-automation>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="ui-eyebrow">{{ __('Automation') }}</p>
@@ -300,7 +308,7 @@
         </div>
 
         @if ($oneTimeWebhookSecret)
-            <x-ui.alert tone="warning" class="mt-4 border-l-4">
+            <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-accent)" role="alert">
                 <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
                 <input
                     type="text"
@@ -308,7 +316,7 @@
                     value="{{ $oneTimeWebhookSecret }}"
                     class="ui-input mt-2 w-full font-mono text-sm"
                 >
-            </x-ui.alert>
+            </aside>
         @endif
 
         <div class="mt-4 text-sm text-muted">
@@ -359,7 +367,7 @@
         @endphp
         <details
             id="webhook-delivery-history"
-            class="group mt-8 overflow-hidden"
+            class="group mt-8 scroll-mt-24 overflow-hidden"
             @if ($webhookDeliveryNeedsAttention) open @endif
         >
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 border-t border-line pt-6 font-bold text-ink [&::-webkit-details-marker]:hidden">
@@ -548,7 +556,8 @@
      ! Repository information
      ! ------------------------------------------------------------
      !-->
-    <x-ui.card class="ui-panel mt-6 p-5 sm:p-6">
+    <section id="repository-information" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" data-repository-information aria-labelledby="repository-information-heading">
+        <h2 id="repository-information-heading" class="sr-only">{{ __('Repository information') }}</h2>
         <div class="grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div class="flex items-start gap-3 text-muted">
             <svg class="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true">
@@ -585,11 +594,11 @@
             </div>
         @endif
         </div>
-    </x-ui.card>
+    </section>
 
     <details
         id="repository-setup"
-        class="ui-responsive-details group ui-panel mt-6 overflow-hidden"
+        class="ui-responsive-details group ui-panel mt-6 scroll-mt-24 overflow-hidden"
         @if ($repositorySetupNeedsAttention) open @endif
         data-responsive-details
         data-responsive-details-mobile-expanded="{{ $repositorySetupNeedsAttention ? 'true' : 'false' }}"
@@ -611,7 +620,7 @@
 
     <details
         id="repository-deployment-insights"
-        class="ui-responsive-details group ui-panel mt-10 overflow-hidden"
+        class="ui-responsive-details group ui-panel mt-10 scroll-mt-24 overflow-hidden"
         @if ($deploymentInsightsNeedAttention) open @endif
         data-responsive-details
         data-responsive-details-mobile-expanded="{{ $deploymentInsightsNeedAttention ? 'true' : 'false' }}"
@@ -671,7 +680,7 @@
 
     <details
         id="repository-deployment-history"
-        class="group ui-panel mt-10 overflow-hidden"
+        class="group ui-panel mt-10 scroll-mt-24 overflow-hidden"
         @if ($latestBuild?->statusEnum()?->isActive() === true) open @endif
     >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">

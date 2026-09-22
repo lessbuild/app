@@ -26,7 +26,7 @@
         <x-ui.badge :tone="$statusTone">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
     </div>
 
-    <x-ui.alert tone="info" class="border-l-4">{{ $outcome }}</x-ui.alert>
+    <aside class="ui-panel border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">{{ $outcome }}</aside>
 
     <dl class="grid gap-4 text-sm sm:grid-cols-2">
         <div>
