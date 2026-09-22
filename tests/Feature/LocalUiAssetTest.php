@@ -423,9 +423,9 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('pb-[max(1rem,env(safe-area-inset-bottom))]', false)
             ->assertSee('data-mobile-account', false)
             ->assertSee('ada@example.test')
-            ->assertSee('class="mx-4 mt-4 border-t border-primary pt-4 lg:hidden"', false)
+            ->assertSee('class="mx-4 mt-4 border-t border-line pt-4 lg:hidden"', false)
             ->assertSee('action="'.route('logout').'" method="post"', false)
-            ->assertSee('button tertiary w-full justify-center', false)
+            ->assertSee('ui-btn ui-btn-secondary w-full justify-center', false)
             ->assertSee('@click="if ($event.target.closest(\'a\')) menu = false"', false)
             ->assertSee('aria-label="Account settings"', false)
             ->assertSee('data-auth-brand', false)
@@ -438,6 +438,24 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('&copy; '.now()->year.' '.config('app.name'), false)
             ->assertDontSee('href="#"', false)
             ->assertDontSee('Copyright 2020');
+
+        foreach ([
+            resource_path('views/components/layouts/app.blade.php'),
+            resource_path('views/components/layouts/sidebar.blade.php'),
+            resource_path('views/components/layouts/mobile-navigation.blade.php'),
+            resource_path('views/components/layouts/partials/navigation-link.blade.php'),
+        ] as $shellPath) {
+            $shell = File::get($shellPath);
+
+            $this->assertStringContainsString('ui-', $shell, $shellPath);
+            $this->assertStringNotContainsString('button primary', $shell, $shellPath);
+            $this->assertStringNotContainsString('button secondary', $shell, $shellPath);
+            $this->assertStringNotContainsString('button tertiary', $shell, $shellPath);
+            $this->assertStringNotContainsString('bg-secondary', $shell, $shellPath);
+            $this->assertStringNotContainsString('border-primary', $shell, $shellPath);
+            $this->assertStringNotContainsString('text-secondary', $shell, $shellPath);
+            $this->assertStringNotContainsString('text-ternary', $shell, $shellPath);
+        }
 
         $javascript = File::get(resource_path('js/app.js'));
         $publicJavascript = File::get(resource_path('js/alpine.js'));

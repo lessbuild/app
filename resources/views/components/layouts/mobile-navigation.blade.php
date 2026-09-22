@@ -17,25 +17,25 @@
         <a
             href="{{ route('search.index') }}"
             data-workspace-search-trigger
-            class="flex h-11 min-w-0 flex-1 items-center rounded-lg border border-primary bg-secondary px-3 text-sm text-secondary"
+            class="ui-card ui-card--interactive flex h-11 min-w-0 flex-1 items-center px-3 text-sm text-muted"
             @click.prevent="openPalette($event.currentTarget)"
         >
             {{ __('Search workspace') }}
         </a>
-        <button type="button" x-ref="closeNavigation" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-2xl text-secondary hover:bg-secondary hover:text-primary" aria-label="{{ __('Close navigation') }}" @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())">×</button>
+        <button type="button" x-ref="closeNavigation" class="ui-icon-btn h-11 w-11 shrink-0 text-2xl" aria-label="{{ __('Close navigation') }}" @click="menu = false; $nextTick(() => $refs.navigationToggle.focus())">×</button>
     </div>
 
     <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <a href="{{ route('organizations.index') }}" class="mb-4 flex items-center gap-3 rounded-xl border border-primary p-3 shadow-xs">
+        <a href="{{ route('organizations.index') }}" class="ui-card ui-card--interactive mb-4 flex items-center gap-3 p-3">
             <x-avatar :name="auth()->user()->currentOrganization?->name ?: config('app.name')" class="h-10 w-10 shrink-0 rounded-lg" />
             <span class="min-w-0">
-                <span class="block text-[10px] font-bold uppercase tracking-wide text-secondary">{{ __('Current workspace') }}</span>
-                <span class="block truncate text-sm font-bold text-primary">{{ auth()->user()->currentOrganization?->name ?: config('app.name') }}</span>
+                <span class="block text-[10px] font-bold uppercase tracking-wide text-muted">{{ __('Current workspace') }}</span>
+                <span class="block truncate text-sm font-bold text-ink">{{ auth()->user()->currentOrganization?->name ?: config('app.name') }}</span>
             </span>
         </a>
 
         @foreach ($navigation['mobile']['groups'] ?? [] as $group)
-            <nav class="grid grid-cols-2 gap-2 border-b border-primary pb-4 mb-4" aria-label="{{ $loop->first ? __('Workspace navigation') : __('Settings and support') }}">
+            <nav class="grid grid-cols-2 gap-2 border-b border-line pb-4 mb-4" aria-label="{{ $loop->first ? __('Workspace navigation') : __('Settings and support') }}">
                 @foreach ($group as $item)
                     <x-layouts.partials.navigation-link :item="$item" mobile />
                 @endforeach

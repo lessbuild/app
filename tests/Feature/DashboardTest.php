@@ -88,7 +88,7 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-quick-navigation', false)
             ->assertSee('data-mobile-footer', false)
-            ->assertSee('class="hidden w-full items-center justify-between border-t border-primary', false)
+            ->assertSee('class="hidden w-full items-center justify-between border-t border-line', false)
             ->assertSee('data-mobile-keyboard-open', false)
             ->assertSee('visualViewport', false);
     }
@@ -150,7 +150,7 @@ class DashboardTest extends TestCase
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
         $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*bg-secondary[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
+            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*bg-surface-muted[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
             $response->getContent(),
         );
     }

@@ -40,7 +40,7 @@
 @endphp
 
 <x-layouts.core :title="$resolvedTitle" :description="$description">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-primary focus:shadow-xl">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-on-primary focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
     <div
@@ -199,14 +199,14 @@
             <div class="sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft" data-mobile-header>
                 <div class="flex h-16 items-center justify-between px-4 lg:hidden">
                     <a href="{{ route('dashboard') }}" data-auth-brand class="text-lg font-bold text-ink">{{ config('app.name') }}</a>
-                    <button type="button" x-ref="mobilePaletteToggle" class="button secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">Ctrl K</kbd></button>
+                    <button type="button" x-ref="mobilePaletteToggle" class="ui-btn ui-btn-secondary hidden min-h-[44px] sm:inline-flex" aria-label="{{ __('Search and navigate') }}" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-2 rounded-md border border-line px-1.5 py-0.5 text-[10px] text-muted">Ctrl K</kbd></button>
                     <button type="button" class="ui-icon-btn h-11 w-11 shrink-0" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false"><span data-theme-icon aria-hidden="true">☾</span></button>
-                    <button type="button" x-ref="navigationToggle" class="button secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
+                    <button type="button" x-ref="navigationToggle" class="ui-btn ui-btn-secondary flex min-h-[44px] gap-2" aria-controls="primary-navigation" :aria-expanded="menu.toString()" aria-label="{{ __('Toggle navigation') }}" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())"><svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>{{ __('Menu') }}</button>
                 </div>
-                <div class="hidden h-14 w-full items-center justify-between border-b border-primary px-6 lg:flex">
+                <div class="hidden h-14 w-full items-center justify-between border-b border-line px-6 lg:flex">
                     <div class="flex items-center gap-3">
                         <div class="hidden sm:block">
-                            <button type="button" x-ref="paletteToggle" class="button secondary" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-md border border-secondary px-1.5 py-0.5 text-[10px] text-secondary">⌘K</kbd></button>
+                            <button type="button" x-ref="paletteToggle" class="ui-btn ui-btn-secondary" @click="openPalette($event.currentTarget)"><span>{{ __('Search and navigate') }}</span><kbd class="ml-3 rounded-md border border-line px-1.5 py-0.5 text-[10px] text-muted">⌘K</kbd></button>
                         </div>
                     </div>
                     <div class="relative flex items-center">
@@ -229,11 +229,11 @@
             </div>
         </main>
 
-        <nav data-mobile-quick-navigation class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-primary bg-primary pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
-            <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('dashboard'), 'text-secondary' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
-            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => $applicationCreateDialogOpen, 'text-secondary' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
-            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-secondary hover:bg-secondary" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
-            <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-secondary', 'text-ternary' => request()->routeIs('notifications.*'), 'text-secondary' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
+        <nav data-mobile-quick-navigation class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-line bg-surface pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
+            <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => request()->routeIs('dashboard'), 'text-muted' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
+            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => $applicationCreateDialogOpen, 'text-muted' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
+            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-muted hover:bg-surface-muted" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
+            <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => request()->routeIs('notifications.*'), 'text-muted' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
 
         <div
@@ -247,11 +247,11 @@
         ></div>
 
         <div x-cloak x-show="palette" x-trap.inert.noscroll="palette" class="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/60 px-4 pt-[10vh]" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" data-workspace-search-dialog @click.self="closePalette()">
-            <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-primary bg-primary shadow-2xl" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
-                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-primary">{{ __('Search workspace') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</x-ui.button></div>
-                <form method="GET" action="{{ route('search.index') }}" class="border-b border-primary p-3">
+            <div class="w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
+                <div class="flex items-center justify-between px-4 pt-3"><h2 id="command-palette-title" class="font-bold text-ink">{{ __('Search workspace') }}</h2><x-ui.button type="button" variant="ghost" class="min-h-10 px-2 text-lg" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">×</x-ui.button></div>
+                <form method="GET" action="{{ route('search.index') }}" class="border-b border-line p-3">
                     <label for="command-palette-query" class="sr-only">{{ __('Search commands and workspace resources') }}</label>
-                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="input secondary w-full rounded-xl text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
+                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="ui-input w-full rounded-xl text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
                 </form>
                 <nav x-ref="paletteResults" class="max-h-[55vh] overflow-y-auto p-2" aria-label="{{ __('Quick actions') }}" role="listbox">
                     @foreach ([
@@ -278,20 +278,20 @@
                                 default => null,
                             };
                         @endphp
-                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-primary hover:bg-secondary focus:bg-secondary focus:outline-hidden">
-                            <span>{{ $label }}</span><span aria-hidden="true" class="text-secondary">↵</span>
+                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="palette = false" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="flex items-center justify-between rounded-xl px-4 py-3 text-sm font-bold text-ink hover:bg-surface-muted focus:bg-surface-muted focus:outline-hidden">
+                            <span>{{ $label }}</span><span aria-hidden="true" class="text-muted">↵</span>
                         </a>
                     @endforeach
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-4 py-3 text-sm text-secondary">{{ __('Searching workspace…') }}</div>
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-4 py-3 text-sm text-secondary">
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-4 py-3 text-sm text-muted">{{ __('Searching workspace…') }}</div>
+                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-4 py-3 text-sm text-muted">
                         <p>{{ __('Workspace search could not be loaded.') }}</p>
-                        <button type="button" class="font-semibold text-ternary underline" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
+                        <button type="button" class="font-semibold text-primary underline" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
                     </div>
                     <div x-show="workspaceSearchResults !== ''" x-html="workspaceSearchResults"></div>
-                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-secondary">
+                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-muted">
                         {{ __('No matching quick actions. Press Enter to search all workspace resources.') }}
                     </p>
-                    <div class="border-t border-primary px-4 py-3 text-xs text-secondary">
+                    <div class="border-t border-line px-4 py-3 text-xs text-muted">
                         {{ __('Press Enter to search all workspace resources for your exact query.') }}
                     </div>
                 </nav>
@@ -320,7 +320,7 @@
                     @if ($providerCreateDialogOpen)
                         <x-scenes.providers.create-dialog-content :cancel-url="$quickCreateReturnUrl" />
                     @else
-                        <p class="p-5 text-sm text-secondary">{{ __('Loading provider form…') }}</p>
+                        <p class="p-5 text-sm text-muted">{{ __('Loading provider form…') }}</p>
                     @endif
                 </div>
             </x-dialogs.modal>
@@ -350,7 +350,7 @@
                             :return-url="$quickCreateReturnUrl"
                         />
                     @else
-                        <p class="p-5 text-sm text-secondary">{{ __('Loading server form…') }}</p>
+                        <p class="p-5 text-sm text-muted">{{ __('Loading server form…') }}</p>
                     @endif
                 </div>
             </x-dialogs.modal>
@@ -377,7 +377,7 @@
                             :return-url="$quickCreateReturnUrl"
                         />
                     @else
-                        <p class="p-5 text-sm text-secondary">{{ __('Loading website form…') }}</p>
+                        <p class="p-5 text-sm text-muted">{{ __('Loading website form…') }}</p>
                     @endif
                 </div>
             </x-dialogs.modal>
@@ -403,7 +403,7 @@
                             :return-url="$quickCreateReturnUrl"
                         />
                     @else
-                        <p class="p-5 text-sm text-secondary">{{ __('Loading repository form…') }}</p>
+                        <p class="p-5 text-sm text-muted">{{ __('Loading repository form…') }}</p>
                     @endif
                 </div>
             </x-dialogs.modal>
@@ -414,14 +414,14 @@
          ! Footer and links
          ! ------------------------------------------------------------
          !-->
-        <div data-mobile-footer class="hidden w-full items-center justify-between border-t border-primary bg-primary px-6 py-6 text-sm text-primary sm:px-8 lg:flex">
+        <div data-mobile-footer class="hidden w-full items-center justify-between border-t border-line bg-surface px-6 py-6 text-sm text-ink sm:px-8 lg:flex">
             <p class="mb-2 lg:mb-0">
                 &copy; {{ now()->year }} {{ config('app.name') }}
             </p>
             <nav class="flex" aria-label="{{ __('Footer navigation') }}">
-                <a href="{{ route('dashboard') }}" class="mr-6 hover:text-ternary">{{ __('Dashboard') }}</a>
-                <a href="{{ route('activity.index') }}" class="mr-6 hover:text-ternary">{{ __('Activity') }}</a>
-                <a href="{{ route('account.index') }}" class="hover:text-ternary">{{ __('Account') }}</a>
+                <a href="{{ route('dashboard') }}" class="mr-6 hover:text-primary">{{ __('Dashboard') }}</a>
+                <a href="{{ route('activity.index') }}" class="mr-6 hover:text-primary">{{ __('Activity') }}</a>
+                <a href="{{ route('account.index') }}" class="hover:text-primary">{{ __('Account') }}</a>
             </nav>
         </div>
     </div>
