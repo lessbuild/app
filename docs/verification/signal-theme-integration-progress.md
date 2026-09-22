@@ -55,10 +55,13 @@ Evidence:
 - Existing shell/navigation, creation-dialog, dashboard page-local modal,
   dialog scroll-lock and mobile native filter-sheet browser checks:
   **5 passed** (4.1m).
+- Commit `80a8e5b3d47679a8f5b0a21c62e04c47b4c24c29` was pushed to
+  `origin/main` (`9f66f05` → `80a8e5b`).
 
-Next task: review the complete diff, then commit and push this verified slice
-to `main`. Continue the source-driven UI audit afterward; this slice does not
-claim every screen has been visually accepted on physical devices.
+Next task: compare future Signal upstream revisions against the recorded source
+SHA before adoption, and verify the deployed site's served asset hashes after a
+separately authorized deployment. No live deployment or physical-device visual
+acceptance is claimed by this slice.
 
 ## Slice 120 — verify shared Signal dialogs and fixture assets — 2026-09-22
 
