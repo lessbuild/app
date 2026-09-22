@@ -65,14 +65,17 @@
         ];
     @endphp
 
-    <header class="ui-dashboard-hero ui-panel mb-6 flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6" aria-labelledby="dashboard-title" data-dashboard-hero>
+    <header class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end" aria-labelledby="dashboard-title" data-dashboard-hero>
         <div class="min-w-0">
             <p class="ui-eyebrow">{{ __('Workspace overview') }}</p>
-            <p class="mt-2 text-sm text-muted">{{ __('Welcome back, :name', ['name' => auth()->user()->name]) }}</p>
-            <h1 id="dashboard-title" class="mt-1 break-words text-2xl font-extrabold tracking-tight text-ink">{{ auth()->user()->currentOrganization?->name ?: __('Dashboard') }}</h1>
-            <p class="mt-1 text-sm text-muted">{{ __('Your infrastructure. Your next deployment. One clear view.') }}</p>
+            <h1 id="dashboard-title" class="mt-2 break-words text-3xl font-extrabold tracking-[-0.035em] text-ink">{{ __('Good morning, :name.', ['name' => auth()->user()->name]) }}</h1>
+            <p class="mt-2 text-sm leading-6 text-muted">
+                {{ auth()->user()->currentOrganization?->name ?: __('Your workspace') }}
+                &middot;
+                {{ __('Your infrastructure. Your next deployment. One clear view.') }}
+            </p>
         </div>
-        <nav class="flex shrink-0 flex-wrap gap-2" aria-label="{{ __('Dashboard quick actions') }}">
+        <nav class="flex shrink-0 flex-wrap items-center gap-3 sm:justify-end" aria-label="{{ __('Dashboard quick actions') }}">
             <x-ui.button
                 :href="$dashboardServerCreateUrl"
                 data-modal-trigger="server-create-dialog"
@@ -103,6 +106,8 @@
         </nav>
     </header>
 
+    @include('dashboard._metrics')
+
     @include('dashboard._attention')
 
     <x-scenes.dashboard.preferences-dialog
@@ -113,8 +118,6 @@
     @include('dashboard._setup')
 
     @include('dashboard._quick-actions')
-
-    @include('dashboard._metrics')
 
     <details
         id="dashboard-operational-overview"

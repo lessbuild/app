@@ -220,10 +220,6 @@
         min-height: 2.75rem;
     }
 
-    .ui-dashboard-hero {
-        background: var(--ui-surface);
-    }
-
     .ui-dashboard-quick-action {
         text-decoration: none;
     }
@@ -383,14 +379,8 @@
             min-width: 0;
         }
 
-        [data-dashboard-hero] {
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            padding: 1rem;
-        }
-
         [data-dashboard-hero] h1 {
-            font-size: 1.5rem;
+            font-size: 1.875rem;
         }
 
         [data-dashboard-hero] > nav {

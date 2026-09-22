@@ -277,7 +277,8 @@ class DashboardTest extends TestCase
         $this->assertNotFalse($quickActionsPosition);
         $this->assertNotFalse($statsPosition);
         $this->assertLessThan($quickActionsPosition, $setupPosition);
-        $this->assertLessThan($statsPosition, $quickActionsPosition);
+        $this->assertLessThan($setupPosition, $statsPosition);
+        $this->assertLessThan($quickActionsPosition, $statsPosition);
     }
 
     public function test_dashboard_setup_has_mobile_step_navigation_without_removing_setup_actions(): void

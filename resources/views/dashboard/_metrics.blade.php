@@ -1,8 +1,16 @@
 @if(in_array('stats', $dashboardWidgets, true))
-    <dl data-dashboard-stats class="ui-insight-grid mb-8 grid grid-cols-2 gap-2 sm:mb-12 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4" aria-label="{{ __('Workspace totals') }}">
-        <x-ui.stat class="p-3 sm:p-4" :value="$stats['websites']" :label="__('Websites')" :description="__('Hosted application targets')" />
-        <x-ui.stat class="p-3 sm:p-4" :value="$stats['servers']" :label="__('Servers')" :description="__('Provisioned compute')" />
-        <x-ui.stat class="p-3 sm:p-4" :value="$stats['builds']" :label="__('Builds')" :description="__('Recorded releases')" />
-        <x-ui.stat class="p-3 sm:p-4" :value="$stats['repositories']" :label="__('Repositories')" :description="__('Connected sources')" />
+    <dl data-dashboard-stats class="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="{{ __('Workspace totals') }}">
+        @foreach ([
+            [__('Websites'), $stats['websites'], __('Hosted application targets')],
+            [__('Servers'), $stats['servers'], __('Provisioned compute')],
+            [__('Builds'), $stats['builds'], __('Recorded releases')],
+            [__('Repositories'), $stats['repositories'], __('Connected sources')],
+        ] as [$label, $value, $description])
+            <div class="ui-card p-4 sm:p-5">
+                <dt class="text-xs font-bold text-muted">{{ $label }}</dt>
+                <dd class="mt-4 text-3xl font-extrabold tracking-tight text-ink">{{ $value }}</dd>
+                <dd class="mt-2 text-xs text-muted">{{ $description }}</dd>
+            </div>
+        @endforeach
     </dl>
 @endif
