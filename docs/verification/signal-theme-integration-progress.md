@@ -965,3 +965,56 @@ Next task: inspect the remaining inventory pages and select the next cohesive
 operational surface to modernize, starting with commands or the next
 deployment-adjacent page while preserving its existing modal and authorization
 contracts.
+
+## Slice 16 — command-center surfaces
+
+Status: implemented and verified locally; code committed and pushed as
+`1ce1cca`.
+
+Responsibility problem addressed:
+
+- The global Command Center and its dashboard active-command fragment still
+  mixed legacy controls, text roles, borders and card surfaces with the Signal
+  primitives used by the surrounding operational inventories.
+- Command metadata is intentionally bounded and secret-safe, so the visual
+  refresh needed to improve scanability without exposing command text or
+  retained output or changing the existing modal flow.
+
+Signal implementation:
+
+- Replaced global command filters with shared Signal labels, inputs, choices
+  and checkboxes while preserving filter names, values, defaults and the
+  native mobile filter sheet.
+- Kept the existing six command insights and aligned them with the shared
+  responsive stat surface.
+- Converted command history to the shared panel/divider inventory treatment,
+  with compact execution metadata and server-history actions.
+- Updated the dashboard active-command fragment with the same eyebrow, ink,
+  muted and card hierarchy while retaining its lazy, read-only dialog.
+- Extended browser coverage to the global command page and the shared mobile
+  filter harness.
+
+Preserved contracts:
+
+- Verified-account requirements, organization scoping, filter normalization,
+  pagination and export URLs, active-command refresh behavior, execution
+  status/output badges, bounded metadata, focused server-history links and
+  secret/output non-disclosure.
+- Existing dashboard dialog URLs, focus restoration, no-JavaScript links and
+  server command-history/output boundaries.
+
+Evidence:
+
+- `CommandCenterTest` and `ServerCommandHistoryInsightsTest` — 13 tests
+  passed, 133 assertions.
+- Dashboard active-command dialog, mobile filter coverage and full command
+  center inventory journey — 3 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `1ce1cca` is on `origin/main`.
+
+Next task: deploy the command-center slice to the isolated Deployer runtime,
+then modernize the server-scoped command history page and retained-output
+workflow as its own cohesive slice.
