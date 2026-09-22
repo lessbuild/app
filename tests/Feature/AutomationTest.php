@@ -590,6 +590,56 @@ class AutomationTest extends TestCase
         $this->assertMatchesRegularExpression('/<details\s+id="automation-quick-start"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
     }
 
+    public function test_automation_surface_uses_compact_signal_panels_and_controls(): void
+    {
+        $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Signal automation',
+            'slug' => 'signal-automation',
+            'preset' => 'custom',
+        ]);
+        $environment = $project->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+            'branch' => 'main',
+        ]);
+        $environment->deploymentSchedules()->create([
+            'created_by' => $user->id,
+            'name' => 'Nightly deploy',
+            'cron_expression' => '0 3 * * *',
+            'timezone' => 'UTC',
+            'is_enabled' => true,
+        ]);
+        $environment->scheduledTasks()->create([
+            'created_by' => $user->id,
+            'name' => 'Warm cache',
+            'cron_expression' => '0 * * * *',
+            'timezone' => 'UTC',
+            'command' => 'php artisan cache:warm',
+            'timeout_seconds' => 300,
+            'without_overlapping' => true,
+            'alert_on_failure' => true,
+            'is_enabled' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('automation.index'))
+            ->assertOk()
+            ->assertSee('data-automation-overview', false)
+            ->assertSee('data-automation-summary="operations"', false)
+            ->assertSee('data-automation-tokens', false)
+            ->assertSee('data-automation-quick-start', false)
+            ->assertSee('data-automation-project', false)
+            ->assertSee('data-automation-environment', false)
+            ->assertSee('data-automation-schedules', false)
+            ->assertSee('data-automation-tasks', false)
+            ->assertSee('class="ui-input', false)
+            ->assertSee('class="ui-panel', false)
+            ->assertSee('Automate routine release work');
+    }
+
     public function test_token_composer_is_a_dialog_and_reopens_for_validation_errors(): void
     {
         $user = User::factory()->create();

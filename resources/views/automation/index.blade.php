@@ -29,18 +29,18 @@
     </x-layouts.partials.heading>
 
     @if (session('success'))
-        <div class="ui-alert ui-alert--success mt-6" role="status">{{ session('success') }}</div>
+        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-success)" role="status">{{ session('success') }}</div>
     @endif
 
     @if (session('plainTextToken'))
-        <div class="ui-alert ui-alert--warning mt-6" role="status">
-            <p class="font-bold text-primary">{{ __('Copy this token now') }}</p>
-            <code class="mt-2 block break-all rounded-md bg-primary p-3 text-sm text-primary">{{ session('plainTextToken') }}</code>
+        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
+            <p class="font-bold text-ink">{{ __('Copy this token now') }}</p>
+            <code class="mt-2 block break-all rounded-md bg-gray-950 p-3 text-sm text-gray-100">{{ session('plainTextToken') }}</code>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="ui-alert ui-alert--danger mt-6" role="alert">
+        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             <ul class="space-y-1">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
         </div>
     @endif
@@ -74,39 +74,40 @@
 
     <x-ui.insights
         id="automation-overview"
-        class="mt-6 scroll-mt-24 border-ternary"
+        class="mt-6 scroll-mt-24"
+        data-automation-overview
         :summary="trans_choice(':count scheduled operation|:count scheduled operations', $scheduledOperationCount, ['count' => $scheduledOperationCount])"
         aria-labelledby="automation-overview-title"
     >
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Automation overview') }}</p>
-                <h2 id="automation-overview-title" class="mt-1 text-xl font-black text-primary">{{ __('Automate routine release work') }}</h2>
-                <p class="mt-1 max-w-3xl text-sm leading-6 text-secondary">{{ __('Start with API access or open an application workflow to manage deploys, capacity, runtime state and scheduled tasks.') }}</p>
+                <p class="ui-eyebrow">{{ __('Automation overview') }}</p>
+                <h2 id="automation-overview-title" class="mt-1 text-xl font-black text-ink">{{ __('Automate routine release work') }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ __('Start with API access or open an application workflow to manage deploys, capacity, runtime state and scheduled tasks.') }}</p>
             </div>
             <x-ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-ui.badge>
         </div>
 
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="#automation-tokens" class="ui-card ui-card--interactive block bg-secondary p-4">
-                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('API access') }}</p>
-                <p class="mt-2 text-2xl font-black text-primary">{{ $tokens->count() }}</p>
-                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count token|:count tokens', $tokens->count(), ['count' => $tokens->count()]) }}</p>
+            <a href="#automation-tokens" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="tokens">
+                <p class="ui-eyebrow">{{ __('API access') }}</p>
+                <p class="mt-2 text-2xl font-black text-ink">{{ $tokens->count() }}</p>
+                <p class="mt-1 text-sm text-muted">{{ trans_choice(':count token|:count tokens', $tokens->count(), ['count' => $tokens->count()]) }}</p>
             </a>
-            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
-                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Applications') }}</p>
-                <p class="mt-2 text-2xl font-black text-primary">{{ $projects->count() }}</p>
-                <p class="mt-1 text-sm text-secondary">{{ trans_choice(':count workflow|:count workflows', $projects->count(), ['count' => $projects->count()]) }}</p>
+            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="applications">
+                <p class="ui-eyebrow">{{ __('Applications') }}</p>
+                <p class="mt-2 text-2xl font-black text-ink">{{ $projects->count() }}</p>
+                <p class="mt-1 text-sm text-muted">{{ trans_choice(':count workflow|:count workflows', $projects->count(), ['count' => $projects->count()]) }}</p>
             </a>
-            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
-                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Environments') }}</p>
-                <p class="mt-2 text-2xl font-black text-primary">{{ $environmentCount }}</p>
-                <p class="mt-1 text-sm text-secondary">{{ __('Available for runtime controls') }}</p>
+            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="environments">
+                <p class="ui-eyebrow">{{ __('Environments') }}</p>
+                <p class="mt-2 text-2xl font-black text-ink">{{ $environmentCount }}</p>
+                <p class="mt-1 text-sm text-muted">{{ __('Available for runtime controls') }}</p>
             </a>
-            <a href="#automation-workflows" class="ui-card ui-card--interactive block bg-secondary p-4">
-                <p class="text-xs font-bold uppercase tracking-widest text-secondary">{{ __('Scheduled operations') }}</p>
-                <p class="mt-2 text-2xl font-black text-primary">{{ $scheduledOperationCount }}</p>
-                <p class="mt-1 text-sm text-secondary">{{ __('Deploys, scaling and tasks') }}</p>
+            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="operations">
+                <p class="ui-eyebrow">{{ __('Scheduled operations') }}</p>
+                <p class="mt-2 text-2xl font-black text-ink">{{ $scheduledOperationCount }}</p>
+                <p class="mt-1 text-sm text-muted">{{ __('Deploys, scaling and tasks') }}</p>
             </a>
         </div>
 
@@ -118,26 +119,26 @@
     </x-ui.insights>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
-        <details id="automation-tokens" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}">
-            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
+        <details id="automation-tokens" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}" data-automation-tokens>
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
                 <span>
                     <span class="flex flex-wrap items-center gap-2">
-                        <span class="font-black text-primary">{{ __('Personal access tokens') }}</span>
+                        <span class="font-black text-ink">{{ __('Personal access tokens') }}</span>
                         <x-ui.badge>{{ $tokens->count() }}</x-ui.badge>
                     </span>
-                    <span class="mt-1 block text-sm text-secondary">{{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}</span>
+                    <span class="mt-1 block text-sm text-muted">{{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}</span>
                 </span>
-                <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                <span class="shrink-0 text-xl text-muted transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
 
             <div class="ui-responsive-details__content p-6 lg:block">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Control plane API') }}</p>
-                    <h2 class="mt-2 text-xl font-black text-primary">{{ __('Personal access tokens') }}</h2>
-                    <p class="mt-2 text-sm text-secondary">
+                    <p class="ui-eyebrow">{{ __('Control plane API') }}</p>
+                    <h2 class="mt-2 text-xl font-black text-ink">{{ __('Personal access tokens') }}</h2>
+                    <p class="mt-2 text-sm text-muted">
                         {{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}
-                        <a href="{{ route('api-docs') }}" class="font-bold text-ternary">{{ __('API reference') }}</a>
+                        <a href="{{ route('api-docs') }}" class="ui-link">{{ __('API reference') }}</a>
                     </p>
                 </div>
                 @unless ($features['api'])
@@ -147,10 +148,10 @@
 
             <div class="mt-6 space-y-2">
                 @forelse ($tokens as $token)
-                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-secondary p-3">
+                    <div class="ui-panel flex flex-wrap items-center justify-between gap-3 bg-surface-muted p-3" data-automation-token>
                         <div class="min-w-0">
-                            <p class="font-bold text-primary">{{ $token->name }}</p>
-                            <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-secondary">
+                            <p class="font-bold text-ink">{{ $token->name }}</p>
+                            <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
                                 @foreach ($token->abilities as $ability)
                                     <x-ui.badge>{{ ucfirst($ability) }}</x-ui.badge>
                                 @endforeach
@@ -184,19 +185,19 @@
             <x-scenes.automation.token-dialog :open="$tokenDialogOpen" />
         @endif
 
-        <details id="automation-quick-start" class="ui-responsive-details ui-card group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false">
-            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 lg:hidden">
+        <details id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
                 <span>
-                    <span class="block font-black text-primary">{{ __('CLI-friendly API') }}</span>
-                    <span class="mt-1 block text-sm font-normal text-secondary">{{ __('A copy-ready starting point for curl and CI.') }}</span>
+                    <span class="block font-black text-ink">{{ __('CLI-friendly API') }}</span>
+                    <span class="mt-1 block text-sm font-normal text-muted">{{ __('A copy-ready starting point for curl and CI.') }}</span>
                 </span>
-                <span class="shrink-0 text-xl text-secondary transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                <span class="shrink-0 text-xl text-muted transition-transform group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
 
             <div class="ui-responsive-details__content p-6 lg:block">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Quick start') }}</p>
-                <h2 class="mt-2 text-xl font-black text-primary">{{ __('CLI-friendly API') }}</h2>
-                <p class="mt-2 text-sm text-secondary">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
+                <p class="ui-eyebrow">{{ __('Quick start') }}</p>
+                <h2 class="mt-2 text-xl font-black text-ink">{{ __('CLI-friendly API') }}</h2>
+                <p class="mt-2 text-sm text-muted">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
                 <pre class="mt-5 overflow-x-auto rounded-xl bg-gray-950 p-4 text-xs leading-6 text-gray-100"><code>export BUILDPUSHER_TOKEN="bp_…"
 curl -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   {{ url('/api/v1/projects') }}
@@ -209,44 +210,45 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
 
     <section id="automation-workflows" class="mt-8 scroll-mt-24" aria-labelledby="automation-workflows-title">
         <div class="mb-4">
-            <h2 id="automation-workflows-title" class="text-2xl font-black text-primary">{{ __('Application workflows') }}</h2>
-            <p class="mt-1 text-secondary">{{ __('Open an application to configure it. This keeps a large workspace compact.') }}</p>
+            <p class="ui-eyebrow">{{ __('Release controls') }}</p>
+            <h2 id="automation-workflows-title" class="mt-1 text-2xl font-black text-ink">{{ __('Application workflows') }}</h2>
+            <p class="mt-1 text-muted">{{ __('Open an application to configure it. This keeps a large workspace compact.') }}</p>
         </div>
 
         <div class="space-y-4">
             @forelse ($projects as $project)
-                <details id="automation-project-{{ $project->id }}" class="ui-card group overflow-hidden">
+                <details id="automation-project-{{ $project->id }}" class="ui-panel group overflow-hidden" data-automation-project>
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
                         <div>
-                            <p class="font-black text-primary">{{ $project->name }}</p>
-                            <p class="mt-1 text-sm text-secondary">
+                            <p class="font-black text-ink">{{ $project->name }}</p>
+                            <p class="mt-1 text-sm text-muted">
                                 {{ trans_choice(':count environment|:count environments', $project->environments->count(), ['count' => $project->environments->count()]) }}
                                 · {{ $project->environments->sum(fn ($environment) => $environment->deploymentSchedules->count()) }} {{ __('deploy schedules') }}
                                 · {{ $project->environments->sum(fn ($environment) => $environment->scheduledTasks->count()) }} {{ __('tasks') }}
                             </p>
                         </div>
-                        <span class="text-2xl text-ternary transition group-open:rotate-45" aria-hidden="true">+</span>
+                        <span class="text-2xl text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
                     </summary>
 
-                    <div class="border-t border-primary p-5">
+                    <div class="border-t border-line p-5">
                         <form method="POST" action="{{ route('automation.workflow', $project) }}">
                             @csrf
                             @method('PUT')
-                            <label class="block text-sm font-bold text-primary" for="workflow-{{ $project->id }}">buildpusher.yaml</label>
-                            <textarea id="workflow-{{ $project->id }}" name="workflow" rows="12" class="input secondary mt-2 w-full rounded-md font-mono text-xs" spellcheck="false">{{ old('workflow', $project->workflow_yaml ?: "version: 1\nenvironments:\n  production:\n    deployment:\n      cron: '0 3 * * 1-5'\n      timezone: UTC\n    scale:\n      minimum: 1\n      maximum: 3\n      desired: 2\n      hibernate_after_minutes: 60") }}</textarea>
+                            <label class="ui-label" for="workflow-{{ $project->id }}">buildpusher.yaml</label>
+                            <textarea id="workflow-{{ $project->id }}" name="workflow" rows="12" class="ui-input mt-2 w-full font-mono text-xs" spellcheck="false">{{ old('workflow', $project->workflow_yaml ?: "version: 1\nenvironments:\n  production:\n    deployment:\n      cron: '0 3 * * 1-5'\n      timezone: UTC\n    scale:\n      minimum: 1\n      maximum: 3\n      desired: 2\n      hibernate_after_minutes: 60") }}</textarea>
                             <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
-                                <p class="text-xs text-secondary">{{ __('Applying YAML validates every setting before saving any of them.') }}</p>
+                                <p class="text-xs text-muted">{{ __('Applying YAML validates every setting before saving any of them.') }}</p>
                                 <x-ui.button type="submit" variant="primary" :disabled="! $canManage">{{ __('Validate & apply') }}</x-ui.button>
                             </div>
                         </form>
 
                         <div class="mt-6 grid gap-4 xl:grid-cols-2">
                             @foreach ($project->environments as $environment)
-                                <article class="rounded-xl border border-primary bg-secondary p-4">
+                                <article class="ui-panel bg-surface-muted p-4" data-automation-environment>
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
-                                            <h3 class="truncate font-black text-primary">{{ $environment->name }}</h3>
-                                            <p class="text-xs text-secondary">{{ $environment->branch }}</p>
+                                            <h3 class="truncate font-black text-ink">{{ $environment->name }}</h3>
+                                            <p class="text-xs text-muted">{{ $environment->branch }}</p>
                                         </div>
                                         <x-ui.badge tone="{{ $environment->hibernated_at ? 'warning' : 'success' }}">{{ $environment->hibernated_at ? __('Hibernated') : __('Running') }}</x-ui.badge>
                                     </div>
@@ -260,23 +262,23 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                     @endif
 
                                     @if ($features['scaling'])
-                                        <form method="POST" action="{{ route('automation.scale', $environment) }}" class="mt-5 grid grid-cols-3 gap-2 border-t border-primary pt-4">
+                                        <form method="POST" action="{{ route('automation.scale', $environment) }}" class="mt-5 grid grid-cols-3 gap-2 border-t border-line pt-4">
                                             @csrf
                                             @method('PATCH')
-                                            <label class="block"><span class="sr-only">{{ __('Minimum replicas') }}</span><input class="input secondary w-full rounded-md" type="number" min="1" max="20" name="minimum_replicas" value="{{ $environment->minimum_replicas }}" aria-label="{{ __('Minimum replicas') }}"></label>
-                                            <label class="block"><span class="sr-only">{{ __('Maximum replicas') }}</span><input class="input secondary w-full rounded-md" type="number" min="1" max="20" name="maximum_replicas" value="{{ min(20, $environment->maximum_replicas) }}" aria-label="{{ __('Maximum replicas') }}"></label>
-                                            <label class="block"><span class="sr-only">{{ __('Desired replicas') }}</span><input class="input secondary w-full rounded-md" type="number" min="1" max="20" name="desired_replicas" value="{{ $environment->desired_replicas }}" aria-label="{{ __('Desired replicas') }}"></label>
+                                            <label class="block"><span class="sr-only">{{ __('Minimum replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="minimum_replicas" value="{{ $environment->minimum_replicas }}" aria-label="{{ __('Minimum replicas') }}"></label>
+                                            <label class="block"><span class="sr-only">{{ __('Maximum replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="maximum_replicas" value="{{ min(20, $environment->maximum_replicas) }}" aria-label="{{ __('Maximum replicas') }}"></label>
+                                            <label class="block"><span class="sr-only">{{ __('Desired replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="desired_replicas" value="{{ $environment->desired_replicas }}" aria-label="{{ __('Desired replicas') }}"></label>
                                             <input type="hidden" name="hibernate_after_minutes" value="{{ $environment->hibernate_after_minutes }}">
                                             <x-ui.button type="submit" variant="primary" class="col-span-3">{{ __('Apply capacity') }}</x-ui.button>
                                         </form>
                                     @else
-                                        <p class="mt-4 text-sm text-secondary"><a class="font-bold text-ternary" href="{{ route('billing.index') }}">{{ __('Upgrade to Business') }}</a> {{ __('for scheduled scaling.') }}</p>
+                                        <p class="mt-4 text-sm text-muted"><a class="ui-link" href="{{ route('billing.index') }}">{{ __('Upgrade to Business') }}</a> {{ __('for scheduled scaling.') }}</p>
                                     @endif
 
-                                    <div class="mt-5 border-t border-primary pt-4">
-                                        <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Schedules') }}</p>
+                                    <div class="mt-5 border-t border-line pt-4" data-automation-schedules>
+                                        <p class="ui-eyebrow">{{ __('Schedules') }}</p>
                                         @foreach ($environment->deploymentSchedules as $schedule)
-                                            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-secondary">
+                                            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-muted">
                                                 <span class="min-w-0 truncate">{{ $schedule->name }} · <code>{{ $schedule->cron_expression }}</code></span>
                                                 <form method="POST" action="{{ route('automation.deployment-schedules.destroy', $schedule) }}">
                                                     @csrf
@@ -312,18 +314,18 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                         @endif
                                     </div>
 
-                                    <div class="mt-5 border-t border-primary pt-4">
+                                    <div class="mt-5 border-t border-line pt-4" data-automation-tasks>
                                         <div class="flex items-center justify-between gap-3">
-                                            <p class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Application tasks') }}</p>
+                                            <p class="ui-eyebrow">{{ __('Application tasks') }}</p>
                                             <x-ui.badge>{{ __('Encrypted commands') }}</x-ui.badge>
                                         </div>
                                         <div class="mt-3 space-y-2">
                                             @foreach ($environment->scheduledTasks as $task)
-                                                <div class="rounded-lg border border-primary bg-primary p-3">
+                                                <div class="ui-panel bg-surface p-3" data-automation-task>
                                                     <div class="flex flex-wrap items-center gap-2">
                                                         <div class="min-w-0 flex-1">
-                                                            <p class="font-bold text-primary">{{ $task->name }}</p>
-                                                            <p class="text-xs text-secondary"><code>{{ $task->cron_expression }}</code> · {{ $task->timezone }} · {{ $task->last_status ? ucfirst($task->last_status) : __('Never run') }}</p>
+                                                            <p class="font-bold text-ink">{{ $task->name }}</p>
+                                                            <p class="text-xs text-muted"><code>{{ $task->cron_expression }}</code> · {{ $task->timezone }} · {{ $task->last_status ? ucfirst($task->last_status) : __('Never run') }}</p>
                                                         </div>
                                                         <form method="POST" action="{{ route('automation.tasks.run', $task) }}">
                                                             @csrf
@@ -348,7 +350,8 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                                     data-modal-history-url="{{ route('automation.index', ['dialog' => $taskRunDialogKey]) }}"
                                                                     aria-controls="automation-task-run-dialog"
                                                                     aria-expanded="{{ $scheduledTaskRunDialogOpen && $scheduledTaskRun->id === $run->id ? 'true' : 'false' }}"
-                                                                    class="rounded-md bg-secondary px-2 py-1 text-[10px] text-secondary"
+                                                                    class="rounded-md border border-line bg-surface-muted px-2 py-1 text-[10px] text-muted transition hover:border-primary"
+                                                                    data-automation-task-run
                                                                 >{{ $run->status }} · {{ $run->created_at->diffForHumans() }}</a>
                                                             @endforeach
                                                         </div>
@@ -403,7 +406,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
             :open="$scheduledTaskRunDialogOpen"
         >
             <div data-modal-content>
-                <div class="space-y-3 text-sm text-secondary">{{ __('Loading task-run details…') }}</div>
+                <div class="space-y-3 text-sm text-muted">{{ __('Loading task-run details…') }}</div>
             </div>
         </x-dialogs.modal>
     @endif
