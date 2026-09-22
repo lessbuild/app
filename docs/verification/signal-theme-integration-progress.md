@@ -6593,6 +6593,64 @@ Next task: characterize the remaining Livewire server-command modal and align
 its visual composition with Signal's actual dialog panel while preserving its
 server-side open/close and polling semantics.
 
+## Slice 102 — Signal Livewire command dialog — 2026-09-22
+
+Responsibility problem:
+
+- The Livewire server-command surface used a separate fixed overlay, bespoke
+  backdrop and `ui-card`/utility composition. It therefore looked unlike the
+  actual Signal native dialog and could not share the same mobile sheet,
+  focus, scroll-lock and backdrop behavior as the rest of the application.
+
+Boundary and implementation:
+
+- Rebuilt the command surface around Signal's native `ui-dialog` and
+  `ui-command-dialog` primitives with the same `data-modal-panel`,
+  `data-modal-header`, `data-modal-body` and footer composition used by the
+  shared dialogs.
+- Added a small Livewire dialog bridge in the core layout. It upgrades the
+  server-rendered open state to `showModal()`, routes Escape and backdrop
+  dismissal back through the Livewire close action, and preserves the existing
+  modal scroll lock without moving command authorization or queue behavior into
+  JavaScript.
+- Added the form-aware Signal layout rules needed to keep the command history
+  body scrollable while the action footer remains visible on small screens.
+
+Preserved contracts and safety:
+
+- Command authorization, validation, queue dispatch, cancellation, reruns,
+  polling, retained output and download links are unchanged.
+- Existing Livewire state remains authoritative; the browser enhancement does
+  not invent command state or bypass server-side authorization.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 57 tests passed, 2,768 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-CrbxrYle.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `129a7f7` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `129a7f7`; assets, config, route and Blade caches were rebuilt and both
+  services are active. `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit remaining bespoke visual primitives and raw utility clusters
+against the Signal source, prioritizing shared cards, form controls and
+responsive navigation where visual drift affects many pages.
+
 ## Slice 97 — Signal utility normalization and native dialog visibility — 2026-09-22
 
 Responsibility problem:
