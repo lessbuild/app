@@ -3168,3 +3168,56 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 44 — configuration authoring and review surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'2b79d1e'.
+
+Responsibility problem addressed:
+
+- Configuration-as-code had a full-page authoring/review/receipt workflow and
+  a reusable application modal, but both presentation boundaries still used
+  compatibility palette classes for review cards, recorded/observed state,
+  binding catalogs and YAML/JSON editors. The visual split made the highest
+  consequence workflow harder to scan on small screens.
+
+Signal implementation:
+
+- Migrated configuration authoring, review changes, receipts, environment
+  overview/comparison, provider observation, guides and binding catalogs to
+  semantic Signal surfaces and text roles.
+- Converted full-page and modal YAML/JSON editors to `ui-input` and their
+  labels to `ui-label`; converted modal navigation/actions to `ui-link` while
+  retaining the existing dialog triggers and contextual URLs.
+- Kept the full-page and modal views aligned without introducing a new
+  configuration-specific styling abstraction.
+
+Preserved contracts:
+
+- YAML/JSON field names, old-input protection, validation keys, review and
+  receipt routes, modal query parameters, action methods, status copy,
+  secret masking, immutable review identity, apply/cancel/retry behavior and
+  no-op/removal safeguards are unchanged.
+- Environment overview remains recorded local state; provider observation
+  remains an explicit read; no new remote reconciliation or side effect was
+  introduced.
+- No controller, request, policy, action, persistence, transaction, queue or
+  authorization behavior was modified.
+
+Evidence:
+
+- Complete application-configuration and configuration operation family —
+  195 tests passed, 1,876 assertions.
+- Fixture-backed configuration authoring/review/receipt responsive coverage —
+  2 tests passed for light/dark at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '2b79d1e' is on 'origin/main'.
+
+Next task: deploy the configuration-surface modernization to the isolated
+canonical Deployer runtime, then inspect the next product surface for a
+separate cohesive Signal modernization boundary.
