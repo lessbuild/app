@@ -1,5 +1,75 @@
 # Signal theme integration progress
 
+## Slice 114 — Signal deployment timeline primitive — 2026-09-22
+
+Responsibility problem:
+
+- The shared deployment/provisioning timeline component still assembled its
+  own list indentation, circular marker and eyebrow status label instead of
+  using Signal's timeline and status primitives.
+- That left repository, website and build timeline surfaces with a second
+  component vocabulary despite already sharing one application component.
+
+Boundary and implementation:
+
+- Migrated the shared `x-deployment-timeline` component to Signal's exact
+  `ui-timeline` and `ui-timeline-item` structure.
+- Replaced the bespoke marker/eyebrow rendering with the shared `x-ui.badge`
+  status contract while preserving completed, active, failed, canceled and
+  pending status tones.
+- Kept timeline entries, ordering, descriptions, timestamps, polling and
+  workflow-specific data sources unchanged.
+
+SOLID and Laravel benefit:
+
+- The shared Blade component remains the single presentation responsibility
+  for deployment milestones; each consuming page inherits the same Signal
+  structure automatically.
+- Existing services and Livewire components continue to own timeline data and
+  authorization, while the view only maps stable statuses to UI tones.
+
+Preserved contracts and safety:
+
+- Deployment and provisioning milestone text, status values, timestamps,
+  cancellation/failure notices and Livewire polling behavior are unchanged.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `php vendor/bin/phpunit tests/Feature/LocalUiAssetTest.php --testdox` — 65
+  tests passed, 2,880 assertions.
+- Deployment/provisioning suites (`DeploymentTimelineTest`,
+  `RepositoryDeploymentTest`, `DeploymentLogTest`,
+  `WebsiteProvisioningLogTest`, `WebsiteProvisioningRetryTest`) — 31 tests
+  passed, 264 assertions.
+- `npm run build` — passed; generated bundle is
+  `assets/app-CbO4z2yl.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Authenticated 390px live browser smoke against
+  `https://deployer.buildpusher.com` rendered the timeline on repository
+  `/repositories/13`, website `/websites/5` and build `/builds/44`; all had no
+  horizontal overflow and no page errors.
+- Implementation commit `148a378` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `148a378`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}` and `build/assets/app-CbO4z2yl.css` returns HTTP 200.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue only where a concrete page-level divergence from Signal's
+source remains; keep the verified navbar, sidebar, modal and shared timeline
+primitives unchanged.
+
 ## Slice 113 — Signal inventory avatars and checkboxes — 2026-09-22
 
 Responsibility problem:
