@@ -2134,6 +2134,37 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to '6042065'. The runtime asset bundle was rebuilt, application, configuration,
+route and view caches were rebuilt, and buildpusher-dev-main.service plus its
+queue worker were restarted. The canonical development host is
+https://deployer.buildpusher.com; the legacy buildpusher.com host is not the
+verification target for this application.
+
+Served-runtime evidence:
+
+- /docs — HTTP 200 with title Product guide · Deployer; the response includes
+  Signal eyebrows and muted cards.
+- /api-docs — HTTP 200 with title Control plane API · Deployer; the response
+  includes theme-aware library-code blocks and interactive Signal cards.
+- /build/manifest.json — HTTP 200 with the current asset manifest, including
+  assets/app-Dn2nMkFU.css and assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+
+The two remaining text-secondary matches in each raw public response are
+shared core-layout asynchronous loading fallback strings, not classes from the
+documentation views. They remain a separate global cleanup candidate. The
+runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Slice 45 — public documentation surfaces — 2026-09-22
 
 Status: implemented and verified locally; code committed and pushed as
