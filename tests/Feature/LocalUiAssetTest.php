@@ -581,6 +581,19 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-build-comparison-field', $comparison);
     }
 
+    public function test_shared_pagination_uses_signal_controls(): void
+    {
+        $pagination = File::get(resource_path('views/vendor/pagination/simple-tailwind.blade.php'));
+
+        $this->assertStringContainsString('ui-btn ui-btn-secondary ui-btn-sm', $pagination);
+        $this->assertStringContainsString('aria-disabled="true"', $pagination);
+        $this->assertStringNotContainsString('text-secondary', $pagination);
+        $this->assertStringNotContainsString('bg-primary', $pagination);
+        $this->assertStringNotContainsString('border-primary', $pagination);
+        $this->assertStringNotContainsString('focus:ring-3', $pagination);
+        $this->assertStringNotContainsString('ring-gray-300', $pagination);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([
