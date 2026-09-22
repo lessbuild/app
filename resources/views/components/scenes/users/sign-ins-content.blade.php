@@ -6,11 +6,11 @@
     $exportUrl = route('account.sign-ins.export', array_filter($filters, fn ($value) => $value !== null));
 @endphp
 
-<section class="ui-card p-4 sm:p-5" aria-labelledby="{{ $filterIdPrefix }}sign-in-filters-heading">
+<section id="{{ $filterIdPrefix }}sign-in-filters" class="ui-panel scroll-mt-24 p-4 sm:p-5" aria-labelledby="{{ $filterIdPrefix }}sign-in-filters-heading">
     <div class="mb-4">
-        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Security history') }}</p>
-        <h2 id="{{ $filterIdPrefix }}sign-in-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter sign-ins') }}</h2>
-        <p class="mt-1 text-sm text-secondary">{{ __('Narrow successful sign-ins by method and date.') }}</p>
+        <p class="ui-eyebrow text-[0.65rem]">{{ __('Security history') }}</p>
+        <h2 id="{{ $filterIdPrefix }}sign-in-filters-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Filter sign-ins') }}</h2>
+        <p class="mt-1 text-sm text-muted">{{ __('Narrow successful sign-ins by method and date.') }}</p>
     </div>
     <form
         method="GET"
@@ -22,8 +22,8 @@
     >
         <div class="grid gap-4 sm:grid-cols-3">
             <div>
-                <label for="{{ $filterIdPrefix }}method" class="block text-xs font-semibold uppercase text-secondary">{{ __('Method') }}</label>
-                <select id="{{ $filterIdPrefix }}method" name="method" class="input secondary mt-1 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}method" class="ui-label">{{ __('Method') }}</label>
+                <select id="{{ $filterIdPrefix }}method" name="method" class="ui-input">
                     <option value="">{{ __('All methods') }}</option>
                     @foreach ($methods as $value => $label)
                         <option value="{{ $value }}" @selected($filters['method'] === $value)>{{ $label }}</option>
@@ -31,12 +31,12 @@
                 </select>
             </div>
             <div>
-                <label for="{{ $filterIdPrefix }}date-from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Signed in from') }}</label>
-                <input id="{{ $filterIdPrefix }}date-from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}date-from" class="ui-label">{{ __('Signed in from') }}</label>
+                <input id="{{ $filterIdPrefix }}date-from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
             </div>
             <div>
-                <label for="{{ $filterIdPrefix }}date-to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Signed in through') }}</label>
-                <input id="{{ $filterIdPrefix }}date-to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}date-to" class="ui-label">{{ __('Signed in through') }}</label>
+                <input id="{{ $filterIdPrefix }}date-to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
@@ -59,15 +59,15 @@
 </section>
 
 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-secondary">
+    <p class="text-sm text-muted">
         {{ trans_choice(':count matching sign-in|:count matching sign-ins', $signIns->total(), ['count' => $signIns->total()]) }}
     </p>
-    <p class="text-xs text-secondary">{{ __('Only successful sign-ins are recorded. Raw browser user agents are never displayed or exported.') }}</p>
+    <p class="text-xs text-muted">{{ __('Only successful sign-ins are recorded. Raw browser user agents are never displayed or exported.') }}</p>
 </div>
 
 <x-ui.insights
     id="{{ $filterIdPrefix }}sign-in-insights"
-    class="mt-4"
+    class="mt-4 scroll-mt-24"
     :summary="trans_choice(':count matching sign-in|:count matching sign-ins', $metrics['total'], ['count' => $metrics['total']])"
 >
     <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -79,33 +79,34 @@
     </dl>
 </x-ui.insights>
 
+<div id="{{ $filterIdPrefix }}sign-in-history" class="mt-4 scroll-mt-24">
 @if ($signIns->isEmpty())
-    <x-ui.empty-state class="mt-4" :title="array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.')" />
+    <x-ui.empty-state :title="array_filter($filters, fn ($value) => $value !== null) ? __('No sign-ins match these filters.') : __('No sign-in history yet.')" />
 @else
-    <div data-sign-in-cards class="ui-card mt-4 divide-y divide-primary">
+    <div data-sign-in-cards class="ui-panel divide-y divide-line">
         @foreach ($signIns as $signIn)
             <article data-sign-in-card class="p-4 sm:p-5">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <h2 class="font-semibold text-primary">{{ $signIn['device'] }}</h2>
-                        <p class="mt-1 text-sm text-secondary">{{ $signIn['method'] }}</p>
+                        <h2 class="font-semibold text-ink">{{ $signIn['device'] }}</h2>
+                        <p class="mt-1 text-sm text-muted">{{ $signIn['method'] }}</p>
                     </div>
-                    <time class="text-right text-sm text-secondary" datetime="{{ $signIn['signed_in_at']->toIso8601String() }}" title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}">
+                    <time class="text-right text-sm text-muted" datetime="{{ $signIn['signed_in_at']->toIso8601String() }}" title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}">
                         {{ $signIn['signed_in_at']->diffForHumans() }}
                     </time>
                 </div>
                 <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                     <div>
-                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Method') }}</dt>
-                        <dd class="mt-1 text-primary">{{ $signIn['method'] }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('Method') }}</dt>
+                        <dd class="mt-1 text-ink">{{ $signIn['method'] }}</dd>
                     </div>
                     <div>
-                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('IP address') }}</dt>
-                        <dd class="mt-1 break-all font-mono text-xs text-primary">{{ $signIn['ip_address'] }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('IP address') }}</dt>
+                        <dd class="mt-1 break-all font-mono text-xs text-ink">{{ $signIn['ip_address'] }}</dd>
                     </div>
                     <div class="sm:col-span-2">
-                        <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Signed in') }}</dt>
-                        <dd class="mt-1 text-primary">{{ $signIn['signed_in_at']->toDayDateTimeString() }}</dd>
+                        <dt class="ui-eyebrow text-[0.65rem]">{{ __('Signed in') }}</dt>
+                        <dd class="mt-1 text-ink">{{ $signIn['signed_in_at']->toDayDateTimeString() }}</dd>
                     </div>
                 </dl>
             </article>
@@ -113,3 +114,4 @@
     </div>
     <div class="py-4">{{ $signIns->links() }}</div>
 @endif
+</div>

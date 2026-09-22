@@ -34,6 +34,9 @@ class SignInHistoryInsightsTest extends TestCase
             ->assertSee('Known IP addresses')
             ->assertSee('Latest matching sign-in')
             ->assertSee('Recognized GitHub, GitLab, or Bitbucket events.')
+            ->assertSee('Sign-in history sections')
+            ->assertSee('sign-in-filters', false)
+            ->assertSee('sign-in-history', false)
             ->assertDontSee('raw-agent-secret');
     }
 

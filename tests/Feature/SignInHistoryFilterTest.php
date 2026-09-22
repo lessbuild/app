@@ -59,6 +59,7 @@ class SignInHistoryFilterTest extends TestCase
             ->assertSee('method=password', false)
             ->assertSee('date_from=2026-09-02', false)
             ->assertSee('date_to=2026-09-04', false)
+            ->assertSee('sign-in-history', false)
             ->assertSee('data-sign-in-cards', false)
             ->assertSee('data-sign-in-card', false)
             ->assertDontSee('<table', false);

@@ -682,6 +682,12 @@ test('account sign-in history opens as a contextual read-only dialog', async ({ 
 
     await page.goto('http://buildpusher.test/account?dialog=account-sign-in-history-dialog', { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Sign-in history', exact: true })).toBeVisible();
+
+    await page.goto('http://buildpusher.test/account/sign-ins', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('navigation', { name: 'Sign-in history sections', exact: true })).toBeVisible();
+    await expect(page.locator('#sign-in-insights')).toBeVisible();
+    await expect(page.locator('#sign-in-filters')).toBeVisible();
+    await expect(page.locator('#sign-in-history')).toBeVisible();
 });
 
 test('account profile opens as a page-local editor dialog', async ({ page }) => {
