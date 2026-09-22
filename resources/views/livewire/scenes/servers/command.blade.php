@@ -62,7 +62,7 @@
                                                 <p class="mt-2 text-xs text-muted">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
                                             @endif
                                             @if ($execution->output !== null)
-                                                <pre class="ui-console-output mt-3 max-h-56 whitespace-pre-wrap rounded-lg bg-emphasis p-3">{{ $execution->output }}</pre>
+                                                <pre class="ui-console ui-console-output mt-3 max-h-56 whitespace-pre-wrap p-3">{{ $execution->output }}</pre>
                                             @elseif (in_array($execution->status, \App\Models\ServerCommandExecution::ACTIVE_STATUSES, true))
                                                 <p class="mt-2 text-xs text-muted">{{ __('Waiting for command output…') }}</p>
                                             @endif

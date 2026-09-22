@@ -683,6 +683,22 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('bg-primary/', $server);
     }
 
+    public function test_retained_output_surfaces_use_signal_console_tokens(): void
+    {
+        foreach ([
+            resource_path('views/scenes/websites/show.blade.php'),
+            resource_path('views/livewire/build-deployment-status.blade.php'),
+            resource_path('views/components/scenes/servers/command-output-content.blade.php'),
+            resource_path('views/livewire/scenes/servers/command.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('bg-slate-950', $source, $viewPath);
+            $this->assertStringNotContainsString('text-slate-100', $source, $viewPath);
+            $this->assertStringContainsString('ui-console', $source, $viewPath);
+        }
+    }
+
     public function test_authenticated_layout_has_live_accessible_shell_navigation(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);

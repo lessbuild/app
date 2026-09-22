@@ -15,5 +15,5 @@
         <code class="mt-2 block break-all font-mono text-xs text-ink">{{ $execution->command }}</code>
     </div>
 
-    <pre class="max-h-[min(60vh,32rem)] overflow-auto whitespace-pre-wrap break-words rounded-xl border border-line bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100" tabindex="0">{{ $execution->output }}</pre>
+    <pre class="ui-console ui-console-output max-h-[min(60vh,32rem)] whitespace-pre-wrap break-words p-4 font-mono text-xs leading-6" tabindex="0">{{ $execution->output }}</pre>
 </div>

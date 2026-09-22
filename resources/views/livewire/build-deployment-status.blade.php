@@ -561,7 +561,7 @@
             </div>
 
             @if ($deploymentLog)
-                <pre class="max-h-[36rem] overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $deploymentLog->log }}</pre>
+                <pre class="ui-console ui-console-output max-h-[36rem] whitespace-pre-wrap break-words p-5 font-mono text-xs leading-5">{{ $deploymentLog->log }}</pre>
             @elseif ($shouldPoll)
                 <div class="ui-card p-6 text-center">
                     <p class="font-medium text-ink">{{ __('Waiting for deployment output…') }}</p>

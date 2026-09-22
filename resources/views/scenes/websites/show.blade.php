@@ -377,7 +377,7 @@
                 @if($snapshot?->error)
                     <x-ui.alert tone="danger" class="mb-3 border-l-4">{{ $snapshot->error }}</x-ui.alert>
                 @endif
-                <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
+                <pre data-log-output class="ui-console ui-console-output max-h-[32rem] whitespace-pre-wrap break-words p-5 font-mono text-xs leading-5">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
             </div>
         @endforeach
         @if ($canUpdateWebsite)
