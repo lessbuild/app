@@ -17,6 +17,7 @@
         $serverCreateContentUrl = route('dialogs.create', ['resource' => 'server', 'return_to' => $providerPageUrl]);
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
         $serverCreateOpen = request()->query('dialog') === 'create-server';
+        $connectionHealth = $provider->connectionHealth();
     @endphp
 
     <!--
@@ -86,57 +87,102 @@
 
     @if (session('provider_connection'))
         @php($connection = session('provider_connection'))
-        <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="my-4">
+        <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6">
             {{ $connection['message'] }}
         </x-ui.alert>
     @endif
 
-    <x-ui.card class="my-4 p-4">
-        <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-        <span class="font-medium text-primary">{{ __('Confirmed connection status:') }}</span>
-        @if ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_HEALTHY)
-            <x-ui.badge tone="success">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-        @elseif ($provider->connectionHealth() === \App\Models\Provider::CONNECTION_FAILED)
-            <x-ui.badge tone="danger">{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-        @else
-            <x-ui.badge>{{ str($provider->connectionHealth())->title() }}</x-ui.badge>
-        @endif
-        @if ($provider->connection_checked_at)
-            <span class="text-secondary">{{ $provider->connection_checked_at->diffForHumans() }}</span>
-        @else
-            <span class="text-secondary">{{ __('Run a connection check to verify this credential.') }}</span>
-        @endif
-        <span class="text-secondary" aria-hidden="true">&middot;</span>
-        <span class="font-medium {{ $provider->connection_monitoring_enabled ? 'text-green-600' : 'text-amber-700' }}">
-            {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
-        </span>
-        <span class="text-secondary">
-            ({{ trans_choice('every :count hour|every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }})
-        </span>
-        <span class="text-secondary" aria-hidden="true">&middot;</span>
-        <span class="text-primary">{{ __('Failure confirmation') }}</span>
-        <span class="text-secondary">
-            {{ trans_choice('after :count consecutive failure|after :count consecutive failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
-        </span>
-        @if ($provider->connection_failure_count > 0)
-            <span class="text-secondary">
-                ({{ trans_choice(':count failure recorded|:count failures recorded', $provider->connection_failure_count, ['count' => $provider->connection_failure_count]) }})
-            </span>
-        @endif
+    <section class="ui-panel mt-6 p-5 sm:p-6" aria-labelledby="provider-connection-overview-heading">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="ui-eyebrow">{{ __('Credential health') }}</p>
+                <h2 id="provider-connection-overview-heading" class="mt-2 text-xl font-extrabold tracking-tight text-ink">
+                    {{ __('Connection overview') }}
+                </h2>
+                <p class="mt-1 text-sm text-muted">
+                    {{ __('A quiet summary of the latest credential check and its monitoring policy.') }}
+                </p>
+            </div>
+            @if ($connectionHealth === \App\Models\Provider::CONNECTION_HEALTHY)
+                <x-ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-ui.badge>
+            @elseif ($connectionHealth === \App\Models\Provider::CONNECTION_FAILED)
+                <x-ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-ui.badge>
+            @else
+                <x-ui.badge>{{ str($connectionHealth)->title() }}</x-ui.badge>
+            @endif
         </div>
-    </x-ui.card>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div @class([
+                'ui-card border-l-4 p-4',
+                'border-success' => $connectionHealth === \App\Models\Provider::CONNECTION_HEALTHY,
+                'border-danger' => $connectionHealth === \App\Models\Provider::CONNECTION_FAILED,
+                'border-line' => ! in_array($connectionHealth, [
+                    \App\Models\Provider::CONNECTION_HEALTHY,
+                    \App\Models\Provider::CONNECTION_FAILED,
+                ], true),
+            ])>
+                <p class="ui-eyebrow text-[0.65rem]">{{ __('Confirmed connection status:') }}</p>
+                <p class="mt-2 font-bold text-ink">{{ str($connectionHealth)->title() }}</p>
+                @if ($provider->connection_checked_at)
+                    <p class="mt-1 text-xs text-muted">{{ $provider->connection_checked_at->diffForHumans() }}</p>
+                @else
+                    <p class="mt-1 text-xs text-muted">{{ __('Run a connection check to verify this credential.') }}</p>
+                @endif
+            </div>
+            <div class="ui-card p-4">
+                <p class="ui-eyebrow text-[0.65rem]">{{ __('Monitoring') }}</p>
+                <p class="mt-2 font-bold {{ $provider->connection_monitoring_enabled ? 'text-success' : 'text-warning' }}">
+                    {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
+                </p>
+                <p class="mt-1 text-xs text-muted">
+                    {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
+                </p>
+            </div>
+            <div class="ui-card p-4">
+                <p class="ui-eyebrow text-[0.65rem]">{{ __('Failure confirmation') }}</p>
+                <p class="mt-2 font-bold text-ink">
+                    {{ trans_choice('after :count consecutive failure|after :count consecutive failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
+                </p>
+                @if ($provider->connection_failure_count > 0)
+                    <p class="mt-1 text-xs text-muted">
+                        {{ trans_choice(':count failure recorded|:count failures recorded', $provider->connection_failure_count, ['count' => $provider->connection_failure_count]) }}
+                    </p>
+                @endif
+            </div>
+            <div class="ui-card p-4">
+                <p class="ui-eyebrow text-[0.65rem]">{{ __('Credential safety') }}</p>
+                <p class="mt-2 font-bold text-ink">{{ __('Encrypted at rest') }}</p>
+                <p class="mt-1 text-xs text-muted">{{ __('Secrets are excluded from retained check evidence.') }}</p>
+            </div>
+        </div>
+    </section>
 
     @if ($errors->has('provider'))
-        <x-ui.alert tone="danger" class="my-4">
+        <x-ui.alert tone="danger" class="ui-panel my-4">
             {{ $errors->first('provider') }}
         </x-ui.alert>
     @endif
 
-    <section class="mt-8" aria-labelledby="connection-history-heading">
+    <x-ui.insights
+        id="provider-overview-insights"
+        class="mt-6"
+        :summary="__('Credential and attached-resource coverage')"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-ui.stat :label="__('Provider type')" :value="str($provider->provider)->replace('_', ' ')->title()" :description="__('The external service backing this connection.')" />
+            <x-ui.stat :label="__('Attached repositories')" :value="$repositories->total()" :description="__('Source-control resources using this provider.')" />
+            <x-ui.stat :label="__('Attached servers')" :value="$servers->total()" :description="__('Infrastructure resources using this provider.')" />
+            <x-ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Recent credential observations kept for this provider.')" />
+        </dl>
+    </x-ui.insights>
+
+    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="connection-history-heading">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <h2 id="connection-history-heading" class="text-2xl font-bold text-primary">{{ __('Recent connection checks') }}</h2>
-                <p class="mt-1 text-sm text-secondary">
+                <p class="ui-eyebrow">{{ __('Connection timeline') }}</p>
+                <h2 id="connection-history-heading" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Recent connection checks') }}</h2>
+                <p class="mt-1 text-sm text-muted">
                     {{ __('Accepted manual and automatic results are retained for the latest 100 checks. This page shows the newest 20 without credentials or response bodies.') }}
                 </p>
             </div>
@@ -168,7 +214,7 @@
                 <x-ui.stat :label="__('Current failure streak')" :value="$connectionMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']])" />
             </dl>
         </x-ui.insights>
-        <p class="mt-3 text-xs text-secondary">
+        <p class="mt-3 text-xs text-muted">
             {{ __('These figures summarize retained observations and are not an SLA or a guarantee that the credential is currently valid.') }}
         </p>
 
@@ -176,13 +222,15 @@
             <x-ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
         @else
             <details id="provider-connection-history" class="group ui-card mt-4 overflow-hidden" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                     <span>{{ __('Latest check results') }}</span>
-                    <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                    <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
                 </summary>
-                <div class="divide-y divide-primary border-t border-primary">
+                <div class="ui-timeline space-y-3 border-t border-line p-4 sm:p-5">
                     @foreach ($connectionChecks as $check)
-                        @include('scenes.providers._connection-check-card', ['check' => $check])
+                        <div class="ui-timeline-item ui-card">
+                            @include('scenes.providers._connection-check-card', ['check' => $check])
+                        </div>
                     @endforeach
                 </div>
             </details>
@@ -194,12 +242,21 @@
      ! List attached servers or repos for this token
      ! ------------------------------------------------------------
      !-->
-    <div class="mt-8 grid gap-6 lg:grid-cols-2">
+    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="provider-resources-heading">
+        <div class="flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <p class="ui-eyebrow">{{ __('Workspace resources') }}</p>
+                <h2 id="provider-resources-heading" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Attached resources') }}</h2>
+                <p class="mt-1 text-sm text-muted">{{ __('Resources using this provider appear here with direct paths to their operational pages.') }}</p>
+            </div>
+        </div>
+
+        <div class="mt-5 grid gap-5 lg:grid-cols-2">
 
         @if($provider->isSourceControl())
-            <x-ui.card class="p-5">
+            <div class="ui-card p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-3">
-                    <h3 class="text-lg font-bold text-primary">{{ __('Repositories') }}</h3>
+                    <h3 class="font-extrabold text-ink">{{ __('Repositories') }}</h3>
                 <x-ui.button
                     :href="$repositoryCreateUrl"
                     data-modal-trigger="repository-create-dialog"
@@ -209,16 +266,16 @@
                     variant="ghost"
                 >{{ __('Add Repository') }}</x-ui.button>
                 </div>
-                <ul role="list" class="mt-4 divide-y divide-primary">
+                <ul role="list" class="mt-4 grid gap-3">
                     @forelse($repositories as $repository)
                         <li>
-                            <a href="{{ route('repositories.show', $repository) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
-                                <x-avatar :name="$repository->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
+                            <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex items-center gap-3 p-3">
+                                <x-avatar :name="$repository->name" class="ui-avatar ui-avatar-md rounded-md text-xs" />
                                 <span class="min-w-0 flex-1">
-                                    <span class="block truncate text-sm font-medium text-primary">{{ $repository->name }}</span>
-                                    <span class="block truncate text-sm text-secondary">{{ $repository->url }}</span>
+                                    <span class="ui-link block truncate text-sm">{{ $repository->name }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-muted">{{ $repository->url }}</span>
                                 </span>
-                                <span class="shrink-0 text-xs font-semibold text-secondary">{{ $repository->created_at->diffForHumans() }}</span>
+                                <span class="shrink-0 text-xs font-semibold text-muted">{{ $repository->created_at->diffForHumans() }}</span>
                             </a>
                         </li>
                     @empty
@@ -228,15 +285,15 @@
                     @endforelse
                 </ul>
                 @if ($repositories->hasPages())
-                    <div class="mt-4 border-t border-primary pt-4">{{ $repositories->links() }}</div>
+                    <div class="mt-4 border-t border-line pt-4">{{ $repositories->links() }}</div>
                 @endif
-            </x-ui.card>
+            </div>
         @endif
 
         @if(str($provider->provider)->contains(['digitalocean']))
-            <x-ui.card class="p-5">
+            <div class="ui-card p-4 sm:p-5">
                 <div class="flex items-center justify-between gap-3">
-                    <h3 class="text-lg font-bold text-primary">{{ __('Servers') }}</h3>
+                    <h3 class="font-extrabold text-ink">{{ __('Servers') }}</h3>
                     <x-ui.button
                         :href="$serverCreateUrl"
                         data-modal-trigger="server-create-dialog"
@@ -246,16 +303,16 @@
                         variant="ghost"
                     >{{ __('Add Server') }}</x-ui.button>
                 </div>
-                <ul role="list" class="mt-4 divide-y divide-primary">
+                <ul role="list" class="mt-4 grid gap-3">
                     @forelse($servers as $server)
                         <li>
-                            <a href="{{ route('servers.show', $server) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
-                                <x-avatar :name="$server->label" class="h-8 w-8 shrink-0 rounded-full text-xs" />
+                            <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex items-center gap-3 p-3">
+                                <x-avatar :name="$server->label" class="ui-avatar ui-avatar-md rounded-md text-xs" />
                                 <span class="min-w-0 flex-1">
-                                    <span class="block truncate text-sm font-medium text-primary">{{ $server->label }}</span>
-                                    <span class="block truncate text-sm text-secondary">#{{ $server->identifier }}</span>
+                                    <span class="ui-link block truncate text-sm">{{ $server->label }}</span>
+                                    <span class="mt-0.5 block truncate text-xs text-muted">#{{ $server->identifier }}</span>
                                 </span>
-                                <span class="shrink-0 text-xs font-semibold text-secondary">{{ $server->created_at->diffForHumans() }}</span>
+                                <span class="shrink-0 text-xs font-semibold text-muted">{{ $server->created_at->diffForHumans() }}</span>
                             </a>
                         </li>
                     @empty
@@ -265,12 +322,13 @@
                     @endforelse
                 </ul>
                 @if ($servers->hasPages())
-                    <div class="mt-4 border-t border-primary pt-4">{{ $servers->links() }}</div>
+                    <div class="mt-4 border-t border-line pt-4">{{ $servers->links() }}</div>
                 @endif
-            </x-ui.card>
+            </div>
         @endif
 
-    </div>
+        </div>
+    </section>
 
     <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
 
@@ -282,7 +340,7 @@
         body-class="p-0"
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading connection check history…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading connection check history…') }}</p>
         </div>
     </x-dialogs.modal>
 </x-layouts.app>
