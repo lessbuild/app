@@ -804,3 +804,82 @@ development evidence, not production or external-provider acceptance.
 Next task: inventory the build detail and deployment-history surfaces, then
 modernize their timeline, evidence, notes and recovery controls as the next
 cohesive repository/deployment slice.
+
+## Slice 14 — build deployment evidence and timeline
+
+Status: implemented, verified locally, committed and pushed as `dcd779b`.
+
+Responsibility problem addressed:
+
+- The build detail Livewire surface still mixed legacy cards, borders, text
+  roles, fields and alerts across deployment evidence, recovery guidance,
+  approval, promotion, observation, health and log sections.
+- The deployment timeline was visually subordinate to older execution-oriented
+  presentation even though it is the authoritative milestone view.
+- Operator notes and milestone entries did not use the shared Signal form and
+  evidence treatment.
+
+Signal implementation:
+
+- Standardized build summary metadata, immutable revision links and identity/
+  approval context on Signal ink/muted/eyebrow roles.
+- Made deployment timeline, recovery guidance, release/commit context,
+  promotion history, observation and application-health surfaces use panels,
+  line borders and compact actions.
+- Kept the deployment log as the bounded dark console, but modernized its
+  disclosure, download action, waiting state and surrounding controls.
+- Updated timeline milestones and the operator-note modal with shared Signal
+  card, label, input and help primitives.
+- Preserved the existing single timeline workflow; no execution-checkpoint
+  section was reintroduced.
+- Hardened build modal browser coverage to resolve the fixture’s canonical
+  build-history URL and added Signal panel assertions to the 390px audit.
+
+Preserved contracts:
+
+- Livewire polling, status transitions, bounded/escaped deployment output,
+  signed log callbacks, download headers, cancellation, retry/redeploy,
+  approval/rejection, rollback, promotion lineage and stale-state behavior.
+- Exact modal URLs, comparison and health-history fragments, operator-note
+  error bag, named routes, no-JavaScript fallbacks and authorization.
+- Existing open-state rules: active/failed work receives attention while
+  completed deployments remain concise.
+
+Evidence:
+
+- `DeploymentLogTest`, `DeploymentComparisonTest`, `DeploymentApprovalTest`,
+  `DeploymentCancellationTest`, `DeploymentHistoryNavigationTest`,
+  `BuildRedeploymentTest`, `BuildPromotionTest` and `CreationDialogTest` —
+  63 tests passed, 518 assertions.
+- Build comparison and health-history modal journeys plus the light 390px
+  layout audit — 3 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+The browser fixture’s historical `/builds/2` alias was retained for coverage,
+while assertions now follow the rendered build’s canonical modal-history URL;
+this avoids treating fixture ID drift as an application navigation failure.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `dcd779b` and its configuration, route and view caches were rebuilt before
+restarting `buildpusher-dev-main.service` and its queue worker. The canonical
+development host is https://deployer.buildpusher.com; the legacy buildpusher.com
+host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: modernize the deployment-history inventory at `/builds`, preserving
+its filters, metrics, CSV export, pagination, status semantics and query bounds.
