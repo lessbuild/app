@@ -9,16 +9,22 @@
     @apply py-2.5;
 
     &.primary {
-        @apply bg-primary;
-        @apply text-primary;
-        @apply placeholder-primary;
-        @apply border-primary;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        border-color: var(--border-primary);
+
+        &::placeholder {
+            color: var(--placeholder-primary);
+        }
     }
 
     &.secondary {
-        @apply bg-secondary;
-        @apply text-secondary;
-        @apply placeholder-secondary;
-        @apply border-secondary;
+        background-color: var(--bg-secondary);
+        color: var(--text-secondary);
+        border-color: var(--border-secondary);
+
+        &::placeholder {
+            color: var(--placeholder-secondary);
+        }
     }
 }

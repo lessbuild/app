@@ -603,6 +603,26 @@ class LocalUiAssetTest extends TestCase
         );
     }
 
+    public function test_signal_is_the_canonical_theme_entrypoint(): void
+    {
+        $stylesheet = File::get(resource_path('css/app.css'));
+        $buttonStyles = File::get(resource_path('css/components/button.css'));
+        $inputStyles = File::get(resource_path('css/components/input.css'));
+        $observability = File::get(resource_path('views/observability/index.blade.php'));
+        $server = File::get(resource_path('views/livewire/scenes/servers/show.blade.php'));
+
+        $this->assertStringNotContainsString('@import "./theme.css"', $stylesheet);
+        $this->assertStringNotContainsString('@apply bg-primary', $buttonStyles);
+        $this->assertStringNotContainsString('@apply bg-secondary', $buttonStyles);
+        $this->assertStringNotContainsString('@apply bg-primary', $inputStyles);
+        $this->assertStringNotContainsString('bg-surface-ternary', $observability);
+        $this->assertStringNotContainsString('bg-surface-ternary', $server);
+        $this->assertStringContainsString('@import "./signal/theme.css"', $stylesheet);
+        $this->assertStringContainsString('var(--ui-primary)', $buttonStyles);
+        $this->assertStringContainsString('bg-primary/', $observability);
+        $this->assertStringContainsString('bg-primary/', $server);
+    }
+
     public function test_authenticated_layout_has_live_accessible_shell_navigation(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);

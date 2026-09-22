@@ -22,52 +22,52 @@
     }
 
     &.primary {
-        @apply bg-primary;
-        @apply border-primary;
-        @apply text-primary;
+        background-color: var(--bg-primary);
+        border-color: var(--border-primary);
+        color: var(--text-primary);
     }
 
     &.secondary {
-        @apply bg-secondary;
-        @apply border-secondary;
-        @apply text-secondary;
+        background-color: var(--bg-secondary);
+        border-color: var(--border-secondary);
+        color: var(--text-secondary);
     }
 
     &.tertiary {
-        @apply bg-tertiary;
-        @apply border-tertiary;
-        @apply text-white;
+        background-color: var(--bg-tertiary);
+        border-color: var(--border-tertiary);
+        color: var(--text-tertiary);
     }
 
     &.ternary {
-        @apply bg-ternary;
-        @apply border-ternary;
-        @apply text-white;
+        background-color: var(--bg-ternary);
+        border-color: var(--border-ternary);
+        color: var(--text-ternary);
     }
 
     &.danger {
-        @apply bg-red-500;
-        @apply text-white;
-        @apply border-red-700;
+        background-color: var(--ui-danger);
+        color: var(--ui-on-danger);
+        border-color: var(--ui-danger);
     }
 
     /* Semantic variants for new and migrated views. Keep the historical
        primary/secondary/ternary classes above for incremental compatibility. */
     &.button--primary {
-        background-color: var(--ui-accent);
-        border-color: var(--ui-accent);
-        color: white;
+        background-color: var(--ui-primary);
+        border-color: var(--ui-primary);
+        color: var(--ui-on-primary);
     }
 
     &.button--primary:hover:not(:disabled) {
-        background-color: var(--ui-accent-hover);
-        border-color: var(--ui-accent-hover);
+        background-color: var(--ui-primary-hover);
+        border-color: var(--ui-primary-hover);
     }
 
     &.button--secondary {
         background-color: var(--ui-surface);
-        border-color: var(--ui-border-strong);
-        color: var(--ui-text);
+        border-color: var(--ui-line);
+        color: var(--ui-ink);
     }
 
     &.button--secondary:hover:not(:disabled),
@@ -78,13 +78,13 @@
     &.button--ghost {
         background-color: transparent;
         border-color: transparent;
-        color: var(--ui-text-muted);
+        color: var(--ui-muted);
     }
 
     &.button--danger {
         background-color: var(--ui-danger);
         border-color: var(--ui-danger);
-        color: white;
+        color: var(--ui-on-danger);
     }
 
     &.button--danger:hover:not(:disabled) {
@@ -92,9 +92,9 @@
     }
 
     &.button--inverse {
-        background-color: var(--ui-surface-inverse);
-        border-color: var(--ui-surface-inverse);
-        color: white;
+        background-color: var(--ui-emphasis);
+        border-color: var(--ui-emphasis);
+        color: var(--ui-emphasis-ink);
     }
 
 }

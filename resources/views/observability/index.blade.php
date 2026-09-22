@@ -141,7 +141,7 @@
                     </dl>
                     <div class="mt-3 flex h-10 items-end gap-0.5" aria-label="{{ __('Recent CPU samples') }}">
                         @foreach ($server->metrics->reverse() as $sample)
-                            <span class="min-w-1 flex-1 rounded-t bg-surface-ternary/60" style="height: {{ max(4, $sample->cpu_percent ?? 0) }}%" title="{{ $sample->cpu_percent }}%"></span>
+                            <span class="min-w-1 flex-1 rounded-t bg-primary/60" style="height: {{ max(4, $sample->cpu_percent ?? 0) }}%" title="{{ $sample->cpu_percent }}%"></span>
                         @endforeach
                     </div>
                     <p class="mt-2 text-xs text-muted">{{ __('Load :load · :processes processes · ↓ :rx / ↑ :tx', ['load' => $metric?->load_1m ?? '—', 'processes' => $metric?->process_count ?? '—', 'rx' => $metric ? Number::fileSize($metric->network_rx_bytes ?? 0) : '—', 'tx' => $metric ? Number::fileSize($metric->network_tx_bytes ?? 0) : '—']) }}</p>

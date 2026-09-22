@@ -1,5 +1,4 @@
 @import "tailwindcss" source(none);
-@import "./theme.css";
 @custom-variant dark (&:where(.dark, .dark *));
 @import "./signal/theme.css";
 @import "./signal/presets.css";
