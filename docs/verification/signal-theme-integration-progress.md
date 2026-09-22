@@ -2134,6 +2134,48 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 55 — public status and access-request surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'32895bc'.
+
+Responsibility problem addressed:
+
+- Public service-status, published status-page and access-request screens still
+  used the compatibility background, text, border, input and skip-link palette.
+  This left the public reliability and onboarding boundary visually behind the
+  authenticated Deployer experience.
+
+Signal implementation:
+
+- Migrated public page backgrounds, headings, status dots, service rows,
+  incident history, subscription input, access-request form fields and
+  navigation links to Signal semantic roles.
+- Kept the status pages quiet and scannable while retaining the existing
+  operational badges and the explicit access-request privacy guidance.
+
+Preserved contracts:
+
+- Public URLs, canonical metadata, JSON report links, service/incident data,
+  subscription form fields, validation/error association, old input, flash
+  messages and access-request honeypot behavior are unchanged.
+- No status query, notification, controller, policy, persistence or
+  authorization behavior changed.
+
+Evidence:
+
+- Public status, access-request, observability and local UI coverage — 68 tests
+  passed, 970 assertions.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '32895bc' is on 'origin/main'.
+
+Next task: deploy the public status/access modernization to the isolated
+canonical Deployer runtime, then run the public-page browser audit there.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
