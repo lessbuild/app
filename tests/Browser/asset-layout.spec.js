@@ -1043,6 +1043,10 @@ test('website detail keeps provisioning and health evidence in Signal panels', a
     await expect(page.locator('#website-health')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#website-health-insights')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete Website', exact: true })).toBeVisible();
+
+    const operations = page.locator('#website-operations');
+    await operations.locator('summary').click();
+    await expect(operations.locator('.ui-console')).toBeVisible();
 });
 
 test('website runtime logs and repositories stay scannable on mobile', async ({ page }) => {

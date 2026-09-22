@@ -9,10 +9,10 @@
         <form method="POST" action="{{ route('websites.import.store') }}" class="mt-8">
             @csrf
             <x-ui.card class="overflow-hidden">
-                <div class="space-y-6 bg-primary px-5 py-5 sm:px-8">
+                <div class="space-y-6 bg-surface px-5 py-5 sm:px-8">
                     <div>
-                        <label for="server_id" class="block text-sm font-semibold text-primary">{{ __('Active server') }}</label>
-                        <select id="server_id" name="server_id" required class="input secondary mt-2 w-full rounded-lg">
+                        <label for="server_id" class="ui-label">{{ __('Active server') }}</label>
+                        <select id="server_id" name="server_id" required class="ui-input">
                             <option value="">{{ __('Choose a server') }}</option>
                             @foreach ($servers as $server)
                                 <option value="{{ $server->id }}" @selected(old('server_id') == $server->id)>{{ $server->label }} · {{ $server->public_ip }}</option>
@@ -23,29 +23,29 @@
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label for="name" class="block text-sm font-semibold text-primary">{{ __('Application name') }}</label>
-                            <input id="name" name="name" required maxlength="100" value="{{ old('name') }}" class="input secondary mt-2 w-full rounded-lg">
+                            <label for="name" class="ui-label">{{ __('Application name') }}</label>
+                            <input id="name" name="name" required maxlength="100" value="{{ old('name') }}" class="ui-input">
                             <x-forms.errors name="name" />
                         </div>
                         <div>
-                            <label for="url" class="block text-sm font-semibold text-primary">{{ __('Domain') }}</label>
-                            <input id="url" name="url" required maxlength="255" value="{{ old('url') }}" placeholder="app.example.com" class="input secondary mt-2 w-full rounded-lg">
+                            <label for="url" class="ui-label">{{ __('Domain') }}</label>
+                            <input id="url" name="url" required maxlength="255" value="{{ old('url') }}" placeholder="app.example.com" class="ui-input">
                             <x-forms.errors name="url" />
                         </div>
                     </div>
 
                     <div>
-                        <label for="deployment_slug" class="block text-sm font-semibold text-primary">{{ __('Directory name under /var/www') }}</label>
+                        <label for="deployment_slug" class="ui-label">{{ __('Directory name under /var/www') }}</label>
                         <div class="mt-2 flex">
-                            <span class="inline-flex items-center rounded-l-lg border border-r-0 border-primary bg-secondary px-3 text-sm text-secondary">/var/www/</span>
-                            <input id="deployment_slug" name="deployment_slug" required maxlength="32" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="{{ old('deployment_slug') }}" placeholder="my-app" class="input secondary min-w-0 flex-1 rounded-l-none rounded-r-lg">
+                            <span class="inline-flex items-center rounded-l-lg border border-r-0 border-line bg-surface-muted px-3 text-sm text-muted">/var/www/</span>
+                            <input id="deployment_slug" name="deployment_slug" required maxlength="32" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" value="{{ old('deployment_slug') }}" placeholder="my-app" class="ui-input min-w-0 flex-1 rounded-l-none rounded-r-lg">
                         </div>
                         <x-forms.errors name="deployment_slug" />
                     </div>
 
                     <div>
-                        <label for="description" class="block text-sm font-semibold text-primary">{{ __('Description') }}</label>
-                        <textarea id="description" name="description" required maxlength="1000" rows="4" class="input secondary mt-2 w-full rounded-lg">{{ old('description') }}</textarea>
+                        <label for="description" class="ui-label">{{ __('Description') }}</label>
+                        <textarea id="description" name="description" required maxlength="1000" rows="4" class="ui-input">{{ old('description') }}</textarea>
                         <x-forms.errors name="description" />
                     </div>
 
@@ -54,7 +54,7 @@
                     </x-ui.alert>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-primary bg-secondary px-5 py-4 sm:px-8">
+                <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-8">
                     <x-ui.button :href="route('websites.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
                     <x-ui.button type="submit" variant="primary" :disabled="! $planUsage['allowed'] || $servers->isEmpty()">{{ __('Verify and import') }}</x-ui.button>
                 </div>

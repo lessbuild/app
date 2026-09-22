@@ -489,6 +489,25 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-check', File::get(resource_path('views/scenes/servers/import-review.blade.php')));
     }
 
+    public function test_website_import_and_provisioning_surfaces_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/websites/import.blade.php'),
+            resource_path('views/livewire/website-provisioning-log.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-slate-', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-slate-', $source, $viewPath);
+        }
+
+        $this->assertStringContainsString('ui-input', File::get(resource_path('views/scenes/websites/import.blade.php')));
+        $this->assertStringContainsString('ui-console', File::get(resource_path('views/livewire/website-provisioning-log.blade.php')));
+    }
+
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();
