@@ -204,7 +204,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" x-ref="paletteToggle" class="ui-btn ui-btn-secondary ui-btn-sm hidden sm:inline-flex" aria-controls="command-palette" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" @click="openPalette($event.currentTarget)">
+                    <button type="button" x-ref="paletteToggle" class="ui-btn ui-btn-secondary ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="command-palette" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" @click="openPalette($event.currentTarget)">
                         <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
                         <span class="hidden lg:inline">{{ __('Jump to') }}</span>
                         <kbd class="ui-kbd hidden lg:inline-flex">⌘K</kbd>
