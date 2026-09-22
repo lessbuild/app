@@ -2134,6 +2134,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 66 — shared Signal control layer — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'6859a78'.
+
+Responsibility problem addressed:
+
+- The central button, modal, filter-sheet, delete-confirmation, insights and
+  empty-state components still emitted compatibility classes even after most
+  feature surfaces had moved to Signal primitives.
+- That left every dialog and page-header action dependent on the retired
+  `.button` hook and made the theme migration incomplete at its shared
+  rendering boundary.
+
+Signal implementation:
+
+- `x-ui.button` now emits the Signal `ui-btn` contract directly.
+- Shared modal and filter close controls, delete confirmation, insights and
+  empty states now use Signal text, line, surface and control roles.
+- Updated shared responsive layout selectors to target `ui-btn`, preserving
+  header action sizing, dashboard quick actions and focus behavior.
+- Added source-level guards so shared components cannot silently reintroduce
+  retired button and palette hooks.
+
+Preserved contracts:
+
+- Button variants, links, submit/reset/button types, disabled states, modal
+  close hooks, filter-sheet URL behavior, delete methods, empty-state actions,
+  responsive navigation and focus/scroll locking.
+- No controller, request, policy, action, persistence, queue, authorization
+  or route behavior changed.
+
+Evidence:
+
+- Shared control, creation-dialog, dashboard, application, provider, gallery
+  and local UI coverage — 108 tests passed, 1,626 assertions.
+- Modal, filter-sheet, scroll-lock and responsive creation workflows — 4
+  Playwright tests passed in 3.0 minutes in the isolated fixture runtime.
+- `npm run build` — passed; generated CSS is `assets/app-B_pxF9I0.css`.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `6859a78` is on `origin/main`.
+
+Next task: deploy the shared-control modernization to the isolated canonical
+Deployer runtime, then inspect the next remaining cohesive Signal boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
