@@ -115,6 +115,60 @@ Deployment:
 Next task: audit the observability and operational detail cards for the same
 concrete use of Signal's semantic cards, panels, stats and disclosure shapes.
 
+## Slice 108 — Signal card radius in observability views — 2026-09-22
+
+Responsibility problem:
+
+- Observability's nested metric cards, signal entries, environment evidence,
+  destination/status/incident records and empty states used raw `rounded-lg`
+  or `rounded-xl` utilities, creating a second corner vocabulary inside the
+  operational UI.
+
+Boundary and implementation:
+
+- Reused Signal's `rounded-card` token for those nested operational surfaces
+  in the observability index, environment context and incident fragments.
+- Left interactive disclosure focus treatment and all operational-specific
+  status indicators, data hooks and responsive behavior unchanged.
+- Added a source-level regression check for the audited observability views.
+
+Preserved contracts and safety:
+
+- Metrics, incidents, status pages, alert destinations, environment links,
+  runtime-log links, filters, dialogs and lazy-loaded timelines are unchanged.
+- Authorization, encrypted data, queue behavior, exports and remote calls are
+  unchanged.
+- No controllers, persistence, queues, credentials, dependencies or
+  external infrastructure changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused UI and observability/incident tests — 93 tests passed, 3,135
+  assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px browser check found no horizontal overflow or page errors;
+  the page served the Signal stylesheet and rendered the operational panels.
+  Screenshot: `/tmp/deployer-observability-signal-390.png`.
+- Implementation commit `d47b228` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `d47b228`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The served stylesheet is `build/assets/app-D4LlAziF.css`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue the source-level audit of remaining high-traffic detail
+surfaces, starting with websites, repositories and server operations.
+
 ## Slice 105 — Signal source controls in shared chrome — 2026-09-22
 
 Responsibility problem:
