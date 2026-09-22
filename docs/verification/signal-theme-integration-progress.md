@@ -1576,3 +1576,48 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the remaining operational page families and select the
 next smallest cohesive Signal modernization boundary.
+
+## Slice 24 — product feedback
+
+Status: implemented and verified locally; code committed and pushed as
+'8b461fd'.
+
+Responsibility problem addressed:
+
+- Feedback encryption, workspace visibility, review authorization and
+  deletion already lived behind dedicated application boundaries, but the
+  inbox still used legacy cards, inputs and secondary text roles.
+- Reviewers therefore had to scan a visually noisy list and the compose/review
+  dialogs did not share the current mobile form controls.
+
+Signal implementation:
+
+- Converted feedback submissions to compact Signal panels with ink/muted
+  hierarchy, quiet reproduction/response disclosures and a stable inventory
+  hook.
+- Replaced status/category filters with shared Signal inputs.
+- Updated compose and review dialogs to shared labels, inputs and explicit
+  control IDs without changing their forms.
+- Added a feature-level presentation contract for the populated inventory.
+
+Preserved contracts:
+
+- Encrypted descriptions and reproduction steps, submitter/workspace
+  visibility, admin-only review, denial-before-validation ordering and
+  foreign-workspace protection.
+- Existing categories, severity/status values, validation keys, pagination,
+  modal URLs, review responses, deletion behavior and flash messages.
+
+Evidence:
+
+- 'ProductFeedbackTest' — 7 tests passed, 47 assertions.
+- 'LocalUiAssetTest' — 23 tests passed, 470 assertions.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'npm run build' — passed.
+- 'git diff --check' — passed.
+
+Push status: '8b461fd' is on 'origin/main'.
+
+Next task: deploy the feedback modernization and rebuilt assets to the
+isolated Deployer runtime, then inspect observability and automation surfaces.
