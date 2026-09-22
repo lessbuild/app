@@ -3,11 +3,12 @@
 # Latest isolated dev runtime and Signal shell verification — 2026-09-22
 
 The isolated Deployer dev runtime at
-`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` is on `main` at
-`8d8ab03`, matching `origin/main`. Its deployed application assets were built
-from `c331dfd`; the later `6a92c75` and `8d8ab03` commits only update
-verification records and browser-fixture coverage. The runtime has its own
-`APP_ENV=local`, SQLite database, storage, cache, sessions and application key.
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` is on `main` and
+matches `origin/main`. Its deployed application assets were built from the
+last code-affecting commit, `c331dfd`; commits after that only update
+verification records, browser-fixture coverage and handoff documentation. The
+runtime has its own `APP_ENV=local`, SQLite database, storage, cache, sessions
+and application key.
 Its existing local `deploy/Caddyfile` modification was preserved.
 
 Both `buildpusher-dev-main.service` and
