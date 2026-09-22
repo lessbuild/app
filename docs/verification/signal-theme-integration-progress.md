@@ -1,5 +1,63 @@
 # Signal theme integration progress
 
+## Slice 112 — Shared Signal shell parity verification — 2026-09-22
+
+Responsibility problem:
+
+- The shared navbar, sidebar, command palette, button wrappers and modal
+  wrapper are the highest-leverage places for an old theme to remain visible
+  across every page. They needed verification against the actual Signal source
+  rather than another page-by-page visual approximation.
+
+Boundary and implementation:
+
+- Compared the authenticated/public shell markup and shared overlay hooks with
+  Signal's `site-header`, `app-sidebar`, `global-command` and dialog
+  compositions.
+- Confirmed the application-specific additions are limited to dynamic
+  navigation data, organization/account links, modal content loading and
+  accessibility/focus behavior; their visual primitives remain Signal's
+  `app-sidebar-link`, `ui-btn`, `ui-command-item`, `rounded-card` and
+  `ui-dialog`.
+- Compared the vendored Signal assets with the current local Signal source:
+  `theme.css`, `components.css` and `signal-theme-init.js` are byte-for-byte
+  identical.
+
+Preserved contracts and safety:
+
+- No application behavior changed in this verification slice. Existing
+  navigation destinations, merged desktop/mobile groups, command search,
+  focus restoration, modal loading, route-backed dialogs and no-JavaScript
+  fallbacks remain intact.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `sha256sum` parity with the Signal source:
+  `theme.css` `980e9be5…8713d`, `components.css` `a5ebd67c…6c384`, and
+  `signal-theme-init.js` `7737f5fd…ed22fa1`.
+- `BROWSER_BASE_URL=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/accessibility.spec.js tests/Browser/navigation.spec.js` — 6
+  tests passed across mobile, tablet and desktop in 3.3 minutes.
+- Live runtime smoke also found HTTP 200, no horizontal overflow, 24 Signal
+  command results and no page errors on the mobile workspace palette check.
+- The implementation shell is already present in pushed commit `6f0e453`;
+  this verification record is pushed in `1f367ad`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` is synced to
+  `1f367ad` (code at `6f0e453`), and `https://deployer.buildpusher.com/api/health`
+  returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue only where a concrete page-level divergence from Signal's
+source remains; do not replace the verified shared shell with a second visual
+system.
+
 ## Slice 111 — Signal choice, command and detail primitives — 2026-09-22
 
 Responsibility problem:
