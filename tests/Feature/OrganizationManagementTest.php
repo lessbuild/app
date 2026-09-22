@@ -55,6 +55,9 @@ class OrganizationManagementTest extends TestCase
             $this->assertMatchesRegularExpression('/<details\s+id="'.$id.'"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
         }
 
+        $this->assertStringContainsString('Workspace sections', $content);
+        $this->assertStringContainsString('id="organization-members"', $content);
+
         $this->assertStringContainsString('data-modal-trigger="organization-invite"', $content);
         $this->assertStringNotContainsString('<details id="organization-invite"', $content);
         $this->assertDoesNotMatchRegularExpression(

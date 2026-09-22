@@ -1779,6 +1779,9 @@ for (const colorScheme of ['light', 'dark']) {
                         }
                     }
                     if (screen === 'organization') {
+                        await expect(page.getByRole('navigation', { name: 'Workspace sections', exact: true })).toBeVisible();
+                        await expect(page.locator('#organization-members')).toBeVisible();
+                        await expect(page.locator('#organization-insights')).toBeVisible();
                         const inviteTrigger = page.getByRole('link', { name: 'Invitations', exact: true });
                         const inviteDialog = page.getByRole('dialog', { name: 'Invite member', exact: true });
                         await inviteTrigger.click();

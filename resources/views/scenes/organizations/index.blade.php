@@ -52,7 +52,7 @@
 
     <x-ui.insights
         id="organization-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :summary="trans_choice(':count member|:count members', $organization->members->count(), ['count' => $organization->members->count()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -84,7 +84,8 @@
         </dl>
     </x-ui.insights>
 
-    <x-ui.local-nav :label="__('Workspace sections')">
+    <x-ui.local-nav class="mt-6" :label="__('Workspace sections')">
+        <a href="#organization-members" class="ui-local-nav__link">{{ __('Members') }}</a>
         <a href="#organization-security-policy" class="ui-local-nav__link">{{ __('Security') }}</a>
         @if ($canManage)
             <a
@@ -109,16 +110,17 @@
     </x-ui.local-nav>
 
     <div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
+        <section id="organization-members" class="scroll-mt-24">
         <x-forms.section
             :title="__('Members')"
             :description="__('People with access to :workspace.', ['workspace' => $organization->name])"
         >
-            <div class="divide-y divide-primary bg-primary">
+            <div class="divide-y divide-line bg-surface">
                 @foreach ($organization->members as $member)
                     <div class="flex flex-wrap items-center gap-4 px-4 py-4 sm:px-6">
                         <div class="min-w-0 flex-1">
-                            <p class="font-bold text-primary">{{ $member->name }}</p>
-                            <p class="truncate text-sm text-secondary">{{ $member->email }}</p>
+                            <p class="font-bold text-ink">{{ $member->name }}</p>
+                            <p class="truncate text-sm text-muted">{{ $member->email }}</p>
                         </div>
 
                         <x-ui.badge :tone="$member->pivot->role === 'viewer' ? 'neutral' : 'accent'">
@@ -148,6 +150,7 @@
                 @endforeach
             </div>
         </x-forms.section>
+        </section>
 
         <div class="space-y-6">
             @if ($canManage)
@@ -158,30 +161,30 @@
                     id="organization-security-policy"
                     :open="$securityPolicyOpen"
                 >
-                    <form method="POST" action="{{ route('organizations.security-policy.update') }}" class="space-y-5 bg-primary p-5 sm:p-6">
+                    <form method="POST" action="{{ route('organizations.security-policy.update') }}" class="space-y-5 bg-surface p-5 sm:p-6">
                         @csrf
                         @method('PATCH')
 
                         <div>
-                            <label for="allowed-ip-ranges" class="block text-sm font-bold text-primary">{{ __('Allowed IP ranges') }}</label>
-                            <textarea id="allowed-ip-ranges" name="allowed_ip_ranges" rows="3" class="input secondary mt-2 w-full rounded-lg font-mono" placeholder="203.0.113.10/32&#10;2001:db8::/48">{{ old('allowed_ip_ranges', implode("\n", $organization->allowed_ip_ranges ?? [])) }}</textarea>
-                            <p class="mt-1.5 text-xs text-secondary">{{ __('Leave empty for any network. Your current IP must be included before saving.') }}</p>
+                            <label for="allowed-ip-ranges" class="ui-label">{{ __('Allowed IP ranges') }}</label>
+                            <textarea id="allowed-ip-ranges" name="allowed_ip_ranges" rows="3" class="ui-input mt-2 font-mono" placeholder="203.0.113.10/32&#10;2001:db8::/48">{{ old('allowed_ip_ranges', implode("\n", $organization->allowed_ip_ranges ?? [])) }}</textarea>
+                            <p class="mt-1.5 text-xs text-muted">{{ __('Leave empty for any network. Your current IP must be included before saving.') }}</p>
                         </div>
 
                         <div>
-                            <label for="allowed-email-domains" class="block text-sm font-bold text-primary">{{ __('Member email domains') }}</label>
-                            <input id="allowed-email-domains" name="allowed_email_domains" value="{{ old('allowed_email_domains', implode(', ', $organization->allowed_email_domains ?? [])) }}" class="input secondary mt-2 w-full rounded-lg" placeholder="example.com, agency.test">
+                            <label for="allowed-email-domains" class="ui-label">{{ __('Member email domains') }}</label>
+                            <input id="allowed-email-domains" name="allowed_email_domains" value="{{ old('allowed_email_domains', implode(', ', $organization->allowed_email_domains ?? [])) }}" class="ui-input mt-2" placeholder="example.com, agency.test">
                         </div>
 
                         <input type="hidden" name="require_two_factor" value="0">
-                        <label class="flex items-start gap-3 text-sm text-secondary">
-                            <input type="checkbox" name="require_two_factor" value="1" @checked(old('require_two_factor', $organization->require_two_factor))>
-                            <span><strong class="block text-primary">{{ __('Require two-factor authentication') }}</strong>{{ __('Members without 2FA are limited to their account security screen.') }}</span>
+                        <label class="flex items-start gap-3 text-sm text-muted">
+                            <input type="checkbox" name="require_two_factor" value="1" class="ui-check mt-1" @checked(old('require_two_factor', $organization->require_two_factor))>
+                            <span><strong class="block text-ink">{{ __('Require two-factor authentication') }}</strong>{{ __('Members without 2FA are limited to their account security screen.') }}</span>
                         </label>
 
                         <div>
-                            <label for="session-idle-minutes" class="block text-sm font-bold text-primary">{{ __('Idle session timeout') }}</label>
-                            <select id="session-idle-minutes" name="session_idle_minutes" class="input secondary mt-2 w-full rounded-lg">
+                            <label for="session-idle-minutes" class="ui-label">{{ __('Idle session timeout') }}</label>
+                            <select id="session-idle-minutes" name="session_idle_minutes" class="ui-input mt-2">
                                 <option value="">{{ __('Use platform default') }}</option>
                                 @foreach ([15, 30, 60, 240, 720, 1440] as $minutes)
                                     <option value="{{ $minutes }}" @selected((int) old('session_idle_minutes', $organization->session_idle_minutes) === $minutes)>
@@ -191,30 +194,30 @@
                             </select>
                         </div>
 
-                        <div class="border-t border-primary pt-5">
-                            <p class="font-bold text-primary">{{ __('OpenID Connect SSO') }}</p>
-                            <p class="mt-1 text-xs leading-5 text-secondary">{{ __('Use the callback URL :url in your identity provider.', ['url' => route('organizations.sso.callback')]) }}</p>
+                        <div class="border-t border-line pt-5">
+                            <p class="font-bold text-ink">{{ __('OpenID Connect SSO') }}</p>
+                            <p class="mt-1 text-xs leading-5 text-muted">{{ __('Use the callback URL :url in your identity provider.', ['url' => route('organizations.sso.callback')]) }}</p>
                         </div>
 
                         <div>
-                            <label for="sso-issuer" class="block text-sm font-bold text-primary">{{ __('Issuer URL') }}</label>
-                            <input id="sso-issuer" type="url" name="sso_issuer" value="{{ old('sso_issuer', $organization->sso_configuration['issuer'] ?? '') }}" class="input secondary mt-2 w-full rounded-lg" placeholder="https://identity.example.com">
+                            <label for="sso-issuer" class="ui-label">{{ __('Issuer URL') }}</label>
+                            <input id="sso-issuer" type="url" name="sso_issuer" value="{{ old('sso_issuer', $organization->sso_configuration['issuer'] ?? '') }}" class="ui-input mt-2" placeholder="https://identity.example.com">
                         </div>
 
                         <div>
-                            <label for="sso-client-id" class="block text-sm font-bold text-primary">{{ __('Client ID') }}</label>
-                            <input id="sso-client-id" name="sso_client_id" value="{{ old('sso_client_id', $organization->sso_configuration['client_id'] ?? '') }}" class="input secondary mt-2 w-full rounded-lg">
+                            <label for="sso-client-id" class="ui-label">{{ __('Client ID') }}</label>
+                            <input id="sso-client-id" name="sso_client_id" value="{{ old('sso_client_id', $organization->sso_configuration['client_id'] ?? '') }}" class="ui-input mt-2">
                         </div>
 
                         <div>
-                            <label for="sso-client-secret" class="block text-sm font-bold text-primary">{{ __('Client secret') }}</label>
-                            <input id="sso-client-secret" type="password" name="sso_client_secret" class="input secondary mt-2 w-full rounded-lg" autocomplete="new-password" placeholder="{{ filled($organization->sso_configuration['client_secret'] ?? null) ? __('Stored — leave blank to keep') : '' }}">
+                            <label for="sso-client-secret" class="ui-label">{{ __('Client secret') }}</label>
+                            <input id="sso-client-secret" type="password" name="sso_client_secret" class="ui-input mt-2" autocomplete="new-password" placeholder="{{ filled($organization->sso_configuration['client_secret'] ?? null) ? __('Stored — leave blank to keep') : '' }}">
                         </div>
 
                         <input type="hidden" name="sso_enforced" value="0">
-                        <label class="flex items-start gap-3 text-sm text-secondary">
-                            <input type="checkbox" name="sso_enforced" value="1" @checked(old('sso_enforced', $organization->sso_enforced))>
-                            <span><strong class="block text-primary">{{ __('Require workspace SSO') }}</strong>{{ __('Members must re-verify through your identity provider in each session.') }}</span>
+                        <label class="flex items-start gap-3 text-sm text-muted">
+                            <input type="checkbox" name="sso_enforced" value="1" class="ui-check mt-1" @checked(old('sso_enforced', $organization->sso_enforced))>
+                            <span><strong class="block text-ink">{{ __('Require workspace SSO') }}</strong>{{ __('Members must re-verify through your identity provider in each session.') }}</span>
                         </label>
 
                         <div class="flex flex-wrap gap-2">
@@ -234,12 +237,12 @@
                     :open="$notificationPreferencesOpen"
                 >
                     @php($enabledNotificationCategories = $organization->notification_preferences['categories'] ?? ['website', 'server', 'deployment', 'provider', 'security', 'recipe'])
-                    <div class="flex flex-wrap items-start justify-between gap-4 bg-primary p-5 sm:p-6">
+                    <div class="flex flex-wrap items-start justify-between gap-4 bg-surface p-5 sm:p-6">
                         <div>
-                            <p class="font-semibold text-primary">
+                            <p class="font-semibold text-ink">
                                 {{ trans_choice(':count inbox category enabled|:count inbox categories enabled', count($enabledNotificationCategories), ['count' => count($enabledNotificationCategories)]) }}
                             </p>
-                            <p class="mt-1 text-sm text-secondary">
+                            <p class="mt-1 text-sm text-muted">
                                 {{ ($organization->notification_preferences['recoveries'] ?? true) ? __('Recovery alerts are enabled.') : __('Recovery alerts are disabled.') }}
                             </p>
                         </div>
@@ -260,7 +263,7 @@
                 :collapsible="true"
                 id="organization-workspaces"
             >
-                <div class="space-y-2 bg-primary p-5 sm:p-6">
+                <div class="space-y-2 bg-surface p-5 sm:p-6">
                     @foreach (auth()->user()->organizations as $workspace)
                         <form method="POST" action="{{ route('organizations.switch', $workspace) }}">
                             @csrf
@@ -318,18 +321,18 @@
                     @method('DELETE')
                     <div>
                         <label for="workspace-confirmation" class="block text-sm font-bold text-red-900">{{ __('Type “:name”', ['name' => $organization->name]) }}</label>
-                        <input id="workspace-confirmation" name="confirmation" class="input secondary mt-2 w-full rounded-lg" required>
+                        <input id="workspace-confirmation" name="confirmation" class="ui-input mt-2" required>
                     </div>
                     @if (auth()->user()->hasLocalPassword())
                         <div>
                             <label for="workspace-current-password" class="block text-sm font-bold text-red-900">{{ __('Current password') }}</label>
-                            <input id="workspace-current-password" type="password" name="current_password" autocomplete="current-password" class="input secondary mt-2 w-full rounded-lg" required>
+                            <input id="workspace-current-password" type="password" name="current_password" autocomplete="current-password" class="ui-input mt-2" required>
                         </div>
                     @endif
                     @if (auth()->user()->twoFactorEnabled())
                         <div>
                             <label for="workspace-two-factor-code" class="block text-sm font-bold text-red-900">{{ __('Authenticator or recovery code') }}</label>
-                            <input id="workspace-two-factor-code" name="code" autocomplete="one-time-code" class="input secondary mt-2 w-full rounded-lg font-mono" required>
+                            <input id="workspace-two-factor-code" name="code" autocomplete="one-time-code" class="ui-input mt-2 font-mono" required>
                         </div>
                     @endif
                     <div class="sm:col-span-2">
