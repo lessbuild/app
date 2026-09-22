@@ -2047,3 +2047,64 @@ development evidence, not production or external-provider acceptance.
 
 Next task: modernize the website detail and runtime-log surface as a separate
 cohesive Signal slice.
+
+## Slice 30 — website detail and runtime evidence
+
+Status: implemented and verified locally; code committed and pushed as
+'201d409'.
+
+Responsibility problem addressed:
+
+- The website detail page already delegated deployment, health, runtime-log,
+  provisioning and repository operations to their existing controllers,
+  Livewire components, jobs and modal fragments. Its remaining presentation
+  mixed older alert/card/input conventions, and mobile users had no compact
+  way to jump between overview, operations, health, logs and repositories.
+- This was a presentation-boundary problem, not a reason to move encrypted
+  environment handling, health state transitions or provisioning behavior into
+  new abstractions.
+
+Signal implementation:
+
+- Added compact website section navigation with stable overview, operations,
+  health, runtime-log and repository anchors.
+- Converted website status feedback and empty repository states to quiet
+  border-led panels instead of filled alert cards.
+- Updated website create/edit modal fields, health settings, help text,
+  separators and action footers to the shared Signal input/panel language.
+- Kept provisioning output as a deliberately dark, bounded terminal surface
+  while aligning its links and metadata with the Signal treatment.
+- Added stable presentation hooks for the overview, health and repository
+  surfaces and browser assertions for the mobile layout.
+
+Preserved contracts:
+
+- Website routes, dialog query keys, fragment URLs, modal reopen behavior,
+  form names, validation errors, flash behavior and no-JavaScript links are
+  unchanged.
+- Encrypted environment values remain rendered only in the authorized edit
+  form and are absent from the overview; health polling, bounded log output,
+  provisioning retries, relocation cleanup, deletion and stale-attempt
+  protections remain in their existing components and operations.
+- The existing collapsed/expanded rules for provisioning, health history and
+  runtime snapshots remain unchanged, as does the deliberate absence of the
+  old “Setup Information” section.
+
+Evidence:
+
+- Website provisioning, retention, health history, environment encryption,
+  placement, relocation, retry, deletion, monitoring, deployment health and
+  dialog coverage — 86 tests passed, 801 assertions.
+- Focused website browser journeys — 5 Playwright tests passed: website edit
+  modal, health-history filtering, detail section navigation, runtime logs and
+  repository panel, and deployment-history dialog.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '201d409' is on 'origin/main'.
+
+Next task: deploy the website-detail modernization to the isolated canonical
+development runtime, then inspect the next product surface for a separate
+cohesive Signal slice.
