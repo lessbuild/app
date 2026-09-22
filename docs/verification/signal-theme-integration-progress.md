@@ -2196,6 +2196,62 @@ Evidence:
 
 Next task: modernize gallery unread state and server log failure feedback.
 
+## Slice 84 — contextual evidence states — 2026-09-22
+
+Responsibility problem:
+
+- Gallery report history used fixed blue border/ring utilities for unread
+  contributor updates, and server log failure feedback used a fixed red text
+  utility. These high-context evidence states bypassed the Signal primitives.
+
+Boundary and implementation:
+
+- Added the reusable `ui-card--unread` Signal surface for unread report cards.
+- Migrated server log failure copy to the existing `text-danger` token.
+- Kept report status modal links, notification actions, log polling and
+  persisted snapshot behavior unchanged.
+- Added a local UI guard for both views.
+
+Preserved contracts and safety:
+
+- Report ownership, unread update marking, filters, pagination, modal history,
+  allowlisted log types, bounded snapshots and failure preservation are
+  unchanged.
+- No controller, action, job, queue, API, authorization or remote-command
+  behavior changed.
+
+Evidence:
+
+- Gallery report history, server log snapshot/provisioning and local UI
+  coverage — 75 tests passed, 1,424 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- `npm run build` — passed; generated CSS is `assets/app-C4g8uJoa.css`.
+- Push status: implementation commit `8dcfdcd` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `8dcfdcd`. Application assets, Blade and route caches were rebuilt; the
+served bundle is `assets/app-C4g8uJoa.css`, both application and queue services
+are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The downloaded CSS contains `ui-card--unread`.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
