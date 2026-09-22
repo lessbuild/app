@@ -46,7 +46,7 @@
         <form method="GET" action="{{ route('servers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <label for="search" class="ui-label">{{ __('Search') }}</label>
                 <input
                     id="search"
                     name="search"
@@ -54,12 +54,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name, identifier, or IP address') }}"
-                    class="input secondary mt-1 w-full rounded-lg"
+                    class="ui-input"
                 >
             </div>
             <div>
-                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
+                <label for="status" class="ui-label">{{ __('Status') }}</label>
+                <select id="status" name="status" class="ui-input">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -69,9 +69,9 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
-                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
-                    {{ __('Provisioning only') }}
+                <label class="ui-choice h-full">
+                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning']) class="ui-check mt-0.5">
+                    <span class="text-sm text-ink">{{ __('Provisioning only') }}</span>
                 </label>
             </div>
         </div>
@@ -108,15 +108,15 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$servers->isEmpty())
-        <div class="ui-card ui-inventory-list mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Server inventory') }}">
+        <div class="ui-panel ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Server inventory') }}">
             @foreach($servers as $server)
-                <article data-server-card class="p-4 sm:p-5">
+                <article data-server-card class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <x-avatar :name="$server->label" class="h-10 w-10 shrink-0 rounded-md text-sm" />
                             <div class="min-w-0">
-                                <a href="{{ route('servers.show', $server) }}" class="font-semibold text-primary hover:underline">{{ $server->label }}</a>
-                                <p class="text-sm text-secondary">
+                                <a href="{{ route('servers.show', $server) }}" class="ui-link">{{ $server->label }}</a>
+                                <p class="text-sm text-muted">
                                     @if (filled($server->display_name))
                                         {{ $server->name }} &middot;
                                     @endif
@@ -138,24 +138,24 @@
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Specifics') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Specifics') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 {{ $server->region }}
-                                <span class="mt-1 block text-secondary">{{ $server->image }}</span>
-                                <span class="mt-1 block text-secondary">{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
+                                <span class="mt-1 block text-muted">{{ $server->image }}</span>
+                                <span class="mt-1 block text-muted">{{ str($server->type->value)->replace('-', ' ')->title() }}</span>
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Public IP') }}</dt>
-                            <dd class="mt-1 font-mono text-xs text-primary">{{ $server->public_ip ?? __('Not generated yet') }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Public IP') }}</dt>
+                            <dd class="mt-1 font-mono text-xs text-ink">{{ $server->public_ip ?? __('Not generated yet') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Private IP') }}</dt>
-                            <dd class="mt-1 font-mono text-xs text-primary">{{ $server->private_ip ?? __('Not generated yet') }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Private IP') }}</dt>
+                            <dd class="mt-1 font-mono text-xs text-ink">{{ $server->private_ip ?? __('Not generated yet') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
-                            <dd class="mt-1 text-primary">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Status') }}</dt>
+                            <dd class="mt-1 text-ink">{{ str($server->provisioning_status)->replace('_', ' ')->title() }}</dd>
                         </div>
                     </dl>
                 </article>

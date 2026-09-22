@@ -2022,6 +2022,20 @@ test('domain actions stay in the page header above the overview on mobile', asyn
     expect(actionBottom).toBeLessThanOrEqual(insightTop);
 });
 
+test('server inventory keeps capacity and provisioning rows scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/servers', { waitUntil: 'networkidle' });
+
+    await expect(page.locator('#servers-insights .ui-stat')).toHaveCount(6);
+    await expect(page.locator('#servers-filters')).toHaveClass(/\bui-filter-dialog\b/);
+    await expect(page.locator('#servers-filters .ui-input')).toHaveCount(2);
+    await expect(page.locator('[data-server-card]')).toHaveCount(2);
+    await expect(page.locator('[data-server-card]').first().locator('.ui-link')).toBeVisible();
+    await expect(page.locator('[data-server-card]').first().locator('.ui-eyebrow')).toHaveCount(4);
+});
+
 test('organization notification preferences open in a page-local dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ colorScheme: 'light' });

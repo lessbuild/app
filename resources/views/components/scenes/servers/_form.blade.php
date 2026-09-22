@@ -13,12 +13,10 @@
     $inputId = fn (string $field): string => $fieldPrefix.$field;
 @endphp
 
-<div class="grid gap-6 bg-primary px-5 py-5 sm:grid-cols-2 sm:px-8" data-server-catalog>
+<div class="grid gap-6 bg-surface px-5 py-5 sm:grid-cols-2 sm:px-8" data-server-catalog>
     <div>
-        <label for="{{ $inputId('provider_id') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Providers') }}
-        </label>
-        <select id="{{ $inputId('provider_id') }}" name="provider_id" class="input secondary mt-2 w-full rounded-lg" required>
+        <label for="{{ $inputId('provider_id') }}" class="ui-label">{{ __('Providers') }}</label>
+        <select id="{{ $inputId('provider_id') }}" name="provider_id" class="ui-input" required>
             @foreach ($providers as $provider)
                 <option
                     value="{{ $provider->id }}"
@@ -30,14 +28,12 @@
             @endforeach
         </select>
         <x-forms.errors name="provider_id" />
-        <p class="mt-2 text-xs text-secondary" data-server-catalog-status aria-live="polite"></p>
+        <p class="ui-help" data-server-catalog-status aria-live="polite"></p>
     </div>
 
     <div>
-        <label for="{{ $inputId('type') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Server Type') }}
-        </label>
-        <select id="{{ $inputId('type') }}" name="type" class="input secondary mt-2 w-full rounded-lg" required>
+        <label for="{{ $inputId('type') }}" class="ui-label">{{ __('Server Type') }}</label>
+        <select id="{{ $inputId('type') }}" name="type" class="ui-input" required>
             @foreach ($types as $type)
                 <option
                     value="{{ $type->value }}"
@@ -51,9 +47,7 @@
     </div>
 
     <div>
-        <label for="{{ $inputId('name') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Cloud server name') }}
-        </label>
+        <label for="{{ $inputId('name') }}" class="ui-label">{{ __('Cloud server name') }}</label>
         <input
             value="{{ old('name') ?? ($server?->name ?? null) }}"
             type="text"
@@ -61,17 +55,15 @@
             id="{{ $inputId('name') }}"
             maxlength="255"
             required
-            class="input secondary mt-2 w-full rounded-lg"
+            class="ui-input"
             placeholder="Example: Deployer"
         >
         <x-forms.errors name="name" />
     </div>
 
     <div>
-        <label for="{{ $inputId('image') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Image') }}
-        </label>
-        <select id="{{ $inputId('image') }}" name="image" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('image', $server?->image ?? '') }}">
+        <label for="{{ $inputId('image') }}" class="ui-label">{{ __('Image') }}</label>
+        <select id="{{ $inputId('image') }}" name="image" class="ui-input" required data-selected="{{ old('image', $server?->image ?? '') }}">
             @foreach ($images as $key => $value)
                 <option
                     value="{{ $key }}"
@@ -83,10 +75,8 @@
     </div>
 
     <div>
-        <label for="{{ $inputId('region') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Region') }}
-        </label>
-        <select id="{{ $inputId('region') }}" name="region" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('region', $server?->region ?? '') }}">
+        <label for="{{ $inputId('region') }}" class="ui-label">{{ __('Region') }}</label>
+        <select id="{{ $inputId('region') }}" name="region" class="ui-input" required data-selected="{{ old('region', $server?->region ?? '') }}">
             @foreach ($regions as $region)
                 <option
                     value="{{ $region->slug }}"
@@ -98,10 +88,8 @@
     </div>
 
     <div>
-        <label for="{{ $inputId('size') }}" class="block text-sm font-semibold text-primary">
-            {{ __('Sizes') }}
-        </label>
-        <select id="{{ $inputId('size') }}" name="size" class="input secondary mt-2 w-full rounded-lg" required data-selected="{{ old('size', $server?->size ?? '') }}">
+        <label for="{{ $inputId('size') }}" class="ui-label">{{ __('Sizes') }}</label>
+        <select id="{{ $inputId('size') }}" name="size" class="ui-input" required data-selected="{{ old('size', $server?->size ?? '') }}">
             @foreach ($sizes as $size)
                 <option
                     value="{{ $size->slug }}"
@@ -122,22 +110,22 @@
 
     @if ($recipes->isNotEmpty())
         <fieldset class="sm:col-span-2">
-            <legend class="text-sm font-semibold text-primary">{{ __('Provisioning recipes') }}</legend>
-            <p class="mt-1 text-xs text-secondary">{{ __('Selected recipes run as root, in this order, while the server is provisioned.') }}</p>
-            <div class="mt-3 grid gap-3 rounded-xl border border-primary bg-secondary p-4 sm:grid-cols-2">
+            <legend class="text-sm font-semibold text-ink">{{ __('Provisioning recipes') }}</legend>
+            <p class="ui-help">{{ __('Selected recipes run as root, in this order, while the server is provisioned.') }}</p>
+            <div class="ui-panel mt-3 grid gap-3 p-4 sm:grid-cols-2">
                 @foreach ($recipes as $recipe)
-                    <label class="flex items-start gap-3 rounded-lg p-2 hover:bg-primary">
+                    <label class="ui-choice">
                         <input
-                            class="mt-1 rounded border-primary bg-primary text-ternary"
+                            class="ui-check mt-1"
                             type="checkbox"
                             name="recipes[]"
                             value="{{ $recipe->id }}"
                             @checked(in_array($recipe->id, old('recipes', [])))
                         >
                         <span>
-                            <span class="block text-sm font-medium text-primary">{{ $recipe->name }}</span>
+                            <span class="block text-sm font-medium text-ink">{{ $recipe->name }}</span>
                             @if ($recipe->description)
-                                <span class="mt-1 block text-xs text-secondary">{{ $recipe->description }}</span>
+                                <span class="mt-1 block text-xs text-muted">{{ $recipe->description }}</span>
                             @endif
                         </span>
                     </label>
