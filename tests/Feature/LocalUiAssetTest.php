@@ -222,6 +222,19 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_project_readiness_and_rotation_states_use_signal_tokens(): void
+    {
+        $source = File::get(resource_path('views/scenes/projects/show.blade.php'));
+
+        foreach (['text-success', 'text-danger'] as $token) {
+            $this->assertStringContainsString($token, $source);
+        }
+
+        foreach (['text-green-600', 'text-red-600'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
