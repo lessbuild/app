@@ -2315,6 +2315,56 @@ Next task: deploy the managed-database modernization to the isolated canonical
 Deployer runtime, then inspect the next product surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 48 — cost visibility and budget surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'cf84b82'.
+
+Responsibility problem addressed:
+
+- Cost reporting already delegates estimate calculation, preview usage and
+  budget writes to dedicated query/action/request collaborators. Its dense
+  estimate rows, preview lifetime panel, budget dialog and cost-basis card
+  still used compatibility palette classes and a saturated full-surface cost
+  panel, reducing contrast between evidence and guidance on mobile.
+
+Signal implementation:
+
+- Migrated estimates, attribution, preview lifetime, budget and optimization
+  copy to semantic ink, muted, line, link and input roles.
+- Replaced the saturated cost-basis panel with a quiet card and a colored
+  leading edge, preserving the informational emphasis without making the
+  whole panel an alert color.
+- Converted the budget dialog field to the shared `ui-label`/`ui-input`
+  pattern and added cost inventory/modal fixtures to the responsive matrix.
+
+Preserved contracts:
+
+- Provider-catalog estimate wording, unknown-price handling, CPU telemetry,
+  project attribution, preview quota/lifetime semantics, plan entitlements,
+  budget validation, admin-only writes, dialog URL state and provider-invoice
+  disclaimer are unchanged.
+- No cost query, billing integration, budget action, request, authorization,
+  persistence or preview lifecycle behavior was modified.
+
+Evidence:
+
+- Cost and product improvement checks plus local UI checks — 32 tests passed,
+  532 assertions.
+- Browser fixture export including costs — 1 test passed, 313 assertions.
+- Fixture-backed responsive/navigation coverage — 2 tests passed for light/dark
+  at 390px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'cf84b82' is on 'origin/main'.
+
+Next task: deploy cost-visibility modernization to the isolated canonical
+Deployer runtime, then inspect the next product surface for a separate
+cohesive Signal modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
