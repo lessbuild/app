@@ -2134,6 +2134,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 56 — deployment history and comparison fragments — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as 'e4a5002'.
+
+Responsibility problem addressed:
+
+- The deployment detail already presents one responsive Deployment timeline
+  and intentionally omits the retired Execution checkpoints section. The
+  reusable deployment-history modal fragment and build-comparison fragment,
+  however, still used the compatibility palette, so modal evidence did not
+  visually match the surrounding Signal deployment surfaces.
+
+Signal implementation:
+
+- Migrated deployment-history headings, timeline rail, deployment cards,
+  metadata labels and values to Signal semantic roles.
+- Migrated comparison dividers, field labels, long-value panels, links and
+  duration outcomes to Signal semantic roles.
+- Added a LocalUiAssetTest guard covering both reusable fragments so retired
+  palette utilities cannot silently return.
+
+Preserved contracts:
+
+- Deployment timeline markup, accessible labels, build-card hooks, status
+  badges, pagination, comparison fields, route URLs and modal fragment
+  boundaries are unchanged.
+- Revision/message/failure escaping, duration wording, comparison behavior,
+  authorization and repository scoping are unchanged.
+- No controller, request, policy, action, persistence, queue or deployment
+  execution behavior changed.
+
+Evidence:
+
+- History, comparison, timeline, deployment-log and shared UI coverage — 48
+  tests passed, 815 assertions.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'npm run build' — passed.
+- Focused mobile browser coverage — 3 tests passed. The first invocation
+  exposed the browser harness defaulting to PHP 8.3; rerunning with
+  BROWSER_PHP_BINARY=/root/.local/share/buildpusher/php-8.5.10/bin/php passed.
+- 'git diff --check' — passed.
+
+Push status: 'e4a5002' is on 'origin/main'.
+
+Next task: deploy this fragment modernization to the isolated canonical
+Deployer runtime, then inspect the next remaining high-impact UI surface.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
