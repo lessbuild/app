@@ -1,5 +1,60 @@
 # Signal theme integration progress
 
+## Slice 120 — verify shared Signal dialogs and fixture assets — 2026-09-22
+
+Responsibility problem:
+
+- The Signal shell audit needed proof that its actual shared navigation asset is
+  present in rendered pages and that the Signal native-dialog primitive still
+  behaves correctly after the standalone drawer entry was added.
+- `tests/Browser/asset-layout.spec.js` manually builds fixture pages from the
+  Vite manifest, but had not included the new `signal-drawer` entry. Its layout
+  checks therefore did not exercise the full current Signal asset set.
+
+Boundary and implementation:
+
+- Updated only the browser fixture asset loader to include the manifest's
+  standalone Signal drawer entry and added an interaction check for the public
+  drawer's served asset, visibility, `aria-expanded`, scroll lock, Escape and
+  focus restoration.
+- Re-audited the current `main` shell against the supplied Signal Starter:
+  app-shell/sidebar/mobile-navigation composition and component primitives are
+  already committed on `main`; the native modal renders Signal's `ui-dialog`
+  primitive and layers the product's URL-backed/lazy-content behavior on it.
+  No new modal or sidebar rewrite was justified by the evidence.
+- Left the older, dirty isolated implementation checkout untouched. It is 71
+  commits behind current `main`; its initial shell migration is superseded by
+  the newer committed shell and subsequent responsive/accessibility work.
+
+Preserved contracts and safety:
+
+- No application markup, navigation destinations, modal behavior, routes,
+  authorization, persistence, dependencies, or external resources changed.
+- Authenticated dev checks performed ordinary sign-in only; they did not submit
+  product forms, provider tests, or infrastructure operations. The existing
+  dev runtime Caddyfile change remains untouched.
+- The source snapshot has no Git metadata. Current Deployer parity with that
+  snapshot is verified; the snapshot's status as the latest upstream release
+  cannot be independently established.
+
+Evidence:
+
+- Local asset-layout public drawer test: **1 passed** (1.7 minutes).
+- Local native-dialog regressions: **2 passed** (2.2 minutes), covering primary
+  creation dialogs and modal page-lock/inner-scroll behavior.
+- Authenticated dev domain: mobile sidebar **1 passed** (31.8s), mobile
+  accessibility/command-dialog keyboard flow **1 passed** (36.0s), desktop
+  sidebar **1 passed** (58.2s).
+- JS syntax and `git diff --check` passed. The current served Signal CSS hash
+  and ready health response remain recorded in Slice 119.
+- Verification-only changes are prepared for commit/push on `main`; no
+  production or physical-device acceptance is claimed.
+
+Next task: no additional local Signal shell/dialog mismatch is currently
+identified. Verify a newer Signal release only if an authoritative source
+repository or version/commit is provided; external and physical-device
+acceptance remain separate.
+
 ## Slice 119 — load Signal navigation independently of Alpine — 2026-09-22
 
 Responsibility problem:

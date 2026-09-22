@@ -25,6 +25,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/build/manifest.json'), 'utf8'));
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
+    const signalDrawer = `/build/${manifest['resources/js/signal-drawer.js'].file}`;
     const signalThemeInit = `/build/${manifest['resources/js/signal-theme-init.js'].file}`;
     const signalTheme = `/build/${manifest['resources/js/signal-theme.js'].file}`;
     await page.route('**/*', async (route) => {
@@ -275,7 +276,13 @@ async function serveFixtures(page, { delays = {} } = {}) {
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html)
                 ? ''
                 : `<script type="module" src="${alpine}"></script>`;
-            html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}"><script type="module" src="${signalThemeInit}"></script><script type="module" src="${signalTheme}"></script>${script}</head>`);
+            const signalAssets = [
+                `<link rel="stylesheet" href="${stylesheet}">`,
+                `<script type="module" src="${signalThemeInit}"></script>`,
+                `<script type="module" src="${signalTheme}"></script>`,
+                `<script type="module" src="${signalDrawer}"></script>`,
+            ].join('');
+            html = html.replace('</head>', `${signalAssets}${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
         }
         const file = /^\/livewire(?:-[^/]+)?\/livewire/.test(pathname)
@@ -287,6 +294,27 @@ async function serveFixtures(page, { delays = {} } = {}) {
         return route.fulfill({ contentType: contentTypes[path.extname(file)] || 'text/plain', body: fs.readFileSync(file) });
     });
 }
+
+test('public Signal navigation loads its standalone drawer behavior', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await serveFixtures(page);
+
+    const drawerAsset = page.waitForResponse((response) => response.url().includes('/build/assets/signal-drawer-'));
+    await page.goto('http://buildpusher.test/landing', { waitUntil: 'networkidle' });
+    expect((await drawerAsset).status()).toBe(200);
+
+    const toggle = page.locator('#navbarToggler');
+    const drawer = page.locator('#navbarCollapse');
+    await toggle.click();
+    await expect(drawer).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeHidden();
+    await expect(toggle).toBeFocused();
+    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(false);
+});
 
 test('operational incident timeline opens as a contextual evidence dialog', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
