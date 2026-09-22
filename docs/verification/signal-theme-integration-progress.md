@@ -1246,3 +1246,28 @@ Push status: `ee607b0` is on `origin/main`.
 Next task: deploy the system-health slice to the isolated Deployer runtime,
 then inspect notifications and remaining operations inventories for the next
 cohesive Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `91bf8e7`. Application, configuration, route and view caches were rebuilt,
+then `buildpusher-dev-main.service` and its queue worker were restarted. The
+canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/manifest.json` — HTTP 200 with the current Deployer asset manifest,
+  including `assets/app-CiFQClWv.css`.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is
+isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect notifications and the remaining operational inventory
+surfaces for the next smallest cohesive Signal modernization slice.
