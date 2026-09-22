@@ -153,7 +153,7 @@
 
         @if ($canManage)
             <details id="metric-alert-rules" class="ui-panel mt-6 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Metric alert rules') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($metricRules->isNotEmpty())
@@ -191,7 +191,7 @@
     </section>
 
     <details id="correlated-signals" class="ui-responsive-details group ui-panel mt-6 scroll-mt-24 overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" aria-labelledby="correlated-signals-title">
-        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-6 [&::-webkit-details-marker]:hidden">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:p-6 [&::-webkit-details-marker]:hidden">
             <span>
             <span class="ui-eyebrow block">{{ __('Incident command centre') }}</span>
                 <span id="correlated-signals-title" class="mt-1 block text-xl font-black text-ink">{{ __('Recent deployment and health signals') }}</span>
@@ -206,7 +206,7 @@
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedBuilds as $signal)
                     <a href="{{ route('builds.show', $signal) }}" class="flex items-center gap-3 rounded-lg border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
-                            <span class="h-2 w-2 shrink-0 rounded-full {{ $signal->status === \App\Models\Build::STATUS_SUCCEEDED ? 'bg-green-500' : 'bg-red-500' }}" aria-hidden="true"></span>
+                            <span class="ui-status-dot" style="--ui-status-dot: {{ $signal->status === \App\Models\Build::STATUS_SUCCEEDED ? 'var(--ui-success)' : 'var(--ui-danger)' }}" aria-hidden="true"></span>
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->repository->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ str($signal->status)->headline() }} · {{ $signal->finished_at?->diffForHumans() }}</span>
                         </a>
@@ -220,7 +220,7 @@
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedHealthChecks as $signal)
                         <a href="{{ route('websites.show', $signal->website) }}" class="flex items-center gap-3 rounded-lg border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
-                            <span class="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden="true"></span>
+                            <span class="ui-status-dot" style="--ui-status-dot: var(--ui-danger)" aria-hidden="true"></span>
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->website->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ $signal->status_code ?: __('Transport') }} · {{ $signal->checked_at?->diffForHumans() }}</span>
                         </a>
@@ -236,7 +236,7 @@
     @if ($environmentProjects->isNotEmpty())
         <section class="ui-panel mt-6 p-5 sm:p-6" aria-labelledby="environment-evidence-heading">
             <details id="environment-evidence" class="rounded-xl" aria-labelledby="environment-evidence-heading">
-                <summary class="flex cursor-pointer list-none items-start gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <summary class="flex cursor-pointer list-none items-start gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <div>
                         <p class="ui-eyebrow">{{ __('Investigation') }}</p>
                         <h2 id="environment-evidence-heading" class="mt-1 text-xl font-black text-ink">{{ __('Environment evidence') }}</h2>
@@ -250,7 +250,7 @@
                 <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     @foreach ($environmentProjects as $project)
                         @foreach ($project->environments as $environment)
-                            <a href="{{ route('observability.environments.context', $environment) }}" class="ui-panel block bg-surface-muted p-4 transition hover:border-primary">
+                            <a href="{{ route('observability.environments.context', $environment) }}" class="ui-panel block bg-surface-muted p-4 transition hover:border-[var(--ui-primary)]">
                                 <p class="ui-eyebrow">{{ $project->name }}</p>
                                 <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-black text-ink">{{ $environment->name }}</h3><x-ui.badge>{{ str((string) $environment->type)->headline() }}</x-ui.badge></div>
                                 <p class="mt-2 text-xs text-muted">{{ $environment->branch }} · {{ str((string) $environment->status)->headline() }}</p>
@@ -268,7 +268,7 @@
             <h2 class="mt-1 text-xl font-black text-ink">{{ __('Alert destinations') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Send signed failure and recovery events to Slack or your HTTPS webhook.') }}</p>
             <details id="alert-destinations" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Manage destinations') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($destinations->isNotEmpty())
@@ -319,7 +319,7 @@
             <h2 class="mt-1 text-xl font-black text-ink">{{ __('Public status pages') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Publish live component health and rolling 30-day uptime without exposing infrastructure details.') }}</p>
             <details id="status-pages" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Manage status pages') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($statusPages->isNotEmpty())
@@ -369,7 +369,7 @@
         <p class="mt-1 text-sm text-muted">{{ __('Publish updates to a status page and notify its confirmed subscribers.') }}</p>
 
         <details id="status-incident-history" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any() || $incidents->contains(fn ($incident) => ! in_array($incident->status, ['resolved', 'completed'], true))) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Show status updates') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($incidents->isNotEmpty())

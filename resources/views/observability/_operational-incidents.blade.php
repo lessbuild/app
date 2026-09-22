@@ -45,7 +45,7 @@
 
     @if ($resolvedOperationalIncidents->isNotEmpty())
         <details id="operational-incident-history" class="ui-panel mt-5 bg-surface-muted p-4">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Resolved incident history') }}</span>
                 <span class="flex items-center gap-2">
                     <x-ui.badge>{{ $resolvedOperationalIncidents->count() }}</x-ui.badge>

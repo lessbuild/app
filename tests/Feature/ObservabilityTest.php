@@ -260,6 +260,11 @@ class ObservabilityTest extends TestCase
 
         $this->assertStringContainsString('class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"', $content);
         $this->assertStringContainsString('class="ui-eyebrow"', $content);
+        $source = file_get_contents(resource_path('views/observability/index.blade.php'));
+        $this->assertStringContainsString('ui-status-dot', $source);
+        $this->assertStringNotContainsString('focus-visible:ring-2 focus-visible:ring-primary', $source);
+        $this->assertStringNotContainsString('bg-red-500', $source);
+        $this->assertStringNotContainsString('bg-green-500', $source);
         $this->assertStringNotContainsString('class="input secondary w-full rounded-md"', $content);
     }
 

@@ -56,6 +56,8 @@
   .ui-badge-warning { background: var(--ui-warning-soft); color: var(--ui-warning); }
   .ui-badge-danger { background: var(--ui-danger-soft); color: var(--ui-danger); }
   .ui-badge-info { background: var(--ui-info-soft); color: var(--ui-info); }
+  .ui-status-dot { display: inline-block; width: 0.5rem; height: 0.5rem; flex: 0 0 auto; border-radius: 999px; background: var(--ui-status-dot, var(--ui-primary)); }
+  .ui-status-dot-lg { width: 0.625rem; height: 0.625rem; }
   .ui-eyebrow { color: var(--ui-primary); font-size: 0.73rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
   .ui-link { color: var(--ui-primary); font-weight: 750; text-decoration: none; }
   .ui-link:hover { color: var(--ui-primary-hover); text-decoration: underline; text-underline-offset: 0.2em; }

@@ -209,6 +209,11 @@ class ObservabilityEnvironmentContextTest extends TestCase
 
         $this->assertStringContainsString('class="ui-panel mt-8 p-5 sm:p-6"', $content);
         $this->assertStringContainsString('class="ui-eyebrow"', $content);
+        $source = file_get_contents(resource_path('views/observability/environment-context.blade.php'));
+        $this->assertStringContainsString('ui-status-dot', $source);
+        $this->assertStringNotContainsString('focus-visible:ring-2 focus-visible:ring-primary', $source);
+        $this->assertStringNotContainsString('bg-red-500', $source);
+        $this->assertStringNotContainsString('bg-green-500', $source);
     }
 
     public function test_context_read_is_tenant_authorized_before_window_validation(): void
