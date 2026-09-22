@@ -1271,3 +1271,57 @@ acceptance.
 
 Next task: inspect notifications and the remaining operational inventory
 surfaces for the next smallest cohesive Signal modernization slice.
+
+## Slice 20 — notification inbox
+
+Status: implemented and verified locally; code committed and pushed as
+'2e5a39b'.
+
+Responsibility problem addressed:
+
+- The notification page already had dedicated query, exporter, destination,
+  request, policy and state-action boundaries, but its main inbox still used
+  legacy cards, saturated bulk controls and legacy form inputs.
+- The mobile page therefore gave alerts, bulk actions and secondary filters
+  equal visual weight and required unnecessary scrolling to understand the
+  current inbox.
+
+Signal implementation:
+
+- Converted the alert list into one bordered Signal inventory panel with
+  compact rows, quiet surfaces, readable ink/muted hierarchy and colored
+  status edges only for unread failure, recovery and information alerts.
+- Made the bulk toolbar a quiet sticky panel with theme-aware primary edge,
+  shared check controls and the existing action names and confirmation copy.
+- Replaced filter inputs and select controls with shared Signal labels and
+  inputs while preserving every query key, option value and disclosure state.
+- Converted filter and saved-filter sections to panels and saved presets to
+  compact chips without changing their URLs, deletion forms or dialog
+  triggers.
+- Added deterministic unread/read fixture notifications and mobile browser
+  coverage for the populated inbox instead of testing only the empty state.
+
+Preserved contracts:
+
+- Notification ownership, destination resolution, read/unread/delete actions,
+  bulk limits, saved-filter normalization, pagination, CSV export and private
+  payload redaction.
+- Existing route names, validation keys, flash messages, confirmation text,
+  read-notification disclosure behavior and URL-backed save-filter dialog.
+
+Evidence:
+
+- 'NotificationInboxInsightsTest' — 6 tests passed, 31 assertions.
+- 'NotificationBulkActionTest' — 6 tests passed, 41 assertions.
+- 'LocalUiAssetTest' — 23 tests passed, 470 assertions.
+- Notification dialog and populated mobile inbox journeys — 2 passed in the
+  isolated fixture runtime.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '2e5a39b' is on 'origin/main'.
+
+Next task: deploy the notification inbox to the isolated Deployer runtime,
+then inspect backups and the remaining operational inventory pages for the
+next smallest cohesive modernization boundary.
