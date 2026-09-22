@@ -2134,6 +2134,56 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 43 — public landing surface — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'a627431'.
+
+Responsibility problem addressed:
+
+- The public landing page was still the most visible remaining surface using
+  the compatibility palette for its header, mobile menu, provider strip,
+  feature/category tabs, product tour, workflow cards, FAQ, CTA and footer.
+  That made the first impression look like a separate product from the
+  authenticated Signal workspace, especially in dark mode and on phones.
+
+Signal implementation:
+
+- Migrated the landing page to semantic Signal surfaces, text roles, borders,
+  focus rings and on-primary colors.
+- Updated the mobile navigation, feature tabs, product tour tabs, illustrative
+  workspace preview, guardrail panel, FAQ cards and CTA to use the shared
+  visual language while keeping compact responsive layouts.
+- Reused the existing `ui-btn` primitives for the mobile menu control and
+  primary CTA; no new landing-only component system was introduced.
+
+Preserved contracts:
+
+- Landing copy, app-name interpolation, registration/access-request decision,
+  route targets, provider labels/icons, Alpine tab state, keyboard tab
+  navigation, skip link, mobile Escape behavior and no-JavaScript navigation
+  are unchanged.
+- No account, deployment, provider, analytics, persistence or authorization
+  behavior was modified.
+
+Evidence:
+
+- Public landing, dashboard, account lifecycle, UI asset, product-improvement
+  and page-title coverage — 69 tests passed, 898 assertions.
+- Fixture-backed responsive asset matrix — 4 tests passed at 320px and
+  1440px in light and dark themes.
+- Focused local UI asset coverage — 23 tests passed, 475 assertions.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'a627431' is on 'origin/main'.
+
+Next task: deploy the public landing modernization to the isolated canonical
+development runtime, then inspect the next product surface for a separate
+cohesive Signal modernization boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
