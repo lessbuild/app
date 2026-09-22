@@ -2134,6 +2134,48 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 70 — deployment and provisioning evidence — 2026-09-22
+
+Responsibility problem:
+
+- Repository deployment milestones, website provisioning output and the shared
+  setup-stage Livewire fragment mixed legacy text/background classes and raw
+  status colors into operational evidence users rely on while diagnosing
+  releases.
+
+Boundary and implementation:
+
+- Kept Livewire polling, timeline rendering, provisioning log download links,
+  status text, stage calculations and cancellation/error messages unchanged.
+- Replaced the presentation layer with semantic Signal text, status badges,
+  status-soft surfaces and console primitives. This keeps workflow state in
+  the existing Livewire components while shared UI primitives own its visual
+  representation.
+
+Preserved contracts and safety:
+
+- Deployment timeline contents, exact revision/configuration context,
+  provisioning retries, stale-attempt behavior, server retry semantics and
+  authorization remain unchanged.
+- No controller, action, policy, persistence, queue, remote-call or polling
+  behavior changed.
+
+Evidence:
+
+- UI, deployment timeline, repository deployment, website provisioning retry
+  and server initialization retry coverage — 64 tests passed, 1,239
+  assertions.
+- Repository and website mobile evidence journeys — 2 tests passed in 20.2s.
+- `npm run build` — passed; generated CSS includes app-XhfdYbQT.css.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: implementation commit '3bc51c3' is on 'origin/main'.
+
+Next task: deploy the deployment/provisioning evidence modernization to the
+isolated canonical Deployer runtime and verify repository/website surfaces.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
